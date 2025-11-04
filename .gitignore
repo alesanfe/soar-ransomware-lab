@@ -1,0 +1,49 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+*.egg-info/
+
+# Variables de entorno
+.env
+.env.*
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+docker/data/
+docker/volumes/
+docker/logs/
+*.pid
+
+# Ansible
+*.retry
+
+# Vagrant
+.vagrant/
+
+# Logs y dumps
+*.log
+*.out
+*.bak
+*.tmp
+
+# Archivos grandes o sensibles
+*.zip
+*.tar
+*.gz
+
+# Documentación generada
+docs/build/
