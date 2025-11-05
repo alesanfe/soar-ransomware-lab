@@ -1,0 +1,217 @@
+name: Auto-label WBS/Área/Tipo + Create Branch
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: auto-label-branch-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  parse_and_label:
+    runs-on: ubuntu-latest
+    outputs:
+      wbs:        ${{ steps.parse.outputs.wbs }}
+      area:       ${{ steps.parse.outputs.area }}
+      areaSlug:   ${{ steps.parse.outputs.areaSlug }}
+      tipo:       ${{ steps.parse.outputs.tipo }}
+      tipoPrefix: ${{ steps.parse.outputs.tipoPrefix }}
+      titleSlug:  ${{ steps.parse.outputs.titleSlug }}
+      branch:     ${{ steps.parse.outputs.branch }}
+    steps:
+      - id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+
+            // ---- Helpers ----
+            async function ensureLabel(name, color, description) {
+              try { await github.rest.issues.getLabel({ owner, repo, name }); }
+              catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({ owner, repo, name, color: color || "ededed", description: description || "" });
+                } else throw e;
+              }
+            }
+            async function addLabels(names) {
+              const current = (issue.labels || []).map(l => typeof l === "string" ? l : l.name);
+              const toAdd = names.filter(l => !current.includes(l));
+              if (toAdd.length) await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: toAdd });
+            }
+            const slugify = s => (s||"")
+              .replace(/\[WBS\s+\d+(?:\.\d+)?\]\s*/ig,"")
+              .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+              .toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")
+              .substring(0, 80);
+
+            // Extractors
+            const title = issue.title || "";
+            const body  = issue.body  || "";
+
+            const extractWbsFromTitle = t => (t.match(/\[WBS\s+(\d+(?:\.\d+)?)\]/i)||[])[1] || null;
+            const extractFieldBelowHeading = (text, headingRegex) => {
+              if (!text) return null;
+              const lines = text.split(/\r?\n/);
+              for (let i=0;i<lines.length;i++){
+                if (headingRegex.test(lines[i])){
+                  for (let j=i+1;j<lines.length;j++){
+                    const v = lines[j].trim();
+                    if (v) return v;
+                  }
+                }
+              }
+              return null;
+            };
+            const wbs  = extractWbsFromTitle(title) || (extractFieldBelowHeading(body, /WBS\s*ID/i)||"").match(/^(\d+(?:\.\d+)?)/)?.[1] || "";
+            const areaLine = extractFieldBelowHeading(body, /Área\s*\(EDT\s*nivel\s*1\)/i) || "";
+            const area = (areaLine.match(/^(\d+)/)||[])[1] || "";
+            const tipoLine = extractFieldBelowHeading(body, /^Tipo$/i) || ""; // exact label "Tipo"
+            const tipo = (tipoLine || "").toLowerCase().trim();
+
+            const areaMap = { "1":"iniciacion", "2":"planificacion", "3":"arquitectura", "4":"entorno", "5":"integracion", "6":"playbooks", "7":"pruebas", "8":"documentacion", "9":"gestion" };
+            const areaSlug = area ? (areaMap[area] || `area-${area}`) : "";
+
+            // Tipo -> prefijo de rama y label
+            const tipoMap = {
+              "programacion":  { label: "tipo:programacion",  prefix: "feat"  },
+              "documentacion": { label: "tipo:documentacion", prefix: "docs"  },
+              "configuracion": { label: "tipo:configuracion", prefix: "ops"   },
+              "pruebas":       { label: "tipo:pruebas",       prefix: "test"  },
+              "gestion":       { label: "tipo:gestion",       prefix: "chore" }
+            };
+            // Fallback por Área si no se indicó 'Tipo'
+            const tipoFallbackByArea = { "1":"gestion","2":"gestion","3":"documentacion","4":"configuracion","5":"programacion","6":"programacion","7":"pruebas","8":"documentacion","9":"gestion" };
+            const tipoResolved = tipoMap[tipo] ? tipo : (tipoFallbackByArea[area] || "programacion");
+            const { label: tipoLabel, prefix: tipoPrefix } = tipoMap[tipoResolved];
+
+            // Labels base
+            const labelsToEnsure = [
+              { name:"feature", color:"1f883d", desc:"Feature request" },
+              { name:`area:${area}`, color:"0e8a16", desc:"Área EDT" },
+              { name:`wbs:${wbs}`, color:"7057ff", desc:"Paquete EDT" },
+              { name: tipoLabel, color:"fbca04", desc:"Tipo de trabajo" }
+            ].filter(Boolean);
+
+            const labelsToAdd = ["feature"];
+            if (area) labelsToAdd.push(`area:${area}`);
+            if (wbs)  labelsToAdd.push(`wbs:${wbs}`);
+            labelsToAdd.push(tipoLabel);
+
+            for (const l of labelsToEnsure) await ensureLabel(l.name, l.color, l.desc);
+            await addLabels(labelsToAdd);
+
+            const titleSlug = slugify(title);
+
+            // Construcción del nombre de rama
+            let branch = "";
+            if (area) {
+              const num = issue.number;
+              branch = wbs
+                ? `${tipoPrefix}/area-${area}-${areaSlug}/wbs-${wbs}-${titleSlug}-${num}`
+                : `${tipoPrefix}/area-${area}-${areaSlug}/${titleSlug}-${num}`;
+            }
+
+            core.setOutput("wbs", wbs);
+            core.setOutput("area", area);
+            core.setOutput("areaSlug", areaSlug);
+            core.setOutput("tipo", tipoResolved);
+            core.setOutput("tipoPrefix", tipoPrefix);
+            core.setOutput("titleSlug", titleSlug);
+            core.setOutput("branch", branch);
+
+            // Comentarios de ayuda si faltan campos
+            let msg = "";
+            if (!wbs)  msg += "- No se detectó **WBS ID**. Inclúyelo en el título `[WBS x.y]` o rellena el campo del formulario.\n";
+            if (!area) msg += "- No se detectó **Área (EDT nivel 1)**. Selecciónala en el formulario.\n";
+            if (msg) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issue.number,
+                body: `👋 Gracias por crear la issue.\n${msg}`
+              });
+            }
+
+  create_branch:
+    needs: parse_and_label
+    if: ${{ needs.parse_and_label.outputs.area != '' && needs.parse_and_label.outputs.branch != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create branch and scaffold file
+        env:
+          BRANCH:       ${{ needs.parse_and_label.outputs.branch }}
+          AREA:         ${{ needs.parse_and_label.outputs.area }}
+          AREA_SLUG:    ${{ needs.parse_and_label.outputs.areaSlug }}
+          TIPO:         ${{ needs.parse_and_label.outputs.tipo }}
+          TIPO_PREFIX:  ${{ needs.parse_and_label.outputs.tipoPrefix }}
+          WBS:          ${{ needs.parse_and_label.outputs.wbs }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+
+          if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null 2>&1; then
+            echo "Branch ${BRANCH} already exists."
+          else
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git fetch origin "${DEFAULT_BRANCH}"
+            git switch -c "${BRANCH}" "origin/${DEFAULT_BRANCH}"
+
+            DIR="work/${TIPO_PREFIX}/area-${AREA}-${AREA_SLUG}"
+            FILE="${DIR}/WBS-${WBS:-NA}-${ISSUE_NUMBER}.md"
+            mkdir -p "${DIR}"
+            cat > "${FILE}" <<'EOF'
+            # Trabajo en curso
+
+            **Issue**: ${{ github.event.issue.html_url }}
+            **Título**: ${{ github.event.issue.title }}
+            **WBS**: ${{ needs.parse_and_label.outputs.wbs }}
+            **Área**: ${{ needs.parse_and_label.outputs.area }} (${{ needs.parse_and_label.outputs.areaSlug }})
+            **Tipo**: ${{ needs.parse_and_label.outputs.tipo }} (prefijo: ${{ needs.parse_and_label.outputs.tipoPrefix }})
+
+            ## Objetivo
+            > Especifica aquí el objetivo de la tarea/feature.
+
+            ## Criterios de aceptación (DoD)
+            - [ ] Funciona en el laboratorio (entorno aislado).
+            - [ ] Evidencias en `docs/` o `tests/`.
+            - [ ] Configuración reproducible (IaC/scripts).
+            - [ ] Documentación actualizada.
+
+            ## Notas
+            - Añade comandos, decisiones y enlaces relevantes.
+            EOF
+
+            git add "${FILE}"
+            git commit -m "chore(wbs:${WBS:-NA}): scaffold ${FILE} for issue #${ISSUE_NUMBER}"
+            git push -u origin "${BRANCH}"
+          fi
+
+      - name: Comment branch link on the issue
+        uses: actions/github-script@v7
+        env:
+          BRANCH: ${{ needs.parse_and_label.outputs.branch }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const issue_number = context.payload.issue.number;
+            const branch = process.env.BRANCH || "";
+            if (!branch) return;
+            const link = `https://github.com/${owner}/${repo}/tree/${branch}`;
+            await github.rest.issues.createComment({
+              owner, repo, issue_number,
+              body: `🧩 Rama creada: \`${branch}\`  \n🔗 ${link}`
+            });
