@@ -87,27 +87,4 @@ body:
     validations:
       required: false
 
-  - type: textarea
-    id: solution
-    attributes:
-      label: "Describe the solution you'd like."
-      description: "A clear and concise description of what you want to happen."
-      value: |
-        **Acceptance criteria (DoD)**
-        - [ ] Funciona en entorno de laboratorio aislado.
-        - [ ] Evidencias adjuntas (capturas/logs en `docs/` o `tests/`).
-        - [ ] Configuración versionada y reproducible (IaC/scripts).
-        - [ ] Documentación actualizada (README/docs).
-    validations:
-      required: false
-
-  - type: textarea
-    id: context
-    attributes:
-      label: "Additional context"
-      description: "Add any other context or additional information about the problem here."
-      placeholder: "Riesgos/mitigaciones, enlaces a docs/tutos, notas."
-    validations:
-      required: false
-
 
