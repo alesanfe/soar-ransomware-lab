@@ -28,7 +28,7 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
+  - type: textarea
     id: dod
     attributes:
       label: Definition of Done (DoD)
