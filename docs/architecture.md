@@ -1,3 +1,3 @@
-# Arquitectura del laboratorio
+# Arquitectura
 
-Diagrama y flujos.
+Servicios: TheHive, Cortex, Shuffle, Postgres, Redis en red `soar_net`.

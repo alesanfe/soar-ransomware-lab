@@ -1,3 +1,3 @@
-# Playbooks de Shuffle
+# Playbook E2E
 
-Coloca aquí los JSON/YAML exportados de tus workflows de Shuffle.
+Webhook -> Validación -> Caso TheHive -> Cortex -> Decisión -> Contención -> Notificación.

@@ -1,1 +1,0 @@
-# Placeholder Invoke-AtomicRedTeam example

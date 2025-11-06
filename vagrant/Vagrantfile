@@ -1,11 +1,17 @@
-# -*- mode: ruby -*-
+
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/focal64"
-  config.vm.hostname = "soar-lab"
-  config.vm.network :private_network, ip: "192.168.56.10"
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = 4096
-    vb.cpus = 2
+  # Ubuntu (SOAR)
+  config.vm.define "soar-ubuntu" do |ub|
+    ub.vm.box = "ubuntu/jammy64"
+    ub.vm.hostname = "soar-ubuntu"
+    ub.vm.network "private_network", ip: "192.168.56.10"
+    ub.vm.provision "shell", path: "provision.sh"
   end
-  config.vm.provision "shell", path: "provision.sh"
+
+  # Windows (víctima) - placeholder, requiere box/licencia válida
+  config.vm.define "victima-windows" do |win|
+    win.vm.box = "gusztavvargadr/windows-10" # ejemplo; ajusta según licencia
+    win.vm.hostname = "victima-windows"
+    win.vm.network "private_network", ip: "192.168.56.20"
+  end
 end

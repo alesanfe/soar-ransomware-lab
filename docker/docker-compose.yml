@@ -1,42 +1,57 @@
 
-version: "3.8"
+version: "3.9"
 
-services:
-  postgres:
-    image: postgres:16
-    container_name: postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-thehive}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-thehive_password}
-      POSTGRES_DB: ${POSTGRES_DB:-thehive}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    command: ["redis-server", "--appendonly", "yes"]
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redisdata:/data
-
-  # cortex:
-  #   image: thehiveproject/cortex:latest
-  #   container_name: cortex
-  #   restart: unless-stopped
-  #   ports:
-  #     - "9001:9001"
-  #   volumes:
-  #     - cortex-data:/data
-  #   depends_on:
-  #     - redis
+networks:
+  soar_net:
+    driver: bridge
 
 volumes:
   pgdata:
-  redisdata:
-  cortex-data:
+  thehive_data:
+  cortex_data:
+  shuffle_data:
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [soar_net]
+
+  redis:
+    image: redis:6
+    networks: [soar_net]
+
+  thehive:
+    image: thehiveproject/thehive:latest
+    depends_on: [postgres]
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_USER=${POSTGRES_USER}
+    ports:
+      - "9000:9000"
+    networks: [soar_net]
+    volumes:
+      - thehive_data:/opt/thehive/data
+
+  cortex:
+    image: thehiveproject/cortex:latest
+    depends_on: [redis]
+    ports:
+      - "9001:9001"
+    networks: [soar_net]
+    volumes:
+      - cortex_data:/var/lib/cortex
+
+  shuffle:
+    image: frikky/shuffle:latest
+    depends_on: [redis]
+    ports:
+      - "3000:3000"
+    networks: [soar_net]
+    volumes:
+      - shuffle_data:/shuffle-app-data

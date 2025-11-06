@@ -1,7 +1,1 @@
-flowchart LR
-A[Wazuh/ELK] -->|Webhook| H(TheHive)
-H -->|Observables| C(Cortex)
-H <-->|REST API| S(Shuffle)
-S -->|Responder| D[Defender for Endpoint]
-H <---> P[(PostgreSQL)]
-C <---> R[(Redis)]
+graph TD; SIEM-->Shuffle; Shuffle-->TheHive; TheHive-->Cortex;

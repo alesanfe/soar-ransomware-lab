@@ -1,0 +1,12 @@
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Shuffle Alert",
+  "type": "object",
+  "required": ["hostname", "hash", "src_ip"],
+  "properties": {
+    "hostname": {"type": "string"},
+    "hash": {"type": "string"},
+    "src_ip": {"type": "string", "format": "ipv4"}
+  }
+}

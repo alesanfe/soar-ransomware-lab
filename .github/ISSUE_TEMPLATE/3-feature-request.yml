@@ -1,90 +1,49 @@
-name: "🚀🆕 Feature Request"
-description: "Suggest an idea or possible new feature for this project."
-title: "[Feature] [WBS x.y] <título breve>"
-labels: ["feature", "needs-triage"]
+name: "🗂️ EDT Task"
+description: "Crear un issue a partir de un elemento de la EDT del TFM SOAR"
+title: "[EDT] {Sección} — {Entregable(s)}"
+labels: ["EDT", "task"]
 assignees: []
 body:
   - type: markdown
     attributes:
       value: |
-        # **🚀 Feature Request**
-        Completa los campos para describir la funcionalidad y enlazarla con la EDT.
+        ## 🗂️ EDT → Issue
+        Completa este formulario para generar un issue ligado a la EDT. Incluye entregables, DoD y dependencias.
 
   - type: input
-    id: wbs
+    id: deliverables
     attributes:
-      label: "WBS ID"
-      description: "ID del paquete de trabajo (p. ej., 4.4, 6.5, 7.2)."
-      placeholder: "x.y"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: area
-    attributes:
-      label: "Área (EDT nivel 1)"
-      options:
-        - "1 · Iniciación y Alcance"
-        - "2 · Planificación del Proyecto"
-        - "3 · Diseño de Arquitectura"
-        - "4 · Preparación del Entorno"
-        - "5 · Integración de Herramientas"
-        - "6 · Desarrollo de Playbooks"
-        - "7 · Pruebas y Validación"
-        - "8 · Documentación y Entregables"
-        - "9 · Gestión del Proyecto"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: tipo
-    attributes:
-      label: "Tipo"
-      description: "Clasifica la issue para crear la rama con el prefijo apropiado."
-      options:
-        - "programacion"
-        - "documentacion"
-        - "configuracion"
-        - "pruebas"
-        - "gestion"
-      default: 0
+      label: Entregable(s)
+      description: Ruta(s) y nombre(s) según el repo (p. ej., `docs/plan.md; scripts/calc_kpis.py`).
+      placeholder: "docs/plan.md; scripts/calc_kpis.py"
     validations:
       required: true
 
   - type: textarea
-    id: feature
+    id: short_desc
     attributes:
-      label: "Describe the feature."
-      description: "A clear and concise description of what the feature is."
-      placeholder: "Qué se necesita y por qué."
+      label: Descripción breve
+      description: Resume el objetivo de este issue en 2–4 líneas.
+      placeholder: "Qué se va a hacer y para qué."
     validations:
       required: true
 
-  - type: textarea
-    id: deliverable
+  - type: checkboxes
+    id: dod
     attributes:
-      label: "Deliverable / Output"
-      description: "¿Qué se entrega exactamente?"
-      placeholder: "Documento, script, diagrama, configuración, evidencias, etc."
-    validations:
-      required: true
+      label: Definition of Done (DoD)
+      description: Marca los criterios que deben cumplirse para cerrar el issue.
+      options:
+        - label: Entregable(s) creado(s)/actualizado(s) en la ruta indicada
+          required: true
+        - label: Documentación actualizada (README/docs)
+        - label: Pruebas/E2E o evidencias adjuntas
+        - label: Linter/format OK y sin secretos en .env
+        - label: Revisión/aprobación del tutor (si aplica)
 
   - type: textarea
     id: dependencies
     attributes:
-      label: "Dependencies"
-      description: "Tareas o condiciones previas (WBS o issues relacionadas)."
-      placeholder: "p. ej., 3.1, 4.3, #12"
-    validations:
-      required: false
-
-  - type: dropdown
-    id: priority
-    attributes:
-      label: "Priority"
-      options: ["P0 (Crítica)", "P1 (Alta)", "P2 (Media)", "P3 (Baja)"]
-      default: 2
-    validations:
-      required: false
-
-
+      label: Dependencias
+      description: Issues o PRs que deben resolverse antes (referencias con #).
+      placeholder: "#12, #34"
