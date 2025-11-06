@@ -1,0 +1,49 @@
+name: "🗂️ EDT Task"
+description: "Crear un issue a partir de un elemento de la EDT del TFM SOAR"
+title: "[EDT] {Sección} — {Entregable(s)}"
+labels: ["EDT", "task"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🗂️ EDT → Issue
+        Completa este formulario para generar un issue ligado a la EDT. Incluye entregables, DoD y dependencias.
+
+  - type: input
+    id: deliverables
+    attributes:
+      label: Entregable(s)
+      description: Ruta(s) y nombre(s) según el repo (p. ej., `docs/plan.md; scripts/calc_kpis.py`).
+      placeholder: "docs/plan.md; scripts/calc_kpis.py"
+    validations:
+      required: true
+
+  - type: textarea
+    id: short_desc
+    attributes:
+      label: Descripción breve
+      description: Resume el objetivo de este issue en 2–4 líneas.
+      placeholder: "Qué se va a hacer y para qué."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Definition of Done (DoD)
+      description: Marca los criterios que deben cumplirse para cerrar el issue.
+      options:
+        - label: Entregable(s) creado(s)/actualizado(s) en la ruta indicada
+          required: true
+        - label: Documentación actualizada (README/docs)
+        - label: Pruebas/E2E o evidencias adjuntas
+        - label: Linter/format OK y sin secretos en .env
+        - label: Revisión/aprobación del tutor (si aplica)
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencias
+      description: Issues o PRs que deben resolverse antes (referencias con #).
+      placeholder: "#12, #34"

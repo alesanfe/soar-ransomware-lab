@@ -10,6 +10,44 @@ body:
         ## 🗂️ EDT → Issue
         Completa este formulario para generar un issue ligado a la EDT. Incluye entregables, DoD y dependencias.
 
+  - type: dropdown
+    id: edt_section
+    attributes:
+      label: Sección de la EDT
+      description: Selecciona el apartado correspondiente.
+      options:
+        - "0. Visión y alcance del TFM"
+        - "1.1 Alcance del TFM (MSV)"
+        - "1.2 Objetivos SMART y aprobación"
+        - "2.1 Plan/roadmap"
+        - "2.2 Riesgos y mitigación"
+        - "3.1 Arquitectura single‑host (Docker)"
+        - "3.2 Flujo del playbook (Mermaid/BPMN)"
+        - "3.3 Integraciones mínimas/simuladas"
+        - "4.1 Docker Engine + Compose (Obligatorio)"
+        - "4.2 Seguridad básica (Checklist)"
+        - "4.3 Provisionamiento con Vagrant (Opcional)"
+        - "4.4 Provisionamiento con Ansible (Opcional)"
+        - "5.1 TheHive: plantilla de caso"
+        - "5.2 Cortex: analyzers mínimos"
+        - "5.3 Shuffle: conexiones y webhook"
+        - "5.4 SIEM simulado"
+        - "6.1 Esquema de alerta y payloads"
+        - "6.2 Crear caso + observables (TheHive API)"
+        - "6.3 Ejecutar analyzers (Cortex)"
+        - "6.4 Decisión y contención simulada"
+        - "6.5 Notificación y actualización de caso"
+        - "7.1 E2E (malicioso/benigno)"
+        - "7.2 KPIs MTTR-demo"
+        - "7.3 Validación final"
+        - "7.4 Script de métricas automatizado"
+        - "8.1 Documento técnico (arquitectura/config)"
+        - "8.2 Manual del playbook"
+        - "8.3 Informe de pruebas y resultados"
+        - "8.4 Cierre y lecciones aprendidas"
+    validations:
+      required: true
+
   - type: input
     id: deliverables
     attributes:
@@ -27,6 +65,18 @@ body:
       placeholder: "Qué se va a hacer y para qué."
     validations:
       required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Subtareas / checklist
+      description: Lista de pasos a completar (marca con [x] al terminar).
+      value: |
+        - [ ] Diseñar/actualizar artefactos
+        - [ ] Validar en local
+        - [ ] Actualizar documentación relacionada
+        - [ ] Adjuntar evidencias (capturas/logs)
+      render: markdown
 
   - type: checkboxes
     id: dod
@@ -47,3 +97,41 @@ body:
       label: Dependencias
       description: Issues o PRs que deben resolverse antes (referencias con #).
       placeholder: "#12, #34"
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Riesgos y mitigaciones
+      description: Riesgos relevantes y plan B.
+      placeholder: "Tiempo de analyzers, límites de API, recursos de VM, etc."
+
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimación (horas)
+      placeholder: "4h"
+
+  - type: input
+    id: due_date
+    attributes:
+      label: Fecha objetivo (YYYY-MM-DD)
+      placeholder: "2025-11-20"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      options:
+        - P0 (crítico)
+        - P1 (alto)
+        - P2 (medio)
+        - P3 (bajo)
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencias (adjuntar al cerrar)
+      description: Capturas, hashes, logs o enlaces a resultados.
+      placeholder: "Adjuntar evidencia antes de cerrar el issue."
