@@ -1,8 +1,0 @@
-
----
-- hosts: soar
-  become: yes
-  tasks:
-    - name: Placeholder instalar Docker
-      debug:
-        msg: "Instalar Docker aquí"
