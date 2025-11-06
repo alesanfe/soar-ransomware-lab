@@ -1,6 +1,6 @@
 name: "🗂️ EDT Task"
 description: "Crear un issue a partir de un elemento de la EDT del TFM SOAR"
-title: "[EDT] {Sección} — {Entregable(s)}"
+title: "[EDT] Title"
 labels: ["EDT", "task"]
 assignees: []
 body:
@@ -32,14 +32,9 @@ body:
     id: dod
     attributes:
       label: Definition of Done (DoD)
-      description: Marca los criterios que deben cumplirse para cerrar el issue.
-      options:
-        - label: Entregable(s) creado(s)/actualizado(s) en la ruta indicada
-          required: true
-        - label: Documentación actualizada (README/docs)
-        - label: Pruebas/E2E o evidencias adjuntas
-        - label: Linter/format OK y sin secretos en .env
-        - label: Revisión/aprobación del tutor (si aplica)
+      description: Añade los criterios que deben cumplirse para cerrar el issue.
+      placeholder: "- [] Añadir archivo .py"
+
 
   - type: textarea
     id: dependencies
