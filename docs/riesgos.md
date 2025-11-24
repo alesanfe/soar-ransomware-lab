@@ -1,4 +1,5 @@
-# Riesgos 
+
+# Riesgos
 
 ## 1. Descripción breve
 Identificar riesgos técnicos y de tiempo que pueden afectar el desarrollo del TFM, proponiendo mitigaciones factibles para un proyecto unipersonal.
@@ -18,28 +19,21 @@ Identificar riesgos técnicos y de tiempo que pueden afectar el desarrollo del T
 | Fallos en configuración de red interna | Baja | Alto | Validar puertos y reglas de firewall; usar scripts de verificación |
 | Problemas con almacenamiento persistente | Media | Medio | Configurar volúmenes en Docker correctamente; realizar pruebas de backup |
 | Dependencia de servicios externos (APIs públicas) | Baja | Medio | Implementar manejo de errores y fallback local; limitar llamadas externas |
+| Puertos en uso | Alta | Alto | Ajustar `.env` con puertos configurables; verificar disponibilidad antes de levantar servicios |
+| Analyzers lentos | Alta | Alto | Limitar analyzers, configurar `timeout` y reintentos; priorizar los más rápidos |
+| Postgres caído | Media | Alto | Healthcheck y uso de volúmenes SSD; plan de restauración desde backups |
+| Redis caído | Media | Alto | Healthcheck y reinicio rápido; opción de usar sin persistencia en entornos demo |
+| Tokens inválidos | Alta | Alto | Rotación periódica y pruebas desde Shuffle; fallback a token previo documentado |
+
+---
 
 ## 3. Matriz de riesgos (Impacto vs Probabilidad)
 
 ```mermaid
 graph TD
-    A[Alta Probabilidad / Alto Impacto] --> |Críticos| R1(Imágenes Docker inestables) & R3(Errores autenticación APIs)
+    A[Alta Probabilidad / Alto Impacto] --> |Críticos| R1(Imágenes Docker inestables) & R3(Errores autenticación APIs) & R12(Puertos en uso) & R13(Analyzers lentos)
     B[Alta Probabilidad / Medio Impacto] --> R6(Retrasos curva aprendizaje)
-    C[Media Probabilidad / Alto Impacto] --> R4(Falta recursos VM) & R7(Fallos integración)
+    C[Media Probabilidad / Alto Impacto] --> R4(Falta recursos VM) & R7(Fallos integración) & R14(Postgres caído) & R15(Redis caído)
     D[Media Probabilidad / Medio Impacto] --> R2(Timeout analyzers) & R10(Problemas almacenamiento)
     E[Baja Probabilidad / Alto Impacto] --> R9(Fallos red interna)
     F[Baja Probabilidad / Medio Impacto] --> R5(Licencias Windows) & R11(Dependencia APIs externas)
-```
-
-## 4. Tabla de priorización
-
-| Nivel | Riesgos |
-|-------|---------|
-| **Crítico** | Imágenes Docker inestables, Errores autenticación APIs |
-| **Alto** | Falta recursos VM, Fallos integración, Fallos red interna |
-| **Medio** | Timeouts analyzers, Retrasos curva aprendizaje, Problemas almacenamiento, Deriva de alcance |
-| **Bajo** | Licencias Windows, Dependencia APIs externas |
-
-## 5. Cierre
-Este análisis permite anticipar problemas y reducir el impacto en la entrega del TFM, asegurando un desarrollo más controlado y eficiente.
-
