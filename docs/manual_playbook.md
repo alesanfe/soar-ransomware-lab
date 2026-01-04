@@ -1,6 +1,6 @@
 # Manual del playbook en Shuffle
 
-Este documento modela el flujo completo del playbook end-to-end (E2E) para la respuesta automatizada ante incidentes de ransomware. Incluye los pasos, decisiones, entradas y salidas de cada nodo, así como el manejo de errores en cada fase. El playbook está diseñado para actuar desde la recepción de una alerta hasta la contención simulada y la notificación final. Cada paso está documentado para asegurar que el flujo sea claro, auditable y fácil de implementar en herramientas SOAR como Shuffle, integrando TheHive y Cortex.
+> Este documento modela el flujo completo del playbook end-to-end (E2E) para la respuesta automatizada ante incidentes de ransomware. Incluye los pasos, decisiones, entradas y salidas de cada nodo, así como el manejo de errores en cada fase. El playbook está diseñado para actuar desde la recepción de una alerta hasta la contención simulada y la notificación final. Cada paso está documentado para asegurar que el flujo sea claro, auditable y fácil de implementar en herramientas SOAR como Shuffle, integrando TheHive y Cortex.
 
 ## Flujo general
 
