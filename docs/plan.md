@@ -1,9 +1,8 @@
-# Plan del Proyecto — Versión Mejorada
+# Plan del Proyecto 
 
-## 1. Descripción breve
-Planificar las semanas y los hitos clave para el desarrollo del laboratorio SOAR, incluyendo entorno, integraciones, playbook, pruebas e informe. La **ruta crítica** es: docker → servicios → conexiones → playbook → pruebas → informe.
+> El objetico de este documento es planificar las semanas y los hitos clave para el desarrollo del laboratorio SOAR, incluyendo entorno, integraciones, playbook, pruebas e informe. La **ruta crítica** es: docker → servicios → conexiones → playbook → pruebas → informe.
 
-## 2. Plan por semanas
+## Plan por semanas
 
 | Semana | Fase / Hito                | Objetivo principal                                      | Entregables / Evidencias                          |
 |--------|----------------------------|---------------------------------------------------------|---------------------------------------------------|
@@ -31,7 +30,7 @@ S6 Pruebas y métricas :crit, s6, 06, 1w
 S7 Informe y cierre :crit, s7, 07, 1w
 ```
 
-## 3. Plan por tareas de la EDT
+## Plan por tareas de la EDT
 
 | Tarea EDT | Descripción | Entregables |
 |-----------|-------------|-------------|
