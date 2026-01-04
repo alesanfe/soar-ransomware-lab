@@ -1,10 +1,9 @@
 
 # Riesgos
 
-## 1. Descripción breve
-Identificar riesgos técnicos y de tiempo que pueden afectar el desarrollo del TFM, proponiendo mitigaciones factibles para un proyecto unipersonal.
+> Identificar riesgos técnicos y de tiempo que pueden afectar el desarrollo del TFM, proponiendo mitigaciones factibles para un proyecto unipersonal.
 
-## 2. Riesgos identificados
+## Riesgos identificados
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |--------|--------------|---------|------------|
@@ -27,7 +26,7 @@ Identificar riesgos técnicos y de tiempo que pueden afectar el desarrollo del T
 
 ---
 
-## 3. Matriz de riesgos (Impacto vs Probabilidad)
+## Matriz de riesgos (Impacto vs Probabilidad)
 
 ```mermaid
 graph TD
