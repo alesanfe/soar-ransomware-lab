@@ -1,11 +1,11 @@
 
 # Integraciones mínimas/simuladas
 
-> **Propósito**: especificar qué APIs son **reales** (TheHive/Cortex/Shuffle) y cuáles son **simuladas** (SIEM/EDR/Firewall), definiendo **endpoints**, **autenticación por tokens en `.env`**, **payloads de ejemplo** y **límites de uso**.
+> Este documetno permite especificar qué APIs son **reales** (TheHive/Cortex/Shuffle) y cuáles son **simuladas** (SIEM/EDR/Firewall), definiendo **endpoints**, **autenticación por tokens en `.env`**, **payloads de ejemplo** y **límites de uso**.
 
 ---
 
-## 1. Inventario de APIs
+## Inventario de APIs
 
 Esta sección ofrece una vista de alto nivel de todas las integraciones del laboratorio, diferenciando claramente entre servicios **reales** que operan en el entorno (TheHive, Cortex, Shuffle) y **simulaciones** utilizadas para probar el flujo sin depender de productos comerciales (SIEM, EDR, Firewall). Sirve como mapa inicial para comprender qué componentes se consumen directamente y cuáles funcionan como *mock*.
 
@@ -22,7 +22,7 @@ Esta sección ofrece una vista de alto nivel de todas las integraciones del labo
 
 ---
 
-## 2. Autenticación y secretos (.env)
+## Autenticación y secretos (.env)
 
 Definir los tokens y bases URL en `.env` (no versionado). Ejemplo:
 
@@ -55,13 +55,13 @@ DECISION_SCORE_THRESHOLD=80
 
 ---
 
-## 3. Endpoints — **Reales**
+## Endpoints — **Reales**
 
 Los endpoints reales son los contratos que el flujo E2E consume en tiempo de ejecución. Están pensados para ser **predecibles**, **versionados** y **parametrizables** mediante variables de entorno. A continuación se detallan las rutas principales para crear y actualizar casos en TheHive, ejecutar analyzers en Cortex y recibir alertas en Shuffle.
 
 > Las rutas se parametrizan con las variables `*_BASE_URL`. Los ejemplos asumen `localhost` y puertos por defecto del laboratorio.
 
-### 3.1 TheHive (Real)
+### TheHive (Real)
 
 TheHive actúa como el sistema de registro del incidente. Aquí definimos cómo **crear** el caso, **adjuntar** observables (IoCs) y **actualizar** su estado para reflejar la decisión tomada por el playbook.
 
@@ -101,7 +101,7 @@ TheHive actúa como el sistema de registro del incidente. Aquí definimos cómo 
 
 > **Idempotencia**: antes de crear caso, buscar por `alert_id`/`hash` en ventana T; si existe, adjuntar/actualizar en lugar de crear.
 
-### 3.2 Cortex (Real)
+### Cortex (Real)
 
 Cortex provee la **inteligencia** necesaria para la decisión del flujo. Este apartado documenta cómo solicitar la ejecución de analyzers sobre distintos tipos de IoC y cómo interpretar su resultado (`score`, `verdict`).
 
@@ -127,7 +127,7 @@ Cortex provee la **inteligencia** necesaria para la decisión del flujo. Este ap
     }
     ```
 
-### 3.3 Shuffle (Real)
+### Shuffle (Real)
 
 Shuffle es la **puerta de entrada** del sistema y el **orquestador** del playbook. Recibe la alerta vía webhook, valida el payload y coordina las acciones con TheHive y Cortex.
 
@@ -150,11 +150,11 @@ Shuffle es la **puerta de entrada** del sistema y el **orquestador** del playboo
 
 ---
 
-## 4. Endpoints — **Simulados**
+## Endpoints — **Simulados**
 
 Los endpoints simulados permiten validar decisiones del playbook sin ejecutar acciones en infraestructura real. Su objetivo es **registrar** la intención (aislar, bloquear) y **adjuntar evidencias** en TheHive, devolviendo respuestas controladas para pruebas.
 
-### 4.1 SIEM simulado → Shuffle
+### SIEM simulado → Shuffle
 
  Emula un producto SIEM enviando alertas al webhook de Shuffle. Es útil para pruebas de ingestión, validación de esquema y *rate‑limit* sin depender de terceros.
 
@@ -183,7 +183,7 @@ Representa acciones de **contención de endpoint** sin agente comercial.
     {"status": "accepted", "action": "isolate", "simulation": true}
     ```
 
-### 4.3 Firewall simulado
+### Firewall simulado
 
 Permite ensayar bloqueos de **IP/egress** como respuesta a detecciones sin tocar un firewall real. Sirve para comprobar *payloads*, permisos y *timeouts*.
 
@@ -207,7 +207,7 @@ Permite ensayar bloqueos de **IP/egress** como respuesta a detecciones sin tocar
 
 ---
 
-## 5. Esquema de payload (referencia)
+## Esquema de payload (referencia)
 
 - **Alerta (SIEM simulado)**
   ```json
@@ -240,7 +240,7 @@ Permite ensayar bloqueos de **IP/egress** como respuesta a detecciones sin tocar
 
 ---
 
-## 6. Límites de uso y *timeouts*
+## Límites de uso y *timeouts*
 
 Establecer límites y *timeouts* evita la **degradación** del sistema bajo carga, protege servicios reales y produce métricas consistentes para el TFM. Estos valores pueden ajustarse según resultados de prueba.
 
@@ -251,7 +251,7 @@ Establecer límites y *timeouts* evita la **degradación** del sistema bajo carg
 
 ---
 
-## 7. Manejo de errores (estándar)
+## Manejo de errores (estándar)
 
 Un formato de errores consistente y códigos HTTP estándar permiten diagnósticos rápidos, *fallbacks* adecuados y una mejor experiencia de pruebas.
 
