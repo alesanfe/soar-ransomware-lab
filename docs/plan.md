@@ -60,5 +60,5 @@ section EDT
 8.x Documentación :crit, t8, 06, 2w
 ```
 
-## 4. Cierre
+## Cierre
 Al completar el informe y validación, el proyecto estará listo para revisión final con toda la documentación y evidencias organizadas.
