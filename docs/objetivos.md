@@ -1,5 +1,5 @@
 # Objetivos SMART
-Este documento presenta los objetivos SMART del proyecto y su relación con la EDT, además de indicar dónde se aportarán las pruebas y evidencias en el repositorio.
+> Este documento presenta los objetivos SMART del proyecto y su relación con la EDT, además de indicar dónde se aportarán las pruebas y evidencias en el repositorio.
 
 ---
 
