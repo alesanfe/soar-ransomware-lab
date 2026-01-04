@@ -1,4 +1,5 @@
 # ALCANCE
+> El documento sirve para definir el alcance del TFM, estableciendo los objetivos y límites del proyecto.
 
 ## **Visión general**
 El objetivo del TFM es **diseñar, implementar y evaluar un laboratorio SOAR mínimo viable (MSV)** para respuesta ante incidentes de ransomware. Este laboratorio ejecutará un **playbook automatizado de extremo a extremo (E2E)** que cubra el flujo completo:
