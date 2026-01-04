@@ -83,8 +83,7 @@ repo_soar_laboratorio/
     ├── manual_playbook.md    # Detalles del flujo en Shuffle (EDT 8.2)
     ├── informe_pruebas.md    # Resultados y KPIs (EDT 8.3)
     ├── cierre.md             # Lecciones aprendidas (EDT 8.4)
-    ├── security.md           # Checklist de seguridad (EDT 4.2)
-    └── diagrams/architecture.mmd # Diagrama Mermaid (EDT 3.1)
+    └── security.md           # Checklist de seguridad (EDT 4.2)
 ```
 
 ---
