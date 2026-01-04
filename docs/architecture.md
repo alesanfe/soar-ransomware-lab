@@ -1,6 +1,6 @@
 # Arquitectura SOAR single‑host 
 
-Este documento describe la arquitectura del laboratorio SOAR en un único host con Docker Compose. Incluye puertos, redes, volúmenes, seguridad, operación, rendimiento y diagramas Mermaid. Al final se incluyen `.env.example` y `docker/docker-compose.yml` listos para usar.
+> Este documento describe la arquitectura del laboratorio SOAR en un único host con Docker Compose. Incluye puertos, redes, volúmenes, seguridad, operación, rendimiento y diagramas Mermaid. Al final se incluyen `.env.example` y `docker/docker-compose.yml` listos para usar.
 
 
 ## Componentes y responsabilidades
