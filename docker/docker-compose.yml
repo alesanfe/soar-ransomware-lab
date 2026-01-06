@@ -1,57 +1,198 @@
 
 version: "3.9"
 
-networks:
-  soar_net:
-    driver: bridge
-
-volumes:
-  pgdata:
-  thehive_data:
-  cortex_data:
-  shuffle_data:
+name: soar-lab
 
 services:
+  # === Data layer ===
   postgres:
-    image: postgres:14
+    image: ${POSTGRES_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks: [soar_net]
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   redis:
-    image: redis:6
-    networks: [soar_net]
+    image: ${REDIS_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
+  opensearch:
+    image: ${OPENSEARCH_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=${OPENSEARCH_JAVA_OPTS}
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  # === Apps ===
   thehive:
-    image: thehiveproject/thehive:latest
-    depends_on: [postgres]
+    image: ${THEHIVE_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_thehive
+    depends_on:
+      - postgres
     environment:
       - DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_USER=${POSTGRES_USER}
     ports:
-      - "9000:9000"
-    networks: [soar_net]
+      - "${THEHIVE_HTTP_PORT}:9000"
     volumes:
-      - thehive_data:/opt/thehive/data
+      - thehive_data:/data
+    networks:
+      - soar_edge
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
   cortex:
-    image: thehiveproject/cortex:latest
-    depends_on: [redis]
+    build:
+      context: ./cortex
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
+    depends_on:
+      - opensearch
+      - redis
     ports:
-      - "9001:9001"
-    networks: [soar_net]
+      - "${CORTEX_HTTP_PORT}:9001"
     volumes:
       - cortex_data:/var/lib/cortex
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - soar_edge
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9001 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
-  shuffle:
-    image: frikky/shuffle:latest
-    depends_on: [redis]
+  shuffle-frontend:
+    image: ${SHUFFLE_FRONTEND_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_frontend
+    environment:
+      BACKEND_HOSTNAME: shuffle-backend
     ports:
-      - "3000:3000"
-    networks: [soar_net]
+      - "${SHUFFLE_UI_PORT}:3001"
+    networks:
+      - soar_edge
+      - soar_net
+    depends_on:
+      - shuffle-backend
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:3001 || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  shuffle-backend:
+    image: ${SHUFFLE_BACKEND_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend
+    environment:
+      SHUFFLE_ELASTIC: "true"
+      SHUFFLE_OPENSEARCH_URL: http://opensearch:9200
+      SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "true"
+      OUTER_HOSTNAME: ${OUTER_HOSTNAME}
+      SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
+      SHUFFLE_FILE_LOCATION: /shuffle-files
     volumes:
-      - shuffle_data:/shuffle-app-data
+      - shuffle_apps:/shuffle-apps
+      - shuffle_files:/shuffle-files
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "${SHUFFLE_API_PORT}:5001"
+    networks:
+      - soar_edge
+      - soar_net
+    depends_on:
+      - opensearch
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Optional executor for scale (no public ports)
+  orborus:
+    image: ${ORBORUS_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_orborus
+    environment:
+      ORG_ID: Shuffle
+      ENVIRONMENT_NAME: Shuffle
+      BASE_URL: http://shuffle-backend:5001
+      DOCKER_API_VERSION: 1.40
+      SHUFFLE_OPENSEARCH_URL: http://opensearch:9200
+    networks:
+      - soar_net
+    depends_on:
+      - shuffle-backend
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://shuffle-backend:5001/health || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  thehive_data:
+  cortex_data:
+  shuffle_apps:
+  shuffle_files:
+  opensearch_data:
+
+networks:
+  soar_edge:
+    driver: bridge
+  soar_net:
+    driver: bridge
+    internal: true
+
+# wsl -d docker-desktop sysctl -w vm.max_map_count=262144
