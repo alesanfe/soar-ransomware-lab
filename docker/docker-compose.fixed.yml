@@ -1,51 +1,18 @@
 
 version: "3.9"
-
 name: soar-lab
+
 
 services:
   # === Data layer ===
-  postgres:
-    image: ${POSTGRES_IMAGE}
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - postgres_data:/var/lib/postgresql
-    networks:
-      - soar_net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  redis:
-    image: ${REDIS_IMAGE}
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_redis
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis_data:/data
-    networks:
-      - soar_net
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  opensearch:
-    image: ${OPENSEARCH_IMAGE}
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_opensearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
     environment:
       - discovery.type=single-node
-      - plugins.security.disabled=true
-      - OPENSEARCH_JAVA_OPTS=${OPENSEARCH_JAVA_OPTS}
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xms1g -Xmx1g"}
+    # Requisitos de ulimits (Docker/Elastic)
     ulimits:
       memlock:
         soft: -1
@@ -54,30 +21,32 @@ services:
         soft: 65536
         hard: 65536
     volumes:
-      - opensearch_data:/usr/share/opensearch/data
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "19200:9200"
     networks:
       - soar_net
+    # Healthcheck a cluster health (yellow o green)
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
-      interval: 15s
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health | grep -q 'green\\|yellow' || exit 1"]
+      interval: 10s
       timeout: 5s
-      retries: 15
+      retries: 30
+      start_period: 40s
     restart: unless-stopped
+
 
   # === Apps ===
   thehive:
-    image: ${THEHIVE_IMAGE}
+    image: thehiveproject/thehive:3.5.2-1
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_thehive
     depends_on:
-      - postgres
-    environment:
-      - DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      - DB_PASSWORD=${POSTGRES_PASSWORD}
-      - DB_USER=${POSTGRES_USER}
+      - elasticsearch
     ports:
-      - "${THEHIVE_HTTP_PORT}:9000"
+      - "${THEHIVE_HTTP_PORT:-9000}:9000"
     volumes:
-      - thehive_data:/data
+      - thehive_files:/opt/thp/thehive/files
+      - ./thehive.application.conf:/etc/thehive/application.conf:ro
     networks:
       - soar_edge
       - soar_net
@@ -89,17 +58,15 @@ services:
     restart: unless-stopped
 
   cortex:
-    build:
-      context: ./cortex
-      dockerfile: Dockerfile
+    image: thehiveproject/cortex:3.1.0-1
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
     depends_on:
-      - opensearch
-      - redis
+      - elasticsearch
     ports:
-      - "${CORTEX_HTTP_PORT}:9001"
+      - "${CORTEX_HTTP_PORT:-9001}:9001"
     volumes:
       - cortex_data:/var/lib/cortex
+      - ./cortex.application.conf:/etc/cortex/application.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - soar_edge
@@ -117,14 +84,15 @@ services:
     environment:
       BACKEND_HOSTNAME: shuffle-backend
     ports:
-      - "${SHUFFLE_UI_PORT}:3001"
+      - "${SHUFFLE_UI_PORT:-3001}:3001"
     networks:
       - soar_edge
+    
       - soar_net
     depends_on:
       - shuffle-backend
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q --spider http://localhost:3001 || exit 1" ]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3001 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -135,22 +103,27 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend
     environment:
       SHUFFLE_ELASTIC: "true"
-      SHUFFLE_OPENSEARCH_URL: http://opensearch:9200
+      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
       SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "true"
       OUTER_HOSTNAME: ${OUTER_HOSTNAME}
       SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
       SHUFFLE_FILE_LOCATION: /shuffle-files
+      SHUFFLE_APP_DOWNLOAD_LOCATION: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
+      SHUFFLE_DEFAULT_USERNAME: ${SHUFFLE_DEFAULT_USERNAME:-admin}
+      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD:-ChangeMe!}
+      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY:-changeme-api-key}
+      DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.44}
     volumes:
       - shuffle_apps:/shuffle-apps
       - shuffle_files:/shuffle-files
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "${SHUFFLE_API_PORT}:5001"
+      - "${SHUFFLE_API_PORT:-5001}:5001"
     networks:
       - soar_edge
       - soar_net
     depends_on:
-      - opensearch
+      - elasticsearch
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5001/health || exit 1"]
       interval: 15s
@@ -166,27 +139,25 @@ services:
       ORG_ID: Shuffle
       ENVIRONMENT_NAME: Shuffle
       BASE_URL: http://shuffle-backend:5001
-      DOCKER_API_VERSION: 1.40
-      SHUFFLE_OPENSEARCH_URL: http://opensearch:9200
+      DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.44}
+      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
     networks:
       - soar_net
     depends_on:
       - shuffle-backend
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO- http://shuffle-backend:5001/health || exit 1" ]
+      test: ["CMD-SHELL", "wget -qO- http://shuffle-backend:5001/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10
     restart: unless-stopped
 
 volumes:
-  postgres_data:
-  redis_data:
-  thehive_data:
+  es_data:
+  thehive_files:
   cortex_data:
   shuffle_apps:
   shuffle_files:
-  opensearch_data:
 
 networks:
   soar_edge:
@@ -194,5 +165,3 @@ networks:
   soar_net:
     driver: bridge
     internal: true
-
-# wsl -d docker-desktop sysctl -w vm.max_map_count=262144
