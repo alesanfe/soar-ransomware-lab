@@ -1,0 +1,197 @@
+{
+  "_id": "template_ransomware_incident",
+  "name": "Ransomware_Incident",
+  "displayName": "Ransomware Incident Template",
+  "description": "Template for ransomware security incidents with standardized fields and tags",
+  "severity": 2,
+  "status": "Open",
+  "tags": ["ransomware", "malware", "incident", "soar"],
+  "tlp": 2,
+  "pap": 2,
+  "flag": false,
+  "summary": "Ransomware incident detected and automated response initiated",
+  "customFields": [
+    {
+      "name": "hostname",
+      "description": "Affected endpoint hostname",
+      "type": "string",
+      "mandatory": true,
+      "defaultValue": ""
+    },
+    {
+      "name": "username",
+      "description": "User account involved in the incident",
+      "type": "string",
+      "mandatory": false,
+      "defaultValue": ""
+    },
+    {
+      "name": "file_hash",
+      "description": "SHA256 hash of suspicious file",
+      "type": "string",
+      "mandatory": true,
+      "defaultValue": ""
+    },
+    {
+      "name": "src_ip",
+      "description": "Source IP address of the threat actor",
+      "type": "ip",
+      "mandatory": true,
+      "defaultValue": ""
+    },
+    {
+      "name": "alert_id",
+      "description": "Original alert identifier from SIEM",
+      "type": "string",
+      "mandatory": true,
+      "defaultValue": ""
+    },
+    {
+      "name": "detection_time",
+      "description": "Timestamp when the ransomware was detected",
+      "type": "date",
+      "mandatory": true,
+      "defaultValue": ""
+    },
+    {
+      "name": "containment_status",
+      "description": "Current status of containment actions",
+      "type": "string",
+      "mandatory": false,
+      "defaultValue": "pending"
+    },
+    {
+      "name": "analyzer_score",
+      "description": "Threat score from Cortex analyzers",
+      "type": "number",
+      "mandatory": false,
+      "defaultValue": 0
+    },
+    {
+      "name": "verdict",
+      "description": "Analysis verdict from Cortex",
+      "type": "string",
+      "mandatory": false,
+      "defaultValue": "unknown"
+    },
+    {
+      "name": "affected_files",
+      "description": "List of encrypted or affected files",
+      "type": "string",
+      "mandatory": false,
+      "defaultValue": ""
+    },
+    {
+      "name": "mitigation_actions",
+      "description": "Actions taken to mitigate the incident",
+      "type": "string",
+      "mandatory": false,
+      "defaultValue": ""
+    }
+  ],
+  "observables": [
+    {
+      "dataType": "hash",
+      "description": "Malicious file hash"
+    },
+    {
+      "dataType": "ip",
+      "description": "Threat actor IP address"
+    },
+    {
+      "dataType": "hostname",
+      "description": "Compromised endpoint"
+    },
+    {
+      "dataType": "domain",
+      "description": "C2 domain if identified"
+    },
+    {
+      "dataType": "url",
+      "description": "Malicious URLs or download links"
+    },
+    {
+      "dataType": "filename",
+      "description": "Suspicious filenames"
+    }
+  ],
+  "tasks": [
+    {
+      "title": "Initial Triage",
+      "description": "Perform initial assessment and validate alert",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    },
+    {
+      "title": "Create Case in TheHive",
+      "description": "Create formal case with all observables",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    },
+    {
+      "title": "Run Analyzers on IoCs",
+      "description": "Execute Cortex analyzers on hash and IP",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    },
+    {
+      "title": "Threat Intelligence Analysis",
+      "description": "Review analyzer results and threat intel",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    },
+    {
+      "title": "Containment Decision",
+      "description": "Decide on containment based on analysis",
+      "status": "Waiting",
+      "flag": true,
+      "assignee": null
+    },
+    {
+      "title": "Execute Containment",
+      "description": "Isolate affected endpoint and block malicious IPs",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    },
+    {
+      "title": "Evidence Collection",
+      "description": "Collect and preserve forensic evidence",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    },
+    {
+      "title": "Notification",
+      "description": "Notify security team and stakeholders",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    },
+    {
+      "title": "Incident Documentation",
+      "description": "Document all actions and timeline",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    },
+    {
+      "title": "Recovery Planning",
+      "description": "Plan system recovery and restoration",
+      "status": "Waiting",
+      "flag": false,
+      "assignee": null
+    }
+  ],
+  "requireComment": false,
+  "metrics": {
+    "mttr_alert_to_case": 0,
+    "mttr_case_to_containment": 0,
+    "mttr_total": 0,
+    "analyzer_execution_time": 0
+  }
+}

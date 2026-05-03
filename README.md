@@ -1,20 +1,25 @@
-# Laboratorio SOAR para Respuesta a Ransomware
+# Laboratorio SOAR para Respuesta ante Ransomware
 
-Este repositorio contiene la **Infraestructura como Código (IaC)** y scripts necesarios para montar un laboratorio **SOAR** orientado a la respuesta ante incidentes de ransomware. El laboratorio integra **TheHive**, **Cortex** y **Shuffle**, desplegados sobre **Docker**, con opciones de automatización mediante **Vagrant** y **Ansible**.
+**Trabajo Fin de Máster (TFM) - Máster en Ciberseguridad**
 
-> ⚠️ Este laboratorio está diseñado para entornos de pruebas y formación. No se recomienda para producción sin aplicar las guías oficiales y medidas de seguridad adicionales.
+Este repositorio contiene la **Infraestructura como Código (IaC)** y los scripts necesarios para implementar un laboratorio **SOAR (Security Orchestration, Automation and Response)** especializado en la respuesta ante incidentes de ransomware. El laboratorio integra **TheHive**, **Cortex** y **Shuffle**, desplegados mediante **Docker**, con opciones de automatización mediante **Vagrant** y **Ansible**.
 
----
-
-## ✅ Objetivo del laboratorio
-- Simular incidentes de ransomware en un entorno controlado.
-- Automatizar la respuesta mediante **playbooks SOAR**.
-- Reducir el tiempo medio de respuesta (**MTTR**) y mejorar la trazabilidad.
-- Proporcionar un entorno reproducible para pruebas y formación.
+> ⚠️ **Advertencia**: Este laboratorio está diseñado exclusivamente para entornos de pruebas y formación académica. No se recomienda su uso en entornos de producción sin aplicar las guías oficiales y medidas de seguridad adicionales.
 
 ---
 
-## ✅ Arquitectura (alto nivel)
+## 🎯 Objetivos del Laboratorio
+
+- Simular incidentes de ransomware en un entorno controlado y seguro
+- Automatizar la respuesta mediante **playbooks SOAR**
+- Reducir el Tiempo Medio de Respuesta (**MTTR**) y mejorar la trazabilidad
+- Proporcionar un entorno reproducible para pruebas y formación en ciberseguridad
+- Validar la eficacia de la orquestación automatizada en incidentes reales
+
+---
+
+## 🏗️ Arquitectura General
+
 ```mermaid
 flowchart LR
   SIEM[(SIEM/XDR)] -- Webhook/Feeder --> Shuffle
@@ -30,17 +35,18 @@ flowchart LR
   Cortex <--> Redis
 ```
 
-**Explicación:**
-- **Shuffle** actúa como orquestador, recibiendo alertas y ejecutando el flujo automatizado.
-- **TheHive** gestiona casos y evidencias.
-- **Cortex** analiza IoCs mediante analyzers.
-- **PostgreSQL** y **Redis** son servicios de soporte para persistencia y cache.
+**Descripción de Componentes:**
+- **Shuffle**: Actúa como orquestador principal, recibiendo alertas y ejecutando el flujo automatizado
+- **TheHive**: Gestiona casos de incidentes y evidencias forenses
+- **Cortex**: Analiza Indicadores de Compromiso (IoCs) mediante analyzers especializados
+- **PostgreSQL** y **Redis**: Servicios de soporte para persistencia de datos y caché
 
 ---
 
-## ✅ Estructura del repositorio (con comentarios y EDT)
+## 📁 Estructura del Repositorio (con EDT)
+
 ```
-repo_soar_laboratorio/
+laboratorio_soar_ransomware/
 ├── README.md                # Documentación principal del proyecto (EDT 8.x)
 ├── LICENSE                  # Licencia del proyecto
 ├── Makefile                 # Comandos rápidos: up/down/test/metrics (EDT 4.1, 7.4)
@@ -76,55 +82,190 @@ repo_soar_laboratorio/
 ├── results/
 │   └── kpis.csv             # KPIs calculados (EDT 7.2, 7.4)
 └── docs/
-    ├── architecture.md       # Diseño del laboratorio (EDT 3.1)
-    ├── plan.md               # Roadmap del proyecto (EDT 2.1)
-    ├── riesgos.md            # Análisis de riesgos (EDT 2.2)
-    ├── tecnico.md            # Configuración técnica (EDT 8.1)
-    ├── manual_playbook.md    # Detalles del flujo en Shuffle (EDT 8.2)
-    ├── informe_pruebas.md    # Resultados y KPIs (EDT 8.3)
-    ├── cierre.md             # Lecciones aprendidas (EDT 8.4)
-    └── security.md           # Checklist de seguridad (EDT 4.2)
+    ├── scope.md             # Definición del alcance del proyecto (EDT 1.1)
+    ├── objectives.md        # Objetivos SMART del TFM (EDT 1.2)
+    ├── plan.md              # Planificación y cronograma del proyecto (EDT 2.1)
+    ├── risks.md             # Análisis de riesgos técnicos y temporales (EDT 2.2)
+    ├── architecture.md      # Diseño arquitectónico del laboratorio (EDT 3.1)
+    ├── api.md               # Integraciones de APIs (reales vs simuladas) (EDT 3.3)
+    ├── technical.md         # Configuración técnica detallada (EDT 8.1)
+    ├── playbook_manual.md   # Manual del flujo en Shuffle (EDT 8.2)
+    ├── test_report.md       # Informe de pruebas y resultados (EDT 8.3)
+    ├── closure.md           # Lecciones aprendidas y cierre del proyecto (EDT 8.4)
+    ├── user_guide.md        # Guía de usuario completa (EDT 8.5)
+    ├── troubleshooting.md   # Guía de resolución de problemas (EDT 8.6)
+    └── security.md          # Checklist de seguridad (EDT 4.2)
 ```
 
 ---
 
-## ✅ Instalación rápida
-1. Copia `.env.example` a `.env` y ajusta credenciales.
-2. Levanta el stack:
+## 📚 Documentación del Proyecto
+
+Este proyecto incluye documentación académica completa que cubre todos los aspectos del laboratorio SOAR:
+
+### Documentación Fundamental
+- **[Alcance del Proyecto](docs/scope.md)** - Definición de qué incluye y excluye el TFM
+- **[Objetivos SMART](docs/objectives.md)** - Objetivos medibles con ubicación de evidencias
+- **[Planificación del Proyecto](docs/plan.md)** - Cronograma, hitos y ruta crítica
+- **[Análisis de Riesgos](docs/risks.md)** - Riesgos técnicos y temporales con mitigaciones
+
+### Documentación Técnica
+- **[Arquitectura](docs/architecture.md)** - Diseño detallado del sistema y relaciones entre componentes
+- **[Integraciones de APIs](docs/api.md)** - APIs reales vs simuladas con detalles de configuración
+- **[Guía Técnica](docs/technical.md)** - Configuración completa, despliegue y resolución de problemas
+- **[Manual del Playbook](docs/playbook_manual.md)** - Documentación detallada del flujo en Shuffle
+
+### Resultados y Análisis
+- **[Informe de Pruebas](docs/test_report.md)** - Resultados de pruebas E2E, KPIs y análisis de rendimiento
+- **[Cierre del Proyecto](docs/closure.md)** - Lecciones aprendidas y recomendaciones futuras
+- **[Guía de Seguridad](docs/security.md)** - Mejores prácticas de seguridad y checklist
+
+### Guías de Usuario
+- **[Guía de Usuario](docs/user_guide.md)** - Manual completo de operación del laboratorio
+- **[Resolución de Problemas](docs/troubleshooting.md)** - Guía completa de diagnóstico y soluciones
+
+### Archivos de Configuración
+- **[Plantilla TheHive](docs/thehive_template.json)** - Plantilla de casos para incidentes de ransomware
+- **[Analyzers Cortex](docs/cortex_analyzers.md)** - Configuración y documentación de analyzers
+
+---
+
+## 🚀 Instalación Rápida
+
+### Requisitos Previos
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- Python 3.8+
+- 8GB+ RAM (16GB+ recomendado)
+- 50GB+ SSD (100GB+ recomendado)
+
+### Pasos de Instalación
+
+1. **Configurar Variables de Entorno**:
+   ```bash
+   # Copiar plantilla de configuración
+   cp docker/.env.example docker/.env
+   
+   # Editar configuración con credenciales seguras
+   nano docker/.env
+   ```
+
+2. **Generar Certificados TLS**:
+   ```bash
+   # Generar certificados autofirmados
+   ./scripts/gen_certs.sh
+   ```
+
+3. **Iniciar Servicios**:
+   ```bash
+   # Iniciar todos los servicios
+   make up
+   
+   # Verificar estado de los contenedores
+   docker compose ps
+   ```
+
+4. **Detener Servicios**:
+   ```bash
+   # Detener todos los servicios
+   make down
+   ```
+
+---
+
+## 🔧 Automatización Opcional
+
+### Vagrant
 ```bash
-make up
+# Crear entorno automatizado
+vagrant up
+
+# Incluir máquina Windows opcional
+vagrant up windows
 ```
-3. Baja el stack:
+
+### Ansible
 ```bash
-make down
+# Despliegue en múltiples hosts
+ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
 ```
 
 ---
 
-## ✅ Automatización opcional
-- **Vagrant**: `vagrant up` (Ubuntu + Windows opcional).
-- **Ansible**: `ansible-playbook -i ansible/inventory.ini ansible/playbook.yml`.
+## 🛡️ Buenas Prácticas
+
+- No subir archivos `.env` ni certificados al repositorio (usar `.gitignore`)
+- Documentar pruebas en `tests/e2e` y resultados en `docs/test_report.md`
+- Utilizar TLS y credenciales seguras en todo momento
+- Realizar copias de seguridad periódicas de la configuración
+- Mantener actualizadas las dependencias y Docker images
 
 ---
 
-## ✅ Buenas prácticas
-- No subas `.env` ni certificados (usa `.gitignore`).
-- Documenta pruebas en `tests/e2e` y resultados en `docs/informe_pruebas.md`.
-- Usa TLS y credenciales seguras.
+## 📊 Métricas y Pruebas
+
+### Ejecución de Pruebas
+```bash
+# Ejecutar pruebas E2E completas
+make test
+
+# Enviar alerta maliciosa de prueba
+python3 scripts/send_alert.py --type malicious --single
+
+# Enviar alerta benigna de prueba
+python3 scripts/send_alert.py --type benign --single
+```
+
+### Cálculo de KPIs
+```bash
+# Calcular métricas MTTR
+python3 scripts/calc_kpis.py
+
+# Ver resultados
+cat results/kpis.csv
+```
+
+### Análisis de Resultados
+- Documentar resultados en `results/kpis.csv` y `docs/test_report.md`
+- Verificar cumplimiento de umbrales: p50 ≤ 120s, p90 ≤ 180s
+- Analizar logs de ejecución en `logs/notify.log`
 
 ---
 
-## ✅ Métricas y pruebas
-- Ejecuta pruebas E2E con casos maliciosos y benignos.
-- Calcula KPIs (p50, p90, media) con `scripts/calc_kpis.py`.
-- Documenta resultados en `results/kpis.csv` y `docs/informe_pruebas.md`.
+## 🎓 Contexto Académico
+
+Este laboratorio SOAR ha sido desarrollado como **Trabajo Fin de Máster** en el área de ciberseguridad, cumpliendo con los siguientes objetivos académicos:
+
+- **Aplicación Práctica**: Implementación de conceptos teóricos de SOAR en entorno realista
+- **Investigación Aplicada**: Validación de la eficacia de la automatización en respuesta a incidentes
+- **Innovación Tecnológica**: Desarrollo de un laboratorio reproducible para formación especializada
+- **Contribución Académica**: Creación de recursos educativos reutilizables
 
 ---
 
-## ✅ Referencias clave
+## 🔗 Referencias Clave
+
+### Documentación Oficial
 - [TheHive Docker](https://docs.strangebee.com/thehive/installation/docker/)
 - [Cortex Analyzers](https://docs.strangebee.com/cortex/)
 - [Shuffle SOAR](https://shuffler.io/docs)
+
+### Tecnologías Utilizadas
 - [Docker Volumes](https://docs.docker.com/engine/storage/volumes/)
 - [PostgreSQL Docker](https://hub.docker.com/_/postgres/)
 - [Redis Docker](https://hub.docker.com/_/redis/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+---
+
+## 📄 Licencia y Uso
+
+Este proyecto está licenciado bajo los términos especificados en el archivo `LICENSE`. El uso académico y educativo está fomentado, siempre que se cite adecuadamente la fuente.
+
+---
+
+**Autor**: [Nombre del Autor]  
+**Director/a**: [Nombre del Director/a]  
+**Universidad**: [Nombre de la Universidad]  
+**Año Académico**: 2024-2025  
+**Versión**: 1.3.0
