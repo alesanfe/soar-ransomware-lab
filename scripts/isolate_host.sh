@@ -20,6 +20,34 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
 }
 
+# Cleanup function
+cleanup() {
+    log "Cleaning up temporary files..."
+    # Add cleanup logic here if needed
+    rm -f /tmp/isolate_host_*.tmp 2>/dev/null || true
+}
+
+# Signal handlers
+trap cleanup EXIT INT TERM
+
+# Function to validate hostname format
+validate_hostname() {
+    local hostname="$1"
+    if [[ ! "$hostname" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]]; then
+        log "ERROR: Invalid hostname format. Only alphanumeric characters and hyphens allowed"
+        return 1
+    fi
+}
+
+# Function to validate case ID format
+validate_case_id() {
+    local case_id="$1"
+    if [[ ! "$case_id" =~ ^[A-Z]+-[0-9]+$ ]]; then
+        log "ERROR: Invalid case ID format. Expected format: CASE-123"
+        return 1
+    fi
+}
+
 # Function to simulate network isolation
 isolate_network() {
     local hostname="$1"
@@ -180,6 +208,18 @@ contain_host() {
     # Validate inputs
     if [ -z "$hostname" ] || [ -z "$case_id" ]; then
         log "ERROR: Missing required parameters: hostname and case_id"
+        exit 1
+    fi
+    
+    # Validate hostname format (alphanumeric, hyphens, underscores)
+    if ! [[ "$hostname" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        log "ERROR: Invalid hostname format. Only alphanumeric, hyphens and underscores allowed"
+        exit 1
+    fi
+    
+    # Validate case_id format (alphanumeric, hyphens)
+    if ! [[ "$case_id" =~ ^[a-zA-Z0-9-]+$ ]]; then
+        log "ERROR: Invalid case_id format. Only alphanumeric and hyphens allowed"
         exit 1
     fi
     

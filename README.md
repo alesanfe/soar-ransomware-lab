@@ -72,11 +72,15 @@ laboratorio_soar_ransomware/
 │   └── calc_kpis.py         # Calcula métricas MTTR y exporta CSV (EDT 7.4)
 ├── schemas/
 │   └── alert.schema.json    # Esquema JSON para validar alertas (EDT 6.1)
-├── tests/
-│   ├── atomic/README.md     # Pruebas unitarias con Atomic Red Team (EDT 7.1)
-│   └── e2e/
-│       ├── TC-01/           # Caso malicioso (EDT 7.1)
-│       └── TC-02/           # Caso benigno (EDT 7.1)
+├── tests/                   # Suite de pruebas completa (ver [docs/tests.md](docs/tests.md))
+│   ├── unit/               # Pruebas unitarias
+│   ├── integration/        # Pruebas de integración
+│   ├── performance/        # Pruebas de rendimiento
+│   ├── security/           # Pruebas de seguridad
+│   └── e2e/               # Pruebas end-to-end
+│       ├── TC-01/         # Caso malicioso (EDT 7.1)
+│       ├── TC-02/         # Caso benigno (EDT 7.1)
+│       └── TC-03/         # Casos extremos y edge cases
 ├── logs/
 │   └── notify.log           # Registro de pasos del playbook (EDT 6.5, 7.4)
 ├── results/
@@ -101,32 +105,42 @@ laboratorio_soar_ransomware/
 
 ## 📚 Documentación del Proyecto
 
-Este proyecto incluye documentación académica completa que cubre todos los aspectos del laboratorio SOAR:
+Este proyecto incluye documentación académica completa estructurada según las directrices de Trabajo Fin de Máster (TFM):
 
-### Documentación Fundamental
-- **[Alcance del Proyecto](docs/scope.md)** - Definición de qué incluye y excluye el TFM
-- **[Objetivos SMART](docs/objectives.md)** - Objetivos medibles con ubicación de evidencias
-- **[Planificación del Proyecto](docs/plan.md)** - Cronograma, hitos y ruta crítica
-- **[Análisis de Riesgos](docs/risks.md)** - Riesgos técnicos y temporales con mitigaciones
+### 1. Documentación Fundamental del TFM
+1. **[Alcance del Proyecto](docs/scope.md)** - Definición de qué incluye y excluye el TFM
+2. **[Objetivos SMART](docs/objectives.md)** - Objetivos medibles con ubicación de evidencias
+3. **[Planificación del Proyecto](docs/plan.md)** - Cronograma, hitos y ruta crítica
+4. **[Análisis de Riesgos](docs/risks.md)** - Riesgos técnicos y temporales con mitigaciones
 
-### Documentación Técnica
-- **[Arquitectura](docs/architecture.md)** - Diseño detallado del sistema y relaciones entre componentes
-- **[Integraciones de APIs](docs/api.md)** - APIs reales vs simuladas con detalles de configuración
-- **[Guía Técnica](docs/technical.md)** - Configuración completa, despliegue y resolución de problemas
-- **[Manual del Playbook](docs/playbook_manual.md)** - Documentación detallada del flujo en Shuffle
+### 2. Documentación Técnica y Arquitectónica
+5. **[Arquitectura](docs/architecture.md)** - Diseño detallado del sistema y relaciones entre componentes
+6. **[Integraciones de APIs](docs/api.md)** - APIs reales vs simuladas con detalles de configuración
+7. **[Guía Técnica](docs/technical.md)** - Configuración completa, despliegue y resolución de problemas
+8. **[Manual del Playbook](docs/playbook_manual.md)** - Documentación detallada del flujo en Shuffle
 
-### Resultados y Análisis
-- **[Informe de Pruebas](docs/test_report.md)** - Resultados de pruebas E2E, KPIs y análisis de rendimiento
-- **[Cierre del Proyecto](docs/closure.md)** - Lecciones aprendidas y recomendaciones futuras
-- **[Guía de Seguridad](docs/security.md)** - Mejores prácticas de seguridad y checklist
+### 3. Resultados y Análisis del Proyecto
+9. **[Informe de Pruebas](docs/test_report.md)** - Resultados de pruebas E2E, KPIs y análisis de rendimiento
+10. **[Cierre del Proyecto](docs/closure.md)** - Lecciones aprendidas y recomendaciones futuras
+11. **[Guía de Seguridad](docs/security.md)** - Mejores prácticas de seguridad y checklist
 
-### Guías de Usuario
-- **[Guía de Usuario](docs/user_guide.md)** - Manual completo de operación del laboratorio
-- **[Resolución de Problemas](docs/troubleshooting.md)** - Guía completa de diagnóstico y soluciones
+### 4. Guías de Usuario y Operativas
+12. **[Guía de Usuario](docs/user_guide.md)** - Manual completo de operación del laboratorio
+13. **[Resolución de Problemas](docs/troubleshooting.md)** - Guía completa de diagnóstico y soluciones
 
-### Archivos de Configuración
-- **[Plantilla TheHive](docs/thehive_template.json)** - Plantilla de casos para incidentes de ransomware
-- **[Analyzers Cortex](docs/cortex_analyzers.md)** - Configuración y documentación de analyzers
+### 5. Documentación de Mejoras Implementadas
+14. **[Análisis de Mejoras](docs/improvement_recommendations.md)** - Análisis completo de 44 mejoras identificadas
+15. **[Implementación de Mejoras](docs/improvements_implementation.md)** - Documentación de todas las mejoras implementadas
+16. **[Reporte Final de Implementación](docs/final_implementation_report.md)** - Reporte completo del proyecto transformado
+
+### 6. Documentación API y Desarrollo
+17. **[Documentación API](docs/api.md)** - Documentación completa de endpoints REST
+18. **[Guía de Contribución](CONTRIBUTING.md)** - Guía para desarrolladores y contribuidores
+19. **[CHANGELOG](CHANGELOG.md)** - Historial de cambios y versiones del proyecto
+
+### 7. Archivos de Configuración y Plantillas
+20. **[Plantilla TheHive](docs/thehive_template.json)** - Plantilla de casos para incidentes de ransomware
+21. **[Analyzers Cortex](docs/cortex_analyzers.md)** - Configuración y documentación de analyzers
 
 ---
 
@@ -205,9 +219,19 @@ ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
 ## 📊 Métricas y Pruebas
 
 ### Ejecución de Pruebas
+Para ejecutar pruebas, consultar la documentación completa en **[docs/tests.md](docs/tests.md)**:
+
 ```bash
-# Ejecutar pruebas E2E completas
-make test
+# Ejecutar todas las pruebas
+make test-all
+
+# Ejecutar categorías específicas
+make test-unit
+make test-integration
+make test-e2e
+
+# Ejecutar con cobertura
+make test-coverage
 
 # Enviar alerta maliciosa de prueba
 python3 scripts/send_alert.py --type malicious --single
@@ -219,16 +243,35 @@ python3 scripts/send_alert.py --type benign --single
 ### Cálculo de KPIs
 ```bash
 # Calcular métricas MTTR
-python3 scripts/calc_kpis.py
+make metrics
+
+# Análisis completo con generación de datos
+make metrics-full
 
 # Ver resultados
 cat results/kpis.csv
+```
+
+### Análisis de Datos
+```bash
+# Ver estado de datos disponibles
+make data-status
+
+# Generar análisis completo
+make data-generate
+
+# Ver todos los datos disponibles
+make data-view
+
+# Monitorear cambios en tiempo real
+make data-watch
 ```
 
 ### Análisis de Resultados
 - Documentar resultados en `results/kpis.csv` y `docs/test_report.md`
 - Verificar cumplimiento de umbrales: p50 ≤ 120s, p90 ≤ 180s
 - Analizar logs de ejecución en `logs/notify.log`
+- Ver documentación completa de pruebas en **[docs/tests.md](docs/tests.md)**
 
 ---
 

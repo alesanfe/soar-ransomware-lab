@@ -12,7 +12,7 @@
 | S4     | Conexiones                | Activar Webhook, definir esquema de alerta y simular SIEM | schemas/alert.schema.json, scripts/send_alert.py, logs de pruebas |
 | S5     | Playbook E2E              | Construir flujo completo en Shuffle con contención simulada | playbooks/shuffle/README.md, scripts/isolate_host.sh, scripts/isolate_endpoint.ps1, scripts/notify.sh, logs/notify.log |
 | S6     | Pruebas y métricas        | Ejecutar casos malicioso y benigno; calcular KPIs      | tests/e2e/*, results/kpis.csv, capturas de ejecución |
-| S7     | Informe y cierre          | Redactar informe técnico, manual del playbook y lecciones aprendidas | docs/informe_pruebas.md, docs/manual_playbook.md, docs/tecnico.md, docs/cierre.md, docs/validacion.md |
+| S7     | Informe y cierre          | Redactar informe técnico, manual del playbook y lecciones aprendidas | docs/test_report.md, docs/manual_playbook.md, docs/tecnico.md, docs/cierre.md, docs/validacion.md |
 
 ### Diagrama Gantt por semanas
 ```mermaid
@@ -41,7 +41,7 @@ S7 Informe y cierre :crit, s7, 07, 1w
 | 5.x Integraciones | Conectar TheHive, Cortex, Shuffle y SIEM simulado | docs/thehive_template.json, docs/cortex_analyzers.md, scripts/send_alert.py |
 | 6.x Playbook | Construir flujo E2E con decisiones y contención simulada | playbooks/shuffle/README.md, scripts/isolate_host.sh |
 | 7.x Pruebas | Ejecutar pruebas E2E y calcular KPIs | tests/e2e/*, results/kpis.csv |
-| 8.x Documentación | Redactar informe técnico, manual y cierre | docs/informe_pruebas.md, docs/manual_playbook.md, docs/cierre.md |
+| 8.x Documentación | Redactar informe técnico, manual y cierre | docs/test_report.md, docs/manual_playbook.md, docs/cierre.md |
 
 ### Diagrama Gantt por tareas EDT
 ```mermaid

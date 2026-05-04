@@ -96,7 +96,7 @@ La salida esperada debe mostrar todos los servicios como "healthy":
 
 ---
 
-## System Configuration
+## Configuración del Sistema
 
 ### TheHive Setup
 
@@ -333,7 +333,7 @@ docker logs soar_shuffle-backend
 
 ---
 
-## Advanced Usage
+## Uso Avanzado
 
 ### Custom Alert Payloads
 
@@ -428,7 +428,7 @@ tar -czf backup-$(date +%Y%m%d).tar.gz \
 
 ---
 
-## Best Practices
+## Mejores Prácticas
 
 ### Security Practices
 
@@ -490,7 +490,7 @@ tar -czf backup-$(date +%Y%m%d).tar.gz \
 
 ---
 
-## Quick Reference
+## Referencia Rápida
 
 ### Essential Commands
 

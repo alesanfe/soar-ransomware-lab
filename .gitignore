@@ -9,3 +9,21 @@ __pycache__/
 .idea/
 *.swp
 *.swo
+
+# Sensitive data
+logs/
+backups/
+certs/
+results/
+*.key
+*.pem
+*.crt
+*.csr
+
+# Docker
+docker/.env
+
+# Temporary files
+*.tmp
+*.log
+*.bak

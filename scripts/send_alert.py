@@ -6,16 +6,30 @@ Sends simulated ransomware alerts to Shuffle webhook
 """
 
 import json
+import os
 import time
 import argparse
 import random
 import hashlib
 import requests
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Dict, List, Any, Optional
+
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/siem_simulator.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class SIEMSimulator:
-    def __init__(self, webhook_url, api_token):
+    def __init__(self, webhook_url: str, api_token: str) -> None:
         self.webhook_url = webhook_url
         self.api_token = api_token
         self.headers = {
@@ -23,18 +37,18 @@ class SIEMSimulator:
             'Content-Type': 'application/json'
         }
         
-        # Sample data for realistic simulation
+        # Sample data for realistic simulation (SHA256 hashes)
         self.malicious_hashes = [
-            '44d88612fea8a8f36de82e1278abb02f',  # EICAR test
-            'd41d8cd98f00b204e9800998ecf8427e',  # Empty file
-            '098f6bcd4621d373cade4e832627b4f6',  # test
-            '5d41402abc4b2a76b9719d911017c592'   # hello
+            '44d88612fea8a8f36de82e1278abb02f44d88612fea8a8f36de82e1278abb02f',  # EICAR test (padded to 64 chars)
+            'd41d8cd98f00b204e9800998ecf8427ed41d8cd98f00b204e9800998ecf8427e',  # Empty file (padded to 64 chars)
+            '098f6bcd4621d373cade4e832627b4f6098f6bcd4621d373cade4e832627b4f6',  # test (padded to 64 chars)
+            '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592'   # hello (padded to 64 chars)
         ]
         
         self.benign_hashes = [
-            'e3b0c44298fc1c149afbf4c8996fb924',  # Common system file
-            'a665a45920422f9d417e4867efdc4fb8',  # Another benign
-            '7c222fb2927d828af22f592134e89324'   # Config file
+            'e3b0c44298fc1c149afbf4c8996fb924e3b0c44298fc1c149afbf4c8996fb924',  # Common system file (padded to 64 chars)
+            'a665a45920422f9d417e4867efdc4fb8a665a45920422f9d417e4867efdc4fb8',  # Another benign (padded to 64 chars)
+            '7c222fb2927d828af22f592134e893247c222fb2927d828af22f592134e89324'   # Config file (padded to 64 chars)
         ]
         
         self.sample_ips = [
@@ -53,7 +67,7 @@ class SIEMSimulator:
             '94.102.52.10'      # C2 server
         ]
 
-    def generate_alert(self, alert_type='malicious'):
+    def generate_alert(self, alert_type: str = 'malicious') -> Dict[str, Any]:
         """Generate a realistic ransomware alert"""
         timestamp = datetime.now(timezone.utc).isoformat()
         
@@ -89,10 +103,10 @@ class SIEMSimulator:
         
         return alert
 
-    def send_alert(self, alert):
+    def send_alert(self, alert: Dict[str, Any]) -> bool:
         """Send alert to Shuffle webhook"""
         try:
-            print(f"[{datetime.now().isoformat()}] Sending alert {alert['alert_id']} to {self.webhook_url}")
+            logger.info(f"Sending alert {alert['alert_id']} to {self.webhook_url}")
             
             response = requests.post(
                 self.webhook_url,
@@ -102,17 +116,17 @@ class SIEMSimulator:
             )
             
             if response.status_code == 200:
-                print(f"[✓] Alert {alert['alert_id']} sent successfully")
+                logger.info(f"Alert {alert['alert_id']} sent successfully")
                 return True
             else:
-                print(f"[✗] Failed to send alert {alert['alert_id']}: {response.status_code} - {response.text}")
+                logger.error(f"Failed to send alert {alert['alert_id']}: {response.status_code} - {response.text}")
                 return False
                 
         except requests.exceptions.RequestException as e:
-            print(f"[✗] Network error sending alert {alert['alert_id']}: {e}")
+            logger.error(f"Network error sending alert {alert['alert_id']}: {e}")
             return False
         except Exception as e:
-            print(f"[✗] Unexpected error sending alert {alert['alert_id']}: {e}")
+            logger.error(f"Unexpected error sending alert {alert['alert_id']}: {e}")
             return False
 
     def validate_alert(self, alert):
