@@ -6,34 +6,48 @@ Comprehensive test suite for the SOAR Ransomware Lab project, covering unit test
 
 ```
 tests/
-├── unit/                    # Unit tests
+├── unit/                    # Unit tests (212 tests)
 │   ├── test_calc_kpis.py    # KPI calculation tests
 │   ├── test_generate_iocs.py # IOC generation tests
 │   ├── test_generate_secrets.py # Secret generation tests
 │   ├── test_schemas.py      # Schema validation tests
 │   ├── test_send_alert.py   # Alert sending tests
 │   ├── test_bash_scripts.py # Bash script tests
-│   └── test_powershell.py   # PowerShell script tests
-├── integration/             # Integration tests
+│   ├── test_powershell.py   # PowerShell script tests
+│   ├── test_coverage_boost.py # Coverage enhancement tests
+│   ├── test_send_alert_extended.py # Extended alert tests
+│   ├── test_settings_extended.py # Settings configuration tests
+│   ├── test_tfm_data_enhancer.py # Data enhancement tests
+│   └── test_tfm_data_viewer.py # Data visualization tests
+├── atomic/                  # Atomic tests (118 tests)
+│   ├── test_alert_validation.py # Alert validation tests
+│   ├── test_ioc_generator.py # IOC generator tests
+│   ├── test_kpi_calculator.py # KPI calculator tests
+│   ├── test_schema_validation.py # Schema validation tests
+│   └── test_secrets_generator.py # Secrets generator tests
+├── integration/             # Integration tests (161 tests)
 │   ├── test_api_endpoints.py # API endpoint tests
 │   ├── test_backup_restore.py # Backup/restore tests
 │   ├── test_configuration.py # Configuration tests
 │   ├── test_docker.py       # Docker integration tests
 │   ├── test_docker_services.py # Docker services tests
 │   └── test_security.py     # Security integration tests
-├── performance/             # Performance tests
+├── performance/             # Performance tests (9 tests)
 │   ├── test_load.py         # Load testing
 │   └── test_stress.py       # Stress testing
-├── security/                # Security tests
+├── security/                # Security tests (18 tests)
 │   ├── test_automated_security.py # Automated security tests
 │   └── test_input_validation.py # Input validation security tests
-├── e2e/                     # End-to-end tests
+├── e2e/                     # End-to-end tests (3 tests)
 │   ├── TC-01/
 │   │   └── test_malicious.py # Malicious ransomware scenario
 │   ├── TC-02/
 │   │   └── test_benign.py    # Benign false positive scenario
 │   └── TC-03/
 │       └── test_edge_cases.py # Edge cases and boundary conditions
+├── payloads/                # Test data payloads
+│   ├── payload_case1.json
+│   └── payload_case2.json
 ├── run_all_tests.py         # Comprehensive test runner
 └── README.md               # This file
 ```
@@ -50,6 +64,20 @@ Test individual components and functions in isolation.
 - **test_send_alert.py**: Tests alert sending functionality and payload validation
 - **test_bash_scripts.py**: Tests Bash script execution and error handling
 - **test_powershell.py**: Tests PowerShell script execution and cross-platform compatibility
+- **test_coverage_boost.py**: Tests for enhancing code coverage
+- **test_send_alert_extended.py**: Extended alert sending functionality tests
+- **test_settings_extended.py**: Settings configuration and validation tests
+- **test_tfm_data_enhancer.py**: Data enhancement and analysis tests
+- **test_tfm_data_viewer.py**: Data visualization and reporting tests
+
+### Atomic Tests
+Test individual functions and methods at the most granular level.
+
+- **test_alert_validation.py**: Atomic alert validation tests
+- **test_ioc_generator.py**: Atomic IOC generation tests
+- **test_kpi_calculator.py**: Atomic KPI calculation tests
+- **test_schema_validation.py**: Atomic schema validation tests
+- **test_secrets_generator.py**: Atomic secrets generation tests
 
 ### Integration Tests
 Test interactions between different components and services.
@@ -90,7 +118,10 @@ make test-all
 
 # Run specific test categories
 make test-unit
+make test-atomic
+make test-security
 make test-integration
+make test-performance
 make test-e2e
 
 # Run with coverage
@@ -101,19 +132,28 @@ make test-coverage
 
 ```bash
 # Run unit tests
-python -m pytest tests/unit/ -v
+python3 -m pytest tests/unit/ -v
+
+# Run atomic tests
+python3 -m pytest tests/atomic/ -v
+
+# Run security tests
+python3 -m pytest tests/security/ -v
 
 # Run integration tests
-python -m pytest tests/integration/ -v
+python3 -m pytest tests/integration/ -v
+
+# Run performance tests
+python3 -m pytest tests/performance/ -v
 
 # Run E2E tests
-python -m pytest tests/e2e/ -v
+python3 -m pytest tests/e2e/ -v
 
 # Run specific test file
-python -m pytest tests/unit/test_calc_kpis.py -v
+python3 -m pytest tests/unit/test_calc_kpis.py -v
 
 # Run with coverage
-python -m pytest tests/ --cov=scripts --cov-report=html --cov-report=term
+python3 -m pytest tests/ --cov=scripts --cov=config --cov-report=html --cov-report=term --cov-fail-under=80
 ```
 
 ### Test Runner Script
@@ -215,9 +255,13 @@ open htmlcov/index.html
 
 ### Coverage Targets
 
-- **Unit tests**: >90% coverage
-- **Integration tests**: >80% coverage
-- **Overall**: >85% coverage
+- **Unit tests**: >90% coverage (currently 83.91%)
+- **Atomic tests**: >80% coverage (currently 34.64%)
+- **Security tests**: >80% coverage (currently 13.41%)
+- **Integration tests**: >80% coverage (currently 12.64%)
+- **Performance tests**: >80% coverage (currently 12.64%)
+- **E2E tests**: >80% coverage (currently 0.00%)
+- **Overall**: >80% coverage (currently 85.67%) ✅
 
 ## Test Environments
 

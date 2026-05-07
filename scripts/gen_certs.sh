@@ -1,10 +1,11 @@
-
 #!/usr/bin/env bash
 
 # SOAR Ransomware Lab - TLS Certificate Generator
 # Generates self-signed certificates for TheHive and Shuffle services
+# This script creates the necessary TLS assets for secure communication.
 
 set -euo pipefail
+set -u
 
 # Configuration
 CERT_DIR="${CERT_DIR:-./certs}"

@@ -232,13 +232,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-volumes:
-  es_data:
-  thehive_files:
-  cortex_data:
-  shuffle_apps:
-  shuffle_files:
-
 # === Reverse Proxy ===
   nginx:
     image: nginx:1.25-alpine
@@ -291,6 +284,7 @@ volumes:
   shuffle_apps:
   shuffle_files:
   nginx_logs:
+  certs:
 
 networks:
   soar_edge:

@@ -1,5 +1,18 @@
-# SOAR Ransomware Lab - Windows Endpoint Isolation Script
-# Simulates endpoint containment actions for ransomware response
+#Requires -Version 5.1
+
+<#
+.SYNOPSIS
+    SOAR Ransomware Lab - Windows Endpoint Isolation Script
+.DESCRIPTION
+    Simulates endpoint containment actions for ransomware response.
+    Includes network isolation, process termination, and account lockdown.
+.PARAMETER Hostname
+    Target hostname to contain.
+.PARAMETER CaseId
+    Case identifier for tracking.
+.EXAMPLE
+    .\isolate_endpoint.ps1 -Hostname 'WIN-001' -CaseId 'CASE-12345'
+#>
 
 param(
     [Parameter(Mandatory=$true)]
@@ -35,7 +48,7 @@ function Write-Log {
 }
 
 # Function to simulate network isolation
-function Isolate-Network {
+function Disable-Network {
     param([string]$Hostname, [string]$CaseId)
     
     Write-Log "NETWORK ISOLATION - Host: $Hostname, Case: $CaseId"
@@ -55,8 +68,11 @@ function Isolate-Network {
     }
 }
 
+# Compatibility alias for tests
+function Isolate-Network { Disable-Network @PSBoundParameters }
+
 # Function to simulate process termination
-function Terminate-MaliciousProcesses {
+function Stop-MaliciousProcess {
     param([string]$Hostname, [string]$CaseId)
     
     Write-Log "PROCESS TERMINATION - Host: $Hostname, Case: $CaseId"
@@ -75,6 +91,9 @@ function Terminate-MaliciousProcesses {
         Write-Log "Real process termination would be executed here"
     }
 }
+
+# Compatibility alias for tests
+function Terminate-MaliciousProcesses { Stop-MaliciousProcess @PSBoundParameters }
 
 # Function to simulate user account lockdown
 function Lockdown-Accounts {
@@ -111,6 +130,7 @@ function Protect-Filesystem {
         Write-Log "WARNING: Real filesystem protection mode enabled"
         # Enable-BitLocker -MountPoint "C:" -PasswordProtector
         # Get-ChildItem -Path "C:\Users" -Recurse | Set-ItemProperty -Name IsReadOnly -Value $true
+        # Set-Acl -Path "C:\Data" -AclObject $null
         Write-Log "Real filesystem protection would be executed here"
     }
 }
@@ -132,12 +152,14 @@ function New-ForensicBackup {
         Write-Log "[SIMULATION] Copying registry: reg export HKLM -> $backupPath\registry_hkml.reg"
         Write-Log "[SIMULATION] Copying prefetch: C:\Windows\Prefetch -> $backupPath\prefetch"
         Write-Log "[SIMULATION] Forensic backup completed"
+        Write-Log "[SIMULATION] Compress-Archive -Path $backupPath -DestinationPath $backupPath.zip"
     } else {
         Write-Log "Creating real forensic backup at $backupPath"
         # Copy-Item "C:\temp\memory.dmp" $backupPath -ErrorAction SilentlyContinue
         # Copy-Item "C:\Windows\System32\winevt\Logs" $backupPath\logs -Recurse -ErrorAction SilentlyContinue
         # reg export "HKLM" "$backupPath\registry_hkml.reg"
         # Copy-Item "C:\Windows\Prefetch" $backupPath\prefetch -Recurse -ErrorAction SilentlyContinue
+        # Compress-Archive -Path $backupPath -DestinationPath "$backupPath.zip"
         Write-Log "Real forensic backup would be created here"
     }
     
@@ -174,7 +196,7 @@ function New-ContainmentReport {
         )
     }
     
-    $report | ConvertTo-Json -Depth 10 | Out-File -FilePath $reportFile -Encoding UTF8
+    $report | ConvertTo-Json -Depth 10 | Set-Content -Path $reportFile -Encoding UTF8
     Write-Log "Containment report generated: $reportFile"
     
     return $reportFile
@@ -190,36 +212,44 @@ function Invoke-Containment {
     Write-Log "Simulation Mode: $SimulationMode"
     
     # Validate inputs
-    if ([string]::IsNullOrEmpty($Hostname) -or [string]::IsNullOrEmpty($CaseId)) {
-        Write-Log "ERROR: Missing required parameters: hostname and case_id"
+    try {
+        if ([string]::IsNullOrEmpty($Hostname) -or [string]::IsNullOrEmpty($CaseId)) {
+            throw "Missing required parameters: hostname and case_id"
+        }
+        
+        if (-not ($Hostname -match '^[a-zA-Z0-9_-]+$')) {
+            throw "Invalid hostname format"
+        }
+        
+        # Execute containment steps
+        Disable-Network -Hostname $Hostname -CaseId $CaseId
+        Stop-MaliciousProcess -Hostname $Hostname -CaseId $CaseId
+        Lockdown-Accounts -Hostname $Hostname -CaseId $CaseId
+        Protect-Filesystem -Hostname $Hostname -CaseId $CaseId
+        
+        # Create forensic backup
+        $backupPath = New-ForensicBackup -Hostname $Hostname -CaseId $CaseId
+        
+        # Generate report
+        $reportFile = New-ContainmentReport -Hostname $Hostname -CaseId $CaseId -BackupPath $backupPath
+        
+        Write-Log "=== CONTAINMENT PROCEDURE COMPLETED ==="
+        Write-Log "Backup location: $backupPath"
+        Write-Log "Report file: $reportFile"
+        
+        # Log to notify.log for KPI calculation
+        $notifyLog = "logs/notify.log"
+        "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') STEP: Containment executed" | Out-File -Append -FilePath $notifyLog
+        
+        # Return success
+        Write-Output "SUCCESS: Host $Hostname contained successfully"
+        Write-Output "Case ID: $CaseId"
+        Write-Output "Backup: $backupPath"
+        Write-Output "Report: $reportFile"
+    } catch {
+        Write-Log "ERROR: $($_.Exception.Message)"
         exit 1
     }
-    
-    # Execute containment steps
-    Isolate-Network -Hostname $Hostname -CaseId $CaseId
-    Terminate-MaliciousProcesses -Hostname $Hostname -CaseId $CaseId
-    Lockdown-Accounts -Hostname $Hostname -CaseId $CaseId
-    Protect-Filesystem -Hostname $Hostname -CaseId $CaseId
-    
-    # Create forensic backup
-    $backupPath = New-ForensicBackup -Hostname $Hostname -CaseId $CaseId
-    
-    # Generate report
-    $reportFile = New-ContainmentReport -Hostname $Hostname -CaseId $CaseId -BackupPath $backupPath
-    
-    Write-Log "=== CONTAINMENT PROCEDURE COMPLETED ==="
-    Write-Log "Backup location: $backupPath"
-    Write-Log "Report file: $reportFile"
-    
-    # Log to notify.log for KPI calculation
-    $notifyLog = "logs/notify.log"
-    "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') STEP: Containment executed" | Out-File -Append -FilePath $notifyLog
-    
-    # Return success
-    Write-Output "SUCCESS: Host $Hostname contained successfully"
-    Write-Output "Case ID: $CaseId"
-    Write-Output "Backup: $backupPath"
-    Write-Output "Report: $reportFile"
 }
 
 # Function to show usage
@@ -239,7 +269,7 @@ function Show-Usage {
 }
 
 # Parse command line arguments
-if ($args.Count -eq 0 -or (-not $Hostname -or -not $CaseId)) {
+if ($args.Count -eq 0 -and (-not $PSBoundParameters.ContainsKey('Hostname') -or -not $PSBoundParameters.ContainsKey('CaseId'))) {
     Show-Usage
     exit 1
 }

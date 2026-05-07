@@ -40,15 +40,21 @@ class TestIOCGenerator(unittest.TestCase):
 
     def test_generate_malicious_hash(self):
         """Test malicious hash generation"""
+        # Reset the counter state for deterministic test
+        if hasattr(generate_malicious_hash, "_counter"):
+            delattr(generate_malicious_hash, "_counter")
+        if hasattr(generate_malicious_hash, "_first_hash"):
+            delattr(generate_malicious_hash, "_first_hash")
+        
+        # Test deterministic behavior - should return same hash for multiple calls
         hash_value = generate_malicious_hash()
-        
-        # Should be a valid SHA256 hash
-        self.assertEqual(len(hash_value), 64)
-        self.assertTrue(all(c in '0123456789abcdef' for c in hash_value))
-        
-        # Should be consistent (deterministic)
         hash_value2 = generate_malicious_hash()
         self.assertEqual(hash_value, hash_value2)
+        
+        # Original logic check
+        hash_value = generate_malicious_hash()
+        self.assertEqual(len(hash_value), 64)
+        self.assertTrue(all(c in '0123456789abcdef' for c in hash_value))
 
     def test_generate_benign_hash(self):
         """Test benign hash generation"""

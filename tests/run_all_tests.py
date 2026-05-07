@@ -131,8 +131,22 @@ class TestRunner:
         total_tests = sum(r['total_tests'] for r in e2e_results.values())
         total_passed = sum(r['passed'] for r in e2e_results.values())
         total_failed = sum(r['failed'] for r in e2e_results.values())
-        total_errors = sum(r['errors'] for r in e2e_results.values())
-        total_skipped = sum(r['skipped'] for r in e2e_results.values())
+        
+        # Count errors properly since 'errors' key is replaced by list in successful runs
+        total_errors = 0
+        for r in e2e_results.values():
+            if isinstance(r['errors'], list):
+                total_errors += len(r['errors'])
+            else:
+                total_errors += r['errors']
+
+        # Count skipped properly
+        total_skipped = 0
+        for r in e2e_results.values():
+            if isinstance(r['skipped'], list):
+                total_skipped += len(r['skipped'])
+            else:
+                total_skipped += r['skipped']
         total_duration = sum(r['duration'] for r in e2e_results.values())
         overall_success = all(r['success'] for r in e2e_results.values())
         
@@ -197,8 +211,22 @@ class TestRunner:
         total_tests = sum(r['total_tests'] for r in all_results.values())
         total_passed = sum(r['passed'] for r in all_results.values())
         total_failed = sum(r['failed'] for r in all_results.values())
-        total_errors = sum(r['errors'] for r in all_results.values())
-        total_skipped = sum(r['skipped'] for r in all_results.values())
+        
+        # Count errors properly
+        total_errors = 0
+        for r in all_results.values():
+            if isinstance(r['errors'], list):
+                total_errors += len(r['errors'])
+            else:
+                total_errors += r['errors']
+
+        # Count skipped properly
+        total_skipped = 0
+        for r in all_results.values():
+            if isinstance(r['skipped'], list):
+                total_skipped += len(r['skipped'])
+            else:
+                total_skipped += r['skipped']
         total_duration = sum(r['duration'] for r in all_results.values())
         overall_success = all(r['success'] for r in all_results.values())
         
@@ -398,3 +426,45 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+class TestRunAllTests(unittest.TestCase):
+    """Test the run_all_tests.py functionality"""
+    
+    def test_test_runner_initialization(self):
+        """Test TestRunner initialization"""
+        runner = TestRunner()
+        self.assertIsNotNone(runner.project_root)
+        self.assertEqual(runner.test_results, [])
+        self.assertIsNotNone(runner.start_time)
+    
+    def test_discover_tests_existing_directory(self):
+        """Test test discovery in existing directory"""
+        runner = TestRunner()
+        suite = runner.discover_tests("unit")
+        self.assertIsNotNone(suite)
+        # Should find tests in unit directory
+        self.assertGreater(suite.countTestCases(), 0)
+    
+    def test_discover_tests_nonexistent_directory(self):
+        """Test test discovery in non-existent directory"""
+        runner = TestRunner()
+        suite = runner.discover_tests("nonexistent")
+        self.assertEqual(suite, [])
+    
+    def test_discover_tests_with_pattern(self):
+        """Test test discovery with custom pattern"""
+        runner = TestRunner()
+        suite = runner.discover_tests("unit", "test_*.py")
+        self.assertIsNotNone(suite)
+        self.assertGreater(suite.countTestCases(), 0)
+    
+    def test_run_test_suite_integration(self):
+        """Integration test for running test suites"""
+        runner = TestRunner()
+        # Run a simple test suite integration
+        suite = runner.discover_tests("unit")
+        self.assertIsNotNone(suite)
+        # Test that we can count tests without running them
+        test_count = suite.countTestCases()
+        self.assertGreater(test_count, 0)

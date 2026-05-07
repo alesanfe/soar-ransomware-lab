@@ -1,10 +1,11 @@
-
 #!/bin/bash
 
 # SOAR Ransomware Lab - Linux Host Isolation Script
 # Simulates endpoint containment actions for ransomware response
+# This script handles network isolation, process termination, and account lockdown.
 
 set -euo pipefail
+set -u
 
 # Configuration
 LOG_FILE="${LOG_FILE:-./logs/containment.log}"

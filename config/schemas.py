@@ -6,7 +6,8 @@ Data validation models using Pydantic for type safety and validation
 
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, validator, HttpUrl, IPv4Address
+from pydantic import BaseModel, Field, validator, HttpUrl
+from pydantic.networks import IPv4Address
 from enum import Enum
 import re
 
@@ -32,7 +33,7 @@ class NetworkEvent(BaseModel):
     dst_ip: Optional[IPv4Address] = Field(None, description="Destination IP address")
     src_port: Optional[int] = Field(None, ge=1, le=65535, description="Source port")
     dst_port: Optional[int] = Field(None, ge=1, le=65535, description="Destination port")
-    protocol: Optional[str] = Field(None, regex=r"^(TCP|UDP|ICMP)$", description="Network protocol")
+    protocol: Optional[str] = Field(None, pattern=r"^(TCP|UDP|ICMP)$", description="Network protocol")
     
     @validator('src_ip')
     def validate_src_ip(cls, v):
@@ -43,9 +44,9 @@ class NetworkEvent(BaseModel):
 
 class FileHash(BaseModel):
     """File hash model"""
-    sha256: str = Field(..., min_length=64, max_length=64, regex=r"^[a-fA-F0-9]{64}$", description="SHA256 hash")
-    md5: Optional[str] = Field(None, min_length=32, max_length=32, regex=r"^[a-fA-F0-9]{32}$", description="MD5 hash")
-    sha1: Optional[str] = Field(None, min_length=40, max_length=40, regex=r"^[a-fA-F0-9]{40}$", description="SHA1 hash")
+    sha256: str = Field(..., min_length=64, max_length=64, pattern=r"^[a-fA-F0-9]{64}$", description="SHA256 hash")
+    md5: Optional[str] = Field(None, min_length=32, max_length=32, pattern=r"^[a-fA-F0-9]{32}$", description="MD5 hash")
+    sha1: Optional[str] = Field(None, min_length=40, max_length=40, pattern=r"^[a-fA-F0-9]{40}$", description="SHA1 hash")
     
     @validator('sha256')
     def validate_sha256_format(cls, v):
@@ -92,14 +93,14 @@ class AffectedFile(BaseModel):
 
 class RansomwareAlert(BaseModel):
     """Ransomware detection alert model"""
-    alert_id: str = Field(..., regex=r"^ALERT-\d{10}-\d{4}$", description="Alert ID format: ALERT-timestamp-sequence")
-    hostname: str = Field(..., min_length=1, max_length=255, regex=r"^[a-zA-Z0-9\-]+$", description="Hostname")
+    alert_id: str = Field(..., pattern=r"^ALERT-\d{10}-\d{4}$", description="Alert ID format: ALERT-timestamp-sequence")
+    hostname: str = Field(..., min_length=1, max_length=255, pattern=r"^[a-zA-Z0-9\-]+$", description="Hostname")
     src_ip: IPv4Address = Field(..., description="Source IP address")
     hash: FileHash = Field(..., description="File hash information")
     severity: SeverityLevel = Field(..., description="Alert severity")
     source: str = Field(..., min_length=1, max_length=100, description="Alert source")
     detection_time: datetime = Field(..., description="Detection timestamp")
-    event_type: str = Field(..., regex=r"^ransomware_detection$", description="Event type")
+    event_type: str = Field(..., pattern=r"^ransomware_detection$", description="Event type")
     description: str = Field(..., min_length=1, max_length=1000, description="Alert description")
     affected_files: List[AffectedFile] = Field(default_factory=list, description="Affected files")
     mitre_tactics: List[str] = Field(default_factory=list, description="MITRE tactics")
@@ -147,11 +148,11 @@ class WebhookPayload(BaseModel):
 
 class ContainmentAction(BaseModel):
     """Containment action model"""
-    action_id: str = Field(..., regex=r"^ACTION-\d{10}-\d{4}$", description="Action ID")
-    alert_id: str = Field(..., regex=r"^ALERT-\d{10}-\d{4}$", description="Related alert ID")
+    action_id: str = Field(..., pattern=r"^ACTION-\d{10}-\d{4}$", description="Action ID")
+    alert_id: str = Field(..., pattern=r"^ALERT-\d{10}-\d{4}$", description="Related alert ID")
     hostname: str = Field(..., description="Target hostname")
-    action_type: str = Field(..., regex=r"^(network_isolation|process_termination|account_lockdown)$", description="Action type")
-    status: str = Field(..., regex=r"^(pending|executed|failed|completed)$", description="Action status")
+    action_type: str = Field(..., pattern=r"^(network_isolation|process_termination|account_lockdown)$", description="Action type")
+    status: str = Field(..., pattern=r"^(pending|executed|failed|completed)$", description="Action status")
     execution_time: Optional[datetime] = Field(None, description="Execution timestamp")
     details: Dict[str, Any] = Field(default_factory=dict, description="Action details")
     error_message: Optional[str] = Field(None, description="Error message if failed")
@@ -198,7 +199,7 @@ class KPIReport(BaseModel):
 class HealthCheck(BaseModel):
     """Health check model"""
     service_name: str = Field(..., description="Service name")
-    status: str = Field(..., regex=r"^(healthy|unhealthy|degraded)$", description="Health status")
+    status: str = Field(..., pattern=r"^(healthy|unhealthy|degraded)$", description="Health status")
     timestamp: datetime = Field(default_factory=datetime.now, description="Check timestamp")
     response_time_ms: Optional[float] = Field(None, ge=0, description="Response time in milliseconds")
     error_message: Optional[str] = Field(None, description="Error message if unhealthy")
@@ -214,9 +215,9 @@ class HealthCheck(BaseModel):
 
 class BackupReport(BaseModel):
     """Backup report model"""
-    backup_id: str = Field(..., regex=r"^BACKUP-\d{8}_\d{6}$", description="Backup ID")
+    backup_id: str = Field(..., pattern=r"^BACKUP-\d{8}_\d{6}$", description="Backup ID")
     timestamp: datetime = Field(..., description="Backup timestamp")
-    backup_type: str = Field(..., regex=r"^(manual|scheduled|auto)$", description="Backup type")
+    backup_type: str = Field(..., pattern=r"^(manual|scheduled|auto)$", description="Backup type")
     components: Dict[str, bool] = Field(..., description="Backup components status")
     total_size_mb: float = Field(..., ge=0, description="Total backup size in MB")
     compression_ratio: Optional[float] = Field(None, ge=0, le=1, description="Compression ratio")
@@ -234,7 +235,7 @@ class BackupReport(BaseModel):
 
 class SecurityScan(BaseModel):
     """Security scan report model"""
-    scan_id: str = Field(..., regex=r"^SCAN-\d{8}_\d{6}$", description="Scan ID")
+    scan_id: str = Field(..., pattern=r"^SCAN-\d{8}_\d{6}$", description="Scan ID")
     timestamp: datetime = Field(..., description="Scan timestamp")
     scanner: str = Field(..., description="Scanner name")
     target: str = Field(..., description="Scan target")
@@ -257,9 +258,18 @@ class SecurityScan(BaseModel):
 
 
 # Validation functions
-def validate_alert_data(alert_data: Dict[str, Any]) -> RansomwareAlert:
-    """Validate alert data and return validated model"""
-    return RansomwareAlert(**alert_data)
+def validate_alert_data(alert_data: Dict[str, Any]) -> tuple[bool, list]:
+    """Validate alert data and return (is_valid, errors)"""
+    try:
+        RansomwareAlert(**alert_data)
+        return True, []
+    except Exception as e:
+        # Extract validation errors from pydantic exception
+        if hasattr(e, 'errors'):
+            errors = [str(error) for error in e.errors()]
+        else:
+            errors = [str(e)]
+        return False, errors
 
 
 def validate_webhook_payload(payload_data: Dict[str, Any]) -> WebhookPayload:

@@ -40,6 +40,67 @@ class TFMDataEnhancer:
         self.results_dir.mkdir(exist_ok=True)
         self.logs_dir.mkdir(exist_ok=True)
         
+        self.scenarios = ['malicious', 'benign', 'edge_case']
+
+    def generate_kpis_data(self) -> Dict[str, Any]:
+        """Generate KPI data for the TFM report (compatibility with tests)"""
+        import scripts.calc_kpis as calc_kpis
+        start_time = time.time()
+        kpi_data = calc_kpis.main()
+        generation_time = time.time() - start_time
+        
+        return {
+            'kpi_generation_time': generation_time,
+            'kpi_data': kpi_data
+        }
+
+    def generate_alert_data(self) -> Dict[str, Any]:
+        """Generate alert data for the TFM report (compatibility with tests)"""
+        from scripts.send_alert import SIEMSimulator
+        start_time = time.time()
+        
+        simulator = SIEMSimulator(
+            webhook_url="http://localhost:5001/webhook",
+            api_token="test-token"
+        )
+        
+        alerts = [
+            simulator.generate_malicious_alert() for _ in range(3)
+        ]
+        
+        generation_time = time.time() - start_time
+        
+        return {
+            'alert_generation_time': generation_time,
+            'alerts': alerts
+        }
+
+    def save_results(self, data: Dict[str, Any], file_path: Path) -> None:
+        """Save results to a JSON file (compatibility with tests)"""
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=4)
+
+    def get_test_statistics(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Calculate test statistics (compatibility with tests)"""
+        scenarios = test_results.get('scenarios', {})
+        total = len(scenarios)
+        successful = sum(1 for s in scenarios.values() if s.get('success', False))
+        failed = total - successful
+        success_rate = successful / total if total > 0 else 0
+        
+        durations = [s.get('duration', 0) for s in scenarios.values()]
+        total_duration = sum(durations)
+        average_duration = total_duration / total if total > 0 else 0
+        
+        return {
+            'total_scenarios': total,
+            'successful_scenarios': successful,
+            'failed_scenarios': failed,
+            'success_rate': success_rate,
+            'total_duration': total_duration,
+            'average_duration': average_duration
+        }
+        
     def run_test_scenarios(self) -> Dict[str, Any]:
         """Ejecutar escenarios de tests para generar datos reales"""
         logger.info("Running test scenarios to generate real data...")

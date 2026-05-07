@@ -227,10 +227,13 @@ make test-all
 
 # Ejecutar categorías específicas
 make test-unit
+make test-atomic
+make test-security
 make test-integration
+make test-performance
 make test-e2e
 
-# Ejecutar con cobertura
+# Ejecutar con cobertura (mínimo 80% requerido)
 make test-coverage
 
 # Enviar alerta maliciosa de prueba

@@ -111,11 +111,20 @@ data-export:
 test-unit:
 	python3 -m pytest tests/unit/ -v
 
+test-atomic:
+	python3 -m pytest tests/atomic/ -v
+
+test-security:
+	python3 -m pytest tests/security/ -v
+
 test-integration:
 	python3 -m pytest tests/integration/ -v
 
+test-performance:
+	python3 -m pytest tests/performance/ -v
+
 test-e2e:
-	bash scripts/run_tests.sh RUN_UNIT=false RUN_INTEGRATION=false
+	python3 -m pytest tests/e2e/ -v
 
 test-all:
 	bash scripts/run_tests.sh
@@ -142,7 +151,10 @@ help:
 	@echo ""
 	@echo "Testing (Automated):"
 	@echo "  make test-unit      - Run unit tests"
+	@echo "  make test-atomic    - Run atomic tests"
+	@echo "  make test-security  - Run security tests"
 	@echo "  make test-integration - Run integration tests"
+	@echo "  make test-performance - Run performance tests"
 	@echo "  make test-e2e       - Run E2E tests"
 	@echo "  make test-all       - Run all tests"
 	@echo "  make test-coverage  - Run tests with coverage report"

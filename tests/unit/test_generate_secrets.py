@@ -21,6 +21,8 @@ from scripts.generate_secrets import (
     generate_password,
     generate_webhook_token,
     generate_jwt_secret,
+    generate_secret_key,
+    generate_token,
     generate_all_secrets,
     validate_secret_format
 )
@@ -134,8 +136,9 @@ class TestSecretGenerator(unittest.TestCase):
         generate_all_secrets(self.test_output_file)
         
         # Verify all generation functions were called
-        mock_api_key.assert_called_once()
-        mock_password.assert_called_once()
+        # generate_api_key is called 3 times in generate_all_secrets
+        self.assertEqual(mock_api_key.call_count, 3)
+        mock_password.assert_not_called() # Not called in generate_all_secrets
         mock_webhook.assert_called_once()
         mock_jwt.assert_called_once()
         
@@ -159,12 +162,16 @@ class TestSecretGenerator(unittest.TestCase):
             self.assertIn(key, secrets_data)
         
         # Check timestamp format
-        import datetime
+        from datetime import datetime
         timestamp = secrets_data['generated_at']
         try:
-            datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            # ISO format with Z
+            datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
         except ValueError:
-            self.fail("Generated timestamp is not in valid ISO format")
+            try:
+                datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
+            except ValueError:
+                self.fail(f"Generated timestamp {timestamp} is not in expected format")
 
     def test_validate_secret_format(self):
         """Test secret format validation"""
@@ -239,6 +246,126 @@ class TestSecretGenerator(unittest.TestCase):
         self.assertGreater(upper_count, total_chars * 0.2)  # At least 20% uppercase
         self.assertGreater(lower_count, total_chars * 0.2)  # At least 20% lowercase
         self.assertGreater(digit_count, total_chars * 0.2)  # At least 20% digits
+
+    def test_generate_secret_key(self):
+        """Test secret key generation"""
+        secret_key = generate_secret_key()
+        
+        # Should be 32 characters long (16 bytes * 2 for hex)
+        self.assertEqual(len(secret_key), 32)
+        
+        # Should contain only hexadecimal characters
+        valid_chars = string.hexdigits.lower()
+        self.assertTrue(all(c in valid_chars for c in secret_key))
+        
+        # Should be different each time
+        secret_key2 = generate_secret_key()
+        self.assertNotEqual(secret_key, secret_key2)
+
+    def test_generate_token(self):
+        """Test token generation"""
+        token = generate_token()
+        
+        # Should be 48 characters long
+        self.assertEqual(len(token), 48)
+        
+        # Should contain only URL-safe characters
+        valid_chars = string.ascii_letters + string.digits + '-_'
+        self.assertTrue(all(c in valid_chars for c in token))
+        
+        # Should be different each time
+        token2 = generate_token()
+        self.assertNotEqual(token, token2)
+
+    def test_generate_token_custom_length(self):
+        """Test token generation with custom length"""
+        for length in [16, 24, 32, 48, 64]:
+            token = generate_token(length=length)
+            self.assertEqual(len(token), length)
+
+    def test_generate_secret_key_custom_length(self):
+        """Test secret key generation with custom length"""
+        # Test even length
+        secret_key = generate_secret_key(64)
+        self.assertEqual(len(secret_key), 64)
+        
+        # Test odd length (should be floor(length/2) * 2 for hex)
+        secret_key_odd = generate_secret_key(33)
+        self.assertEqual(len(secret_key_odd), 32)  # 33//2 = 16, *2 = 32
+
+    def test_generate_all_secrets_without_file(self):
+        """Test generating all secrets without saving to file"""
+        secrets_data = generate_all_secrets()
+        
+        # Should return dictionary with expected keys
+        expected_keys = ['thehive_api_key', 'cortex_api_key', 'shuffle_api_key',
+                       'shuffle_webhook_token', 'jwt_secret', 'generated_at']
+        
+        for key in expected_keys:
+            self.assertIn(key, secrets_data)
+        
+        # Should not create any files
+        self.assertFalse(os.path.exists(self.test_output_file))
+
+
+class TestSecretMainFunction(unittest.TestCase):
+    """Test main function and CLI interface"""
+
+    @patch('sys.argv', ['generate_secrets.py'])
+    @patch('builtins.print')
+    def test_main_default_output(self, mock_print):
+        """Test main function with default output"""
+        from scripts.generate_secrets import main
+        
+        main()
+        
+        # Should have called print multiple times
+        self.assertGreater(mock_print.call_count, 10)
+        
+        # Check that key messages were printed
+        print_calls = [str(call) for call in mock_print.call_args_list]
+        output_text = ' '.join(print_calls)
+        
+        self.assertIn('Generating secure secrets', output_text)
+        self.assertIn('ELASTIC_PASSWORD=', output_text)
+        self.assertIn('Copy these values', output_text)
+
+    @patch('sys.argv', ['generate_secrets.py', '--output-file', 'test.json'])
+    @patch('scripts.generate_secrets.generate_all_secrets')
+    @patch('builtins.print')
+    def test_main_with_output_file(self, mock_print, mock_generate):
+        """Test main function with output file argument"""
+        from scripts.generate_secrets import main
+        
+        main()
+        
+        # Should call generate_all_secrets with the file path
+        mock_generate.assert_called_once_with('test.json')
+        
+        # Should print success message
+        mock_print.assert_any_call('Secrets generated in test.json')
+
+    @patch('sys.argv', ['generate_secrets.py', '--output-file'])
+    @patch('builtins.print')
+    def test_main_with_output_file_missing_argument(self, mock_print):
+        """Test main function with output file but missing argument"""
+        from scripts.generate_secrets import main
+        
+        main()
+        
+        # Should generate secrets normally (no file specified)
+        self.assertGreater(mock_print.call_count, 10)
+
+    @patch('sys.argv', ['generate_secrets.py', '--unknown-arg'])
+    @patch('builtins.print')
+    def test_main_with_unknown_argument(self, mock_print):
+        """Test main function with unknown argument"""
+        from scripts.generate_secrets import main
+        
+        main()
+        
+        # Should generate secrets normally (ignore unknown arg)
+        self.assertGreater(mock_print.call_count, 10)
 
 
 class TestSecretSecurity(unittest.TestCase):

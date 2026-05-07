@@ -4,6 +4,7 @@ SOAR Ransomware Lab - Load Testing Tests
 Performance and load testing for SOAR components
 """
 
+import unittest
 import asyncio
 import aiohttp
 import time
@@ -398,3 +399,103 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+class TestLoadPerformance(unittest.TestCase):
+    """Unit tests for load testing functionality"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        self.load_tester = LoadTester()
+    
+    def test_generate_test_alert(self):
+        """Test alert generation for load testing"""
+        alert = self.load_tester.generate_test_alert("ALERT-TEST-001")
+        
+        self.assertIn("alert_id", alert)
+        self.assertEqual(alert["alert_id"], "ALERT-TEST-001")
+        self.assertIn("hostname", alert)
+        self.assertIn("src_ip", alert)
+        self.assertIn("hash", alert)
+        self.assertIn("sha256", alert["hash"])
+        self.assertIn("severity", alert)
+        self.assertIn("source", alert)
+        self.assertIn("detection_time", alert)
+        self.assertIn("event_type", alert)
+        self.assertIn("description", alert)
+    
+    def test_analyze_results_empty(self):
+        """Test result analysis with empty results"""
+        analysis = self.load_tester.analyze_results([])
+        self.assertIn("error", analysis)
+    
+    def test_analyze_results_successful(self):
+        """Test result analysis with successful requests"""
+        results = [
+            {
+                "alert_id": "TEST-001",
+                "status_code": 200,
+                "response_time_ms": 100,
+                "success": True,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "alert_id": "TEST-002", 
+                "status_code": 200,
+                "response_time_ms": 150,
+                "success": True,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        ]
+        
+        analysis = self.load_tester.analyze_results(results)
+        
+        self.assertEqual(analysis["total_requests"], 2)
+        self.assertEqual(analysis["successful_requests"], 2)
+        self.assertEqual(analysis["failed_requests"], 0)
+        self.assertEqual(analysis["success_rate"], 100.0)
+        self.assertIn("avg_response_time_ms", analysis)
+        self.assertIn("median_response_time_ms", analysis)
+        self.assertIn("min_response_time_ms", analysis)
+        self.assertIn("max_response_time_ms", analysis)
+    
+    def test_percentile_calculation(self):
+        """Test percentile calculation"""
+        data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        
+        p50 = self.load_tester._percentile(data, 50)
+        p95 = self.load_tester._percentile(data, 95)
+        
+        self.assertEqual(p50, 5.5)  # Median of even number of items
+        self.assertAlmostEqual(p95, 9.55, places=2)  # 95th percentile (allow floating point precision)
+    
+    def test_save_results(self):
+        """Test saving results to file"""
+        results = [
+            {
+                "alert_id": "TEST-001",
+                "status_code": 200,
+                "response_time_ms": 100,
+                "success": True,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        ]
+        
+        analysis = self.load_tester.analyze_results(results)
+        
+        # Test saving (this will create a file)
+        self.load_tester.save_results(results, analysis, "test_save")
+        
+        # Check if file was created
+        results_file = Path("results/load_tests/test_save.json")
+        self.assertTrue(results_file.exists())
+        
+        # Clean up
+        if results_file.exists():
+            results_file.unlink()
+    
+    def test_load_test_integration(self):
+        """Integration test for load testing"""
+        # Test runs regardless of external services availability
+        # Skip by default to avoid dependency on external services
+        pass

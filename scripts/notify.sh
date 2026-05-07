@@ -1,10 +1,11 @@
-
 #!/bin/bash
 
 # SOAR Ransomware Lab - Notification Script
 # Sends notifications to security team and updates TheHive case
+# This script handles email, Slack, and TheHive updates.
 
 set -euo pipefail
+set -u
 
 # Configuration
 LOG_FILE="${LOG_FILE:-./logs/notify.log}"
