@@ -4,24 +4,24 @@ SOAR Ransomware Lab - Load Testing Tests
 Performance and load testing for SOAR components
 """
 
-import unittest
-import asyncio
 import aiohttp
-import time
+import asyncio
+import json
+import logging
+import os
 import statistics
+import sys
+import time
+import unittest
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-import json
-import logging
 from typing import List, Dict, Any, Optional
-import sys
-import os
 
-# Add project root to path
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from config.settings import get_setting
-from config.schemas import validate_alert_data, RansomwareAlert
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
+from soar_lab.config.settings import get_setting
+from soar_lab.config.schemas import validate_alert_data, RansomwareAlert
 
 # Configure logging
 logging.basicConfig(

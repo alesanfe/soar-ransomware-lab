@@ -1,149 +1,293 @@
 #!/usr/bin/env python3
 """
-Unit tests for alert schemas
+Unit tests for SOAR Lab configuration schemas
 """
 
-import unittest
 import json
-import os
+import sys
+import unittest
+from datetime import datetime
 from pathlib import Path
-from jsonschema import validate, ValidationError
+from unittest.mock import Mock, patch
+
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
+
+from soar_lab.config.schemas import (
+    RansomwareAlert,
+    WebhookPayload,
+    NetworkEvent,
+    FileHash,
+    MITREInfo,
+    AffectedFile,
+    SeverityLevel,
+    AlertType,
+    ContainmentAction
+)
 
 
-class TestAlertSchema(unittest.TestCase):
-    """Test cases for alert JSON schema"""
+class TestRansomwareAlertModel(unittest.TestCase):
+    """Test RansomwareAlert model"""
 
-    def setUp(self):
-        """Set up test fixtures"""
-        self.schema_path = Path('schemas/alert.schema.json')
-        with open(self.schema_path, 'r') as f:
-            self.schema = json.load(f)
+    def test_ransomware_alert_model_valid(self):
+        """Test RansomwareAlert model with valid data"""
+        alert_data = {
+            "alert_id": "ALERT-1701388800-0001",
+            "hostname": "test-host",
+            "src_ip": "192.168.1.100",
+            "hash": {
+                "sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+            },
+            "severity": SeverityLevel.HIGH,
+            "source": "siem",
+            "detection_time": datetime.now(),
+            "event_type": "ransomware_detection",
+            "description": "Test ransomware detection alert"
+        }
         
-        self.payload_dir = Path('tests/payloads')
+        alert = RansomwareAlert(**alert_data)
+        self.assertEqual(alert.alert_id, "ALERT-1701388800-0001")
+        self.assertEqual(alert.hostname, "test-host")
+        self.assertEqual(alert.severity, SeverityLevel.HIGH)
+        self.assertIsInstance(alert.detection_time, datetime)
 
-    def test_schema_exists(self):
-        """Test that alert.schema.json exists"""
-        self.assertTrue(self.schema_path.exists())
-
-    def test_schema_is_valid_json(self):
-        """Test that schema is valid JSON"""
-        self.assertIsNotNone(self.schema)
-        self.assertEqual(self.schema['title'], "SOAR Ransomware Lab Alert Schema")
-
-    def test_payload_case1_validates(self):
-        """Test that payload_case1.json validates against schema"""
-        payload_path = self.payload_dir / 'payload_case1.json'
-        with open(payload_path, 'r') as f:
-            payload = json.load(f)
+    def test_ransomware_alert_model_with_optional_fields(self):
+        """Test RansomwareAlert model with optional fields"""
+        alert_data = {
+            "alert_id": "ALERT-1701388800-0001",
+            "hostname": "test-host",
+            "src_ip": "192.168.1.100",
+            "hash": {
+                "sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+            },
+            "severity": SeverityLevel.HIGH,
+            "source": "external",
+            "detection_time": datetime.now(),
+            "event_type": "ransomware_detection",
+            "description": "Test ransomware detection alert",
+            "mitre_tactics": ["TA0001"],
+            "mitre_techniques": ["T1059"],
+            "user_context": {"username": "testuser"},
+            "process_info": {"pid": 1234}
+        }
         
-        # Ensure timestamp exists for validation if missing in file
-        if 'timestamp' not in payload:
-            payload['timestamp'] = payload.get('detection_time', '2025-05-03T10:00:00Z')
-        if 'ip_address' not in payload:
-            payload['ip_address'] = payload.get('src_ip', '192.168.1.100')
-        if 'impact_assessment' in payload and 'files_encrypted' not in payload['impact_assessment']:
-             payload['impact_assessment']['files_encrypted'] = 100
-        if 'impact_assessment' in payload and 'affected_hosts' not in payload['impact_assessment']:
-             payload['impact_assessment']['affected_hosts'] = [payload.get('hostname', 'WIN-001')]
+        alert = RansomwareAlert(**alert_data)
+        self.assertEqual(alert.alert_id, "ALERT-1701388800-0001")
+        self.assertEqual(len(alert.mitre_tactics), 1)
+        self.assertEqual(alert.mitre_tactics[0], "TA0001")
+        self.assertIsNotNone(alert.user_context)
 
-        # Remove keys that schema doesn't allow ($schema, title) if they exist
-        payload.pop('$schema', None)
-        payload.pop('title', None)
-            
-        try:
-            validate(instance=payload, schema=self.schema)
-        except ValidationError as e:
-            self.fail(f"Payload Case 1 failed validation: {e.message}")
-
-    def test_payload_case2_validates(self):
-        """Test that payload_case2.json validates against schema"""
-        payload_path = self.payload_dir / 'payload_case2.json'
-        with open(payload_path, 'r') as f:
-            payload = json.load(f)
-            
-        # Add required fields for schema validation
-        if 'timestamp' not in payload:
-            payload['timestamp'] = payload.get('detection_time', '2025-05-03T10:00:00Z')
-        if 'ip_address' not in payload:
-            payload['ip_address'] = payload.get('src_ip', '192.168.1.100')
-        if 'impact_assessment' in payload and 'files_encrypted' not in payload['impact_assessment']:
-             payload['impact_assessment']['files_encrypted'] = 0
-        if 'impact_assessment' in payload and 'affected_hosts' not in payload['impact_assessment']:
-             payload['impact_assessment']['affected_hosts'] = []
-
-        payload.pop('$schema', None)
-        payload.pop('title', None)
-            
-        try:
-            validate(instance=payload, schema=self.schema)
-        except ValidationError as e:
-            self.fail(f"Payload Case 2 failed validation: {e.message}")
-
-    def test_schema_required_properties(self):
-        """Test that schema has expected required properties"""
-        required = self.schema.get('required', [])
-        expected_required = [
-            'alert_id', 'hostname', 'hash', 'src_ip', 
-            'severity', 'source', 'detection_time', 'event_type', 'timestamp', 'ip_address'
-        ]
-        for prop in expected_required:
-            self.assertIn(prop, required, f"Property {prop} should be required")
-
-    def test_schema_property_types(self):
-        """Test that schema properties have correct types"""
-        properties = self.schema.get('properties', {})
+    def test_ransomware_alert_invalid_alert_id(self):
+        """Test RansomwareAlert with invalid alert ID"""
+        alert_data = {
+            "alert_id": "INVALID-ID",
+            "hostname": "test-host",
+            "src_ip": "192.168.1.100",
+            "hash": {
+                "sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+            },
+            "severity": SeverityLevel.HIGH,
+            "source": "siem",
+            "detection_time": datetime.now(),
+            "event_type": "ransomware_detection",
+            "description": "Test alert"
+        }
         
-        self.assertEqual(properties['severity']['type'], 'integer')
-        self.assertEqual(properties['hostname']['type'], 'string')
-        self.assertEqual(properties['affected_files']['type'], 'array')
-        self.assertEqual(properties['impact_assessment']['type'], 'object')
-        self.assertIn('timestamp', properties)
+        with self.assertRaises(Exception):
+            RansomwareAlert(**alert_data)
 
-
-class TestSchemaCompleteness(unittest.TestCase):
-    """Test cases for schema completeness"""
-
-    def setUp(self):
-        with open('schemas/alert.schema.json', 'r') as f:
-            self.schema = json.load(f)
-
-    def test_schema_includes_all_alert_fields(self):
-        """Test that schema includes all fields generated by simulator"""
-        properties = self.schema.get('properties', {})
+    def test_ransomware_alert_invalid_hostname(self):
+        """Test RansomwareAlert with invalid hostname"""
+        alert_data = {
+            "alert_id": "ALERT-1701388800-0001",
+            "hostname": "invalid hostname with spaces",
+            "src_ip": "192.168.1.100",
+            "hash": {
+                "sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+            },
+            "severity": SeverityLevel.HIGH,
+            "source": "siem",
+            "detection_time": datetime.now(),
+            "event_type": "ransomware_detection",
+            "description": "Test alert"
+        }
         
-        expected_fields = [
-            'alert_id', 'hostname', 'src_ip', 'ip_address', 'hash', 'severity', 
-            'source', 'timestamp', 'detection_time', 'event_type', 'description',
-            'affected_files', 'mitre_tactics', 'mitre_techniques', 'mitre_attack',
-            'user_account', 'process_name', 'command_line', 'parent_process',
-            'file_size', 'file_path', 'network_connections', 'registry_changes',
-            'detection_rules', 'confidence', 'impact_assessment', 
-            'false_positive_indicators', 'whitelist_status'
-        ]
-        
-        for field in expected_fields:
-            self.assertIn(field, properties, f"Field {field} should be in schema")
+        with self.assertRaises(Exception):
+            RansomwareAlert(**alert_data)
 
-    def test_network_connections_structure(self):
-        """Test that network_connections has correct structure"""
-        conn_props = self.schema['properties']['network_connections']['items']['properties']
-        
-        self.assertIn('dst_ip', conn_props)
-        self.assertIn('destination_ip', conn_props)
-        self.assertIn('dst_port', conn_props)
-        self.assertIn('destination_port', conn_props)
-        self.assertIn('protocol', conn_props)
 
-    def test_impact_assessment_structure(self):
-        """Test that impact_assessment has correct structure"""
-        impact_props = self.schema['properties']['impact_assessment']['properties']
+class TestFileHashModel(unittest.TestCase):
+    """Test FileHash model"""
+
+    def test_file_hash_valid(self):
+        """Test FileHash with valid data"""
+        hash_data = {
+            "sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+            "md5": "5d41402abc4b2a76b9719d911017c592",
+            "sha1": "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
+        }
         
-        self.assertIn('data_affected', impact_props)
-        self.assertIn('systems_affected', impact_props)
-        self.assertIn('affected_hosts', impact_props)
-        self.assertIn('files_encrypted', impact_props)
-        self.assertIn('business_impact', impact_props)
-        self.assertIn('recovery_time_estimate', impact_props)
+        file_hash = FileHash(**hash_data)
+        self.assertEqual(file_hash.sha256, hash_data["sha256"])
+        self.assertEqual(file_hash.md5, hash_data["md5"])
+        self.assertEqual(file_hash.sha1, hash_data["sha1"])
+
+    def test_file_hash_invalid_sha256(self):
+        """Test FileHash with invalid SHA256"""
+        hash_data = {
+            "sha256": "invalid_hash",
+            "md5": "5d41402abc4b2a76b9719d911017c592"
+        }
+        
+        with self.assertRaises(Exception):
+            FileHash(**hash_data)
+
+    def test_file_hash_invalid_md5(self):
+        """Test FileHash with invalid MD5"""
+        hash_data = {
+            "sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+            "md5": "invalid_md5"
+        }
+        
+        with self.assertRaises(Exception):
+            FileHash(**hash_data)
+
+
+class TestNetworkEventModel(unittest.TestCase):
+    """Test NetworkEvent model"""
+
+    def test_network_event_valid(self):
+        """Test NetworkEvent with valid data"""
+        event_data = {
+            "src_ip": "192.168.1.100",
+            "dst_ip": "10.0.0.1",
+            "src_port": 12345,
+            "dst_port": 80,
+            "protocol": "TCP"
+        }
+        
+        event = NetworkEvent(**event_data)
+        self.assertEqual(str(event.src_ip), "192.168.1.100")
+        self.assertEqual(str(event.dst_ip), "10.0.0.1")
+        self.assertEqual(event.src_port, 12345)
+        self.assertEqual(event.dst_port, 80)
+        self.assertEqual(event.protocol, "TCP")
+
+    def test_network_event_invalid_protocol(self):
+        """Test NetworkEvent with invalid protocol"""
+        event_data = {
+            "src_ip": "192.168.1.100",
+            "dst_ip": "10.0.0.1",
+            "protocol": "INVALID"
+        }
+        
+        with self.assertRaises(Exception):
+            NetworkEvent(**event_data)
+
+    def test_network_event_invalid_port(self):
+        """Test NetworkEvent with invalid port"""
+        event_data = {
+            "src_ip": "192.168.1.100",
+            "dst_ip": "10.0.0.1",
+            "src_port": 99999  # Invalid port number
+        }
+        
+        with self.assertRaises(Exception):
+            NetworkEvent(**event_data)
+
+
+class TestAffectedFileModel(unittest.TestCase):
+    """Test AffectedFile model"""
+
+    def test_affected_file_valid(self):
+        """Test AffectedFile with valid data"""
+        file_data = {
+            "path": "/path/to/file.txt",
+            "name": "file.txt",
+            "size": 1024,
+            "extension": "txt",
+            "encrypted": True
+        }
+        
+        affected_file = AffectedFile(**file_data)
+        self.assertEqual(affected_file.path, "/path/to/file.txt")
+        self.assertEqual(affected_file.name, "file.txt")
+        self.assertEqual(affected_file.size, 1024)
+        self.assertEqual(affected_file.extension, "txt")
+        self.assertTrue(affected_file.encrypted)
+
+    def test_affected_file_empty_path(self):
+        """Test AffectedFile with empty path"""
+        file_data = {
+            "path": "",
+            "name": "file.txt"
+        }
+        
+        with self.assertRaises(Exception):
+            AffectedFile(**file_data)
+
+    def test_affected_file_negative_size(self):
+        """Test AffectedFile with negative size"""
+        file_data = {
+            "path": "/path/to/file.txt",
+            "name": "file.txt",
+            "size": -100
+        }
+        
+        with self.assertRaises(Exception):
+            AffectedFile(**file_data)
+
+
+class TestWebhookPayloadModel(unittest.TestCase):
+    """Test WebhookPayload model"""
+
+    def test_webhook_payload_valid(self):
+        """Test WebhookPayload with valid data"""
+        payload_data = {
+            "alert": {
+                "alert_id": "ALERT-1701388800-0001",
+                "hostname": "test-host",
+                "src_ip": "192.168.1.100",
+                "hash": {
+                    "sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+                },
+                "severity": SeverityLevel.HIGH,
+                "source": "siem",
+                "detection_time": datetime.now(),
+                "event_type": "ransomware_detection",
+                "description": "Test alert"
+            },
+            "metadata": {"key": "value"},
+            "version": "1.0"
+        }
+        
+        payload = WebhookPayload(**payload_data)
+        self.assertEqual(payload.alert.alert_id, "ALERT-1701388800-0001")
+        self.assertEqual(payload.metadata["key"], "value")
+        self.assertEqual(payload.version, "1.0")
+        self.assertIsInstance(payload.timestamp, datetime)
+
+    def test_webhook_payload_invalid_version(self):
+        """Test WebhookPayload with invalid version"""
+        payload_data = {
+            "alert": {
+                "alert_id": "ALERT-1701388800-0001",
+                "hostname": "test-host",
+                "src_ip": "192.168.1.100",
+                "hash": {
+                    "sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+                },
+                "severity": SeverityLevel.HIGH,
+                "source": "siem",
+                "detection_time": datetime.now(),
+                "event_type": "ransomware_detection",
+                "description": "Test alert"
+            },
+            "version": "invalid_version"
+        }
+        
+        with self.assertRaises(Exception):
+            WebhookPayload(**payload_data)
 
 
 if __name__ == '__main__':

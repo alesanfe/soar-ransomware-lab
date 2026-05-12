@@ -17,3 +17,7 @@ jsonschema>=4.19.0
 
 # HTTP testing
 requests-mock>=1.11.0
+
+# Browser automation
+selenium>=4.15.0
+webdriver-manager>=3.8.0

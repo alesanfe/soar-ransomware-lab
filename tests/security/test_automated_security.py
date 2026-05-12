@@ -4,23 +4,23 @@ SOAR Ransomware Lab - Automated Security Tests
 Comprehensive security testing for SOAR components
 """
 
-import asyncio
 import aiohttp
+import asyncio
 import json
+import logging
+import os
 import re
 import subprocess
-import tempfile
-from pathlib import Path
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
-import logging
 import sys
-import os
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import List, Dict, Any, Optional
 
-# Add project root to path
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from config.settings import get_setting
-from config.schemas import validate_alert_data, RansomwareAlert
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
+from soar_lab.config.settings import get_setting
+from soar_lab.config.schemas import validate_alert_data, RansomwareAlert
 
 # Configure logging
 logging.basicConfig(

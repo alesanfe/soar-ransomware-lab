@@ -1,29 +1,43 @@
-# System
-.DS_Store
-Thumbs.db
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
 .venv/
 .env
-.vscode/
+
+# IDEs
 .idea/
+.vscode/
 *.swp
 *.swo
 
-# Sensitive data
-logs/
-backups/
-certs/
-results/
-*.key
-*.pem
-*.crt
-*.csr
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
 
-# Docker
-docker/.env
-
-# Temporary files
-*.tmp
+# Logs
 *.log
-*.bak
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+results/
+backups/
+artifacts/logs/
+artifacts/results/
+
+# Refact
+.refact/
+.junie/
+
+# GitHub
+.github/

@@ -4,17 +4,17 @@ SOAR Ransomware Lab - Atomic Tests for KPI Calculator
 Tests individual KPI calculation functions in isolation
 """
 
-import unittest
-import tempfile
 import os
 import sys
-from pathlib import Path
+import tempfile
+import unittest
 from datetime import datetime, timezone
+from pathlib import Path
 
-# Add scripts directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts'))
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 
-from calc_kpis import (
+from soar_lab.data.calc_kpis import (
     validate_log_file,
     parse_log_file,
     calculate_execution_times,
@@ -29,328 +29,233 @@ class TestKPICalculatorAtomic(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.temp_dir = tempfile.mkdtemp()
-        self.test_log_file = os.path.join(self.temp_dir, "test_kpi.log")
-        
-        # Create sample log data
-        self.sample_log_entries = [
-            "2025-01-15 10:00:00 - INFO - Alert received: ALERT-001",
-            "2025-01-15 10:05:00 - INFO - Case created: CASE-001",
-            "2025-01-15 10:10:00 - INFO - Containment initiated",
-            "2025-01-15 10:15:00 - INFO - Containment completed",
-            "2025-01-15 10:20:00 - INFO - Alert resolved",
-            "2025-01-15 11:00:00 - INFO - Alert received: ALERT-002",
-            "2025-01-15 11:05:00 - INFO - Case created: CASE-002",
-            "2025-01-15 11:30:00 - INFO - Alert resolved (no containment)",
-        ]
-        
-        with open(self.test_log_file, 'w') as f:
-            for entry in self.sample_log_entries:
-                f.write(entry + '\n')
+        self.test_dir = tempfile.mkdtemp()
+        self.test_log_path = os.path.join(self.test_dir, 'test_kpi.log')
+        self.test_results_path = os.path.join(self.test_dir, 'results')
+        os.makedirs(self.test_results_path, exist_ok=True)
 
     def tearDown(self):
         """Clean up test fixtures"""
-        if os.path.exists(self.test_log_file):
-            os.remove(self.test_log_file)
-        os.rmdir(self.temp_dir)
+        if os.path.exists(self.test_dir):
+            import shutil
+            shutil.rmtree(self.test_dir)
 
-    def test_validate_log_file_valid(self):
-        """Test log file validation with valid file"""
+    def test_validate_log_file_exists_valid(self):
+        """Test log file validation when file exists and is valid"""
         # Create a valid log file
-        valid_log = os.path.join(self.temp_dir, "valid.log")
-        with open(valid_log, 'w') as f:
-            f.write("Test log entry\n")
+        with open(self.test_log_path, 'w') as f:
+            f.write("[2025-05-08 10:00:00] STEP: Alert received\n")
+            f.write("[2025-05-08 10:01:30] STEP: Containment executed\n")
         
-        # Temporarily change LOG_PATH to our test file
-        import calc_kpis
-        original_path = calc_kpis.LOG_PATH
-        calc_kpis.LOG_PATH = Path(valid_log)
-        
-        try:
-            result = validate_log_file()
-            self.assertEqual(result, Path(valid_log))
-        finally:
-            calc_kpis.LOG_PATH = original_path
-        
-        os.remove(valid_log)
-
-    def test_validate_log_file_nonexistent(self):
-        """Test log file validation with nonexistent file"""
-        # Temporarily change LOG_PATH to nonexistent file
-        import calc_kpis
-        original_path = calc_kpis.LOG_PATH
-        calc_kpis.LOG_PATH = Path("nonexistent.log")
+        # Mocks LOG_PATH to point to our test file
+        from soar_lab.data import calc_kpis
+        original_log_path = calc_kpis.LOG_PATH
+        calc_kpis.LOG_PATH = Path(self.test_log_path)
         
         try:
-            with self.assertRaises(FileNotFoundError):
-                validate_log_file()
+            result = validate_log_file(self.test_log_path)
+            self.assertTrue(result)
         finally:
-            calc_kpis.LOG_PATH = original_path
+            calc_kpis.LOG_PATH = original_log_path
 
-    def test_parse_log_file_valid_format(self):
-        """Test log file parsing with valid format"""
-        # Create log with expected format
-        valid_log = os.path.join(self.temp_dir, "valid_format.log")
-        log_content = [
-            "[2025-01-15 10:00:00] STEP: Alert received",
-            "[2025-01-15 10:05:00] STEP: Case creation",
-            "[2025-01-15 10:10:00] STEP: Containment executed",
+    def test_validate_log_file_not_exists(self):
+        """Test log file validation when file doesn't exist"""
+        non_existent_path = "/non/existent/path.log"
+        
+        # Mocks LOG_PATH to point to non-existent file
+        from soar_lab.data import calc_kpis
+        original_log_path = calc_kpis.LOG_PATH
+        calc_kpis.LOG_PATH = Path(non_existent_path)
+        
+        with self.assertRaises(FileNotFoundError):
+            validate_log_file(non_existent_path)
+        
+        calc_kpis.LOG_PATH = original_log_path
+
+    def test_parse_log_file_valid(self):
+        """Test parsing a valid log file"""
+        # Create test log
+        entries = [
+            "[2025-05-08 10:00:00] STEP: Alert received",
+            "[2025-05-08 10:01:30] STEP: Containment executed",
+            "[2025-05-08 10:02:45] STEP: Investigation started"
         ]
+        with open(self.test_log_path, 'w') as f:
+            for entry in entries:
+                f.write(f"{entry}\n")
         
-        with open(valid_log, 'w') as f:
-            for entry in log_content:
-                f.write(entry + '\n')
-        
-        alert_steps = parse_log_file(Path(valid_log))
-        
-        # Should return dict with step names as keys
-        self.assertIsInstance(alert_steps, dict)
-        self.assertIn("Alert received", alert_steps)
-        self.assertIn("Case creation", alert_steps)
-        self.assertIn("Containment executed", alert_steps)
-        
-        # Each step should have datetime objects
-        for step_name, timestamps in alert_steps.items():
-            self.assertIsInstance(timestamps, list)
-            for ts in timestamps:
-                self.assertIsInstance(ts, datetime)
-        
-        os.remove(valid_log)
+        parsed = parse_log_file(self.test_log_path)
+        self.assertEqual(len(parsed), 3)
+        self.assertIn('Alert received', parsed)
+        self.assertIn('Containment executed', parsed)
+        self.assertIn('Investigation started', parsed)
+        self.assertEqual(len(parsed['Alert received']), 1)
+        self.assertEqual(len(parsed['Containment executed']), 1)
+        self.assertEqual(len(parsed['Investigation started']), 1)
 
-    def test_parse_log_file_empty_file(self):
-        """Test log file parsing with empty file"""
-        empty_log = os.path.join(self.temp_dir, "empty.log")
-        with open(empty_log, 'w') as f:
-            pass  # Create empty file
+    def test_parse_log_file_empty(self):
+        """Test parsing an empty log file"""
+        # Create empty file
+        with open(self.test_log_path, 'w') as f:
+            pass
         
-        alert_steps = parse_log_file(Path(empty_log))
-        self.assertEqual(alert_steps, {})
-        
-        os.remove(empty_log)
+        parsed = parse_log_file(self.test_log_path)
+        self.assertEqual(len(parsed), 0)
 
-    def test_parse_log_file_invalid_format(self):
-        """Test log file parsing with invalid format"""
-        invalid_log = os.path.join(self.temp_dir, "invalid.log")
-        invalid_content = [
-            "2025-01-15 10:00:00 - INFO - Alert received",  # Missing brackets
-            "[Invalid timestamp] STEP: Alert received",  # Invalid timestamp
-            "Random log line without format",
-        ]
+    def test_parse_log_file_mixed_format(self):
+        """Test parsing log file with mixed valid and invalid entries"""
+        # Create test log with mixed entries
+        with open(self.test_log_path, 'w') as f:
+            f.write("[2025-05-08 10:00:00] STEP: Alert received\n")
+            f.write("Invalid entry without proper format\n")
+            f.write("[2025-05-08 10:01:30] STEP: Containment executed\n")
         
-        with open(invalid_log, 'w') as f:
-            for entry in invalid_content:
-                f.write(entry + '\n')
-        
-        alert_steps = parse_log_file(Path(invalid_log))
-        self.assertEqual(alert_steps, {})  # Should return empty dict
-        
-        os.remove(invalid_log)
+        parsed = parse_log_file(self.test_log_path)
+        self.assertEqual(len(parsed), 2)  # Only valid entries should be parsed
 
-    def test_parse_log_file_unicode_error(self):
-        """Test log file parsing with Unicode error"""
-        unicode_log = os.path.join(self.temp_dir, "unicode.log")
+    def test_calculate_execution_times_single(self):
+        """Test execution time calculation with single execution"""
+        # Create test log with single execution
+        start_time = datetime(2025, 5, 8, 10, 0, 0)
+        end_time = datetime(2025, 5, 8, 10, 1, 30)
         
-        # Create file with invalid UTF-8
-        with open(unicode_log, 'wb') as f:
-            f.write(b"[2025-01-15 10:00:00] STEP: Alert received\n")
-            f.write(b'\xff\xfe')  # Invalid UTF-8 bytes
+        with open(self.test_log_path, 'w') as f:
+            f.write(f"[{start_time.strftime('%Y-%m-%d %H:%M:%S')}] STEP: Alert received\n")
+            f.write(f"[{end_time.strftime('%Y-%m-%d %H:%M:%S')}] STEP: Containment executed\n")
         
-        with self.assertRaises(UnicodeDecodeError):
-            parse_log_file(Path(unicode_log))
-        
-        os.remove(unicode_log)
+        parsed = parse_log_file(self.test_log_path)
+        times = calculate_execution_times(parsed)
+        self.assertEqual(len(times), 1)
+        self.assertAlmostEqual(times[0], 90.0, places=1)
 
-    def test_calculate_execution_times_valid_data(self):
-        """Test execution times calculation with valid data"""
-        alert_steps = {
-            'Alert received': [datetime(2025, 1, 15, 10, 0, 0), datetime(2025, 1, 15, 11, 0, 0)],
-            'Containment executed': [datetime(2025, 1, 15, 10, 30, 0), datetime(2025, 1, 15, 11, 45, 0)]
-        }
+    def test_calculate_execution_times_multiple(self):
+        """Test execution time calculation with multiple executions"""
+        # Create test log with multiple executions
+        with open(self.test_log_path, 'w') as f:
+            f.write("[2025-05-08 10:00:00] STEP: Alert received\n")
+            f.write("[2025-05-08 10:01:30] STEP: Containment executed\n")
+            f.write("[2025-05-08 11:00:00] STEP: Alert received\n")
+            f.write("[2025-05-08 11:02:00] STEP: Containment executed\n")
         
-        execution_times = calculate_execution_times(alert_steps)
-        
-        # Should calculate time differences in seconds
-        self.assertIsInstance(execution_times, list)
-        self.assertEqual(len(execution_times), 2)
-        
-        # First alert: 30 minutes = 1800 seconds
-        self.assertAlmostEqual(execution_times[0], 1800.0, places=1)
-        # Second alert: 45 minutes = 2700 seconds
-        self.assertAlmostEqual(execution_times[1], 2700.0, places=1)
+        parsed = parse_log_file(self.test_log_path)
+        times = calculate_execution_times(parsed)
+        self.assertEqual(len(times), 2)
+        self.assertAlmostEqual(times[0], 90.0, places=1)
+        self.assertAlmostEqual(times[1], 120.0, places=1)
 
-    def test_calculate_execution_times_no_alerts(self):
-        """Test execution times calculation with no alerts"""
-        alert_steps = {
-            'Case creation': [datetime(2025, 1, 15, 10, 5, 0)],
-            'Containment executed': [datetime(2025, 1, 15, 10, 30, 0)]
-        }
+    def test_calculate_execution_times_incomplete(self):
+        """Test execution time calculation with incomplete pairs"""
+        # Create test log with incomplete execution pairs
+        with open(self.test_log_path, 'w') as f:
+            f.write("[2025-05-08 10:00:00] STEP: Alert received\n")
+            f.write("[2025-05-08 10:01:30] STEP: Containment executed\n")
+            f.write("[2025-05-08 11:00:00] STEP: Alert received\n")  # Missing end
         
-        execution_times = calculate_execution_times(alert_steps)
-        self.assertEqual(execution_times, [])
+        parsed = parse_log_file(self.test_log_path)
+        times = calculate_execution_times(parsed)
+        self.assertEqual(len(times), 1)  # Only complete pairs should be calculated
 
-    def test_calculate_execution_times_no_containment(self):
-        """Test execution times calculation with no containment"""
-        alert_steps = {
-            'Alert received': [datetime(2025, 1, 15, 10, 0, 0)],
-            'Case creation': [datetime(2025, 1, 15, 10, 5, 0)]
-        }
+    def test_calculate_metrics_basic(self):
+        """Test basic metrics calculation"""
+        times = [90.0, 120.0, 150.0]
+        metrics = calculate_metrics(times)
         
-        execution_times = calculate_execution_times(alert_steps)
-        self.assertEqual(execution_times, [])
+        self.assertEqual(metrics['total_executions'], 3)
+        self.assertAlmostEqual(metrics['mean'], 120.0, places=1)
+        self.assertEqual(metrics['min'], 90.0)
+        self.assertEqual(metrics['max'], 150.0)
+        self.assertEqual(metrics['median'], 120.0)
 
-    def test_calculate_execution_times_mismatched_counts(self):
-        """Test execution times with mismatched alert/containment counts"""
-        alert_steps = {
-            'Alert received': [datetime(2025, 1, 15, 10, 0, 0), datetime(2025, 1, 15, 11, 0, 0)],
-            'Containment executed': [datetime(2025, 1, 15, 10, 30, 0)]  # Only one containment
-        }
-        
-        execution_times = calculate_execution_times(alert_steps)
-        # Should only calculate for matching pairs
-        self.assertEqual(len(execution_times), 1)
-        self.assertAlmostEqual(execution_times[0], 1800.0, places=1)  # 30 minutes = 1800 seconds
-
-    def test_calculate_metrics_valid_data(self):
-        """Test metrics calculation with valid data"""
-        execution_times = [30.0, 45.0, 60.0, 15.0, 90.0]  # in minutes
-        
-        metrics = calculate_metrics(execution_times)
-        
-        # Should be a dictionary
-        self.assertIsInstance(metrics, dict)
-        
-        # Should contain expected keys
-        expected_keys = [
-            "total_executions",
-            "mean",
-            "median",
-            "p50",
-            "p90",
-            "min",
-            "max",
-            "std_dev"
-        ]
-        
-        for key in expected_keys:
-            self.assertIn(key, metrics)
-
-    def test_calculate_metrics_data_types(self):
-        """Test metrics calculation data types"""
-        execution_times = [30.0, 45.0, 60.0]
-        
-        metrics = calculate_metrics(execution_times)
-        
-        # Check data types
-        self.assertIsInstance(metrics["total_executions"], int)
-        self.assertIsInstance(metrics["mean"], (int, float))
-        self.assertIsInstance(metrics["median"], (int, float))
-        self.assertIsInstance(metrics["p50"], (int, float))
-        self.assertIsInstance(metrics["p90"], (int, float))
-        self.assertIsInstance(metrics["min"], (int, float))
-        self.assertIsInstance(metrics["max"], (int, float))
-        self.assertIsInstance(metrics["std_dev"], (int, float))
-
-    def test_calculate_metrics_empty_data(self):
+    def test_calculate_metrics_empty(self):
         """Test metrics calculation with empty data"""
-        execution_times = []
+        metrics = calculate_metrics([])
         
-        metrics = calculate_metrics(execution_times)
-        
-        self.assertEqual(metrics["total_executions"], 0)
+        self.assertEqual(metrics['total_executions'], 0)
+        self.assertEqual(metrics['mean'], 0.0)
+        self.assertEqual(metrics['min'], 0.0)
+        self.assertEqual(metrics['max'], 0.0)
+        self.assertEqual(metrics['median'], 0.0)
 
-    def test_calculate_metrics_single_value(self):
-        """Test metrics calculation with single value"""
-        execution_times = [30.0]
+    def test_calculate_metrics_single(self):
+        """Test metrics calculation with single data point"""
+        times = [75.0]
+        metrics = calculate_metrics(times)
         
-        metrics = calculate_metrics(execution_times)
-        
-        self.assertEqual(metrics["total_executions"], 1)
-        self.assertEqual(metrics["mean"], 30.0)
-        self.assertEqual(metrics["median"], 30.0)
-        self.assertEqual(metrics["p50"], 30.0)
-        self.assertEqual(metrics["min"], 30.0)
-        self.assertEqual(metrics["max"], 30.0)
-        self.assertEqual(metrics["std_dev"], 0.0)
+        self.assertEqual(metrics['total_executions'], 1)
+        self.assertAlmostEqual(metrics['mean'], 75.0, places=1)
+        self.assertEqual(metrics['min'], 75.0)
+        self.assertEqual(metrics['max'], 75.0)
+        self.assertEqual(metrics['median'], 75.0)
 
-    def test_save_metrics_structure(self):
-        """Test save metrics to CSV file"""
+    def test_save_metrics(self):
+        """Test saving metrics to CSV"""
         metrics = {
-            "total_executions": 5,
-            "mean": 45.0,
-            "median": 40.0,
-            "p50": 40.0,
-            "p90": 80.0,
-            "min": 15.0,
-            "max": 90.0,
-            "std_dev": 25.0
+            'total_executions': 5,
+            'mean': 100.5,
+            'median': 95.0,
+            'min': 45.0,
+            'max': 180.0
         }
         
-        output_file = Path(self.temp_dir) / "test_metrics.csv"
+        csv_path = Path(self.test_results_path) / 'kpis.csv'
+        save_metrics(metrics, csv_path)
+        self.assertTrue(csv_path.exists())
         
-        save_metrics(metrics, output_file)
-        
-        # Check file was created
-        self.assertTrue(output_file.exists())
-        
-        # Check file content
-        with open(output_file, 'r') as f:
+        # Verify CSV content
+        with open(csv_path, 'r') as f:
             content = f.read()
-            self.assertIn("total_executions", content)
-            self.assertIn("5", content)
-        
-        os.remove(output_file)
+            self.assertIn('total_executions', content)
+            self.assertIn('mean', content)
+            self.assertIn('100.5', content)
 
-    def test_print_metrics_summary_valid(self):
-        """Test print metrics summary with valid data"""
+    def test_save_metrics_custom_path(self):
+        """Test saving metrics to custom path"""
+        metrics = {'total_executions': 3, 'mean': 85.0}
+        custom_path = Path(self.test_results_path) / 'custom_kpis.csv'
+        
+        save_metrics(metrics, custom_path)
+        self.assertTrue(custom_path.exists())
+
+    def test_print_metrics_summary(self):
+        """Test printing metrics summary"""
         metrics = {
-            "total_executions": 5,
-            "mean": 45.0,
-            "p50": 40.0,
-            "p90": 80.0,
-            "std_dev": 25.0
+            'total_executions': 10,
+            'mean': 95.5,
+            'median': 90.0,
+            'p50': 90.0,
+            'p90': 120.0,
+            'min': 30.0,
+            'max': 180.0,
+            'std_dev': 25.0
         }
         
-        # Should not raise exception
+        # This test just ensures function doesn't crash
         try:
             print_metrics_summary(metrics)
-        except Exception as e:
-            self.fail(f"print_metrics_summary raised exception: {e}")
+            function_executed = True
+        except Exception:
+            function_executed = False
+        
+        self.assertTrue(function_executed)
 
     def test_print_metrics_summary_empty(self):
-        """Test print metrics summary with empty data"""
-        metrics = {
-            "total_executions": 0
+        """Test printing metrics summary with empty metrics"""
+        empty_metrics = {
+            'total_executions': 0,
+            'mean': 0.0,
+            'median': 0.0,
+            'min': 0.0,
+            'max': 0.0
         }
         
-        # Should not raise exception
+        # This test just ensures function handles empty data gracefully
         try:
-            print_metrics_summary(metrics)
-        except Exception as e:
-            self.fail(f"print_metrics_summary raised exception: {e}")
-
-    def test_parse_log_file_multiple_same_steps(self):
-        """Test log file parsing with multiple occurrences of same step"""
-        multiple_log = os.path.join(self.temp_dir, "multiple.log")
-        log_content = [
-            "[2025-01-15 10:00:00] STEP: Alert received",
-            "[2025-01-15 10:05:00] STEP: Alert received",  # Second alert
-            "[2025-01-15 10:10:00] STEP: Case creation",
-            "[2025-01-15 10:15:00] STEP: Containment executed",
-            "[2025-01-15 10:20:00] STEP: Containment executed",  # Second containment
-        ]
+            print_metrics_summary(empty_metrics)
+            function_executed = True
+        except Exception:
+            function_executed = False
         
-        with open(multiple_log, 'w') as f:
-            for entry in log_content:
-                f.write(entry + '\n')
-        
-        alert_steps = parse_log_file(Path(multiple_log))
-        
-        # Should have multiple timestamps for steps that appear multiple times
-        self.assertEqual(len(alert_steps["Alert received"]), 2)
-        self.assertEqual(len(alert_steps["Containment executed"]), 2)
-        self.assertEqual(len(alert_steps["Case creation"]), 1)
-        
-        os.remove(multiple_log)
+        self.assertTrue(function_executed)
 
 
 if __name__ == '__main__':

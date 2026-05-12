@@ -2,7 +2,7 @@
 
 **Trabajo Fin de Máster (TFM) - Máster en Ciberseguridad**
 
-Este repositorio contiene la **Infraestructura como Código (IaC)** y los scripts necesarios para implementar un laboratorio **SOAR (Security Orchestration, Automation and Response)** especializado en la respuesta ante incidentes de ransomware. El laboratorio integra **TheHive**, **Cortex** y **Shuffle**, desplegados mediante **Docker**, con opciones de automatización mediante **Vagrant** y **Ansible**.
+Este repositorio contiene la **Infraestructura como Código (IaC)** completa y los scripts necesarios para implementar un laboratorio **SOAR (Security Orchestration, Automation and Response)** especializado en la respuesta ante incidentes de ransomware. El laboratorio integra múltiples herramientas de seguridad desplegadas mediante **Docker**, con suites de pruebas completas y automatización mediante **Makefile**.
 
 > ⚠️ **Advertencia**: Este laboratorio está diseñado exclusivamente para entornos de pruebas y formación académica. No se recomienda su uso en entornos de producción sin aplicar las guías oficiales y medidas de seguridad adicionales.
 
@@ -11,10 +11,11 @@ Este repositorio contiene la **Infraestructura como Código (IaC)** y los script
 ## 🎯 Objetivos del Laboratorio
 
 - Simular incidentes de ransomware en un entorno controlado y seguro
-- Automatizar la respuesta mediante **playbooks SOAR**
+- Automatizar la respuesta mediante **playbooks SOAR** con múltiples orquestadores
 - Reducir el Tiempo Medio de Respuesta (**MTTR**) y mejorar la trazabilidad
 - Proporcionar un entorno reproducible para pruebas y formación en ciberseguridad
 - Validar la eficacia de la orquestación automatizada en incidentes reales
+- Integrar herramientas de Threat Intelligence para análisis automatizado
 
 ---
 
@@ -27,78 +28,102 @@ flowchart LR
   TheHive -- Observables --> Cortex
   Cortex -- Analyzers --> TI[(Threat Intel)]
   Shuffle -- Responder/API --> EDR[(EDR/Defender for Endpoint)]
-  subgraph Core
-    Postgres[(PostgreSQL)]
-    Redis[(Redis)]
+  subgraph Monitoring
+    Prometheus[Prometheus]
+    Grafana[Grafana]
+    InfluxDB[InfluxDB]
+    Telegraf[Telegraf]
+  end
+  subgraph Threat Intelligence
+    MISP[MISP]
+    OpenCTI[OpenCTI]
+    Redis[Redis]
+  end
+  subgraph Storage
+    MinIO[MinIO]
+    NFS[NFS Server]
   end
   TheHive <--> Postgres
   Cortex <--> Redis
+  Shuffle <--> Elasticsearch
+  Prometheus --> Grafana
+  Telegraf --> InfluxDB
+  MISP --> Redis
+  OpenCTI --> Elasticsearch
 ```
 
-**Descripción de Componentes:**
-- **Shuffle**: Actúa como orquestador principal, recibiendo alertas y ejecutando el flujo automatizado
+**Componentes Principales:**
+- **Shuffle**: Orquestador principal, recibiendo alertas y ejecutando flujos automatizados
 - **TheHive**: Gestiona casos de incidentes y evidencias forenses
 - **Cortex**: Analiza Indicadores de Compromiso (IoCs) mediante analyzers especializados
-- **PostgreSQL** y **Redis**: Servicios de soporte para persistencia de datos y caché
+- **MISP**: Plataforma de Threat Intelligence para compartir IoCs
+- **OpenCTI**: Plataforma de Threat Intelligence moderna con análisis avanzado
+- **Prometheus/Grafana**: Stack de monitorización de métricas
+- **Elasticsearch**: Motor de búsqueda y análisis para logs
+- **MinIO**: Almacenamiento de objetos compatible S3
+- **PostgreSQL** y **Redis**: Servicios de soporte para persistencia y caché
 
 ---
 
-## 📁 Estructura del Repositorio (con EDT)
+## 📁 Estructura del Repositorio
 
 ```
-laboratorio_soar_ransomware/
-├── README.md                # Documentación principal del proyecto (EDT 8.x)
-├── LICENSE                  # Licencia del proyecto
-├── Makefile                 # Comandos rápidos: up/down/test/metrics (EDT 4.1, 7.4)
-├── docker/
-│   ├── docker-compose.yml   # Define stack SOAR: TheHive, Cortex, Shuffle, DB, Redis (EDT 4.1)
-│   └── .env.example         # Variables seguras: credenciales DB, tokens API (EDT 4.2)
-├── vagrant/                 # Automatización opcional con Vagrant (EDT 4.3)
-│   ├── Vagrantfile          # Configura VM Ubuntu y opcional Windows (EDT 4.3)
-│   └── provision.sh         # Script para instalar Docker y Compose (EDT 4.3)
-├── ansible/                 # Opcional para multi-host (EDT 4.4)
-│   ├── inventory.ini        # Hosts remotos (EDT 4.4)
-│   ├── playbook.yml         # Playbook para instalar Docker y desplegar Compose (EDT 4.4)
-│   └── roles/docker/tasks/main.yml # Tareas específicas (EDT 4.4)
-├── playbooks/
-│   └── shuffle/README.md    # Documentación del flujo E2E en Shuffle (EDT 6.x)
-├── scripts/
-│   ├── generate_iocs.py     # Genera IoCs para pruebas (EDT 6.1)
-│   ├── send_alert.py        # Simula alerta SIEM para disparar playbook (EDT 5.4)
-│   ├── isolate_host.sh      # Acción de contención simulada en Linux (EDT 6.4)
-│   ├── isolate_endpoint.ps1 # Acción de contención simulada en Windows (EDT 6.4)
-│   ├── notify.sh            # Notificación al equipo (EDT 6.5)
-│   ├── gen_certs.sh         # Genera TLS autofirmado (EDT 4.2)
-│   └── calc_kpis.py         # Calcula métricas MTTR y exporta CSV (EDT 7.4)
-├── schemas/
-│   └── alert.schema.json    # Esquema JSON para validar alertas (EDT 6.1)
-├── tests/                   # Suite de pruebas completa (ver [docs/tests.md](docs/tests.md))
-│   ├── unit/               # Pruebas unitarias
-│   ├── integration/        # Pruebas de integración
-│   ├── performance/        # Pruebas de rendimiento
-│   ├── security/           # Pruebas de seguridad
-│   └── e2e/               # Pruebas end-to-end
-│       ├── TC-01/         # Caso malicioso (EDT 7.1)
-│       ├── TC-02/         # Caso benigno (EDT 7.1)
-│       └── TC-03/         # Casos extremos y edge cases
-├── logs/
-│   └── notify.log           # Registro de pasos del playbook (EDT 6.5, 7.4)
-├── results/
-│   └── kpis.csv             # KPIs calculados (EDT 7.2, 7.4)
-└── docs/
-    ├── scope.md             # Definición del alcance del proyecto (EDT 1.1)
-    ├── objectives.md        # Objetivos SMART del TFM (EDT 1.2)
-    ├── plan.md              # Planificación y cronograma del proyecto (EDT 2.1)
-    ├── risks.md             # Análisis de riesgos técnicos y temporales (EDT 2.2)
-    ├── architecture.md      # Diseño arquitectónico del laboratorio (EDT 3.1)
-    ├── api.md               # Integraciones de APIs (reales vs simuladas) (EDT 3.3)
-    ├── technical.md         # Configuración técnica detallada (EDT 8.1)
-    ├── playbook_manual.md   # Manual del flujo en Shuffle (EDT 8.2)
-    ├── test_report.md       # Informe de pruebas y resultados (EDT 8.3)
-    ├── closure.md           # Lecciones aprendidas y cierre del proyecto (EDT 8.4)
-    ├── user_guide.md        # Guía de usuario completa (EDT 8.5)
-    ├── troubleshooting.md   # Guía de resolución de problemas (EDT 8.6)
-    └── security.md          # Checklist de seguridad (EDT 4.2)
+soar-ransomware-lab/
+├── README.md                    # Documentación principal del proyecto
+├── LICENSE                      # Licencia del proyecto
+├── Makefile                     # Comandos rápidos: up/down/test/metrics
+├── pyproject.toml               # Configuración de proyecto Python
+├── pytest.ini                  # Configuración de pytest
+├── requirements-test.txt         # Dependencias para testing
+├── .gitignore                  # Archivos ignorados por git
+├── .env.full                   # Variables de entorno completas
+├── CHANGELOG.md                # Historial de cambios
+├── CONTRIBUTING.md              # Guía de contribución
+├── apps/                       # Aplicaciones Docker
+│   ├── api/                   # API REST del proyecto
+│   ├── docs-site/              # Sitio de documentación
+│   └── web-management/         # Interfaz web de gestión
+├── infra/                      # Infraestructura como código
+│   ├── docker/                # Configuración Docker Compose
+│   │   ├── docker-compose.yml  # Stack completo SOAR
+│   │   └── nginx.conf         # Configuración reverse proxy
+│   ├── logging/               # Configuración ELK stack
+│   ├── monitoring/            # Configuración Prometheus/Grafana
+│   └── vagrant/              # Automatización opcional con Vagrant
+├── src/soar_lab/             # Código fuente principal
+│   ├── analytics/             # Módulos de análisis de datos
+│   ├── api/                   # API FastAPI
+│   ├── config/                # Configuración y esquemas
+│   ├── data/                  # Gestión de datos y KPIs
+│   ├── schemas/               # Esquemas de validación
+│   └── services/              # Servicios principales
+├── scripts/                    # Scripts de automatización
+│   ├── infra/                # Scripts de infraestructura
+│   ├── security/              # Scripts de seguridad
+│   ├── testing/               # Scripts de testing
+│   └── utils/                # Scripts de utilidad y migración
+├── tests/                      # Suite de pruebas completa
+│   ├── unit/                  # Pruebas unitarias
+│   ├── integration/           # Pruebas de integración
+│   ├── e2e/                  # Pruebas end-to-end
+│   ├── performance/           # Pruebas de rendimiento
+│   ├── security/              # Pruebas de seguridad
+│   ├── atomic/                # Pruebas atómicas
+│   ├── browser/               # Pruebas de navegador
+│   ├── fixtures/              # Datos de prueba y fixtures
+│   └── runners/               # Scripts de ejecución de pruebas
+├── docs/                       # Documentación completa
+│   ├── architecture/          # Documentación de arquitectura
+│   ├── operations/            # Guías operativas
+│   ├── references/            # Referencias y esquemas
+│   ├── security/              # Documentación de seguridad
+│   └── user-guide/            # Guía de usuario
+└── artifacts/                  # Artefactos generados
+    ├── backups/               # Copias de seguridad
+    ├── coverage/              # Reportes de cobertura
+    ├── debug/                 # Scripts de debug
+    ├── logs/                  # Logs de ejecución
+    └── results/               # Resultados de pruebas
 ```
 
 ---
@@ -158,10 +183,10 @@ Este proyecto incluye documentación académica completa estructurada según las
 1. **Configurar Variables de Entorno**:
    ```bash
    # Copiar plantilla de configuración
-   cp docker/.env.example docker/.env
+   cp infra/docker/.env.example infra/docker/.env
    
    # Editar configuración con credenciales seguras
-   nano docker/.env
+   nano infra/docker/.env
    ```
 
 2. **Generar Certificados TLS**:
@@ -252,7 +277,7 @@ make metrics
 make metrics-full
 
 # Ver resultados
-cat results/kpis.csv
+cat artifacts/results/kpis.csv
 ```
 
 ### Análisis de Datos
@@ -271,9 +296,9 @@ make data-watch
 ```
 
 ### Análisis de Resultados
-- Documentar resultados en `results/kpis.csv` y `docs/test_report.md`
+- Documentar resultados en `artifacts/results/kpis.csv` y `docs/test_report.md`
 - Verificar cumplimiento de umbrales: p50 ≤ 120s, p90 ≤ 180s
-- Analizar logs de ejecución en `logs/notify.log`
+- Analizar logs de ejecución en `artifacts/logs/notify.log`
 - Ver documentación completa de pruebas en **[docs/tests.md](docs/tests.md)**
 
 ---

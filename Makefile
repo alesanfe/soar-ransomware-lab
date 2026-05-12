@@ -1,25 +1,101 @@
 
-up:
-	docker compose -f docker/docker-compose.yml --env-file docker/.env up -d
+.PHONY: help install install-dev test lint format clean build run docker-build docker-run docker-stop down
 
-down:
-	docker compose -f docker/docker-compose.yml --env-file docker/.env down
+help:
+	@echo "SOAR Ransomware Lab - Available Commands:"
+	@echo "  install      Install production dependencies"
+	@echo "  install-dev  Install development dependencies"
+	@echo "  test         Run all tests"
+	@echo "  test-unit    Run unit tests only"
+	@echo "  test-int     Run integration tests only"
+	@echo "  test-e2e     Run E2E tests only"
+	@echo "  lint         Run linting checks"
+	@echo "  format       Format code with black and isort"
+	@echo "  clean        Clean all generated files"
+	@echo "  build        Build package"
+	@echo "  docker-build Build Docker images"
+	@echo "  docker-run   Run development environment"
+	@echo "  docker-stop  Stop development environment"
 
-restart:
-	docker compose -f docker/docker-compose.yml --env-file docker/.env restart
+install:
+	pip install -e .
 
-logs:
-	docker compose -f docker/docker-compose.yml --env-file docker/.env logs -f
+install-dev:
+	pip install -e ".[dev]"
 
-ps:
-	docker compose -f docker/docker-compose.yml --env-file docker/.env ps
+test:
+	pytest
+
+test-unit:
+	pytest tests/unit/
+
+test-int:
+	pytest tests/integration/
+
+test-e2e:
+	pytest tests/e2e/
+
+lint:
+	flake8 src/ tests/
+	mypy src/
+
+format:
+	black src/ tests/
+	isort src/ tests/
+
+clean:
+	find . -type d -name "__pycache__" -delete
+	find . -name "*.pyc" -delete
+	rm -rf .pytest_cache/
+	rm -rf artifacts/coverage/
+	rm -rf dist/
+	rm -rf build/
+	rm -rf *.egg-info/
+
+build:
+	python -m build
+
+docker-build:
+	docker build -t soar-lab-api -f apps/api/Dockerfile .
+
+docker-run:
+	docker-compose -f infra/docker/docker-compose.yml up -d
+
+docker-stop:
+	docker-compose -f infra/docker/docker-compose.yml down
+
+dev-setup: install-dev
+	pre-commit install
+	docker compose -f docker-compose.full.yml --env-file .env.full ps
 
 health:
-	@echo "Checking service health..."
+	@echo "Checking core service health..."
 	@curl -f http://localhost:9000/api/health && echo "TheHive: OK" || echo "TheHive: FAILED"
 	@curl -f http://localhost:9001/api/health && echo "Cortex: OK" || echo "Cortex: FAILED"
 	@curl -f http://localhost:5001/health && echo "Shuffle: OK" || echo "Shuffle: FAILED"
 	@curl -f http://localhost:19200/_cluster/health && echo "Elasticsearch: OK" || echo "Elasticsearch: FAILED"
+
+health-full:
+	@echo "Checking full stack health..."
+	@echo "=== Core SOAR Services ==="
+	@curl -f http://localhost:9000/api/health && echo "✅ TheHive: OK" || echo "❌ TheHive: FAILED"
+	@curl -f http://localhost:9001/api/health && echo "✅ Cortex: OK" || echo "❌ Cortex: FAILED"
+	@curl -f http://localhost:5001/health && echo "✅ Shuffle: OK" || echo "❌ Shuffle: FAILED"
+	@curl -f http://localhost:19200/_cluster/health && echo "✅ Elasticsearch: OK" || echo "❌ Elasticsearch: FAILED"
+	@echo "=== Monitoring Stack ==="
+	@curl -f http://localhost:9090/-/healthy && echo "✅ Prometheus: OK" || echo "❌ Prometheus: FAILED"
+	@curl -f http://localhost:3000/api/health && echo "✅ Grafana: OK" || echo "❌ Grafana: FAILED"
+	@curl -f http://localhost:8086/ping && echo "✅ InfluxDB: OK" || echo "❌ InfluxDB: FAILED"
+	@echo "=== Threat Intelligence ==="
+	@curl -f http://localhost:8082/users/login && echo "✅ MISP: OK" || echo "❌ MISP: FAILED"
+	@curl -f http://localhost:8083/health && echo "✅ OpenCTI: OK" || echo "❌ OpenCTI: FAILED"
+	@curl -f http://localhost:6379 && echo "✅ Redis: OK" || echo "❌ Redis: FAILED"
+	@echo "=== Storage Services ==="
+	@curl -f http://localhost:9000/minio/health/live && echo "✅ MinIO: OK" || echo "❌ MinIO: FAILED"
+	@echo "=== Management Services ==="
+	@curl -f http://localhost:8080/health && echo "✅ Web UI: OK" || echo "❌ Web UI: FAILED"
+	@curl -f http://localhost:8000/health && echo "✅ API: OK" || echo "❌ API: FAILED"
+	@curl -f http://localhost:3000 && echo "✅ Docs Site: OK" || echo "❌ Docs Site: FAILED"
 
 test:
 	python3 scripts/send_alert.py
@@ -48,14 +124,73 @@ backup:
 restore:
 	@echo "Usage: make restore BACKUP=<backup_name>"
 	@echo "Available backups:"
-	@ls -1 backups/ | grep -E "_manifest.txt$" | sed 's/_manifest.txt//' || echo "No backups found"
+	@ls -1 artifacts/backups/ | grep -E "_manifest.txt$" | sed 's/_manifest.txt//' || echo "No backups found"
 
 clean:
 	docker compose -f docker/docker-compose.yml --env-file docker/.env down -v
 
+clean-full:
+	docker compose -f docker-compose.full.yml --env-file .env.full down -v
+
 clean-all:
 	docker compose -f docker/docker-compose.yml --env-file docker/.env down -v --remove-orphans
 	docker system prune -f
+
+clean-all-full:
+	docker compose -f docker-compose.yml --env-file .env.full down -v --remove-orphans
+	docker system prune -f
+
+clean-generated:
+	@echo "🧹 Cleaning generated files and artifacts..."
+	@echo "Removing Python cache files..."
+	find . -name "__pycache__" -type d -exec rm -rf {} +
+	@echo "Removing Python bytecode files..."
+	find . -name "*.pyc" -delete
+	@echo "Removing coverage files..."
+	rm -f coverage.xml .coverage
+	rm -rf coverage_annotate/ htmlcov/
+	@echo "Removing test result files..."
+	rm -f test_results_unit.txt unit_test_results.txt
+	@echo "Removing pytest cache..."
+	rm -rf .pytest_cache/
+	@echo "Removing temporary logs and results..."
+	rm -rf artifacts/logs/ artifacts/results/ scripts/logs/ scripts/results/
+	@echo "✅ Generated files cleanup completed"
+
+clean-docker:
+	@echo "🐳 Cleaning Docker artifacts..."
+	docker system prune -af
+	docker volume prune -f
+	@echo "✅ Docker cleanup completed"
+
+clean-all: clean-generated clean-docker
+	@echo "🧹 Full project cleanup completed"
+
+clean-generated:
+	@echo "🧹 Cleaning generated files and artifacts..."
+	@echo "Removing Python cache files..."
+	find . -name "__pycache__" -type d -exec rm -rf {} +
+	@echo "Removing Python bytecode files..."
+	find . -name "*.pyc" -delete
+	@echo "Removing coverage files..."
+	rm -f coverage.xml .coverage
+	rm -rf coverage_annotate/ htmlcov/
+	@echo "Removing test result files..."
+	rm -f test_results_unit.txt unit_test_results.txt
+	@echo "Removing pytest cache..."
+	rm -rf .pytest_cache/
+	@echo "Removing temporary logs and results..."
+	rm -rf artifacts/logs/ artifacts/results/ scripts/logs/ scripts/results/
+	@echo "✅ Generated files cleanup completed"
+
+clean-docker:
+	@echo "🐳 Cleaning Docker artifacts..."
+	docker system prune -af
+	docker volume prune -f
+	@echo "✅ Docker cleanup completed"
+
+clean-all: clean-generated clean-docker
+	@echo "🧹 Full project cleanup completed"
 
 certs:
 	bash scripts/gen_certs.sh
@@ -135,13 +270,22 @@ test-coverage:
 help:
 	@echo "SOAR Ransomware Lab - Makefile Commands"
 	@echo ""
-	@echo "Service Management:"
-	@echo "  make up          - Start all services"
-	@echo "  make down        - Stop all services"
-	@echo "  make restart     - Restart all services"
-	@echo "  make logs        - View service logs"
-	@echo "  make ps          - Show service status"
-	@echo "  make health      - Check service health"
+	@echo "=== Service Management ==="
+	@echo "Core Stack:"
+	@echo "  make up          - Start core services"
+	@echo "  make down        - Stop core services"
+	@echo "  make restart     - Restart core services"
+	@echo "  make logs        - View core service logs"
+	@echo "  make ps          - Show core service status"
+	@echo "  make health      - Check core service health"
+	@echo ""
+	@echo "Full Stack:"
+	@echo "  make up-full     - Start full SOAR/TI stack"
+	@echo "  make down-full   - Stop full stack"
+	@echo "  make restart-full - Restart full stack"
+	@echo "  make logs-full   - View full stack logs"
+	@echo "  make ps-full     - Show full stack status"
+	@echo "  make health-full - Check full stack health"
 	@echo ""
 	@echo "Testing (Functional):"
 	@echo "  make test        - Run single test alert"
@@ -190,3 +334,7 @@ help:
 	@echo ""
 	@echo "Other:"
 	@echo "  make help        - Show this help message"
+
+down:
+	docker-compose down -v --remove-orphans
+	@echo "All services stopped and volumes removed"

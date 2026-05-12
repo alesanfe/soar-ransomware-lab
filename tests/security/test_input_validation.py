@@ -4,22 +4,22 @@ Security tests for input validation
 Tests security aspects of input handling and validation
 """
 
-import unittest
-import json
-import requests
-import re
 import html
+import json
+import os
+import re
+import requests
+import sys
 import time
+import unittest
 from datetime import datetime, timezone
 from pathlib import Path
-import sys
-import os
 
-# Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 
-from config.settings import get_setting
-from config.schemas import validate_alert_data, RansomwareAlert
+from soar_lab.config.settings import get_setting
+from soar_lab.config.schemas import validate_alert_data, RansomwareAlert
 
 
 class TestInputValidation(unittest.TestCase):

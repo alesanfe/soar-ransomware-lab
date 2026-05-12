@@ -10,15 +10,15 @@ SOAR Ransomware Lab - E2E Test Case 03 (Edge Cases)
 Tests edge cases and boundary conditions for SOAR workflow
 """
 
-import unittest
 import json
-import time
+import os
 import requests
 import subprocess
+import sys
+import time
+import unittest
 from datetime import datetime, timezone
 from pathlib import Path
-import sys
-import os
 
 # Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))

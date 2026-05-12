@@ -4,15 +4,15 @@ SOAR Ransomware Lab - Atomic Tests for Schema Validation
 Tests individual schema validation functions in isolation
 """
 
-import unittest
 import json
 import sys
+import unittest
 from pathlib import Path
 
-# Add config directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'config'))
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 
-from schemas import (
+from soar_lab.config.schemas import (
     RansomwareAlert,
     NetworkEvent,
     FileHash,

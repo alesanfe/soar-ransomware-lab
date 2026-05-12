@@ -4,19 +4,20 @@ SOAR Ransomware Lab - Stress Testing Tests
 Stress and load testing for SOAR components under extreme conditions
 """
 
-import unittest
-import asyncio
 import aiohttp
-import time
-import statistics
+import asyncio
+import gc
+import json
+import logging
 import psutil
+import statistics
 import threading
+import time
+import unittest
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-import json
-import logging
-import gc
+
 try:
     import resource
 except ImportError:
