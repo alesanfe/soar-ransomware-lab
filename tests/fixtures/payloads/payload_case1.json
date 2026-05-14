@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Malicious Ransomware Alert",
+  "description": "Example payload for a malicious ransomware detection alert",
+  "alert_id": "ALERT-2025-001234",
+  "hostname": "WIN-001",
+  "src_ip": "185.220.101.182",
+  "hash": "44d88612fea8a8f36de82e1278abb02f",
+  "severity": 3,
+  "source": "siem-ransomware-detection",
+  "detection_time": "2025-05-03T18:42:15Z",
+  "event_type": "ransomware_detection",
+  "description": "Ransomware activity detected on WIN-001 - suspicious file encryption patterns observed",
+  "affected_files": [
+    "C:\\Users\\Documents\\important.docx",
+    "C:\\Data\\financial.xlsx",
+    "C:\\Backup\\database.sql"
+  ],
+  "mitre_tactics": ["TA0040"],
+  "mitre_techniques": ["T1486"],
+  "user_account": "johndoe",
+  "process_name": "ransomware.exe",
+  "command_line": "C:\\Windows\\Temp\\ransomware.exe -encrypt -path C:\\Users",
+  "parent_process": "explorer.exe",
+  "file_size": 2048576,
+  "file_path": "C:\\Windows\\Temp\\ransomware.exe",
+  "network_connections": [
+    {
+      "dst_ip": "185.220.101.182",
+      "dst_port": 443,
+      "protocol": "tcp",
+      "bytes_sent": 1024,
+      "bytes_received": 2048
+    }
+  ],
+  "registry_changes": [
+    "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\ransomware"
+  ],
+  "detection_rules": [
+    "Suspicious File Encryption Pattern",
+    "Known Malicious Hash",
+    "C2 Communication Detected"
+  ],
+  "confidence": 95,
+  "impact_assessment": {
+    "data_affected": "High",
+    "systems_affected": 1,
+    "business_impact": "High",
+    "recovery_time_estimate": "4-8 hours"
+  }
+}

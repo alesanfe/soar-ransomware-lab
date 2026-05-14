@@ -1,16 +1,5 @@
 # SOAR Ransomware Lab - User Guide
 
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Installation](#installation)
-3. [Quick Start](#quick-start)
-4. [Core Features](#core-features)
-5. [Configuration](#configuration)
-6. [Security Considerations](#security-considerations)
-7. [Troubleshooting](#troubleshooting)
-8. [Advanced Usage](#advanced-usage)
-
 ## Overview
 
 SOAR Ransomware Lab is a comprehensive security orchestration, automation and response platform designed for ransomware incident handling. This guide will help you get started with the platform and understand its key features.
@@ -33,29 +22,58 @@ SOAR Ransomware Lab is a comprehensive security orchestration, automation and re
    cd soar-ransomware-lab
    ```
 
-2. Copy the environment configuration:
+2. Review and edit environment configuration:
    ```bash
-   cp docker/.env.example .env
+   nano .env.full
    ```
 
-3. Start the services:
+3. Start the full stack:
    ```bash
-   docker-compose up -d
+   make up
    ```
 
-4. Verify installation:
+4. Verify all services are healthy:
    ```bash
-   python -m pytest tests/integration/test_configuration.py
+   docker ps --format "table {{.Names}}\t{{.Status}}"
    ```
 
 ## Quick Start
 
+### Service Access URLs
+
+| Service | URL | Purpose |
+|---|---|---|
+| **Web Management UI** | http://localhost | Main management dashboard |
+| **Nginx Proxy** | http://localhost:8080 | Unified reverse proxy to all services |
+| **TheHive** | http://localhost:9000 | Incident case management |
+| **Cortex** | http://localhost:9001 | IoC analysis and enrichment |
+| **Shuffle UI** | http://localhost:3001 | SOAR orchestration workflows |
+| **Shuffle API** | http://localhost:5001 | Shuffle REST API |
+| **Kibana** | http://localhost:15601 | Log visualization and dashboards |
+| **MISP** | http://localhost:8082 | Threat intelligence platform |
+| **Lab API** | http://localhost:8000 | Lab management REST API |
+| **Documentation** | http://localhost:3000/docs/ | Project documentation site |
+
+### Via Nginx Proxy (port 8080)
+
+All services are also accessible through the Nginx reverse proxy:
+
+| Path | Proxies to |
+|---|---|
+| http://localhost:8080/thehive/ | TheHive |
+| http://localhost:8080/cortex/ | Cortex |
+| http://localhost:8080/shuffle/ | Shuffle UI |
+| http://localhost:8080/kibana/ | Kibana |
+| http://localhost:8080/api/ | Lab API |
+| http://localhost:8080/misp/ | MISP |
+| http://localhost:8080/docs/ | Documentation |
+
 ### First Time Setup
 
-1. Access the web management interface at `http://localhost:9000`
-2. Log in with default credentials (admin/admin123)
-3. Configure your first alert source
-4. Create a test alert to verify functionality
+1. Access TheHive at `http://localhost:9000` — default admin credentials in `.env.full`
+2. Access Kibana at `http://localhost:15601` — configure index patterns for Wazuh logs
+3. Access Shuffle at `http://localhost:3001` — import or create response playbooks
+4. Access MISP at `http://localhost:8082` — configure threat intelligence feeds
 
 ### Basic Workflow
 
@@ -98,29 +116,39 @@ SOAR Ransomware Lab is a comprehensive security orchestration, automation and re
 
 ### Environment Variables
 
-Key configuration options in `.env`:
+All configuration lives in `.env.full` at the project root:
 
 ```bash
 # Service Ports
 THEHIVE_HTTP_PORT=9000
 CORTEX_HTTP_PORT=9001
+SHUFFLE_UI_PORT=3001
+SHUFFLE_API_PORT=5001
+WAZUH_DASHBOARD_PORT=15601   # Kibana
+ELASTICSEARCH_PORT=9201      # Internal only on Docker Desktop/Windows
 REDIS_PORT=6379
+DOCS_PORT=3000
+API_PORT=8000
+HTTP_PORT=80
+HTTPS_PORT=443
+WEB_UI_PORT=8080
 
-# Authentication
-WEB_UI_USER=admin
-WEB_UI_PASSWORD=admin123
+# Wazuh
+WAZUH_EVENTS_PORT=1514
 
-# Database
-POSTGRES_DB=soar_lab
-POSTGRES_USER=soar_user
-POSTGRES_PASSWORD=secure_password
+# Credentials (change before deploying!)
+ELASTIC_PASSWORD=...
+SHUFFLE_DEFAULT_PASSWORD=...
+THEHIVE_SECRET=...
 ```
 
-### Service Configuration
+### Service Configuration Files
 
-- **TheHive**: `infra/docker/docker/thehive.application.conf/thehive.conf`
-- **Cortex**: `infra/docker/docker/cortex.application.conf/cortex.conf`
-- **Elasticsearch**: Configured via environment variables
+- **Nginx**: `infra/docker/nginx.conf`
+- **Cortex**: `infra/docker/docker/cortex.application.conf`
+- **TheHive**: configured via environment variables
+- **Kibana**: configured via environment variables in `docker-compose.yml`
+- **Elasticsearch**: configured via environment variables
 
 ### Custom Integrations
 
@@ -163,19 +191,28 @@ Add new integrations by:
 #### Services Won't Start
 
 ```bash
-# Check Docker status
-docker-compose ps
+# Check status of all containers
+docker ps --format "table {{.Names}}\t{{.Status}}"
 
-# View service logs
-docker-compose logs thehive
-docker-compose logs cortex
+# View logs for a specific service
+docker logs soar_thehive --tail 50
+docker logs soar_elasticsearch --tail 50
+
+# Restart the full stack
+make down && make up
 ```
 
-#### Database Connection Errors
+#### Port Already Allocated (Windows/Docker Desktop)
 
-1. Verify PostgreSQL is running
-2. Check connection string in `.env`
-3. Restart services: `docker-compose restart`
+Some ports may be reserved by Hyper-V on Windows. Check excluded ranges:
+```powershell
+netsh int ipv4 show excludedportrange protocol=tcp
+```
+If a port is in an excluded range, change it in `.env.full` and re-run `make up`.
+
+#### Elasticsearch Not Accessible from Host (Windows)
+
+This is a known Docker Desktop bug on Windows with custom networks. Elasticsearch is only accessible internally. All services that need it (Kibana, Shuffle, TheHive) connect through the Docker network and work correctly.
 
 #### Performance Issues
 
@@ -302,6 +339,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Last Updated**: $(date '+%Y-%m-%d')
-**Version**: 1.0.0
+**Last Updated**: 2026-05-14
+**Version**: 1.4.0
 **Maintainers**: SOAR Ransomware Lab Team

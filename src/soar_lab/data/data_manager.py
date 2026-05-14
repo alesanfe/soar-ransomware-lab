@@ -1,0 +1,563 @@
+#!/usr/bin/env python3
+"""
+SOAR Ransomware Lab - Centralized Data Manager
+Provides centralized data management operations for the SOAR environment
+"""
+
+import hashlib
+import json
+import logging
+import os
+import sqlite3
+import threading
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class DataManager:
+    """Centralized data manager for SOAR operations"""
+    
+    def __init__(self, db_path: str = "data/soar_data.db"):
+        """Initialize the data manager"""
+        self.db_path = Path(db_path)
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.lock = threading.Lock()
+        self._init_database()
+    
+    def _init_database(self):
+        """Initialize the SQLite database"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # Create tables
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    alert_id TEXT UNIQUE NOT NULL,
+                    alert_type TEXT NOT NULL,
+                    severity TEXT NOT NULL,
+                    hostname TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    data TEXT,
+                    status TEXT DEFAULT 'new',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS cases (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    case_id TEXT UNIQUE NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    severity TEXT NOT NULL,
+                    status TEXT DEFAULT 'open',
+                    alert_id TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (alert_id) REFERENCES alerts (alert_id)
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS metrics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    metric_name TEXT NOT NULL,
+                    metric_value REAL NOT NULL,
+                    unit TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    source TEXT,
+                    tags TEXT
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS backups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    backup_name TEXT UNIQUE NOT NULL,
+                    backup_type TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    file_path TEXT,
+                    size_bytes INTEGER,
+                    checksum TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    completed_at DATETIME
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS test_results (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    test_category TEXT NOT NULL,
+                    test_name TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    duration_seconds REAL,
+                    coverage_percent REAL,
+                    passed INTEGER DEFAULT 0,
+                    failed INTEGER DEFAULT 0,
+                    skipped INTEGER DEFAULT 0,
+                    errors INTEGER DEFAULT 0,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS iocs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ioc_type TEXT NOT NULL,
+                    ioc_value TEXT NOT NULL,
+                    severity TEXT,
+                    source TEXT,
+                    confidence INTEGER DEFAULT 50,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            conn.commit()
+            logger.info("Database initialized successfully")
+    
+    def store_alert(self, alert_data: Dict[str, Any]) -> str:
+        """Store an alert in the database"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO alerts (alert_id, alert_type, severity, hostname, timestamp, data, status)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
+                ''', (
+                    alert_data.get('alert_id'),
+                    alert_data.get('alert_type'),
+                    alert_data.get('severity'),
+                    alert_data.get('hostname'),
+                    json.dumps(alert_data.get('data', {})),
+                    alert_data.get('status', 'new')
+                ))
+                conn.commit()
+                alert_id = alert_data.get('alert_id')
+                logger.info(f"Stored alert: {alert_id}")
+                return alert_id
+    
+    def get_alert(self, alert_id: str) -> Dict[str, Any]:
+        """Retrieve a single alert by ID"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM alerts WHERE alert_id = ?', (alert_id,))
+            row = cursor.fetchone()
+            
+            if row:
+                try:
+                    data = json.loads(row[5]) if row[5] else {}
+                except (json.JSONDecodeError, TypeError):
+                    data = {'raw_data': row[5]} if row[5] else {}
+                
+                return {
+                    'id': row[0],
+                    'alert_id': row[1],
+                    'alert_type': row[2],
+                    'severity': row[3],
+                    'hostname': row[4],
+                    'data': data,
+                    'status': row[7],
+                    'created_at': row[8]
+                }
+            return None
+    
+    def update_alert_status(self, alert_id: str, status: str) -> bool:
+        """Update alert status"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('UPDATE alerts SET status = ? WHERE alert_id = ?', (status, alert_id))
+                conn.commit()
+                return cursor.rowcount > 0
+    
+    def get_alerts_by_type(self, alert_type: str) -> List[Dict[str, Any]]:
+        """Retrieve alerts by type"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM alerts WHERE alert_type = ? ORDER BY timestamp DESC', (alert_type,))
+            
+            results = []
+            for row in cursor.fetchall():
+                try:
+                    data = json.loads(row[5]) if row[5] else {}
+                except (json.JSONDecodeError, TypeError):
+                    data = {'raw_data': row[5]} if row[5] else {}
+                
+                results.append({
+                    'id': row[0],
+                    'alert_id': row[1],
+                    'alert_type': row[2],
+                    'severity': row[3],
+                    'hostname': row[4],
+                    'data': data,
+                    'status': row[7],
+                    'created_at': row[8]
+                })
+            return results
+    
+    def get_alerts_by_severity(self, severity: str) -> List[Dict[str, Any]]:
+        """Retrieve alerts by severity"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM alerts WHERE severity = ? ORDER BY timestamp DESC', (severity,))
+            
+            results = []
+            for row in cursor.fetchall():
+                try:
+                    data = json.loads(row[5]) if row[5] else {}
+                except (json.JSONDecodeError, TypeError):
+                    data = {'raw_data': row[5]} if row[5] else {}
+                
+                results.append({
+                    'id': row[0],
+                    'alert_id': row[1],
+                    'alert_type': row[2],
+                    'severity': row[3],
+                    'hostname': row[4],
+                    'data': data,
+                    'status': row[7],
+                    'created_at': row[8]
+                })
+            return results
+    
+    def store_ioc(self, ioc_data: Dict[str, Any]) -> str:
+        """Store an IOC in the database"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO iocs (ioc_type, ioc_value, source, confidence)
+                    VALUES (?, ?, ?, ?)
+                ''', (
+                    ioc_data.get('ioc_type'),
+                    ioc_data.get('ioc_value'),
+                    ioc_data.get('source'),
+                    ioc_data.get('confidence')
+                ))
+                conn.commit()
+                logger.info(f"Stored IOC: {ioc_data.get('ioc_type')}")
+                return ioc_data.get('ioc_value')
+    
+    def get_iocs_by_type(self, ioc_type: str) -> List[Dict[str, Any]]:
+        """Retrieve IOCs by type"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM iocs WHERE ioc_type = ? ORDER BY created_at DESC', (ioc_type,))
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'id': row[0],
+                    'ioc_type': row[1],
+                    'ioc_value': row[2],
+                    'source': row[3],
+                    'confidence': row[4],
+                    'created_at': row[5]
+                })
+            return results
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get system statistics"""
+        return self.get_system_stats()
+    
+    def update_alert_status(self, alert_id: str, status: str) -> bool:
+        """Update alert status"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE alerts SET status = ? WHERE alert_id = ?
+                ''', (status, alert_id))
+                conn.commit()
+                return cursor.rowcount > 0
+    
+    def store_case(self, case_data: Dict[str, Any]) -> str:
+        """Store a case in the database"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO cases (case_id, title, description, severity, alert_id)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (
+                    case_data.get('case_id'),
+                    case_data.get('title'),
+                    case_data.get('description'),
+                    case_data.get('severity'),
+                    case_data.get('alert_id')
+                ))
+                conn.commit()
+                logger.info(f"Stored case: {case_data.get('case_id')}")
+                return case_data.get('case_id')
+    
+    def store_metric(self, metric_name: str, value: float, unit: str = None, 
+                   source: str = None, tags: Dict[str, str] = None):
+        """Store a metric in the database"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO metrics (metric_name, metric_value, unit, timestamp, source, tags)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    metric_name,
+                    value,
+                    unit,
+                    datetime.now(),
+                    source,
+                    json.dumps(tags) if tags else None
+                ))
+                conn.commit()
+    
+    def get_metrics(self, metric_name: str = None, hours: int = 24) -> List[Dict[str, Any]]:
+        """Retrieve metrics from the database"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            if metric_name:
+                cursor.execute('''
+                    SELECT * FROM metrics 
+                    WHERE metric_name = ? AND timestamp > datetime('now', '-{} hours')
+                    ORDER BY timestamp DESC
+                '''.format(hours), (metric_name,))
+            else:
+                cursor.execute('''
+                    SELECT * FROM metrics 
+                    WHERE timestamp > datetime('now', '-{} hours')
+                    ORDER BY timestamp DESC
+                '''.format(hours))
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'id': row[0],
+                    'metric_name': row[1],
+                    'metric_value': row[2],
+                    'unit': row[3],
+                    'timestamp': row[4],
+                    'source': row[5],
+                    'tags': json.loads(row[6]) if row[6] else {}
+                })
+            return results
+    
+    def store_backup_info(self, backup_data: Dict[str, Any]) -> str:
+        """Store backup information"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO backups (backup_name, backup_type, status, file_path, size_bytes, checksum)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    backup_data.get('backup_name'),
+                    backup_data.get('backup_type'),
+                    backup_data.get('status', 'pending'),
+                    backup_data.get('file_path'),
+                    backup_data.get('size_bytes'),
+                    backup_data.get('checksum')
+                ))
+                conn.commit()
+                logger.info(f"Stored backup info: {backup_data.get('backup_name')}")
+                return backup_data.get('backup_name')
+    
+    def update_backup_status(self, backup_name: str, status: str, file_path: str = None, 
+                           size_bytes: int = None, checksum: str = None):
+        """Update backup status"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                updates = ['status = ?', 'completed_at = CURRENT_TIMESTAMP']
+                params = [status]
+                
+                if file_path:
+                    updates.append('file_path = ?')
+                    params.append(file_path)
+                
+                if size_bytes:
+                    updates.append('size_bytes = ?')
+                    params.append(size_bytes)
+                
+                if checksum:
+                    updates.append('checksum = ?')
+                    params.append(checksum)
+                
+                params.append(backup_name)
+                
+                cursor.execute(f'''
+                    UPDATE backups SET {', '.join(updates)} WHERE backup_name = ?
+                ''', params)
+                conn.commit()
+    
+    def store_test_results(self, test_data: Dict[str, Any]):
+        """Store test results"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO test_results 
+                    (test_category, test_name, status, duration_seconds, coverage_percent, 
+                     passed, failed, skipped, errors)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    test_data.get('test_category'),
+                    test_data.get('test_name'),
+                    test_data.get('status'),
+                    test_data.get('duration_seconds'),
+                    test_data.get('coverage_percent'),
+                    test_data.get('passed', 0),
+                    test_data.get('failed', 0),
+                    test_data.get('skipped', 0),
+                    test_data.get('errors', 0)
+                ))
+                conn.commit()
+                logger.info(f"Stored test results: {test_data.get('test_name')}")
+    
+    def get_test_results(self, category: str = None, hours: int = 24) -> List[Dict[str, Any]]:
+        """Retrieve test results"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            if category:
+                cursor.execute('''
+                    SELECT * FROM test_results 
+                    WHERE test_category = ? AND timestamp > datetime('now', '-{} hours')
+                    ORDER BY timestamp DESC
+                '''.format(hours), (category,))
+            else:
+                cursor.execute('''
+                    SELECT * FROM test_results 
+                    WHERE timestamp > datetime('now', '-{} hours')
+                    ORDER BY timestamp DESC
+                '''.format(hours))
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'id': row[0],
+                    'test_category': row[1],
+                    'test_name': row[2],
+                    'status': row[3],
+                    'duration_seconds': row[4],
+                    'coverage_percent': row[5],
+                    'passed': row[6],
+                    'failed': row[7],
+                    'skipped': row[8],
+                    'errors': row[9],
+                    'timestamp': row[10]
+                })
+            return results
+    
+    def calculate_file_checksum(self, file_path: str) -> str:
+        """Calculate SHA-256 checksum of a file"""
+        sha256_hash = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(chunk)
+        return sha256_hash.hexdigest()
+    
+    def get_system_stats(self) -> Dict[str, Any]:
+        """Get system statistics"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # Alert stats
+            cursor.execute('SELECT COUNT(*) FROM alerts')
+            total_alerts = cursor.fetchone()[0]
+            
+            cursor.execute('SELECT COUNT(*) FROM alerts WHERE status = "new"')
+            new_alerts = cursor.fetchone()[0]
+            
+            # Case stats
+            cursor.execute('SELECT COUNT(*) FROM cases')
+            total_cases = cursor.fetchone()[0]
+            
+            cursor.execute('SELECT COUNT(*) FROM cases WHERE status = "open"')
+            open_cases = cursor.fetchone()[0]
+            
+            # Backup stats
+            cursor.execute('SELECT COUNT(*) FROM backups WHERE status = "completed"')
+            completed_backups = cursor.fetchone()[0]
+            
+            # Test stats
+            cursor.execute('''
+                SELECT AVG(coverage_percent) FROM test_results 
+                WHERE timestamp > datetime('now', '-24 hours')
+            ''')
+            avg_coverage = cursor.fetchone()[0] or 0
+            
+            return {
+                'alerts': {
+                    'total': total_alerts,
+                    'new': new_alerts
+                },
+                'cases': {
+                    'total': total_cases,
+                    'open': open_cases
+                },
+                'backups': {
+                    'completed': completed_backups
+                },
+                'tests': {
+                    'avg_coverage_24h': round(avg_coverage, 2)
+                },
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+    
+    def cleanup_old_data(self, days: int = 30):
+        """Clean up old data from the database"""
+        with self.lock:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Clean old metrics
+                cursor.execute('''
+                    DELETE FROM metrics 
+                    WHERE timestamp < datetime('now', '-{} days')
+                '''.format(days))
+                
+                # Clean old test results
+                cursor.execute('''
+                    DELETE FROM test_results 
+                    WHERE timestamp < datetime('now', '-{} days')
+                '''.format(days))
+                
+                conn.commit()
+                logger.info(f"Cleaned up data older than {days} days")
+    
+    def close(self):
+        """Close database connections and cleanup"""
+        # Force garbage collection to close any open connections
+        import gc
+        gc.collect()
+
+def main():
+    """Main function for standalone execution"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='SOAR Data Manager')
+    parser.add_argument('--init', action='store_true', help='Initialize database')
+    parser.add_argument('--stats', action='store_true', help='Show system statistics')
+    parser.add_argument('--cleanup', type=int, metavar='DAYS', help='Clean up data older than DAYS')
+    parser.add_argument('--db-path', default='data/soar_data.db', help='Database path')
+    
+    args = parser.parse_args()
+    
+    dm = DataManager(args.db_path)
+    
+    if args.init:
+        print("Database initialized successfully")
+    
+    if args.stats:
+        stats = dm.get_system_stats()
+        print(json.dumps(stats, indent=2))
+    
+    if args.cleanup:
+        dm.cleanup_old_data(args.cleanup)
+        print(f"Cleaned up data older than {args.cleanup} days")
+
+if __name__ == '__main__':
+    main()

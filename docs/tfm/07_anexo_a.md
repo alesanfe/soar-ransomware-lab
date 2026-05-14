@@ -173,8 +173,8 @@ services:
       SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY:-changeme-api-key}
       DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.44}
     volumes:
-      - shuffle_apps:/shuffle-apps
-      - shuffle_files:/shuffle-files
+      - shuffle_app_storage:/shuffle-apps
+      - shuffle_file_storage:/shuffle-files
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "${SHUFFLE_API_PORT:-5001}:5001"
@@ -286,8 +286,8 @@ volumes:
   es_data:
   thehive_files:
   cortex_data:
-  shuffle_apps:
-  shuffle_files:
+  shuffle_app_storage:
+  shuffle_file_storage:
   nginx_logs:
   certs:
 

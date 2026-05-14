@@ -1,0 +1,273 @@
+name: Docker Ports Testing CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'tests/integration/test_docker_ports_*.py'
+      - 'tests/browser/test_docker_ports_*.py'
+      - 'infra/docker/docker-compose*.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'tests/integration/test_docker_ports_*.py'
+      - 'tests/browser/test_docker_ports_*.py'
+      - 'infra/docker/docker-compose*.yml'
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of tests to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - internal
+          - external
+          - selenium
+      services:
+        description: 'Services to start'
+        required: false
+        default: 'core'
+        type: choice
+        options:
+          - core
+          - extended
+          - full
+
+env:
+  COMPOSE_PROJECT_NAME: soartest
+  ELASTIC_PASSWORD: testpassword123
+  REDIS_PASSWORD: testpassword123
+  GRAFANA_PASSWORD: admin123
+  THEHIVE_SECRET: thehive-test-secret
+  THEHIVE_API_KEY: thehive-test-api-key
+  CORTEX_SECRET: cortex-test-secret
+  CORTEX_API_KEY: cortex-test-api-key
+
+jobs:
+  docker-ports-testing:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.11]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-test.txt
+        pip install pytest pytest-cov pytest-html selenium webdriver-manager
+    
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Start Docker services
+      run: |
+        echo "Starting Docker services: ${{ github.event.inputs.services || 'core' }}"
+        case "${{ github.event.inputs.services || 'core' }}" in
+          "core")
+            cd infra/docker
+            docker-compose -f docker-compose-ports.yml up -d
+            ;;
+          "extended")
+            cd infra/docker
+            docker-compose -f docker-compose-extended.yml up -d
+            ;;
+          "full")
+            cd infra/docker
+            # Set all required environment variables
+            export MISP_DB_ROOT_PASSWORD=misptest123
+            export MISP_DB_PASSWORD=misptest123
+            export MISP_REDIS_PASSWORD=misptest123
+            export MISP_GPG_PASSWORD=misptest123
+            export MISP_ADMIN_PASSWORD=misptest123
+            export OPENCTI_DB_PASSWORD=openctitest123
+            export OPENCTI_ADMIN_PASSWORD=openctitest123
+            export MINIO_ROOT_PASSWORD=miniotest123
+            export INFLUXDB_PASSWORD=influxtest123
+            export API_AUTH_SECRET=apitestsecret123
+            docker-compose up -d elasticsearch redis thehive cortex grafana prometheus
+            ;;
+        esac
+        
+        # Wait for services to be healthy
+        echo "Waiting for services to be healthy..."
+        sleep 30
+        
+        # Show running containers
+        docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}"
+    
+    - name: Run internal Docker tests
+      if: contains(github.event.inputs.test_type, 'internal') || github.event.inputs.test_type == 'all' || github.event.inputs.test_type == ''
+      run: |
+        echo "Running internal Docker tests..."
+        python -m pytest tests/integration/test_docker_ports_internal.py -v \
+          --tb=short \
+          --html=reports/internal-tests.html \
+          --cov=src/soar_lab \
+          --cov-report=html:reports/coverage-internal \
+          --cov-report=xml:reports/coverage-internal.xml \
+          --junitxml=reports/internal-tests.xml
+    
+    - name: Run external port tests
+      if: contains(github.event.inputs.test_type, 'external') || github.event.inputs.test_type == 'all' || github.event.inputs.test_type == ''
+      run: |
+        echo "Running external port tests..."
+        python -m pytest tests/integration/test_docker_ports_complete.py -v \
+          --tb=short \
+          --html=reports/external-tests.html \
+          --cov=src/soar_lab \
+          --cov-report=html:reports/coverage-external \
+          --cov-report=xml:reports/coverage-external.xml \
+          --junitxml=reports/external-tests.xml
+    
+    - name: Run Selenium UI tests
+      if: contains(github.event.inputs.test_type, 'selenium') || github.event.inputs.test_type == 'all' || github.event.inputs.test_type == ''
+      run: |
+        echo "Running Selenium UI tests..."
+        # Install Chrome for Selenium
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        
+        python -m pytest tests/browser/test_docker_ports_selenium.py -v \
+          --tb=short \
+          --html=reports/selenium-tests.html \
+          --cov=src/soar_lab \
+          --cov-report=html:reports/coverage-selenium \
+          --cov-report=xml:reports/coverage-selenium.xml \
+          --junitxml=reports/selenium-tests.xml
+    
+    - name: Generate comprehensive report
+      run: |
+        echo "Generating comprehensive test report..."
+        python -m pytest tests/integration/test_docker_ports_summary.py -v \
+          --tb=short \
+          --html=reports/summary-report.html \
+          --junitxml=reports/summary-tests.xml
+    
+    - name: Upload test reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-reports-${{ matrix.python-version }}
+        path: reports/
+        retention-days: 30
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: always()
+      with:
+        files: ./reports/coverage-*.xml
+        flags: docker-ports
+        name: docker-ports-coverage-${{ matrix.python-version }}
+        fail_ci_if_error: false
+    
+    - name: Docker cleanup
+      if: always()
+      run: |
+        echo "Cleaning up Docker resources..."
+        cd infra/docker
+        docker-compose -f docker-compose-ports.yml down -v || true
+        docker-compose -f docker-compose-extended.yml down -v || true
+        docker system prune -f
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read test results
+          let summary = "## Docker Ports Testing Results\n\n";
+          
+          try {
+            const internalResults = JSON.parse(fs.readFileSync('reports/internal-tests.xml', 'utf8'));
+            summary += `### Internal Tests\n`;
+            summary += `- Tests: ${internalResults.testsuites.testsuite[0].tests}\n`;
+            summary += `- Failures: ${internalResults.testsuites.testsuite[0].failures}\n`;
+            summary += `- Time: ${internalResults.testsuites.testsuite[0].time}s\n\n`;
+          } catch (e) {
+            summary += `### Internal Tests\n- Not run\n\n`;
+          }
+          
+          try {
+            const externalResults = JSON.parse(fs.readFileSync('reports/external-tests.xml', 'utf8'));
+            summary += `### External Tests\n`;
+            summary += `- Tests: ${externalResults.testsuites.testsuite[0].tests}\n`;
+            summary += `- Failures: ${externalResults.testsuites.testsuite[0].failures}\n`;
+            summary += `- Time: ${externalResults.testsuites.testsuite[0].time}s\n\n`;
+          } catch (e) {
+            summary += `### External Tests\n- Not run\n\n`;
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summary
+          });
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: docker-ports-testing
+    steps:
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'docker.elastic.co/elasticsearch/elasticsearch:7.17.17'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  performance-benchmark:
+    runs-on: ubuntu-latest
+    needs: docker-ports-testing
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pytest time-machine
+    
+    - name: Run performance benchmarks
+      run: |
+        python scripts/performance/docker_ports_benchmark.py
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: benchmark-results.json
+        retention-days: 30

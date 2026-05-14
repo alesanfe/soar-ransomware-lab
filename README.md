@@ -28,40 +28,25 @@ flowchart LR
   TheHive -- Observables --> Cortex
   Cortex -- Analyzers --> TI[(Threat Intel)]
   Shuffle -- Responder/API --> EDR[(EDR/Defender for Endpoint)]
-  subgraph Monitoring
-    Prometheus[Prometheus]
-    Grafana[Grafana]
-    InfluxDB[InfluxDB]
-    Telegraf[Telegraf]
-  end
-  subgraph Threat Intelligence
-    MISP[MISP]
-    OpenCTI[OpenCTI]
-    Redis[Redis]
-  end
-  subgraph Storage
-    MinIO[MinIO]
-    NFS[NFS Server]
-  end
-  TheHive <--> Postgres
+  TheHive <--> Elasticsearch
   Cortex <--> Redis
   Shuffle <--> Elasticsearch
-  Prometheus --> Grafana
-  Telegraf --> InfluxDB
-  MISP --> Redis
-  OpenCTI --> Elasticsearch
+  Wazuh[Wazuh SIEM] --> Elasticsearch
+  Wazuh --> Shuffle
 ```
 
 **Componentes Principales:**
 - **Shuffle**: Orquestador principal, recibiendo alertas y ejecutando flujos automatizados
 - **TheHive**: Gestiona casos de incidentes y evidencias forenses
 - **Cortex**: Analiza Indicadores de Compromiso (IoCs) mediante analyzers especializados
-- **MISP**: Plataforma de Threat Intelligence para compartir IoCs
-- **OpenCTI**: Plataforma de Threat Intelligence moderna con análisis avanzado
-- **Prometheus/Grafana**: Stack de monitorización de métricas
-- **Elasticsearch**: Motor de búsqueda y análisis para logs
-- **MinIO**: Almacenamiento de objetos compatible S3
-- **PostgreSQL** y **Redis**: Servicios de soporte para persistencia y caché
+- **Wazuh Manager**: Plataforma SIEM/XDR para detección de amenazas y respuesta a incidentes
+- **Kibana**: Dashboard de visualización de datos y logs de Wazuh/Elasticsearch
+- **Elasticsearch**: Motor de búsqueda y análisis para logs (compartido por todos los servicios)
+- **Redis**: Servicio de soporte para persistencia y caché
+- **MISP**: Plataforma de inteligencia de amenazas (Threat Intelligence)
+- **Nginx**: Reverse proxy centralizado para acceso a todos los servicios
+- **API**: API REST (FastAPI) para gestión y automatización del laboratorio
+- **Docs Site**: Sitio de documentación Docusaurus
 
 ---
 
@@ -88,7 +73,6 @@ soar-ransomware-lab/
 │   │   ├── docker-compose.yml  # Stack completo SOAR
 │   │   └── nginx.conf         # Configuración reverse proxy
 │   ├── logging/               # Configuración ELK stack
-│   ├── monitoring/            # Configuración Prometheus/Grafana
 │   └── vagrant/              # Automatización opcional con Vagrant
 ├── src/soar_lab/             # Código fuente principal
 │   ├── analytics/             # Módulos de análisis de datos
@@ -174,41 +158,47 @@ Este proyecto incluye documentación académica completa estructurada según las
 ### Requisitos Previos
 - Docker Engine 20.10+
 - Docker Compose 2.0+
-- Python 3.8+
-- 8GB+ RAM (16GB+ recomendado)
-- 50GB+ SSD (100GB+ recomendado)
+- Python 3.11+
+- 16GB+ RAM recomendado (mínimo 8GB)
+- 50GB+ SSD
 
 ### Pasos de Instalación
 
 1. **Configurar Variables de Entorno**:
    ```bash
-   # Copiar plantilla de configuración
-   cp infra/docker/.env.example infra/docker/.env
-   
-   # Editar configuración con credenciales seguras
-   nano infra/docker/.env
+   # El archivo .env.full contiene la configuración completa
+   # Editar credenciales antes de arrancar
+   nano .env.full
    ```
 
-2. **Generar Certificados TLS**:
+2. **Iniciar el Stack Completo**:
    ```bash
-   # Generar certificados autofirmados
-   ./scripts/gen_certs.sh
-   ```
-
-3. **Iniciar Servicios**:
-   ```bash
-   # Iniciar todos los servicios
    make up
-   
-   # Verificar estado de los contenedores
-   docker compose ps
    ```
 
-4. **Detener Servicios**:
+3. **Detener Servicios**:
    ```bash
-   # Detener todos los servicios
    make down
    ```
+
+### Servicios y Accesos
+
+| Servicio | URL | Descripción |
+|---|---|---|
+| **Web Management UI** | http://localhost | Panel de gestión principal |
+| **Nginx Proxy** | http://localhost:8080 | Proxy inverso a todos los servicios |
+| **TheHive** | http://localhost:9000 | Gestión de casos e incidentes |
+| **Cortex** | http://localhost:9001 | Análisis de IoCs y analyzers |
+| **Shuffle UI** | http://localhost:3001 | Orquestador SOAR |
+| **Shuffle API** | http://localhost:5001 | API REST de Shuffle |
+| **Kibana** | http://localhost:15601 | Dashboards y visualización de logs |
+| **MISP** | http://localhost:8082 | Inteligencia de amenazas |
+| **API REST** | http://localhost:8000 | API de gestión del laboratorio |
+| **Docs Site** | http://localhost:3000/docs/ | Documentación del proyecto |
+| **Elasticsearch** | interno Docker | Motor de búsqueda (sin acceso externo) |
+| **Wazuh Manager** | interno Docker | SIEM/XDR (API en puerto 55100 interno) |
+
+> **Nota Windows/Docker Desktop**: Los puertos de Wazuh API (55000) y Elasticsearch están bloqueados por rangos de exclusión de Hyper-V. Todos los servicios internos funcionan correctamente a través de la red Docker.
 
 ---
 
@@ -339,4 +329,4 @@ Este proyecto está licenciado bajo los términos especificados en el archivo `L
 **Director/a**: [Nombre del Director/a]  
 **Universidad**: [Nombre de la Universidad]  
 **Año Académico**: 2024-2025  
-**Versión**: 1.3.0
+**Versión**: 1.4.0
