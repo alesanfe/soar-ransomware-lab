@@ -1,21 +1,6 @@
 # SOAR Ransomware Lab - Security Documentation
 
-## Table of Contents
-
-1. [Security Overview](#security-overview)
-2. [Threat Model](#threat-model)
-3. [Security Architecture](#security-architecture)
-4. [Authentication & Authorization](#authentication--authorization)
-5. [Data Protection](#data-protection)
-6. [Network Security](#network-security)
-7. [Application Security](#application-security)
-8. [Infrastructure Security](#infrastructure-security)
-9. [Compliance](#compliance)
-10. [Security Operations](#security-operations)
-11. [Incident Response](#incident-response)
-12. [Security Testing](#security-testing)
-
-## Security Overview
+## Overview
 
 SOAR Ransomware Lab implements a defense-in-depth security strategy to protect against ransomware attacks and ensure the integrity of security operations. This document outlines the security controls, policies, and procedures implemented in the platform.
 

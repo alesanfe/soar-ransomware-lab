@@ -291,7 +291,7 @@ def send_alert(alert_data: Dict[str, Any]) -> bool:
 
 ```python
 # Calculate MTTR using weighted average
-# TODO: Implement outlier detection for more accurate metrics
+# Example: Use markers for future improvements
 mttr = sum(execution_times) / len(execution_times)
 ```
 

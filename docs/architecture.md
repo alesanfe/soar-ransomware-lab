@@ -9,92 +9,105 @@ SOAR Ransomware Lab is a comprehensive security orchestration platform designed 
 ### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Web Management Layer                        │
-├─────────────────────────────────────────────────────────────┤
-│  Web UI (React/Vue)  │  REST API (FastAPI)  │  Auth Service  │
-├─────────────────────────────────────────────────────────────┤
-│                    Business Logic Layer                        │
-├─────────────────────────────────────────────────────────────┤
-│  Alert Engine  │  Playbook Engine  │  Analytics Engine       │
-├─────────────────────────────────────────────────────────────┤
-│                    Data Processing Layer                       │
-├─────────────────────────────────────────────────────────────┤
-│  TheHive        │  Cortex           │  Elasticsearch         │
-├─────────────────────────────────────────────────────────────┤
-│                    Infrastructure Layer                        │
-├─────────────────────────────────────────────────────────────┤
-│  Docker Compose │  Redis Cache      │  PostgreSQL             │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                         Access Layer (Nginx)                            │
+│  :80 Web UI  │  :8080 Reverse Proxy  │  :443 HTTPS                     │
+├────────────────────────────────────────────────────────────────────────┤
+│                         SOAR Orchestration Layer                         │
+│  Shuffle UI :3001  │  Shuffle API :5001  │  Orborus (worker executor)  │
+├────────────────────────────────────────────────────────────────────────┤
+│                         Incident Response Layer                          │
+│  TheHive :9000 (cases)  │  Cortex :9001 (analyzers)                    │
+├────────────────────────────────────────────────────────────────────────┤
+│                         SIEM / Detection Layer                           │
+│  Wazuh Manager :1514-1516 (events)  │  Kibana :15601 (dashboards)      │
+├────────────────────────────────────────────────────────────────────────┤
+│                         Threat Intelligence Layer                        │
+│  MISP :8082 (TI platform)                                               │
+├────────────────────────────────────────────────────────────────────────┤
+│                         Management & API Layer                           │
+│  Lab API :8000 (FastAPI)  │  Docs Site :3000                           │
+├────────────────────────────────────────────────────────────────────────┤
+│                         Data & Infrastructure Layer                      │
+│  Elasticsearch (internal)  │  Redis (internal)  │  MariaDB (MISP)      │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Overview
 
-#### Core Services
+#### Core SOAR Services
 
-1. **API Gateway** (`src/soar_lab/api/main.py`)
-   - FastAPI-based REST API
-   - Authentication and authorization
-   - Request routing and validation
-   - Rate limiting and throttling
+1. **Shuffle** (`:3001` UI / `:5001` API)
+   - Main SOAR orchestrator
+   - Drag-and-drop workflow builder
+   - Receives alerts from Wazuh via webhook
+   - Executes automated response playbooks
+   - Orborus executes app containers as workers
 
-2. **Alert Processing Engine**
-   - Alert ingestion from multiple sources
-   - IOC extraction and enrichment
-   - Severity scoring and prioritization
-   - Duplicate detection and correlation
+2. **TheHive** (`:9000`)
+   - Incident case management platform
+   - Evidence and observable tracking
+   - Task assignment and timeline
+   - Integrates with Cortex for enrichment
 
-3. **Playbook Execution Engine**
-   - Automated response workflows
-   - Custom playbook definitions
-   - Integration with external tools
-   - Execution tracking and logging
+3. **Cortex** (`:9001`)
+   - IoC analysis engine
+   - Runs analyzers and responders
+   - Integrates with MISP, VirusTotal, etc.
+   - Custom Python analyzer support
 
-4. **Analytics Platform**
-   - KPI calculation and reporting
-   - Trend analysis and forecasting
-   - Performance metrics
-   - Historical data analysis
+#### SIEM / Detection
+
+4. **Wazuh Manager** (`:1514-1516` events, `:55100` API internal)
+   - SIEM/XDR agent-based detection
+   - File integrity monitoring
+   - Log collection and correlation
+   - Sends alerts to Shuffle via webhook
+
+5. **Kibana** (`:15601`)
+   - Visualization frontend for Elasticsearch
+   - Dashboards for Wazuh event data
+   - Log exploration via Discover
+   - Image: `docker.elastic.co/kibana/kibana:7.17.17`
+
+#### Threat Intelligence
+
+6. **MISP** (`:8082`)
+   - Open-source threat intelligence platform
+   - IOC sharing and management
+   - Feeds integration
+   - Connected to Cortex analyzers
 
 #### Data Layer
 
-1. **TheHive** - Case Management
-   - Incident tracking
-   - Evidence management
-   - Task assignment
-   - Timeline visualization
+7. **Elasticsearch** (internal Docker network)
+   - `docker.elastic.co/elasticsearch/elasticsearch:7.17.17`
+   - Shared backend for Shuffle, TheHive, and Kibana
+   - Log aggregation and full-text search
+   - Single-node setup with xpack.security enabled
 
-2. **Cortex** - Analysis Engine
-   - IOC analysis
-   - Threat intelligence integration
-   - Automated enrichment
-   - Custom analyzers
-
-3. **Elasticsearch** - Search and Analytics
-   - Full-text search
-   - Log aggregation
-   - Real-time monitoring
-   - Data visualization
-
-4. **PostgreSQL** - Primary Database
-   - Configuration data
-   - User management
-   - Audit logs
-   - System metadata
-
-#### Supporting Services
-
-1. **Redis** - Caching Layer
-   - Session storage
-   - Response caching
+8. **Redis** (internal)
+   - Session and cache store for Shuffle
    - Message queuing
-   - Rate limiting data
 
-2. **Docker Compose** - Container Orchestration
-   - Service deployment
-   - Network configuration
-   - Volume management
-   - Health monitoring
+9. **MariaDB** (internal)
+   - Database backend for MISP
+
+#### Access & Management
+
+10. **Nginx** (`:80`, `:443`, `:8080`)
+    - Reverse proxy for all services
+    - Serves web management static UI on `:80`
+    - Proxies all services via path prefix on `:8080`
+
+11. **Lab API** (`:8000`)
+    - FastAPI application (`apps/api/entrypoint.py`)
+    - Lab management and automation endpoints
+    - Health check at `/health`
+
+12. **Docs Site** (`:3000`)
+    - Docusaurus static site
+    - Served at `/docs/`
 
 ## Data Flow Architecture
 
@@ -212,7 +225,6 @@ Alert Detection → Triage → Investigation → Containment → Eradication →
 3. **Infrastructure**
    - Cloud providers (AWS, Azure, GCP)
    - Container orchestration (Kubernetes)
-   - Monitoring systems (Prometheus, Grafana)
    - Logging platforms (Splunk, ELK)
 
 ### Integration Patterns
@@ -237,44 +249,37 @@ Alert Detection → Triage → Investigation → Containment → Eradication →
 
 ## Deployment Architecture
 
-### Container Strategy
+### Deployed Stack (`infra/docker/docker-compose.yml`)
 
-```yaml
-services:
-  web-management:
-    image: soar-lab/web-management:latest
-    ports: ["9000:9000"]
-    depends_on: [api-gateway]
-    
-  api-gateway:
-    image: soar-lab/api:latest
-    ports: ["8000:8000"]
-    depends_on: [redis, postgresql]
-    
-  thehive:
-    image: thehive:latest
-    ports: ["9000:9000"]
-    depends_on: [elasticsearch]
-    
-  cortex:
-    image: cortex:latest
-    ports: ["9001:9001"]
-    depends_on: [elasticsearch]
-    
-  elasticsearch:
-    image: elasticsearch:8.8.0
-    ports: ["9200:9200"]
-    volumes: ["elasticsearch-data:/usr/share/elasticsearch/data"]
-    
-  redis:
-    image: redis:7-alpine
-    ports: ["6379:6379"]
-    
-  postgresql:
-    image: postgres:15
-    ports: ["5432:5432"]
-    volumes: ["postgres-data:/var/lib/postgresql/data"]
-```
+| Container | Image | Ports (host) |
+|---|---|---|
+| `soar_nginx` | nginx:1.25-alpine | 80, 443, 8080 |
+| `soar_thehive` | strangebee/thehive:5 | 9000 |
+| `soar_cortex` | thehive4py/cortex:latest | 9001 |
+| `soar_shuffle_backend` | ghcr.io/shuffle/shuffle-backend | 5001 |
+| `soar_shuffle_frontend` | ghcr.io/shuffle/shuffle-frontend | 3001 |
+| `soar_orborus` | ghcr.io/shuffle/shuffle-orborus | — |
+| `soar_wazuh_manager` | wazuh/wazuh-manager:4.8.2 | 1514-1516 |
+| `soar_wazuh_dashboard` | kibana:7.17.17 | 15601 |
+| `soar_misp` | ghcr.io/misp/misp-docker | 8082 |
+| `soar_elasticsearch` | elasticsearch:7.17.17 | internal |
+| `soar_redis` | redis:7-alpine | internal |
+| `soar_misp_db` | mariadb | internal |
+| `soar_api` | build: apps/api | 8000 |
+| `soar_docs_site` | build: apps/docs-site | 3000 |
+
+### Docker Networks
+
+- `soar_net` — red interna principal (todos los servicios)
+- `soar_edge` — red de acceso externo (nginx, servicios con UI)
+- `ti_net` — red de threat intelligence (elasticsearch, MISP)
+
+### Configuration
+
+- Variables de entorno: `.env.full` (raíz del proyecto)
+- Compose file: `infra/docker/docker-compose.yml`
+- Nginx config: `infra/docker/nginx.conf`
+- Cortex config: `infra/docker/docker/cortex.application.conf`
 
 ### Environment Configuration
 
@@ -392,13 +397,18 @@ src/soar_lab/
 
 ### Core Technologies
 
-- **Backend**: Python 3.11, FastAPI, SQLAlchemy
-- **Frontend**: React/Vue.js, TypeScript
-- **Database**: PostgreSQL 15, Elasticsearch 8.8
+- **Backend**: Python 3.11, FastAPI (`apps/api/entrypoint.py`)
+- **Frontend**: Static HTML/JS (web-management), React (Shuffle)
+- **SIEM**: Wazuh Manager 4.8.2
+- **Visualization**: Kibana 7.17.17
+- **SOAR**: Shuffle (backend + frontend + orborus)
+- **Case Management**: TheHive 5 + Cortex
+- **Threat Intel**: MISP
+- **Search**: Elasticsearch 7.17.17
 - **Cache**: Redis 7
-- **Containerization**: Docker, Docker Compose
-- **Monitoring**: Prometheus, Grafana
-- **Logging**: ELK Stack
+- **Proxy**: Nginx 1.25
+- **Docs**: Docusaurus 3
+- **Containerization**: Docker Compose 2
 
 ### Security Technologies
 
@@ -446,7 +456,7 @@ src/soar_lab/
 
 ---
 
-**Document Version**: 1.0.0  
-**Last Updated**: $(date '+%Y-%m-%d')  
+**Document Version**: 1.4.0  
+**Last Updated**: 2026-05-14  
 **Maintainers**: SOAR Ransomware Lab Architecture Team  
 **Review Cycle**: Quarterly

@@ -1,0 +1,272 @@
+import asyncio
+import json
+import logging
+from datetime import datetime
+from typing import Annotated, Dict, Any
+
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
+
+from .config import settings
+from .config import redis_client, docker_client
+from .auth import security, verify_credentials, create_jwt_token, get_current_user
+from .models import (
+    LoginRequest, LoginResponse, VerifyAuthResponse, TestRequest, BackupRequest,
+    ServiceStatus, Metrics, TestResults, CoverageData, BackupListResponse, CreateBackupResponse,
+    RestoreBackupResponse, HealthResponse, ErrorResponse
+)
+from .services import (
+    get_all_services_status, get_system_metrics, run_tests, get_test_coverage,
+    create_backup, list_backups, restore_backup
+)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title=settings.API_TITLE,
+    description=settings.API_DESCRIPTION,
+    version=settings.API_VERSION
+)
+
+# CORS middleware - configurable via environment variable
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Global exception handler for consistent error responses
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    """Handle HTTPExceptions with consistent error response format."""
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request, exc):
+    """Handle general exceptions with consistent error response format."""
+    logger.error(f"Unhandled exception: {exc}")
+    return ErrorResponse.create(
+        code="internal_error",
+        message="An internal server error occurred",
+        status_code=500
+    )
+
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except WebSocketDisconnect:
+                self.active_connections.remove(connection)
+            except Exception as e:
+                logger.warning(f"Error sending message to connection: {e}")
+                self.active_connections.remove(connection)
+
+manager = ConnectionManager()
+
+# Routes
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """Root endpoint."""
+    return """
+    <html>
+        <head>
+            <title>SOAR Lab Management API</title>
+        </head>
+        <body>
+            <h1>SOAR Lab Management API</h1>
+            <p>API Documentation: <a href="/docs">/docs</a></p>
+            <p>Health Check: <a href="/health">/health</a></p>
+        </body>
+    </html>
+    """
+
+
+@app.get("/health", response_model=HealthResponse)
+async def health_check():
+    """Health check endpoint."""
+    return HealthResponse(
+        status="healthy",
+        timestamp=datetime.now().isoformat(),
+        version=settings.API_VERSION
+    )
+
+@app.post("/auth/login", response_model=LoginResponse, responses={
+    200: {"description": "Login successful"},
+    401: {"description": "Invalid credentials"},
+    500: {"description": "Authentication system not properly configured"}
+})
+async def login(request: LoginRequest):
+    """Authentication endpoint."""
+    if verify_credentials(request.username, request.password):
+        token = create_jwt_token(request.username)
+        return LoginResponse(token=token, message="Login successful")
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+
+@app.get("/auth/verify", response_model=VerifyAuthResponse, responses={
+    200: {"description": "Authentication token is valid"},
+    401: {"description": "Unauthorized - invalid authentication credentials"},
+    500: {"description": "Internal server error - authentication system not properly configured"}
+})
+async def verify_auth(current_user: Annotated[Dict[str, Any], Depends(get_current_user)]):
+    """Verify authentication token."""
+    return VerifyAuthResponse(valid=True, user=current_user)
+
+@app.get("/metrics", response_model=Metrics, responses={
+    200: {"description": "Metrics retrieved successfully"},
+    401: {"description": "Unauthorized - invalid authentication credentials"},
+    500: {"description": "Internal server error - failed to get metrics"}
+})
+async def get_metrics(current_user: Annotated[Dict[str, Any], Depends(get_current_user)]):
+    """Get system metrics."""
+    try:
+        metrics_data = get_system_metrics()
+        return Metrics(**metrics_data)
+    except Exception as e:
+        logger.error(f"Error getting metrics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get metrics")
+
+@app.get("/services/status", responses={
+    200: {"description": "Services status retrieved successfully"},
+    401: {"description": "Unauthorized - invalid authentication credentials"},
+    500: {"description": "Internal server error - Docker not available"}
+})
+async def get_services_status_endpoint(current_user: Annotated[Dict[str, Any], Depends(get_current_user)]):
+    """Get status of all services."""
+    try:
+        status = await get_all_services_status()
+        return status
+    except Exception as e:
+        logger.error(f"Error getting services status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get services status")
+
+@app.post("/tests/run", response_model=TestResults, responses={
+    200: {"description": "Tests executed successfully"},
+    401: {"description": "Unauthorized - invalid authentication credentials"},
+    408: {"description": "Request timeout - tests took too long to execute"},
+    500: {"description": "Internal server error - failed to run tests"}
+})
+async def run_tests_endpoint(request: TestRequest, current_user: Annotated[Dict[str, Any], Depends(get_current_user)]):
+    """Run tests and return results."""
+    try:
+        results = await run_tests(request.category)
+        return TestResults(**results)
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=408, detail="Tests timed out")
+    except Exception as e:
+        logger.error(f"Error running tests: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to run tests: {str(e)}")
+
+@app.get("/tests/coverage", response_model=CoverageData, responses={
+    200: {"description": "Test coverage retrieved successfully"},
+    401: {"description": "Unauthorized - invalid authentication credentials"},
+    404: {"description": "Coverage report not found"},
+    500: {"description": "Internal server error - failed to get coverage"}
+})
+async def get_test_coverage_endpoint(current_user: Annotated[Dict[str, Any], Depends(get_current_user)]):
+    """Get current test coverage."""
+    try:
+        coverage_data = await get_test_coverage()
+        return CoverageData(**coverage_data)
+    except Exception as e:
+        logger.error(f"Error getting coverage: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get coverage")
+
+@app.post("/backup/create", response_model=CreateBackupResponse, responses={
+    200: {"description": "Backup created successfully"},
+    401: {"description": "Unauthorized - invalid authentication credentials"},
+    500: {"description": "Internal server error - failed to create backup"}
+})
+async def create_backup_endpoint(current_user: Annotated[Dict[str, Any], Depends(get_current_user)]):
+    """Create a backup."""
+    try:
+        username = current_user.get("user", "unknown") if isinstance(current_user, dict) else "unknown"
+        backup_info = create_backup(user=username)
+        return CreateBackupResponse(**backup_info)
+    except Exception as e:
+        logger.error(f"Error creating backup: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create backup: {str(e)}")
+
+@app.get("/backup/list", response_model=BackupListResponse, responses={
+    200: {"description": "Backups listed successfully"},
+    401: {"description": "Unauthorized - invalid authentication credentials"},
+    404: {"description": "Backups directory not found"},
+    500: {"description": "Internal server error - failed to list backups"}
+})
+async def list_backups_endpoint(current_user: Annotated[Dict[str, Any], Depends(get_current_user)]):
+    """List available backups."""
+    try:
+        backups_info = list_backups()
+        return BackupListResponse(**backups_info)
+    except Exception as e:
+        logger.error(f"Error listing backups: {e}")
+        raise HTTPException(status_code=500, detail="Failed to list backups")
+
+@app.post("/backup/restore", responses={
+    200: {"description": "Backup restored successfully"},
+    401: {"description": "Unauthorized - invalid authentication credentials"},
+    404: {"description": "Backup file not found"},
+    500: {"description": "Internal server error - failed to restore backup"}
+})
+async def restore_backup_endpoint(request: BackupRequest, current_user: Annotated[Dict[str, Any], Depends(get_current_user)]):
+    """Restore from backup."""
+    try:
+        username = current_user.get("user", "unknown") if isinstance(current_user, dict) else "unknown"
+        result = restore_backup(request.backup_name, user=username)
+        return RestoreBackupResponse(**result)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Backup file not found")
+    except Exception as e:
+        logger.error(f"Error restoring backup: {e}")
+        raise HTTPException(status_code=500, detail="Failed to restore backup: {str(e)}")
+
+@app.websocket("/ws/logs")
+async def websocket_logs(websocket: WebSocket):
+    """WebSocket endpoint for real-time logs"""
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Simulate log messages (in production, connect to actual log stream)
+            log_data = {
+                "timestamp": datetime.now().isoformat(),
+                "level": "INFO",
+                "message": f"System running normally - {datetime.now().strftime('%H:%M:%S')}"
+            }
+            
+            # Send log data
+            await websocket.send_text(json.dumps(log_data))
+            
+            # Wait before next message
+            await asyncio.sleep(2)
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        manager.disconnect(websocket)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host=settings.API_HOST, port=settings.API_PORT)

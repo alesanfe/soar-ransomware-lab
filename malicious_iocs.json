@@ -1,0 +1,50 @@
+{
+    "malicious": {
+        "hash": "9384fc3675660dd06c7c228658da19ac1cdd1e0183ab59730fe16282145ac80a",
+        "ips": [
+            "10.170.33.167",
+            "192.168.33.7",
+            "10.32.62.111",
+            "172.21.225.11",
+            "10.241.3.194"
+        ],
+        "domains": [
+            "88ajx4t.com",
+            "r63t3.biz",
+            "nutpbqeb4.net",
+            "kwk6c87.org",
+            "m3jvqgxuzl.cn"
+        ],
+        "urls": [
+            "http://6ehiw76aa4o.info/api/v1",
+            "https://gv9vkw2uhycx.cn/payload.exe",
+            "http://ufxzuoo.com/payload.exe",
+            "http://z2144r.net/api/v1",
+            "http://b15ys.info/api/v1"
+        ]
+    },
+    "benign": {
+        "hash": "c18b3dc24dff4f3279910fc73cac8eb35f04d0a48807d92186de4a37fcf5cec1",
+        "ips": [
+            "192.168.103.107",
+            "192.168.27.200",
+            "192.168.246.232",
+            "10.74.243.188",
+            "10.104.186.133"
+        ],
+        "domains": [
+            "kug6mcd39.net",
+            "jqgcohdcq3v.xyz",
+            "2psv0od.io",
+            "nnld3esmf.xyz",
+            "1u6hp3txh.net"
+        ],
+        "urls": [
+            "http://wy2mp5zm.info/payload.exe",
+            "http://gqleu.cn/update",
+            "http://eowpr.info/update",
+            "https://c8zfen.net/api/v1",
+            "http://mogchk.cn/download"
+        ]
+    }
+}

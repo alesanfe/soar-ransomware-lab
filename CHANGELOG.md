@@ -9,19 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Prometheus + Grafana monitoring integration
-- Centralized logging with ELK stack
 - Enhanced security testing framework
 - Performance benchmarking tools
 
-### Changed
-- Improved error handling in all components
-- Enhanced logging with structured format
-- Updated documentation with latest features
+---
 
-### Security
-- Added comprehensive security validation
-- Enhanced input sanitization
-- Improved authentication mechanisms
+## [1.4.0] - 2026-05-14
+
+### 🚀 Added
+- **Kibana 7.17.17** como dashboard de visualización (reemplaza Wazuh Dashboard incompatible)
+- **MISP** como plataforma de Threat Intelligence integrada en el stack
+- Ruta `/kibana/` en Nginx reverse proxy
+- `KIBANA_ENCRYPTION_KEY` en `.env.full`
+- Volumen `kibana_data` para persistencia de Kibana
+
+### 🔧 Fixed
+- **API**: corregido `CMD` del Dockerfile de `main:app` a `entrypoint:app`
+- **API healthcheck**: reemplazado `wget`/`curl` por `python -c urllib.request` (imagen slim sin herramientas HTTP)
+- **Nginx healthcheck**: cambiado `localhost` a `127.0.0.1` (resolución IPv6 en Alpine)
+- **Nginx config**: corregida ruta del volumen de `./docker/nginx.conf` a `./nginx.conf`
+- **Orborus healthcheck**: corregido endpoint de `/health` a `/api/v1/health`
+- **Docs-site healthcheck**: corregido path de `/` a `/docs/` (404 en raíz)
+- **Elasticsearch**: eliminado alias de red `wazuh.indexer` (no necesario con Kibana)
+- **Wazuh Dashboard**: eliminado (incompatible con Elasticsearch puro, requiere OpenSearch+TLS)
+- Puerto `WAZUH_DASHBOARD_PORT` cambiado de `5601` a `15601` (rango excluido por Hyper-V)
+- Puerto `WAZUH_API_PORT` cambiado de `55000` a `55100` (rango excluido por Hyper-V)
+- Eliminado binding de host para Wazuh API (puerto bloqueado por Windows)
+- Wazuh Manager healthcheck actualizado a HTTPS con aceptación de 401
+- Shuffle Backend: añadidas variables `SHUFFLE_OPENSEARCH_USERNAME/PASSWORD`
+- Cortex healthcheck: cambiado de `/api/health` (501) a verificación de código HTTP en `/`
+- Wazuh Dashboard dependency en Nginx: cambiado a `service_started`
+
+### 📝 Changed
+- `README.md`: tabla de servicios con URLs y puertos reales
+- `docs/architecture.md`: diagrama actualizado con stack completo
+- `docs/user_guide.md`: URLs correctas, guía de troubleshooting Windows
+- `infra/docker/nginx.conf`: upstream `kibana`, ruta `/kibana/`
 
 ---
 

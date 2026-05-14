@@ -1,0 +1,707 @@
+name: soar-lab
+
+# === SOAR Ransomware Lab - Complete Stack ===
+# Services: Elasticsearch, TheHive, Cortex, Shuffle, Redis, Nginx, API, Wazuh
+#
+# Usage:
+#   docker compose up -d                    # Start all services
+
+networks:
+  soar_edge:
+    driver: bridge
+  soar_net:
+    driver: bridge
+    internal: true
+  ti_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  # Core SOAR volumes
+  es_data:
+    driver: local
+  thehive_files:
+    driver: local
+  cortex_data:
+    driver: local
+  shuffle_apps:
+    driver: local
+  shuffle_files:
+    driver: local
+  nginx_logs:
+    driver: local
+  certs:
+    driver: local
+  redis_data:
+    driver: local
+
+  # MISP volumes
+  misp_db:
+    driver: local
+  misp_files:
+    driver: local
+  misp_logs:
+    driver: local
+  misp_configs:
+    driver: local
+  misp_ssl:
+    driver: local
+
+  # Wazuh volumes
+  wazuh_config:
+    driver: local
+  wazuh_api_config:
+    driver: local
+  wazuh_etc:
+    driver: local
+  wazuh_logs:
+    driver: local
+  wazuh_queue:
+    driver: local
+  wazuh_var_multigroups:
+    driver: local
+  wazuh_integration_files:
+    driver: local
+  wazuh_active_response:
+    driver: local
+  wazuh_wodles:
+    driver: local
+  kibana_data:
+    driver: local
+
+services:
+  # === Core SOAR Services ===
+  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-false}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "${ELASTICSEARCH_PORT:-9201}:9200"
+    networks:
+      - soar_net
+      - ti_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u ${ELASTIC_USERNAME:-elastic}:${ELASTIC_PASSWORD} 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 90s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - ti_net
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  thehive:
+    image: thehiveproject/thehive:3.5.2-1
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_thehive
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "${THEHIVE_HTTP_PORT:-9000}:9000"
+    volumes:
+      - thehive_files:/opt/thp/thehive/files
+      - ./docker/thehive.application.conf:/etc/thehive/application.conf:ro
+    networks:
+      - soar_edge
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cortex:
+    image: thehiveproject/cortex:3.1.0-1
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "${CORTEX_HTTP_PORT:-9001}:9001"
+    volumes:
+      - cortex_data:/var/lib/cortex
+      - ./docker/cortex.application.conf:/etc/cortex/application.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - soar_edge
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk -o /dev/null -w '%{http_code}' http://localhost:9001/ | grep -qE '^[23]' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  shuffle-frontend:
+    image: ghcr.io/shuffle/shuffle-frontend:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_frontend
+    environment:
+      BACKEND_HOSTNAME: shuffle-backend
+      SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
+    ports:
+      - "${SHUFFLE_UI_PORT:-3001}:80"
+    networks:
+      - soar_edge
+      - soar_net
+    depends_on:
+      shuffle-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:80 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  shuffle-backend:
+    image: ghcr.io/shuffle/shuffle-backend:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend
+    environment:
+      SHUFFLE_ELASTIC: "true"
+      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
+      SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "true"
+      SHUFFLE_OPENSEARCH_USERNAME: ${ELASTIC_USERNAME:-elastic}
+      SHUFFLE_OPENSEARCH_PASSWORD: ${ELASTIC_PASSWORD}
+      OUTER_HOSTNAME: ${OUTER_HOSTNAME:-localhost}
+      SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
+      SHUFFLE_FILE_LOCATION: /shuffle-files
+      SHUFFLE_APP_DOWNLOAD_LOCATION: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
+      SHUFFLE_DEFAULT_USERNAME: ${SHUFFLE_DEFAULT_USERNAME:-admin}
+      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD:-ChangeMe!}
+      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY:-changeme-api-key}
+      DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.44}
+      SHUFFLE_SWAGGER_ENABLED: "true"
+      SHUFFLE_AUTH_MODE: "multi"
+    volumes:
+      - shuffle_apps:/shuffle-apps
+      - shuffle_files:/shuffle-files
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "${SHUFFLE_API_PORT:-5001}:5001"
+    networks:
+      - soar_edge
+      - soar_net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5001/api/v1/users/login --post-data '{}' 2>&1 | grep -q 'HTTP\\|error\\|login\\|password' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  orborus:
+    image: ghcr.io/shuffle/shuffle-orborus:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_orborus
+    environment:
+      SHUFFLE_APP_SDK_TIMEOUT: 300
+      ENVIRONMENT_NAME: ${SHUFFLE_ENV_NAME:-Shuffle}
+      ORG_ID: ${SHUFFLE_ORG_ID:-Shuffle}
+      BASE_URL: http://shuffle-backend:5001
+      DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.44}
+      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
+      EXECUTION_ENVIRONMENT: docker
+      SHUFFLE_APP_SDK_URL: "https://github.com/shuffle/python-apps"
+      SHUFFLE_STATS_DISABLED: true
+      SHUFFLE_LOGS_DISABLED: true
+      SHUFFLE_SWARM_CONFIG: run
+      CLEANUP: false
+      SHUFFLE_WORKER_IMAGE: ghcr.io/shuffle/shuffle-worker:latest
+    networks:
+      - soar_net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      shuffle-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://shuffle-backend:5001/api/v1/health 2>&1 | grep -q 'success\\|workflows' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # === MISP Threat Intelligence Stack ===
+
+  misp-db:
+    image: mariadb:10.11
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MISP_DB_ROOT_PASSWORD:-misp_root_password}
+      MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
+      MYSQL_USER: ${MISP_DB_USER:-misp}
+      MYSQL_PASSWORD: ${MISP_DB_PASSWORD:-misp_password}
+    volumes:
+      - misp_db:/var/lib/mysql
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MISP_DB_ROOT_PASSWORD:-misp_root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  misp-modules:
+    image: ghcr.io/misp/misp-docker/misp-modules:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_modules
+    healthcheck:
+      test: ["CMD-SHELL", "/bin/bash -c '</dev/tcp/localhost/6666'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soar_net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  misp:
+    image: ghcr.io/misp/misp-docker/misp-core:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp
+    cap_add:
+      - AUDIT_WRITE
+    depends_on:
+      misp-db:
+        condition: service_healthy
+      misp-modules:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://${MISP_HOSTNAME:-localhost}:${MISP_PORT:-8082}
+      MYSQL_HOST: misp-db
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MISP_DB_USER:-misp}
+      MYSQL_PASSWORD: ${MISP_DB_PASSWORD:-misp_password}
+      MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-RedisSecurePassword678!@#}
+      ADMIN_EMAIL: ${MISP_ADMIN_EMAIL:-admin@soar.local}
+      ADMIN_PASSWORD: ${MISP_ADMIN_PASSWORD:-MispAdminPassword123!@#}
+      ADMIN_ORG: ${MISP_ADMIN_ORG:-SOAR Lab}
+      MISP_EMAIL: ${MISP_EMAIL:-noreply@soar.local}
+      MISP_CONTACT: ${MISP_CONTACT:-admin@soar.local}
+      ENCRYPTION_KEY: ${MISP_ENCRYPTION_KEY:-random_encryption_key_32_chars_long}
+      SALT: ${MISP_SALT:-random_salt_32_chars_long}
+      PHP_MEMORY_LIMIT: 2048M
+      PHP_MAX_EXECUTION_TIME: 300
+      PHP_UPLOAD_MAX_FILESIZE: 50M
+      PHP_POST_MAX_SIZE: 50M
+      DISABLE_SSL_REDIRECT: "true"
+    ports:
+      - "${MISP_PORT:-8082}:80"
+    volumes:
+      - misp_files:/var/www/MISP/app/files
+      - misp_logs:/var/www/MISP/app/tmp/logs
+      - misp_configs:/var/www/MISP/app/Config
+      - misp_ssl:/etc/nginx/certs
+    networks:
+      - soar_edge
+      - soar_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/users/heartbeat"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
+
+  # === Wazuh SIEM Stack ===
+
+  wazuh-manager:
+    image: wazuh/wazuh-manager:4.8.2
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_wazuh_manager
+    environment:
+      - INDEXER_URL=http://elasticsearch:9200
+      - INDEXER_USERNAME=${ELASTIC_USERNAME:-elastic}
+      - INDEXER_PASSWORD=${ELASTIC_PASSWORD}
+      - INDEXER_CA_CERT=/etc/wazuh-indexer/certs/root-ca.pem
+      - INDEXER_CERT=/etc/wazuh-indexer/certs/filebeat.pem
+      - INDEXER_KEY=/etc/wazuh-indexer/certs/filebeat-key.pem
+      - API_USERNAME=${WAZUH_API_USERNAME:-wazuh-wui}
+      - API_PASSWORD=${WAZUH_API_PASSWORD}
+      - WAZUH_CLUSTER_KEY=${WAZUH_CLUSTER_KEY:-wazuh-cluster-key}
+      - WAZUH_CLUSTER_NAME=soar-wazuh-cluster
+      - WAZUH_CLUSTER_NODE_NAME=soar-wazuh-manager
+      - WAZUH_CLUSTER_NODE_TYPE=master
+    volumes:
+      - wazuh_config:/wazuh-config-mount
+      - wazuh_api_config:/var/wazuh/api/configuration/auth
+      - wazuh_etc:/var/ossec/etc
+      - wazuh_logs:/var/ossec/logs
+      - wazuh_queue:/var/ossec/queue
+      - wazuh_var_multigroups:/var/ossec/var/multigroups
+      - wazuh_integration_files:/var/ossec/integrations
+      - wazuh_active_response:/var/ossec/active-response/bin
+      - wazuh_wodles:/var/ossec/wodles
+    ports:
+      - "${WAZUH_EVENTS_PORT:-1514}:1514"
+      - "1515:1515"
+      - "1516:1516"
+    networks:
+      - soar_net
+      - soar_edge
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk https://localhost:55000/ | grep -q 'Unauthorized\\|title' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  wazuh-dashboard:
+    image: docker.elastic.co/kibana/kibana:7.17.17
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_wazuh_dashboard
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=${ELASTIC_USERNAME:-elastic}
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+      - SERVER_NAME=kibana
+      - XPACK_SECURITY_ENABLED=false
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY:-a7a6311933d3503b89bc2dbc36572c33a6c10925682e591bffcab6911c06786d}
+    volumes:
+      - kibana_data:/usr/share/kibana/data
+    ports:
+      - "${WAZUH_DASHBOARD_PORT:-15601}:5601"
+    networks:
+      - soar_edge
+      - soar_net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # === API Service ===
+
+  api:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_api
+    environment:
+      - FASTAPI_ENV=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - CORS_ORIGINS=${CORS_ORIGINS:-"http://localhost:8080,http://localhost:3000"}
+      - LOG_LEVEL=${API_LOG_LEVEL:-INFO}
+      - AUTH_SECRET_KEY=${API_AUTH_SECRET}
+      - DOCKER_COMPOSE_FILE=docker-compose.yml
+      - TEST_RESULTS_DIR=/app/results
+      - BACKUP_DIR=/app/backups
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+    volumes:
+      - ../../apps/api:/app
+      - ./scripts:/app/scripts:ro
+      - ./results:/app/results
+      - ./backups:/app/backups
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "${API_PORT:-8000}:8000"
+    networks:
+      - soar_edge
+      - soar_net
+      - ti_net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # === Documentation Site ===
+
+  docs-site:
+    build:
+      context: ../../
+      dockerfile: apps/docs-site/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_docs_site
+    ports:
+      - "${DOCS_PORT:-3000}:3000"
+    volumes:
+      - ../../docs:/opt/docusaurus/docs:ro
+    networks:
+      - soar_edge
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/docs/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # === Nginx Reverse Proxy ===
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../../apps/web-management:/usr/share/nginx/html:ro
+      - certs:/etc/ssl/certs:ro
+      - certs:/etc/ssl/private:ro
+      - nginx_logs:/var/log/nginx
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${WEB_UI_PORT:-8080}:8080"
+    networks:
+      - soar_edge
+      - soar_net
+    depends_on:
+      thehive:
+        condition: service_healthy
+      cortex:
+        condition: service_healthy
+      shuffle-frontend:
+        condition: service_healthy
+      wazuh-manager:
+        condition: service_healthy
+      wazuh-dashboard:
+        condition: service_started
+      misp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/nginx-health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

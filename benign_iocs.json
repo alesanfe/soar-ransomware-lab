@@ -1,0 +1,38 @@
+{
+    "malicious": {
+        "hash": "e1866b6a40b1bfe7ff12e9cc90ea42571aeec8251ff260b2a8c2595cc14c7d76",
+        "ips": [
+            "172.25.94.1",
+            "192.168.144.68",
+            "192.168.252.149"
+        ],
+        "domains": [
+            "oz3jm.cn",
+            "riato2ak0ld.com",
+            "fvduj38qth.com"
+        ],
+        "urls": [
+            "http://mo3jeosz5y9.io/index.php",
+            "http://yl4rxsflm.biz/index.php",
+            "https://h1d2p1tf6n65.info/api/v1"
+        ]
+    },
+    "benign": {
+        "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+        "ips": [
+            "172.18.246.90",
+            "10.141.231.235",
+            "192.168.186.174"
+        ],
+        "domains": [
+            "45z4en.xyz",
+            "ddn0pqt.info",
+            "irs38.ru"
+        ],
+        "urls": [
+            "http://t8lcmv.xyz/config",
+            "http://8v053y.com/api/v1",
+            "http://5b8entzi5w.com/api/v1"
+        ]
+    }
+}

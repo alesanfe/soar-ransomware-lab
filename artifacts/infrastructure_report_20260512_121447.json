@@ -1,0 +1,233 @@
+{
+  "timestamp": "2026-05-12 12:14:47 UTC",
+  "overall_status": "FULLY_OPERATIONAL",
+  "summary": {
+    "total_containers": 8,
+    "running_containers": 8,
+    "accessible_services": 7,
+    "healthy_services": 7,
+    "prometheus_up_targets": 4,
+    "elasticsearch_indices": 2
+  },
+  "details": {
+    "containers": {
+      "soar_grafana": {
+        "running": true,
+        "status": "running",
+        "health": "healthy"
+      },
+      "soar_prometheus": {
+        "running": true,
+        "status": "running",
+        "health": "healthy"
+      },
+      "soar_thehive": {
+        "running": true,
+        "status": "running",
+        "health": "healthy"
+      },
+      "soar_cortex": {
+        "running": true,
+        "status": "running",
+        "health": "unhealthy"
+      },
+      "soar_elasticsearch": {
+        "running": true,
+        "status": "running",
+        "health": "healthy"
+      },
+      "soar_redis": {
+        "running": true,
+        "status": "running",
+        "health": "healthy"
+      },
+      "soar_redis_exporter": {
+        "running": true,
+        "status": "running",
+        "health": "unknown"
+      },
+      "soar_elasticsearch_exporter": {
+        "running": true,
+        "status": "running",
+        "health": "unknown"
+      }
+    },
+    "ports": {
+      "grafana": {
+        "accessible": true,
+        "status_code": 200,
+        "response_time": 0.025533
+      },
+      "prometheus": {
+        "accessible": true,
+        "status_code": 200,
+        "response_time": 0.014381
+      },
+      "thehive": {
+        "accessible": true,
+        "status_code": 200,
+        "response_time": 0.013978
+      },
+      "cortex": {
+        "accessible": true,
+        "status_code": 200,
+        "response_time": 0.005507
+      },
+      "elasticsearch": {
+        "accessible": true,
+        "status_code": 200,
+        "response_time": 0.01675
+      },
+      "redis_exporter": {
+        "accessible": true,
+        "status_code": 200,
+        "response_time": 0.009033
+      },
+      "elasticsearch_exporter": {
+        "accessible": true,
+        "status_code": 200,
+        "response_time": 0.017962
+      }
+    },
+    "health": {
+      "grafana": {
+        "healthy": true,
+        "status_code": 200,
+        "expected_status": 200,
+        "response_time": 0.004435
+      },
+      "prometheus": {
+        "healthy": true,
+        "status_code": 200,
+        "expected_status": 200,
+        "response_time": 0.003222
+      },
+      "thehive": {
+        "healthy": true,
+        "status_code": 200,
+        "expected_status": 200,
+        "response_time": 0.011411
+      },
+      "cortex": {
+        "healthy": true,
+        "status_code": 200,
+        "expected_status": 200,
+        "response_time": 0.004656
+      },
+      "elasticsearch": {
+        "healthy": true,
+        "status_code": 200,
+        "expected_status": 200,
+        "response_time": 0.008899
+      },
+      "redis_exporter": {
+        "healthy": true,
+        "status_code": 200,
+        "expected_status": 200,
+        "response_time": 0.032348
+      },
+      "elasticsearch_exporter": {
+        "healthy": true,
+        "status_code": 200,
+        "expected_status": 200,
+        "response_time": 0.029755
+      }
+    },
+    "prometheus": {
+      "total_targets": 6,
+      "up_targets": 4,
+      "down_targets": 2,
+      "expected_up": 4,
+      "target_details": [
+        {
+          "job": "cortex",
+          "instance": "cortex:9001",
+          "health": "down",
+          "last_error": "server returned HTTP status 404 Not Found"
+        },
+        {
+          "job": "elasticsearch",
+          "instance": "elasticsearch-exporter:9114",
+          "health": "up",
+          "last_error": ""
+        },
+        {
+          "job": "grafana",
+          "instance": "grafana:3000",
+          "health": "up",
+          "last_error": ""
+        },
+        {
+          "job": "prometheus",
+          "instance": "localhost:9090",
+          "health": "up",
+          "last_error": ""
+        },
+        {
+          "job": "redis",
+          "instance": "redis-exporter:9121",
+          "health": "up",
+          "last_error": ""
+        },
+        {
+          "job": "thehive",
+          "instance": "thehive:9000",
+          "health": "down",
+          "last_error": "server returned HTTP status 404 Not Found"
+        }
+      ]
+    },
+    "network": {
+      "network_name": "soar-lab-testing_soar_net",
+      "connected_containers": 8,
+      "container_details": [
+        {
+          "name": "soar_thehive",
+          "status": "running"
+        },
+        {
+          "name": "soar_prometheus",
+          "status": "running"
+        },
+        {
+          "name": "soar_elasticsearch",
+          "status": "running"
+        },
+        {
+          "name": "soar_redis",
+          "status": "running"
+        },
+        {
+          "name": "soar_elasticsearch_exporter",
+          "status": "running"
+        },
+        {
+          "name": "soar_redis_exporter",
+          "status": "running"
+        },
+        {
+          "name": "soar_grafana",
+          "status": "running"
+        },
+        {
+          "name": "soar_cortex",
+          "status": "running"
+        }
+      ]
+    },
+    "elasticsearch": {
+      "total_indices": 3,
+      "required_indices_found": [
+        "the_hive_17",
+        "cortex"
+      ],
+      "missing_indices": []
+    },
+    "redis": {
+      "ping_success": false,
+      "info_success": true,
+      "ping_output": "Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.\nPONG",
+      "redis_version": "7.4.9"
+    }
+  }
+}

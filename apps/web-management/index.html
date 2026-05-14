@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOAR Lab Management UI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🛡️ SOAR Lab Management</h1>
+                <div class="auth-section" id="authSection">
+                    <input type="text" id="username" placeholder="Username" class="auth-input">
+                    <input type="password" id="password" placeholder="Password" class="auth-input">
+                    <button id="loginBtn" class="btn btn-primary">Login</button>
+                    <button id="logoutBtn" class="btn btn-secondary" style="display: none;">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent" style="display: none;">
+            <!-- Dashboard Overview -->
+            <section class="dashboard">
+                <h2>📊 System Overview</h2>
+                <div class="cards-grid">
+                    <div class="card">
+                        <h3>Services Status</h3>
+                        <div class="status-indicator" id="servicesStatus">
+                            <span class="status-dot loading">⟳</span>
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>System Resources</h3>
+                        <div class="metrics">
+                            <div class="metric">
+                                <span>CPU:</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="cpuUsage" style="width: 0%"></div>
+                                </div>
+                                <span id="cpuPercent">0%</span>
+                            </div>
+                            <div class="metric">
+                                <span>RAM:</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="ramUsage" style="width: 0%"></div>
+                                </div>
+                                <span id="ramPercent">0%</span>
+                            </div>
+                            <div class="metric">
+                                <span>Disk:</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="diskUsage" style="width: 0%"></div>
+                                </div>
+                                <span id="diskPercent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Test Coverage</h3>
+                        <div class="coverage-display">
+                            <div class="coverage-circle" id="coverageCircle">
+                                <span id="coveragePercent">0%</span>
+                            </div>
+                            <div class="coverage-details">
+                                <div>Unit: <span id="unitCoverage">-</span></div>
+                                <div>Integration: <span id="integrationCoverage">-</span></div>
+                                <div>Overall: <span id="overallCoverage">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Services Links -->
+            <section class="services-section">
+                <h2>🔗 Service Links</h2>
+                <div class="services-grid">
+                    <a href="http://localhost:9000" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>TheHive</h3>
+                            <p>Case Management</p>
+                            <span class="port">:9000</span>
+                            <span class="status" data-service="thehive">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:9001" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>Cortex</h3>
+                            <p>Analysis Engine</p>
+                            <span class="port">:9001</span>
+                            <span class="status" data-service="cortex">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:3001" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>Shuffle</h3>
+                            <p>Workflow Automation</p>
+                            <span class="port">:3001</span>
+                            <span class="status" data-service="shuffle">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:15601" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>Kibana</h3>
+                            <p>Log Visualization</p>
+                            <span class="port">:15601</span>
+                            <span class="status" data-service="kibana">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:55100" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>Wazuh API</h3>
+                            <p>SIEM/XDR API</p>
+                            <span class="port">:55100</span>
+                            <span class="status" data-service="wazuh-manager">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:8000" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>API</h3>
+                            <p>REST API</p>
+                            <span class="port">:8000</span>
+                            <span class="status" data-service="api">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:3000/docs/" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>Docs</h3>
+                            <p>Documentation</p>
+                            <span class="port">:3000</span>
+                            <span class="status" data-service="docs-site">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:80" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>Nginx</h3>
+                            <p>Reverse Proxy</p>
+                            <span class="port">:80</span>
+                            <span class="status" data-service="nginx">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:8082" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>MISP</h3>
+                            <p>Threat Intelligence</p>
+                            <span class="port">:8082</span>
+                            <span class="status" data-service="misp">●</span>
+                        </div>
+                    </a>
+                    <a href="http://localhost:3000" target="_blank" class="service-link">
+                        <div class="service-card">
+                            <h3>Docs</h3>
+                            <p>Documentation</p>
+                            <span class="port">:3000</span>
+                            <span class="status" data-service="docs-site">●</span>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Testing Section -->
+            <section class="testing-section">
+                <h2>🧪 Test Management</h2>
+                <div class="testing-controls">
+                    <div class="test-categories">
+                        <button class="btn btn-test" data-category="unit" onclick="runTests('unit')">
+                            Unit Tests
+                        </button>
+                        <button class="btn btn-test" data-category="integration" onclick="runTests('integration')">
+                            Integration Tests
+                        </button>
+                        <button class="btn btn-test" data-category="atomic" onclick="runTests('atomic')">
+                            Atomic Tests
+                        </button>
+                        <button class="btn btn-test" data-category="e2e" onclick="runTests('e2e')">
+                            E2E Tests
+                        </button>
+                        <button class="btn btn-test" data-category="performance" onclick="runTests('performance')">
+                            Performance Tests
+                        </button>
+                        <button class="btn btn-test" data-category="security" onclick="runTests('security')">
+                            Security Tests
+                        </button>
+                        <button class="btn btn-primary btn-large" onclick="runTests('all')">
+                            🚀 Run All Tests
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Test Results -->
+                <div class="test-results" id="testResults" style="display: none;">
+                    <h3>Test Results</h3>
+                    <div class="results-summary" id="resultsSummary">
+                        <div class="summary-item passed">
+                            <span class="count" id="passedCount">0</span>
+                            <span class="label">Passed</span>
+                        </div>
+                        <div class="summary-item failed">
+                            <span class="count" id="failedCount">0</span>
+                            <span class="label">Failed</span>
+                        </div>
+                        <div class="summary-item skipped">
+                            <span class="count" id="skippedCount">0</span>
+                            <span class="label">Skipped</span>
+                        </div>
+                        <div class="summary-item coverage">
+                            <span class="count" id="testCoverage">0%</span>
+                            <span class="label">Coverage</span>
+                        </div>
+                    </div>
+                    <div class="results-details" id="resultsDetails">
+                        <pre id="resultsOutput"></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Section -->
+            <section class="logs-section">
+                <h2>📋 System Logs</h2>
+                <div class="logs-controls">
+                    <button class="btn btn-secondary" onclick="toggleLogs()">
+                        <span id="logsToggleText">Start Live Logs</span>
+                    </button>
+                    <select id="logLevel" class="log-select">
+                        <option value="all">All Levels</option>
+                        <option value="error">Errors Only</option>
+                        <option value="warning">Warnings & Errors</option>
+                        <option value="info">Info & Above</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="clearLogs()">Clear</button>
+                </div>
+                <div class="logs-container">
+                    <pre id="logsOutput"></pre>
+                </div>
+            </section>
+
+            <!-- Backup Section -->
+            <section class="backup-section">
+                <h2>💾 Backup Management</h2>
+                <div class="backup-controls">
+                    <button class="btn btn-primary" onclick="createBackup()">Create Backup</button>
+                    <button class="btn btn-secondary" onclick="listBackups()">List Backups</button>
+                    <div class="restore-section">
+                        <select id="backupList" class="backup-select">
+                            <option value="">Select backup...</option>
+                        </select>
+                        <button class="btn btn-warning" onclick="restoreBackup()">Restore</button>
+                    </div>
+                </div>
+                <div class="backup-status" id="backupStatus"></div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

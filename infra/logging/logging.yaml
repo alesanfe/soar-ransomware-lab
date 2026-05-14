@@ -1,0 +1,350 @@
+# SOAR Ransomware Lab - Centralized Logging Configuration
+# This configuration supports centralized logging for all services
+
+version: 1
+
+# Disable existing loggers
+disable_existing_loggers: false
+
+# Formatters
+formatters:
+  standard:
+    format: '%(asctime)s [%(levelname)8s] %(name)s: %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  
+  detailed:
+    format: '%(asctime)s [%(levelname)8s] %(name)s [%(filename)s:%(lineno)d] - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  
+  json:
+    format: '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s", "module": "%(module)s", "function": "%(funcName)s", "line": %(lineno)d}'
+    datefmt: '%Y-%m-%dT%H:%M:%S'
+  
+  security:
+    format: '%(asctime)s [SECURITY] %(name)s: %(message)s [IP: %(client_ip)s, User: %(user)s]'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+# Filters
+filters:
+  security_filter:
+    class: logging.Filter
+    name: security
+  
+  performance_filter:
+    class: logging.Filter
+    name: performance
+  
+  audit_filter:
+    class: logging.Filter
+    name: audit
+
+# Handlers
+handlers:
+  # Console Handler
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: standard
+    stream: ext://sys.stdout
+    filters: [security_filter]
+
+  # File Handlers
+  main_file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: json
+    filename: /var/log/soar/soar.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 5
+    encoding: utf8
+
+  error_file:
+    class: logging.handlers.RotatingFileHandler
+    level: ERROR
+    formatter: detailed
+    filename: /var/log/soar/error.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 5
+    encoding: utf8
+
+  security_file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: security
+    filename: /var/log/soar/security.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 10
+    encoding: utf8
+    filters: [security_filter]
+
+  audit_file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: json
+    filename: /var/log/soar/audit.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 20
+    encoding: utf8
+    filters: [audit_filter]
+
+  performance_file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: json
+    filename: /var/log/soar/performance.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 5
+    encoding: utf8
+    filters: [performance_filter]
+
+  # Syslog Handler
+  syslog:
+    class: logging.handlers.SysLogHandler
+    level: INFO
+    formatter: standard
+    address: localhost
+    facility: local0
+    socktype: socket.SOCK_DGRAM
+
+  # Elasticsearch Handler (via Logstash)
+  elasticsearch:
+    class: logging.handlers.SocketHandler
+    level: INFO
+    formatter: json
+    host: logstash
+    port: 5000
+
+  # Email Handler for Critical Errors
+  email:
+    class: logging.handlers.SMTPHandler
+    level: CRITICAL
+    formatter: detailed
+    mailhost: localhost
+    fromaddr: soar-alerts@soar.local
+    toaddrs:
+      - admin@soar.local
+    subject: SOAR Critical Error Alert
+    credentials:
+      - soar-alerts@soar.local
+      - email_password
+    secure: ()
+
+# Loggers
+loggers:
+  # Root Logger
+  root:
+    level: INFO
+    handlers: [console, main_file, error_file]
+    propagate: false
+
+  # SOAR Application Loggers
+  soar:
+    level: INFO
+    handlers: [console, main_file, error_file, elasticsearch]
+    propagate: false
+
+  soar.thehive:
+    level: INFO
+    handlers: [console, main_file, audit_file]
+    propagate: false
+
+  soar.cortex:
+    level: INFO
+    handlers: [console, main_file, audit_file]
+    propagate: false
+
+  soar.shuffle:
+    level: INFO
+    handlers: [console, main_file, audit_file]
+    propagate: false
+
+  # Security Logger
+  security:
+    level: INFO
+    handlers: [console, security_file, email, elasticsearch]
+    propagate: false
+    filters: [security_filter]
+
+  # Audit Logger
+  audit:
+    level: INFO
+    handlers: [console, audit_file, elasticsearch]
+    propagate: false
+    filters: [audit_filter]
+
+  # Performance Logger
+  performance:
+    level: INFO
+    handlers: [console, performance_file, elasticsearch]
+    propagate: false
+    filters: [performance_filter]
+
+  # API Logger
+  api:
+    level: INFO
+    handlers: [console, main_file, audit_file, elasticsearch]
+    propagate: false
+
+  # Database Loggers
+  database:
+    level: WARNING
+    handlers: [console, main_file]
+    propagate: false
+
+  database.elasticsearch:
+    level: WARNING
+    handlers: [console, main_file]
+    propagate: false
+
+  database.postgresql:
+    level: WARNING
+    handlers: [console, main_file]
+    propagate: false
+
+  database.mysql:
+    level: WARNING
+    handlers: [console, main_file]
+    propagate: false
+
+  database.redis:
+    level: WARNING
+    handlers: [console, main_file]
+    propagate: false
+
+  # External Service Loggers
+  external:
+    level: INFO
+    handlers: [console, main_file]
+    propagate: false
+
+  external.misp:
+    level: INFO
+    handlers: [console, main_file, audit_file]
+    propagate: false
+
+  external.opencti:
+    level: INFO
+    handlers: [console, main_file, audit_file]
+    propagate: false
+
+  # Monitoring Loggers
+  monitoring:
+    level: INFO
+    handlers: [console, main_file, elasticsearch]
+    propagate: false
+
+  monitoring.prometheus:
+    level: INFO
+    handlers: [console, main_file]
+    propagate: false
+
+  monitoring.grafana:
+    level: INFO
+    handlers: [console, main_file]
+    propagate: false
+
+  # Third-party Library Loggers
+  urllib3:
+    level: WARNING
+    handlers: [console, main_file]
+    propagate: false
+
+  requests:
+    level: WARNING
+    handlers: [console, main_file]
+    propagate: false
+
+  docker:
+    level: WARNING
+    handlers: [console, main_file]
+    propagate: false
+
+  # Test Loggers
+  tests:
+    level: DEBUG
+    handlers: [console, main_file]
+    propagate: false
+
+  tests.unit:
+    level: DEBUG
+    handlers: [console, main_file]
+    propagate: false
+
+  tests.integration:
+    level: DEBUG
+    handlers: [console, main_file]
+    propagate: false
+
+  tests.e2e:
+    level: DEBUG
+    handlers: [console, main_file]
+    propagate: false
+
+  tests.atomic:
+    level: DEBUG
+    handlers: [console, main_file]
+    propagate: false
+
+  tests.performance:
+    level: DEBUG
+    handlers: [console, performance_file]
+    propagate: false
+
+  tests.security:
+    level: DEBUG
+    handlers: [console, security_file]
+    propagate: false
+
+  # Development/Debug Loggers
+  debug:
+    level: DEBUG
+    handlers: [console, main_file]
+    propagate: false
+
+  # WebSocket Logger for Real-time Logs
+  websocket:
+    level: INFO
+    handlers: [console, elasticsearch]
+    propagate: false
+
+# Special Configuration for Production vs Development
+profiles:
+  production:
+    formatters:
+      standard:
+        format: '%(asctime)s [%(levelname)1.1s] %(name)s: %(message)s'
+    handlers:
+      console:
+        level: WARNING
+    loggers:
+      root:
+        level: INFO
+      urllib3:
+        level: ERROR
+      requests:
+        level: ERROR
+
+  development:
+    formatters:
+      standard:
+        format: '%(asctime)s [%(levelname)8s] %(name)s [%(filename)s:%(lineno)d]: %(message)s'
+    handlers:
+      console:
+        level: DEBUG
+    loggers:
+      root:
+        level: DEBUG
+      soar:
+        level: DEBUG
+
+  testing:
+    handlers:
+      console:
+        level: DEBUG
+      main_file:
+        level: DEBUG
+    loggers:
+      root:
+        level: DEBUG
+      tests:
+        level: DEBUG
