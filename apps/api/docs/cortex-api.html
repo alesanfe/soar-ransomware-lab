@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Cortex - Documentación</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>API de Cortex</h1>
+                <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <a href="index.html" class="back-link">← Volver al Índice</a>
+
+            <div class="service-info">
+                <h2>API de Cortex</h2>
+                <div class="meta">
+                    <div class="meta-item"><strong>Contenedor:</strong> soar_cortex</div>
+                    <div class="meta-item"><strong>Puerto:</strong> 9001</div>
+                    <div class="meta-item"><strong>URL Base:</strong> http://localhost:9001/api</div>
+                    <div class="meta-item"><strong>Documentación:</strong> <a href="https://docs.cortex-project.org/" style="color: var(--primary-light);">Documentación de la API de Cortex</a></div>
+                </div>
+                <p style="color: var(--text-secondary);">Plataforma de análisis de seguridad para enriquecimiento de observables y automatización. Cortex proporciona una API RESTful para gestionar analizadores, trabajos y respondedores.</p>
+            </div>
+
+            <div class="section">
+                <h3>Conceptos y Casos de Uso</h3>
+                <p style="color: var(--text-secondary);">Cortex es una plataforma de análisis de seguridad que automatiza el enriquecimiento de observables y proporciona capacidades de respuesta automatizada:</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
+                    <li><strong>Analizadores</strong>: Herramientas que enriquecen observables con información adicional de fuentes externas (VirusTotal, AbuseIPDB, Shodan, etc.). Cada analizador está diseñado para tipos específicos de observables.</li>
+                    <li><strong>Trabajos</strong>: Tareas de análisis individuales. Cuando se envía un observable a un analizador, se crea un trabajo para rastrear el progreso y resultados del análisis.</li>
+                    <li><strong>Respondedores</strong>: Acciones automatizadas que pueden activarse basándose en resultados de análisis (ej. bloquear IPs, crear reglas de firewall, enviar notificaciones).</li>
+                    <li><strong>Tipos de Observables</strong>: Direcciones IP, dominios, URLs, hashes, direcciones de correo, archivos y otros artefactos que pueden analizarse.</li>
+                    <li><strong>Integración con TheHive</strong>: Cortex está estrechamente integrado con TheHive. Los observables de casos de TheHive pueden enriquecerse automáticamente por analizadores de Cortex.</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Autenticación</h3>
+                <p style="color: var(--text-secondary);">Cortex utiliza autenticación por clave de API. Incluya la clave de API en el encabezado de Authorization.</p>
+                <div class="note">
+                    <strong>Encabezado de Authorization:</strong> Authorization: Bearer {api_key}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Analizadores</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/analyzer</span>
+                    </div>
+                    <p class="endpoint-description">Listar todos los analizadores</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/analyzer/{id}</span>
+                    </div>
+                    <p class="endpoint-description">Obtener analizador por ID</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/analyzer/{analyzer_id}/config</span>
+                    </div>
+                    <p class="endpoint-description">Obtener configuración del analizador</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/api/analyzer/{analyzer_id}/config</span>
+                    </div>
+                    <p class="endpoint-description">Actualizar configuración del analizador</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/analyzer/{analyzer_id}/report/{report_id}</span>
+                    </div>
+                    <p class="endpoint-description">Obtener reporte del analizador</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/analyzer/{analyzer_id}/job</span>
+                    </div>
+                    <p class="endpoint-description">Listar trabajos por analizador</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Trabajos</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/analyzer/{analyzer_id}/run</span>
+                    </div>
+                    <p class="endpoint-description">Ejecutar un analizador</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/job</span>
+                    </div>
+                    <p class="endpoint-description">Listar todos los trabajos</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/job/{job_id}</span>
+                    </div>
+                    <p class="endpoint-description">Obtener trabajo por ID</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/job/{job_id}/report</span>
+                    </div>
+                    <p class="endpoint-description">Obtener reporte del trabajo</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/job/{job_id}/wait</span>
+                    </div>
+                    <p class="endpoint-description">Esperar a que termine el trabajo</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <span class="path">/api/job/{job_id}</span>
+                    </div>
+                    <p class="endpoint-description">Eliminar trabajo</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Respondedores</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/responder</span>
+                    </div>
+                    <p class="endpoint-description">Listar todos los respondedores</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/responder/{responder_id}/run</span>
+                    </div>
+                    <p class="endpoint-description">Ejecutar un respondedor</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Usuarios y Organizaciones</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/organization</span>
+                    </div>
+                    <p class="endpoint-description">Listar organizaciones</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/user/me</span>
+                    </div>
+                    <p class="endpoint-description">Obtener usuario actual</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/user</span>
+                    </div>
+                    <p class="endpoint-description">Crear usuario</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/api/user/{user_id}</span>
+                    </div>
+                    <p class="endpoint-description">Actualizar usuario</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <span class="path">/api/user/{user_id}</span>
+                    </div>
+                    <p class="endpoint-description">Eliminar usuario</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/role</span>
+                    </div>
+                    <p class="endpoint-description">Listar roles</p>
+                </div>
+                <div class="note">
+                    <strong>Roles por Defecto:</strong> read, analyze, orgAdmin
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Verificación de Salud</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/health</span>
+                    </div>
+                    <p class="endpoint-description">Verificar salud de la API</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Variables de Entorno</h3>
+                <ul class="env-list">
+                    <li><span class="env-name">CORTEX_PORT</span><span class="env-value">9001</span></li>
+                    <li><span class="env-name">CORTEX_SECRET</span><span class="env-value">Clave secreta de Cortex</span></li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Ejemplos de Pruebas</h3>
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando curl</h4>
+                <pre class="code-block" style="margin-bottom: 1rem;"># Listar Trabajos
+curl -X GET http://localhost:9001/api/job \
+  -H "Authorization: Bearer {api_key}"
+
+# Ejecutar Analizador
+curl -X POST http://localhost:9001/api/analyzer/{id}/run \
+  -H "Authorization: Bearer {api_key}" \
+  -H "Content-Type: application/json" \
+  -d '{"data":["1.2.3.4"],"dataType":"ip"}'</pre>
+
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando Python</h4>
+                <pre class="code-block">import requests
+
+api_key = "your_api_key"
+headers = {"Authorization": f"Bearer {api_key}"}
+
+# Listar Trabajos
+response = requests.get("http://localhost:9001/api/job", headers=headers)
+print(response.json())</pre>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

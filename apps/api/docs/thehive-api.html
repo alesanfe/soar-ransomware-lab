@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de TheHive - Documentación</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>API de TheHive</h1>
+                <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <a href="index.html" class="back-link">← Volver al Índice</a>
+
+            <div class="service-info">
+                <h2>API de TheHive</h2>
+                <div class="meta">
+                    <div class="meta-item"><strong>Contenedor:</strong> soar_thehive</div>
+                    <div class="meta-item"><strong>Puerto:</strong> 9000</div>
+                    <div class="meta-item"><strong>URL Base:</strong> http://localhost:9000/api</div>
+                    <div class="meta-item"><strong>Documentación:</strong> <a href="https://docs.thehive-project.org/thehive/latest/api/" style="color: var(--primary-light);">Documentación de la API de TheHive</a></div>
+                </div>
+                <p style="color: var(--text-secondary);">Plataforma colaborativa de gestión de casos para respuesta a incidentes. TheHive proporciona una API RESTful para gestionar casos, observables, tareas y alertas.</p>
+            </div>
+
+            <div class="section">
+                <h3>Conceptos y Casos de Uso</h3>
+                <p style="color: var(--text-secondary);">TheHive es una plataforma colaborativa de respuesta a incidentes que ayuda a los equipos de seguridad a gestionar casos desde la detección hasta la resolución:</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
+                    <li><strong>Alertas</strong>: Importar alertas de fuentes externas (SIEM, correo, etc.) para crear casos automáticamente. Las alertas contienen información preliminar sobre eventos de seguridad.</li>
+                    <li><strong>Casos</strong>: Unidad central de gestión de incidentes. Cada caso contiene observables, tareas y la línea de tiempo de la investigación.</li>
+                    <li><strong>Observables</strong>: Artefactos extraídos de casos (direcciones IP, dominios, hashes, URLs, etc.) que pueden enriquecerse mediante analizadores de Cortex.</li>
+                    <li><strong>Tareas</strong>: Elementos de acción asignados a miembros del equipo para avanzar en la investigación. Las tareas pueden rastrearse con actualizaciones de estado.</li>
+                    <li><strong>Plantillas de Casos</strong>: Estructuras predefinidas para tipos de incidentes comunes para estandarizar los procedimientos de respuesta.</li>
+                    <li><strong>Exportar a MISP</strong>: Compartir información de casos con MISP para la colaboración de inteligencia de amenazas.</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Autenticación</h3>
+                <p style="color: var(--text-secondary);">TheHive utiliza autenticación por clave de API. Incluya la clave de API en el encabezado de Authorization.</p>
+                <div class="note">
+                    <strong>Encabezado de Authorization:</strong> Authorization: Bearer {api_key}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Alertas</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/alert</span>
+                    </div>
+                    <p class="endpoint-description">Crear una alerta</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/alert</span>
+                    </div>
+                    <p class="endpoint-description">Listar todas las alertas</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/alert/{alert_id}</span>
+                    </div>
+                    <p class="endpoint-description">Obtener alerta por ID</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/alert/{alert_id}/case</span>
+                    </div>
+                    <p class="endpoint-description">Promocionar alerta a caso</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/alert/{alert_id}/merge/{case_id}</span>
+                    </div>
+                    <p class="endpoint-description">Fusionar alerta en caso</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Gestión de Casos</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/case</span>
+                    </div>
+                    <p class="endpoint-description">Crear un nuevo caso</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/case</span>
+                    </div>
+                    <p class="endpoint-description">Listar todos los casos</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/case/{case_id}</span>
+                    </div>
+                    <p class="endpoint-description">Obtener caso por ID</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/api/case/{case_id}</span>
+                    </div>
+                    <p class="endpoint-description">Actualizar un caso</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/case/_list</span>
+                    </div>
+                    <p class="endpoint-description">Listar plantillas de casos</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/case/_fromTemplate/{template_id}</span>
+                    </div>
+                    <p class="endpoint-description">Crear caso desde plantilla</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/case/{case_id}/customFields</span>
+                    </div>
+                    <p class="endpoint-description">Listar campos personalizados</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/api/case/{case_id}/customFields</span>
+                    </div>
+                    <p class="endpoint-description">Actualizar campos personalizados</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/api/case/{case_id}</span>
+                    </div>
+                    <p class="endpoint-description">Establecer nivel PAP (0-3)</p>
+                </div>
+                <div class="note">
+                    <strong>Niveles PAP:</strong> 0=Blanco, 1=Verde, 2=Ámbar, 3=Rojo
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/case/{case_id}/export/misp</span>
+                    </div>
+                    <p class="endpoint-description">Compartir caso con MISP</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Observables</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/case/{case_id}/observable</span>
+                    </div>
+                    <p class="endpoint-description">Listar observables de un caso</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/case/{case_id}/observable</span>
+                    </div>
+                    <p class="endpoint-description">Añadir observable a un caso</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <span class="path">/api/case/{case_id}/observable/{observable_id}</span>
+                    </div>
+                    <p class="endpoint-description">Eliminar observable</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/api/case/{case_id}/observable/{observable_id}</span>
+                    </div>
+                    <p class="endpoint-description">Marcar observable como IOC</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Tareas</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/case/{case_id}/task</span>
+                    </div>
+                    <p class="endpoint-description">Listar tareas de un caso</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/case/{case_id}/task</span>
+                    </div>
+                    <p class="endpoint-description">Crear una tarea</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method patch">PATCH</span>
+                        <span class="path">/api/case/{case_id}/task/{task_id}</span>
+                    </div>
+                    <p class="endpoint-description">Actualizar una tarea</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <span class="path">/api/case/{case_id}/task/{task_id}</span>
+                    </div>
+                    <p class="endpoint-description">Eliminar una tarea</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Plantillas de Casos</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/casetemplate/{template_id}</span>
+                    </div>
+                    <p class="endpoint-description">Obtener plantilla de caso</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Variables de Entorno</h3>
+                <ul class="env-list">
+                    <li><span class="env-name">THEHIVE_PORT</span><span class="env-value">9000</span></li>
+                    <li><span class="env-name">THEHIVE_SECRET</span><span class="env-value">Clave secreta de TheHive</span></li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Ejemplos de Pruebas</h3>
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando curl</h4>
+                <pre class="code-block" style="margin-bottom: 1rem;"># Listar Casos
+curl -X GET http://localhost:9000/api/case \
+  -H "Authorization: Bearer {api_key}"
+
+# Crear Caso
+curl -X POST http://localhost:9000/api/case \
+  -H "Authorization: Bearer {api_key}" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Test Case","description":"Test description","severity":2}'</pre>
+
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando Python</h4>
+                <pre class="code-block">import requests
+
+api_key = "your_api_key"
+headers = {"Authorization": f"Bearer {api_key}"}
+
+# Listar Casos
+response = requests.get("http://localhost:9000/api/case", headers=headers)
+print(response.json())</pre>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

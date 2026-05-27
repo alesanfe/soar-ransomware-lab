@@ -1,0 +1,111 @@
+name: soar-lab-logging
+
+# === Centralized Logging Stack ===
+# Loki, Promtail, Grafana, PostgreSQL
+
+services:
+  grafana-db:
+    image: postgres:14-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_grafana_db
+    environment:
+      POSTGRES_USER: grafana
+      POSTGRES_PASSWORD: grafana_password
+      POSTGRES_DB: grafana
+    volumes:
+      - grafana_db_data:/var/lib/postgresql/data
+    networks:
+      - logging_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grafana"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://localhost/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=grafana-db:5432
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=grafana
+      - GF_DATABASE_PASSWORD=grafana_password
+    networks:
+      - logging_net
+    ports:
+      - "${GRAFANA_PORT:-3002}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      grafana-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  loki:
+    image: grafana/loki:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - logging_net
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - loki_data:/loki
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_promtail
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - logging_net
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+networks:
+  logging_net:
+    driver: bridge
+
+volumes:
+  grafana_db_data:
+  grafana_data:
+  loki_data:

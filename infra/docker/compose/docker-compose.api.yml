@@ -1,0 +1,192 @@
+name: soar-lab-api
+
+# === API Service, Documentation, Web Management, Nginx ===
+
+services:
+  api:
+    build:
+      context: ../../../
+      dockerfile: apps/api/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_api
+    environment:
+      - FASTAPI_ENV=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - CORS_ORIGINS=${CORS_ORIGINS:-"http://localhost:8080,http://localhost:3000,http://localhost,http://localhost:8081"}
+      - LOG_LEVEL=${API_LOG_LEVEL:-INFO}
+      - AUTH_SECRET_KEY=${API_AUTH_SECRET}
+      - API_AUTH_SECRET=${API_AUTH_SECRET}
+      - WEB_UI_USER=${WEB_UI_USER:-admin}
+      - WEB_UI_PASSWORD=${WEB_UI_PASSWORD}
+      - DOCKER_COMPOSE_FILE=docker-compose.yml
+      - TEST_RESULTS_DIR=/app/results
+      - BACKUP_DIR=/app/backups
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - PYTHONPATH=/app/src
+      - DOCKER_HOST=tcp://host.docker.internal:2375
+      - BASE_DIR=/app
+      - THEHIVE_SECRET=${THEHIVE_SECRET}
+      - THEHIVE_API_KEY=${THEHIVE_API_KEY}
+      - CORTEX_SECRET=${CORTEX_SECRET}
+      - CORTEX_API_KEY=${CORTEX_API_KEY}
+      - SHUFFLE_DEFAULT_USERNAME=${SHUFFLE_DEFAULT_USERNAME:-admin}
+      - SHUFFLE_DEFAULT_PASSWORD=${SHUFFLE_DEFAULT_PASSWORD}
+      - SHUFFLE_DEFAULT_APIKEY=${SHUFFLE_DEFAULT_APIKEY}
+      - MISP_API_KEY=${MISP_API_KEY}
+      - SIEM_WEBHOOK_TOKEN=${SIEM_WEBHOOK_TOKEN}
+      - EDR_SIM_TOKEN=${EDR_SIM_TOKEN}
+      - FIREWALL_SIM_TOKEN=${FIREWALL_SIM_TOKEN}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # Service health check URLs
+      - THEHIVE_HEALTH_URL=http://thehive:9000/api/health
+      - THEHIVE_CONTAINER=soar_thehive
+      - CORTEX_HEALTH_URL=http://cortex:9001/
+      - CORTEX_CONTAINER=soar_cortex
+      - SHUFFLE_UI_HEALTH_URL=http://shuffle-frontend:80
+      - SHUFFLE_FRONTEND_CONTAINER=soar_shuffle_frontend
+      - SHUFFLE_HEALTH_URL=http://shuffle-backend:5001/api/v1/health
+      - SHUFFLE_CONTAINER=soar_shuffle_backend
+      - KIBANA_HEALTH_URL=http://kibana:5601/kibana/api/status
+      - KIBANA_CONTAINER=soar_kibana
+      - DOCS_HEALTH_URL=http://docs-site:3000
+      - DOCS_CONTAINER=soar_docs_site
+      - API_HEALTH_URL=http://api:8000/health
+      - API_CONTAINER=soar_api
+      - ELASTICSEARCH_HEALTH_URL=http://elasticsearch:9200/_cluster/health
+      - ELASTICSEARCH_CONTAINER=soar_elasticsearch
+      - NGINX_HEALTH_URL=http://nginx/nginx-health
+      - NGINX_CONTAINER=soar_nginx
+    volumes:
+      - ${ARTIFACTS_DIR:-../../../artifacts}/results:/app/results
+      - ${ARTIFACTS_DIR:-../../../artifacts}/backups:/app/backups
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    networks:
+      - soar_net
+      - ti_net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  docs-site:
+    build:
+      context: ../../../
+      dockerfile: apps/docs-site/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_docs_site
+    volumes:
+      - ../../../docs:/opt/docusaurus/docs:ro
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  web-management:
+    build:
+      context: ../../../apps/web-management
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_web_management
+    ports:
+      - "8081:80"
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep nginx || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_nginx
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+      - "3001:3001"
+      - "3000:3000"
+    networks:
+      - soar_net
+      - logging_net
+    depends_on:
+      thehive:
+        condition: service_healthy
+      cortex:
+        condition: service_healthy
+      shuffle-frontend:
+        condition: service_healthy
+      wazuh-manager:
+        condition: service_healthy
+      kibana:
+        condition: service_started
+      web-management:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/nginx-health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped

@@ -16,8 +16,12 @@
     "C:\\Data\\financial.xlsx",
     "C:\\Backup\\database.sql"
   ],
-  "mitre_tactics": ["TA0040"],
-  "mitre_techniques": ["T1486"],
+  "mitre_tactics": [
+    "TA0040"
+  ],
+  "mitre_techniques": [
+    "T1486"
+  ],
   "user_account": "johndoe",
   "process_name": "ransomware.exe",
   "command_line": "C:\\Windows\\Temp\\ransomware.exe -encrypt -path C:\\Users",

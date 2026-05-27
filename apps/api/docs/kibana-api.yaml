@@ -1,0 +1,282 @@
+openapi: 3.0.3
+info:
+  title: Kibana API
+  description: Visualization and dashboard platform for Elasticsearch
+  version: 8.x
+  contact:
+    name: Kibana Project
+servers:
+  - url: http://localhost:15601
+    description: Local development server
+  - url: https://localhost:15601
+    description: Local development server (SSL)
+  - url: http://localhost/kibana
+    description: Nginx reverse proxy
+  - url: https://localhost/kibana
+    description: Nginx reverse proxy (SSL)
+tags:
+  - name: Saved Objects
+    description: Saved objects management
+  - name: Spaces
+    description: Spaces management
+  - name: Search
+    description: Search operations
+  - name: Core
+    description: Core APIs
+paths:
+  /api/saved_objects/_find:
+    get:
+      tags:
+        - Saved Objects
+      summary: Find saved objects
+      description: Find saved objects by type
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saved objects found
+  /api/saved_objects/{type}/{id}:
+    get:
+      tags:
+        - Saved Objects
+      summary: Get saved object
+      description: Get a specific saved object
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saved object retrieved
+    post:
+      tags:
+        - Saved Objects
+      summary: Create saved object
+      description: Create a new saved object
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Saved object created
+    put:
+      tags:
+        - Saved Objects
+      summary: Update saved object
+      description: Update a saved object
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Saved object updated
+    delete:
+      tags:
+        - Saved Objects
+      summary: Delete saved object
+      description: Delete a saved object
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saved object deleted
+  /api/saved_objects/_bulk_create:
+    post:
+      tags:
+        - Saved Objects
+      summary: Bulk create saved objects
+      description: Create multiple saved objects
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+      responses:
+        '200':
+          description: Saved objects created
+  /api/spaces:
+    get:
+      tags:
+        - Spaces
+      summary: List spaces
+      description: Get list of all spaces
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Spaces retrieved
+    post:
+      tags:
+        - Spaces
+      summary: Create space
+      description: Create a new space
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '200':
+          description: Space created
+  /api/spaces/{space_id}:
+    get:
+      tags:
+        - Spaces
+      summary: Get space
+      description: Get a specific space
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: space_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Space retrieved
+    put:
+      tags:
+        - Spaces
+      summary: Update space
+      description: Update a space
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: space_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Space updated
+    delete:
+      tags:
+        - Spaces
+      summary: Delete space
+      description: Delete a space
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: space_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Space deleted
+  /api/search:
+    post:
+      tags:
+        - Search
+      summary: Search
+      description: Search across Kibana
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Search results
+  /api/status:
+    get:
+      tags:
+        - Core
+      summary: Get status
+      description: Get Kibana status
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Kibana status retrieved
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

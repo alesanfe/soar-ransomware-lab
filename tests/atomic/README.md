@@ -4,7 +4,8 @@ This directory contains atomic test cases for individual component validation.
 
 ## Purpose
 
-Atomic tests verify the functionality of specific components in isolation, without dependencies on other services. These are useful for:
+Atomic tests verify the functionality of specific components in isolation, without dependencies on other services. These
+are useful for:
 
 - Rapid development iteration
 - Isolating root causes of failures
@@ -14,6 +15,7 @@ Atomic tests verify the functionality of specific components in isolation, witho
 ## Test Structure
 
 Each atomic test should:
+
 - Test a single component or feature
 - Be independent of other tests
 - Have clear pass/fail criteria

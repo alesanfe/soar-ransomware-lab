@@ -1,6 +1,8 @@
 """Pydantic models for SOAR Lab API."""
+import json
 from datetime import datetime
-from pydantic import BaseModel, Field, validator
+from fastapi import Response
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, List, Any
 
 
@@ -26,9 +28,10 @@ class VerifyAuthResponse(BaseModel):
 class TestRequest(BaseModel):
     """Test execution request model."""
     category: str = Field(..., description="Test category (e.g., 'unit', 'integration', 'all')")
-    
-    @validator('category')
-    def validate_category(cls, v):
+
+    @field_validator('category')
+    @classmethod
+    def validate_category(cls, v: str) -> str:
         allowed_categories = ['unit', 'integration', 'e2e', 'all']
         if v not in allowed_categories:
             raise ValueError(f"Category must be one of: {', '.join(allowed_categories)}")
@@ -38,10 +41,10 @@ class TestRequest(BaseModel):
 class BackupRequest(BaseModel):
     """Backup request model."""
     backup_name: str = Field(..., description="Name of the backup file to restore")
-    
-    @validator('backup_name')
-    def validate_backup_name(cls, v):
-        # Prevent path traversal attacks
+
+    @field_validator('backup_name')
+    @classmethod
+    def validate_backup_name(cls, v: str) -> str:
         if '..' in v or '/' in v or '\\' in v:
             raise ValueError("Invalid backup name: path traversal not allowed")
         if not v.endswith('.tar.gz'):
@@ -108,12 +111,10 @@ class RestoreBackupResponse(BaseModel):
 class ErrorResponse(BaseModel):
     """Standard error response model."""
     error: Dict[str, str] = Field(..., description="Error details")
-    
+
     @classmethod
     def create(cls, code: str, message: str, status_code: int = 500):
         """Create an error response."""
-        from fastapi import Response
-        import json
         return Response(
             status_code=status_code,
             content=json.dumps({"error": {"code": code, "message": message}}),

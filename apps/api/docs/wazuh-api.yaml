@@ -1,0 +1,313 @@
+openapi: 3.0.3
+info:
+  title: Wazuh API
+  description: Security information and event management platform
+  version: 4.x
+  contact:
+    name: Wazuh Project
+servers:
+  - url: http://localhost:55000
+    description: Local development server
+  - url: https://localhost:55000
+    description: Local development server (SSL)
+  - url: http://localhost/wazuh
+    description: Nginx reverse proxy
+  - url: https://localhost/wazuh
+    description: Nginx reverse proxy (SSL)
+tags:
+  - name: Security
+    description: Authentication and security
+  - name: Agents
+    description: Agent management
+  - name: Groups
+    description: Group management
+  - name: Decoders
+    description: Decoder management
+  - name: Rules
+    description: Rule management
+  - name: Lists
+    description: List management
+  - name: Active Response
+    description: Active response commands
+paths:
+  /security/user/authenticate:
+    post:
+      tags:
+        - Security
+      summary: Authenticate user
+      description: Authenticate user to get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+  /agents:
+    get:
+      tags:
+        - Agents
+      summary: List agents
+      description: Get list of all agents
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Agents retrieved successfully
+    post:
+      tags:
+        - Agents
+      summary: Add agent
+      description: Add a new agent
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                ip:
+                  type: string
+      responses:
+        '200':
+          description: Agent added successfully
+  /agents/{agent_id}:
+    get:
+      tags:
+        - Agents
+      summary: Get agent by ID
+      description: Retrieve a specific agent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent retrieved successfully
+    delete:
+      tags:
+        - Agents
+      summary: Delete agent
+      description: Delete an agent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent deleted successfully
+  /agents/{agent_id}/restart:
+    put:
+      tags:
+        - Agents
+      summary: Restart agent
+      description: Restart a specific agent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent restarted successfully
+  /agents/{agent_id}/status:
+    get:
+      tags:
+        - Agents
+      summary: Get agent status
+      description: Get status of a specific agent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent status retrieved
+  /groups:
+    get:
+      tags:
+        - Groups
+      summary: List groups
+      description: Get list of all groups
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Groups retrieved successfully
+    post:
+      tags:
+        - Groups
+      summary: Create group
+      description: Create a new group
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Group created successfully
+  /groups/{group_id}:
+    get:
+      tags:
+        - Groups
+      summary: Get group by ID
+      description: Retrieve a specific group
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: group_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Group retrieved successfully
+  /decoders:
+    get:
+      tags:
+        - Decoders
+      summary: List decoders
+      description: Get list of all decoders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Decoders retrieved successfully
+  /decoders/{decoder_id}:
+    get:
+      tags:
+        - Decoders
+      summary: Get decoder by ID
+      description: Retrieve a specific decoder
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: decoder_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Decoder retrieved successfully
+  /rules:
+    get:
+      tags:
+        - Rules
+      summary: List rules
+      description: Get list of all rules
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Rules retrieved successfully
+  /rules/{rule_id}:
+    get:
+      tags:
+        - Rules
+      summary: Get rule by ID
+      description: Retrieve a specific rule
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rule_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rule retrieved successfully
+  /lists:
+    get:
+      tags:
+        - Lists
+      summary: Lists
+      description: Get list of all CDB lists
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lists retrieved successfully
+  /lists/{list_path}:
+    get:
+      tags:
+        - Lists
+      summary: Get list by path
+      description: Retrieve a specific CDB list
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: list_path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List retrieved successfully
+  /active-response:
+    get:
+      tags:
+        - Active Response
+      summary: List active response commands
+      description: Get list of all active response commands
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Active response commands retrieved
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

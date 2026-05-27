@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MISP Modules API - Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>MISP Modules API</h1>
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <a href="index.html" class="back-link">← Back to Index</a>
+
+            <div class="service-info">
+                <h2>MISP Modules API</h2>
+                <div class="meta">
+                    <div class="meta-item"><strong>Container:</strong> soar_misp_modules</div>
+                    <div class="meta-item"><strong>Port:</strong> 6666</div>
+                    <div class="meta-item"><strong>Base URL:</strong> http://localhost:6666</div>
+                    <div class="meta-item"><strong>Documentation:</strong> <a href="https://github.com/MISP/misp-modules" style="color: var(--primary-light);">MISP Modules GitHub</a></div>
+                </div>
+                <p style="color: var(--text-secondary);">Expansion, import, and export modules for MISP enrichment. Provides modules for expanding attributes with additional threat intelligence data.</p>
+            </div>
+
+            <div class="section">
+                <h3>Modules</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/modules</span>
+                    </div>
+                    <p class="endpoint-description">List all modules</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/modules/expansion</span>
+                    </div>
+                    <p class="endpoint-description">List expansion modules</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/modules/export</span>
+                    </div>
+                    <p class="endpoint-description">List export modules</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/modules/import</span>
+                    </div>
+                    <p class="endpoint-description">List import modules</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/modules/action</span>
+                    </div>
+                    <p class="endpoint-description">List action modules</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/modules/{module_name}</span>
+                    </div>
+                    <p class="endpoint-description">Get module info</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/modules/{module_name}</span>
+                    </div>
+                    <p class="endpoint-description">Run module</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/modules/{module_name}/health</span>
+                    </div>
+                    <p class="endpoint-description">Get module health</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/modules/{module_name}/stats</span>
+                    </div>
+                    <p class="endpoint-description">Get module statistics</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Environment Variables</h3>
+                <ul class="env-list">
+                    <li><span class="env-name">MISP_MODULES_PORT</span><span class="env-value">6666</span></li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Testing Examples</h3>
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Using curl</h4>
+                <pre class="code-block" style="margin-bottom: 1rem;"># List Modules
+curl -X GET http://localhost:6666/modules
+
+# Run Module
+curl -X POST http://localhost:6666/modules/{name} \
+  -H "Content-Type: application/json" \
+  -d '{"module":"{name}","data":["1.2.3.4"]}'</pre>
+
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Using Python</h4>
+                <pre class="code-block">import requests
+
+# List Modules
+response = requests.get("http://localhost:6666/modules")
+print(response.json())</pre>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

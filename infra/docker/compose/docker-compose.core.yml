@@ -1,0 +1,250 @@
+name: soar-lab-core
+
+# === Core SOAR Services ===
+# Redis, TheHive, Cortex, Shuffle
+# (Elasticsearch is in docker-compose.yml)
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - ti_net
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  thehive:
+    image: thehiveproject/thehive:3.5.2-1
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_thehive
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "${THEHIVE_HTTP_PORT:-9000}:9000"
+    volumes:
+      - thehive_files:/opt/thp/thehive/files
+      - ../thehive.application.conf/thehive.conf:/etc/thehive/application.conf:ro
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cortex:
+    build:
+      context: ../cortex
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "${CORTEX_HTTP_PORT:-9001}:9001"
+    volumes:
+      - cortex_data:/var/lib/cortex
+      - ../cortex.application.conf/cortex.conf:/etc/cortex/application.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk -o /dev/null -w '%{http_code}' http://localhost:9001/ | grep -qE '^[23]' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  shuffle-frontend:
+    image: ghcr.io/shuffle/shuffle-frontend:2.2.1
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_frontend
+    environment:
+      BACKEND_HOSTNAME: shuffle-backend
+      SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
+    networks:
+      - soar_net
+    depends_on:
+      shuffle-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:80 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  shuffle-backend:
+    image: ghcr.io/shuffle/shuffle-backend:2.2.1
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend
+    environment:
+      SHUFFLE_ELASTIC: "true"
+      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
+      SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "true"
+      SHUFFLE_OPENSEARCH_USERNAME: ${ELASTIC_USERNAME:-elastic}
+      SHUFFLE_OPENSEARCH_PASSWORD: ${ELASTIC_PASSWORD}
+      OUTER_HOSTNAME: ${OUTER_HOSTNAME:-host.docker.internal}
+      SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
+      SHUFFLE_FILE_LOCATION: /shuffle-files
+      SHUFFLE_APP_DOWNLOAD_LOCATION: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
+      SHUFFLE_DEFAULT_USERNAME: ${SHUFFLE_DEFAULT_USERNAME:-shuffleadmin}
+      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD:-ChangeMe!}
+      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY:-e18f1fe3-1591-44ec-aff4-c6e759b3a8bf}
+      SHUFFLE_SWAGGER_ENABLED: "true"
+      SHUFFLE_AUTH_MODE: "multi"
+      SHUFFLE_HEALTHCHECK_DISABLED: "true"
+    volumes:
+      - shuffle_apps:/shuffle-apps
+      - shuffle_files:/shuffle-files
+    ports:
+      - "${SHUFFLE_API_PORT:-5001}:5001"
+    networks:
+      - soar_net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5001/api/v1/users/login --post-data '{}' 2>&1 | grep -q 'HTTP\\|error\\|login\\|password' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  network-watcher:
+    build: network-watcher
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_network_watcher
+    environment:
+      TARGET_NETWORK: soar_soar_net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - soar_net
+    restart: unless-stopped
+
+  orborus:
+    image: ghcr.io/shuffle/shuffle-orborus:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_orborus
+    environment:
+      SHUFFLE_APP_SDK_TIMEOUT: 300
+      ENVIRONMENT_NAME: ${SHUFFLE_ENV_NAME:-Shuffle}
+      ORG_ID: ${SHUFFLE_ORG_ID:-Shuffle}
+      BASE_URL: http://host.docker.internal:5001
+      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
+      EXECUTION_ENVIRONMENT: docker
+      SHUFFLE_APP_SDK_URL: "https://github.com/shuffle/python-apps"
+      SHUFFLE_STATS_DISABLED: true
+      SHUFFLE_LOGS_DISABLED: true
+      SHUFFLE_SWARM_CONFIG: docker
+      CLEANUP: false
+      SHUFFLE_WORKER_IMAGE: ghcr.io/shuffle/shuffle-worker:latest
+      SHUFFLE_PIPELINE_AUTH: ${SHUFFLE_DEFAULT_APIKEY:-e18f1fe3-1591-44ec-aff4-c6e759b3a8bf}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - soar_net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      shuffle-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://shuffle-backend:5001/api/v1/health 2>&1 | grep -q 'success\\|workflows' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

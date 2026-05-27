@@ -5,14 +5,9 @@ Tests individual validation functions in isolation
 """
 
 import json
-import sys
 import unittest
-from pathlib import Path
 
-# Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
-
-from soar_lab.services.send_alert import SIEMSimulator
+from soar_lab.validation.validators import AlertValidator
 
 
 class TestAlertValidationAtomic(unittest.TestCase):
@@ -20,10 +15,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.simulator = SIEMSimulator(
-            webhook_url="http://localhost:5001/webhook",
-            api_token="test-token"
-        )
+        # Use AlertValidator directly instead of SIEMSimulator
+        pass
 
     def test_validate_alert_structure_complete(self):
         """Test alert structure validation with complete data"""
@@ -35,7 +28,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 2,
             'event_type': 'ransomware_detection'
         }
-        self.assertTrue(self.simulator.validate_alert_structure(alert))
+        self.assertTrue(AlertValidator.validate_structure(alert))
 
     def test_validate_alert_structure_missing_required_fields(self):
         """Test alert structure validation with missing required fields"""
@@ -45,9 +38,9 @@ class TestAlertValidationAtomic(unittest.TestCase):
             {'alert_id': 'TEST-003', 'src_ip': '192.168.1.1'},  # Missing hostname, hash, severity, event_type
             {'alert_id': 'TEST-004', 'severity': 2},  # Missing hostname, src_ip, hash, event_type
         ]
-        
+
         for alert in invalid_alerts:
-            self.assertFalse(self.simulator.validate_alert_structure(alert))
+            self.assertFalse(AlertValidator.validate_structure(alert))
 
     def test_validate_alert_structure_invalid_severity(self):
         """Test alert structure validation with invalid severity"""
@@ -59,7 +52,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 99,  # Invalid severity
             'event_type': 'ransomware_detection'
         }
-        self.assertFalse(self.simulator.validate_alert_structure(alert))
+        self.assertFalse(AlertValidator.validate_structure(alert))
 
     def test_validate_alert_structure_invalid_hash(self):
         """Test alert structure validation with invalid hash"""
@@ -71,7 +64,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 2,
             'event_type': 'ransomware_detection'
         }
-        self.assertFalse(self.simulator.validate_alert_structure(alert))
+        self.assertFalse(AlertValidator.validate_structure(alert))
 
     def test_validate_alert_structure_invalid_ip(self):
         """Test alert structure validation with invalid IP"""
@@ -83,13 +76,13 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 2,
             'event_type': 'ransomware_detection'
         }
-        self.assertFalse(self.simulator.validate_alert_structure(alert))
+        self.assertFalse(AlertValidator.validate_structure(alert))
 
     def test_validate_alert_structure_edge_cases(self):
         """Test alert structure validation with edge cases"""
         # Empty alert
-        self.assertFalse(self.simulator.validate_alert_structure({}))
-        
+        self.assertFalse(AlertValidator.validate_structure({}))
+
         # Alert with extra fields (should still be valid)
         alert_with_extra = {
             'alert_id': 'TEST-008',
@@ -100,7 +93,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'event_type': 'ransomware_detection',
             'extra_field': 'extra_value'
         }
-        self.assertTrue(self.simulator.validate_alert_structure(alert_with_extra))
+        self.assertTrue(AlertValidator.validate_structure(alert_with_extra))
 
     def test_validate_alert_structure_unicode_handling(self):
         """Test alert structure validation with unicode characters"""
@@ -112,7 +105,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 2,
             'event_type': 'ransomware_detection'
         }
-        self.assertTrue(self.simulator.validate_alert_structure(alert))
+        self.assertTrue(AlertValidator.validate_structure(alert))
 
     def test_validate_alert_structure_numeric_severity(self):
         """Test alert structure validation with numeric severity values"""
@@ -126,17 +119,17 @@ class TestAlertValidationAtomic(unittest.TestCase):
                 'severity': severity,
                 'event_type': 'ransomware_detection'
             }
-            self.assertTrue(self.simulator.validate_alert_structure(alert))
+            self.assertTrue(AlertValidator.validate_structure(alert))
 
     def test_validate_alert_structure_hash_formats(self):
         """Test alert structure validation with different hash formats"""
         # Test valid hash formats
         valid_hashes = [
-            'd41d8cd98f00b204e9800998ecf8427ed41d8cd98f00b204e9800998ecf8427e',  # MD5 (32 chars)
+            'd41d8cd98f00b204e9800998ecf8427ed41d8cd98f00b204e9800998ecf8427e',  # SHA-256 (64 chars)
             'da39a3ee5e6b4b0d3255bfef95601890afd80709',  # SHA1 (40 chars)
             'a' * 64  # SHA256 (64 chars)
         ]
-        
+
         for i, hash_value in enumerate(valid_hashes):
             alert = {
                 'alert_id': f'TEST-HASH-{i}',
@@ -146,7 +139,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
                 'severity': 2,
                 'event_type': 'ransomware_detection'
             }
-            self.assertTrue(self.simulator.validate_alert_structure(alert))
+            self.assertTrue(AlertValidator.validate_structure(alert))
 
     def test_validate_alert_structure_ip_formats(self):
         """Test alert structure validation with different IP formats"""
@@ -157,7 +150,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             '172.16.0.1',
             '127.0.0.1'
         ]
-        
+
         for i, ip in enumerate(valid_ips):
             alert = {
                 'alert_id': f'TEST-IP-{i}',
@@ -167,7 +160,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
                 'severity': 2,
                 'event_type': 'ransomware_detection'
             }
-            self.assertTrue(self.simulator.validate_alert_structure(alert))
+            self.assertTrue(AlertValidator.validate_structure(alert))
 
 
 if __name__ == '__main__':

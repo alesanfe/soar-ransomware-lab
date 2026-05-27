@@ -6,106 +6,93 @@ Provides common fixtures and configuration for all tests
 
 import os
 import pytest
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import WebDriverException
+from pathlib import Path
+from unittest.mock import Mock
+
+# Set BASE_DIR at module load time so that imports of soar_lab.api (which
+# instantiate Settings() eagerly) do not fail during test collection.
+os.environ.setdefault('BASE_DIR', str(Path(__file__).parent.parent))
+
+# Disable eager instantiation in soar_lab.api.__init__ to allow tests to
+# configure environment before app creation
+os.environ.setdefault('SOAR_SKIP_EAGER_INIT', '1')
 
 
-def get_headless_mode():
-    """Determine if tests should run in headless mode"""
-    # Default to False (visible browser) unless explicitly set to True
-    headless_env = os.getenv('HEADLESS', '').lower()
-    return headless_env in ('true', '1', 'yes')
+@pytest.fixture
+def mock_settings():
+    """Mock settings object for testing."""
+    settings = Mock()
+    settings.API_HOST = "127.0.0.1"
+    settings.API_PORT = 8000
+    settings.REDIS_URL = None
+    settings.BACKUP_DIR = "/tmp/test_backups"
+    settings.TEST_TIMEOUT_SECONDS = 300
+    settings.TEST_COVERAGE_PATH = "src/soar_lab"
+    settings.JWT_SECRET_KEY = "test-secret-key-min-32-chars-long"
+    settings.JWT_EXPIRATION_MINUTES = 60
+    settings.CORS_ORIGINS = ["http://localhost:8080"]
+    return settings
 
 
-@pytest.fixture(scope="session")
-def chrome_options():
-    """Provide Chrome options with configurable headless mode"""
-    options = Options()
-    
-    # Configure headless mode based on environment variable
-    if get_headless_mode():
-        options.add_argument('--headless')
-        print("Running Chrome in HEADLESS mode")
-    else:
-        print("Running Chrome in VISIBLE mode")
-        # Maximize window for visible mode
-        options.add_argument('--start-maximized')
-    
-    # Common Chrome options for stability
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=1920,1080')
-    
-    # Additional stability options
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-web-security')
-    options.add_argument('--allow-running-insecure-content')
-    options.add_argument('--disable-features=VizDisplayCompositor')
-    
-    return options
+@pytest.fixture
+def mock_redis_client():
+    """Mock Redis client for testing."""
+    client = Mock()
+    client.ping.return_value = True
+    client.get.return_value = None
+    client.set.return_value = True
+    client.delete.return_value = True
+    return client
 
 
-@pytest.fixture(scope="class")
-def driver(chrome_options):
-    """Setup Chrome driver for browser testing"""
-    try:
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.set_page_load_timeout(30)
-        driver.implicitly_wait(10)
-        yield driver
-    except WebDriverException as e:
-        # Don't skip - let the test handle the driver unavailability
-        # Tests should handle this gracefully within their logic
-        raise Exception(f"Chrome WebDriver not available: {e}")
-    finally:
-        if 'driver' in locals():
-            try:
-                driver.quit()
-            except:
-                pass
+@pytest.fixture
+def mock_docker_client():
+    """Mock Docker client for testing."""
+    client = Mock()
+    client.ping.return_value = True
+    client.containers = Mock()
+    client.containers.list.return_value = []
+    return client
 
 
-@pytest.fixture(scope="function")
-def driver_function(chrome_options):
-    """Setup Chrome driver for individual test functions"""
-    try:
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.set_page_load_timeout(30)
-        driver.implicitly_wait(10)
-        yield driver
-    except WebDriverException as e:
-        # Don't skip - let the test handle the driver unavailability
-        # Tests should handle this gracefully within their logic
-        raise Exception(f"Chrome WebDriver not available: {e}")
-    finally:
-        if 'driver' in locals():
-            try:
-                driver.quit()
-            except:
-                pass
+@pytest.fixture
+def sample_alert():
+    """Sample alert payload for testing."""
+    return {
+        "alert_id": "TEST-001",
+        "hostname": "test-host",
+        "src_ip": "192.168.1.100",
+        "hash": "5d41402abc4b2a76b9719d911017c592",
+        "severity": 1,
+        "event_type": "ransomware",
+        "timestamp": "2024-01-01T00:00:00Z",
+        "process_name": "malicious.exe",
+        "mitre_techniques": ["T1059"]
+    }
 
 
-# Docker tests should run regardless of Docker availability
-# Tests should handle Docker unavailability gracefully within the test logic
-# This ensures all tests remain active as required by project standards
+@pytest.fixture
+def temp_backup_dir(tmp_path):
+    """Temporary backup directory for testing."""
+    backup_dir = tmp_path / "backups"
+    backup_dir.mkdir()
+    return str(backup_dir)
 
 
-# Custom markers
-pytest_plugins = []
+@pytest.fixture
+def temp_results_dir(tmp_path):
+    """Temporary results directory for testing."""
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    return str(results_dir)
 
-def pytest_configure(config):
-    """Configure custom markers"""
-    config.addinivalue_line(
-        "markers", "browser: marks tests as browser tests requiring Selenium"
-    )
-    config.addinivalue_line(
-        "markers", "docker: marks tests as requiring Docker"
-    )
-    config.addinivalue_line(
-        "markers", "integration: marks tests as integration tests"
-    )
-    config.addinivalue_line(
-        "markers", "slow: marks tests as slow running"
-    )
+
+@pytest.fixture(autouse=True)
+def reset_env_vars():
+    """Reset environment variables before each test."""
+    original_env = os.environ.copy()
+    # Set BASE_DIR for tests that import modules that require it
+    os.environ.setdefault('BASE_DIR', str(Path(__file__).parent.parent))
+    yield
+    os.environ.clear()
+    os.environ.update(original_env)

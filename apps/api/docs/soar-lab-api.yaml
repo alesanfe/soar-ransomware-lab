@@ -1,0 +1,354 @@
+openapi: 3.0.3
+info:
+  title: SOAR Lab Management API
+  description: Custom FastAPI-based management interface for the SOAR lab environment
+  version: 1.0.0
+  contact:
+    name: SOAR Lab Team
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://localhost:8000
+    description: Local development server (SSL)
+  - url: http://localhost/api
+    description: Nginx reverse proxy
+  - url: https://localhost/api
+    description: Nginx reverse proxy (SSL)
+tags:
+  - name: Authentication
+    description: Authentication and authorization endpoints
+  - name: Health
+    description: Health check and system status
+  - name: Analytics
+    description: System metrics and analytics
+  - name: Backups
+    description: Backup and restore operations
+  - name: Tests
+    description: Test execution and results
+  - name: Services
+    description: Service management
+  - name: WebSocket
+    description: Real-time communication
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login to get JWT token
+      description: Authenticate with username and password to receive JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  example: WebUIPassword123!@#
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+        '401':
+          description: Invalid credentials
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Check API health status
+      description: Returns the health status of the API
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: 1.0.0
+  /analytics/metrics:
+    get:
+      tags:
+        - Analytics
+      summary: Get system metrics
+      description: Get system metrics including CPU, memory, and disk usage
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cpu:
+                    type: number
+                    example: 1.6
+                  memory:
+                    type: number
+                    example: 44.1
+                  disk:
+                    type: number
+                    example: 5.5
+                  timestamp:
+                    type: string
+                    format: date-time
+  /analytics/kpis:
+    get:
+      tags:
+        - Analytics
+      summary: Get KPI metrics
+      description: Get KPI metrics from log files
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: log_file_path
+          in: query
+          description: Path to log file
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: KPIs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mttr:
+                    type: number
+                    example: 3600
+                  mttd:
+                    type: number
+                    example: 1800
+                  alert_volume:
+                    type: integer
+                    example: 150
+                  resolution_rate:
+                    type: number
+                    example: 0.85
+  /backup/create:
+    post:
+      tags:
+        - Backups
+      summary: Create a backup
+      description: Create a backup of the lab environment
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                backup_type:
+                  type: string
+                  enum: [full, incremental]
+                  example: full
+                source_dir:
+                  type: string
+                  example: /app/data
+                include_metadata:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Backup created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backup_name:
+                    type: string
+                  status:
+                    type: string
+  /backup/restore:
+    post:
+      tags:
+        - Backups
+      summary: Restore a backup
+      description: Restore a backup to the lab environment
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - backup_name
+              properties:
+                backup_name:
+                  type: string
+                  example: backup_20260523.tar.gz
+                target_dir:
+                  type: string
+                  example: /app/data
+      responses:
+        '200':
+          description: Backup restored successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+  /backup/list:
+    get:
+      tags:
+        - Backups
+      summary: List available backups
+      description: Get list of all available backups
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Backups listed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backups:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                        size:
+                          type: string
+  /tests/run:
+    post:
+      tags:
+        - Tests
+      summary: Run lab tests
+      description: Execute lab tests by category
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: string
+                  enum: [unit, integration, e2e, all]
+                  example: unit
+      responses:
+        '200':
+          description: Tests executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  category:
+                    type: string
+                  passed:
+                    type: integer
+                  failed:
+                    type: integer
+                  skipped:
+                    type: integer
+                  coverage:
+                    type: number
+                  output:
+                    type: string
+                  duration:
+                    type: number
+  /tests/results:
+    get:
+      tags:
+        - Tests
+      summary: Get test results
+      description: Get results from previous test executions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Test results retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /services/status:
+    get:
+      tags:
+        - Services
+      summary: Get service status
+      description: Get status of all services in the lab
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Service status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        status:
+                          type: string
+                        port:
+                          type: integer
+  /ws/logs:
+    get:
+      tags:
+        - WebSocket
+      summary: WebSocket for log streaming
+      description: WebSocket endpoint for real-time log streaming
+      responses:
+        '101':
+          description: WebSocket connection established
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
