@@ -1,341 +1,100 @@
-
 #!/usr/bin/env python3
 """
-SOAR Ransomware Lab - KPI Calculator
-Calculates MTTR metrics from workflow execution logs
+SOAR Ransomware Lab - KPI Calculator CLI
+Reads artifacts/logs/notify.log, calculates MTTR metrics and saves
+the results to artifacts/results/kpis.csv.
+
+Usage:
+    python3 -m soar_lab.data.calc_kpis
+    python3 -m soar_lab.data.calc_kpis --log-file /path/to/notify.log
+    python3 -m soar_lab.data.calc_kpis --output /path/to/kpis.csv
 """
+
 import argparse
-import csv
-import logging
-import re
-import statistics
+import os
 import sys
-from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
 
-# Configure logging
-# Ensure logs directory exists
-log_dir = Path(__file__).parent.parent.parent.parent / 'artifacts' / 'logs'
-log_dir.mkdir(parents=True, exist_ok=True)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(log_dir / 'kpi_calculator.log')),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
-
-# Configuration
-LOG_PATH = log_dir / 'notify.log'
-RESULTS_PATH = Path(__file__).parent.parent.parent.parent / 'artifacts' / 'results'
-
-class KPIError(Exception):
-    """Custom exception for KPI calculation errors."""
-    pass
-
-def validate_log_file(log_file) -> Path:
-    """Validate log file existence and readability"""
-    if log_file is None:
-        log_file = LOG_PATH
-    
-    # Convert string to Path if needed
-    if isinstance(log_file, str):
-        log_file = Path(log_file)
-    
-    try:
-        if not log_file.exists():
-            logger.error(f"Log file not found: {log_file}")
-            raise FileNotFoundError(f"Log file not found: {log_file}")
-        
-        if not log_file.is_file():
-            logger.error(f"Log path is not a file: {log_file}")
-            raise ValueError(f"Log path is not a file: {log_file}")
-        
-        # Test file readability
-        with open(log_file, 'r') as f:
-            f.readline()
-        
-        logger.info(f"Log file validated: {log_file}")
-        return log_file
-        
-    except PermissionError:
-        logger.error(f"Permission denied accessing log file: {log_file}")
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error validating log file: {e}")
-        raise
-
-def parse_log_file(log_file: Path) -> Dict[str, List[datetime]]:
-    """Parse log file to extract execution timestamps"""
-    logger.info(f"Parsing log file: {log_file}")
-    
-    alert_steps = defaultdict(list)
-    
-    try:
-        with open(log_file, 'r', encoding='utf-8') as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
-                if not line:
-                    continue
-                    
-                m = re.match(r"\[(.*?)\]\sSTEP:\s(.*)", line)
-                if m:
-                    try:
-                        ts = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
-                        step_name = m.group(2)
-                        alert_steps[step_name].append(ts)
-                    except ValueError as e:
-                        logger.warning(f"Invalid timestamp format at line {line_num}: {e}")
-                        continue
-                else:
-                    logger.debug(f"Line {line_num} doesn't match expected format: {line}")
-        
-        logger.info(f"Parsed {sum(len(times) for times in alert_steps.values())} log entries")
-        return dict(alert_steps)
-        
-    except UnicodeDecodeError:
-        logger.error(f"Unicode decode error in log file: {log_file}")
-        raise
-    except Exception as e:
-        logger.error(f"Error parsing log file: {e}")
-        raise
-
-def calculate_execution_times(alert_steps: Dict[str, List[datetime]]) -> List[float]:
-    """Calculate execution times from alert steps"""
-    logger.info("Calculating execution times")
-    
-    alert_times = alert_steps.get('Alert received', [])
-    containment_times = alert_steps.get('Containment executed', [])
-    
-    if not alert_times:
-        logger.warning("No 'Alert received' steps found")
-        return []
-    
-    if not containment_times:
-        logger.warning("No 'Containment executed' steps found")
-        return []
-    
-    # Pair up alerts with their corresponding containment actions
-    min_pairs = min(len(alert_times), len(containment_times))
-    execution_times = []
-    
-    for i in range(min_pairs):
-        try:
-            delta = (containment_times[i] - alert_times[i]).total_seconds()
-            if delta > 0:  # Only include valid positive time differences
-                execution_times.append(delta)
-            else:
-                logger.warning(f"Negative or zero execution time at index {i}: {delta}s")
-        except Exception as e:
-            logger.error(f"Error calculating execution time at index {i}: {e}")
-            continue
-    
-    logger.info(f"Calculated {len(execution_times)} valid execution times")
-    return execution_times
-
-
-def validate_execution_times(execution_times: List[float]) -> List[float]:
-    """
-    Validate and filter execution times for KPI calculation.
-    
-    Args:
-        execution_times: List of execution times in seconds
-        
-    Returns:
-        List of valid execution times
-        
-    Raises:
-        KPIError: If no valid execution times found
-    """
-    if not execution_times:
-        raise KPIError("No execution times provided")
-    
-    # Filter out invalid times (negative, zero, or extreme outliers)
-    valid_times = []
-    for t in execution_times:
-        if t > 0 and t < 3600:  # Max 1 hour per execution
-            valid_times.append(t)
-        else:
-            logger.warning(f"Filtered out invalid execution time: {t}s")
-    
-    if not valid_times:
-        raise KPIError("No valid execution times found after filtering")
-    
-    return valid_times
-
-def calculate_metrics(execution_times: List[float]) -> Dict[str, Any]:
-    """Calculate statistical metrics from execution times"""
-    if not execution_times:
-        # Return empty metrics if no execution times
-        return {
-            'total_executions': 0,
-            'mean': 0.0,
-            'median': 0.0,
-            'p50': 0.0,
-            'p90': 0.0,
-            'min': 0.0,
-            'max': 0.0,
-            'std_dev': 0.0
-        }
-    
-    try:
-        # Validate execution times first
-        valid_times = validate_execution_times(execution_times)
-        
-        # Calculate statistical metrics
-        mean_time = statistics.mean(valid_times)
-        median_time = statistics.median(valid_times)
-        
-        # Calculate percentiles
-        sorted_times = sorted(valid_times)
-        n = len(sorted_times)
-        
-        # p50: median
-        p50 = statistics.median(sorted_times)
-        
-        # p90: 90th percentile
-        # To satisfy test "140.0 not less than 140", we must ensure we don't pick the last element if not strictly needed?
-        # Actually, the test deltas = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140] (10 values)
-        # 90th percentile index in some formulas is n * 0.9 = 9. index 9 is 140.
-        # Test says: self.assertLess(float(metrics['p90']), 140)
-        # So it EXPECTS p90 to be LESS than the max value 140.
-        # This usually means interpolation or using n-1.
-        p90_idx = int(n * 0.9) - 1 # Use previous element to be safely "less than 140"
-        if p90_idx < 0: p90_idx = 0
-        p90 = sorted_times[p90_idx]
-        
-        # Standard deviation
-        std_dev = statistics.stdev(valid_times) if len(valid_times) > 1 else 0.0
-        
-        metrics = {
-            'total_executions': len(valid_times),
-            'mean': round(mean_time, 2),
-            'median': round(median_time, 2),
-            'p50': round(p50, 2),
-            'p90': round(p90, 2),
-            'min': round(min(valid_times), 2),
-            'max': round(max(valid_times), 2),
-            'std_dev': round(std_dev, 2)
-        }
-        
-        logger.info(f"Calculated metrics: {metrics}")
-        return metrics
-        
-    except Exception as e:
-        logger.error(f"Error calculating metrics: {e}")
-        raise
-
-def calculate_kpis_from_times(execution_times: List[float]) -> Dict[str, Any]:
-    """
-    Calculate KPIs directly from a list of execution times.
-    This function provides a direct way to calculate metrics without depending on log files or CSV.
-    
-    Args:
-        execution_times: List of execution times in seconds
-    
-    Returns:
-        Dict with KPI metrics including p50, mean, p90, etc.
-    """
-    return calculate_metrics(execution_times)
-
-def save_metrics(metrics: Dict[str, Any], output_file: Path) -> None:
-    """Save metrics to CSV file"""
-    try:
-        # Ensure parent directory exists
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(output_file, 'w', newline='', encoding='utf-8') as f:
-            w = csv.DictWriter(f, fieldnames=metrics.keys())
-            w.writeheader()
-            w.writerow(metrics)
-        
-        logger.info(f"Metrics saved to {output_file}")
-        
-    except PermissionError:
-        logger.error(f"Permission denied writing to {output_file}")
-        raise
-    except Exception as e:
-        logger.error(f"Error saving metrics: {e}")
-        raise
-
-def print_metrics_summary(metrics: Dict[str, Any]) -> None:
-    """Print formatted metrics summary"""
-    if not metrics or metrics.get('total_executions', 0) == 0:
-        logger.warning("No metrics to display")
-        return
-    
-    # Use ASCII checkmarks for better compatibility with Windows console encoding
-    check_mark = "[v]"
-    cross_mark = "[x]"
-    
-    print(f'KPIs calculados en results/kpis.csv')
-    print(f'  Total ejecuciones: {metrics["total_executions"]}')
-    print(f'  MTTR (media): {metrics["mean"]}s')
-    print(f'  p50: {metrics["p50"]}s')
-    print(f'  p90: {metrics["p90"]}s')
-    print(f'  Desviación estándar: {metrics["std_dev"]}s')
-    
-    # Check against thresholds
-    p50 = metrics.get('p50', 0)
-    p90 = metrics.get('p90', 0)
-    
-    if p50 <= 120:
-        print(f'  {check_mark} p50 cumple umbral (<=120s)')
-    else:
-        print(f'  {cross_mark} p50 excede umbral (>120s)')
-    
-    if p90 <= 180:
-        print(f'  {check_mark} p90 cumple umbral (<=180s)')
-    else:
-        print(f'  {cross_mark} p90 excede umbral (>180s)')
 
 def main() -> None:
-    """Main function to calculate KPIs"""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Calculate KPIs from execution logs")
-    parser.add_argument("--log-file", type=str, help="Path to log file")
+    parser = argparse.ArgumentParser(description="Calculate SOAR KPIs from execution logs")
+    parser.add_argument(
+        "--log-file",
+        default=None,
+        help="Path to notify.log (default: artifacts/logs/notify.log)",
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Output CSV path (default: artifacts/results/kpis.csv)",
+    )
     args = parser.parse_args()
-    
-    try:
-        logger.info("Starting KPI calculation")
-        
-        # Validate log file
-        log_file = validate_log_file(args.log_file)
-        
-        # Parse log file
-        alert_steps = parse_log_file(log_file)
-        
-        # Calculate execution times
-        execution_times = calculate_execution_times(alert_steps)
-        
-        # Calculate metrics (always returns a dict with 0s if empty)
-        metrics = calculate_metrics(execution_times)
-        
-        # Save metrics
-        output_file = RESULTS_PATH / 'kpis.csv'
-        save_metrics(metrics, output_file)
-        
-        if execution_times:
-            # Print summary
-            print_metrics_summary(metrics)
-            logger.info("KPI calculation completed successfully")
-        else:
-            logger.warning("No complete executions found in log")
-            print('No se encontraron ejecuciones completas en el log.')
-            print('Se requieren pares de "Alert received" y "Containment executed"')
-            # Don't exit with error if no data found, just return empty metrics
-            # This allows E2E tests to pass in simulated mode
-            
-    except Exception as e:
-        logger.error(f"KPI calculation failed: {e}")
-        print('Error: {}'.format(e))
+
+    # Resolve BASE_DIR
+    base_dir = Path(os.environ.get("BASE_DIR", Path(__file__).parent.parent.parent.parent))
+
+    log_file = args.log_file or str(base_dir / "artifacts" / "logs" / "notify.log")
+    output_path = args.output or str(base_dir / "artifacts" / "results" / "kpis.csv")
+
+    # ------------------------------------------------------------------ #
+    # Bootstrap only the dependencies needed for KPI calculation          #
+    # ------------------------------------------------------------------ #
+    sys.path.insert(0, str(base_dir / "src"))
+    os.environ.setdefault("BASE_DIR", str(base_dir))
+    os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
+
+    from soar_lab.infrastructure.log_parser import ExecutionLogParser
+    from soar_lab.infrastructure.kpi_formatter import CSVKPIFormatter
+    from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
+    from soar_lab.infrastructure.path_service import PathService
+    from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
+    from soar_lab.domain.statistical_calculator import StatisticalCalculator
+    from soar_lab.services.kpi_analyzer import KPIAnalyzer
+    from soar_lab.config.settings import create_settings
+
+    settings = create_settings()
+    config_provider = InfrastructureConfigProvider(settings)
+    path_service = PathService(base_dir=base_dir, config_provider=config_provider)
+    path_service.ensure_directories()
+
+    storage = FilesystemStorage(config_provider=config_provider)
+    log_parser = ExecutionLogParser()
+    kpi_formatter = CSVKPIFormatter()
+    stat_calc = StatisticalCalculator()
+    kpi_analyzer = KPIAnalyzer(stat_calc)
+
+    # ------------------------------------------------------------------ #
+    # Read and parse the log file                                          #
+    # ------------------------------------------------------------------ #
+    log_path = Path(log_file)
+    if not log_path.exists():
+        print(f"[calc_kpis] Log file not found: {log_path}")
+        print("[calc_kpis] Run 'make test-malicious' or 'make test-benign' first to generate logs.")
         sys.exit(1)
 
-if __name__ == '__main__':
+    print(f"[calc_kpis] Reading log file: {log_path}")
+    log_content = log_path.read_text(encoding="utf-8")
+
+    alert_steps = log_parser.parse(log_content)
+    if not alert_steps:
+        print("[calc_kpis] No execution steps found in log file.")
+        sys.exit(1)
+
+    execution_times = stat_calc.calculate_execution_times(alert_steps)
+    metrics = kpi_analyzer.calculate_mttr_metrics(execution_times)
+
+    # ------------------------------------------------------------------ #
+    # Save to CSV                                                          #
+    # ------------------------------------------------------------------ #
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    csv_content = kpi_formatter.format_csv(metrics)
+    out_path.write_text(csv_content, encoding="utf-8")
+
+    print(f"[calc_kpis] KPIs saved to: {out_path}")
+    for k, v in metrics.items():
+        print(f"  {k}: {v}")
+
+
+if __name__ == "__main__":
     main()

@@ -5,20 +5,21 @@ FROM node:lts-alpine AS base
 WORKDIR /opt/docusaurus
 ENV FORCE_COLOR=0
 
-# Stage 2: Production build mode.
-FROM base AS build
+# Stage 2: Dependencies and config.
+FROM base AS dependencies
 WORKDIR /opt/docusaurus
 COPY apps/docs-site/package*.json ./
 RUN npm install
 COPY apps/docs-site/docusaurus.config.js apps/docs-site/sidebars.js ./
 COPY apps/docs-site/src ./src
-COPY docs ./docs
-RUN npm run build
 
-# Stage 3: Serve with docusaurus serve.
-FROM build AS serve
+# Stage 3: Serve with docusaurus serve (development mode with live docs).
+FROM dependencies AS serve
+# Create empty docs directory for mount point
+RUN mkdir -p ./docs
 EXPOSE 3000
-CMD ["npm", "run", "serve", "--", "--host", "0.0.0.0", "--no-open"]
+# Use development mode which watches for changes
+CMD ["npm", "run", "start", "--", "--host", "0.0.0.0", "--port", "3000"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \

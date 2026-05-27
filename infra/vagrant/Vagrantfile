@@ -1,17 +1,123 @@
+# ==============================================================================
+# SOAR Ransomware Lab - Vagrantfile
+# Multi-machine: Ubuntu (SOAR stack) + Windows (víctima/generador de tráfico)
+#
+# Uso:
+#   vagrant up               # Levanta ambas VMs
+#   vagrant up soar-ubuntu   # Solo la VM SOAR
+#   vagrant up victima-windows # Solo la VM Windows
+#   vagrant ssh soar-ubuntu  # Acceder a la VM SOAR
+#   vagrant rdp victima-windows # Acceder a la VM Windows
+# ==============================================================================
+
+SOAR_IP    = "192.168.56.10"
+WINDOWS_IP = "192.168.56.20"
+
+# Directorio raíz del repo (dos niveles arriba del Vagrantfile)
+REPO_ROOT = File.expand_path("../..", __FILE__)
 
 Vagrant.configure("2") do |config|
-  # Ubuntu (SOAR)
-  config.vm.define "soar-ubuntu" do |ub|
-    ub.vm.box = "ubuntu/jammy64"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # VM 1: Ubuntu — Stack SOAR completo (Docker + todos los servicios)
+  # ────────────────────────────────────────────────────────────────────────────
+  config.vm.define "soar-ubuntu", primary: true do |ub|
+    ub.vm.box     = "ubuntu/jammy64"
+    ub.vm.box_version = ">= 20240101.0.0"
     ub.vm.hostname = "soar-ubuntu"
-    ub.vm.network "private_network", ip: "192.168.56.10"
+
+    # Red privada para comunicación con la VM Windows
+    ub.vm.network "private_network", ip: SOAR_IP
+
+    # Port forwarding para acceder desde el host
+    ub.vm.network "forwarded_port", guest: 443,  host: 8443,  host_ip: "127.0.0.1"
+    ub.vm.network "forwarded_port", guest: 80,   host: 8080,  host_ip: "127.0.0.1"
+    ub.vm.network "forwarded_port", guest: 3001, host: 3001,  host_ip: "127.0.0.1"
+    ub.vm.network "forwarded_port", guest: 3000, host: 3000,  host_ip: "127.0.0.1"
+    ub.vm.network "forwarded_port", guest: 5001, host: 5001,  host_ip: "127.0.0.1"
+
+    # Sincronizar el repositorio completo dentro de la VM
+    ub.vm.synced_folder REPO_ROOT, "/opt/soar-ransomware-lab",
+      owner: "vagrant", group: "vagrant"
+
+    # Recursos: Elasticsearch + todos los servicios necesitan memoria
+    ub.vm.provider "virtualbox" do |vb|
+      vb.name   = "soar-ransomware-lab-ubuntu"
+      vb.memory = 8192
+      vb.cpus   = 4
+      vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      vb.customize ["modifyvm", :id, "--ioapic", "on"]
+    end
+
+    ub.vm.provider "vmware_desktop" do |vmw|
+      vmw.memory = 8192
+      vmw.cpus   = 4
+    end
+
+    # Provisioning
     ub.vm.provision "shell", path: "provision.sh"
+
+    # Mensaje post-arranque
+    ub.vm.post_up_message = <<~MSG
+      ✅ SOAR Ubuntu VM lista
+         Web Management : https://localhost:8443/
+         TheHive        : https://localhost:8443/thehive/
+         Cortex         : https://localhost:8443/cortex/
+         Kibana/Wazuh   : https://localhost:8443/kibana/
+         Grafana        : https://localhost:8443/grafana/
+         Shuffle        : https://localhost:3001/
+         SOAR IP (red interna): #{SOAR_IP}
+    MSG
   end
 
-  # Windows (víctima) - placeholder, requiere box/licencia válida
+  # ────────────────────────────────────────────────────────────────────────────
+  # VM 2: Windows — Víctima + generador de tráfico ransomware
+  # ────────────────────────────────────────────────────────────────────────────
   config.vm.define "victima-windows" do |win|
-    win.vm.box = "gusztavvargadr/windows-10" # ejemplo; ajusta según licencia
-    win.vm.hostname = "victima-windows"
-    win.vm.network "private_network", ip: "192.168.56.20"
+    # Box público gratuito de Windows 10 (sin licencia de activación)
+    # Alternativa: "peru/windows-server-2019-standard-x64-eval"
+    win.vm.box              = "gusztavvargadr/windows-10"
+    win.vm.box_version      = ">= 2202.0.2409"
+    win.vm.hostname         = "victima-windows"
+    win.vm.communicator     = "winrm"
+    win.winrm.username      = "vagrant"
+    win.winrm.password      = "vagrant"
+
+    # Red privada — misma subred que la Ubuntu
+    win.vm.network "private_network", ip: WINDOWS_IP
+
+    # Sincronizar repo para acceder al código del simulador
+    win.vm.synced_folder REPO_ROOT, "C:/vagrant",
+      owner: "vagrant"
+
+    # Recursos
+    win.vm.provider "virtualbox" do |vb|
+      vb.name   = "soar-ransomware-lab-windows"
+      vb.memory = 4096
+      vb.cpus   = 2
+      vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+      vb.customize ["modifyvm", :id, "--draganddrop", "bidirectional"]
+    end
+
+    win.vm.provider "vmware_desktop" do |vmw|
+      vmw.memory = 4096
+      vmw.cpus   = 2
+    end
+
+    # Provisioning PowerShell
+    win.vm.provision "shell",
+      path:       "provision-windows.ps1",
+      privileged: true,
+      powershell_elevated_interactive: false
+
+    win.vm.post_up_message = <<~MSG
+      ✅ Windows VM (víctima) lista
+         IP: #{WINDOWS_IP}
+         Para simular ataque de ransomware:
+           vagrant winrm -c "powershell C:\\simulate-attack.ps1" victima-windows
+         O conéctate por RDP y ejecuta: C:\\simulate-attack.ps1
+    MSG
   end
+
 end

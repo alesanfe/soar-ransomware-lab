@@ -1,0 +1,108 @@
+name: soar-lab-misp
+
+# === MISP Threat Intelligence Stack ===
+
+services:
+  misp-db:
+    image: mariadb:10.11
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MISP_DB_ROOT_PASSWORD:-MispDbRootPassword123!@#}
+      MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
+      MYSQL_USER: ${MISP_DB_USER:-misp}
+      MYSQL_PASSWORD: ${MISP_DB_PASSWORD:-MispDbPassword456!@#}
+    volumes:
+      - misp_db:/var/lib/mysql
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MISP_DB_ROOT_PASSWORD:-MispDbRootPassword123!@#}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  misp-modules:
+    image: ghcr.io/misp/misp-docker/misp-modules:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_modules
+    healthcheck:
+      test: ["CMD-SHELL", "/bin/bash -c '</dev/tcp/localhost/6666'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soar_net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  misp:
+    image: ghcr.io/misp/misp-docker/misp-core:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp
+    cap_add:
+      - AUDIT_WRITE
+    depends_on:
+      misp-db:
+        condition: service_healthy
+      misp-modules:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://${MISP_HOSTNAME:-localhost}:${MISP_PORT:-8082}
+      MYSQL_HOST: misp-db
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MISP_DB_USER:-misp}
+      MYSQL_PASSWORD: ${MISP_DB_PASSWORD:-MispDbPassword456!@#}
+      MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-RedisSecurePassword678!@#}
+      ADMIN_EMAIL: ${MISP_ADMIN_EMAIL:-admin@soar.local}
+      ADMIN_PASSWORD: ${MISP_ADMIN_PASSWORD:-MispAdminPassword123!@#}
+      ADMIN_ORG: ${MISP_ADMIN_ORG:-SOAR Lab}
+      MISP_EMAIL: ${MISP_EMAIL:-noreply@soar.local}
+      MISP_CONTACT: ${MISP_CONTACT:-admin@soar.local}
+      ENCRYPTION_KEY: ${MISP_ENCRYPTION_KEY:-random_encryption_key_32_chars_long}
+      SALT: ${MISP_SALT:-random_salt_32_chars_long}
+      PHP_MEMORY_LIMIT: 2048M
+      PHP_MAX_EXECUTION_TIME: 300
+      PHP_UPLOAD_MAX_FILESIZE: 50M
+      PHP_POST_MAX_SIZE: 50M
+    ports:
+      - "${MISP_PORT:-8082}:80"
+    volumes:
+      - misp_files:/var/www/MISP/app/files
+      - misp_logs:/var/www/MISP/app/tmp/logs
+      - misp_configs:/var/www/MISP/app/Config
+    networks:
+      - soar_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/users/heartbeat"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G

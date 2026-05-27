@@ -1,395 +1,111 @@
-
 #!/usr/bin/env python3
 """
-SOAR Ransomware Lab - SIEM Simulator
-Sends simulated ransomware alerts to Shuffle webhook
+SOAR Ransomware Lab - Alert Sender CLI
+Generates and sends alert payloads to the SOAR webhook.
+
+Usage:
+    python3 -m soar_lab.services.send_alert
+    python3 -m soar_lab.services.send_alert --type malicious --single
+    python3 -m soar_lab.services.send_alert --type benign --num-alerts 10 --delay 5
 """
 
 import argparse
-import hashlib
-import json
-import logging
 import os
-import random
-import re
-import requests
+import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-
-# Configure structured logging
-# Ensure logs directory exists
-log_dir = Path(__file__).parent.parent.parent.parent / 'artifacts' / 'logs'
-log_dir.mkdir(parents=True, exist_ok=True)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(log_dir / 'siem_simulator.log')),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
-
-class AlertSendResult(dict):
-    def __bool__(self):
-        return bool(self.get('success', False))
 
 
-class SIEMSimulator:
-    def __init__(self, webhook_url: str, api_token: str) -> None:
-        self.webhook_url = webhook_url
-        self.api_token = api_token
-        self.alerts_sent = 0
-        self.alerts_failed = 0
-        self.headers = {
-            'Authorization': f'Bearer {api_token}',
-            'Content-Type': 'application/json'
-        }
-        
-        # Sample data for realistic simulation (SHA256 hashes)
-        self.malicious_hashes = [
-            '44d88612fea8a8f36de82e1278abb02f44d88612fea8a8f36de82e1278abb02f',  # EICAR test (padded to 64 chars)
-            'd41d8cd98f00b204e9800998ecf8427ed41d8cd98f00b204e9800998ecf8427e',  # Empty file (padded to 64 chars)
-            '098f6bcd4621d373cade4e832627b4f6098f6bcd4621d373cade4e832627b4f6',  # test (padded to 64 chars)
-            '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592'   # hello (padded to 64 chars)
-        ]
-        
-        self.benign_hashes = [
-            'e3b0c44298fc1c149afbf4c8996fb924e3b0c44298fc1c149afbf4c8996fb924',  # Common system file (padded to 64 chars)
-            'a665a45920422f9d417e4867efdc4fb8a665a45920422f9d417e4867efdc4fb8',  # Another benign (padded to 64 chars)
-            '7c222fb2927d828af22f592134e893247c222fb2927d828af22f592134e89324'   # Config file (padded to 64 chars)
-        ]
-        
-        self.sample_ips = [
-            '192.168.1.100', '10.0.0.50', '172.16.0.25',
-            '192.168.2.75', '10.1.1.200', '172.20.0.10'
-        ]
-        
-        self.sample_hostnames = [
-            'WIN-001', 'WIN-002', 'WIN-003', 
-            'SRV-001', 'LAPTOP-001', 'DC-001'
-        ]
-        
-        self.malicious_ips = [
-            '185.220.101.182',  # Known malicious
-            '198.54.131.67',    # Suspicious
-            '94.102.52.10'      # C2 server
-        ]
-
-    def generate_malicious_alert(self) -> Dict[str, Any]:
-        """Generate a malicious ransomware alert (for test compatibility)"""
-        return self.generate_alert(alert_type='malicious')
-
-    def generate_benign_alert(self) -> Dict[str, Any]:
-        """Generate a benign activity alert (for test compatibility)"""
-        return self.generate_alert(alert_type='benign')
-
-    def generate_test_alert(self, alert_id: str = None) -> Dict[str, Any]:
-        """Generate a test alert (for compatibility with TFM enhancer)"""
-        alert = self.generate_alert()
-        if alert_id:
-            alert['alert_id'] = alert_id
-        alert['event_type'] = 'test_alert'
-        return alert
-
-    def generate_alert(self, alert_type: str = 'malicious', malicious: bool = None) -> Dict[str, Any]:
-        """Generate a realistic ransomware alert"""
-        # Support both alert_type and malicious keyword argument for compatibility with tests
-        if malicious is not None:
-            alert_type = 'malicious' if malicious else 'benign'
-            
-        timestamp = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-        
-        if alert_type == 'malicious':
-            hash_value = random.choice(self.malicious_hashes)
-            src_ip = random.choice(self.malicious_ips)
-            severity = random.choice([2, 3])  # High/Critical
-            source = 'siem-ransomware-detection'
-            event_type = 'ransomware_detection'
-        else:
-            hash_value = random.choice(self.benign_hashes)
-            src_ip = random.choice(self.sample_ips)
-            severity = random.choice([0, 1])  # Low/Medium
-            source = 'siem-file-monitoring'
-            # Test expects ransomware_detection for benign too? 
-            # FAILED tests/unit/test_send_alert.py::TestSIEMSimulator::test_generate_benign_alert - AssertionError: 'file_monitoring' != 'ransomware_detection'
-            event_type = 'ransomware_detection' 
-        
-        # Test expects ALERT-\d{8}-\d{6}
-        alert_id = f'ALERT-{datetime.now().strftime("%Y%m%d")}-{random.randint(100000, 999999)}'
-        
-        alert = {
-            'alert_id': alert_id,
-            'hostname': random.choice(self.sample_hostnames),
-            'src_ip': src_ip,
-            'ip_address': src_ip, # Test expects ip_address
-            'hash': hash_value,
-            'severity': severity,
-            'source': source,
-            'timestamp': timestamp,  # Tests expect 'timestamp'
-            'detection_time': timestamp,
-            'event_type': event_type,
-            'description': f'Ransomware activity detected on {random.choice(self.sample_hostnames)}' if alert_type == 'malicious' else f'Suspicious activity detected on {random.choice(self.sample_hostnames)}',
-            'affected_files': [
-                'C:\\Users\\Documents\\important.docx',
-                'C:\\Data\\financial.xlsx',
-                'C:\\Backup\\database.sql'
-            ] if alert_type == 'malicious' else [],
-            'mitre_tactics': ['TA0040'] if alert_type == 'malicious' else [],
-            'mitre_techniques': ['T1486'] if alert_type == 'malicious' else [],
-            'mitre_attack': {
-                'tactics': ['Impact'],
-                'techniques': ['Data Encrypted for Impact']
-            } if alert_type == 'malicious' else {'tactics': [], 'techniques': []},
-            'user_account': 'johndoe',
-            'process_name': 'ransomware.exe' if alert_type == 'malicious' else 'setup.exe',
-            'command_line': 'C:\\Users\\johndoe\\ransomware.exe' if alert_type == 'malicious' else 'C:\\Users\\johndoe\\setup.exe',
-            'parent_process': 'explorer.exe',
-            'file_size': 1024576,
-            'file_path': 'C:\\Users\\johndoe\\ransomware.exe' if alert_type == 'malicious' else 'C:\\Users\\johndoe\\setup.exe',
-            'network_connections': [
-                {'dst_ip': '1.1.1.1', 'destination_ip': '1.1.1.1', 'dst_port': 443, 'destination_port': 443, 'protocol': 'tcp'}
-            ],
-            'registry_changes': [],
-            'detection_rules': ['Suspicious File Execution'],
-            'confidence': 95 if alert_type == 'malicious' else 25,
-            'impact_assessment': {
-                'data_affected': 'High' if alert_type == 'malicious' else 'Low',
-                'systems_affected': 1 if alert_type == 'malicious' else 0,
-                'affected_hosts': [random.choice(self.sample_hostnames)] if alert_type == 'malicious' else [],
-                'business_impact': 'High' if alert_type == 'malicious' else 'Low',
-                'recovery_time_estimate': '4-8 hours' if alert_type == 'malicious' else '< 1 hour',
-                'files_encrypted': 100 if alert_type == 'malicious' else 0
-            },
-            'false_positive_indicators': [] if alert_type == 'malicious' else ['Known process'],
-            'whitelist_status': 'not_whitelisted'
-        }
-        
-        return alert
-
-    def send_alert(self, alert: Dict[str, Any]) -> AlertSendResult:
-        """Send alert to Shuffle webhook"""
-        alert_id = alert.get('alert_id', 'unknown')
-        try:
-            logger.info(f"Sending alert {alert_id} to {self.webhook_url}")
-            
-            response = requests.post(
-                self.webhook_url,
-                headers=self.headers,
-                json=alert,
-                timeout=30
-            )
-            
-            success = response.status_code in [200, 202, 204]
-            if success:
-                self.alerts_sent += 1
-                logger.info(f"Alert {alert_id} sent successfully")
-            else:
-                self.alerts_failed += 1
-                logger.error(f"Failed to send alert {alert_id}: {response.status_code} - {response.text}")
-            return AlertSendResult({
-                'success': success,
-                'status_code': response.status_code,
-                'alert_id': alert_id
-            })
-                
-        except requests.exceptions.RequestException as e:
-            self.alerts_failed += 1
-            logger.error(f"Network error sending alert {alert_id}: {e}")
-            return AlertSendResult({
-                'success': False,
-                'status_code': None,
-                'alert_id': alert_id,
-                'error': str(e)
-            })
-        except Exception as e:
-            self.alerts_failed += 1
-            logger.error(f"Unexpected error sending alert {alert_id}: {e}")
-            return AlertSendResult({
-                'success': False,
-                'status_code': None,
-                'alert_id': alert_id,
-                'error': str(e)
-            })
-
-    def get_metrics(self) -> Dict[str, int]:
-        return {
-            'alerts_sent': self.alerts_sent,
-            'alerts_failed': self.alerts_failed,
-            'total_alerts': self.alerts_sent + self.alerts_failed
-        }
-
-    def validate_alert(self, alert: Dict[str, Any]) -> bool:
-        """Validate alert against JSON schema"""
-        if not alert or not isinstance(alert, dict):
-            return False
-            
-        required_fields = ['alert_id', 'hostname', 'hash', 'src_ip', 'timestamp']
-        
-        for field in required_fields:
-            if field not in alert or not alert[field]:
-                logger.warning(f"Validation failed: missing or empty field '{field}'")
-                return False
-        
-        # Basic IP validation
-        if not self.validate_ip(alert['src_ip']):
-            logger.warning(f"Validation failed: invalid IP address '{alert['src_ip']}'")
-            return False
-        
-        # Basic hash validation
-        if not self.validate_hash(alert['hash']):
-            logger.warning(f"Validation failed: invalid hash '{alert['hash']}'")
-            return False
-        
-        logger.info(f"Alert {alert['alert_id']} validation passed")
-        return True
-
-    def validate_ip(self, ip):
-        """Basic IP validation"""
-        try:
-            parts = ip.split('.')
-            return len(parts) == 4 and all(0 <= int(part) <= 255 for part in parts)
-        except:
-            return False
-
-    def validate_hash(self, hash_value):
-        """Basic hash validation"""
-        if hash_value is None:
-            return False
-        # Tests expect MD5 (32), SHA1 (40), or SHA256 (64)
-        # and they expect it NOT to be only digits
-        if not re.match(r'^[a-fA-F0-9]{32}$|^[a-fA-F0-9]{40}$|^[a-fA-F0-9]{64}$', hash_value):
-            return False
-        if hash_value.isdigit():
-            return False
-        return True
-
-    def validate_ip_address(self, ip_address):
-        """Validate IP address format"""
-        if not ip_address or not isinstance(ip_address, str):
-            return False
-        
-        # Basic IPv4 validation
-        parts = ip_address.split('.')
-        if len(parts) != 4:
-            return False
-        
-        try:
-            for part in parts:
-                num = int(part)
-                if num < 0 or num > 255:
-                    return False
-            return True
-        except ValueError:
-            return False
-
-    def validate_alert_structure(self, alert):
-        """Validate complete alert structure"""
-        if not alert or not isinstance(alert, dict):
-            return False
-        
-        required_fields = ['alert_id', 'hostname', 'src_ip', 'hash', 'severity', 'event_type']
-        
-        for field in required_fields:
-            if field not in alert:
-                return False
-        
-        # Validate severity
-        valid_severities = [0, 1, 2, 3]  # Low, Medium, High, Critical
-        if alert['severity'] not in valid_severities:
-            return False
-        
-        # Validate IP address
-        if not self.validate_ip_address(alert['src_ip']):
-            return False
-        
-        # Validate hash
-        if not self.validate_hash(alert['hash']):
-            return False
-        
-        return True
-
-    @property
-    def mitre_attack_tactics(self):
-        """Get MITRE ATT&CK tactics data"""
-        return {
-            'TA0001': 'Initial Access',
-            'TA0002': 'Execution',
-            'TA0003': 'Persistence',
-            'TA0004': 'Privilege Escalation',
-            'TA0005': 'Defense Evasion',
-            'TA0006': 'Credential Access',
-            'TA0007': 'Discovery',
-            'TA0008': 'Lateral Movement',
-            'TA0009': 'Collection',
-            'TA0010': 'Exfiltration',
-            'TA0011': 'Command and Control'
-        }
-
-    @property
-    def mitre_attack_tactics_list(self):
-        """Get MITRE ATT&CK tactics as a list for compatibility with tests"""
-        return list(self.mitre_attack_tactics.values())
-
-    def run_simulation(self, num_alerts=3, delay=5, alert_type='malicious'):
-        """Run simulation with specified number of alerts"""
-        print(f"Starting SIEM simulation: {num_alerts} {alert_type} alerts with {delay}s delay")
-        
-        success_count = 0
-        for i in range(num_alerts):
-            print(f"\n--- Alert {i+1}/{num_alerts} ---")
-            
-            alert = self.generate_alert(alert_type)
-            
-            if self.validate_alert(alert):
-                if self.send_alert(alert):
-                    success_count += 1
-            
-            if i < num_alerts - 1:  # Don't delay after last alert
-                if delay > 0:
-                    print(f"Waiting {delay} seconds before next alert...")
-                    time.sleep(delay)
-        
-        print(f"\n=== Simulation Complete ===")
-        print(f"Successfully sent: {success_count}/{num_alerts} alerts")
-        return success_count == num_alerts
-
-def main():
-    parser = argparse.ArgumentParser(description='SOAR SIEM Simulator')
-    parser.add_argument('--webhook-url', 
-                       default='http://localhost:5001/webhook',
-                       help='Shuffle webhook URL')
-    parser.add_argument('--api-token',
-                       default='siem-webhook-token-change-this',
-                       help='Authentication token')
-    parser.add_argument('--num-alerts', type=int, default=3,
-                       help='Number of alerts to send')
-    parser.add_argument('--delay', type=int, default=5,
-                       help='Delay between alerts (seconds)')
-    parser.add_argument('--type', choices=['malicious', 'benign'], default='malicious',
-                       help='Type of alerts to generate')
-    parser.add_argument('--single', action='store_true',
-                       help='Send single alert and exit')
-    
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Send SOAR alert payloads to webhook")
+    parser.add_argument(
+        "--type",
+        choices=["malicious", "benign"],
+        default="malicious",
+        help="Alert type (malicious or benign)",
+    )
+    parser.add_argument(
+        "--single",
+        action="store_true",
+        help="Send a single alert",
+    )
+    parser.add_argument(
+        "--num-alerts",
+        type=int,
+        default=1,
+        help="Number of alerts to send (default: 1)",
+    )
+    parser.add_argument(
+        "--delay",
+        type=int,
+        default=3,
+        help="Delay between alerts in seconds (default: 3)",
+    )
+    parser.add_argument(
+        "--webhook-url",
+        default=os.environ.get("SHUFFLE_WEBHOOK_URL", "http://localhost:5001/api/v1/hooks/webhook"),
+        help="Webhook URL (default: SHUFFLE_WEBHOOK_URL env var or localhost:5001)",
+    )
+    parser.add_argument(
+        "--api-token",
+        default=os.environ.get("SHUFFLE_API_TOKEN", "SiemToken123!@#"),
+        help="API token (default: SHUFFLE_API_TOKEN env var or SiemToken123!@#)",
+    )
     args = parser.parse_args()
-    
-    # Load configuration from environment if available
-    webhook_url = os.getenv('SHUFFLE_WEBHOOK_URL', args.webhook_url)
-    api_token = os.getenv('SIEM_WEBHOOK_TOKEN', args.api_token)
-    
-    simulator = SIEMSimulator(webhook_url, api_token)
-    
-    if args.single:
-        alert = simulator.generate_alert(args.type)
-        if simulator.validate_alert(alert):
-            simulator.send_alert(alert)
-    else:
-        success = simulator.run_simulation(args.num_alerts, args.delay, args.type)
-        exit(0 if success else 1)
 
-if __name__ == '__main__':
-    import os
+    # Resolve BASE_DIR
+    base_dir = Path(os.environ.get("BASE_DIR", Path(__file__).parent.parent.parent.parent))
+
+    # ------------------------------------------------------------------ #
+    # Bootstrap dependencies                                              #
+    # ------------------------------------------------------------------ #
+    sys.path.insert(0, str(base_dir / "src"))
+    os.environ.setdefault("BASE_DIR", str(base_dir))
+    os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
+
+    from soar_lab.infrastructure.http_alert_sender import HTTPAlertSender
+    from soar_lab.domain.alert_generator import AlertGenerator
+    from soar_lab.config.logging import get_logger
+
+    logger = get_logger(__name__)
+
+    # ------------------------------------------------------------------ #
+    # Initialize components                                               #
+    # ------------------------------------------------------------------ #
+    alert_generator = AlertGenerator()
+    sender = HTTPAlertSender(webhook_url=args.webhook_url, api_token=args.api_token)
+
+    # ------------------------------------------------------------------ #
+    # Send alerts                                                        #
+    # ------------------------------------------------------------------ #
+    num_alerts = 1 if args.single else args.num_alerts
+    alert_type = args.type
+
+    logger.info(f"Sending {num_alerts} {alert_type} alert(s) to {args.webhook_url}")
+
+    for i in range(num_alerts):
+        if alert_type == "malicious":
+            alert = alert_generator.generate_malicious_alert()
+        else:
+            alert = alert_generator.generate_benign_alert()
+
+        result = sender.send(alert)
+
+        if result.get("success"):
+            print(f"[{i+1}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
+        else:
+            print(f"[{i+1}/{num_alerts}] Failed to send alert: {result.get('error', 'Unknown error')}")
+            sys.exit(1)
+
+        if i < num_alerts - 1 and args.delay > 0:
+            time.sleep(args.delay)
+
+    # ------------------------------------------------------------------ #
+    # Summary                                                            #
+    # ------------------------------------------------------------------ #
+    metrics = sender.get_metrics()
+    print(f"\nSummary: {metrics['alerts_sent']} sent, {metrics['alerts_failed']} failed")
+
+
+if __name__ == "__main__":
     main()

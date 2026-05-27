@@ -7,8 +7,8 @@ let logsInterval = null;
 let metricsInterval = null;
 let servicesInterval = null;
 
-// API base URL
-const API_BASE = 'http://localhost:8000';
+// API base URL — rutas relativas para funcionar detrás de Nginx
+const API_BASE = '/api';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
+    // Load saved theme
+    loadTheme();
+
     // Check authentication status
     checkAuthStatus();
     
@@ -29,6 +32,9 @@ function initializeApp() {
 }
 
 function setupEventListeners() {
+    // Theme toggle
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
     // Authentication
     document.getElementById('loginBtn').addEventListener('click', login);
     document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -39,6 +45,30 @@ function setupEventListeners() {
             login();
         }
     });
+}
+
+// Theme toggle function
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    // Update toggle button icon
+    const toggleButton = document.getElementById('themeToggle');
+    toggleButton.textContent = newTheme === 'light' ? '☀️' : '🌙';
+}
+
+// Load saved theme on page load
+function loadTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    const toggleButton = document.getElementById('themeToggle');
+    if (toggleButton) {
+        toggleButton.textContent = savedTheme === 'light' ? '☀️' : '🌙';
+    }
 }
 
 // Authentication functions
@@ -89,8 +119,9 @@ function logout() {
 function checkAuthStatus() {
     const token = localStorage.getItem('auth_token');
     if (token) {
-        // Verify token with server
+        // Verify token with server - use POST method
         fetch(`${API_BASE}/auth/verify`, {
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -148,7 +179,7 @@ function stopPeriodicUpdates() {
 // Metrics functions
 async function updateMetrics() {
     try {
-        const response = await fetch(`${API_BASE}/metrics`, {
+        const response = await fetch(`${API_BASE}/analytics/metrics`, {
             headers: getAuthHeaders()
         });
         
@@ -182,19 +213,29 @@ async function updateServicesStatus() {
         if (response.ok) {
             const data = await response.json();
             
+            // The API now returns services in a "services" field
+            const services = data.services || {};
+            
             // Update service status indicators
-            Object.keys(data).forEach(service => {
+            Object.keys(services).forEach(service => {
                 const statusElement = document.querySelector(`[data-service="${service}"]`);
                 if (statusElement) {
-                    statusElement.className = `status ${data[service] ? 'online' : 'offline'}`;
+                    statusElement.className = `status ${services[service] ? 'online' : 'offline'}`;
                 }
             });
             
             // Update overall services status
-            const onlineCount = Object.values(data).filter(status => status).length;
-            const totalCount = Object.keys(data).length;
+            const onlineCount = Object.values(services).filter(status => status).length;
+            const offlineCount = Object.values(services).filter(status => !status).length;
+            const totalCount = Object.keys(services).length;
             const servicesStatus = document.getElementById('servicesStatus');
-            
+
+            // Update summary
+            document.getElementById('totalServices').textContent = totalCount;
+            document.getElementById('onlineServices').textContent = onlineCount;
+            document.getElementById('offlineServices').textContent = offlineCount;
+            document.getElementById('servicesSummary').style.display = 'flex';
+
             if (onlineCount === totalCount) {
                 servicesStatus.innerHTML = '<span class="status-dot online"></span><span>All services online</span>';
             } else {
@@ -208,27 +249,10 @@ async function updateServicesStatus() {
 
 // Test coverage functions
 async function updateTestCoverage() {
-    try {
-        const response = await fetch(`${API_BASE}/tests/coverage`, {
-            headers: getAuthHeaders()
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            // Update coverage circle
-            const coverageCircle = document.getElementById('coverageCircle');
-            coverageCircle.style.setProperty('--coverage', data.overall);
-            document.getElementById('coveragePercent').textContent = `${data.overall}%`;
-            
-            // Update coverage details
-            document.getElementById('unitCoverage').textContent = `${data.unit}%`;
-            document.getElementById('integrationCoverage').textContent = `${data.integration}%`;
-            document.getElementById('overallCoverage').textContent = `${data.overall}%`;
-        }
-    } catch (error) {
-        console.error('Failed to update test coverage:', error);
-    }
+    // Coverage is not available as a separate endpoint
+    // It's returned when running tests via /tests/run
+    // This function is kept for compatibility but does nothing
+    console.log('Coverage data should be obtained from /tests/run response');
 }
 
 // Test execution functions
@@ -275,8 +299,8 @@ function displayTestResults(results) {
     // Scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth' });
     
-    // Update coverage after tests
-    updateTestCoverage();
+    // Coverage is already included in the test results from /tests/run
+    // No need to call separate updateTestCoverage()
 }
 
 // Logs functions
@@ -298,7 +322,7 @@ function toggleLogs() {
 
 function startWebSocketLogs() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//localhost:8000/ws/logs`;
+    const wsUrl = `${protocol}//${window.location.host}/api/ws/logs`;
     
     ws = new WebSocket(wsUrl);
     

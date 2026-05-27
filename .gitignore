@@ -20,6 +20,7 @@ venv/
 .coverage
 htmlcov/
 .tox/
+coverage.json
 
 # Logs
 *.log
@@ -29,11 +30,17 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Vagrant
+.vagrant/
+
 # Project specific
 results/
 backups/
 artifacts/logs/
 artifacts/results/
+# Ignore data directories at root level, but keep src/soar_lab/data/ for code
+/data/
+./data/
 
 # Refact
 .refact/
@@ -41,3 +48,9 @@ artifacts/results/
 
 # GitHub
 .github/
+
+# Security
+*.key
+*.pem
+*.crt
+certs/

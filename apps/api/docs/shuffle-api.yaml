@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: Shuffle API
+  description: Open-source SOAR platform for workflow automation
+  version: 1.0.0
+  contact:
+    name: Shuffle Project
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Local development server
+  - url: https://localhost:5001/api/v1
+    description: Local development server (SSL)
+  - url: http://localhost/shuffle/api/v1
+    description: Nginx reverse proxy
+  - url: https://localhost/shuffle/api/v1
+    description: Nginx reverse proxy (SSL)
+tags:
+  - name: Authentication
+    description: Authentication and authorization
+  - name: Workflows
+    description: Workflow management
+  - name: Apps
+    description: App management
+  - name: Triggers
+    description: Trigger management
+  - name: Organizations
+    description: Organization management
+  - name: Users
+    description: User management
+  - name: Environments
+    description: Environment management
+  - name: Execution Queue
+    description: Workflow execution queue
+  - name: Orborus
+    description: Orborus workflow executor
+paths:
+  /users/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login to get API key
+      description: Authenticate with username and password to receive API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+  /workflows:
+    get:
+      tags:
+        - Workflows
+      summary: List workflows
+      description: Get list of all workflows
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Workflows retrieved successfully
+    post:
+      tags:
+        - Workflows
+      summary: Create workflow
+      description: Create a new workflow
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - actions
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                actions:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '201':
+          description: Workflow created successfully
+  /workflows/{workflow_id}:
+    get:
+      tags:
+        - Workflows
+      summary: Get workflow by ID
+      description: Retrieve a specific workflow
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow retrieved successfully
+    put:
+      tags:
+        - Workflows
+      summary: Update workflow
+      description: Update workflow information
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow updated successfully
+    delete:
+      tags:
+        - Workflows
+      summary: Delete workflow
+      description: Delete a workflow
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Workflow deleted
+  /workflows/{workflow_id}/execute:
+    post:
+      tags:
+        - Workflows
+      summary: Execute workflow
+      description: Execute a workflow
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow execution started
+  /workflows/{workflow_id}/variables:
+    get:
+      tags:
+        - Workflows
+      summary: Get workflow variables
+      description: Get variables for a workflow
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Variables retrieved
+  /apps:
+    get:
+      tags:
+        - Apps
+      summary: List apps
+      description: Get list of all available apps
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Apps retrieved successfully
+  /apps/{app_id}:
+    get:
+      tags:
+        - Apps
+      summary: Get app by ID
+      description: Get details of a specific app
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: app_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: App retrieved successfully
+  /triggers:
+    get:
+      tags:
+        - Triggers
+      summary: List triggers
+      description: Get list of all triggers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Triggers retrieved successfully
+  /organizations:
+    get:
+      tags:
+        - Organizations
+      summary: List organizations
+      description: Get list of all organizations
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Organizations retrieved successfully
+  /organizations/{org_id}:
+    get:
+      tags:
+        - Organizations
+      summary: Get organization by ID
+      description: Get details of a specific organization
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Organization retrieved successfully
+  /users:
+    get:
+      tags:
+        - Users
+      summary: List users
+      description: Get list of all users
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Users retrieved successfully
+  /environments:
+    get:
+      tags:
+        - Environments
+      summary: List environments
+      description: Get list of all environments
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Environments retrieved successfully
+  /executions:
+    get:
+      tags:
+        - Execution Queue
+      summary: List executions
+      description: Get list of workflow executions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Executions retrieved successfully
+  /executions/{execution_id}:
+    get:
+      tags:
+        - Execution Queue
+      summary: Get execution by ID
+      description: Get details of a specific execution
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: execution_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Execution retrieved successfully
+  /orborus:
+    get:
+      tags:
+        - Orborus
+      summary: Get Orborus status
+      description: Get status of Orborus workflow executor
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Orborus status retrieved
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key

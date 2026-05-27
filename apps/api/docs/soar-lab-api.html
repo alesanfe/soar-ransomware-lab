@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Gestión de SOAR Lab - Documentación</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>API de Gestión de SOAR Lab</h1>
+                <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <a href="index.html" class="back-link">← Volver al Índice</a>
+
+            <div class="service-info">
+                <h2>API de Gestión de SOAR Lab</h2>
+                <div class="meta">
+                    <div class="meta-item"><strong>Contenedor:</strong> soar_api</div>
+                    <div class="meta-item"><strong>Puerto:</strong> 8000</div>
+                    <div class="meta-item"><strong>URL Base:</strong> http://localhost:8000</div>
+                    <div class="meta-item"><strong>Documentación:</strong> <a href="http://localhost:8000/docs" style="color: var(--primary-light);">Documentación Auto-Generada de FastAPI</a></div>
+                </div>
+                <p style="color: var(--text-secondary);">Interfaz de gestión personalizada basada en FastAPI para el entorno del laboratorio SOAR. Proporciona endpoints para análisis, copias de seguridad, pruebas y comunicación por WebSocket.</p>
+            </div>
+
+            <div class="section">
+                <h3>Conceptos y Casos de Uso</h3>
+                <p style="color: var(--text-secondary);">Esta API proporciona capacidades de gestión centralizada para el entorno del Laboratorio SOAR de Ransomware:</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
+                    <li><strong>Autenticación</strong>: La autenticación basada en JWT garantiza un acceso seguro a todos los endpoints. Inicia sesión una vez para obtener un token, luego úsalo en todas las solicitudes posteriores.</li>
+                    <li><strong>Monitoreo de Salud</strong>: Verifica el estado de salud general del entorno del laboratorio y los servicios individuales.</li>
+                    <li><strong>Análisis</strong>: Obtén métricas sobre el rendimiento del sistema, resultados de pruebas e indicadores clave de rendimiento (KPI) como MTTR (Tiempo Medio de Respuesta) y MTTD (Tiempo Medio de Detección).</li>
+                    <li><strong>Gestión de Copias de Seguridad</strong>: Crea, restaura y lista copias de seguridad de todo el entorno del laboratorio para recuperación ante desastres.</li>
+                    <li><strong>Pruebas</strong>: Ejecuta pruebas automatizadas (unitarias, de integración, e2e) para verificar la funcionalidad del laboratorio.</li>
+                    <li><strong>Logs por WebSocket</strong>: Transmisión de logs en tiempo real para monitorear eventos del sistema.</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Autenticación</h3>
+                <p style="color: var(--text-secondary);">La API utiliza autenticación basada en tokens JWT. Inicia sesión para obtener un token, luego inclúyelo en el encabezado de Authorization.</p>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/auth/login</span>
+                    </div>
+                    <p class="endpoint-description">Inicia sesión para obtener el token JWT</p>
+                </div>
+                <div class="note">
+                    <strong>Cuerpo de la Solicitud:</strong><br>
+                    <code>{"username":"admin","password":"WebUIPassword123!@#"}</code>
+                </div>
+                <div class="note">
+                    <strong>Encabezado de Authorization:</strong> Authorization: Bearer {token}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Verificación de Salud</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/health</span>
+                    </div>
+                    <p class="endpoint-description">Verifica el estado de salud de la API</p>
+                </div>
+                <div class="note">
+                    <strong>Respuesta:</strong><br>
+                    <code>{"status": "healthy", "timestamp": "2026-05-23T09:23:15.813140Z", "version": "1.0.0"}</code>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Análisis</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/analytics/metrics</span>
+                        <span class="auth-badge">Autenticación Requerida</span>
+                    </div>
+                    <p class="endpoint-description">Obtén métricas del sistema (CPU, memoria, uso de disco)</p>
+                </div>
+                <div class="note">
+                    <strong>Respuesta:</strong><br>
+                    <code>{"cpu": 1.6, "memory": 44.1, "disk": 5.5, "timestamp": "2026-05-23T09:23:15.813140Z"}</code>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/analytics/kpis?log_file_path=/path/to/log</span>
+                        <span class="auth-badge">Autenticación Requerida</span>
+                    </div>
+                    <p class="endpoint-description">Obtén métricas KPI desde archivos de log</p>
+                </div>
+                <div class="note">
+                    <strong>Respuesta:</strong><br>
+                    <code>{"mttr": 3600, "mttd": 1800, "alert_volume": 150, "resolution_rate": 0.85}</code>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Copias de Seguridad</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/backup/create</span>
+                        <span class="auth-badge">Autenticación Requerida</span>
+                    </div>
+                    <p class="endpoint-description">Crea una copia de seguridad del entorno del laboratorio</p>
+                </div>
+                <div class="note">
+                    <strong>Cuerpo de la Solicitud:</strong><br>
+                    <code>{"backup_type": "full", "source_dir": "/app/data", "include_metadata": true}</code>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/backup/restore</span>
+                        <span class="auth-badge">Autenticación Requerida</span>
+                    </div>
+                    <p class="endpoint-description">Restaura una copia de seguridad</p>
+                </div>
+                <div class="note">
+                    <strong>Cuerpo de la Solicitud:</strong><br>
+                    <code>{"backup_name": "backup_20260523.tar.gz", "target_dir": "/app/data"}</code>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/backup/list</span>
+                        <span class="auth-badge">Autenticación Requerida</span>
+                    </div>
+                    <p class="endpoint-description">Lista las copias de seguridad disponibles</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Pruebas</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/tests/run</span>
+                        <span class="auth-badge">Autenticación Requerida</span>
+                    </div>
+                    <p class="endpoint-description">Ejecuta pruebas del laboratorio</p>
+                </div>
+                <div class="note">
+                    <strong>Categorías válidas:</strong> unit, integration, e2e, all<br>
+                    <strong>Cuerpo de la Solicitud:</strong><br>
+                    <code>{"category": "unit"}</code>
+                </div>
+                <div class="note">
+                    <strong>Respuesta:</strong><br>
+                    <code>{"category": "unit", "passed": 657, "failed": 6, "skipped": 0, "coverage": 75.5, "output": "Test execution output...", "duration": 6.47}</code>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/tests/results</span>
+                        <span class="auth-badge">Autenticación Requerida</span>
+                    </div>
+                    <p class="endpoint-description">Obtén resultados de pruebas</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Servicios</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/services/status</span>
+                        <span class="auth-badge">Autenticación Requerida</span>
+                    </div>
+                    <p class="endpoint-description">Obtén el estado de todos los servicios</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>WebSocket</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method ws">WS</span>
+                        <span class="path">/ws/logs</span>
+                    </div>
+                    <p class="endpoint-description">Endpoint de WebSocket para transmisión de logs en tiempo real</p>
+                </div>
+                <div class="note">
+                    <strong>Transmite entradas de log en tiempo real:</strong><br>
+                    <code>{"timestamp": "2026-05-23T09:23:15.813140Z", "level": "INFO", "message": "Simulated log entry"}</code>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Variables de Entorno</h3>
+                <ul class="env-list">
+                    <li><span class="env-name">API_PORT</span><span class="env-value">8000</span></li>
+                    <li><span class="env-name">SECRET_KEY</span><span class="env-value">JWT secret key</span></li>
+                    <li><span class="env-name">WEBUI_PASSWORD</span><span class="env-value">WebUIPassword123!@#</span></li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Ejemplos de Pruebas</h3>
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando curl</h4>
+                <pre class="code-block" style="margin-bottom: 1rem;"># Iniciar sesión
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"WebUIPassword123!@#"}'
+
+# Obtener Métricas
+curl -X GET http://localhost:8000/analytics/metrics \
+  -H "Authorization: Bearer {token}"</pre>
+
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando Python</h4>
+                <pre class="code-block">import requests
+
+# Iniciar sesión
+response = requests.post("http://localhost:8000/auth/login",
+    json={"username":"admin","password":"WebUIPassword123!@#"})
+token = response.json()['token']
+
+# Obtener Métricas
+headers = {'Authorization': f'Bearer {token}'}
+response = requests.get('http://localhost:8000/analytics/metrics', headers=headers)
+print(response.json())</pre>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

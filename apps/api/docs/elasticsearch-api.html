@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Elasticsearch - Documentación</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>API de Elasticsearch</h1>
+                <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <a href="index.html" class="back-link">← Volver al Índice</a>
+
+            <div class="service-info">
+                <h2>API de Elasticsearch</h2>
+                <div class="meta">
+                    <div class="meta-item"><strong>Contenedor:</strong> soar_elasticsearch</div>
+                    <div class="meta-item"><strong>Puerto:</strong> 9201</div>
+                    <div class="meta-item"><strong>URL Base:</strong> http://localhost:9201</div>
+                    <div class="meta-item"><strong>Documentación:</strong> <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.17/rest-apis.html" style="color: var(--primary-light);">API REST de Elasticsearch</a></div>
+                </div>
+                <p style="color: var(--text-secondary);">Motor de búsqueda y análisis distribuido. Elasticsearch proporciona una API RESTful para indexar, buscar y gestionar datos.</p>
+            </div>
+
+            <div class="section">
+                <h3>Conceptos y Casos de Uso</h3>
+                <p style="color: var(--text-secondary);">Elasticsearch es un motor de búsqueda y análisis distribuido y RESTful capaz de abordar un creciente número de casos de uso:</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
+                    <li><strong>Clúster</strong>: Una colección de uno o más nodos que juntos contienen todos sus datos y proporcionan capacidades de indexación y búsqueda federadas en todos los nodos.</li>
+                    <li><strong>Índice</strong>: Una colección de documentos con características similares. Un índice es la unidad de nivel más alto en Elasticsearch (como una base de datos en SQL).</li>
+                    <li><strong>Documento</strong>: Una unidad de información que puede indexarse (como una fila en SQL). Los documentos son objetos JSON.</li>
+                    <li><strong>Búsqueda</strong>: Capacidades de búsqueda de texto completo con soporte para consultas complejas, agregaciones y filtros.</li>
+                    <li><strong>Agregaciones</strong>: Capacidades de análisis de datos para resumir y analizar datos (métricas, buckets, etc.).</li>
+                    <li><strong>Operaciones Masivas</strong>: Indexar o eliminar eficientemente múltiples documentos en una sola solicitud.</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Autenticación</h3>
+                <p style="color: var(--text-secondary);">Elasticsearch utiliza autenticación básica con nombre de usuario y contraseña.</p>
+                <div class="note">
+                    <strong>Credenciales por defecto:</strong> elastic / {ELASTIC_PASSWORD}
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Clúster</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cluster/health</span>
+                    </div>
+                    <p class="endpoint-description">Obtener salud del clúster</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cluster/state</span>
+                    </div>
+                    <p class="endpoint-description">Obtener estado del clúster</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cluster/stats</span>
+                    </div>
+                    <p class="endpoint-description">Obtener estadísticas del clúster</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cluster/settings</span>
+                    </div>
+                    <p class="endpoint-description">Obtener configuración del clúster</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method put">PUT</span>
+                        <span class="path">/_cluster/settings</span>
+                    </div>
+                    <p class="endpoint-description">Actualizar configuración del clúster</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Operaciones de Índice</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method put">PUT</span>
+                        <span class="path">/{index}</span>
+                    </div>
+                    <p class="endpoint-description">Crear índice</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/{index}</span>
+                    </div>
+                    <p class="endpoint-description">Obtener información del índice</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <span class="path">/{index}</span>
+                    </div>
+                    <p class="endpoint-description">Eliminar índice</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cat/indices</span>
+                    </div>
+                    <p class="endpoint-description">Listar todos los índices</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/{index}/_mapping</span>
+                    </div>
+                    <p class="endpoint-description">Obtener mapping del índice</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method put">PUT</span>
+                        <span class="path">/{index}/_mapping</span>
+                    </div>
+                    <p class="endpoint-description">Actualizar mapping del índice</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/{index}/_settings</span>
+                    </div>
+                    <p class="endpoint-description">Obtener configuración del índice</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Operaciones de Documento</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/{index}/_doc</span>
+                    </div>
+                    <p class="endpoint-description">Indexar un documento</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method put">PUT</span>
+                        <span class="path">/{index}/_doc/{id}</span>
+                    </div>
+                    <p class="endpoint-description">Indexar documento con ID</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/{index}/_doc/{id}</span>
+                    </div>
+                    <p class="endpoint-description">Obtener documento</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/{index}/_update/{id}</span>
+                    </div>
+                    <p class="endpoint-description">Actualizar documento</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <span class="path">/{index}/_doc/{id}</span>
+                    </div>
+                    <p class="endpoint-description">Eliminar documento</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/{index}/_bulk</span>
+                    </div>
+                    <p class="endpoint-description">Operaciones masivas</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Búsqueda</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/{index}/_search</span>
+                    </div>
+                    <p class="endpoint-description">Buscar documentos</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/{index}/_search</span>
+                    </div>
+                    <p class="endpoint-description">Buscar con query DSL</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_search</span>
+                    </div>
+                    <p class="endpoint-description">Buscar en todos los índices</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/{index}/_count</span>
+                    </div>
+                    <p class="endpoint-description">Contar documentos</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/{index}/_explain/{id}</span>
+                    </div>
+                    <p class="endpoint-description">Explicar puntuación</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Agregaciones</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/{index}/_search</span>
+                    </div>
+                    <p class="endpoint-description">Agregaciones en búsqueda</p>
+                </div>
+                <div class="note">
+                    <strong>Tipos de agregación:</strong> terms, avg, sum, min, max, stats, date_histogram, range
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>APIs Cat</h3>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cat/indices?v</span>
+                    </div>
+                    <p class="endpoint-description">Listar índices (legible por humanos)</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cat/nodes?v</span>
+                    </div>
+                    <p class="endpoint-description">Listar nodos</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cat/health?v</span>
+                    </div>
+                    <p class="endpoint-description">Salud del clúster</p>
+                </div>
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/_cat/aliases?v</span>
+                    </div>
+                    <p class="endpoint-description">Listar alias</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Variables de Entorno</h3>
+                <ul class="env-list">
+                    <li><span class="env-name">ELASTICSEARCH_PORT</span><span class="env-value">9201</span></li>
+                    <li><span class="env-name">ELASTIC_PASSWORD</span><span class="env-value">Contraseña de Elastic</span></li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>Ejemplos de Pruebas</h3>
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando curl</h4>
+                <pre class="code-block" style="margin-bottom: 1rem;"># Salud del Clúster
+curl -X GET http://localhost:9201/_cluster/health
+
+# Indexar Documento
+curl -X POST http://localhost:9201/test-index/_doc \
+  -H "Content-Type: application/json" \
+  -d '{"field":"value"}'</pre>
+
+                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando Python</h4>
+                <pre class="code-block">from elasticsearch import Elasticsearch
+
+es = Elasticsearch(['http://localhost:9201'])
+
+# Salud del Clúster
+print(es.cluster.health())
+
+# Indexar Documento
+es.index(index='test-index', document={'field': 'value'})</pre>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -5,12 +5,9 @@ Tests individual schema validation functions in isolation
 """
 
 import json
-import sys
 import unittest
 from pathlib import Path
-
-# Add src directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
+from pydantic import ValidationError
 
 from soar_lab.config.schemas import (
     RansomwareAlert,
@@ -57,12 +54,12 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_file_hash_invalid_sha256_length(self):
         """Test FileHash with invalid SHA256 length"""
-        with self.assertRaises(Exception):  # Pydantic validation error
+        with self.assertRaises(ValidationError):
             FileHash(sha256="d41d8cd98f00b204e9800998ecf8427")  # Too short
 
     def test_file_hash_invalid_sha256_chars(self):
         """Test FileHash with invalid SHA256 characters"""
-        with self.assertRaises(Exception):  # Pydantic validation error
+        with self.assertRaises(ValidationError):
             FileHash(sha256="g41d8cd98f00b204e9800998ecf8427e" * 2)  # Contains 'g'
 
     def test_file_hash_with_optional_md5(self):
@@ -75,7 +72,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_file_hash_invalid_md5_length(self):
         """Test FileHash with invalid MD5 length"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             FileHash(
                 sha256="d41d8cd98f00b204e9800998ecf8427e" * 2,
                 md5="d41d8cd98f00b204e9800998ecf8427"  # Too short
@@ -107,12 +104,12 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_network_event_invalid_src_ip(self):
         """Test NetworkEvent with invalid source IP"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             NetworkEvent(src_ip="192.168.1.300")  # Invalid octet
 
     def test_network_event_invalid_dst_ip(self):
         """Test NetworkEvent with invalid destination IP"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             NetworkEvent(
                 src_ip="192.168.1.100",
                 dst_ip="10.0.0.300"  # Invalid octet
@@ -120,7 +117,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_network_event_invalid_port_range(self):
         """Test NetworkEvent with invalid port range"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             NetworkEvent(
                 src_ip="192.168.1.100",
                 src_port=70000  # Invalid port (> 65535)
@@ -128,7 +125,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_network_event_invalid_port_zero(self):
         """Test NetworkEvent with invalid port zero"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             NetworkEvent(
                 src_ip="192.168.1.100",
                 src_port=0  # Invalid port (< 1)
@@ -136,7 +133,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_network_event_invalid_protocol(self):
         """Test NetworkEvent with invalid protocol"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             NetworkEvent(
                 src_ip="192.168.1.100",
                 protocol="HTTP"  # Not in TCP|UDP|ICMP
@@ -159,7 +156,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_file_hash_invalid_sha1_length(self):
         """Test FileHash with invalid SHA1 length"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             FileHash(
                 sha256="d41d8cd98f00b204e9800998ecf8427e" * 2,
                 sha1="d41d8cd98f00b204e9800998ecf8427e"  # Too short
@@ -181,7 +178,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
         # Test minimum valid port
         event1 = NetworkEvent(src_ip="192.168.1.100", src_port=1)
         self.assertEqual(event1.src_port, 1)
-        
+
         # Test maximum valid port
         event2 = NetworkEvent(src_ip="192.168.1.100", dst_port=65535)
         self.assertEqual(event2.dst_port, 65535)
@@ -191,11 +188,11 @@ class TestSchemaValidationAtomic(unittest.TestCase):
         # Should accept uppercase
         file_hash1 = FileHash(sha256="D41D8CD98F00B204E9800998ECF8427E" * 2)
         self.assertIsNotNone(file_hash1.sha256)
-        
+
         # Should accept lowercase
         file_hash2 = FileHash(sha256="d41d8cd98f00b204e9800998ecf8427e" * 2)
         self.assertIsNotNone(file_hash2.sha256)
-        
+
         # Should accept mixed case
         file_hash3 = FileHash(sha256="D41d8CD9" * 8)
         self.assertIsNotNone(file_hash3.sha256)
@@ -209,7 +206,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_mitre_info_invalid_tactics(self):
         """Test MITREInfo with invalid tactics"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             MITREInfo(tactics=["INVALID_TACTIC"])
 
     def test_mitre_info_with_techniques(self):
@@ -246,7 +243,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_affected_file_invalid_size(self):
         """Test AffectedFile with invalid size"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             AffectedFile(
                 path="/tmp/test.txt",
                 name="test.txt",
@@ -255,7 +252,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
 
     def test_affected_file_empty_path(self):
         """Test AffectedFile with empty path"""
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             AffectedFile(path="", name="test.txt")
 
     def test_ransomware_alert_valid_minimal(self):
@@ -280,7 +277,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
     def test_ransomware_alert_invalid_alert_id(self):
         """Test RansomwareAlert with invalid alert ID"""
         file_hash = FileHash(sha256="d41d8cd98f00b204e9800998ecf8427e" * 2)
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             RansomwareAlert(
                 alert_id="INVALID-ID",  # Invalid format
                 hostname="server-01",
@@ -291,7 +288,7 @@ class TestSchemaValidationAtomic(unittest.TestCase):
     def test_ransomware_alert_invalid_hostname(self):
         """Test RansomwareAlert with invalid hostname"""
         file_hash = FileHash(sha256="d41d8cd98f00b204e9800998ecf8427e" * 2)
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             RansomwareAlert(
                 alert_id="ALERT-1234567890-1234",
                 hostname="server@01",  # Invalid character

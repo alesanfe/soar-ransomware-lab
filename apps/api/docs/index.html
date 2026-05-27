@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación de la API de SOAR Lab - Índice</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>🚀 Documentación de la API de SOAR Lab</h1>
+                <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="intro">
+                <h2>Referencia Completa de la API</h2>
+                <p>Documentación completa para todos los servicios y contenedores en el entorno del SOAR Ransomware Lab. Seleccione un servicio a continuación para ver la documentación detallada de la API.</p>
+            </div>
+
+            <h3 class="section-title">Servicios Core de SOAR</h3>
+            <div class="services-grid">
+                <a href="soar-lab-api.html" class="service-card">
+                    <h3>API de Gestión de SOAR Lab</h3>
+                    <p>Interfaz de gestión personalizada basada en FastAPI para el entorno del laboratorio SOAR</p>
+                    <span class="port">Puerto: 8000</span>
+                    <span class="badge api">API REST</span>
+                </a>
+
+                <a href="thehive-api.html" class="service-card">
+                    <h3>API de TheHive</h3>
+                    <p>Plataforma colaborativa de gestión de casos para respuesta a incidentes</p>
+                    <span class="port">Puerto: 9000</span>
+                    <span class="badge api">API REST</span>
+                </a>
+
+                <a href="cortex-api.html" class="service-card">
+                    <h3>API de Cortex</h3>
+                    <p>Plataforma de análisis de seguridad para enriquecimiento de observables y automatización</p>
+                    <span class="port">Puerto: 9001</span>
+                    <span class="badge api">API REST</span>
+                </a>
+
+                <a href="shuffle-api.html" class="service-card">
+                    <h3>API de Shuffle</h3>
+                    <p>Plataforma SOAR de código abierto para automatización de flujos de trabajo</p>
+                    <span class="port">Puerto: 5001</span>
+                    <span class="badge api">API REST</span>
+                </a>
+            </div>
+
+            <h3 class="section-title">Inteligencia de Amenazas</h3>
+            <div class="services-grid">
+                <a href="misp-api.html" class="service-card">
+                    <h3>API de MISP</h3>
+                    <p>Plataforma de intercambio y colaboración de inteligencia de amenazas</p>
+                    <span class="port">Puerto: 8082</span>
+                    <span class="badge api">API REST</span>
+                </a>
+
+                <a href="misp-modules-api.html" class="service-card">
+                    <h3>API de Módulos de MISP</h3>
+                    <p>Módulos de expansión, importación y exportación para enriquecimiento de MISP</p>
+                    <span class="port">Puerto: 6666</span>
+                    <span class="badge internal">Interno</span>
+                </a>
+            </div>
+
+            <h3 class="section-title">SIEM y Monitoreo</h3>
+            <div class="services-grid">
+                <a href="wazuh-api.html" class="service-card">
+                    <h3>API de Wazuh</h3>
+                    <p>Plataforma de gestión de información y eventos de seguridad</p>
+                    <span class="port">Puerto: 55000</span>
+                    <span class="badge api">API REST</span>
+                </a>
+
+                <a href="elasticsearch-api.html" class="service-card">
+                    <h3>API de Elasticsearch</h3>
+                    <p>Motor de búsqueda y análisis distribuido</p>
+                    <span class="port">Puerto: 9201</span>
+                    <span class="badge api">API REST</span>
+                </a>
+
+                <a href="kibana-api.html" class="service-card">
+                    <h3>API de Kibana</h3>
+                    <p>Plataforma de visualización y dashboard para Elasticsearch</p>
+                    <span class="port">Puerto: 15601</span>
+                    <span class="badge api">API REST</span>
+                </a>
+            </div>
+
+            <h3 class="section-title">Datos e Infraestructura</h3>
+            <div class="services-grid">
+                <a href="redis-api.html" class="service-card">
+                    <h3>API de Redis</h3>
+                    <p>Almacén de datos en memoria y caché</p>
+                    <span class="port">Puerto: 6379</span>
+                    <span class="badge api">Protocolo Redis</span>
+                </a>
+
+                <a href="docker-api.html" class="service-card">
+                    <h3>API de Docker</h3>
+                    <p>Gestión y orquestación de contenedores</p>
+                    <span class="port">Socket Unix</span>
+                    <span class="badge api">API REST</span>
+                </a>
+            </div>
+
+            <h3 class="section-title">Servicios Internos</h3>
+            <div class="services-grid">
+                <a href="internal-services.html" class="service-card">
+                    <h3>Servicios Internos</h3>
+                    <p>Planificador de flujos de trabajo Orborus y Network Watcher</p>
+                    <span class="port">Interno</span>
+                    <span class="badge internal">Sin API HTTP</span>
+                </a>
+            </div>
+
+            <h3 class="section-title">Web y Proxy</h3>
+            <div class="services-grid">
+                <a href="web-nginx.html" class="service-card">
+                    <h3>UI de Gestión Web y Nginx</h3>
+                    <p>Interfaz web y configuración de proxy inverso</p>
+                    <span class="port">80, 443, 8081</span>
+                    <span class="badge support">Infraestructura</span>
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

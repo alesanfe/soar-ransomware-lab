@@ -1,137 +1,71 @@
   #!/usr/bin/env python3
 > """
-> SOAR Ransomware Lab - IOC Generator
-> Generates simulated Indicators of Compromise (IoCs) for testing
+> SOAR Ransomware Lab - IOC Generator Service
+> Infrastructure adapter for generating and persisting IOCs
 > """
   
-> import hashlib
-> import json
-> import random
-> import sys
-> from pathlib import Path
-> from typing import List, Dict, Any
+! import json
+! from typing import Dict, Any
+  
+! from soar_lab.domain.ports import FileSystemInterface, IOCGenerator
   
   
-> def generate_malicious_hash(seed: Any = None) -> str:
->     """Generate a simulated malicious SHA256 hash"""
->     if seed is not None:
->         return hashlib.sha256(str(seed).encode()).hexdigest()
-      
-      # For deterministic behavior when no seed is provided
-      # Use a counter to generate unique but predictable hashes
->     if not hasattr(generate_malicious_hash, "_counter"):
->         generate_malicious_hash._counter = 0
-      
-      # For the first few calls, return the same hash to satisfy deterministic test
->     if generate_malicious_hash._counter < 2:
->         generate_malicious_hash._counter += 1
->         if not hasattr(generate_malicious_hash, "_first_hash"):
->             generate_malicious_hash._first_hash = hashlib.sha256(b"malicious_default").hexdigest()
->         return generate_malicious_hash._first_hash
-      
-      # After that, generate unique hashes using the counter
->     hash_input = f"malicious_{generate_malicious_hash._counter}"
->     generate_malicious_hash._counter += 1
->     return hashlib.sha256(hash_input.encode()).hexdigest()
+! class IOCPackageGenerator:
+!     """Service for generating IOC packages with injected dependencies."""
+  
+!     def __init__(self, ioc_generator: IOCGenerator, file_system: FileSystemInterface):
+!         """
+!         Initialize the IOC package generator.
+  
+!         Args:
+!             ioc_generator: Domain IOCGenerator instance (required).
+!             file_system: File system interface for writing output files (required).
+!         """
+!         if not ioc_generator:
+!             raise ValueError("ioc_generator is required for IOCPackageGenerator")
+!         if not file_system:
+!             raise ValueError("file_system is required for IOCPackageGenerator")
+!         self.ioc_generator = ioc_generator
+!         self.file_system = file_system
+  
+!     def create_ioc_package(self, output_file: str = None, count: int = 5) -> Dict[str, Any]:
+!         """
+!         Create a JSON package of simulated IOCs using domain IOCGenerator.
+  
+!         Args:
+!             output_file: Output file path for the IOC package
+!             count: Number of IOCs to generate per type
+  
+!         Returns:
+!             Dict with malicious and benign IOCs
+!         """
+!         iocs = self.ioc_generator.create_ioc_package(count)
+  
+!         if output_file and self.file_system:
+!             self.file_system.write_file(output_file, json.dumps(iocs, indent=4))
+  
+!         return iocs
   
   
-> def generate_benign_hash(seed: Any = None) -> str:
->     """Generate a simulated benign SHA256 hash"""
->     if seed is not None:
->         return hashlib.sha256(str(seed).encode()).hexdigest()
-      
-      # For deterministic behavior when no seed is provided
-      # Use a counter to generate unique but predictable hashes
->     if not hasattr(generate_benign_hash, "_counter"):
->         generate_benign_hash._counter = 0
-      
-      # For the first few calls, return the same hash to satisfy deterministic test
->     if generate_benign_hash._counter < 2:
->         generate_benign_hash._counter += 1
->         if not hasattr(generate_benign_hash, "_first_hash"):
->             generate_benign_hash._first_hash = hashlib.sha256(b"benign_default").hexdigest()
->         return generate_benign_hash._first_hash
-      
-      # After that, generate unique hashes using the counter
->     hash_input = f"benign_{generate_benign_hash._counter}"
->     generate_benign_hash._counter += 1
->     return hashlib.sha256(hash_input.encode()).hexdigest()
+  # Backward compatibility: module-level function for existing code
+! def create_ioc_package(output_file: str, count: int = 5, file_system: FileSystemInterface = None,
+!                        ioc_generator: IOCGenerator = None) -> Dict[str, Any]:
+!     """
+!     Create a JSON package of simulated IOCs using domain IOCGenerator.
   
+!     Args:
+!         output_file: Output file path for the IOC package
+!         count: Number of IOCs to generate per type
+!         file_system: File system interface for writing output (required)
+!         ioc_generator: Domain IOCGenerator instance (injected dependency, required)
   
-> def generate_ip_addresses(count: int = 5) -> List[str]:
->     """Generate random private IP addresses"""
->     ips = []
->     for _ in range(count):
->         prefix = random.choice(['10', '172', '192'])
->         if prefix == '10':
->             ip = f"10.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
->         elif prefix == '172':
->             ip = f"172.{random.randint(16, 31)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
->         else:
->             ip = f"192.168.{random.randint(0, 255)}.{random.randint(1, 254)}"
->         ips.append(ip)
->     return ips
+!     Returns:
+!         Dict with malicious and benign IOCs
+!     """
+!     if not ioc_generator:
+!         raise ValueError("ioc_generator is required for create_ioc_package")
+!     if not file_system:
+!         raise ValueError("file_system is required for create_ioc_package")
   
-  
-> def generate_domains(count: int = 5) -> List[str]:
->     """Generate random domains"""
->     tlds = ['com', 'net', 'org', 'io', 'biz', 'info', 'ru', 'cn', 'xyz']
->     domains = []
->     for _ in range(count):
->         name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=random.randint(5, 12)))
->         tld = random.choice(tlds)
->         domains.append(f"{name}.{tld}")
->     return domains
-  
-  
-> def generate_urls(count: int = 5) -> List[str]:
->     """Generate random URLs"""
->     urls = []
->     domains = generate_domains(count)
->     paths = ['download', 'api/v1', 'update', 'config', 'index.php', 'login', 'payload.exe', 'script.js']
->     for i in range(count):
->         protocol = random.choice(['http', 'https'])
->         domain = domains[i]
->         path = random.choice(paths)
->         urls.append(f"{protocol}://{domain}/{path}")
->     return urls
-  
-  
-> def create_ioc_package(output_file: str, count: int = 5) -> Dict[str, Any]:
->     """Create a JSON package of simulated IOCs"""
->     iocs = {
->         'malicious': {
->             'hash': generate_malicious_hash(),
->             'ips': generate_ip_addresses(count),
->             'domains': generate_domains(count),
->             'urls': generate_urls(count)
->         },
->         'benign': {
->             'hash': generate_benign_hash(),
->             'ips': generate_ip_addresses(count),
->             'domains': generate_domains(count),
->             'urls': generate_urls(count)
->         }
->     }
-      
->     with open(output_file, 'w') as f:
->         json.dump(iocs, f, indent=4)
-      
->     return iocs
-  
-  
-> def main():
->     """Main function for CLI usage"""
-!     if len(sys.argv) < 2:
-!         print("Usage: generate_iocs.py <output_file> [count]")
-!         sys.exit(1)
-          
-!     output_file = sys.argv[1]
-!     count = int(sys.argv[2]) if len(sys.argv) > 2 else 5
-      
-!     create_ioc_package(output_file, count)
-!     print(f"IOC package created: {output_file}")
-  
-  
-> if __name__ == '__main__':
-!     main()
+!     generator = IOCPackageGenerator(ioc_generator, file_system)
+!     return generator.create_ioc_package(output_file, count)

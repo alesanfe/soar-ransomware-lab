@@ -5,14 +5,14 @@ Data validation models using Pydantic for type safety and validation
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
-from pydantic import BaseModel, Field, validator, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
+from pydantic.networks import IPv4Address
+from typing import Any, Dict, List, Optional
 
 # Constants
 ALERT_ID_PATTERN = r"^ALERT-\d{10}-\d{4}$"
-from pydantic.networks import IPv4Address
-from typing import List, Optional, Dict, Any
 
 
 class SeverityLevel(str, Enum):
@@ -37,11 +37,10 @@ class NetworkEvent(BaseModel):
     src_port: Optional[int] = Field(None, ge=1, le=65535, description="Source port")
     dst_port: Optional[int] = Field(None, ge=1, le=65535, description="Destination port")
     protocol: Optional[str] = Field(None, pattern=r"^(TCP|UDP|ICMP)$", description="Network protocol")
-    
-    @validator('src_ip')
-    def validate_src_ip(cls, v):
-        """Validate source IP is not private if malicious"""
-        # Additional validation logic can be added here
+
+    @field_validator('src_ip')
+    @classmethod
+    def validate_src_ip(cls, v: IPv4Address) -> IPv4Address:
         return v
 
 
@@ -49,14 +48,8 @@ class FileHash(BaseModel):
     """File hash model"""
     sha256: str = Field(..., min_length=64, max_length=64, pattern=r"^[a-fA-F0-9]{64}$", description="SHA256 hash")
     md5: Optional[str] = Field(None, min_length=32, max_length=32, pattern=r"^[a-fA-F0-9]{32}$", description="MD5 hash")
-    sha1: Optional[str] = Field(None, min_length=40, max_length=40, pattern=r"^[a-fA-F0-9]{40}$", description="SHA1 hash")
-    
-    @validator('sha256')
-    def validate_sha256_format(cls, v):
-        """Validate SHA256 hash format"""
-        if not re.match(r"^[a-fA-F0-9]{64}$", v):
-            raise ValueError("SHA256 hash must be 64 hexadecimal characters")
-        return v
+    sha1: Optional[str] = Field(None, min_length=40, max_length=40, pattern=r"^[a-fA-F0-9]{40}$",
+                                description="SHA1 hash")
 
 
 class MITREInfo(BaseModel):
@@ -64,14 +57,14 @@ class MITREInfo(BaseModel):
     tactics: List[str] = Field(default_factory=list, description="MITRE tactics")
     techniques: List[str] = Field(default_factory=list, description="MITRE techniques")
     sub_techniques: List[str] = Field(default_factory=list, description="MITRE sub-techniques")
-    
-    @validator('tactics')
-    def validate_tactics(cls, v):
-        """Validate MITRE tactics format"""
-        valid_tactics = [
+
+    @field_validator('tactics')
+    @classmethod
+    def validate_tactics(cls, v: List[str]) -> List[str]:
+        valid_tactics = {
             "TA0001", "TA0002", "TA0003", "TA0004", "TA0005", "TA0006", "TA0007", "TA0008", "TA0009",
             "TA0010", "TA0011", "TA0040", "TA0042", "TA0043"
-        ]
+        }
         for tactic in v:
             if tactic not in valid_tactics:
                 raise ValueError(f"Invalid MITRE tactic: {tactic}")
@@ -85,11 +78,11 @@ class AffectedFile(BaseModel):
     size: Optional[int] = Field(None, ge=0, description="File size in bytes")
     extension: Optional[str] = Field(None, description="File extension")
     encrypted: Optional[bool] = Field(None, description="Whether file is encrypted")
-    
-    @validator('path')
-    def validate_path(cls, v):
-        """Validate file path format"""
-        if not v or len(v) < 1:
+
+    @field_validator('path')
+    @classmethod
+    def validate_path(cls, v: str) -> str:
+        if not v:
             raise ValueError("File path cannot be empty")
         return v
 
@@ -111,25 +104,27 @@ class RansomwareAlert(BaseModel):
     network_events: List[NetworkEvent] = Field(default_factory=list, description="Network events")
     user_context: Optional[Dict[str, Any]] = Field(None, description="User context information")
     process_info: Optional[Dict[str, Any]] = Field(None, description="Process information")
-    
-    @validator('alert_id')
-    def validate_alert_id(cls, v):
-        """Validate alert ID format"""
+
+    @field_validator('alert_id')
+    @classmethod
+    def validate_alert_id(cls, v: str) -> str:
         if not re.match(ALERT_ID_PATTERN, v):
             raise ValueError("Alert ID must be in format: ALERT-timestamp-sequence")
         return v
-    
-    @validator('hostname')
-    def validate_hostname(cls, v):
-        """Validate hostname format"""
+
+    @field_validator('hostname')
+    @classmethod
+    def validate_hostname(cls, v: str) -> str:
         if not re.match(r"^[a-zA-Z0-9\-]{1,255}$", v):
             raise ValueError("Hostname can only contain alphanumeric characters and hyphens")
         return v
-    
-    @validator('detection_time')
-    def validate_detection_time(cls, v):
-        """Validate detection time is not in future"""
-        if v > datetime.now():
+
+    @field_validator('detection_time')
+    @classmethod
+    def validate_detection_time(cls, v: datetime) -> datetime:
+        now = datetime.now(timezone.utc)
+        v_aware = v if v.tzinfo is not None else v.replace(tzinfo=timezone.utc)
+        if v_aware > now:
             raise ValueError("Detection time cannot be in the future")
         return v
 
@@ -138,12 +133,12 @@ class WebhookPayload(BaseModel):
     """Webhook payload model"""
     alert: RansomwareAlert = Field(..., description="Ransomware alert")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-    timestamp: datetime = Field(default_factory=datetime.now, description="Payload timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Payload timestamp")
     version: str = Field(default="1.0", description="Payload version")
-    
-    @validator('version')
-    def validate_version(cls, v):
-        """Validate payload version"""
+
+    @field_validator('version')
+    @classmethod
+    def validate_version(cls, v: str) -> str:
         if not re.match(r"^\d+\.\d+(\.\d+)?$", v):
             raise ValueError("Version must be in format: x.y or x.y.z")
         return v
@@ -154,15 +149,16 @@ class ContainmentAction(BaseModel):
     action_id: str = Field(..., pattern=r"^ACTION-\d{10}-\d{4}$", description="Action ID")
     alert_id: str = Field(..., pattern=ALERT_ID_PATTERN, description="Related alert ID")
     hostname: str = Field(..., description="Target hostname")
-    action_type: str = Field(..., pattern=r"^(network_isolation|process_termination|account_lockdown)$", description="Action type")
+    action_type: str = Field(..., pattern=r"^(network_isolation|process_termination|account_lockdown)$",
+                             description="Action type")
     status: str = Field(..., pattern=r"^(pending|executed|failed|completed)$", description="Action status")
     execution_time: Optional[datetime] = Field(None, description="Execution timestamp")
     details: Dict[str, Any] = Field(default_factory=dict, description="Action details")
     error_message: Optional[str] = Field(None, description="Error message if failed")
-    
-    @validator('action_id')
-    def validate_action_id(cls, v):
-        """Validate action ID format"""
+
+    @field_validator('action_id')
+    @classmethod
+    def validate_action_id(cls, v: str) -> str:
         if not re.match(r"^ACTION-\d{10}-\d{4}$", v):
             raise ValueError("Action ID must be in format: ACTION-timestamp-sequence")
         return v
@@ -170,7 +166,7 @@ class ContainmentAction(BaseModel):
 
 class KPIReport(BaseModel):
     """KPI report model"""
-    timestamp: datetime = Field(default_factory=datetime.now, description="Report timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Report timestamp")
     total_executions: int = Field(..., ge=0, description="Total number of executions")
     mean_mttr: float = Field(..., ge=0, description="Mean MTTR in seconds")
     median_mttr: float = Field(..., ge=0, description="Median MTTR in seconds")
@@ -183,35 +179,27 @@ class KPIReport(BaseModel):
     threshold_p90: float = Field(default=180.0, description="P90 threshold in seconds")
     p50_within_threshold: bool = Field(..., description="Whether P50 is within threshold")
     p90_within_threshold: bool = Field(..., description="Whether P90 is within threshold")
-    
-    @validator('p50_within_threshold')
-    def validate_p50_threshold(cls, v, values):
-        """Validate P50 threshold compliance"""
-        if 'p50_mttr' in values and 'threshold_p50' in values:
-            return values['p50_mttr'] <= values['threshold_p50']
-        return v
-    
-    @validator('p90_within_threshold')
-    def validate_p90_threshold(cls, v, values):
-        """Validate P90 threshold compliance"""
-        if 'p90_mttr' in values and 'threshold_p90' in values:
-            return values['p90_mttr'] <= values['threshold_p90']
-        return v
+
+    @model_validator(mode='after')
+    def compute_threshold_compliance(self) -> 'KPIReport':
+        self.p50_within_threshold = self.p50_mttr <= self.threshold_p50
+        self.p90_within_threshold = self.p90_mttr <= self.threshold_p90
+        return self
 
 
 class HealthCheck(BaseModel):
     """Health check model"""
     service_name: str = Field(..., description="Service name")
     status: str = Field(..., pattern=r"^(healthy|unhealthy|degraded)$", description="Health status")
-    timestamp: datetime = Field(default_factory=datetime.now, description="Check timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Check timestamp")
     response_time_ms: Optional[float] = Field(None, ge=0, description="Response time in milliseconds")
     error_message: Optional[str] = Field(None, description="Error message if unhealthy")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-    
-    @validator('response_time_ms')
-    def validate_response_time(cls, v):
-        """Validate response time is reasonable"""
-        if v is not None and v > 30000:  # 30 seconds
+
+    @field_validator('response_time_ms')
+    @classmethod
+    def validate_response_time(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v > 30000:
             raise ValueError("Response time exceeds 30 seconds")
         return v
 
@@ -227,10 +215,10 @@ class BackupReport(BaseModel):
     success: bool = Field(..., description="Backup success status")
     error_message: Optional[str] = Field(None, description="Error message if failed")
     retention_days: int = Field(default=7, ge=1, description="Retention period in days")
-    
-    @validator('backup_id')
-    def validate_backup_id(cls, v):
-        """Validate backup ID format"""
+
+    @field_validator('backup_id')
+    @classmethod
+    def validate_backup_id(cls, v: str) -> str:
         if not re.match(r"^BACKUP-\d{8}_\d{6}$", v):
             raise ValueError("Backup ID must be in format: BACKUP-YYYYMMDD_HHMMSS")
         return v
@@ -247,15 +235,15 @@ class SecurityScan(BaseModel):
     scan_duration_seconds: float = Field(..., ge=0, description="Scan duration in seconds")
     success: bool = Field(..., description="Scan success status")
     recommendations: List[str] = Field(default_factory=list, description="Security recommendations")
-    
-    @validator('vulnerabilities')
-    def validate_vulnerabilities(cls, v):
-        """Validate vulnerability counts"""
-        valid_severities = ['critical', 'high', 'medium', 'low', 'info']
-        for severity in v.keys():
+
+    @field_validator('vulnerabilities')
+    @classmethod
+    def validate_vulnerabilities(cls, v: Dict[str, int]) -> Dict[str, int]:
+        valid_severities = {'critical', 'high', 'medium', 'low', 'info'}
+        for severity, count in v.items():
             if severity not in valid_severities:
                 raise ValueError(f"Invalid vulnerability severity: {severity}")
-            if v[severity] < 0:
+            if count < 0:
                 raise ValueError(f"Vulnerability count cannot be negative for {severity}")
         return v
 
@@ -305,11 +293,4 @@ def is_valid_ip_address(ip_address: str) -> bool:
 
 def is_valid_alert_id(alert_id: str) -> bool:
     """Check if alert ID is valid"""
-    try:
-        RansomwareAlert(alert_id=alert_id, hostname="test", src_ip="192.168.1.1", 
-                       hash=FileHash(sha256="a" * 64), severity=SeverityLevel.LOW, 
-                       source="test", detection_time=datetime.now(), 
-                       event_type="ransomware_detection", description="test")
-        return True
-    except Exception:
-        return False
+    return bool(re.match(ALERT_ID_PATTERN, alert_id))

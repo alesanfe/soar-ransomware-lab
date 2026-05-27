@@ -114,42 +114,45 @@ soar-ransomware-lab/
 
 ## 📚 Documentación del Proyecto
 
-Este proyecto incluye documentación académica completa estructurada según las directrices de Trabajo Fin de Máster (TFM):
+Este proyecto incluye documentación técnica completa organizada en el directorio `docs/`:
 
-### 1. Documentación Fundamental del TFM
-1. **[Alcance del Proyecto](docs/scope.md)** - Definición de qué incluye y excluye el TFM
-2. **[Objetivos SMART](docs/objectives.md)** - Objetivos medibles con ubicación de evidencias
-3. **[Planificación del Proyecto](docs/plan.md)** - Cronograma, hitos y ruta crítica
-4. **[Análisis de Riesgos](docs/risks.md)** - Riesgos técnicos y temporales con mitigaciones
+### Documentación Principal
+- **[Índice de Documentación](docs/README.md)** - Índice completo de toda la documentación del proyecto
+- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Documentación completa de todas las APIs del sistema
+- **[CHANGELOG.md](CHANGELOG.md)** - Historial de cambios y versiones del proyecto
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guía para desarrolladores y contribuidores
 
-### 2. Documentación Técnica y Arquitectónica
-5. **[Arquitectura](docs/architecture.md)** - Diseño detallado del sistema y relaciones entre componentes
-6. **[Integraciones de APIs](docs/api.md)** - APIs reales vs simuladas con detalles de configuración
-7. **[Guía Técnica](docs/technical.md)** - Configuración completa, despliegue y resolución de problemas
-8. **[Manual del Playbook](docs/playbook_manual.md)** - Documentación detallada del flujo en Shuffle
+### Documentación Técnica
+- **[Arquitectura](docs/architecture/overview.md)** - Diseño detallado del sistema y relaciones entre componentes
+- **[Arquitectura Docker](docs/architecture/docker_architecture.md)** - Arquitectura Docker, archivos compose y despliegue
+- **[Seguridad](docs/architecture/security.md)** - Consideraciones de seguridad y mejores prácticas
 
-### 3. Resultados y Análisis del Proyecto
-9. **[Informe de Pruebas](docs/test_report.md)** - Resultados de pruebas E2E, KPIs y análisis de rendimiento
-10. **[Cierre del Proyecto](docs/closure.md)** - Lecciones aprendidas y recomendaciones futuras
-11. **[Guía de Seguridad](docs/security.md)** - Mejores prácticas de seguridad y checklist
+### Guías de Usuario
+- **[Visión General](docs/getting_started/overview.md)** - Visión general del laboratorio
+- **[Guía de Instalación](docs/getting_started/installation_guide.md)** - Guía paso a paso de instalación
+- **[Guía de Usuario](docs/getting_started/user_guide.md)** - Manual completo de operación del laboratorio
 
-### 4. Guías de Usuario y Operativas
-12. **[Guía de Usuario](docs/user_guide.md)** - Manual completo de operación del laboratorio
-13. **[Resolución de Problemas](docs/troubleshooting.md)** - Guía completa de diagnóstico y soluciones
+### Operaciones
+- **[Manual de Configuración](docs/operations/configuration_manual.md)** - Configuración completa del laboratorio
+- **[Playbook E2E](docs/operations/playbooks/ransomware_playbook_e2e.md)** - Documentación del playbook E2E
+- **[Troubleshooting](docs/operations/troubleshooting.md)** - Guía de diagnóstico y soluciones
 
-### 5. Documentación de Mejoras Implementadas
-14. **[Análisis de Mejoras](docs/improvement_recommendations.md)** - Análisis completo de 44 mejoras identificadas
-15. **[Implementación de Mejoras](docs/improvements_implementation.md)** - Documentación de todas las mejoras implementadas
-16. **[Reporte Final de Implementación](docs/final_implementation_report.md)** - Reporte completo del proyecto transformado
+### Integraciones
+- **[Contratos de API](docs/integrations/api_contracts.md)** - Especificaciones y contratos de APIs
 
-### 6. Documentación API y Desarrollo
-17. **[Documentación API](docs/api.md)** - Documentación completa de endpoints REST
-18. **[Guía de Contribución](CONTRIBUTING.md)** - Guía para desarrolladores y contribuidores
-19. **[CHANGELOG](CHANGELOG.md)** - Historial de cambios y versiones del proyecto
+### Pruebas
+- **[Índice de Pruebas](docs/testing/README.md)** - Índice de documentación de pruebas
+- **[Suite de Pruebas](docs/testing/test_suite.md)** - Documentación completa de la suite de pruebas
+- **[Estrategia de Pruebas Docker](docs/testing/docker_testing_strategy.md)** - Estrategia de pruebas de Docker
 
-### 7. Archivos de Configuración y Plantillas
-20. **[Plantilla TheHive](docs/thehive_template.json)** - Plantilla de casos para incidentes de ransomware
-21. **[Analyzers Cortex](docs/cortex_analyzers.md)** - Configuración y documentación de analyzers
+### Gestión de Proyecto
+- **[Alcance](docs/project/scope.md)** - Definición de qué incluye y excluye el proyecto
+- **[Objetivos](docs/project/objectives.md)** - Objetivos SMART y entregables
+- **[Planificación](docs/project/plan.md)** - Cronograma y roadmap del proyecto
+- **[Riesgos](docs/project/risks.md)** - Gestión de riesgos y mitigación
+
+### Documentación Académica (TFM)
+- **[Thesis](docs/thesis/)** - Documentación completa de la Tesis de Máster (múltiples archivos)
 
 ---
 
