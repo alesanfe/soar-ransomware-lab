@@ -4,8 +4,8 @@ Unit tests for settings.py
 Tests configuration settings
 """
 
-import pytest
 import os
+import pytest
 from pathlib import Path
 
 from soar_lab.config.settings import Settings
@@ -17,6 +17,10 @@ class TestSettings:
     @pytest.fixture
     def settings(self):
         """Create a Settings instance with BASE_DIR set"""
+        # Clear environment variables to test default values
+        for var in ['API_HOST', 'REDIS_URL']:
+            if var in os.environ:
+                del os.environ[var]
         os.environ['BASE_DIR'] = str(Path(__file__).parent.parent.parent)
         return Settings()
 
@@ -108,7 +112,7 @@ class TestSettings:
         # Clear BASE_DIR if set
         if 'BASE_DIR' in os.environ:
             del os.environ['BASE_DIR']
-        
+
         with pytest.raises(ValueError, match="BASE_DIR environment variable must be set"):
             Settings()
 
@@ -117,12 +121,12 @@ class TestSettings:
         os.environ['BASE_DIR'] = str(Path(__file__).parent.parent.parent)
         os.environ['API_HOST'] = '192.168.1.1'
         os.environ['API_PORT'] = '9000'
-        
+
         settings = Settings()
-        
+
         assert settings.API_HOST == '192.168.1.1'
         assert settings.API_PORT == 9000
-        
+
         # Clean up
         del os.environ['API_HOST']
         del os.environ['API_PORT']
@@ -134,19 +138,19 @@ class TestSettings:
 
     def test_thehive_port_default(self, settings):
         """Test default THEHIVE_HTTP_PORT"""
-        assert settings._config.get('thehive_port') == 9000
+        assert settings._config.get('thehive_port') == 19000
 
     def test_cortex_port_default(self, settings):
         """Test default CORTEX_HTTP_PORT"""
-        assert settings._config.get('cortex_port') == 9001
+        assert settings._config.get('cortex_port') == 19001
 
     def test_shuffle_ui_port_default(self, settings):
         """Test default SHUFFLE_UI_PORT"""
-        assert settings._config.get('shuffle_ui_port') == 3001
+        assert settings._config.get('shuffle_ui_port') == 8081
 
     def test_shuffle_api_port_default(self, settings):
         """Test default SHUFFLE_API_PORT"""
-        assert settings._config.get('shuffle_api_port') == 5001
+        assert settings._config.get('shuffle_api_port') == 15001
 
     def test_elasticsearch_port_default(self, settings):
         """Test elasticsearch port exists"""
@@ -163,7 +167,7 @@ class TestSettings:
 
     def test_misp_port_default(self, settings):
         """Test default MISP_PORT"""
-        assert settings._config.get('misp_port') == 8082
+        assert settings._config.get('misp_port') == 8083
 
     def test_http_port_default(self, settings):
         """Test default HTTP_PORT"""
@@ -171,15 +175,15 @@ class TestSettings:
 
     def test_thehive_url_default(self, settings):
         """Test default THEHIVE_URL"""
-        assert settings._config.get('thehive_url') == 'http://localhost:9000'
+        assert settings._config.get('thehive_url') == 'http://thehive:9000'
 
     def test_cortex_url_default(self, settings):
         """Test default CORTEX_URL"""
-        assert settings._config.get('cortex_url') == 'http://localhost:9001'
+        assert settings._config.get('cortex_url') == 'http://cortex:9001'
 
     def test_shuffle_url_default(self, settings):
         """Test default SHUFFLE_URL"""
-        assert settings._config.get('shuffle_url') == 'http://localhost:5001'
+        assert settings._config.get('shuffle_url') == 'http://soar_shuffle_backend:5001'
 
     def test_kibana_url_default(self, settings):
         """Test default KIBANA_URL"""
@@ -187,15 +191,15 @@ class TestSettings:
 
     def test_wazuh_url_default(self, settings):
         """Test default WAZUH_URL"""
-        assert settings._config.get('wazuh_url') == 'http://localhost:55100'
+        assert settings._config.get('wazuh_url') == 'https://wazuh-manager:55000'
 
     def test_misp_url_default(self, settings):
         """Test default MISP_URL"""
-        assert settings._config.get('misp_url') == 'http://localhost:8082'
+        assert settings._config.get('misp_url') == 'http://misp:80'
 
     def test_elasticsearch_url_default(self, settings):
         """Test default ELASTICSEARCH_URL"""
-        assert settings._config.get('elasticsearch_url') == 'http://localhost:9201'
+        assert settings._config.get('elasticsearch_url') == 'http://elasticsearch:9200'
 
     def test_shuffle_webhook_url_default(self, settings):
         """Test default SHUFFLE_WEBHOOK_URL"""
@@ -338,3 +342,76 @@ class TestSettings:
     def test_compress_backups_default(self, settings):
         """Test default COMPRESS"""
         assert settings._config.get('compress_backups') == True
+
+    def test_get_method(self, settings):
+        """Test get method"""
+        value = settings.get('api_host')
+        assert value == '127.0.0.1'
+
+    def test_get_method_with_default(self, settings):
+        """Test get method with default value"""
+        value = settings.get('nonexistent_key', 'default_value')
+        assert value == 'default_value'
+
+    def test_set_method(self, settings):
+        """Test set method"""
+        settings.set('custom_key', 'custom_value')
+        assert settings.get('custom_key') == 'custom_value'
+
+    def test_get_all_method(self, settings):
+        """Test get_all method"""
+        all_config = settings.get_all()
+        assert isinstance(all_config, dict)
+        assert 'api_host' in all_config
+        assert 'base_dir' in all_config
+
+    def test_validate_missing_keys(self, settings):
+        """Test validate with missing required keys"""
+        # Set required keys to empty
+        settings.set('elastic_password', '')
+        settings.set('thehive_secret', '')
+        settings.set('thehive_api_key', '')
+        settings.set('cortex_secret', '')
+        settings.set('cortex_api_key', '')
+        settings.set('siem_webhook_token', '')
+
+        result = settings.validate()
+        assert result is False
+
+    def test_validate_success(self, settings):
+        """Test validate with all required keys"""
+        settings.set('elastic_password', 'test_password')
+        settings.set('thehive_secret', 'test_secret')
+        settings.set('thehive_api_key', 'test_key')
+        settings.set('cortex_secret', 'test_secret')
+        settings.set('cortex_api_key', 'test_key')
+        settings.set('siem_webhook_token', 'test_token')
+
+        result = settings.validate()
+        assert result is True
+
+    def test_get_service_urls(self, settings):
+        """Test get_service_urls method"""
+        service_urls = settings.get_service_urls()
+        assert isinstance(service_urls, dict)
+        assert 'thehive' in service_urls
+        assert 'cortex' in service_urls
+        assert 'shuffle-backend' in service_urls
+        assert 'elasticsearch' in service_urls
+
+        # Check structure of one service
+        thehive = service_urls['thehive']
+        assert 'url' in thehive
+        assert 'container' in thehive
+
+    def test_get_webhook_url(self, settings):
+        """Test get_webhook_url method"""
+        webhook_url = settings.get_webhook_url()
+        assert isinstance(webhook_url, str)
+        assert 'api/v1/hooks' in webhook_url
+
+    def test_str_method(self, settings):
+        """Test __str__ method"""
+        str_repr = str(settings)
+        assert 'Settings' in str_repr
+        assert 'project=' in str_repr
