@@ -56,19 +56,19 @@ class TestCortexClientInit:
 class TestCortexClientListAnalyzers:
     def test_list_analyzers_success(self, requests_mock):
         analyzers = [{"id": "a1", "name": "Abuse_Finder"}]
-        requests_mock.get("http://cortex:9001/api/analyzer", json=analyzers)
+        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=analyzers)
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         result = client.list_analyzers()
         assert result == analyzers
 
     def test_list_analyzers_non_list_response(self, requests_mock):
-        requests_mock.get("http://cortex:9001/api/analyzer", json={"error": "oops"})
+        requests_mock.post("http://cortex:9001/api/analyzer/_search", json={"error": "oops"})
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         result = client.list_analyzers()
         assert result == []
 
     def test_list_analyzers_http_error(self, requests_mock):
-        requests_mock.get("http://cortex:9001/api/analyzer", status_code=500)
+        requests_mock.post("http://cortex:9001/api/analyzer/_search", status_code=500)
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         with pytest.raises(IntegrationError):
             client.list_analyzers()
@@ -193,13 +193,13 @@ class TestTheHiveClientGetCase:
 class TestTheHiveClientAddObservable:
     def test_add_observable_success(self, requests_mock):
         obs_resp = {"id": "obs-1"}
-        requests_mock.post("http://hive:9000/api/case/case-1/artifact", json=obs_resp)
+        requests_mock.post("http://hive:9000/api/case_observable", json=obs_resp)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         result = client.add_observable("case-1", {"dataType": "ip", "data": "1.2.3.4"})
         assert result == obs_resp
 
     def test_add_observable_http_error(self, requests_mock):
-        requests_mock.post("http://hive:9000/api/case/case-1/artifact", status_code=422)
+        requests_mock.post("http://hive:9000/api/case_observable", status_code=422)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         with pytest.raises(IntegrationError):
             client.add_observable("case-1", {"dataType": "ip", "data": "1.2.3.4"})
@@ -208,13 +208,13 @@ class TestTheHiveClientAddObservable:
 class TestTheHiveClientListCases:
     def test_list_cases_success(self, requests_mock):
         cases = [{"id": "case-1"}, {"id": "case-2"}]
-        requests_mock.get("http://hive:9000/api/case", json=cases)
+        requests_mock.post("http://hive:9000/api/case/_search", json=cases)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         result = client.list_cases()
         assert result == cases
 
     def test_list_cases_non_list(self, requests_mock):
-        requests_mock.get("http://hive:9000/api/case", json={"error": "bad"})
+        requests_mock.post("http://hive:9000/api/case/_search", json={"error": "bad"})
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         assert client.list_cases() == []
 
@@ -258,7 +258,6 @@ class TestShuffleClientSendWebhook:
         client = ShuffleClient(base_url="http://shuffle:5001", api_key="k")
         client.send_webhook("wh-abc", {"x": 1}, token="override-token")
         assert "override-token" in requests_mock.last_request.headers.get("Authorization", "")
-
 
     def test_send_webhook_http_error(self, requests_mock):
         requests_mock.post("http://shuffle:5001/api/v1/hooks/wh-abc", status_code=403)

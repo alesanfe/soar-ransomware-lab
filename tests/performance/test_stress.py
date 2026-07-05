@@ -27,7 +27,16 @@ except ImportError:
 import aiohttp
 import psutil
 
-from soar_lab.config.settings import get_setting
+from soar_lab.config.settings import Settings as _Settings
+from pathlib import Path as _Path
+
+
+def get_setting(key, default=None):
+    import os;
+    os.environ.setdefault('BASE_DIR', str(_Path(__file__).parents[3]))
+    return _Settings().get(key, default)
+
+
 from soar_lab.config.logging import get_logger
 
 logger = get_logger(__name__)
@@ -508,8 +517,8 @@ class TestStressPerformance(unittest.TestCase):
 
     def test_stress_tester_initialization(self):
         """Test stress tester initialization"""
-        self.assertEqual(self.stress_tester.base_url, 'http://localhost:5001')
-        self.assertEqual(self.stress_tester.webhook_url, 'http://localhost:5001/api/v1/webhooks/siem')
+        self.assertEqual(self.stress_tester.base_url, 'http://soar_shuffle_backend:5001')
+        self.assertEqual(self.stress_tester.webhook_url, 'http://soar_shuffle_backend:5001/api/v1/webhooks/siem')
         self.assertIsInstance(self.stress_tester.api_token, str)
         self.assertEqual(self.stress_tester.results, [])
         self.assertEqual(self.stress_tester.system_metrics, [])
