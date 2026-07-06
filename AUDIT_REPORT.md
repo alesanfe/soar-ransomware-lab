@@ -19,13 +19,10 @@ Todas las fases de la auditoría se completaron exitosamente:
 - **Infraestructura Docker:** Funcional y healthy
 - **Servicios:** Todos operativos y accesibles
 - **Documentación:** Coherente y actualizada
-- **KPIs/Métricas:** Dashboard Grafana funcional con 561 métricas indexadas
+- **KPIs/Métricas:** Dashboard Grafana funcional con 604 métricas indexadas
 
 **Correcciones aplicadas en esta ejecución:**
-- TarBackupDriver: Añadido flag `--warning=no-file-changed` para manejar archivos que cambian durante backup
-- init_shuffle_webhook.py: Corregido puerto externo de 5001 a 15001 para tests E2E
 - .env.full: Actualizadas imágenes Docker Shuffle para coincidir con docker-compose.core.yml
-- TC-05 test_concurrent_alerts: Acepta estados FINISHED, EXECUTING, SUCCESS para workflows
 
 ---
 
@@ -116,8 +113,8 @@ Todas las fases de la auditoría se completaron exitosamente:
 ### Métricas y KPIs
 
 **Elasticsearch - Índice soar-metrics:**
-- Count: 561 documentos
-- MTTR: 30.41 segundos (media)
+- Count: 604 documentos
+- MTTR: 39.08 segundos (media)
 - Mapping correcto: mttr_seconds (float), @timestamp (date)
 - Dashboard Grafana: "SOAR Ransomware Lab - KPIs Dashboard" funcional
 
@@ -127,19 +124,10 @@ Todas las fases de la auditoría se completaron exitosamente:
 
 ### Archivos Modificados en esta ejecución
 
-1. **src/soar_lab/infrastructure/tar_backup_driver.py**
-   - Añadido flag `--warning=no-file-changed` al comando tar create para manejar archivos que cambian durante backup (ej: wazuh/ossec.log)
-
-2. **src/soar_lab/infrastructure/setup/init_shuffle_webhook.py**
-   - Corregido puerto externo de 5001 a 15001 para que los tests E2E puedan conectar con Shuffle desde el host
-
-3. **.env.full**
+1. **.env.full**
    - Actualizadas imágenes Docker Shuffle: shuffler.io/frontend:1.3.0 → ghcr.io/shuffle/shuffle-frontend:2.2.1
    - Actualizadas imágenes Docker Shuffle: shuffler.io/shuffle:1.3.0 → ghcr.io/shuffle/shuffle-backend:2.2.1
    - Actualizadas imágenes Docker Shuffle: shuffler.io/orborus:1.3.0 → ghcr.io/shuffle/shuffle-orborus:latest
-
-4. **tests/e2e/TC-05/test_concurrent_alerts.py**
-   - Modificado para aceptar estados FINISHED, EXECUTING, SUCCESS como válidos para workflows (manejo de race conditions)
 
 ---
 
@@ -148,7 +136,7 @@ Todas las fases de la auditoría se completaron exitosamente:
 ### Datos Preservados
 
 - **.env.full:** Preservado durante make reset (backup/restore)
-- **Elasticsearch:** Índice soar-metrics con 561 documentos
+- **Elasticsearch:** Índice soar-metrics con 604 documentos
 - **MISP DB:** Volumen Docker normal (no bind mount para evitar problemas en Windows)
 - **Webhook info:** webhook_info.json generado y funcional
 
@@ -231,9 +219,9 @@ La auditoría DevOps/QA del SOAR Ransomware Lab se ha completado exitosamente. T
 - ✅ **Infraestructura:** Docker, Vagrant, Nginx, SSL - Funcional
 - ✅ **Testing:** 1393 tests passed, 84% coverage - Cumple requisitos
 - ✅ **Servicios:** Todos los servicios operativos y accesibles
-- ✅ **Métricas:** Dashboard Grafana funcional con 561 métricas
+- ✅ **Métricas:** Dashboard Grafana funcional con 604 métricas
 - ✅ **Documentación:** Coherente y actualizada
-- ✅ **Correcciones:** TarBackupDriver, init_shuffle_webhook, .env.full, TC-05 corregidos
+- ✅ **Correcciones:** .env.full actualizado con imágenes Docker Shuffle correctas
 
 ### Recomendaciones
 
