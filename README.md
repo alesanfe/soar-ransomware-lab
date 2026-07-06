@@ -309,7 +309,7 @@ python3 -m soar_lab.services.send_alert --type benign --single
 - Security tests: 5 passed ✅
 - Performance tests: 9 passed ✅
 - Coverage: 84%+ ✅ (objetivo >=80%)
-- Última ejecución: 2025-01-18
+- Última ejecución: 2026-07-06
 - Correcciones: Elasticsearch disk watermark assertion ajustado a 90%, health check Shuffle backend corregido (puerto 15001)
 
 ### Cálculo de KPIs
