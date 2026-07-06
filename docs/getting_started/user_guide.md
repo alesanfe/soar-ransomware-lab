@@ -1,616 +1,342 @@
-# Guía de Usuario del SOAR Ransomware Lab
 
-## Índice
+# Guía de Usuario — SOAR Ransomware Lab
 
-- [1. Resumen](#1-resumen)
-  - [1.1 Objetivo](#11-objetivo)
-  - [1.2 Contexto](#12-contexto)
-- [2. Alcance](#2-alcance)
-  - [2.1 Qué cubre](#21-qué-cubre)
-  - [2.2 Límites](#22-límites)
-  - [2.3 Dependencias](#23-dependencias)
-- [3. Contenido principal](#3-contenido-principal)
-  - [3.1 Instalación y configuración inicial](#31-instalación-y-configuración-inicial)
-  - [3.2 Uso básico y flujo de trabajo](#32-uso-básico-y-flujo-de-trabajo)
-  - [3.3 Funcionalidades avanzadas](#33-funcionalidades-avanzadas)
-  - [3.4 Solución de problemas](#34-solución-de-problemas)
-  - [3.5 Referencias rápidas](#35-referencias-rápidas)
-- [4. Validación](#4-validación)
-  - [4.1 Verificación](#41-verificación)
-  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
-  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
-  - [5.1 Limitaciones](#51-limitaciones)
-  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
-- [6. Referencias](#6-referencias)
+## Acceso a Servicios
 
----
+| Servicio       | URL                    | Credenciales                                            |
+|----------------|------------------------|---------------------------------------------------------|
+| Web Management | https://localhost      | Ver `.env.full` → `WEB_UI_USER` / `WEB_UI_PASSWORD`     |
+| SOAR API       | http://localhost:8000  | Token en cabecera `Authorization: Bearer <token>`       |
+| Shuffle UI     | http://localhost:8081  | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` |
+| MISP           | http://localhost:8083  | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD`              |
+| Grafana        | http://localhost:8084  | `admin` / `GrafanaLab2024Secure`                        |
+| TheHive        | http://localhost:19000 | `THEHIVE_ADMIN_USER` / `THEHIVE_ADMIN_PASSWORD`        |
+| Cortex         | http://localhost:19001 | `CORTEX_ADMIN_USER` / `CORTEX_ADMIN_PASSWORD`          |
+| Kibana/Wazuh   | http://localhost:15601 | `admin` / `WAZUH_API_PASSWORD`                          |
 
-## 1. Resumen
-
-### 1.1 Objetivo
-
-Esta guía proporciona instrucciones paso a paso para instalar, configurar y utilizar el SOAR Ransomware Lab. Su objetivo es ayudar a los usuarios a comenzar con la plataforma y comprender sus características clave.
-
-### 1.2 Contexto
-
-El SOAR Ransomware Lab es una plataforma integral de orquestación, automatización y respuesta de seguridad diseñada para el manejo de incidentes de ransomware. Integra múltiples herramientas de seguridad (Shuffle, TheHive, Cortex, MISP, Wazuh, Kibana) en un entorno Docker Compose unificado para proporcionar capacidades de detección, análisis y respuesta automatizada.
-
-## 2. Alcance
-
-### 2.1 Qué cubre
-
-Esta guía cubre:
-- Requisitos previos de instalación
-- Pasos de instalación y configuración inicial
-- URLs de acceso a servicios y configuración de proxy
-- Flujo de trabajo básico y características principales
-- Configuración de variables de entorno y archivos de servicio
-- Consideraciones de seguridad y mejores prácticas
-- Solución de problemas comunes
-- Uso avanzado (playbooks personalizados, integración API)
-- Optimización de rendimiento y escalabilidad
-
-### 2.2 Límites
-
-Esta guía no cubre:
-- Detalles de arquitectura técnica (ver docs/architecture/overview.md)
-- Estrategias de seguridad detalladas (ver docs/architecture/security.md)
-- Estrategias de Docker específicas (ver docs/architecture/docker_architecture.md)
-- Planificación del proyecto (ver docs/project/)
-- Estrategias de pruebas (ver docs/testing/)
-- Implementación de código Python (ver src/soar_lab/)
-
-### 2.3 Dependencias
-
-Esta guía depende de:
-- Documentación oficial de cada componente (Shuffle, TheHive, Cortex, MISP, Wazuh)
-- Documentación de arquitectura (docs/architecture/overview.md)
-- Documentación de seguridad (docs/architecture/security.md)
-- Estrategia de Docker (docs/architecture/docker_architecture.md)
-
-## 3. Contenido principal
-
-### 3.1 Instalación y configuración inicial
-
-#### Requisitos Previos
-
-- Docker Engine 20.10+ y Docker Compose 2.0+
-- Python 3.11+ 
-- Git
-- Al menos 16GB de RAM (mínimo 8GB)
-- 50GB de espacio libre en disco SSD
-
-#### Características Principales
-
-**Gestión de Alertas:**
-- Ingestión multi-fuente: TheHive, Cortex, APIs personalizadas
-- Enriquecimiento de alertas: Extracción de IoCs, inteligencia de amenazas
-- Scoring de prioridad: Evaluación automatizada de severidad
-- Gestión de casos: Rastree incidentes desde detección hasta resolución
-
-**Motor de Automatización:**
-- Ejecución de playbooks: Procedimientos de respuesta automatizados
-- Workflows personalizados: Cree sus propias secuencias de respuesta
-- Soporte de integración: Conecte con herramientas de seguridad externas
-- Programación: Tareas periódicas automatizadas y health checks
-
-**Analytics y Reportes:**
-- Dashboard de KPIs: Métricas en tiempo real e indicadores de rendimiento
-- Análisis histórico: Análisis de tendencias y patrones de incidentes
-- Reportes personalizados: Exporte datos en múltiples formatos
-- Reportes de cumplimiento: Genere documentación lista para auditoría
-
-**Características de Seguridad:**
-- Control de acceso basado en roles: Permisos granulares
-- Logging de auditoría: Rastreo completo de actividad
-- Encriptación: Datos en reposo y en tránsito
-- Aislamiento de red: Canales de comunicación seguros
-
-### 3.2 Uso básico y flujo de trabajo
-
-#### Pasos de Instalación
-
-1. Clone el repositorio:
-   ```bash
-   git clone https://github.com/alesanfe/soar-ransomware-lab.git
-   cd soar-ransomware-lab
-   ```
-
-2. Revise y edite la configuración del entorno:
-   ```bash
-   nano .env.full
-   ```
-
-3. Inicie el stack completo:
-   ```bash
-   make up
-   ```
-
-4. Verifique que todos los servicios estén saludables:
-   ```bash
-   docker ps --format "table {{.Names}}\t{{.Status}}"
-   ```
-
-#### Configuración Inicial
-
-1. Acceda a TheHive en `http://localhost:9000` — credenciales de admin por defecto en `.env.full`
-   - [Screenshot: TheHive dashboard principal mostrando lista de casos] - Capturar desde http://localhost:9000 tras login, mostrar vista de casos recientes con filtros de severidad
-2. Acceda a Kibana en `http://localhost:15601` — configure patrones de índice para logs de Wazuh
-   - [Screenshot: Kibana dashboard de Wazuh con gráficos de alertas] - Capturar desde http://localhost:15601/wazuh, mostrar dashboard principal con gráficos de alertas por tipo
-3. Acceda a Shuffle en `http://localhost:3001` — importe o cree playbooks de respuesta
-   - [Screenshot: Shuffle UI mostrando editor de workflows] - Capturar desde http://localhost:3001, mostrar editor visual de workflows con nodos de conexión
-4. Acceda a MISP en `http://localhost:8082` — configure feeds de inteligencia de amenazas
-   - [Screenshot: MISP event list mostrando eventos de amenazas] - Capturar desde http://localhost:8082/events, mostrar lista de eventos con indicadores de amenaza
-
-#### Flujo de Trabajo Básico
-
-1. **Ingestión de Alertas**: Reciba alertas de varias fuentes
-2. **Análisis**: Analice alertas usando herramientas automatizadas
-3. **Respuesta**: Ejecute playbooks de respuesta
-4. **Reporte**: Genere reportes de incidentes
-
-#### Configuración
-
-**Variables de Entorno:**
-
-Toda la configuración vive en `.env.full` en el directorio raíz del proyecto:
+## Comandos principales
 
 ```bash
-# Puertos de Servicios
-THEHIVE_HTTP_PORT=9000
-CORTEX_HTTP_PORT=9001
-SHUFFLE_UI_PORT=3001
-SHUFFLE_API_PORT=5001
-WAZUH_DASHBOARD_PORT=15601   # Kibana
-ELASTICSEARCH_PORT=9201      # Internal only on Docker Desktop/Windows
-REDIS_PORT=6379
-DOCS_PORT=3000
-API_PORT=8000
-HTTP_PORT=80
-HTTPS_PORT=443
-WEB_UI_PORT=8080
+# Levantar el entorno
+make up
 
-# Wazuh
-WAZUH_EVENTS_PORT=1514
+# Parar el entorno
+make down
 
-# Credentials (change before deploying!)
-ELASTIC_PASSWORD=...
-SHUFFLE_DEFAULT_PASSWORD=...
-THEHIVE_SECRET=...
+# Reset completo (destruye y recrea)
+make reset && make up
+
+# Ver estado de contenedores
+make ps
+
+# Simular alerta de ransomware
+make simulate
+
+# Calcular KPIs
+make metrics
+
+# Ejecutar tests E2E
+make test-all
 ```
 
-**Service Configuration Files:**
+## Flujo de uso básico
 
-- **Nginx**: `infra/docker/nginx.conf`
-- **Cortex**: `infra/docker/docker/cortex.application.conf`
-- **TheHive**: configured via environment variables
-- **Kibana**: configured via environment variables in `docker-compose.yml`
-- **Elasticsearch**: configured via environment variables
+1. `make up` — levanta todos los servicios (~5-10 min en primer arranque)
+2. Acceder a http://localhost:8085 (Web Management) para verificar estado
+3. `make simulate` — envía alertas de prueba al SOAR
+4. Verificar en TheHive (http://localhost:19000) que se han creado casos
+5. Verificar en Grafana (http://localhost:8084) los KPI dashboards
+6. `make metrics` — genera `artifacts/results/kpis.csv` con métricas
 
-**Custom Integrations:**
+## Interfaces del Sistema
 
-Add new integrations by:
+### Web Management
+**URL:** http://localhost:8085  
+**Credenciales:** Ver `.env.full` → `WEB_UI_USER` / `WEB_UI_PASSWORD`  
+**Descripción:** Interfaz web principal para gestión del entorno SOAR. Permite verificar el estado de todos los servicios, ver logs en tiempo real, gestionar alertas y monitorear la salud del sistema. Proporciona una vista consolidada de toda la infraestructura SOAR.
 
-#### Procedimientos Específicos de Configuración por Servicio
+**Características principales:**
+- Dashboard con estado de todos los servicios (healthy/unhealthy)
+- Visualización de logs en tiempo real por servicio
+- Gestión de alertas enviadas al sistema
+- Métricas de rendimiento y disponibilidad
+- Configuración de parámetros del entorno
 
-**Configuración de TheHive:**
-```bash
-# 1. Cambiar credenciales de admin por defecto
-# Editar .env.full:
-THEHIVE_ADMIN_USER=admin
-THEHIVE_ADMIN_PASSWORD=ChangeMe!
+**Captura pendiente:** docs/img/web_management_dashboard.png
 
-# 2. Configurar organizaciones y usuarios
-# Acceder a http://localhost:9000/#/administration/users
-# Crear usuarios con roles: read, write, admin
+### SOAR API
+**URL:** http://localhost:8000  
+**Credenciales:** Token en cabecera `Authorization: Bearer <token>`  
+**Descripción:** API REST principal del sistema. Proporciona endpoints programáticos para envío de alertas, consulta de métricas, gestión de casos, integración con servicios externos y más. Permite la automatización de operaciones SOAR mediante llamadas HTTP.
 
-# 3. Configurar analizadores de Cortex
-# Acceder a http://localhost:9000/#/administration/analyzers
-# Habilitar analyzers: FileInfo_8_0, DomainMailSPFRecord_2_1
-```
+**Endpoints principales:**
+- `POST /alert` - Envío de alertas al sistema SOAR
+- `GET /health` - Verificación de salud del servicio API
+- `GET /metrics` - Consulta de métricas del sistema
+- `POST /backup/create` - Creación de backups
+- `POST /backup/restore` - Restauración de backups
+- Documentación Swagger disponible en `/docs`
 
-**Configuración de Cortex:**
-```bash
-# 1. Configurar API keys para TheHive
-# Editar .env.full:
-THEHIVE_API_KEY=<generar desde TheHive UI>
-CORTEX_API_KEY=<generar desde Cortex UI>
+**Captura pendiente:** docs/img/api_swagger.png
 
-# 2. Configurar analyzers activos
-# Editar .env.full:
-MAX_CONCURRENT_ANALYZERS=3
-ANALYZER_TIMEOUT=60
+### TheHive
+**URL:** http://localhost:19000  
+**Credenciales:** `THEHIVE_ADMIN_USER` / `THEHIVE_ADMIN_PASSWORD`  
+**Descripción:** Plataforma de gestión de casos de seguridad (SIRP - Security Incident Response Platform). Permite crear, investigar, asignar y cerrar casos de incidentes de seguridad. Integra automáticamente alertas del sistema SOAR y proporciona herramientas para la colaboración entre equipos de respuesta a incidentes.
 
-# 3. Habilitar analyzers específicos
-# Acceder a http://localhost:9001/#/management/analyzers
-# Habilitar: FileInfo, DomainMailSPFRecord, VirusTotal_2
-```
+**Características principales:**
+- Gestión de casos de seguridad con estados (Open, In Progress, Resolved, Closed)
+- Asignación de casos a usuarios y equipos
+- Observables (IOCs) enlazados a casos
+- Integración con Cortex para análisis de amenazas
+- Timeline de actividades en cada caso
+- Alertas automáticas desde Shuffle workflows
+- Búsqueda avanzada de casos y observables
 
-**Configuración de Shuffle:**
-```bash
-# 1. Configurar API key para webhooks
-# Editar .env.full:
-SHUFFLE_DEFAULT_APIKEY=e18f1fe3-1591-44ec-aff4-c6e759b3a8bf
-SIEM_WEBHOOK_TOKEN=SiemToken123!@#
+**Configuración inicial:**
+1. Crear usuario administrador  
+   ![TheHive - Crear administrador](img/thehive_create_admin.png)
+2. Iniciar sesión  
+   ![TheHive - Login](img/thehive_login.png)
+3. Actualizar base de datos (si es necesario)  
+   ![TheHive - Actualizar base de datos](img/thehive_update_database.png)
+4. Generar API key  
+   ![TheHive - API Key](img/thehive_apikey.png)
+5. Dashboard principal  
+   ![TheHive - Dashboard](img/thehive_dashboard.png)
 
-# 2. Configurar URL del webhook
-# Acceder a http://localhost:3001/#/apps
-# Crear webhook: http://localhost:5001/api/v1/hooks/webhook
+### Cortex
+**URL:** http://localhost:19001  
+**Credenciales:** `CORTEX_ADMIN_USER` / `CORTEX_ADMIN_PASSWORD`  
+**Descripción:** Plataforma de análisis de amenazas (TIAM - Threat Intelligence Analysis Module). Permite ejecutar analizadores sobre IOCs (Indicators of Compromise) para obtener información de inteligencia de amenazas. Integra automáticamente con TheHive para enriquecer casos con análisis de observables.
 
-# 3. Importar playbook E2E
-# Acceder a http://localhost:3001/#/workflows
-# Importar desde: docs/operations/playbooks/ransomware_playbook_e2e.md
-```
+**Características principales:**
+- Ejecución de analizadores sobre diferentes tipos de IOCs (IP, dominio, hash, URL, email)
+- Integración con servicios de inteligencia de amenazas (VirusTotal, AlienVault, etc.)
+- Resultados de análisis enlazados a casos en TheHive
+- Gestión de analizadores y configuración de API keys externas
+- Historial de análisis realizados
+- Soporte para analizadores personalizados
 
-**Configuración de MISP:**
-```bash
-# 1. Cambiar credenciales por defecto
-# Editar .env.full:
-MISP_ADMIN_EMAIL=admin@admin.test
-MISP_ADMIN_PASSPHRASE=ChangeMe!
+**Configuración inicial:**
+1. Crear usuario administrador  
+   ![Cortex - Crear administrador](img/cortex_create_admin.png)
+2. Iniciar sesión  
+   ![Cortex - Login](img/cortex_login.png)
+3. Actualizar base de datos (si es necesario)  
+   ![Cortex - Actualizar base de datos](img/cortex_update_database.png)
+4. Dashboard principal  
+   ![Cortex - Dashboard](img/cortex_dashboard.png)
 
-# 2. Configurar feeds de inteligencia
-# Acceder a http://localhost:8082/servers/index
-# Añadir feeds: CIRCL, MISP-Project, VirusTotal
+### Shuffle
+**URL:** http://localhost:8081  
+**Credenciales:** `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD`  
+**Descripción:** Plataforma de automatización de seguridad (SOAR - Security Orchestration, Automation and Response). Permite crear workflows de respuesta automatizada a incidentes de seguridad mediante una interfaz visual drag-and-drop. Integra automáticamente con TheHive, Cortex, MISP, Wazuh y otros servicios del ecosistema SOAR.
 
-# 3. Configurar sincronización automática
-# Acceder a http://localhost:8082/feeds/index
-# Habilitar cron jobs para actualización cada 6 horas
-```
+**Características principales:**
+- Editor visual de workflows drag-and-drop
+- Integración con múltiples servicios (TheHive, Cortex, MISP, Wazuh, Elasticsearch, etc.)
+- Ejecución de workflows basada en triggers (webhooks, alertas, schedules)
+- Apps predefinidas para operaciones comunes (HTTP, Python, Email, Slack, etc.)
+- Variables y condiciones para lógica compleja
+- Historial de ejecuciones de workflows
+- Workflows preconfigurados para respuesta a ransomware
 
-**Configuración de Wazuh:**
-```bash
-# 1. Configurar API de Wazuh
-# Editar .env.full:
-WAZUH_API_USER=wazuh-wui
-WAZUH_API_PASSWORD=ChangeMe!
+**Configuración inicial:**
+1. Iniciar sesión  
+   ![Shuffle - Login](img/shuffle_login.png)
 
-# 2. Configurar reglas de detección
-# Editar infra/docker/wazuh/rules/local_rules.xml
-# Añadir reglas específicas para ransomware
+**Capturas pendientes:**
+- docs/img/shuffle_dashboard.png
+- docs/img/shuffle_workflow_editor.png
+- docs/img/shuffle_workflow_execution.png
 
-# 3. Configurar integración con Elasticsearch
-# Ya configurado en docker-compose.wazuh.yml
-# Kibana accesible en http://localhost:15601
-```
+### MISP
+**URL:** http://localhost:8083  
+**Credenciales:** `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD`  
+**Descripción:** Plataforma de inteligencia de amenazas (Threat Intelligence Platform). Permite compartir y consultar IOCs (Indicators of Compromise) con la comunidad de seguridad. Integra automáticamente con Shuffle workflows para enriquecer alertas con inteligencia de amenazas y verificar IOCs contra bases de datos de amenazas conocidas.
 
-Add new integrations by:
+**Características principales:**
+- Gestión de eventos de amenazas con IOCs
+- Sincronización con feeds de inteligencia de amenazas externos
+- Enrichment automático de IOCs con información de múltiples fuentes
+- Integración con Shuffle para verificación de IOCs en workflows
+- API para consulta de IOCs desde otros servicios
+- Gestión de organizaciones y permisos de compartición
+- Soporte para diferentes tipos de IOCs (IP, dominio, hash, email, URL, etc.)
 
-1. Creating configuration files in `infra/docker/docker/`
-2. Updating Docker Compose services
-3. Adding validation tests in `tests/integration/`
+**Capturas pendientes:**
+- docs/img/misp_login.png
+- docs/img/misp_dashboard.png
+- docs/img/misp_create_event.png
 
-### 3.3 Funcionalidades avanzadas
+### Grafana
+**URL:** http://localhost:8084  
+**Credenciales:** `admin` / `GrafanaLab2024Secure`  
+**Descripción:** Plataforma de visualización de métricas. Permite crear dashboards con KPIs del sistema SOAR. Integra automáticamente con Elasticsearch para visualizar métricas de alertas procesadas, tiempos de respuesta, tasas de éxito y más. Proporciona visualizaciones en tiempo real del rendimiento y salud del sistema SOAR.
 
-#### URLs de Acceso a Servicios
+**Características principales:**
+- Dashboard SOAR KPI con métricas clave del sistema
+- Visualización de alertas procesadas por tipo y severidad
+- Gráficas de MTTR (Mean Time To Respond) por tipo de alerta
+- Tasa de éxito por severidad de alerta
+- Evolución temporal de alertas por tipo
+- Integración con Elasticsearch como datasource
+- Alertas y notificaciones basadas en umbrales
+- Exportación de dashboards y configuraciones
 
-| Servicio | URL | Propósito |
-|---|---|---|
-| **UI de Gestión Web** | http://localhost:8081 | Dashboard de gestión principal |
-| **Proxy Nginx** | http://localhost:80 | Proxy inverso unificado a todos los servicios |
-| **TheHive** | http://localhost:9000 | Gestión de casos de incidentes |
-| **Cortex** | http://localhost:9001 | Análisis y enriquecimiento de IoCs |
-| **UI de Shuffle** | http://localhost:3001 | Workflows de orquestación SOAR |
-| **API de Shuffle** | http://localhost:5001 | API REST de Shuffle |
-| **Kibana** | http://localhost:15601 | Visualización de logs y dashboards |
-| **MISP** | http://localhost:8082 | Plataforma de inteligencia de amenazas |
-| **API del Laboratorio** | http://localhost:8000 | API REST de gestión del laboratorio |
-| **Documentación** | http://localhost:3000 | Sitio de documentación del proyecto |
-| **Grafana** | http://localhost:3002 | Dashboards de observabilidad (opcional) |
-| **Loki** | http://localhost:3100 | Agregación de logs (opcional) |
+**Capturas pendientes:**
+- docs/img/grafana_login.png
+- docs/img/grafana_kpi_dashboard.png
+- docs/img/grafana_datasources.png
 
-#### Vía Proxy Nginx (puerto 80)
+### Kibana/Wazuh
+**URL:** http://localhost:15601  
+**Credenciales:** `admin` / `WAZUH_API_PASSWORD`  
+**Descripción:** Plataforma de análisis de logs y seguridad. Kibana proporciona una interfaz para visualizar y analizar logs de todos los servicios del sistema SOAR. Wazuh es una plataforma de seguridad que integra detección de amenazas, respuesta a incidentes y monitoreo de integrididad de archivos. Juntos proporcionan visibilidad completa de la seguridad del entorno.
 
-Todos los servicios también son accesibles a través del proxy inverso Nginx:
+**Características principales:**
+- Visualización de logs de todos los servicios SOAR en tiempo real
+- Dashboards preconfigurados de Wazuh para seguridad
+- Reglas de detección de amenazas y alertas
+- Monitoreo de integrididad de archivos (FIM)
+- Detección de intrusiones y vulnerabilidades
+- Integración con Elasticsearch para almacenamiento de logs
+- Búsqueda avanzada y filtrado de logs
+- Alertas y notificaciones de seguridad
 
-| Path | Proxy hacia |
-|---|---|
-| http://localhost/ | UI de Gestión Web |
-| http://localhost/thehive/ | TheHive |
-| http://localhost/cortex/ | Cortex |
-| http://localhost/shuffle/ | UI de Shuffle |
-| http://localhost/kibana/ | Kibana |
-| http://localhost/api/ | API del Laboratorio |
-| http://localhost/misp/ | MISP |
-| http://localhost/docs/ | Documentación |
-| http://localhost/grafana/ | Grafana |
+**Capturas pendientes:**
+- docs/img/kibana_login.png
+- docs/img/kibana_dashboard.png
+- docs/img/wazuh_dashboard.png
 
-#### Ejemplos de Playbooks Preconfigurados
+### Verificación de Contenedores Docker
+**Comando:** `make ps` o `docker ps --filter name=soar_`  
+**Descripción:** Verificación del estado de todos los contenedores Docker del proyecto.
 
-**Playbook E2E de Ransomware (Shuffle):**
+![Docker - Contenedores healthy](img/docker_ps_healthy.png)
 
-Este playbook implementa el flujo completo de respuesta a ransomware:
+## Uso del Sistema con Comandos Makefile
 
-```
-1. Webhook SIEM → Shuffle (recepción de alerta)
-2. Validación de esquema (JSON schema validation)
-3. Creación de caso en TheHive
-4. Extracción de IoCs (IPs, dominios, hashes)
-5. Ejecución de analyzers en Cortex:
-   - FileInfo (análisis de archivo)
-   - DomainMailSPFRecord (análisis de dominio)
-   - VirusTotal (reputación de IoC)
-6. Decisión basada en score/verdict:
-   - Si score ≥ 80 o verdict = malicioso → Contención
-   - Si score < 80 y verdict = benigno → Marcar como benigno
-7. Ejecución de contención simulada:
-   - src/soar_lab/services/containment_service.py
-8. Actualización de caso en TheHive
-9. Notificación a equipo de seguridad
-```
-
-**Configuración del Playbook en Shuffle:**
-```bash
-# 1. Acceder a http://localhost:3001/#/workflows
-# 2. Crear nuevo workflow llamado "ransomware_response_e2e"
-# 3. Configurar trigger: Webhook HTTP
-# 4. URL del webhook: http://localhost:5001/api/v1/hooks/webhook
-# 5. Token de autenticación: SiemToken123!@#
-# 6. Añadir nodos en orden:
-#    - Validator Node (JSON schema validation)
-#    - TheHive Create Case
-#    - Extract IoCs
-#    - Cortex Analyzers (FileInfo, DomainMailSPFRecord)
-#    - Decision Node (if score >= 80)
-#    - Execute Script (isolate_host.sh)
-#    - TheHive Update Case
-#    - Send Notification
-```
-
-**Playbook de Escaneo de Vulnerabilidades:**
-
-```
-1. Recepción de solicitud de escaneo
-2. Ejecución de src/soar_lab/services/containment_service.py
-3. Análisis de resultados
-4. Generación de reporte en artifacts/results/
-5. Notificación de hallazgos críticos
-```
-
-**Playbook de Backup Automatizado:**
-
-```
-1. Trigger: Cron job (diario a las 2 AM)
-2. Ejecución de scripts/infra/backup.sh
-3. Verificación de integridad del backup
-4. Limpieza de backups antiguos (> 30 días)
-5. Notificación de estado del backup
-```
-
-#### Custom Playbooks
-
-Create custom response playbooks:
-
-```python
-# Example: Custom ransomware response playbook
-def ransomware_response(alert):
-    """
-    Automated response to ransomware alerts
-    """
-    # Isolate affected host
-    isolate_host(alert.hostname)
-    
-    # Collect forensic evidence
-    collect_evidence(alert.hostname)
-    
-    # Notify security team
-    send_notification(alert)
-    
-    # Create incident case
-    create_case(alert)
-```
-
-#### API Integration
-
-Use the REST API for programmatic access:
+### Inicio y Parada del Entorno
 
 ```bash
-# Get all alerts
-curl -X GET "http://localhost:9000/api/alerts" \
-     -H "Authorization: Bearer $TOKEN"
+# Levantar todos los servicios
+make up
 
-# Create new alert
-curl -X POST "http://localhost:9000/api/alerts" \
-     -H "Content-Type: application/json" \
-     -d '{"alert_type": "ransomware", "severity": "high"}'
+# Verificar estado de contenedores
+make ps
+
+# Verificar health de servicios core
+make health
+
+# Ver logs de servicios en tiempo real
+make logs
+
+# Reiniciar todos los servicios
+make restart
+
+# Parar servicios y eliminar volúmenes
+make down
+
+# Reset completo (destruye y recrea)
+make reset && make up
 ```
 
-#### Best Practices
-
-**Operational:**
-1. **Actualizaciones Regulares**: Mantenga las dependencias actualizadas
-2. **Estrategia de Backup**: Backups automatizados diarios
-3. **Monitoreo**: Configure alertas para métricas críticas
-4. **Pruebas**: Simulacros y ejercicios de seguridad regulares
-
-**Seguridad:**
-1. **Principio de Mínimo Privilegio**: Permisos mínimos requeridos
-2. **Auditorías Regulares**: Evaluaciones de seguridad trimestrales
-3. **Respuesta a Incidentes**: Mantenga planes de respuesta actualizados
-4. **Capacitación**: Capacitación regular de conciencia de seguridad
-
-**Desarrollo:**
-1. **Revisión de Código**: Todos los cambios requieren revisión de pares
-2. **Pruebas**: Cobertura de pruebas integral
-3. **Documentación**: Mantenga los documentos actualizados con las características
-4. **Control de Versiones**: Prácticas de versionamiento semántico
-
-### 3.4 Solución de problemas
-
-#### Problemas Comunes de Instalación
-
-**Docker no inicia:**
-```bash
-# Verificar que Docker esté corriendo
-docker ps
-# Si hay error, reiniciar Docker Desktop
-```
-
-**Puertos ya en uso:**
-```bash
-# Verificar puertos en uso
-netstat -ano | findstr :9000
-# Cambiar puertos en .env.full
-```
-
-**Contenedores no se comunican:**
-```bash
-# Verificar redes Docker
-docker network ls
-docker network inspect soar_net
-```
-
-### 3.5 Referencias rápidas
-
-#### Comandos Útiles
+### Simulación de Alertas
 
 ```bash
-# Ver estado de todos los servicios
-docker ps --format "table {{.Names}}\t{{.Status}}"
+# Simular 5 alertas de ransomware (por defecto)
+make simulate
 
-# Ver logs de un servicio específico
-docker logs soar_thehive --tail 50
+# Enviar 1 alerta maliciosa
+make simulate-malicious
 
-# Reiniciar el stack completo
-make down && make up
+# Enviar 1 alerta benigna
+make simulate-benign
 
-# Acceder a un contenedor
-docker exec -it soar_thehive bash
+# Enviar N alertas (ejemplo: 10)
+make simulate-batch N=10
 ```
 
-#### Contacto y Soporte
-
-Para problemas o preguntas:
-- Documentación oficial: https://shuffler.io/docs
-- Issues del proyecto: https://github.com/alesanfe/soar-ransomware-lab/issues
-- Revisar logs: `docker logs <container_name>`
-
-## 4. Validación
-
-### 4.1 Verificación
-
-La instalación y configuración se verifican mediante:
-- Verificación de que todos los contenedores estén en ejecución (`docker ps`)
-- Verificación de health checks de cada servicio
-- Acceso a URLs de servicios para confirmar disponibilidad
-- Revisión de logs de Docker Compose para errores
-- Ejecución de pruebas de configuración Docker (`tests/unit/test_docker_services_validation.py`)
-
-### 4.2 Criterios de aceptación
-
-La instalación se considera válida cuando:
-- Todos los servicios inician correctamente
-- Las URLs de servicios son accesibles
-- Las credenciales por defecto funcionan
-- El proxy Nginx redirige correctamente
-- Los logs no muestran errores críticos
-- Las pruebas de configuración pasan
-
-### 4.3 Evidencias
-
-Las evidencias de validación incluyen:
-- Salida de `docker ps` mostrando contenedores en ejecución
-- Capturas de pantalla de interfaces web accesibles
-- Logs de Docker Compose sin errores
-- Resultados de pruebas de configuración
-- Confirmación de acceso a cada servicio
-
-## 5. Problemas y consideraciones
-
-### 5.1 Limitaciones
-
-- **Requisitos de recursos**: Mínimo 8GB RAM requerido para stack completo
-- **Windows/Hyper-V**: Restricciones en rangos de puertos debido a reservas de Hyper-V
-- **Single-node Elasticsearch**: Configuración actual no soporta clustering
-- **Configuración por defecto**: Credenciales por defecto deben cambiarse antes de despliegue en producción
-
-### 5.2 Riesgos o incidencias
-
-- **Servicios no inician**: Puede ser debido a puertos ya en uso o conflictos de configuración
-- **Puerto ya asignado (Windows/Docker Desktop)**: Algunos puertos pueden estar reservados por Hyper-V
-- **Elasticsearch no accesible desde host (Windows)**: Bug conocido de Docker Desktop en Windows con redes personalizadas
-- **Problemas de rendimiento**: Recursos insuficientes o configuración subóptima de Elasticsearch
-
-### 5.3 Recomendaciones / troubleshooting
-
-**Services Won't Start:**
+### Gestión de Métricas
 
 ```bash
-# Check status of all containers
-docker ps --format "table {{.Names}}\t{{.Status}}"
+# Calcular KPIs desde logs
+make metrics
 
-# View logs for a specific service
-docker logs soar_thehive --tail 50
-docker logs soar_elasticsearch --tail 50
-
-# Restart the full stack
-make down && make up
+# Ver resultados en artifacts/results/kpis.csv
 ```
 
-**Port Already Allocated (Windows/Docker Desktop):**
-
-Some ports may be reserved by Hyper-V on Windows. Check excluded ranges:
-```powershell
-netsh int ipv4 show excludedportrange protocol=tcp
-```
-If a port is in an excluded range, change it in `.env.full` and re-run `make up`.
-
-**Elasticsearch Not Accessible from Host (Windows):**
-
-This is a known Docker Desktop bug on Windows with custom networks. Elasticsearch is only accessible internally. All services that need it (Kibana, Shuffle, TheHive) connect through the Docker network and work correctly.
-
-**Performance Issues:**
-
-1. Monitor resource usage: `docker stats`
-2. Check Elasticsearch cluster health
-3. Review log files for errors
-
-**Debug Mode:**
-
-Enable debug logging:
+### Ejecución de Tests
 
 ```bash
-# Set log level
-LOG_LEVEL=DEBUG
+# Ejecutar tests unitarios
+make test-unit
 
-# View detailed logs
-docker-compose logs -f --tail=100
+# Ejecutar tests de integración
+make test-integration
+
+# Ejecutar tests E2E
+make test-e2e
+
+# Ejecutar TODOS los tests
+make test-all
+
+# Ejecutar tests con coverage report
+make test-coverage
 ```
 
-**Getting Help:**
+### Mantenimiento
 
-- Check the [Architecture Documentation](../architecture/overview.md)
-- Review [Security Guidelines](../architecture/security.md)
-- Open an issue on GitHub
-- Join our community Discord
+```bash
+# Limpiar archivos temporales
+make clean
 
-## 6. Referencias
+# Limpiar todos los artifacts
+make clean-full
 
-- **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Shuffle**: https://shuffler.io/docs
-- **Documentación de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación de Cortex**: https://docs.strangebee.com/cortex/
-- **Documentación de MISP**: https://www.misp-project.org/documentation/
-- **Documentación de Wazuh**: https://documentation.wazuh.com/
-- **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
-- **Docker Compose Documentation**: https://docs.docker.com/compose/
-- **FastAPI Documentation**: https://fastapi.tiangolo.com/
-- **Documentación de Arquitectura**: [docs/architecture/overview.md](overview.md)
-- **Documentación de Seguridad**: [docs/architecture/security.md](security.md)
-- **Estrategia de Docker**: [docs/architecture/docker_architecture.md](docker_architecture.md)
+# Limpiar artifacts + recursos Docker
+make clean-all
 
----
+# Crear backup de artifacts
+make backup
 
-**Mejoras implementadas:**
-- Corregidas referencias a docs/core/ a rutas correctas (docs/architecture/, docs/getting_started/)
-- Añadidos placeholders para screenshots de interfaces web con descripciones en formato []
-- Documentados procedimientos específicos de configuración para cada servicio (TheHive, Cortex, Shuffle, MISP, Wazuh)
-- Añadidos ejemplos de playbooks preconfigurados (E2E ransomware, escaneo de vulnerabilidades, backup automatizado)
+# Restaurar desde backup
+make restore BACKUP=<nombre_del_backup>
 
+# Validar sincronización de credenciales
+make validate-credentials
 
+# Generar certificados TLS para Nginx
+make certs
 
+# Generar contraseñas/tokens seguros
+make generate-secrets
+```
 
+### Inicialización de Webhook
 
+```bash
+# Inicializar Shuffle webhook para alertas
+make init-webhook
+```
 
+## Vagrant (entorno alternativo)
+
+```bash
+# Levantar VM Ubuntu con el stack completo
+make vagrant-up
+
+# Simular alertas desde la VM
+make vagrant-simulate
+
+# Destruir la VM
+make vagrant-down
+```
+
+Los puertos Vagrant se mapean en rango 9000-9443 para evitar conflictos con el stack Docker:
+
+- https://localhost:9443 — Web Management / Nginx
+- http://localhost:9081 — Shuffle UI
+- http://localhost:9001 — Shuffle API
