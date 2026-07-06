@@ -43,7 +43,7 @@ class TarBackupDriver:
     def create(self, source_dir: str, dest_path: str) -> None:
         """Create a tar.gz backup archive."""
         result = self._runner.run(
-            ['tar', '-czf', dest_path] + _EXCLUDES + ['.'],
+            ['tar', '-czf', dest_path, '--warning=no-file-changed'] + _EXCLUDES + ['.'],
             cwd=source_dir,
             raise_on_error=True
         )
