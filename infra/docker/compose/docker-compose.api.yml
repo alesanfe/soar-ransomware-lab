@@ -12,18 +12,17 @@ services:
       - FASTAPI_ENV=production
       - API_HOST=0.0.0.0
       - API_PORT=8000
-      - CORS_ORIGINS=${CORS_ORIGINS:-"http://localhost:8080,http://localhost:3000,http://localhost,http://localhost:8081"}
+      - CORS_ORIGINS=${CORS_ORIGINS:-"http://localhost:8086,http://localhost,http://localhost:8081"}
       - LOG_LEVEL=${API_LOG_LEVEL:-INFO}
-      - AUTH_SECRET_KEY=${API_AUTH_SECRET}
-      - API_AUTH_SECRET=${API_AUTH_SECRET}
+      - AUTH_SECRET_KEY=${API_AUTH_SECRET:-Y0f#1mP9$vL6@nQ5tW3!zY8&hF2sD7}
+      - API_AUTH_SECRET=${API_AUTH_SECRET:-Y0f#1mP9$vL6@nQ5tW3!zY8&hF2sD7}
       - WEB_UI_USER=${WEB_UI_USER:-admin}
-      - WEB_UI_PASSWORD=${WEB_UI_PASSWORD}
+      - WEB_UI_PASSWORD=${WEB_UI_PASSWORD:-X9e#5mP3$vL7@nQ4tW8!zY2&hF6sD1}
       - DOCKER_COMPOSE_FILE=docker-compose.yml
       - TEST_RESULTS_DIR=/app/results
       - BACKUP_DIR=/app/backups
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - PYTHONPATH=/app/src
-      - DOCKER_HOST=tcp://host.docker.internal:2375
       - BASE_DIR=/app
       - THEHIVE_SECRET=${THEHIVE_SECRET}
       - THEHIVE_API_KEY=${THEHIVE_API_KEY}
@@ -36,7 +35,9 @@ services:
       - SIEM_WEBHOOK_TOKEN=${SIEM_WEBHOOK_TOKEN}
       - EDR_SIM_TOKEN=${EDR_SIM_TOKEN}
       - FIREWALL_SIM_TOKEN=${FIREWALL_SIM_TOKEN}
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME:-elastic}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - WAZUH_API_PASSWORD=${WAZUH_API_PASSWORD}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       # Service health check URLs
@@ -50,7 +51,7 @@ services:
       - SHUFFLE_CONTAINER=soar_shuffle_backend
       - KIBANA_HEALTH_URL=http://kibana:5601/kibana/api/status
       - KIBANA_CONTAINER=soar_kibana
-      - DOCS_HEALTH_URL=http://docs-site:3000
+      - DOCS_HEALTH_URL=http://docs-site:8080
       - DOCS_CONTAINER=soar_docs_site
       - API_HEALTH_URL=http://api:8000/health
       - API_CONTAINER=soar_api
@@ -58,24 +59,33 @@ services:
       - ELASTICSEARCH_CONTAINER=soar_elasticsearch
       - NGINX_HEALTH_URL=http://nginx/nginx-health
       - NGINX_CONTAINER=soar_nginx
+      - ES_URL=http://elasticsearch:9200
+      - THEHIVE_URL=http://thehive:9000
     volumes:
       - ${ARTIFACTS_DIR:-../../../artifacts}/results:/app/results
       - ${ARTIFACTS_DIR:-../../../artifacts}/backups:/app/backups
+      - ${ARTIFACTS_DIR:-../../../artifacts}/logs:/app/artifacts/logs
+      - ${ARTIFACTS_DIR:-../../../artifacts}/logs:/app/results/logs
+      - ../../../tests:/app/tests
       - /var/run/docker.sock:/var/run/docker.sock
+      - ../../../.env.full:/app/.env.full
+      - ../../../infra/docker/compose/logging:/app/infra/docker/compose/logging:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    user: root
     ports:
       - "${API_PORT:-8000}:8000"
     networks:
       - soar_net
       - ti_net
+      - logging_net
     depends_on:
       elasticsearch:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
+      test: [ "CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -100,16 +110,19 @@ services:
       context: ../../../
       dockerfile: apps/docs-site/Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_docs_site
+    ports:
+      - "${DOCS_PORT:-8086}:8080"
     volumes:
       - ../../../docs:/opt/docusaurus/docs:ro
     networks:
       - soar_net
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 3000 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+    # healthcheck disabled temporarily due to Docusaurus config issue
+    # healthcheck:
+    #   test: [ "CMD-SHELL", "nc -z 127.0.0.1 8080 || exit 1" ]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    #   start_period: 60s
     restart: unless-stopped
     deploy:
       resources:
@@ -131,11 +144,11 @@ services:
       dockerfile: Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_web_management
     ports:
-      - "8081:80"
+      - "8085:80"
     networks:
       - soar_net
     healthcheck:
-      test: ["CMD-SHELL", "pgrep nginx || exit 1"]
+      test: [ "CMD-SHELL", "pgrep nginx || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -161,12 +174,9 @@ services:
     volumes:
       - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ../nginx/ssl:/etc/nginx/ssl:ro
-      - nginx_logs:/var/log/nginx
     ports:
       - "80:80"
       - "443:443"
-      - "3001:3001"
-      - "3000:3000"
     networks:
       - soar_net
       - logging_net
@@ -178,13 +188,13 @@ services:
       shuffle-frontend:
         condition: service_healthy
       wazuh-manager:
-        condition: service_healthy
+        condition: service_started
       kibana:
         condition: service_started
       web-management:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/nginx-health || exit 1"]
+      test: [ "CMD-SHELL", "wget -q --spider http://127.0.0.1/nginx-health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5

@@ -1,9 +1,9 @@
 {
-  "webhook_url": "http://soar_shuffle_backend:5001/api/v1/hooks/webhook_3231a1e1-d9f0-5a8a-993b-424c23383a60",
-  "webhook_url_host": "http://localhost:15001/api/v1/hooks/webhook_3231a1e1-d9f0-5a8a-993b-424c23383a60",
-  "workflow_id": "bd9cf15e-aed8-4d61-bf25-656d3f22b342",
-  "trigger_id": "3231a1e1-d9f0-5a8a-993b-424c23383a60",
-  "org_id": "cce41f16-a35c-44d9-9251-930f9e9dccd0",
+  "webhook_url": "http://soar_shuffle_backend:5001/api/v1/hooks/webhook_cf8af378-5f86-5078-9592-52b11405523f",
+  "webhook_url_host": "http://localhost:15001/api/v1/hooks/webhook_cf8af378-5f86-5078-9592-52b11405523f",
+  "workflow_id": "ed9baee1-8305-4320-a04b-e5a53bcf54eb",
+  "trigger_id": "cf8af378-5f86-5078-9592-52b11405523f",
+  "org_id": "fd82ea5a-e6e1-4336-9d34-f3fef9b6611f",
   "workflow_name": "SOAR-Ransomware-Response",
   "actions": {
     "thehive": "http://localhost:19000 - crear caso",
