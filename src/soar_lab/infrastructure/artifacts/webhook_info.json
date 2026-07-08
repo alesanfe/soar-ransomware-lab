@@ -1,0 +1,16 @@
+{
+  "webhook_url": "http://soar_shuffle_backend:5001/api/v1/hooks/webhook_3231a1e1-d9f0-5a8a-993b-424c23383a60",
+  "webhook_url_host": "http://localhost:15001/api/v1/hooks/webhook_3231a1e1-d9f0-5a8a-993b-424c23383a60",
+  "workflow_id": "bd9cf15e-aed8-4d61-bf25-656d3f22b342",
+  "trigger_id": "3231a1e1-d9f0-5a8a-993b-424c23383a60",
+  "org_id": "cce41f16-a35c-44d9-9251-930f9e9dccd0",
+  "workflow_name": "SOAR-Ransomware-Response",
+  "actions": {
+    "thehive": "http://localhost:19000 - crear caso",
+    "cortex_hash": "http://cortex:9001 - analizar hash",
+    "cortex_ip": "http://cortex:9001 - analizar IP",
+    "misp": "http://misp:80 - buscar IOC",
+    "elasticsearch": "http://localhost:19200/soar-alerts - indexar alerta",
+    "wazuh": "https://wazuh-manager:55000/agents - listar agentes"
+  }
+}
