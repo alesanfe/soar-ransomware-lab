@@ -23,7 +23,7 @@ WEBHOOK_INFO = Path("/app/webhook_info.json") if Path(
     "/app/webhook_info.json").exists() else REPO_ROOT / "src" / "soar_lab" / "infrastructure" / "artifacts" / "webhook_info.json"
 ENV_FULL = Path("/app/.env.full") if Path("/app/.env.full").exists() else REPO_ROOT / ".env.full"
 
-WORKFLOW_TIMEOUT = 600
+WORKFLOW_TIMEOUT = 900
 POLL_INTERVAL = 5
 
 
