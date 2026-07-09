@@ -1,56 +1,81 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
-env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
 venv/
-.venv/
-.env
+env/
+ENV/
+.venv
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.json
+coverage.xml
+*.cover
+.hypothesis/
 
 # IDEs
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+.junie/
+.refact/
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-coverage.json
+# Environment variables
+.env
+.env.local
+.env.*.local
 
-# Logs
-*.log
-logs/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Vagrant
-.vagrant/
-
-# Project specific
-results/
-backups/
+# Project-specific
 artifacts/logs/
 artifacts/results/
-# Ignore data directories at root level, but keep src/soar_lab/data/ for code
-/data/
-./data/
+artifacts/coverage/
+artifacts/temp/
+artifacts/backups/
+backups/
+*.tar.gz
+*.tar.gz.metadata.json
 
-# Refact
-.refact/
-.junie/
+# Temporary files
+nul
+tmp/
+*.tmp
+*.bak
+*.log
 
-# GitHub
-.github/
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Security
-*.key
-*.pem
-*.crt
-certs/
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# Cache
+.cache/
