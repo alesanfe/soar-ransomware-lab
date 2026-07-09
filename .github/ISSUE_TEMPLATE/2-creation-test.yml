@@ -1,7 +1,7 @@
 name: "💉 Test"
 description: "Creation tests."
 title: "[Test] "
-labels: ["test"]
+labels: [ "test" ]
 body:
   - type: markdown
     attributes:
@@ -17,5 +17,5 @@ body:
     attributes:
       label: "Additional context"
       description: "Add any other context or additional information about the problem here."
-    validations: 
+    validations:
       required: false
