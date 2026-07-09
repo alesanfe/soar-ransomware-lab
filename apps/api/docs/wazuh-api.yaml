@@ -67,7 +67,7 @@ paths:
       summary: List agents
       description: Get list of all agents
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Agents retrieved successfully
@@ -77,7 +77,7 @@ paths:
       summary: Add agent
       description: Add a new agent
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -101,7 +101,7 @@ paths:
       summary: Get agent by ID
       description: Retrieve a specific agent
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: agent_id
           in: path
@@ -117,7 +117,7 @@ paths:
       summary: Delete agent
       description: Delete an agent
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: agent_id
           in: path
@@ -134,7 +134,7 @@ paths:
       summary: Restart agent
       description: Restart a specific agent
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: agent_id
           in: path
@@ -151,7 +151,7 @@ paths:
       summary: Get agent status
       description: Get status of a specific agent
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: agent_id
           in: path
@@ -168,7 +168,7 @@ paths:
       summary: List groups
       description: Get list of all groups
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Groups retrieved successfully
@@ -178,7 +178,7 @@ paths:
       summary: Create group
       description: Create a new group
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -200,7 +200,7 @@ paths:
       summary: Get group by ID
       description: Retrieve a specific group
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: group_id
           in: path
@@ -217,7 +217,7 @@ paths:
       summary: List decoders
       description: Get list of all decoders
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Decoders retrieved successfully
@@ -228,7 +228,7 @@ paths:
       summary: Get decoder by ID
       description: Retrieve a specific decoder
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: decoder_id
           in: path
@@ -245,7 +245,7 @@ paths:
       summary: List rules
       description: Get list of all rules
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Rules retrieved successfully
@@ -256,7 +256,7 @@ paths:
       summary: Get rule by ID
       description: Retrieve a specific rule
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: rule_id
           in: path
@@ -273,7 +273,7 @@ paths:
       summary: Lists
       description: Get list of all CDB lists
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Lists retrieved successfully
@@ -284,7 +284,7 @@ paths:
       summary: Get list by path
       description: Retrieve a specific CDB list
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: list_path
           in: path
@@ -301,7 +301,7 @@ paths:
       summary: List active response commands
       description: Get list of all active response commands
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Active response commands retrieved

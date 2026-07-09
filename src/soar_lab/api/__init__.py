@@ -1,6 +1,7 @@
-from .main import create_app
-from pathlib import Path
 import os
+from pathlib import Path
+
+from .main import create_app
 
 # Allow tests to disable eager instantiation
 _SKIP_EAGER_INIT = os.getenv('SOAR_SKIP_EAGER_INIT', '').lower() in ('1', 'true', 'yes')
@@ -20,6 +21,15 @@ if not _SKIP_EAGER_INIT:
     from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner
     from soar_lab.infrastructure.pytest_output_parser import PytestOutputParser
     from soar_lab.services.test_service import TestService
+    from soar_lab.services.analytics_service import AnalyticsService
+    from soar_lab.services.backup_service import BackupService
+    from soar_lab.infrastructure.tar_backup_driver import TarBackupDriver
+    from soar_lab.infrastructure.file_log_reader import FileLogReader
+    from soar_lab.infrastructure.log_parser import ExecutionLogParser
+    from soar_lab.infrastructure.kpi_formatter import CSVKPIFormatter
+    from soar_lab.domain.statistical_calculator import StatisticalCalculator
+    from soar_lab.services.kpi_analyzer import KPIAnalyzer
+    from soar_lab.infrastructure.websocket_manager import ConnectionManager
 
     settings = Settings()
     token_provider = JWTTokenProvider()
@@ -28,13 +38,14 @@ if not _SKIP_EAGER_INIT:
     # Real services
     system_metrics = SystemMetricsDriver()
     http_client = AioHTTPClient(default_timeout=5, default_verify_ssl=False)
-    health_checker = HTTPHealthCheckAdapter(http_client, verify_ssl_config={'thehive': False, 'cortex': False, 'shuffle-backend': False})
+    health_checker = HTTPHealthCheckAdapter(http_client, verify_ssl_config={'thehive': False, 'cortex': False,
+                                                                            'shuffle-backend': False})
     health_service = HealthService(health_checker, system_metrics)
 
     # Path and storage
     base_dir = Path(settings.get('base_dir', '/app'))
-    path_service = PathService(base_dir)
-    storage = FilesystemStorage(str(base_dir))
+    path_service = PathService(base_dir, config_provider=settings)
+    storage = FilesystemStorage(str(base_dir), config_provider=settings)
 
     # Alert repository
     alert_repository = InMemoryAlertRepository()
@@ -43,6 +54,30 @@ if not _SKIP_EAGER_INIT:
     test_runner = PytestTestRunner(base_dir, path_service)
     test_parser = PytestOutputParser()
     test_service = TestService(test_runner, test_parser)
+
+    # Analytics service
+    log_reader = FileLogReader(path_service)
+    log_parser = ExecutionLogParser()
+    kpi_formatter = CSVKPIFormatter()
+    statistical_calculator = StatisticalCalculator()
+    kpi_analyzer = KPIAnalyzer(statistical_calculator)
+    analytics_service = AnalyticsService(
+        data_repository=alert_repository,
+        system_metrics=system_metrics,
+        file_system=storage,
+        log_reader=log_reader,
+        log_parser=log_parser,
+        kpi_formatter=kpi_formatter,
+        statistical_calculator=statistical_calculator,
+        kpi_analyzer=kpi_analyzer,
+    )
+
+    # Backup service
+    backup_driver = TarBackupDriver()
+    backup_service = BackupService(driver=backup_driver, storage=storage)
+
+    # WebSocket manager
+    websocket_manager = ConnectionManager()
 
     app = create_app(
         config_provider=settings,
@@ -54,7 +89,11 @@ if not _SKIP_EAGER_INIT:
         storage=storage,
         alert_repository=alert_repository,
         test_runner=test_runner,
-        test_service=test_service
+        test_service=test_service,
+        analytics_service=analytics_service,
+        backup_service=backup_service,
+        websocket_manager=websocket_manager,
+        log_reader=log_reader,
     )
 else:
     app = None

@@ -97,6 +97,8 @@ class BackupRepository(Protocol):
 class TestResultRepository(Protocol):
     """Repository for test results."""
 
+    __test__ = False
+
     def store(self, test_result: Dict[str, Any]) -> None:
         """Store test results."""
         ...

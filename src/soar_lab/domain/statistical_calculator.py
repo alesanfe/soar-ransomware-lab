@@ -139,19 +139,43 @@ class StatisticalCalculator:
         alert_times = alert_steps.get('Alert received', [])
         containment_times = alert_steps.get('Containment executed', [])
 
-        if not alert_times or not containment_times:
-            return []
+        if alert_times and containment_times:
+            # Pair up alerts with their corresponding containment actions
+            min_pairs = min(len(alert_times), len(containment_times))
+            execution_times = []
+            for i in range(min_pairs):
+                try:
+                    delta = (containment_times[i] - alert_times[i]).total_seconds()
+                    if delta > 0:
+                        execution_times.append(delta)
+                except Exception:
+                    continue
+            return execution_times
 
-        # Pair up alerts with their corresponding containment actions
-        min_pairs = min(len(alert_times), len(containment_times))
-        execution_times = []
+        # Fallback: use actual notify.log format where steps have description strings
+        # Step 1 key variants (first step = alert sent)
+        step1_keys = [k for k in alert_steps if 'Sending' in k or 'STEP 1' in k or 'alert' in k.lower()]
+        # STARTED/PASSED pairs
+        started_keys = [k for k in alert_steps if 'STARTED' in k]
+        passed_keys = [k for k in alert_steps if 'PASSED' in k or 'FAILED' in k]
 
-        for i in range(min_pairs):
-            try:
-                delta = (containment_times[i] - alert_times[i]).total_seconds()
-                if delta > 0:  # Only include valid positive time differences
-                    execution_times.append(delta)
-            except Exception:
-                continue
+        if started_keys and passed_keys:
+            starts = sorted([ts for k in started_keys for ts in alert_steps[k]])
+            ends = sorted([ts for k in passed_keys for ts in alert_steps[k]])
+            min_pairs = min(len(starts), len(ends))
+            return [
+                (ends[i] - starts[i]).total_seconds()
+                for i in range(min_pairs)
+                if (ends[i] - starts[i]).total_seconds() > 0
+            ]
 
-        return execution_times
+        # Last fallback: consecutive Step 1 timestamps give inter-arrival time (approximation)
+        if step1_keys:
+            all_ts = sorted([ts for k in step1_keys for ts in alert_steps[k]])
+            return [
+                (all_ts[i + 1] - all_ts[i]).total_seconds()
+                for i in range(len(all_ts) - 1)
+                if 0 < (all_ts[i + 1] - all_ts[i]).total_seconds() < 3600
+            ]
+
+        return []

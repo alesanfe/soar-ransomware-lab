@@ -11,7 +11,7 @@ let servicesInterval = null;
 const API_BASE = '/api';
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeApp();
 });
 
@@ -21,10 +21,10 @@ function initializeApp() {
 
     // Check authentication status
     checkAuthStatus();
-    
+
     // Setup event listeners
     setupEventListeners();
-    
+
     // Start periodic updates if authenticated
     if (isAuthenticated) {
         startPeriodicUpdates();
@@ -38,9 +38,9 @@ function setupEventListeners() {
     // Authentication
     document.getElementById('loginBtn').addEventListener('click', login);
     document.getElementById('logoutBtn').addEventListener('click', logout);
-    
+
     // Enter key for login
-    document.getElementById('password').addEventListener('keypress', function(e) {
+    document.getElementById('password').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             login();
         }
@@ -75,12 +75,12 @@ function loadTheme() {
 async function login() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    
+
     if (!username || !password) {
         showMessage('Please enter username and password', 'error');
         return;
     }
-    
+
     try {
         showLoading(true);
         const response = await fetch(`${API_BASE}/auth/login`, {
@@ -88,9 +88,9 @@ async function login() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({username, password})
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             isAuthenticated = true;
@@ -155,13 +155,17 @@ function hideMainContent() {
 function startPeriodicUpdates() {
     // Update metrics every 5 seconds
     metricsInterval = setInterval(updateMetrics, 5000);
-    
+
     // Update services status every 10 seconds
     servicesInterval = setInterval(updateServicesStatus, 10000);
-    
+
+    // Update KPIs every 30 seconds
+    setInterval(loadKPIs, 30000);
+
     // Initial updates
     updateMetrics();
     updateServicesStatus();
+    loadKPIs();
     updateTestCoverage();
 }
 
@@ -169,7 +173,7 @@ function stopPeriodicUpdates() {
     if (metricsInterval) clearInterval(metricsInterval);
     if (servicesInterval) clearInterval(servicesInterval);
     if (logsInterval) clearInterval(logsInterval);
-    
+
     if (ws) {
         ws.close();
         ws = null;
@@ -182,18 +186,18 @@ async function updateMetrics() {
         const response = await fetch(`${API_BASE}/analytics/metrics`, {
             headers: getAuthHeaders()
         });
-        
+
         if (response.ok) {
             const data = await response.json();
-            
+
             // Update CPU usage
             document.getElementById('cpuUsage').style.width = `${data.cpu}%`;
             document.getElementById('cpuPercent').textContent = `${data.cpu}%`;
-            
+
             // Update RAM usage
             document.getElementById('ramUsage').style.width = `${data.memory}%`;
             document.getElementById('ramPercent').textContent = `${data.memory}%`;
-            
+
             // Update Disk usage
             document.getElementById('diskUsage').style.width = `${data.disk}%`;
             document.getElementById('diskPercent').textContent = `${data.disk}%`;
@@ -209,13 +213,13 @@ async function updateServicesStatus() {
         const response = await fetch(`${API_BASE}/services/status`, {
             headers: getAuthHeaders()
         });
-        
+
         if (response.ok) {
             const data = await response.json();
-            
+
             // The API now returns services in a "services" field
             const services = data.services || {};
-            
+
             // Update service status indicators
             Object.keys(services).forEach(service => {
                 const statusElement = document.querySelector(`[data-service="${service}"]`);
@@ -223,7 +227,7 @@ async function updateServicesStatus() {
                     statusElement.className = `status ${services[service] ? 'online' : 'offline'}`;
                 }
             });
-            
+
             // Update overall services status
             const onlineCount = Object.values(services).filter(status => status).length;
             const offlineCount = Object.values(services).filter(status => !status).length;
@@ -247,6 +251,39 @@ async function updateServicesStatus() {
     }
 }
 
+// KPI functions
+async function loadKPIs() {
+    try {
+        const response = await fetch(`${API_BASE}/analytics/kpis`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) return;
+        const data = await response.json();
+
+        // Map actual API response fields to UI elements
+        // The API returns comprehensive KPIs with nested structure
+        const mttr = data.mttr_metrics || {};
+        const perf = data.performance_kpis || {};
+        const health = data.health_score || {};
+
+        const mapping = {
+            'kpiMttr': mttr.mean !== undefined ? `${Number(mttr.mean).toFixed(1)} min` : '—',
+            'kpiTotalAlerts': perf.total_alerts !== undefined ? perf.total_alerts : '—',
+            'kpiMalicious': perf.malicious !== undefined ? perf.malicious : '—',
+            'kpiBenign': perf.benign !== undefined ? perf.benign : '—',
+            'kpiDetectionRate': perf.detection_rate !== undefined ? `${perf.detection_rate}%` : '—',
+        };
+
+        Object.entries(mapping).forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        });
+    } catch (error) {
+        console.error('Failed to load KPIs:', error);
+    }
+}
+
 // Test coverage functions
 async function updateTestCoverage() {
     // Coverage is not available as a separate endpoint
@@ -258,7 +295,7 @@ async function updateTestCoverage() {
 // Test execution functions
 async function runTests(category) {
     showLoading(true);
-    
+
     try {
         const response = await fetch(`${API_BASE}/tests/run`, {
             method: 'POST',
@@ -266,9 +303,9 @@ async function runTests(category) {
                 ...getAuthHeaders(),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ category })
+            body: JSON.stringify({category})
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             displayTestResults(data);
@@ -285,28 +322,35 @@ async function runTests(category) {
 function displayTestResults(results) {
     const resultsSection = document.getElementById('testResults');
     resultsSection.style.display = 'block';
-    
+
     // Update summary
     document.getElementById('passedCount').textContent = results.passed;
     document.getElementById('failedCount').textContent = results.failed;
     document.getElementById('skippedCount').textContent = results.skipped;
     document.getElementById('testCoverage').textContent = `${results.coverage}%`;
-    
+
     // Update detailed output
     const outputElement = document.getElementById('resultsOutput');
     outputElement.textContent = results.output || 'No output available';
-    
+
+    // Update dashboard coverage card with last run data
+    const coverageEl = document.getElementById('coveragePercent');
+    if (coverageEl) coverageEl.textContent = `${results.coverage}%`;
+    const lastRunEl = document.getElementById('lastRunTime');
+    if (lastRunEl) lastRunEl.textContent = new Date().toLocaleTimeString();
+    const categoryEl = document.getElementById('lastTestCategory');
+    if (categoryEl) categoryEl.textContent = results.category || '—';
+    const durationEl = document.getElementById('lastTestDuration');
+    if (durationEl) durationEl.textContent = results.duration ? `${results.duration.toFixed(1)}s` : '—';
+
     // Scroll to results
-    resultsSection.scrollIntoView({ behavior: 'smooth' });
-    
-    // Coverage is already included in the test results from /tests/run
-    // No need to call separate updateTestCoverage()
+    resultsSection.scrollIntoView({behavior: 'smooth'});
 }
 
 // Logs functions
 function toggleLogs() {
     const toggleText = document.getElementById('logsToggleText');
-    
+
     if (ws) {
         // Stop logs
         ws.close();
@@ -323,24 +367,24 @@ function toggleLogs() {
 function startWebSocketLogs() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/api/ws/logs`;
-    
+
     ws = new WebSocket(wsUrl);
-    
-    ws.onopen = function() {
+
+    ws.onopen = function () {
         console.log('WebSocket connection established');
     };
-    
-    ws.onmessage = function(event) {
+
+    ws.onmessage = function (event) {
         const logData = JSON.parse(event.data);
         appendLog(logData);
     };
-    
-    ws.onerror = function(error) {
+
+    ws.onerror = function (error) {
         console.error('WebSocket error:', error);
         showMessage('Failed to connect to logs stream', 'error');
     };
-    
-    ws.onclose = function() {
+
+    ws.onclose = function () {
         console.log('WebSocket connection closed');
         ws = null;
         document.getElementById('logsToggleText').textContent = 'Start Live Logs';
@@ -350,23 +394,23 @@ function startWebSocketLogs() {
 function appendLog(logData) {
     const logsOutput = document.getElementById('logsOutput');
     const logLevel = document.getElementById('logLevel').value;
-    
+
     // Filter logs by level
     if (logLevel !== 'all') {
         if (logLevel === 'error' && logData.level !== 'ERROR') return;
         if (logLevel === 'warning' && !['ERROR', 'WARNING'].includes(logData.level)) return;
         if (logLevel === 'info' && !['ERROR', 'WARNING', 'INFO'].includes(logData.level)) return;
     }
-    
+
     const logElement = document.createElement('div');
     logElement.className = `log-${logData.level.toLowerCase()}`;
     logElement.textContent = `[${logData.timestamp}] ${logData.level}: ${logData.message}`;
-    
+
     logsOutput.appendChild(logElement);
-    
+
     // Auto-scroll to bottom
     logsOutput.scrollTop = logsOutput.scrollHeight;
-    
+
     // Limit log history
     while (logsOutput.children.length > 1000) {
         logsOutput.removeChild(logsOutput.firstChild);
@@ -380,16 +424,16 @@ function clearLogs() {
 // Backup functions
 async function createBackup() {
     showLoading(true);
-    
+
     try {
         const response = await fetch(`${API_BASE}/backup/create`, {
             method: 'POST',
             headers: getAuthHeaders()
         });
-        
+
         if (response.ok) {
             const data = await response.json();
-            showBackupStatus(`Backup created successfully: ${data.filename}`, 'success');
+            showBackupStatus(`Backup created successfully: ${data.backup_name || data.filename || 'OK'}`, 'success');
             listBackups();
         } else {
             throw new Error('Failed to create backup');
@@ -406,19 +450,22 @@ async function listBackups() {
         const response = await fetch(`${API_BASE}/backup/list`, {
             headers: getAuthHeaders()
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             const backupList = document.getElementById('backupList');
-            
+
             // Clear existing options
             backupList.innerHTML = '<option value="">Select backup...</option>';
-            
-            // Add backup options
+
+            // Add backup options — API returns a plain string array of names
             data.backups.forEach(backup => {
                 const option = document.createElement('option');
-                option.value = backup.name;
-                option.textContent = `${backup.name} (${backup.size}, ${backup.date})`;
+                const name = typeof backup === 'object' ? backup.name : backup;
+                option.value = name;
+                option.textContent = typeof backup === 'object'
+                    ? `${backup.name} (${backup.size || ''}, ${backup.date || ''})`
+                    : name;
                 backupList.appendChild(option);
             });
         }
@@ -429,18 +476,18 @@ async function listBackups() {
 
 async function restoreBackup() {
     const backupName = document.getElementById('backupList').value;
-    
+
     if (!backupName) {
         showBackupStatus('Please select a backup to restore', 'error');
         return;
     }
-    
+
     if (!confirm(`Are you sure you want to restore backup "${backupName}"? This will replace current data.`)) {
         return;
     }
-    
+
     showLoading(true);
-    
+
     try {
         const response = await fetch(`${API_BASE}/backup/restore`, {
             method: 'POST',
@@ -448,9 +495,9 @@ async function restoreBackup() {
                 ...getAuthHeaders(),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ backup_name: backupName })
+            body: JSON.stringify({backup_name: backupName})
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             showBackupStatus(`Backup restored successfully: ${data.message}`, 'success');
@@ -468,7 +515,7 @@ function showBackupStatus(message, type) {
     const statusElement = document.getElementById('backupStatus');
     statusElement.textContent = message;
     statusElement.className = `backup-status text-${type}`;
-    
+
     // Clear status after 5 seconds
     setTimeout(() => {
         statusElement.textContent = '';
@@ -479,7 +526,7 @@ function showBackupStatus(message, type) {
 // Utility functions
 function getAuthHeaders() {
     const token = localStorage.getItem('auth_token');
-    return token ? { 'Authorization': `Bearer ${token}` } : {};
+    return token ? {'Authorization': `Bearer ${token}`} : {};
 }
 
 function showLoading(show) {
@@ -503,9 +550,9 @@ function showMessage(message, type) {
         z-index: 1001;
         max-width: 300px;
     `;
-    
+
     document.body.appendChild(messageElement);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
         document.body.removeChild(messageElement);
@@ -513,7 +560,7 @@ function showMessage(message, type) {
 }
 
 // Handle page visibility changes
-document.addEventListener('visibilitychange', function() {
+document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
         stopPeriodicUpdates();
     } else if (isAuthenticated) {
@@ -522,13 +569,13 @@ document.addEventListener('visibilitychange', function() {
 });
 
 // Handle connection errors
-window.addEventListener('online', function() {
+window.addEventListener('online', function () {
     if (isAuthenticated) {
         startPeriodicUpdates();
     }
 });
 
-window.addEventListener('offline', function() {
+window.addEventListener('offline', function () {
     stopPeriodicUpdates();
     showMessage('Connection lost', 'error');
 });

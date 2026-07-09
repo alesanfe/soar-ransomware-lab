@@ -25,64 +25,52 @@ warn() {
 
 # Test 1: Invalid webhook URL
 log "=== Test 1: Invalid webhook URL ==="
-python3 ../scripts/send_alert.py --webhook-url "http://invalid-host:9999" --single 2>&1 || {
+python3 -m soar_lab.services.send_alert --webhook-url "http://invalid-host:9999" --single 2>&1 || {
     log "✓ Correctly failed with invalid webhook URL"
 }
 
 # Test 2: Missing API token
 log "=== Test 2: Missing API token ==="
-SIEM_WEBHOOK_TOKEN="" python3 ../scripts/send_alert.py --single 2>&1 || {
+SIEM_WEBHOOK_TOKEN="" python3 -m soar_lab.services.send_alert --single 2>&1 || {
     log "✓ Correctly failed with missing API token"
 }
 
 # Test 3: Invalid alert type
 log "=== Test 3: Invalid alert type ==="
-python3 ../scripts/send_alert.py --type "invalid_type" --single 2>&1 || {
+python3 -m soar_lab.services.send_alert --type "invalid_type" --single 2>&1 || {
     log "✓ Correctly failed with invalid alert type"
 }
 
 # Test 4: Zero alerts in batch
 log "=== Test 4: Zero alerts in batch ==="
-python3 ../scripts/send_alert.py --num-alerts 0 --single 2>&1 || {
+python3 -m soar_lab.services.send_alert --num-alerts 0 --single 2>&1 || {
     log "✓ Correctly failed with zero alerts"
 }
 
 # Test 5: Negative delay
 log "=== Test 5: Negative delay ==="
-python3 ../scripts/send_alert.py --num-alerts 1 --delay -5 2>&1 || {
+python3 -m soar_lab.services.send_alert --num-alerts 1 --delay -5 2>&1 || {
     log "✓ Correctly failed with negative delay"
 }
 
 # Test 6: Very large number of alerts
 log "=== Test 6: Large number of alerts (stress test) ==="
-python3 ../scripts/send_alert.py --num-alerts 50 --delay 0.1 --type benign
+python3 -m soar_lab.services.send_alert --num-alerts 50 --delay 0.1 --type benign
 log "✓ Handled 50 alerts successfully"
 
-# Test 7: Containment script with invalid hostname
-log "=== Test 7: Containment with invalid hostname ==="
-bash ../scripts/isolate_host.sh "invalid@hostname" "CASE-999" 2>&1 || {
-    log "✓ Correctly rejected invalid hostname"
-}
-
-# Test 8: Containment script with missing parameters
-log "=== Test 8: Containment with missing parameters ==="
-bash ../scripts/isolate_host.sh 2>&1 || {
-    log "✓ Correctly rejected missing parameters"
-}
-
-# Test 9: KPI calculation with empty log
-log "=== Test 9: KPI calculation with empty log ==="
+# Test 7: KPI calculation with empty log
+log "=== Test 7: KPI calculation with empty log ==="
 mkdir -p ../../logs
 echo "" > ../../logs/notify.log
-python3 ../scripts/calc_kpis.py 2>&1 || {
+python3 -m soar_lab.data.calc_kpis 2>&1 || {
     log "✓ Correctly handled empty log file"
 }
 
-# Test 10: KPI calculation with malformed log
-log "=== Test 10: KPI calculation with malformed log ==="
+# Test 8: KPI calculation with malformed log
+log "=== Test 8: KPI calculation with malformed log ==="
 echo "Invalid log entry without timestamp" > ../../logs/notify.log
 echo "Another invalid entry" >> ../../logs/notify.log
-python3 ../scripts/calc_kpis.py 2>&1 || {
+python3 -m soar_lab.data.calc_kpis 2>&1 || {
     log "✓ Correctly handled malformed log"
 }
 

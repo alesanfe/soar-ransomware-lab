@@ -31,7 +31,7 @@ paths:
       summary: Find saved objects
       description: Find saved objects by type
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: type
           in: query
@@ -48,7 +48,7 @@ paths:
       summary: Get saved object
       description: Get a specific saved object
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: type
           in: path
@@ -69,7 +69,7 @@ paths:
       summary: Create saved object
       description: Create a new saved object
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: type
           in: path
@@ -96,7 +96,7 @@ paths:
       summary: Update saved object
       description: Update a saved object
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: type
           in: path
@@ -123,7 +123,7 @@ paths:
       summary: Delete saved object
       description: Delete a saved object
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: type
           in: path
@@ -145,7 +145,7 @@ paths:
       summary: Bulk create saved objects
       description: Create multiple saved objects
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -164,7 +164,7 @@ paths:
       summary: List spaces
       description: Get list of all spaces
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Spaces retrieved
@@ -174,7 +174,7 @@ paths:
       summary: Create space
       description: Create a new space
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -198,7 +198,7 @@ paths:
       summary: Get space
       description: Get a specific space
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: space_id
           in: path
@@ -214,7 +214,7 @@ paths:
       summary: Update space
       description: Update a space
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: space_id
           in: path
@@ -236,7 +236,7 @@ paths:
       summary: Delete space
       description: Delete a space
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: space_id
           in: path
@@ -253,7 +253,7 @@ paths:
       summary: Search
       description: Search across Kibana
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -270,7 +270,7 @@ paths:
       summary: Get status
       description: Get Kibana status
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Kibana status retrieved

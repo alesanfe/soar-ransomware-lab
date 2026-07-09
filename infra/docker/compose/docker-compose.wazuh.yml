@@ -4,7 +4,7 @@ name: soar-lab-wazuh
 
 services:
   wazuh-manager:
-    image: wazuh/wazuh-manager:4.8.2
+    image: wazuh/wazuh-manager:4.14.0
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_wazuh_manager
     environment:
       - INDEXER_URL=http://elasticsearch:9200
@@ -14,8 +14,8 @@ services:
       - INDEXER_CERT=/etc/wazuh-indexer/certs/filebeat.pem
       - INDEXER_KEY=/etc/wazuh-indexer/certs/filebeat-key.pem
       - API_USERNAME=${WAZUH_API_USERNAME:-wazuh-wui}
-      - API_PASSWORD=${WAZUH_API_PASSWORD}
-      - WAZUH_CLUSTER_KEY=${WAZUH_CLUSTER_KEY:-wazuh-cluster-key}
+      - API_PASSWORD=${WAZUH_API_PASSWORD:-T5a#7mP3$vL2@nQ8tW6!zY4&hF9sD1}
+      - WAZUH_CLUSTER_KEY=${WAZUH_CLUSTER_KEY:-wazuh-soar-lab-cluster-key-2024x}
       - WAZUH_CLUSTER_NAME=soar-wazuh-cluster
       - WAZUH_CLUSTER_NODE_NAME=soar-wazuh-manager
       - WAZUH_CLUSTER_NODE_TYPE=master
@@ -30,17 +30,17 @@ services:
       - wazuh_active_response:/var/ossec/active-response/bin
       - wazuh_wodles:/var/ossec/wodles
     ports:
-      - "${WAZUH_API_PORT:-55000}:55000"
-      - "${WAZUH_EVENTS_PORT:-15141}:1514"
-      - "1515:1515"
-      - "1516:1516"
+      - "${WAZUH_API_PORT:-55100}:55000"
+    #   - "${WAZUH_EVENTS_PORT:-15141}:1514"
+    #   - "1515:1515"
+    #   - "1516:1516"
     networks:
       - soar_net
     depends_on:
       elasticsearch:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -sk https://localhost:55000/ | grep -q 'Unauthorized\\|title' || exit 1"]
+      test: [ "CMD-SHELL", "curl -sk https://localhost:55000/ | grep -q 'Unauthorized\\|title' || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -61,7 +61,7 @@ services:
         max-file: "3"
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.17
+    image: docker.elastic.co/kibana/kibana:7.10.2
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
@@ -71,7 +71,7 @@ services:
       - SERVER_BASEPATH=/kibana
       - SERVER_REWRITEBASEPATH=true
       - XPACK_SECURITY_ENABLED=false
-      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY:-a7a6311933d3503b89bc2dbc36572c33a6c10925682e591bffcab6911c06786d}
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY:-a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2}
     volumes:
       - kibana_data:/usr/share/kibana/data
     ports:
@@ -80,9 +80,9 @@ services:
       - soar_net
     depends_on:
       elasticsearch:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:5601/kibana/api/status || exit 1"]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:5601/kibana/api/status || exit 1" ]
       interval: 30s
       timeout: 10s
       start_period: 120s

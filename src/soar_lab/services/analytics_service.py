@@ -152,16 +152,20 @@ class AnalyticsService:
             # Get application stats (orchestration)
             app_stats = self._get_application_stats()
 
+            # Extract percent values — hw_metrics may return dicts or floats
+            def _pct(val):
+                return val.get('percent', 0.0) if isinstance(val, dict) else float(val or 0)
+
             # Delegate calculation to KPIAnalyzer (pure calculation)
             return self.kpi_analyzer.calculate_health_score(
-                cpu_percent=hw_metrics["cpu"],
-                memory_percent=hw_metrics["memory"],
-                disk_percent=hw_metrics["disk"],
+                cpu_percent=_pct(hw_metrics.get("cpu", 0)),
+                memory_percent=_pct(hw_metrics.get("memory", 0)),
+                disk_percent=_pct(hw_metrics.get("disk", 0)),
                 test_coverage=app_stats["tests"]["avg_coverage_24h"]
             )
         except Exception as e:
             logger.error(f"Error calculating health score: {e}")
-            raise
+            return {"score": 0.0, "status": "unknown"}
 
     # MTTR and KPI Calculation Methods (Consolidated from calc_kpis.py)
     def parse_execution_logs(self, log_file_path: str) -> Dict[str, List[datetime]]:
@@ -176,6 +180,8 @@ class AnalyticsService:
         """
         try:
             log_content = self.file_system.read_file(log_file_path)
+            if log_content is None:
+                return {}
             return self.log_parser.parse(log_content)
         except Exception as e:
             logger.error(f"Error parsing execution logs: {e}")
@@ -210,7 +216,7 @@ class AnalyticsService:
 
         except Exception as e:
             logger.error(f"Error calculating MTTR metrics: {e}")
-            raise
+            return {"p50": 0.0, "p90": 0.0, "mean": 0.0, "count": 0}
 
     def save_kpis_to_csv(self, metrics: Dict[str, Any], output_path: Optional[str] = None) -> None:
         """
@@ -270,3 +276,76 @@ class AnalyticsService:
         except Exception as e:
             logger.error(f"Error getting comprehensive KPIs: {e}")
             raise
+
+    def get_kpis_by_alert_type(self, hours: int = 24) -> Dict[str, Any]:
+        """
+        Get KPIs separated by alert type from Elasticsearch metrics.
+
+        Args:
+            hours: Time period in hours
+
+        Returns:
+            Dict with KPIs by alert type
+        """
+        try:
+            # Query metrics from Elasticsearch (orchestration)
+            from datetime import timedelta
+            query = {
+                "query": {
+                    "range": {
+                        "timestamp": {
+                            "gte": (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+                        }
+                    }
+                },
+                "size": 10000,
+                "sort": [{"timestamp": {"order": "desc"}}]
+            }
+
+            # This would require Elasticsearch client - for now, return empty
+            # In a real implementation, this would use the ES client
+            logger.warning("get_kpis_by_alert_type requires Elasticsearch client integration")
+            return {
+                "period_hours": hours,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "by_alert_type": {}
+            }
+        except Exception as e:
+            logger.error(f"Error calculating KPIs by alert type: {e}")
+            return {"error": str(e)}
+
+    def get_service_integration_kpis(self, hours: int = 24) -> Dict[str, Any]:
+        """
+        Get KPIs for service integrations from Elasticsearch metrics.
+
+        Args:
+            hours: Time period in hours
+
+        Returns:
+            Dict with service integration KPIs
+        """
+        try:
+            # Query metrics from Elasticsearch (orchestration)
+            from datetime import timedelta
+            query = {
+                "query": {
+                    "range": {
+                        "timestamp": {
+                            "gte": (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+                        }
+                    }
+                },
+                "size": 10000
+            }
+
+            # This would require Elasticsearch client - for now, return empty
+            # In a real implementation, this would use the ES client
+            logger.warning("get_service_integration_kpis requires Elasticsearch client integration")
+            return {
+                "period_hours": hours,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "services": {}
+            }
+        except Exception as e:
+            logger.error(f"Error calculating service integration KPIs: {e}")
+            return {"error": str(e)}

@@ -20,6 +20,7 @@ class MISPClient(BaseHTTPClient):
             base_url: str,
             api_key: str,
             config_provider: Optional[object] = None,
+            verify_ssl: bool = True,
     ) -> None:
         if config_provider:
             url = base_url or config_provider.get('misp_url')
@@ -34,7 +35,7 @@ class MISPClient(BaseHTTPClient):
         if not key:
             raise ValueError("misp_api_key must be provided in config_provider or as api_key parameter")
 
-        super().__init__(base_url=url, api_key=key)
+        super().__init__(base_url=url, api_key=key, verify_ssl=verify_ssl)
         self._session.headers.update({"Accept": "application/json"})
 
     def _default_headers(self, api_key: Optional[str]) -> Dict[str, str]:
@@ -72,6 +73,53 @@ class MISPClient(BaseHTTPClient):
         """Add an attribute to an existing event."""
         logger.info(f"Adding attribute to MISP event {event_id}")
         return self.post(f"/attributes/add/{event_id}", data=attribute)
+
+    def search_attributes(
+            self,
+            value: Optional[str] = None,
+            attr_type: Optional[str] = None,
+            limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """Search MISP attributes by value and/or type.
+
+        Args:
+            value: Exact value to match (IP, hash, domain, ...).
+            attr_type: MISP attribute type, e.g. "ip-dst", "sha256".
+            limit: Max results to return.
+
+        Returns:
+            List of attribute dicts.
+        """
+        payload: Dict[str, Any] = {"returnFormat": "json", "limit": limit}
+        if value:
+            payload["value"] = value
+        if attr_type:
+            payload["type"] = attr_type
+        result = self.post("/attributes/restSearch", data=payload)
+        return result.get("response", {}).get("Attribute", [])
+
+    def list_events(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """Return recent MISP events.
+
+        Args:
+            limit: Max number of events.
+
+        Returns:
+            List of event dicts.
+        """
+        result = self.post("/events/restSearch",
+                           data={"returnFormat": "json", "limit": limit})
+        return result.get("response", [])
+
+    def get_attribute_count(self) -> int:
+        """Return total number of attributes in MISP."""
+        try:
+            attrs = self.search_attributes(limit=1)
+            result = self.post("/attributes/restSearch",
+                               data={"returnFormat": "count"})
+            return result.get("count", len(attrs))
+        except Exception:
+            return 0
 
     def health_check(self) -> bool:
         """Check if MISP is reachable."""

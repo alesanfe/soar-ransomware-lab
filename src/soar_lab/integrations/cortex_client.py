@@ -20,6 +20,7 @@ class CortexClient(BaseHTTPClient):
             base_url: str,
             api_key: str,
             config_provider: Optional[object] = None,
+            verify_ssl: bool = True,
     ) -> None:
         if config_provider:
             url = base_url or config_provider.get('cortex_url')
@@ -34,11 +35,22 @@ class CortexClient(BaseHTTPClient):
         if not key:
             raise ValueError("cortex_api_key must be provided in config_provider or as api_key parameter")
 
-        super().__init__(base_url=url, api_key=key)
+        super().__init__(base_url=url, api_key=key, verify_ssl=verify_ssl)
+
+    def _default_headers(self, api_key: Optional[str]) -> Dict[str, str]:
+        """Use Basic auth with admin credentials for Cortex API."""
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        # Use admin credentials (admin:J5x#8mP3$vR2@nQ7tW4!zY9&hF1sD6) for Basic auth
+        import base64
+        auth_str = base64.b64encode(b"admin:J5x#8mP3$vR2@nQ7tW4!zY9&hF1sD6").decode()
+        headers["Authorization"] = f"Basic {auth_str}"
+        return headers
 
     def list_analyzers(self) -> List[Dict[str, Any]]:
         """Return list of available analyzers."""
-        result = self.get("/api/analyzer")
+        # Cortex 3+ uses POST /api/analyzer/_search for listing analyzers
+        payload = {"query": {}, "range": "all"}
+        result = self.post("/api/analyzer/_search", data=payload)
         return result if isinstance(result, list) else []
 
     def run_analyzer(
@@ -72,6 +84,57 @@ class CortexClient(BaseHTTPClient):
     def get_job_report(self, job_id: str) -> Dict[str, Any]:
         """Get the full report for a completed job."""
         return self.get(f"/api/job/{job_id}/report")
+
+    def list_jobs(self, start: int = 0, count: int = 10) -> List[Dict[str, Any]]:
+        """Return recent analyzer jobs.
+
+        Args:
+            start: Offset (0-based).
+            count: Maximum number of jobs to return.
+
+        Returns:
+            List of job dicts.
+        """
+        result = self.get("/api/job", params={"range": f"{start}-{start + count}"})
+        return result if isinstance(result, list) else []
+
+    def list_analyzers_by_type(self, data_type: str) -> List[Dict[str, Any]]:
+        """Return analyzers capable of handling a specific data type.
+
+        Args:
+            data_type: e.g. "hash", "ip", "domain", "url".
+
+        Returns:
+            Filtered list of analyzer dicts.
+        """
+        # Get all analyzers and filter by data type
+        all_analyzers = self.list_analyzers()
+        return [a for a in all_analyzers if data_type in a.get("dataTypeList", [])]
+
+    def wait_for_job(
+            self,
+            job_id: str,
+            timeout: int = 60,
+            poll_interval: int = 5,
+    ) -> Dict[str, Any]:
+        """Poll a job until it finishes or timeout is reached.
+
+        Args:
+            job_id: Cortex job ID.
+            timeout: Max seconds to wait.
+            poll_interval: Seconds between polls.
+
+        Returns:
+            Final job dict (status may be Success, Failure, or still InProgress on timeout).
+        """
+        import time
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            job = self.get_job(job_id)
+            if job.get("status") in ("Success", "Failure"):
+                return job
+            time.sleep(poll_interval)
+        return self.get_job(job_id)
 
     def health_check(self) -> bool:
         """Check if Cortex is reachable."""

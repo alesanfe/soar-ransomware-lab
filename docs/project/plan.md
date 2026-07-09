@@ -84,7 +84,7 @@ La ruta crítica del proyecto es:
    `infra/docker/compose/docker-compose.core.yml`, `infra/docker/compose/docker-compose.misp.yml`,
    `infra/docker/compose/docker-compose.wazuh.yml`, `infra/docker/compose/docker-compose.api.yml`,
    `infra/docker/compose/logging/docker-compose.logging.yml`)
-2. **Servicios**: Inicialización de TheHive, Cortex, Shuffle, MISP, Wazuh, Elasticsearch, Redis, MariaDB, Grafana, Loki, Promtail
+2. **Servicios**: Inicialización de TheHive, Cortex, Shuffle, MISP, Wazuh, Elasticsearch, Redis, MariaDB
 3. **Conexiones**: Webhook, esquema de alerta (`src/soar_lab/config/schemas.py`) y SIEM simulado (
    `src/soar_lab/infrastructure/http_alert_sender.py`)
 4. **Playbook**: Flujo E2E con contención simulada en Shuffle
@@ -120,7 +120,7 @@ marcadas en los diagramas Gantt como `:crit` para identificar la ruta crítica.
 | Semana  | Fase / Hito             | Objetivo principal                                                                             | Entregables / Evidencias                                                                                                                       | Hitos de Validación Intermedia                                     |
 |---------|-------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
 | S1-S4   | Fase 1: Infraestructura | Laboratorio, automatización, API, CLI (Objetivos 1, 8, 17, 18)                                 | infra/docker/compose/, Makefile, src/soar_lab/api/, src/soar_lab/cli.py, scripts/ci/                                                           | Validación: servicios funcionando, API y CLI operativos (Semana 4) |
-| S5-S9   | Fase 2: Desarrollo      | Playbook E2E, integración SIEM, scripts, docs-site, web-management (Objetivos 2, 5, 6, 19, 20) | playbooks/shuffle/, src/soar_lab/infrastructure/http_alert_sender.py, apps/docs-site/, apps/web-management/                                       | Validación: playbook ejecuta, apps desplegadas (Semana 9)          |
+| S5-S9   | Fase 2: Desarrollo      | Playbook E2E, integración SIEM, scripts, docs-site, web-management (Objetivos 2, 5, 6, 19, 20) | playbooks/shuffle/, src/soar_lab/infrastructure/http_alert_sender.py, apps/docs-site/, apps/web-management/                                    | Validación: playbook ejecuta, apps desplegadas (Semana 9)          |
 | S10-S13 | Fase 3: Validación      | Métricas MTTR, pruebas especializadas, KPIs (Objetivos 3, 9, 10, 11, 12, 13, 14)               | tests/atomic/, tests/integration/, tests/security/, tests/performance/, tests/production/, artifacts/results/kpis.csv, src/soar_lab/analytics/ | Validación: pruebas pasan, KPIs cumplen umbrales (Semana 13)       |
 | S14-S15 | Fase 4: Cierre          | Documentación, analytics, aprobación (Objetivos 4, 15, 16)                                     | docs/, src/soar_lab/analytics/, docs/project/ (scope.md, objectives.md, plan.md)                                                               | Validación: documentación aprobada (Semana 15)                     |
 
@@ -146,8 +146,8 @@ Fase 4: Cierre :crit, f4, after f3, 2w
 | 2.2 Riesgos       | Identificar riesgos y mitigaciones                                | docs/project/risks.md                                                                                        |
 | 3.x Arquitectura  | Diseñar arquitectura single-host y flujo del playbook             | docs/architecture/overview.md                                                                                |
 | 4.x Entorno       | Configurar Docker Compose, seguridad básica                       | docker-compose.yml, .env.full                                                                                |
-| 5.x Integraciones | Conectar TheHive, Cortex, Shuffle y SIEM simulado                 | docs/project/references/thehive_template.json, src/soar_lab/infrastructure/http_alert_sender.py                                    |
-| 6.x Playbook      | Construir flujo E2E con decisiones y contención simulada          | docs/operations/playbooks/ransomware_playbook_e2e.md, src/soar_lab/services/containment_service.py                       |
+| 5.x Integraciones | Conectar TheHive, Cortex, Shuffle y SIEM simulado                 | docs/project/references/thehive_template.json, src/soar_lab/infrastructure/http_alert_sender.py              |
+| 6.x Playbook      | Construir flujo E2E con decisiones y contención simulada          | docs/operations/playbooks/ransomware_playbook_e2e.md, src/soar_lab/services/containment_service.py           |
 | 7.x Pruebas       | Ejecutar pruebas E2E y calcular KPIs                              | tests/e2e/*, artifacts/results/kpis.csv                                                                      |
 | 8.x Documentación | Redactar informe técnico, manual y cierre                         | docs/operations/playbooks/ransomware_playbook_e2e.md, docs/operations/configuration_manual.md, docs/project/ |
 

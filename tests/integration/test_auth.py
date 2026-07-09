@@ -5,12 +5,12 @@ Tests authentication adapter
 """
 
 import pytest
-from unittest.mock import Mock, AsyncMock
 from fastapi import HTTPException
+from unittest.mock import Mock, AsyncMock
 
 from soar_lab.api.auth import create_get_current_user
-from soar_lab.services.auth_service import AuthService
 from soar_lab.exceptions import AuthError
+from soar_lab.services.auth_service import AuthService
 
 
 class TestAuthAdapter:
@@ -32,16 +32,16 @@ class TestAuthAdapter:
         """Test successful authentication via get_current_user"""
         mock_auth_service = Mock()
         mock_auth_service.verify_jwt_token.return_value = {"user": "testuser", "method": "jwt"}
-        
+
         dependency = create_get_current_user(mock_auth_service)
-        
+
         # Mock the credentials
         mock_credentials = Mock()
         mock_credentials.credentials = "valid-token"
-        
+
         # Call the dependency (it's not async, but we need to handle the Depends)
         result = dependency(mock_credentials)
-        
+
         assert result == {"user": "testuser", "method": "jwt"}
         mock_auth_service.verify_jwt_token.assert_called_once_with("valid-token")
 
@@ -50,15 +50,15 @@ class TestAuthAdapter:
         """Test get_current_user raises HTTPException on AuthError"""
         mock_auth_service = Mock()
         mock_auth_service.verify_jwt_token.side_effect = AuthError("Invalid token", status_code=401)
-        
+
         dependency = create_get_current_user(mock_auth_service)
-        
+
         mock_credentials = Mock()
         mock_credentials.credentials = "invalid-token"
-        
+
         with pytest.raises(HTTPException) as exc_info:
             dependency(mock_credentials)
-        
+
         assert exc_info.value.status_code == 401
         assert "Invalid token" in str(exc_info.value.detail)
 

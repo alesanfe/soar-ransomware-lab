@@ -1,9 +1,8 @@
+import docker
 import json
 import os
 import requests
 import time
-
-import docker
 
 SH = 'http://localhost:5001'
 ES = 'http://localhost:9201'

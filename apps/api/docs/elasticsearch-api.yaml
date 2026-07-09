@@ -263,4 +263,4 @@ paths:
       responses:
         '200':
           description: Bulk operations completed
-components: {}
+components: { }

@@ -64,7 +64,7 @@ paths:
       summary: List workflows
       description: Get list of all workflows
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Workflows retrieved successfully
@@ -74,7 +74,7 @@ paths:
       summary: Create workflow
       description: Create a new workflow
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -103,7 +103,7 @@ paths:
       summary: Get workflow by ID
       description: Retrieve a specific workflow
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: workflow_id
           in: path
@@ -119,7 +119,7 @@ paths:
       summary: Update workflow
       description: Update workflow information
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: workflow_id
           in: path
@@ -135,7 +135,7 @@ paths:
       summary: Delete workflow
       description: Delete a workflow
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: workflow_id
           in: path
@@ -152,7 +152,7 @@ paths:
       summary: Execute workflow
       description: Execute a workflow
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: workflow_id
           in: path
@@ -169,7 +169,7 @@ paths:
       summary: Get workflow variables
       description: Get variables for a workflow
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: workflow_id
           in: path
@@ -186,7 +186,7 @@ paths:
       summary: List apps
       description: Get list of all available apps
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Apps retrieved successfully
@@ -197,7 +197,7 @@ paths:
       summary: Get app by ID
       description: Get details of a specific app
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: app_id
           in: path
@@ -214,7 +214,7 @@ paths:
       summary: List triggers
       description: Get list of all triggers
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Triggers retrieved successfully
@@ -225,7 +225,7 @@ paths:
       summary: List organizations
       description: Get list of all organizations
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Organizations retrieved successfully
@@ -236,7 +236,7 @@ paths:
       summary: Get organization by ID
       description: Get details of a specific organization
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: org_id
           in: path
@@ -253,7 +253,7 @@ paths:
       summary: List users
       description: Get list of all users
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Users retrieved successfully
@@ -264,7 +264,7 @@ paths:
       summary: List environments
       description: Get list of all environments
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Environments retrieved successfully
@@ -275,7 +275,7 @@ paths:
       summary: List executions
       description: Get list of workflow executions
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Executions retrieved successfully
@@ -286,7 +286,7 @@ paths:
       summary: Get execution by ID
       description: Get details of a specific execution
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: execution_id
           in: path
@@ -303,7 +303,7 @@ paths:
       summary: Get Orborus status
       description: Get status of Orborus workflow executor
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Orborus status retrieved

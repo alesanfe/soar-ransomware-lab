@@ -69,7 +69,8 @@ class TestStatisticalCalculator:
     def test_calculate_statistical_metrics_returns_dict(self):
         """Test returns dictionary with expected keys"""
         result = StatisticalCalculator.calculate_statistical_metrics([1.0, 2.0, 3.0])
-        expected_keys = ['mean', 'median', 'std_dev', 'min', 'max', 'p50', 'p90', 'total_executions', 'mttr_seconds', 'mttr_minutes']
+        expected_keys = ['mean', 'median', 'std_dev', 'min', 'max', 'p50', 'p90', 'total_executions', 'mttr_seconds',
+                         'mttr_minutes']
         for key in expected_keys:
             assert key in result
 
@@ -171,3 +172,30 @@ class TestStatisticalCalculator:
         }
         result = StatisticalCalculator.calculate_execution_times(alert_steps)
         assert result == []  # Negative delta filtered out
+
+    def test_calculate_execution_times_started_passed_pairs(self):
+        """Test execution times calculation with STARTED/PASSED pairs"""
+        now = datetime.now()
+        alert_steps = {
+            'STEP 1 STARTED': [now, now + timedelta(seconds=10)],
+            'STEP 1 PASSED': [now + timedelta(seconds=5), now + timedelta(seconds=15)]
+        }
+        result = StatisticalCalculator.calculate_execution_times(alert_steps)
+        assert len(result) == 2
+        assert result[0] == 5.0
+        assert result[1] == 5.0
+
+    def test_calculate_execution_times_step1_keys_fallback(self):
+        """Test execution times calculation with step1 keys fallback"""
+        now = datetime.now()
+        alert_steps = {
+            'Sending alert': [now, now + timedelta(seconds=10), now + timedelta(seconds=20)]
+        }
+        result = StatisticalCalculator.calculate_execution_times(alert_steps)
+        assert len(result) == 2  # Inter-arrival times
+
+    def test_calculate_statistical_metrics_p90_idx_edge_case(self):
+        """Test p90 calculation with edge case where p90_idx could be negative"""
+        # This tests line 61 where p90_idx < 0 check happens
+        result = StatisticalCalculator.calculate_statistical_metrics([1.0])
+        assert result['p90'] == 1.0  # With single value, p90 should be that value

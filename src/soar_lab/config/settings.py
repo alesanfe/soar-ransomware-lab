@@ -12,7 +12,11 @@ from typing import Dict, Any, Optional
 from soar_lab.config.logging import get_logger
 
 # Load environment variables
+# Load .env first, then .env.full with override=True to ensure E2E test URLs take precedence
 load_dotenv()
+env_file = Path(__file__).parent.parent.parent.parent / '.env.full'
+if env_file.exists():
+    load_dotenv(env_file, override=True)
 
 logger = get_logger(__name__)
 
@@ -66,7 +70,7 @@ class Settings:
 
     @property
     def CORS_ORIGINS(self) -> list:
-        origins = self._config.get('cors_origins', 'http://localhost:8080,http://localhost:3000')
+        origins = self._config.get('cors_origins', 'http://localhost:8086,http://localhost:8081')
         return origins.split(",") if isinstance(origins, str) else origins
 
     @property
@@ -107,7 +111,7 @@ class Settings:
             'api_auth_secret': os.getenv('API_AUTH_SECRET'),
             'jwt_secret_key': os.getenv('JWT_SECRET_KEY'),
             'jwt_expiration_minutes': int(os.getenv('JWT_EXPIRATION_MINUTES', '60')),
-            'cors_origins': os.getenv('CORS_ORIGINS', 'http://localhost:8080,http://localhost:3000'),
+            'cors_origins': os.getenv('CORS_ORIGINS', 'http://localhost:8086,http://localhost:8081'),
             'redis_url': os.getenv('REDIS_URL'),
 
             # === Project Configuration ===
@@ -116,22 +120,22 @@ class Settings:
             # === Network Configuration ===
             'thehive_port': int(os.getenv('THEHIVE_HTTP_PORT', '9000')),
             'cortex_port': int(os.getenv('CORTEX_HTTP_PORT', '9001')),
-            'shuffle_ui_port': int(os.getenv('SHUFFLE_UI_PORT', '3001')),
+            'shuffle_ui_port': int(os.getenv('SHUFFLE_UI_PORT', '8081')),
             'shuffle_api_port': int(os.getenv('SHUFFLE_API_PORT', '5001')),
             'elasticsearch_port': int(os.getenv('ELASTICSEARCH_PORT', '9201')),
             'kibana_port': int(os.getenv('KIBANA_PORT', '15601')),
             'wazuh_api_port': int(os.getenv('WAZUH_API_PORT', '55100')),
-            'misp_port': int(os.getenv('MISP_PORT', '8082')),
+            'misp_port': int(os.getenv('MISP_PORT', '8083')),
             'http_port': int(os.getenv('HTTP_PORT', '80')),
 
             # === Service URLs (single source of truth) ===
-            'thehive_url': os.getenv('THEHIVE_URL', 'http://localhost:9000'),
+            'thehive_url': os.getenv('THEHIVE_URL', 'http://thehive:9000'),
             'cortex_url': os.getenv('CORTEX_URL', 'http://localhost:9001'),
             'shuffle_url': os.getenv('SHUFFLE_URL', 'http://localhost:5001'),
             'kibana_url': os.getenv('KIBANA_URL', 'http://localhost:15601'),
             'wazuh_url': os.getenv('WAZUH_URL', 'http://localhost:55100'),
-            'misp_url': os.getenv('MISP_URL', 'http://localhost:8082'),
-            'elasticsearch_url': os.getenv('ELASTICSEARCH_URL', 'http://localhost:9201'),
+            'misp_url': os.getenv('MISP_URL', 'http://localhost:8083'),
+            'elasticsearch_url': os.getenv('ES_URL', os.getenv('ELASTICSEARCH_URL', 'http://elasticsearch:9200')),
             'shuffle_webhook_url': os.getenv('SHUFFLE_WEBHOOK_URL', 'http://localhost:5001/api/v1/hooks'),
 
             # === Security Configuration ===
@@ -147,6 +151,8 @@ class Settings:
             'shuffle_password': os.getenv('SHUFFLE_DEFAULT_PASSWORD', ''),
             'shuffle_api_key': os.getenv('SHUFFLE_DEFAULT_APIKEY', ''),
             'misp_api_key': os.getenv('MISP_API_KEY', ''),
+            'wazuh_user': os.getenv('WAZUH_API_USERNAME', 'wazuh-wui'),
+            'wazuh_password': os.getenv('WAZUH_API_PASSWORD', ''),
 
             # === Security Tokens ===
             'siem_webhook_token': os.getenv('SIEM_WEBHOOK_TOKEN', ''),
@@ -165,6 +171,7 @@ class Settings:
             # === Logging Configuration ===
             'log_level': os.getenv('LOG_LEVEL', 'INFO'),
             'log_format': os.getenv('LOG_FORMAT', 'json'),
+            'log_dir': os.getenv('LOG_DIR', str(base_dir / 'artifacts' / 'logs' / 'soar')),
 
             # === Performance Configuration ===
             'max_concurrent_analyzers': int(os.getenv('MAX_CONCURRENT_ANALYZERS', '3')),
@@ -196,7 +203,7 @@ class Settings:
             'shuffle_container': os.getenv("SHUFFLE_CONTAINER", "soar_shuffle_backend"),
             'kibana_health_url': os.getenv("KIBANA_HEALTH_URL", "http://soar_kibana:5601/api/status"),
             'kibana_container': os.getenv("KIBANA_CONTAINER", "soar_kibana"),
-            'docs_health_url': os.getenv("DOCS_HEALTH_URL", "http://soar_docs_site:3000/"),
+            'docs_health_url': os.getenv("DOCS_HEALTH_URL", "http://soar_docs_site:8086/"),
             'docs_container': os.getenv("DOCS_CONTAINER", "soar_docs_site"),
             'api_health_url': os.getenv("API_HEALTH_URL", "http://soar_api:8000/health"),
             'api_container': os.getenv("API_CONTAINER", "soar_api"),
@@ -205,6 +212,18 @@ class Settings:
             'elasticsearch_container': os.getenv("ELASTICSEARCH_CONTAINER", "soar_elasticsearch"),
             'nginx_health_url': os.getenv("NGINX_HEALTH_URL", "http://soar_nginx:80/"),
             'nginx_container': os.getenv("NGINX_CONTAINER", "soar_nginx"),
+            'redis_health_url': os.getenv("REDIS_HEALTH_URL", "http://soar_redis:6379/"),
+            'redis_container': os.getenv("REDIS_CONTAINER", "soar_redis"),
+            'loki_health_url': os.getenv("LOKI_HEALTH_URL", "http://soar_loki:3100/ready"),
+            'loki_container': os.getenv("LOKI_CONTAINER", "soar_loki"),
+            'grafana_health_url': os.getenv("GRAFANA_HEALTH_URL", "http://soar_grafana:3000/api/health"),
+            'grafana_container': os.getenv("GRAFANA_CONTAINER", "soar_grafana"),
+            'promtail_health_url': os.getenv("PROMTAIL_HEALTH_URL", "http://soar_promtail:9080/"),
+            'promtail_container': os.getenv("PROMTAIL_CONTAINER", "soar_promtail"),
+            'misp_health_url': os.getenv("MISP_HEALTH_URL", "http://soar_misp:8083/"),
+            'misp_container': os.getenv("MISP_CONTAINER", "soar_misp"),
+            'wazuh_dashboard_health_url': os.getenv("WAZUH_DASHBOARD_HEALTH_URL", "http://soar_wazuh_dashboard:443/"),
+            'wazuh_dashboard_container': os.getenv("WAZUH_DASHBOARD_CONTAINER", "soar_wazuh_dashboard"),
         }
 
         return config
@@ -286,12 +305,35 @@ class Settings:
                 "url": self._config.get('nginx_health_url'),
                 "container": self._config.get('nginx_container'),
             },
+            "redis": {
+                "url": self._config.get('redis_health_url'),
+                "container": self._config.get('redis_container'),
+            },
+            "loki": {
+                "url": self._config.get('loki_health_url'),
+                "container": self._config.get('loki_container'),
+            },
+            "grafana": {
+                "url": self._config.get('grafana_health_url'),
+                "container": self._config.get('grafana_container'),
+            },
+            "promtail": {
+                "url": self._config.get('promtail_health_url'),
+                "container": self._config.get('promtail_container'),
+            },
+            "misp": {
+                "url": self._config.get('misp_health_url'),
+                "container": self._config.get('misp_container'),
+            },
+            "wazuh-dashboard": {
+                "url": self._config.get('wazuh_dashboard_health_url'),
+                "container": self._config.get('wazuh_dashboard_container'),
+            },
         }
 
     def get_webhook_url(self) -> str:
         """Get Shuffle webhook URL"""
-        services = self.get_service_urls()
-        return f"{services['shuffle-backend']['url']}/api/v1/webhooks/siem"
+        return self._config.get('shuffle_webhook_url', 'http://localhost:5001/api/v1/hooks')
 
     def __str__(self) -> str:
         """String representation of configuration"""

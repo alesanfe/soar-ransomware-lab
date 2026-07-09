@@ -10,6 +10,7 @@
 | Shuffle UI     | http://localhost:8081  | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` |
 | MISP           | http://localhost:8083  | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD`              |
 | Grafana        | http://localhost:8084  | `admin` / `GrafanaLab2024Secure`                        |
+| Docs Site      | http://localhost:8086  | Sin autenticación                                        |
 | TheHive        | http://localhost:19000 | `THEHIVE_ADMIN_USER` / `THEHIVE_ADMIN_PASSWORD`        |
 | Cortex         | http://localhost:19001 | `CORTEX_ADMIN_USER` / `CORTEX_ADMIN_PASSWORD`          |
 | Kibana/Wazuh   | http://localhost:15601 | `admin` / `WAZUH_API_PASSWORD`                          |

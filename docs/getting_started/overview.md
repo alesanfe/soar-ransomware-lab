@@ -3,37 +3,37 @@
 ## Índice
 
 - [1. Resumen](#1-resumen)
-  - [1.1 Objetivo](#11-objetivo)
-  - [1.2 Contexto](#12-contexto)
+    - [1.1 Objetivo](#11-objetivo)
+    - [1.2 Contexto](#12-contexto)
 - [2. Alcance](#2-alcance)
-  - [2.1 Qué cubre](#21-qué-cubre)
-  - [2.2 Límites](#22-límites)
-  - [2.3 Dependencias](#23-dependencias)
+    - [2.1 Qué cubre](#21-qué-cubre)
+    - [2.2 Límites](#22-límites)
+    - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
-  - [3.1 Propósito del laboratorio](#31-propósito-del-laboratorio)
-  - [3.2 Componentes principales](#32-componentes-principales)
-    - [3.2.1 Plataformas SOAR](#321-plataformas-soar)
-    - [3.2.2 Servicios de soporte](#322-servicios-de-soporte)
-    - [3.2.3 Infraestructura](#323-infraestructura)
-  - [3.3 Casos de uso](#33-casos-de-uso)
-    - [3.3.1 Respuesta a incidentes](#331-respuesta-a-incidentes)
-    - [3.3.2 Análisis de amenazas](#332-análisis-de-amenazas)
-    - [3.3.3 Validación y aprendizaje](#333-validación-y-aprendizaje)
-  - [3.4 Requisitos](#34-requisitos)
-    - [3.4.1 Requisitos de hardware](#341-requisitos-de-hardware)
-    - [3.4.2 Requisitos de software](#342-requisitos-de-software)
-  - [3.5 Arquitectura de alto nivel](#35-arquitectura-de-alto-nivel)
-    - [3.5.1 Modelo de despliegue](#351-modelo-de-despliegue)
-    - [3.5.2 Redes y comunicación](#352-redes-y-comunicación)
-    - [3.5.3 Persistencia y almacenamiento](#353-persistencia-y-almacenamiento)
+    - [3.1 Propósito del laboratorio](#31-propósito-del-laboratorio)
+    - [3.2 Componentes principales](#32-componentes-principales)
+        - [3.2.1 Plataformas SOAR](#321-plataformas-soar)
+        - [3.2.2 Servicios de soporte](#322-servicios-de-soporte)
+        - [3.2.3 Infraestructura](#323-infraestructura)
+    - [3.3 Casos de uso](#33-casos-de-uso)
+        - [3.3.1 Respuesta a incidentes](#331-respuesta-a-incidentes)
+        - [3.3.2 Análisis de amenazas](#332-análisis-de-amenazas)
+        - [3.3.3 Validación y aprendizaje](#333-validación-y-aprendizaje)
+    - [3.4 Requisitos](#34-requisitos)
+        - [3.4.1 Requisitos de hardware](#341-requisitos-de-hardware)
+        - [3.4.2 Requisitos de software](#342-requisitos-de-software)
+    - [3.5 Arquitectura de alto nivel](#35-arquitectura-de-alto-nivel)
+        - [3.5.1 Modelo de despliegue](#351-modelo-de-despliegue)
+        - [3.5.2 Redes y comunicación](#352-redes-y-comunicación)
+        - [3.5.3 Persistencia y almacenamiento](#353-persistencia-y-almacenamiento)
 - [4. Validación](#4-validación)
-  - [4.1 Verificación](#41-verificación)
-  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
-  - [4.3 Evidencias](#43-evidencias)
+    - [4.1 Verificación](#41-verificación)
+    - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+    - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
-  - [5.1 Limitaciones](#51-limitaciones)
-  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
+    - [5.1 Limitaciones](#51-limitaciones)
+    - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+    - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -42,17 +42,21 @@
 
 ### 1.1 Objetivo
 
-Este documento proporciona una visión general del SOAR Ransomware Lab, un laboratorio mínimo viable (MSV) diseñado para la respuesta automatizada ante incidentes de ransomware.
+Este documento proporciona una visión general del SOAR Ransomware Lab, un laboratorio mínimo viable (MSV) diseñado para
+la respuesta automatizada ante incidentes de ransomware.
 
 ### 1.2 Contexto
 
-El laboratorio SOAR Ransomware Lab integra múltiples herramientas de seguridad orquestación (SOAR), gestión de casos (TheHive), análisis de amenazas (Cortex), e inteligencia de amenazas (MISP) para automatizar la respuesta ante incidentes de ransomware en un entorno controlado y seguro.
+El laboratorio SOAR Ransomware Lab integra múltiples herramientas de seguridad orquestación (SOAR), gestión de casos (
+TheHive), análisis de amenazas (Cortex), e inteligencia de amenazas (MISP) para automatizar la respuesta ante incidentes
+de ransomware en un entorno controlado y seguro.
 
 ## 2. Alcance
 
 ### 2.1 Qué cubre
 
 Este documento cubre:
+
 - Propósito y objetivos del laboratorio
 - Componentes principales y su función
 - Casos de uso típicos
@@ -62,6 +66,7 @@ Este documento cubre:
 ### 2.2 Límites
 
 Este documento es una visión general y no cubre:
+
 - Detalle de configuración (ver [installation_guide.md](installation_guide.md))
 - Guía de usuario detallada (ver [user_guide.md](user_guide.md))
 - Arquitectura técnica detallada (ver [architecture/overview.md](../architecture/overview.md))
@@ -69,6 +74,7 @@ Este documento es una visión general y no cubre:
 ### 2.3 Dependencias
 
 Este documento depende de:
+
 - [installation_guide.md](installation_guide.md) - Guía de instalación
 - [user_guide.md](user_guide.md) - Guía de usuario
 - [architecture/overview.md](../architecture/overview.md) - Arquitectura detallada
@@ -78,6 +84,7 @@ Este documento depende de:
 ### 3.1 Propósito del laboratorio
 
 El SOAR Ransomware Lab tiene como propósito principal:
+
 - **Automatización**: Orquestar respuestas automatizadas ante incidentes de ransomware
 - **Validación**: Validar la integración de herramientas SOAR en un entorno controlado
 - **Aprendizaje**: Proporcionar un entorno educativo para aprender sobre SOAR y respuesta a incidentes
@@ -105,9 +112,9 @@ El laboratorio integra los siguientes componentes principales:
 - **MariaDB**: Base de datos para MISP
 - **Nginx**: Reverse proxy
 - **Elasticsearch**: Motor de búsqueda y almacenamiento (compartido por TheHive, Shuffle, Kibana)
-- **Grafana**: Visualización de métricas y logs
-- **Loki**: Agregación de logs centralizada
-- **Promtail**: Recolector de logs
+- **Grafana**: Dashboards de logging centralizado
+- **Loki**: Agregación de logs
+- **Promtail**: Recopilación de logs
 
 ### 3.3 Casos de uso
 
@@ -171,6 +178,7 @@ El laboratorio sigue una arquitectura basada en contenedores Docker con las sigu
 ### 4.1 Verificación
 
 El laboratorio se considera funcional cuando:
+
 - Todos los servicios se inician correctamente
 - Los health checks reportan estado healthy
 - Los servicios son accesibles en sus puertos esperados
@@ -179,6 +187,7 @@ El laboratorio se considera funcional cuando:
 ### 4.2 Criterios de aceptación
 
 El laboratorio se considera aceptado cuando:
+
 - El playbook E2E se ejecuta en ≤ 180s (p90)
 - Todos los servicios son accesibles y funcionales
 - Las métricas de rendimiento cumplen los umbrales establecidos
@@ -187,6 +196,7 @@ El laboratorio se considera aceptado cuando:
 ### 4.3 Evidencias
 
 Las evidencias de funcionamiento incluyen:
+
 - Logs de contenedores sin errores críticos
 - Ejecuciones de workflows exitosas en Shuffle
 - Casos creados en TheHive
@@ -198,6 +208,7 @@ Las evidencias de funcionamiento incluyen:
 ### 5.1 Limitaciones
 
 **Limitaciones del Entorno:**
+
 - Single-host: No soporta alta disponibilidad
 - Recursos limitados: Depende de recursos del host
 - Simulación: Usa componentes simulados para algunas integraciones
@@ -205,6 +216,7 @@ Las evidencias de funcionamiento incluyen:
 ### 5.2 Riesgos o incidencias
 
 **Riesgos de Seguridad:**
+
 - Uso de contraseñas predeterminadas que deben cambiarse
 - Exposición de servicios en puertos conocidos
 - Necesidad de hardening adicional para producción
@@ -212,6 +224,7 @@ Las evidencias de funcionamiento incluyen:
 ### 5.3 Recomendaciones / troubleshooting
 
 **Recomendaciones:**
+
 - Cambiar todas las contraseñas predeterminadas
 - Usar en entornos aislados o de prueba
 - No desplegar en producción sin hardening adicional

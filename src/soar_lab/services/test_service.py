@@ -12,6 +12,8 @@ logger = get_logger(__name__)
 class TestService:
     """Service class for test operations with injected dependencies."""
 
+    __test__ = False
+
     def __init__(self, runner: TestRunner, parser: TestResultParserInterface):
         self.runner = runner
         if not parser:
@@ -68,7 +70,10 @@ class TestService:
         Raises:
             ValueError: If category is invalid
         """
-        allowed_categories = ['unit', 'integration', 'e2e', 'all']
+        allowed_categories = [
+            'unit', 'integration', 'e2e', 'atomic',
+            'performance', 'security', 'smoke', 'all',
+        ]
         if category not in allowed_categories:
             raise ValueError(f"Invalid test category: {category}")
 

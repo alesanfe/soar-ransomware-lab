@@ -4,20 +4,20 @@ Unit tests for api/models.py
 Tests Pydantic models for SOAR Lab API
 """
 
+import json
 import pytest
 from datetime import datetime
 from fastapi import Response
-import json
 
 from soar_lab.api.models import (
     LoginRequest,
     LoginResponse,
     VerifyAuthResponse,
-    TestRequest,
+    RunRequest,
     BackupRequest,
     ServiceStatus,
     Metrics,
-    TestResults,
+    RunResults,
     CoverageData,
     BackupInfo,
     BackupListResponse,
@@ -71,24 +71,24 @@ class TestVerifyAuthResponse:
         assert response.user == {"username": "admin"}
 
 
-class TestTestRequest:
-    """Test TestRequest model"""
+class TestRunRequest:
+    """Test RunRequest model"""
 
     def test_valid_test_request(self):
         """Test valid test request"""
-        request = TestRequest(category="unit")
+        request = RunRequest(category="unit")
         assert request.category == "unit"
 
     def test_test_request_all_categories(self):
         """Test all allowed categories"""
-        for category in ['unit', 'integration', 'e2e', 'all']:
-            request = TestRequest(category=category)
+        for category in ['unit', 'integration', 'e2e', 'atomic', 'performance', 'security', 'smoke', 'all']:
+            request = RunRequest(category=category)
             assert request.category == category
 
     def test_test_request_invalid_category(self):
         """Test invalid category raises validation error"""
         with pytest.raises(ValueError, match="Category must be one of"):
-            TestRequest(category="invalid")
+            RunRequest(category="invalid")
 
 
 class TestBackupRequest:
@@ -144,12 +144,12 @@ class TestMetrics:
         assert metrics.timestamp == datetime(2024, 1, 1, 12, 0, 0)
 
 
-class TestTestResults:
-    """Test TestResults model"""
+class TestRunResults:
+    """Test RunResults model"""
 
     def test_valid_test_results(self):
         """Test valid test results"""
-        results = TestResults(
+        results = RunResults(
             category="unit",
             passed=10,
             failed=2,
@@ -220,8 +220,8 @@ class TestCreateBackupResponse:
 
     def test_valid_create_backup_response(self):
         """Test valid create backup response"""
-        response = CreateBackupResponse(filename="backup.tar.gz", message="Backup created")
-        assert response.filename == "backup.tar.gz"
+        response = CreateBackupResponse(backup_name="backup.tar.gz", status="success", message="Backup created")
+        assert response.backup_name == "backup.tar.gz"
         assert response.message == "Backup created"
 
 

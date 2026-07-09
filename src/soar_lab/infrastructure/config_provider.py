@@ -5,7 +5,7 @@ wrapping the existing Settings class to provide configuration through
 dependency injection instead of global access.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from soar_lab.config.settings import Settings
 
@@ -43,17 +43,24 @@ class InfrastructureConfigProvider:
         Returns:
             Configuration value or default
         """
-        # Try to get from Settings object (single source of truth)
+        # Try to get from Settings object attribute (single source of truth)
         if hasattr(self._settings, key):
             return getattr(self._settings, key)
 
+        # Fall back to Settings._config dict for lowercase keys (e.g. 'web_ui_user')
+        cfg = getattr(self._settings, '_config', None)
+        if isinstance(cfg, dict) and key in cfg:
+            return self._settings._config[key]
+
         return default
 
-    def get_service_urls(self) -> Dict[str, str]:
+    def get_service_urls(self) -> Dict[str, Any]:
         """
         Get service URLs configuration.
 
         Returns:
-            Dict mapping service names to their health check URLs
+            Dict mapping service names to their health check URLs and container names
         """
-        return self._settings.SERVICES if hasattr(self._settings, 'SERVICES') else {}
+        if hasattr(self._settings, 'get_service_urls'):
+            return self._settings.get_service_urls()
+        return {}

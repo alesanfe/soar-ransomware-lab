@@ -2,191 +2,206 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>API de Kibana - Documentación</title>
-    <link rel="stylesheet" href="styles.css">
+    <link href="styles.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <h1>API de Kibana</h1>
-                <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+<div class="container">
+    <header class="header">
+        <div class="header-content">
+            <h1>API de Kibana</h1>
+            <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <a class="back-link" href="index.html">← Volver al Índice</a>
+
+        <div class="service-info">
+            <h2>API de Kibana</h2>
+            <div class="meta">
+                <div class="meta-item"><strong>Contenedor:</strong> soar_kibana</div>
+                <div class="meta-item"><strong>Puerto:</strong> 15601</div>
+                <div class="meta-item"><strong>URL Base:</strong> http://localhost:15601/kibana/api</div>
+                <div class="meta-item"><strong>Documentación:</strong> <a
+                        href="https://www.elastic.co/guide/en/kibana/7.17/saved-objects-api.html"
+                        style="color: var(--primary-light);">API de Objetos Guardados de Kibana</a></div>
             </div>
-        </header>
+            <p style="color: var(--text-secondary);">Plataforma de visualización y dashboard para Elasticsearch. Kibana
+                proporciona APIs para gestionar objetos guardados, dashboards y visualizaciones.</p>
+        </div>
 
-        <main class="main-content">
-            <a href="index.html" class="back-link">← Volver al Índice</a>
+        <div class="section">
+            <h3>Conceptos y Casos de Uso</h3>
+            <p style="color: var(--text-secondary);">Kibana es una plataforma de visualización y exploración de datos
+                que trabaja con Elasticsearch para proporcionar potentes capacidades de análisis de datos:</p>
+            <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
+                <li><strong>Objetos Guardados</strong>: Objetos de Kibana que pueden guardarse y compartirse
+                    (dashboards, visualizaciones, patrones de índice, mapas, etc.). Estos se almacenan en Elasticsearch.
+                </li>
+                <li><strong>Espacios</strong>: Espacios de trabajo lógicos que permiten a múltiples equipos usar la
+                    misma instancia de Kibana con contenido y permisos aislados.
+                </li>
+                <li><strong>Búsqueda</strong>: APIs para consultar datos de Elasticsearch con soporte para KQL (Kibana
+                    Query Language) y sintaxis de consultas Lucene.
+                </li>
+                <li><strong>APIs Core</strong>: APIs de nivel de sistema para verificar el estado, capacidades y
+                    configuración de Kibana.
+                </li>
+                <li><strong>Integración con Elasticsearch</strong>: Kibana usa Elasticsearch como su almacén de datos.
+                    Todos los objetos guardados y patrones de índice se almacenan en índices de Elasticsearch.
+                </li>
+            </ul>
+        </div>
 
-            <div class="service-info">
-                <h2>API de Kibana</h2>
-                <div class="meta">
-                    <div class="meta-item"><strong>Contenedor:</strong> soar_kibana</div>
-                    <div class="meta-item"><strong>Puerto:</strong> 15601</div>
-                    <div class="meta-item"><strong>URL Base:</strong> http://localhost:15601/kibana/api</div>
-                    <div class="meta-item"><strong>Documentación:</strong> <a href="https://www.elastic.co/guide/en/kibana/7.17/saved-objects-api.html" style="color: var(--primary-light);">API de Objetos Guardados de Kibana</a></div>
+        <div class="section">
+            <h3>Objetos Guardados</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/saved_objects/_find</span>
                 </div>
-                <p style="color: var(--text-secondary);">Plataforma de visualización y dashboard para Elasticsearch. Kibana proporciona APIs para gestionar objetos guardados, dashboards y visualizaciones.</p>
+                <p class="endpoint-description">Buscar objetos guardados</p>
             </div>
-
-            <div class="section">
-                <h3>Conceptos y Casos de Uso</h3>
-                <p style="color: var(--text-secondary);">Kibana es una plataforma de visualización y exploración de datos que trabaja con Elasticsearch para proporcionar potentes capacidades de análisis de datos:</p>
-                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
-                    <li><strong>Objetos Guardados</strong>: Objetos de Kibana que pueden guardarse y compartirse (dashboards, visualizaciones, patrones de índice, mapas, etc.). Estos se almacenan en Elasticsearch.</li>
-                    <li><strong>Espacios</strong>: Espacios de trabajo lógicos que permiten a múltiples equipos usar la misma instancia de Kibana con contenido y permisos aislados.</li>
-                    <li><strong>Búsqueda</strong>: APIs para consultar datos de Elasticsearch con soporte para KQL (Kibana Query Language) y sintaxis de consultas Lucene.</li>
-                    <li><strong>APIs Core</strong>: APIs de nivel de sistema para verificar el estado, capacidades y configuración de Kibana.</li>
-                    <li><strong>Integración con Elasticsearch</strong>: Kibana usa Elasticsearch como su almacén de datos. Todos los objetos guardados y patrones de índice se almacenan en índices de Elasticsearch.</li>
-                </ul>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/saved_objects/{type}/{id}</span>
+                </div>
+                <p class="endpoint-description">Obtener objeto guardado</p>
             </div>
-
-            <div class="section">
-                <h3>Objetos Guardados</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/saved_objects/_find</span>
-                    </div>
-                    <p class="endpoint-description">Buscar objetos guardados</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/saved_objects/{type}</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/saved_objects/{type}/{id}</span>
-                    </div>
-                    <p class="endpoint-description">Obtener objeto guardado</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/saved_objects/{type}</span>
-                    </div>
-                    <p class="endpoint-description">Crear objeto guardado</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method put">PUT</span>
-                        <span class="path">/saved_objects/{type}/{id}</span>
-                    </div>
-                    <p class="endpoint-description">Actualizar objeto guardado</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method delete">DELETE</span>
-                        <span class="path">/saved_objects/{type}/{id}</span>
-                    </div>
-                    <p class="endpoint-description">Eliminar objeto guardado</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/saved_objects/_bulk_create</span>
-                    </div>
-                    <p class="endpoint-description">Crear objetos guardados en masa</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/saved_objects/_bulk_get</span>
-                    </div>
-                    <p class="endpoint-description">Obtener objetos guardados en masa</p>
-                </div>
+                <p class="endpoint-description">Crear objeto guardado</p>
             </div>
-
-            <div class="section">
-                <h3>Espacios</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/spaces/space</span>
-                    </div>
-                    <p class="endpoint-description">Listar todos los espacios</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="path">/saved_objects/{type}/{id}</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/spaces/space/{space_id}</span>
-                    </div>
-                    <p class="endpoint-description">Obtener espacio</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/spaces/space</span>
-                    </div>
-                    <p class="endpoint-description">Crear espacio</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method put">PUT</span>
-                        <span class="path">/spaces/space/{space_id}</span>
-                    </div>
-                    <p class="endpoint-description">Actualizar espacio</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method delete">DELETE</span>
-                        <span class="path">/spaces/space/{space_id}</span>
-                    </div>
-                    <p class="endpoint-description">Eliminar espacio</p>
-                </div>
+                <p class="endpoint-description">Actualizar objeto guardado</p>
             </div>
-
-            <div class="section">
-                <h3>Búsqueda</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/search</span>
-                    </div>
-                    <p class="endpoint-description">Buscar en Kibana</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/saved_objects/{type}/{id}</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/es_search</span>
-                    </div>
-                    <p class="endpoint-description">Buscar en Elasticsearch directamente</p>
-                </div>
+                <p class="endpoint-description">Eliminar objeto guardado</p>
             </div>
-
-            <div class="section">
-                <h3>Core</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/status</span>
-                    </div>
-                    <p class="endpoint-description">Obtener estado de Kibana</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/saved_objects/_bulk_create</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/capabilities</span>
-                    </div>
-                    <p class="endpoint-description">Obtener capacidades de Kibana</p>
+                <p class="endpoint-description">Crear objetos guardados en masa</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/saved_objects/_bulk_get</span>
                 </div>
+                <p class="endpoint-description">Obtener objetos guardados en masa</p>
             </div>
+        </div>
 
-            <div class="section">
-                <h3>Variables de Entorno</h3>
-                <ul class="env-list">
-                    <li><span class="env-name">WAZUH_DASHBOARD_PORT</span><span class="env-value">15601</span></li>
-                    <li><span class="env-name">ELASTIC_PASSWORD</span><span class="env-value">Contraseña de Elastic</span></li>
-                </ul>
+        <div class="section">
+            <h3>Espacios</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/spaces/space</span>
+                </div>
+                <p class="endpoint-description">Listar todos los espacios</p>
             </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/spaces/space/{space_id}</span>
+                </div>
+                <p class="endpoint-description">Obtener espacio</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/spaces/space</span>
+                </div>
+                <p class="endpoint-description">Crear espacio</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="path">/spaces/space/{space_id}</span>
+                </div>
+                <p class="endpoint-description">Actualizar espacio</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/spaces/space/{space_id}</span>
+                </div>
+                <p class="endpoint-description">Eliminar espacio</p>
+            </div>
+        </div>
 
-            <div class="section">
-                <h3>Ejemplos de Pruebas</h3>
-                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando curl</h4>
-                <pre class="code-block"># Buscar Objetos Guardados
+        <div class="section">
+            <h3>Búsqueda</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/search</span>
+                </div>
+                <p class="endpoint-description">Buscar en Kibana</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/es_search</span>
+                </div>
+                <p class="endpoint-description">Buscar en Elasticsearch directamente</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Core</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/status</span>
+                </div>
+                <p class="endpoint-description">Obtener estado de Kibana</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/capabilities</span>
+                </div>
+                <p class="endpoint-description">Obtener capacidades de Kibana</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Variables de Entorno</h3>
+            <ul class="env-list">
+                <li><span class="env-name">WAZUH_DASHBOARD_PORT</span><span class="env-value">15601</span></li>
+                <li><span class="env-name">ELASTIC_PASSWORD</span><span class="env-value">Contraseña de Elastic</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>Ejemplos de Pruebas</h3>
+            <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Usando curl</h4>
+            <pre class="code-block"># Buscar Objetos Guardados
 curl -X GET http://localhost:15601/kibana/api/saved_objects/_find</pre>
-            </div>
+        </div>
 
-        </main>
-    </div>
+    </main>
+</div>
 
-    <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

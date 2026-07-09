@@ -20,28 +20,35 @@ networks:
     name: bridge
     external: true
   soar_edge:
+    name: soar_edge
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: soar_edge
   soar_net:
+    name: soar_net
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: soar_net
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 10.100.0.0/16
   ti_net:
+    name: ti_net
     driver: bridge
     internal: true
     driver_opts:
       com.docker.network.bridge.name: ti_net
     ipam:
       config:
-        - subnet: 172.21.0.0/16
+        - subnet: 172.22.0.0/16
   logging_net:
+    name: logging_net
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: logging_net
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
 
 volumes:
   # Core SOAR volumes
@@ -91,10 +98,6 @@ volumes:
   # MISP volumes
   misp_db:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/misp/db
   misp_files:
     driver: local
     driver_opts:
@@ -211,12 +214,12 @@ services:
     volumes:
       - es_data:/usr/share/elasticsearch/data
     ports:
-      - "${ELASTICSEARCH_PORT:-9201}:9200"
+      - "${ELASTICSEARCH_PORT:-19200}:9200"
     networks:
       - soar_net
       - ti_net
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -u ${ELASTIC_USERNAME:-elastic}:${ELASTIC_PASSWORD} 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1"]
+      test: [ "CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1" ]
       interval: 30s
       timeout: 15s
       retries: 10

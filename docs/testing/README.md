@@ -100,10 +100,10 @@ tests/
 
 La suite de pruebas valida los siguientes servicios:
 
-- **Elasticsearch** (localhost:9200) - Motor de búsqueda y analytics
+- **Elasticsearch** (localhost:9201) - Motor de búsqueda y analytics
 - **TheHive** (localhost:9000) - Plataforma de respuesta a incidentes
 - **Cortex** (localhost:9001) - Motor de análisis de amenazas
-- **Shuffle** (localhost:3001) - Orquestación de workflows
+- **Shuffle** (localhost:8081) - Orquestación de workflows
 - **Kibana** (localhost:15601) - Dashboard de visualización
 - **Wazuh Manager** (localhost:55100) - Plataforma SIEM/XDR
 - **MISP** (localhost:8082) - Plataforma de inteligencia de amenazas
@@ -116,22 +116,24 @@ La suite de pruebas valida los siguientes servicios:
 
 **Nota Importante:** La estructura actual de pruebas difiere significativamente de la documentación anterior:
 
-- **tests/unit/**: 50 archivos de prueba (no 7-8 como se documentaba anteriormente)
-- **tests/atomic/**: 6 archivos de prueba
-- **tests/integration/**: 14 archivos de prueba
-- **tests/e2e/**: 8 archivos de prueba
-- **tests/performance/**: 3 archivos de prueba
+- **tests/unit/**: 37 archivos de prueba
+- **tests/atomic/**: 4 archivos de prueba
+- **tests/integration/**: 23 archivos de prueba
+- **tests/e2e/**: 3 archivos de prueba
+- **tests/performance/**: 2 archivos de prueba
 - **tests/security/**: 2 archivos de prueba
 - **tests/fixtures/**: 9 archivos de fixtures
 - **tests/runners/**: 2 archivos de ejecutores
 
 **Objetivo de Cobertura:**
+
 - El objetivo mínimo es **≥ 80% de coverage**
 - **Estado actual**: No se ha verificado recientemente si se cumple este objetivo
 - Las pruebas unitarias cubren la mayoría del código Python en `src/soar_lab/`
 - **Limitación**: No hay un reporte de coverage actual disponible en `artifacts/coverage/`
 
 **Dependencias de Pruebas:**
+
 - **Unit tests**: Usan mocks (unittest.mock) para aislar componentes. No dependen de infraestructura real.
 - **Integration tests**: Pueden requerir servicios Docker ejecutándose. Algunos usan infraestructura real.
 - **E2E tests**: Requieren el stack completo de Docker Compose ejecutándose.
@@ -146,7 +148,7 @@ make test-all
 make test-unit
 make test-atomic
 make test-integration
-make test-browser
+make test-smoke
 make test-e2e
 
 # Ejecutar con cobertura
@@ -171,6 +173,7 @@ make test-coverage
 #### Comandos de Ejecución
 
 **Ejecutar todas las pruebas:**
+
 ```bash
 make test-all
 ```
@@ -181,7 +184,7 @@ make test-all
 make test-unit
 make test-atomic
 make test-integration
-make test-browser
+make test-smoke
 make test-e2e
 ```
 
@@ -225,7 +228,9 @@ Todas las pruebas han sido corregidas y ahora están pasando. No se necesitan el
 
 ### 4.2 Criterios de Aceptación
 
-La suite de pruebas se considera exitosa cuando:\- Todas las categorías de pruebas alcanzan sus objetivos de cobertura
+La suite de pruebas se considera exitosa cuando:
+
+- Todas las categorías de pruebas alcanzan sus objetivos de cobertura
 
 - Todos los servicios del stack son validados correctamente
 - Las pruebas se ejecutan sin errores en los entornos local y CI/CD

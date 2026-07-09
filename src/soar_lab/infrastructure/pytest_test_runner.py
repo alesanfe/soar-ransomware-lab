@@ -27,19 +27,31 @@ class PytestTestRunner:
         self._path_service = path_service
         self._timeout = timeout
 
-    def run_suite(self, suite: str, coverage: bool = True) -> Dict[str, Any]:
-        """Run a test suite and return results (synchronous wrapper)."""
+    # Categories that map to a dedicated tests/ subdirectory
+    _FOLDER_CATEGORIES = {'unit', 'integration', 'e2e', 'atomic', 'performance', 'security'}
+
+    def _build_pytest_cmd(self, suite: str, coverage: bool) -> list:
+        """Build the pytest command for a given suite name."""
         base_cmd = ['python', '-m', 'pytest']
 
-        if suite == "all":
+        if suite == 'all':
             base_cmd.extend(['tests/', '-v', '--tb=short'])
-        else:
+        elif suite == 'smoke':
+            # smoke uses the pytest marker, not a separate folder
+            base_cmd.extend(['tests/', '-m', 'smoke', '-v', '--tb=short'])
+        elif suite in self._FOLDER_CATEGORIES:
             base_cmd.extend([f'tests/{suite}', '-v', '--tb=short'])
+        else:
+            raise ValueError(f"Unknown test suite: {suite}")
 
         if coverage:
             base_cmd.extend(['--cov=src/soar_lab', '--cov-report=json'])
 
-        result = asyncio.run(self._run_async(base_cmd))
+        return base_cmd
+
+    def run_suite(self, suite: str, coverage: bool = True) -> Dict[str, Any]:
+        """Run a test suite and return results (synchronous wrapper)."""
+        result = asyncio.run(self._run_async(self._build_pytest_cmd(suite, coverage)))
 
         return {
             'status': 'success' if result['returncode'] == 0 else 'error',
@@ -51,17 +63,7 @@ class PytestTestRunner:
 
     async def run_suite_async(self, suite: str, coverage: bool = True) -> Dict[str, Any]:
         """Run a test suite and return results (async version for FastAPI)."""
-        base_cmd = ['python', '-m', 'pytest']
-
-        if suite == "all":
-            base_cmd.extend(['tests/', '-v', '--tb=short'])
-        else:
-            base_cmd.extend([f'tests/{suite}', '-v', '--tb=short'])
-
-        if coverage:
-            base_cmd.extend(['--cov=src/soar_lab', '--cov-report=json'])
-
-        result = await self._run_async(base_cmd)
+        result = await self._run_async(self._build_pytest_cmd(suite, coverage))
 
         return {
             'status': 'success' if result['returncode'] == 0 else 'error',

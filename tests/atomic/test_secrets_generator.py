@@ -9,7 +9,7 @@ import string
 import unittest
 from pathlib import Path
 
-import soar_lab.services.generate_secrets as secrets_module
+import soar_lab.infrastructure.setup.generate_secrets as secrets_module
 
 
 class TestSecretsGeneratorAtomic(unittest.TestCase):
@@ -85,7 +85,8 @@ class TestSecretsGeneratorAtomic(unittest.TestCase):
         # Test API key validation - use actual generated API key format
         api_key = secrets_module.generate_api_key(32)
         result = secrets_module.validate_secret_format(api_key, 32,
-                                        "".join(c for c in string.ascii_letters + string.digits if c not in '0Ol1I'))
+                                                       "".join(c for c in string.ascii_letters + string.digits if
+                                                               c not in '0Ol1I'))
         self.assertTrue(result)
 
         # Test JWT secret validation

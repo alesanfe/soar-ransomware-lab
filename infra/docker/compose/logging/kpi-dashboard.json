@@ -1,0 +1,1158 @@
+{
+  "dashboard": {
+    "title": "SOAR KPI Dashboard",
+    "uid": "soar-kpi-main",
+    "tags": [
+      "soar",
+      "kpi",
+      "ransomware"
+    ],
+    "timezone": "browser",
+    "refresh": "1m",
+    "time": {
+      "from": "now-7d",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Alerts Processed",
+        "description": "Total alertas procesadas por el SOAR (Grafico 4.5)",
+        "type": "stat",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": []
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 5,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "MTTR Medio (s) — Grafico 4.4",
+        "description": "Mean Time To Respond: promedio de mttr_seconds en ES. Umbral: p50<=120s",
+        "type": "stat",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "avg",
+                "field": "mttr_seconds"
+              }
+            ],
+            "bucketAggs": []
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1,
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 60
+                },
+                {
+                  "color": "red",
+                  "value": 120
+                }
+              ]
+            },
+            "color": {
+              "mode": "thresholds"
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 5,
+          "x": 5,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Alertas Criticas (severity=3)",
+        "description": "Grafico 4.5: conteo de alertas con severity=3",
+        "type": "stat",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "severity:3",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": []
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 50
+                },
+                {
+                  "color": "red",
+                  "value": 100
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 5,
+          "x": 10,
+          "y": 0
+        }
+      },
+      {
+        "id": 8,
+        "title": "MTTR p50 (Mediana) — Grafico 4.4",
+        "description": "Percentil 50 del MTTR. Objetivo doc: p50 <= 120s",
+        "type": "stat",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "percentiles",
+                "field": "mttr_seconds",
+                "settings": {
+                  "percents": [
+                    "50"
+                  ]
+                }
+              }
+            ],
+            "bucketAggs": []
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1,
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 60
+                },
+                {
+                  "color": "red",
+                  "value": 120
+                }
+              ]
+            },
+            "color": {
+              "mode": "thresholds"
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 15,
+          "y": 0
+        }
+      },
+      {
+        "id": 9,
+        "title": "MTTR p90 — Grafico 4.4",
+        "description": "Percentil 90 del MTTR. Objetivo doc: p90 <= 180s",
+        "type": "stat",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "percentiles",
+                "field": "mttr_seconds",
+                "settings": {
+                  "percents": [
+                    "90"
+                  ]
+                }
+              }
+            ],
+            "bucketAggs": []
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1,
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 120
+                },
+                {
+                  "color": "red",
+                  "value": 180
+                }
+              ]
+            },
+            "color": {
+              "mode": "thresholds"
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 5,
+          "x": 19,
+          "y": 0
+        }
+      },
+      {
+        "id": 5,
+        "title": "Grafico 4.4 — Analisis de Percentiles MTTR (distribucion completa)",
+        "description": "Muestra p50, p75, p90, p95, max. Reduccion: SOAR p50=17s vs manual estimado 138s (-87%)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "P50",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "p50 (mediana)",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "percentiles",
+                "field": "mttr_seconds",
+                "settings": {
+                  "percents": [
+                    "50"
+                  ]
+                }
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1"
+                }
+              }
+            ]
+          },
+          {
+            "refId": "P90",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "p90",
+            "metrics": [
+              {
+                "id": "3",
+                "type": "percentiles",
+                "field": "mttr_seconds",
+                "settings": {
+                  "percents": [
+                    "90"
+                  ]
+                }
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "4",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1"
+                }
+              }
+            ]
+          },
+          {
+            "refId": "P95",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "p95",
+            "metrics": [
+              {
+                "id": "5",
+                "type": "percentiles",
+                "field": "mttr_seconds",
+                "settings": {
+                  "percents": [
+                    "95"
+                  ]
+                }
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "6",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1"
+                }
+              }
+            ]
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        }
+      },
+      {
+        "id": 10,
+        "title": "Grafico 5.3 — Evolucion MTTR (tendencia diaria)",
+        "description": "Evolucion temporal del MTTR promedio por dia. Refleja mejoras del sistema.",
+        "type": "timeseries",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "MTTR medio (s)",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "avg",
+                "field": "mttr_seconds"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1",
+                  "trimEdges": "0"
+                }
+              }
+            ]
+          },
+          {
+            "refId": "B",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "Alertas/dia (throughput)",
+            "metrics": [
+              {
+                "id": "3",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "4",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1"
+                }
+              }
+            ]
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Alertas/dia (throughput)"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "custom.axisPlacement",
+                  "value": "right"
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        }
+      },
+      {
+        "id": 4,
+        "title": "Grafico 4.5 — Tasa de Exito por Tipo de Alerta",
+        "description": "Distribucion de alertas por tipo (ransomware, benign, edge-case). SOAR: 100% exito",
+        "type": "piechart",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "alert_type",
+                "settings": {
+                  "size": "10",
+                  "order": "desc",
+                  "orderBy": "1"
+                }
+              }
+            ]
+          }
+        ],
+        "options": {
+          "pieType": "donut",
+          "legend": {
+            "displayMode": "list",
+            "placement": "right"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 12
+        }
+      },
+      {
+        "id": 7,
+        "title": "Grafico 4.3 — Alertas por Severidad (distribucion SOAR)",
+        "description": "Desglose por severidad: 1=Low, 2=Medium, 3=Critical. Refleja la distribucion de riesgo.",
+        "type": "barchart",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "severity",
+                "settings": {
+                  "size": "5",
+                  "order": "asc",
+                  "orderBy": "_term"
+                }
+              }
+            ]
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byValue",
+                "options": {
+                  "op": "gte",
+                  "value": 1
+                }
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "green"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "3"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "red"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 12
+        }
+      },
+      {
+        "id": 6,
+        "title": "Grafico 4.5 — Tasa de Exito Servicios (TheHive / Cortex / MISP / Wazuh)",
+        "description": "Porcentaje de alertas con caso creado en TheHive (100% = SOAR sin errores)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "TheHive",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "thehive_case_id:*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "TheHive OK",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1"
+                }
+              }
+            ]
+          },
+          {
+            "refId": "Cortex",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "cortex_hash_job:* OR cortex_ip_job:*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "Cortex OK",
+            "metrics": [
+              {
+                "id": "3",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "4",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1"
+                }
+              }
+            ]
+          },
+          {
+            "refId": "MISP",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "misp_results:*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "MISP OK",
+            "metrics": [
+              {
+                "id": "5",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "6",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1"
+                }
+              }
+            ]
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 12
+        }
+      },
+      {
+        "id": 11,
+        "title": "MTTR Max / Min — Rango de variabilidad",
+        "description": "Muestra el minimo y maximo de MTTR. Grafico 4.4: rango = max-min",
+        "type": "stat",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "MAX",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "MTTR Max",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "max",
+                "field": "mttr_seconds"
+              }
+            ],
+            "bucketAggs": []
+          },
+          {
+            "refId": "MIN",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "MTTR Min",
+            "metrics": [
+              {
+                "id": "2",
+                "type": "min",
+                "field": "mttr_seconds"
+              }
+            ],
+            "bucketAggs": []
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          },
+          "orientation": "horizontal"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        }
+      },
+      {
+        "id": 12,
+        "title": "Grafico 5.4 — Alertas procesadas por hora (throughput SOAR)",
+        "description": "Throughput de procesamiento automatizado. Refleja escalabilidad del SOAR.",
+        "type": "timeseries",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "Alertas/hora",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1h",
+                  "min_doc_count": "1"
+                }
+              }
+            ]
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        }
+      },
+      {
+        "id": 13,
+        "title": "MTTR por Tipo de Alerta",
+        "description": "Comparación de MTTR medio entre alertas maliciosas, benignas y edge-cases",
+        "type": "barchart",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "$term",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "avg",
+                "field": "mttr_seconds"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "alert_type",
+                "settings": {
+                  "order": "desc",
+                  "orderBy": "_term",
+                  "size": "10"
+                }
+              }
+            ]
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 1
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 14,
+        "title": "Tasa de Éxito por Severidad",
+        "description": "Porcentaje de alertas con caso creado en TheHive desglosado por severidad",
+        "type": "barchart",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "Severidad $term",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "bucket_script",
+                "bucketScript": {
+                  "script": "params.thehive / params.total * 100",
+                  "variables": [
+                    {
+                      "name": "thehive",
+                      "type": "metric",
+                      "id": "thehive_metric"
+                    },
+                    {
+                      "name": "total",
+                      "type": "metric",
+                      "id": "total_metric"
+                    }
+                  ]
+                }
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "terms",
+                "field": "severity",
+                "settings": {
+                  "order": "asc",
+                  "orderBy": "_term",
+                  "size": "5"
+                }
+              }
+            ]
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "min": 0,
+            "max": 100
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        }
+      },
+      {
+        "id": 15,
+        "title": "Evolución de Alertas por Tipo",
+        "description": "Evolución temporal de alertas desglosadas por tipo (maliciosas, benignas, edge-cases)",
+        "type": "timeseries",
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${DS_ELASTICSEARCH}"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "query": "*",
+            "index": "soar-metrics",
+            "timeField": "@timestamp",
+            "alias": "$term",
+            "metrics": [
+              {
+                "id": "1",
+                "type": "count"
+              }
+            ],
+            "bucketAggs": [
+              {
+                "id": "2",
+                "type": "date_histogram",
+                "field": "@timestamp",
+                "settings": {
+                  "interval": "1d",
+                  "min_doc_count": "1"
+                }
+              },
+              {
+                "id": "3",
+                "type": "terms",
+                "field": "alert_type",
+                "settings": {
+                  "order": "desc",
+                  "orderBy": "_count",
+                  "size": "10"
+                }
+              }
+            ]
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 32
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "DS_ELASTICSEARCH",
+          "type": "datasource",
+          "pluginId": "elasticsearch",
+          "label": "Elasticsearch",
+          "current": {
+            "text": "Elasticsearch",
+            "value": "Elasticsearch"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "multi": false,
+          "options": [],
+          "query": "elasticsearch",
+          "refresh": 1
+        }
+      ]
+    }
+  },
+  "overwrite": true,
+  "folderId": 0
+}

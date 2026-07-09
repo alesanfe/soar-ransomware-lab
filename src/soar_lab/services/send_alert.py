@@ -43,13 +43,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--webhook-url",
-        default=os.environ.get("SHUFFLE_WEBHOOK_URL", "http://localhost:5001/api/v1/hooks/webhook"),
-        help="Webhook URL (default: SHUFFLE_WEBHOOK_URL env var or localhost:5001)",
+        default=os.environ.get("SHUFFLE_WEBHOOK_URL", "http://soar_shuffle_frontend/api/v1/hooks/webhook"),
+        help="Webhook URL (default: SHUFFLE_WEBHOOK_URL env var or soar_shuffle_frontend)",
     )
     parser.add_argument(
         "--api-token",
-        default=os.environ.get("SHUFFLE_API_TOKEN", "SiemToken123!@#"),
-        help="API token (default: SHUFFLE_API_TOKEN env var or SiemToken123!@#)",
+        default=os.environ.get("SIEM_WEBHOOK_TOKEN", os.environ.get("SHUFFLE_API_TOKEN", "")),
+        help="API token (default: SIEM_WEBHOOK_TOKEN env var, then SHUFFLE_API_TOKEN)",
     )
     args = parser.parse_args()
 
@@ -85,16 +85,16 @@ def main() -> None:
 
     for i in range(num_alerts):
         if alert_type == "malicious":
-            alert = alert_generator.generate_malicious_alert()
+            alert = alert_generator.generate_malicious()
         else:
-            alert = alert_generator.generate_benign_alert()
+            alert = alert_generator.generate_benign()
 
         result = sender.send(alert)
 
         if result.get("success"):
-            print(f"[{i+1}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
+            print(f"[{i + 1}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
         else:
-            print(f"[{i+1}/{num_alerts}] Failed to send alert: {result.get('error', 'Unknown error')}")
+            print(f"[{i + 1}/{num_alerts}] Failed to send alert: {result.get('error', 'Unknown error')}")
             sys.exit(1)
 
         if i < num_alerts - 1 and args.delay > 0:

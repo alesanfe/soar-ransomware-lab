@@ -35,11 +35,11 @@ class TestCortexHealth:
 @pytest.mark.integration
 class TestCortexAnalyzers:
     def test_list_analyzers_returns_list(self, cortex_client):
-        with patch.object(cortex_client._session, 'get') as mock_get:
+        with patch.object(cortex_client._session, 'post') as mock_post:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = []
-            mock_get.return_value = mock_response
+            mock_post.return_value = mock_response
             analyzers = cortex_client.list_analyzers()
             assert isinstance(analyzers, list)
 

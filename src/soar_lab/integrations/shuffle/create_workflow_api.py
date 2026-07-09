@@ -8,7 +8,7 @@ SH = 'http://localhost:5001'
 
 # Login
 s = requests.Session()
-r = s.post(f'{SH}/api/v1/users/login', json={'username': 'admin', 'password': 'ShuffleSecurePassword456!@#'},
+r = s.post(f'{SH}/api/v1/users/login', json={'username': 'admin', 'password': 'R3x#7mP9$vK4@nQ2tW8!zY5&hF1sD3'},
            timeout=10)
 print('Login:', r.status_code)
 if r.status_code != 200:

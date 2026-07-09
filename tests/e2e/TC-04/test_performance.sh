@@ -26,7 +26,7 @@ warn() {
 # Test 1: Single alert latency
 log "=== Test 1: Single alert latency ==="
 START=$(date +%s%N)
-python3 ../scripts/send_alert.py --type malicious --single
+python3 -m soar_lab.services.send_alert --type malicious --single
 END=$(date +%s%N)
 LATENCY=$(( (END - START) / 1000000 ))
 log "Single alert latency: ${LATENCY}ms"
@@ -40,7 +40,7 @@ fi
 log "=== Test 2: Concurrent alerts (10 in parallel) ==="
 START=$(date +%s%N)
 for i in {1..10}; do
-    python3 ../scripts/send_alert.py --type malicious --single &
+    python3 -m soar_lab.services.send_alert --type malicious --single &
 done
 wait
 END=$(date +%s%N)
@@ -52,7 +52,7 @@ log "Average latency per alert: ${AVG_LATENCY}ms"
 # Test 3: Sequential batch
 log "=== Test 3: Sequential batch (20 alerts) ==="
 START=$(date +%s%N)
-python3 ../scripts/send_alert.py --type malicious --num-alerts 20 --delay 0.5
+python3 -m soar_lab.services.send_alert --type malicious --num-alerts 20 --delay 0.5
 END=$(date +%s%N)
 TOTAL_TIME=$(( (END - START) / 1000000 ))
 log "20 sequential alerts completed in ${TOTAL_TIME}ms"
@@ -91,7 +91,7 @@ for i in {1..100}; do
 done
 
 START=$(date +%s%N)
-python3 ../scripts/calc_kpis.py
+python3 -m soar_lab.data.calc_kpis
 END=$(date +%s%N)
 CALC_TIME=$(( (END - START) / 1000000 ))
 log "KPI calculation for 100 entries: ${CALC_TIME}ms"

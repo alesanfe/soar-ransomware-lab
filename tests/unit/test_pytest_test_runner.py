@@ -3,13 +3,15 @@
 Unit tests for pytest_test_runner.py
 """
 
+import asyncio
+import json
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock
-import json
-import asyncio
 
 from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner
+
+pytestmark = pytest.mark.filterwarnings("ignore::RuntimeWarning")
 
 
 class TestPytestTestRunner:
@@ -19,9 +21,9 @@ class TestPytestTestRunner:
         """Test successful initialization"""
         repo_root = Path("/test/repo")
         mock_path_service = Mock()
-        
+
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         assert runner._repo_root == repo_root
         assert runner._path_service == mock_path_service
         assert runner._timeout == 300
@@ -30,9 +32,9 @@ class TestPytestTestRunner:
         """Test initialization with custom timeout"""
         repo_root = Path("/test/repo")
         mock_path_service = Mock()
-        
+
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service, timeout=600)
-        
+
         assert runner._timeout == 600
 
     def test_requires_repo_root(self):
@@ -57,9 +59,9 @@ class TestPytestTestRunner:
             'duration': 5.0
         }
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         result = runner.run_suite('all', coverage=False)
-        
+
         assert result['status'] == 'success'
         assert result['output'] == 'test output'
         assert result['duration'] == 5.0
@@ -76,9 +78,9 @@ class TestPytestTestRunner:
             'duration': 5.0
         }
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         result = runner.run_suite('unit', coverage=False)
-        
+
         assert result['status'] == 'success'
 
     @patch('soar_lab.infrastructure.pytest_test_runner.asyncio.run')
@@ -93,9 +95,9 @@ class TestPytestTestRunner:
             'duration': 5.0
         }
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         result = runner.run_suite('unit', coverage=True)
-        
+
         assert result['status'] == 'success'
 
     @patch('soar_lab.infrastructure.pytest_test_runner.asyncio.run')
@@ -110,9 +112,9 @@ class TestPytestTestRunner:
             'duration': 5.0
         }
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         result = runner.run_suite('unit', coverage=False)
-        
+
         assert result['status'] == 'error'
         assert result['returncode'] == 1
         assert result['error'] == 'error message'
@@ -125,9 +127,9 @@ class TestPytestTestRunner:
         mock_coverage_file.exists.return_value = False
         mock_path_service.coverage_file = mock_coverage_file
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         result = runner.get_coverage()
-        
+
         assert result == {"unit": 0, "integration": 0, "overall": 0}
 
     @patch('builtins.open')
@@ -138,18 +140,18 @@ class TestPytestTestRunner:
         mock_coverage_file = Mock()
         mock_coverage_file.exists.return_value = True
         mock_path_service.coverage_file = mock_coverage_file
-        
+
         coverage_data = {
             'totals': {
                 'percent_covered': 85.5
             }
         }
         mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_data)
-        
+
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         result = runner.get_coverage()
-        
+
         assert result["unit"] == 85.5
         assert result["overall"] == 85.5
         assert result["integration"] == 0
@@ -162,14 +164,14 @@ class TestPytestTestRunner:
         mock_coverage_file = Mock()
         mock_coverage_file.exists.return_value = True
         mock_path_service.coverage_file = mock_coverage_file
-        
+
         coverage_data = {}
         mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(coverage_data)
-        
+
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         result = runner.get_coverage()
-        
+
         assert result["unit"] == 0
         assert result["overall"] == 0
 
@@ -180,14 +182,14 @@ class TestPytestTestRunner:
         repo_root = Path("/test/repo")
         mock_path_service = Mock()
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
-        
+
         mock_proc = AsyncMock()
         mock_proc.returncode = 0
         mock_proc.communicate.return_value = (b'test output', b'')
         mock_subprocess_exec.return_value = mock_proc
-        
+
         result = await runner._run_async(['python', '-m', 'pytest'])
-        
+
         assert result['returncode'] == 0
         assert result['stdout'] == 'test output'
         assert result['duration'] >= 0
@@ -199,12 +201,12 @@ class TestPytestTestRunner:
         repo_root = Path("/test/repo")
         mock_path_service = Mock()
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service, timeout=1)
-        
+
         mock_proc = AsyncMock()
         mock_proc.communicate.side_effect = asyncio.TimeoutError()
         mock_subprocess_exec.return_value = mock_proc
-        
+
         result = await runner._run_async(['python', '-m', 'pytest'])
-        
+
         assert result['returncode'] == -1
         assert 'Timeout' in result['stderr']
