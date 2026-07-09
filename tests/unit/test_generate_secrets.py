@@ -4,10 +4,10 @@ Unit tests for generate_secrets.py
 """
 
 import pytest
-from unittest.mock import Mock
 import string
+from unittest.mock import Mock
 
-from soar_lab.services.generate_secrets import SecretGeneratorService
+from soar_lab.infrastructure.setup.generate_secrets import SecretGeneratorService
 
 
 class TestSecretGeneratorService:

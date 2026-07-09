@@ -33,7 +33,7 @@ paths:
       summary: Create an alert
       description: Create a new alert in TheHive
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -73,7 +73,7 @@ paths:
       summary: Get alert by ID
       description: Retrieve a specific alert
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: alert_id
           in: path
@@ -90,7 +90,7 @@ paths:
       summary: Search alerts
       description: Search for alerts with filters
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -116,7 +116,7 @@ paths:
       summary: Mark alert as read
       description: Mark an alert as read
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: alert_id
           in: path
@@ -133,7 +133,7 @@ paths:
       summary: List all cases
       description: Get list of all cases
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Cases retrieved successfully
@@ -143,7 +143,7 @@ paths:
       summary: Create a case
       description: Create a new case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -160,7 +160,7 @@ paths:
                   type: string
                 severity:
                   type: integer
-                  enum: [1, 2, 3, 4]
+                  enum: [ 1, 2, 3, 4 ]
                 tags:
                   type: array
                   items:
@@ -175,7 +175,7 @@ paths:
       summary: Get case by ID
       description: Retrieve a specific case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -191,7 +191,7 @@ paths:
       summary: Update a case
       description: Update case information
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -223,7 +223,7 @@ paths:
       summary: List case templates
       description: Get list of available case templates
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Case templates retrieved
@@ -234,7 +234,7 @@ paths:
       summary: Create case from template
       description: Create a new case from a template
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: template_id
           in: path
@@ -262,7 +262,7 @@ paths:
       summary: List custom fields
       description: Get custom fields for a case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -278,7 +278,7 @@ paths:
       summary: Update custom fields
       description: Update custom fields for a case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -301,7 +301,7 @@ paths:
       summary: Share case with MISP
       description: Export case to MISP
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -318,7 +318,7 @@ paths:
       summary: List observables
       description: Get observables for a case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -334,7 +334,7 @@ paths:
       summary: Add observable
       description: Add an observable to a case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -371,7 +371,7 @@ paths:
       summary: Delete observable
       description: Delete an observable from a case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -393,7 +393,7 @@ paths:
       summary: Mark observable as IOC
       description: Mark an observable as IOC
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -425,7 +425,7 @@ paths:
       summary: List tasks
       description: Get tasks for a case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -441,7 +441,7 @@ paths:
       summary: Create a task
       description: Create a new task for a case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -463,7 +463,7 @@ paths:
                   type: string
                 status:
                   type: string
-                  enum: [Waiting, InProgress, Completed, Cancelled]
+                  enum: [ Waiting, InProgress, Completed, Cancelled ]
       responses:
         '201':
           description: Task created
@@ -474,7 +474,7 @@ paths:
       summary: Update a task
       description: Update task information
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -508,7 +508,7 @@ paths:
       summary: Delete a task
       description: Delete a task from a case
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: case_id
           in: path
@@ -530,7 +530,7 @@ paths:
       summary: Get case template
       description: Retrieve a specific case template
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: template_id
           in: path

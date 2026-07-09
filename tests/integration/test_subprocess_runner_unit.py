@@ -149,7 +149,6 @@ class TestSubprocessRunner:
         assert result.returncode == -1
         assert "Unexpected error" in result.stderr
 
-
     @pytest.mark.asyncio
     @patch('asyncio.create_subprocess_exec')
     async def test_run_async_success(self, mock_subprocess_exec):
@@ -232,7 +231,7 @@ class TestSubprocessRunner:
         mock_subprocess_exec.return_value = mock_proc
 
         runner = SubprocessRunner(default_timeout=300)
-        
+
         with pytest.raises(SubprocessError):
             await runner.run_async(["false"], raise_on_error=True)
 

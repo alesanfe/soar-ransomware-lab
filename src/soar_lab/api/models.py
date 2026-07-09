@@ -25,14 +25,17 @@ class VerifyAuthResponse(BaseModel):
     user: Dict[str, Any] = Field(..., description="User information")
 
 
-class TestRequest(BaseModel):
+class RunRequest(BaseModel):
     """Test execution request model."""
     category: str = Field(..., description="Test category (e.g., 'unit', 'integration', 'all')")
 
     @field_validator('category')
     @classmethod
     def validate_category(cls, v: str) -> str:
-        allowed_categories = ['unit', 'integration', 'e2e', 'all']
+        allowed_categories = [
+            'unit', 'integration', 'e2e', 'atomic',
+            'performance', 'security', 'smoke', 'all',
+        ]
         if v not in allowed_categories:
             raise ValueError(f"Category must be one of: {', '.join(allowed_categories)}")
         return v
@@ -67,7 +70,7 @@ class Metrics(BaseModel):
     timestamp: datetime = Field(..., description="Timestamp of metrics collection")
 
 
-class TestResults(BaseModel):
+class RunResults(BaseModel):
     """Test results model."""
     category: str = Field(..., description="Test category")
     passed: int = Field(..., description="Number of passed tests")
@@ -99,12 +102,15 @@ class BackupListResponse(BaseModel):
 
 class CreateBackupResponse(BaseModel):
     """Create backup response model."""
-    filename: str = Field(..., description="Created backup filename")
+    backup_name: str = Field(..., description="Created backup name")
+    status: Optional[str] = Field(default=None, description="Operation status")
     message: str = Field(..., description="Response message")
 
 
 class RestoreBackupResponse(BaseModel):
     """Restore backup response model."""
+    backup_name: Optional[str] = Field(default=None, description="Restored backup name")
+    status: Optional[str] = Field(default=None, description="Operation status")
     message: str = Field(..., description="Response message")
 
 

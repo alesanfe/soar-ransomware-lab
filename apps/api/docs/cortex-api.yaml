@@ -35,7 +35,7 @@ paths:
       summary: List all analyzers
       description: Get list of all available analyzers
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Analyzers retrieved successfully
@@ -46,7 +46,7 @@ paths:
       summary: Get analyzer by ID
       description: Get details of a specific analyzer
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: analyzer_id
           in: path
@@ -63,7 +63,7 @@ paths:
       summary: Run analyzer
       description: Execute an analyzer on an observable
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: analyzer_id
           in: path
@@ -88,7 +88,7 @@ paths:
                   example: 1.2.3.4
                 tlp:
                   type: integer
-                  enum: [0, 1, 2, 3]
+                  enum: [ 0, 1, 2, 3 ]
                   example: 2
                 message:
                   type: string
@@ -102,7 +102,7 @@ paths:
       summary: List jobs
       description: Get list of all jobs
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Jobs retrieved successfully
@@ -113,7 +113,7 @@ paths:
       summary: Get job by ID
       description: Get details of a specific job
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: job_id
           in: path
@@ -129,7 +129,7 @@ paths:
       summary: Delete job
       description: Delete a job
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: job_id
           in: path
@@ -146,7 +146,7 @@ paths:
       summary: Wait for job completion
       description: Wait for a job to complete and return the report
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: job_id
           in: path
@@ -163,7 +163,7 @@ paths:
       summary: List all responders
       description: Get list of all available responders
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Responders retrieved successfully
@@ -174,7 +174,7 @@ paths:
       summary: Get responder by ID
       description: Get details of a specific responder
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: responder_id
           in: path
@@ -191,7 +191,7 @@ paths:
       summary: Run responder
       description: Execute a responder
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: responder_id
           in: path
@@ -221,7 +221,7 @@ paths:
       summary: List users
       description: Get list of all users
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Users retrieved successfully
@@ -231,7 +231,7 @@ paths:
       summary: Create user
       description: Create a new user
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -264,7 +264,7 @@ paths:
       summary: Get user by ID
       description: Get details of a specific user
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: user_id
           in: path
@@ -281,7 +281,7 @@ paths:
       summary: List organizations
       description: Get list of all organizations
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Organizations retrieved successfully
@@ -291,7 +291,7 @@ paths:
       summary: Create organization
       description: Create a new organization
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -316,7 +316,7 @@ paths:
       summary: Get organization by ID
       description: Get details of a specific organization
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       parameters:
         - name: org_id
           in: path

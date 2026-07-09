@@ -1,6 +1,7 @@
 # Contributing to SOAR Ransomware Lab
 
-> Thank you for your interest in contributing to the SOAR Ransomware Lab project! This document provides guidelines and information for contributors.
+> Thank you for your interest in contributing to the SOAR Ransomware Lab project! This document provides guidelines and
+> information for contributors.
 
 ## Table of Contents
 
@@ -82,12 +83,14 @@ git checkout -b feature/your-feature-name
 #### VS Code
 
 Install these extensions:
+
 - Python
 - Docker
 - ShellCheck
 - Pylance
 
 Configure settings in `.vscode/settings.json`:
+
 ```json
 {
     "python.linting.enabled": true,
@@ -221,7 +224,7 @@ set -euo pipefail
 
 # Configuration
 LOG_FILE="${LOG_FILE:-./logs/example.log}"
-BACKUP_DIR="${BACKUP_DIR:-./backups}"
+BACKUP_DIR="${BACKUP_DIR:-./artifacts/backups}"
 
 # Logging function
 log() {
@@ -438,6 +441,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) specificatio
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -459,20 +463,20 @@ refactor(config): centralize configuration management
 ### Pull Request Process
 
 1. **Update Documentation**
-   - Update README if needed
-   - Add/update API documentation
-   - Update CHANGELOG
+    - Update README if needed
+    - Add/update API documentation
+    - Update CHANGELOG
 
 2. **Create Pull Request**
-   - Use descriptive title
-   - Fill out PR template
-   - Link relevant issues
+    - Use descriptive title
+    - Fill out PR template
+    - Link relevant issues
 
 3. **Requirements**
-   - All tests pass
-   - Code coverage maintained
-   - Documentation updated
-   - No breaking changes without discussion
+    - All tests pass
+    - Code coverage maintained
+    - Documentation updated
+    - No breaking changes without discussion
 
 #### PR Template
 
@@ -569,25 +573,25 @@ We follow [Semantic Versioning](https://semver.org/):
 ### Release Checklist
 
 1. **Code Quality**
-   - [ ] All tests pass
-   - [ ] Coverage requirements met
-   - [ ] No critical security issues
+    - [ ] All tests pass
+    - [ ] Coverage requirements met
+    - [ ] No critical security issues
 
 2. **Documentation**
-   - [ ] API documentation updated
-   - [ ] User guide updated
-   - [ ] CHANGELOG updated
+    - [ ] API documentation updated
+    - [ ] User guide updated
+    - [ ] CHANGELOG updated
 
 3. **Testing**
-   - [ ] Manual testing completed
-   - [ ] Integration tests verified
-   - [ ] Performance tests passed
+    - [ ] Manual testing completed
+    - [ ] Integration tests verified
+    - [ ] Performance tests passed
 
 4. **Release**
-   - [ ] Version bumped
-   - [ ] Tag created
-   - [ ] Release notes published
-   - [ ] Deployment tested
+    - [ ] Version bumped
+    - [ ] Tag created
+    - [ ] Release notes published
+    - [ ] Deployment tested
 
 ---
 
@@ -616,6 +620,7 @@ pre-commit run --all-files
 ### Pre-commit Configuration
 
 `.pre-commit-config.yaml`:
+
 ```yaml
 repos:
   - repo: https://github.com/psf/black
@@ -692,10 +697,10 @@ pytest tests/unit/test_file.py::TestClass::test_method -vvs
 1. Check the [troubleshooting guide](docs/troubleshooting.md)
 2. Search existing GitHub issues
 3. Create a new issue with:
-   - Clear description of the problem
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Environment details
+    - Clear description of the problem
+    - Steps to reproduce
+    - Expected vs actual behavior
+    - Environment details
 
 ---
 
@@ -704,6 +709,7 @@ pytest tests/unit/test_file.py::TestClass::test_method -vvs
 ### Contributors
 
 All contributors are recognized in:
+
 - README.md contributors section
 - Release notes
 - Annual contributor report

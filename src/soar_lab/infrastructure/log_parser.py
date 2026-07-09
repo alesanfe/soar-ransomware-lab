@@ -34,7 +34,17 @@ class ExecutionLogParser:
             if not line:
                 continue
 
+            # Format 1 (original): [TIMESTAMP] STEP: name
             m = re.match(r"\[(.*?)\]\sSTEP:\s(.*)", line)
+            # Format 2 (actual notify.log): [TIMESTAMP] TC-XX STEP N: description
+            if not m:
+                m = re.match(r"\[(.*?)\]\s+\S+\s+STEP\s+\d+:\s+(.*)", line)
+            # Format 3: [TIMESTAMP] TC-XX === ... STARTED/COMPLETED/PASSED
+            if not m:
+                m2 = re.match(r"\[(.*?)\]\s+\S+\s+=+\s+(TC-\d+.*?(?:STARTED|PASSED|FAILED))\s*=+", line)
+                if m2:
+                    m = m2
+
             if m:
                 try:
                     ts = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)

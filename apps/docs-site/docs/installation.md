@@ -54,17 +54,19 @@ make down
 
 ## Servicios y URLs
 
-| Servicio | URL |
-|---|---|
-| Web Management UI | http://localhost |
-| Nginx Proxy | http://localhost:8080 |
-| TheHive | http://localhost:9000 |
-| Cortex | http://localhost:9001 |
-| Shuffle | http://localhost:3001 |
-| Kibana | http://localhost:15601 |
-| MISP | http://localhost:8082 |
-| API REST | http://localhost:8000 |
-| Documentación | http://localhost:3000/docs/ |
+| Servicio          | URL                         |
+|-------------------|-----------------------------|
+| Web Management UI | http://localhost            |
+| Nginx Proxy       | http://localhost            |
+| TheHive           | http://localhost:9000       |
+| Cortex            | http://localhost:9001       |
+| Shuffle           | http://localhost:8081       |
+| Kibana            | http://localhost:15601      |
+| Grafana           | http://localhost:8084       |
+| MISP              | http://localhost:8083       |
+| API REST          | http://localhost:8000       |
+| Web Management    | http://localhost:8085       |
+| Documentación     | http://localhost:8086/docs/ |
 
 ## Notas para Windows (Docker Desktop)
 

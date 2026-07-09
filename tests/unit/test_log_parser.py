@@ -16,9 +16,9 @@ class TestExecutionLogParser:
         """Test parsing valid log content"""
         parser = ExecutionLogParser()
         log_content = "[2024-01-01 10:00:00] STEP: Alert received\n[2024-01-01 10:00:05] STEP: Containment executed"
-        
+
         result = parser.parse(log_content)
-        
+
         assert 'Alert received' in result
         assert 'Containment executed' in result
         assert len(result['Alert received']) == 1
@@ -29,18 +29,18 @@ class TestExecutionLogParser:
         """Test parsing empty log content"""
         parser = ExecutionLogParser()
         log_content = ""
-        
+
         result = parser.parse(log_content)
-        
+
         assert result == {}
 
     def test_parse_log_with_empty_lines(self):
         """Test parsing log with empty lines"""
         parser = ExecutionLogParser()
         log_content = "\n\n[2024-01-01 10:00:00] STEP: Alert received\n\n"
-        
+
         result = parser.parse(log_content)
-        
+
         assert 'Alert received' in result
         assert len(result['Alert received']) == 1
 
@@ -48,9 +48,9 @@ class TestExecutionLogParser:
         """Test parsing log with invalid timestamp (should skip)"""
         parser = ExecutionLogParser()
         log_content = "[invalid-timestamp] STEP: Alert received\n[2024-01-01 10:00:00] STEP: Containment executed"
-        
+
         result = parser.parse(log_content)
-        
+
         assert 'Alert received' not in result  # Invalid timestamp skipped
         assert 'Containment executed' in result
 
@@ -58,16 +58,16 @@ class TestExecutionLogParser:
         """Test parsing log with multiple entries for same step"""
         parser = ExecutionLogParser()
         log_content = "[2024-01-01 10:00:00] STEP: Alert received\n[2024-01-01 10:01:00] STEP: Alert received"
-        
+
         result = parser.parse(log_content)
-        
+
         assert len(result['Alert received']) == 2
 
     def test_parse_log_no_step_format(self):
         """Test parsing log without STEP format (should skip)"""
         parser = ExecutionLogParser()
         log_content = "[2024-01-01 10:00:00] Some other log line"
-        
+
         result = parser.parse(log_content)
-        
+
         assert result == {}

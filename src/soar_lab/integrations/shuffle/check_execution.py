@@ -18,7 +18,7 @@ WF_ID = info['workflow_id']
 
 # Login
 s = requests.Session()
-s.post(f'{SH}/api/v1/users/login', json={'username': 'admin', 'password': 'ShuffleSecurePassword456!@#'}, timeout=10)
+s.post(f'{SH}/api/v1/users/login', json={'username': 'admin', 'password': 'R3x#7mP9$vK4@nQ2tW8!zY5&hF1sD3'}, timeout=10)
 
 # Wait for execution to complete
 time.sleep(30)

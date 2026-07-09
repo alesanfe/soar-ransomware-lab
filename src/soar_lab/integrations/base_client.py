@@ -71,8 +71,11 @@ class BaseHTTPClient(SyncHTTPClient):
             IntegrationError: On HTTP or connection error.
         """
         url = self._url(path)
+        # Remove Content-Type header for GET requests (TheHive rejects empty JSON body)
+        session_headers = self._session.headers.copy()
+        session_headers.pop('Content-Type', None)
         try:
-            resp = self._session.get(url, timeout=self.timeout, **kwargs)
+            resp = self._session.get(url, timeout=self.timeout, headers=session_headers, **kwargs)
             resp.raise_for_status()
             return resp.json() if resp.content else {}
         except requests.HTTPError as exc:

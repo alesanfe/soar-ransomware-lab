@@ -3,26 +3,26 @@
 ## Índice
 
 - [1. Resumen](#1-resumen)
-  - [1.1 Objetivo](#11-objetivo)
-  - [1.2 Contexto](#12-contexto)
+    - [1.1 Objetivo](#11-objetivo)
+    - [1.2 Contexto](#12-contexto)
 - [2. Alcance](#2-alcance)
-  - [2.1 Qué cubre](#21-qué-cubre)
-  - [2.2 Límites](#22-límites)
-  - [2.3 Dependencias](#23-dependencias)
+    - [2.1 Qué cubre](#21-qué-cubre)
+    - [2.2 Límites](#22-límites)
+    - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
-  - [3.1 Principios de seguridad](#31-principios-de-seguridad)
-  - [3.2 Modelo de amenazas](#32-modelo-de-amenazas)
-  - [3.3 Controles implementados](#33-controles-implementados)
-  - [3.4 Cumplimiento y protección de datos](#34-cumplimiento-y-protección-de-datos)
-  - [3.5 Diagramas o matrices](#35-diagramas-o-matrices)
+    - [3.1 Principios de seguridad](#31-principios-de-seguridad)
+    - [3.2 Modelo de amenazas](#32-modelo-de-amenazas)
+    - [3.3 Controles implementados](#33-controles-implementados)
+    - [3.4 Cumplimiento y protección de datos](#34-cumplimiento-y-protección-de-datos)
+    - [3.5 Diagramas o matrices](#35-diagramas-o-matrices)
 - [4. Validación](#4-validación)
-  - [4.1 Verificación](#41-verificación)
-  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
-  - [4.3 Evidencias](#43-evidencias)
+    - [4.1 Verificación](#41-verificación)
+    - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+    - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
-  - [5.1 Limitaciones](#51-limitaciones)
-  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
+    - [5.1 Limitaciones](#51-limitaciones)
+    - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+    - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -31,13 +31,17 @@
 
 ### 1.1 Objetivo
 
-Este documento describe la estrategia de seguridad defensa en profundidad implementada para proteger contra ataques de ransomware y garantizar la integridad de las operaciones de seguridad del SOAR Ransomware Lab.
+Este documento describe la estrategia de seguridad defensa en profundidad implementada para proteger contra ataques de
+ransomware y garantizar la integridad de las operaciones de seguridad del SOAR Ransomware Lab.
 
 ### 1.2 Contexto
 
-El SOAR Ransomware Lab implementa una estrategia de seguridad defensa en profundidad para proteger contra ataques de ransomware y garantizar la integridad de las operaciones de seguridad. Este documento describe los controles de seguridad, políticas y procedimientos implementados en la plataforma.
+El SOAR Ransomware Lab implementa una estrategia de seguridad defensa en profundidad para proteger contra ataques de
+ransomware y garantizar la integridad de las operaciones de seguridad. Este documento describe los controles de
+seguridad, políticas y procedimientos implementados en la plataforma.
 
 **Principios de Seguridad:**
+
 - **Arquitectura Zero Trust**: Nunca confiar, siempre verificar
 - **Principio de Mínimo Privilegio**: Acceso mínimo requerido
 - **Defensa en Profundidad**: Múltiples capas de seguridad
@@ -49,6 +53,7 @@ El SOAR Ransomware Lab implementa una estrategia de seguridad defensa en profund
 ### 2.1 Qué cubre
 
 Este documento cubre:
+
 - Modelo de amenazas y vectores de ataque
 - Arquitectura de seguridad y zonas de seguridad
 - Autenticación y autorización (MFA, SSO, RBAC)
@@ -64,6 +69,7 @@ Este documento cubre:
 ### 2.2 Límites
 
 Este documento no cubre:
+
 - Detalles de configuración específicos de cada herramienta (ver documentación individual)
 - Procedimientos operativos paso a paso (ver user_guide.md)
 - Estrategias de pruebas específicas (ver testing/)
@@ -73,6 +79,7 @@ Este documento no cubre:
 ### 2.3 Dependencias
 
 Este documento depende de:
+
 - Documentación oficial de cada componente (Shuffle, TheHive, Cortex, MISP, Wazuh)
 - Documentación de arquitectura (docs/architecture/overview.md)
 - Guía de usuario (docs/getting_started/user_guide.md)
@@ -99,28 +106,28 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 **Amenazas Principales:**
 
 1. **Ataques de Ransomware**
-   - Encriptación de archivos
-   - Exfiltración de datos
-   - Disrupción del sistema
-   - Impacto de negocio
+    - Encriptación de archivos
+    - Exfiltración de datos
+    - Disrupción del sistema
+    - Impacto de negocio
 
 2. **Amenazas Internas**
-   - Insiders maliciosos
-   - Exposición accidental de datos
-   - Escalada de privilegios
-   - Robo de datos
+    - Insiders maliciosos
+    - Exposición accidental de datos
+    - Escalada de privilegios
+    - Robo de datos
 
 3. **Ataques Externos**
-   - Intrusión de red
-   - Abuso de API
-   - Denegación de servicio
-   - Ataques a la cadena de suministro
+    - Intrusión de red
+    - Abuso de API
+    - Denegación de servicio
+    - Ataques a la cadena de suministro
 
 4. **Violaciones de Datos**
-   - Acceso no autorizado
-   - Fuga de datos
-   - Violaciones de privacidad
-   - Incumplimiento regulatorio
+    - Acceso no autorizado
+    - Fuga de datos
+    - Violaciones de privacidad
+    - Incumplimiento regulatorio
 
 #### Arquitectura de Seguridad
 
@@ -145,44 +152,44 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 **Controles de Seguridad:**
 
 1. **Controles Preventivos**
-   - Firewalls y segmentación de red
-   - Validación y saneamiento de entrada
-   - Mecanismos de control de acceso
-   - Encriptación y protección de datos
+    - Firewalls y segmentación de red
+    - Validación y saneamiento de entrada
+    - Mecanismos de control de acceso
+    - Encriptación y protección de datos
 
 2. **Controles Detectivos**
-   - Sistemas de detección de intrusiones
-   - Monitoreo de seguridad y logging
-   - Algoritmos de detección de anomalías
-   - Analytics de comportamiento de usuario
+    - Sistemas de detección de intrusiones
+    - Monitoreo de seguridad y logging
+    - Algoritmos de detección de anomalías
+    - Analytics de comportamiento de usuario
 
 3. **Controles Correctivos**
-   - Procedimientos de respuesta a incidentes
-   - Mecanismos de recuperación de sistemas
-   - Gestión de parches de seguridad
-   - Herramientas de análisis forense
+    - Procedimientos de respuesta a incidentes
+    - Mecanismos de recuperación de sistemas
+    - Gestión de parches de seguridad
+    - Herramientas de análisis forense
 
 #### Seguridad de Infraestructura
 
 **Seguridad de Contenedores:**
 
 1. **Seguridad de Imágenes**
-   - Escaneo de imágenes base
-   - Evaluación de vulnerabilidades
-   - Superficie de ataque mínima
-   - Actualizaciones regulares
+    - Escaneo de imágenes base
+    - Evaluación de vulnerabilidades
+    - Superficie de ataque mínima
+    - Actualizaciones regulares
 
 2. **Seguridad en Runtime**
-   - Aislamiento de contenedores
-   - Límites de recursos
-   - Políticas de red
-   - Monitoreo en runtime
+    - Aislamiento de contenedores
+    - Límites de recursos
+    - Políticas de red
+    - Monitoreo en runtime
 
 3. **Seguridad de Orquestación**
-   - Implementación de RBAC
-   - Gestión de secrets
-   - Segmentación de red
-   - Logging de auditoría
+    - Implementación de RBAC
+    - Gestión de secrets
+    - Segmentación de red
+    - Logging de auditoría
 
 ### 3.3 Controles implementados
 
@@ -191,80 +198,80 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 **Métodos de Autenticación:**
 
 1. **Autenticación Multi-Factor (MFA)**
-   - OTP basado en tiempo (TOTP)
-   - Verificación basada en SMS
-   - Tokens de hardware
-   - Autenticación biométrica
+    - OTP basado en tiempo (TOTP)
+    - Verificación basada en SMS
+    - Tokens de hardware
+    - Autenticación biométrica
 
 2. **Single Sign-On (SSO)**
-   - Integración SAML 2.0
-   - OAuth 2.0 / OpenID Connect
-   - LDAP/Active Directory
-   - Proveedores de identidad personalizados
+    - Integración SAML 2.0
+    - OAuth 2.0 / OpenID Connect
+    - LDAP/Active Directory
+    - Proveedores de identidad personalizados
 
 3. **Gestión de Sesiones**
-   - Tokens de sesión seguros
-   - Políticas de timeout de sesión
-   - Límites de sesiones concurrentes
-   - Procedimientos de logout seguro
+    - Tokens de sesión seguros
+    - Políticas de timeout de sesión
+    - Límites de sesiones concurrentes
+    - Procedimientos de logout seguro
 
 **Políticas de Control de Acceso:**
 
 1. **Principio de Mínimo Privilegio**
-   - Permisos mínimos requeridos
-   - Acceso just-in-time
-   - Escalada temporal de privilegios
-   - Procedimientos de revisión de acceso
+    - Permisos mínimos requeridos
+    - Acceso just-in-time
+    - Escalada temporal de privilegios
+    - Procedimientos de revisión de acceso
 
 2. **Separación de Deberes**
-   - Segregación de tareas críticas
-   - Workflows de aprobación
-   - Prevención de conflictos
-   - Mantenimiento de rastro de auditoría
+    - Segregación de tareas críticas
+    - Workflows de aprobación
+    - Prevención de conflictos
+    - Mantenimiento de rastro de auditoría
 
 #### Protección de Datos
 
 **Gestión del Ciclo de Vida de Datos:**
 
 1. **Retención de Datos**
-   - Políticas de retención automatizadas
-   - Procedimientos de legal hold
-   - Eliminación segura de datos
-   - Documentación de cumplimiento
+    - Políticas de retención automatizadas
+    - Procedimientos de legal hold
+    - Eliminación segura de datos
+    - Documentación de cumplimiento
 
 2. **Privacidad de Datos**
-   - Identificación y enmascaramiento de PII
-   - Cumplimiento GDPR
-   - Principios de minimización de datos
-   - Privacidad por diseño
+    - Identificación y enmascaramiento de PII
+    - Cumplimiento GDPR
+    - Principios de minimización de datos
+    - Privacidad por diseño
 
 #### Seguridad de Aplicación
 
 **Ciclo de Vida de Desarrollo Seguro:**
 
 1. **Fase de Diseño**
-   - Modelado de amenazas
-   - Revisión de arquitectura de seguridad
-   - Definición de requisitos de seguridad
-   - Evaluación de impacto de privacidad
+    - Modelado de amenazas
+    - Revisión de arquitectura de seguridad
+    - Definición de requisitos de seguridad
+    - Evaluación de impacto de privacidad
 
 2. **Fase de Desarrollo**
-   - Estándares de codificación segura
-   - Procesos de revisión de código
-   - Escaneo de análisis estático
-   - Escaneo de vulnerabilidades de dependencias
+    - Estándares de codificación segura
+    - Procesos de revisión de código
+    - Escaneo de análisis estático
+    - Escaneo de vulnerabilidades de dependencias
 
 3. **Fase de Pruebas**
-   - Automatización de pruebas de seguridad
-   - Pruebas de penetración
-   - Evaluación de vulnerabilidades
-   - Pruebas de regresión de seguridad
+    - Automatización de pruebas de seguridad
+    - Pruebas de penetración
+    - Evaluación de vulnerabilidades
+    - Pruebas de regresión de seguridad
 
 4. **Fase de Despliegue**
-   - Revisión de configuración de seguridad
-   - Hardening de producción
-   - Configuración de monitoreo de seguridad
-   - Preparación de respuesta a incidentes
+    - Revisión de configuración de seguridad
+    - Hardening de producción
+    - Configuración de monitoreo de seguridad
+    - Preparación de respuesta a incidentes
 
 #### Respuesta a Incidentes
 
@@ -283,26 +290,27 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 **Procedimientos de Respuesta:**
 
 1. **Respuesta a Ransomware**
-   - Aislamiento inmediato
-   - Preservación de evidencia
-   - Protocolos de comunicación
-   - Procedimientos de recuperación
+    - Aislamiento inmediato
+    - Preservación de evidencia
+    - Protocolos de comunicación
+    - Procedimientos de recuperación
 
 2. **Respuesta a Violación de Datos**
-   - Medidas de contención
-   - Evaluación de impacto
-   - Procedimientos de notificación
-   - Acciones de remediación
+    - Medidas de contención
+    - Evaluación de impacto
+    - Procedimientos de notificación
+    - Acciones de remediación
 
 3. **Respuesta a Incidente de Seguridad**
-   - Triage y priorización
-   - Procedimientos de investigación
-   - Análisis forense
-   - Requisitos de documentación
+    - Triage y priorización
+    - Procedimientos de investigación
+    - Análisis forense
+    - Requisitos de documentación
 
 #### Procedimientos Específicos de Respuesta a Ransomware
 
 **Fase 1: Detección y Aislamiento (0-15 minutos)**
+
 ```bash
 # 1. Identificar sistemas afectados
 docker ps | grep -E "thehive|cortex|shuffle"
@@ -316,6 +324,7 @@ docker logs soar_thehive > artifacts/forensic/thehive_<timestamp>.log
 ```
 
 **Fase 2: Análisis y Contención (15-60 minutos)**
+
 ```bash
 # 1. Analizar logs de alertas
 cat artifacts/logs/notify.log | grep -i ransomware
@@ -328,6 +337,7 @@ python3 -m src.soar_lab.services.containment_service <hostname>
 ```
 
 **Fase 3: Erradicación y Recuperación (1-4 horas)**
+
 ```bash
 # 1. Restaurar desde backup limpio
 bash scripts/infra/restore.sh BACKUP=<clean_backup_name>
@@ -356,23 +366,25 @@ python3 -m soar_lab.services.generate_secrets
 
 #### Matriz de Trazabilidad: Controles de Seguridad vs Requisitos Regulatorios
 
-| Control de Seguridad | GDPR Art. 32 | SOC 2 CC6.1 | ISO 27001 A.12 | NIST CSF PR.AC | Implementación |
-|---------------------|--------------|--------------|----------------|----------------|----------------|
-| Autenticación MFA | ✓ | ✓ | ✓ | ✓ | Shuffle, TheHive (pendiente) |
-| Encriptación AES-256 | ✓ | ✓ | ✓ | ✓ | Elasticsearch (pendiente) |
-| TLS 1.3 en tránsito | ✓ | ✓ | ✓ | ✓ | Nginx (pendiente) |
-| RBAC | ✓ | ✓ | ✓ | ✓ | Todos los servicios (parcial) |
-| Logging de auditoría | ✓ | ✓ | ✓ | ✓ | Docker logs (implementado) |
-| Retención de datos | ✓ | ✓ | ✓ | ✓ | Configuración por definir |
-| Respuesta a incidentes | ✓ | ✓ | ✓ | ✓ | Playbook E2E (implementado) |
-| Backups automatizados | ✓ | ✓ | ✓ | ✓ | scripts/infra/backup.sh (implementado) |
-| Escaneo de vulnerabilidades | ✓ | ✓ | ✓ | ✓ | src/soar_lab/services/containment_service.py (implementado) |
+| Control de Seguridad        | GDPR Art. 32 | SOC 2 CC6.1 | ISO 27001 A.12 | NIST CSF PR.AC | Implementación                                              |
+|-----------------------------|--------------|-------------|----------------|----------------|-------------------------------------------------------------|
+| Autenticación MFA           | ✓            | ✓           | ✓              | ✓              | Shuffle, TheHive (pendiente)                                |
+| Encriptación AES-256        | ✓            | ✓           | ✓              | ✓              | Elasticsearch (pendiente)                                   |
+| TLS 1.3 en tránsito         | ✓            | ✓           | ✓              | ✓              | Nginx (pendiente)                                           |
+| RBAC                        | ✓            | ✓           | ✓              | ✓              | Todos los servicios (parcial)                               |
+| Logging de auditoría        | ✓            | ✓           | ✓              | ✓              | Docker logs (implementado)                                  |
+| Retención de datos          | ✓            | ✓           | ✓              | ✓              | Configuración por definir                                   |
+| Respuesta a incidentes      | ✓            | ✓           | ✓              | ✓              | Playbook E2E (implementado)                                 |
+| Backups automatizados       | ✓            | ✓           | ✓              | ✓              | scripts/infra/backup.sh (implementado)                      |
+| Escaneo de vulnerabilidades | ✓            | ✓           | ✓              | ✓              | src/soar_lab/services/containment_service.py (implementado) |
 
-**Nota:** Los controles marcados como "pendiente" son recomendaciones para producción que no están implementados en el laboratorio actual.
+**Nota:** Los controles marcados como "pendiente" son recomendaciones para producción que no están implementados en el
+laboratorio actual.
 
 #### Cumplimiento Regulatorio
 
 El laboratorio cumple con:
+
 - **GDPR**: Protección de datos personales
 - **SOC 2**: Seguridad y disponibilidad
 - **ISO 27001**: Gestión de seguridad de la información
@@ -396,6 +408,7 @@ El laboratorio cumple con:
 #### Procedimientos de Hardening por Componente
 
 **Shuffle SOAR:**
+
 - Cambiar credenciales por defecto (SHUFFLE_DEFAULT_APIKEY)
 - Habilitar autenticación multi-factor
 - Configurar HTTPS con certificados TLS válidos
@@ -403,6 +416,7 @@ El laboratorio cumple con:
 - Deshabilitar analyzers no necesarios
 
 **TheHive:**
+
 - Cambiar credenciales por defecto de admin
 - Configurar HTTPS con certificados TLS
 - Implementar políticas de retención de datos
@@ -410,6 +424,7 @@ El laboratorio cumple con:
 - Configurar CORS restrictivo
 
 **Cortex:**
+
 - Cambiar credenciales por defecto
 - Limitar analyzers activos
 - Configurar rate limiting
@@ -417,6 +432,7 @@ El laboratorio cumple con:
 - Revisar y actualizar analyzers regularmente
 
 **Elasticsearch:**
+
 - Habilitar xpack.security (actualmente deshabilitado para desarrollo)
 - Configurar autenticación básica o TLS
 - Implementar encriptación de datos en reposo
@@ -424,6 +440,7 @@ El laboratorio cumple con:
 - Limitar acceso a puertos (9201)
 
 **MISP:**
+
 - Cambiar credenciales por defecto
 - Configurar HTTPS
 - Implementar autenticación SAML/LDAP
@@ -431,6 +448,7 @@ El laboratorio cumple con:
 - Habilitar logging de auditoría
 
 **Wazuh:**
+
 - Configurar autenticación API
 - Implementar reglas de firewall
 - Configurar políticas de retención
@@ -438,6 +456,7 @@ El laboratorio cumple con:
 - Limitar acceso a puertos (15141-1516)
 
 **Nginx:**
+
 - Configurar HTTPS con TLS 1.3
 - Implementar HSTS
 - Configurar WAF básico
@@ -467,18 +486,21 @@ PERMISSIONS = {
 #### Estándares de Encriptación
 
 **Datos en Reposo:**
+
 - Encriptación AES-256
 - Encriptación de disco completo
 - Encriptación de base de datos
 - Encriptación de filesystem
 
 **Datos en Tránsito:**
+
 - TLS 1.3 para todas las comunicaciones
 - Certificate pinning
 - Autenticación TLS mutua
 - VPN para acceso remoto
 
 **Gestión de Claves:**
+
 - Módulos de Seguridad de Hardware (HSM)
 - Políticas de rotación de claves
 - Almacenamiento seguro de claves
@@ -508,18 +530,21 @@ PERMISSIONS = {
 #### Marcos Regulatorios
 
 **GDPR (Regulación General de Protección de Datos):**
+
 - Derechos del sujeto de datos
 - Gestión de consentimiento
 - Notificación de violación de datos
 - Privacidad por diseño
 
 **SOC 2 (Service Organization Control 2):**
+
 - Controles de seguridad
 - Controles de disponibilidad
 - Integridad de procesamiento
 - Controles de privacidad
 
 **ISO 27001 (Gestión de Seguridad de la Información):**
+
 - Implementación de ISMS
 - Gestión de riesgos
 - Mejora continua
@@ -530,6 +555,7 @@ PERMISSIONS = {
 ### 4.1 Verificación
 
 La seguridad se verifica mediante:
+
 - Escaneos automatizados de vulnerabilidades
 - Pruebas de penetración periódicas
 - Auditorías de seguridad internas y externas
@@ -540,6 +566,7 @@ La seguridad se verifica mediante:
 ### 4.2 Criterios de aceptación
 
 La seguridad se considera válida cuando:
+
 - Todos los controles de seguridad están implementados
 - Las pruebas de seguridad pasan sin vulnerabilidades críticas
 - El monitoreo de seguridad detecta anomalías
@@ -550,6 +577,7 @@ La seguridad se considera válida cuando:
 ### 4.3 Evidencias
 
 Las evidencias de validación incluyen:
+
 - Reportes de escaneo de vulnerabilidades
 - Reportes de pruebas de penetración
 - Logs de auditoría de seguridad
@@ -561,7 +589,8 @@ Las evidencias de validación incluyen:
 
 ### 5.1 Limitaciones
 
-- **Configuración por defecto**: Las configuraciones por defecto de las herramientas pueden no ser adecuadas para producción
+- **Configuración por defecto**: Las configuraciones por defecto de las herramientas pueden no ser adecuadas para
+  producción
 - **Recursos limitados**: Monitoreo y respuesta a incidentes requieren personal dedicado
 - **Dependencias de terceros**: Seguridad depende de la seguridad de componentes de terceros
 - **Evolución de amenazas**: Las amenazas evolucionan constantemente, requiriendo actualizaciones continuas
@@ -590,18 +619,22 @@ Las evidencias de validación incluyen:
 - **Documentación de Seguridad de Cortex**: https://docs.strangebee.com/cortex/admin-guide/security/
 - **Documentación de Seguridad de MISP**: https://www.misp-project.org/guides/admin/
 - **Documentación de Seguridad de Wazuh**: https://documentation.wazuh.com/current/user-manual/security/index.html
-- **Documentación de Seguridad de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html
+- **Documentación de Seguridad de Elasticsearch
+  **: https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html
 - **OWASP Top 10**: https://owasp.org/www-project-top-ten/
 - **Marco de Ciberseguridad NIST**: https://www.nist.gov/cyberframework
 - **Benchmarks CIS**: https://www.cisecurity.org/cis-benchmarks/
 - **Documentación de Arquitectura**: [docs/architecture/overview.md](overview.md)
-- **Guía de Usuario**: [docs/getting_started/user_guide.md](user_guide.md)
+- **Guía de Usuario**: [docs/getting_started/user_guide.md](../getting_started/user_guide.md)
 
 ---
 
 **Mejoras implementadas:**
+
 - Corregidas referencias a docs/core/ a rutas correctas (docs/architecture/, docs/getting_started/)
-- Añadidos procedimientos detallados de hardening para cada componente (Shuffle, TheHive, Cortex, Elasticsearch, MISP, Wazuh, Nginx)
+- Añadidos procedimientos detallados de hardening para cada componente (Shuffle, TheHive, Cortex, Elasticsearch, MISP,
+  Wazuh, Nginx)
 - Documentados procedimientos específicos de respuesta a ransomware con 3 fases (detección, análisis, recuperación)
-- Añadida matriz de trazabilidad entre controles de seguridad y requisitos regulatorios (GDPR, SOC 2, ISO 27001, NIST CSF)
+- Añadida matriz de trazabilidad entre controles de seguridad y requisitos regulatorios (GDPR, SOC 2, ISO 27001, NIST
+  CSF)
 

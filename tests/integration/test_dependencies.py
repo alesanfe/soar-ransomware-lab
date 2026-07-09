@@ -49,7 +49,7 @@ class TestGetConfigProvider:
         mock_config = Mock()
         mock_root = Mock()
         mock_root.config_provider = mock_config
-        
+
         result = get_config_provider(composition_root=mock_root)
         assert result == mock_config
 
@@ -62,7 +62,7 @@ class TestGetRedis:
         mock_redis = Mock()
         mock_root = Mock()
         mock_root.redis_client = mock_redis
-        
+
         result = get_redis(composition_root=mock_root)
         assert result == mock_redis
 
@@ -75,7 +75,7 @@ class TestGetDocker:
         mock_docker = Mock()
         mock_root = Mock()
         mock_root.docker_client = mock_docker
-        
+
         result = get_docker(composition_root=mock_root)
         assert result == mock_docker
 
@@ -88,7 +88,7 @@ class TestGetAnalyticsService:
         mock_service = Mock()
         mock_root = Mock()
         mock_root.analytics_service = mock_service
-        
+
         result = get_analytics_service(composition_root=mock_root)
         assert result == mock_service
 
@@ -101,7 +101,7 @@ class TestGetBackupService:
         mock_service = Mock()
         mock_root = Mock()
         mock_root.backup_service = mock_service
-        
+
         result = get_backup_service(composition_root=mock_root)
         assert result == mock_service
 
@@ -114,7 +114,7 @@ class TestGetTestService:
         mock_service = Mock()
         mock_root = Mock()
         mock_root.test_service = mock_service
-        
+
         result = get_test_service(composition_root=mock_root)
         assert result == mock_service
 
@@ -127,7 +127,7 @@ class TestGetHealthService:
         mock_service = Mock()
         mock_root = Mock()
         mock_root.health_service = mock_service
-        
+
         result = get_health_service(composition_root=mock_root)
         assert result == mock_service
 

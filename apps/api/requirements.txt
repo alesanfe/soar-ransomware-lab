@@ -13,3 +13,4 @@ httpx==0.25.0
 numpy
 pandas
 scikit-learn
+requests-mock

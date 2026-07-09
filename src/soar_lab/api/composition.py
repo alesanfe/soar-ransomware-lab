@@ -7,6 +7,7 @@ It follows the Composition Root pattern from hexagonal architecture.
 from fastapi import FastAPI
 from typing import Optional
 
+from soar_lab.config.logging import setup_logging
 from soar_lab.config.settings import create_settings
 from soar_lab.domain.statistical_calculator import StatisticalCalculator
 from soar_lab.infrastructure.clients import create_docker_client, create_redis_client
@@ -27,9 +28,11 @@ from soar_lab.infrastructure.system_metrics_driver import SystemMetricsDriver
 from soar_lab.infrastructure.tar_backup_driver import TarBackupDriver
 from soar_lab.infrastructure.websocket_manager import ConnectionManager
 from soar_lab.integrations.cortex_client import CortexClient
+from soar_lab.integrations.elasticsearch_client import ElasticsearchClient
 from soar_lab.integrations.misp_client import MISPClient
 from soar_lab.integrations.shuffle_client import ShuffleClient
 from soar_lab.integrations.thehive_client import TheHiveClient
+from soar_lab.integrations.wazuh_client import WazuhClient
 from soar_lab.services.analytics_service import AnalyticsService
 from soar_lab.services.auth_service import AuthService
 from soar_lab.services.backup_service import BackupService
@@ -45,7 +48,15 @@ class CompositionRoot:
         """Initialize the composition root with all dependencies."""
         settings = create_settings()
         self.config_provider = InfrastructureConfigProvider(settings)
+
         from pathlib import Path
+        _log_dir_str = self.config_provider.get('log_dir', '')
+        setup_logging(
+            log_level=self.config_provider.get('log_level', 'INFO'),
+            log_format=self.config_provider.get('log_format', 'text'),
+            log_dir=Path(_log_dir_str) if _log_dir_str else None,
+        )
+
         base_dir_str = self.config_provider.get('base_dir')
         if not base_dir_str:
             raise ValueError("base_dir must be provided in config_provider")
@@ -69,7 +80,7 @@ class CompositionRoot:
         self.log_reader = FileLogReader(self.path_service)
         self.pytest_parser = PytestOutputParser()
         self.test_runner = PytestTestRunner(repo_root=base_dir, path_service=self.path_service)
-        self.backup_driver = TarBackupDriver(self.storage, self.path_service)
+        self.backup_driver = TarBackupDriver()
         self.subprocess_runner = SubprocessRunner()
         self.websocket_manager = ConnectionManager()
         self.statistical_calculator = StatisticalCalculator()
@@ -102,6 +113,16 @@ class CompositionRoot:
             api_key=self.config_provider.get('misp_api_key'),
             config_provider=self.config_provider
         )
+        self.elasticsearch_client = ElasticsearchClient(
+            base_url=self.config_provider.get('elasticsearch_url'),
+            config_provider=self.config_provider
+        )
+        self.wazuh_client = WazuhClient(
+            base_url=self.config_provider.get('wazuh_url'),
+            username=self.config_provider.get('wazuh_user', 'wazuh-wui'),
+            password=self.config_provider.get('wazuh_password', ''),
+            config_provider=self.config_provider
+        )
 
         # Create services
         self.analytics_service = AnalyticsService(
@@ -119,13 +140,20 @@ class CompositionRoot:
             storage=self.storage
         )
         self.test_service = TestService(
-            test_runner=self.test_runner,
-            result_parser=self.pytest_parser,
-            alert_repository=self.alert_repository
+            runner=self.test_runner,
+            parser=self.pytest_parser,
         )
         self.health_service = HealthService(
             health_checker=self.health_checker,
-            system_metrics=self.system_metrics
+            system_metrics=self.system_metrics,
+            soar_clients={
+                "thehive": self.thehive_client,
+                "cortex": self.cortex_client,
+                "misp": self.misp_client,
+                "shuffle": self.shuffle_client,
+                "elasticsearch": self.elasticsearch_client,
+                "wazuh": self.wazuh_client,
+            }
         )
 
     def create_fastapi_app(self) -> FastAPI:
@@ -152,6 +180,8 @@ class CompositionRoot:
             misp_client=self.misp_client,
             shuffle_client=self.shuffle_client,
             thehive_client=self.thehive_client,
+            elasticsearch_client=self.elasticsearch_client,
+            wazuh_client=self.wazuh_client,
             websocket_manager=self.websocket_manager,
             auth_service=self.auth_service
         )

@@ -22,7 +22,7 @@ class TestSimulatedIOCGenerator:
         generator = SimulatedIOCGenerator()
         hash1 = generator.generate_malicious_hash()
         hash2 = generator.generate_malicious_hash()
-        
+
         assert hash1 != hash2
         assert len(hash1) == 64  # SHA256 hex length
         assert generator._malicious_counter == 2
@@ -32,7 +32,7 @@ class TestSimulatedIOCGenerator:
         generator = SimulatedIOCGenerator()
         hash1 = generator.generate_malicious_hash(seed="test")
         hash2 = generator.generate_malicious_hash(seed="test")
-        
+
         assert hash1 == hash2  # Same seed should produce same hash
         assert generator._malicious_counter == 0  # Counter should not increment with seed
 
@@ -41,7 +41,7 @@ class TestSimulatedIOCGenerator:
         generator = SimulatedIOCGenerator()
         hash1 = generator.generate_benign_hash()
         hash2 = generator.generate_benign_hash()
-        
+
         assert hash1 != hash2
         assert len(hash1) == 64
         assert generator._benign_counter == 2
@@ -51,7 +51,7 @@ class TestSimulatedIOCGenerator:
         generator = SimulatedIOCGenerator()
         hash1 = generator.generate_benign_hash(seed="test")
         hash2 = generator.generate_benign_hash(seed="test")
-        
+
         assert hash1 == hash2
         assert generator._benign_counter == 0
 
@@ -59,7 +59,7 @@ class TestSimulatedIOCGenerator:
         """Test IP address generation"""
         generator = SimulatedIOCGenerator()
         ips = generator.generate_ip_addresses(count=5)
-        
+
         assert len(ips) == 5
         for ip in ips:
             assert isinstance(ip, str)
@@ -71,14 +71,14 @@ class TestSimulatedIOCGenerator:
         """Test IP address generation with default count"""
         generator = SimulatedIOCGenerator()
         ips = generator.generate_ip_addresses()
-        
+
         assert len(ips) == 5
 
     def test_generate_domains(self):
         """Test domain generation"""
         generator = SimulatedIOCGenerator()
         domains = generator.generate_domains(count=3)
-        
+
         assert len(domains) == 3
         for domain in domains:
             assert isinstance(domain, str)
@@ -91,14 +91,14 @@ class TestSimulatedIOCGenerator:
         """Test domain generation with default count"""
         generator = SimulatedIOCGenerator()
         domains = generator.generate_domains()
-        
+
         assert len(domains) == 5
 
     def test_generate_urls(self):
         """Test URL generation"""
         generator = SimulatedIOCGenerator()
         urls = generator.generate_urls(count=3)
-        
+
         assert len(urls) == 3
         for url in urls:
             assert isinstance(url, str)
@@ -109,14 +109,14 @@ class TestSimulatedIOCGenerator:
         """Test URL generation with default count"""
         generator = SimulatedIOCGenerator()
         urls = generator.generate_urls()
-        
+
         assert len(urls) == 5
 
     def test_create_ioc_package(self):
         """Test IOC package creation"""
         generator = SimulatedIOCGenerator()
         package = generator.create_ioc_package(count=3)
-        
+
         assert 'malicious' in package
         assert 'benign' in package
         assert 'hash' in package['malicious']
@@ -131,6 +131,6 @@ class TestSimulatedIOCGenerator:
         """Test IOC package creation with default count"""
         generator = SimulatedIOCGenerator()
         package = generator.create_ioc_package()
-        
+
         assert len(package['malicious']['ips']) == 5
         assert len(package['benign']['ips']) == 5

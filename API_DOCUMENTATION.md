@@ -3361,16 +3361,18 @@ Content-Type: application/json
 ## Nginx Reverse Proxy
 
 **Container:** `soar_nginx`
-**Ports:** 80, 443, 8080, 8081, 8085
+**Ports:** 80, 443
 **Base URL:** `http://localhost`
 
 ### Port Mappings
 
-- **Port 80:** HTTP reverse proxy to all services
+- **Port 80:** HTTP reverse proxy to all services (redirects to HTTPS)
 - **Port 443:** HTTPS reverse proxy (SSL configured)
-- **Port 8080:** Docs site
-- **Port 8081:** Shuffle frontend
-- **Port 8085:** Web Management UI
+
+Note: Services are now accessed directly on their respective ports:
+- Docs site: http://localhost:8086
+- Shuffle frontend: http://localhost:8081
+- Web Management UI: http://localhost:8085
 
 ### Service Routes
 

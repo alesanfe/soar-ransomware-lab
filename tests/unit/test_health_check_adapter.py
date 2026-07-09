@@ -15,9 +15,9 @@ class TestHTTPHealthCheckAdapter:
     def test_initialization_success(self):
         """Test successful initialization with http_client"""
         mock_http_client = Mock()
-        
+
         adapter = HTTPHealthCheckAdapter(http_client=mock_http_client)
-        
+
         assert adapter.http_client == mock_http_client
         assert adapter.verify_ssl_config == {}
 
@@ -25,9 +25,9 @@ class TestHTTPHealthCheckAdapter:
         """Test initialization with SSL verification config"""
         mock_http_client = Mock()
         ssl_config = {"service1": False, "service2": True}
-        
+
         adapter = HTTPHealthCheckAdapter(http_client=mock_http_client, verify_ssl_config=ssl_config)
-        
+
         assert adapter.http_client == mock_http_client
         assert adapter.verify_ssl_config == ssl_config
 
@@ -41,11 +41,11 @@ class TestHTTPHealthCheckAdapter:
         """Test successful service health check"""
         mock_http_client = Mock()
         mock_http_client.get = AsyncMock(return_value=200)
-        
+
         adapter = HTTPHealthCheckAdapter(http_client=mock_http_client)
-        
+
         result = await adapter.check_service("service1", "http://service1.local/health")
-        
+
         assert result == True
         mock_http_client.get.assert_called_once_with("http://service1.local/health", verify_ssl=True)
 
@@ -54,22 +54,22 @@ class TestHTTPHealthCheckAdapter:
         """Test service health check with failure status code"""
         mock_http_client = Mock()
         mock_http_client.get = AsyncMock(return_value=500)
-        
+
         adapter = HTTPHealthCheckAdapter(http_client=mock_http_client)
-        
+
         result = await adapter.check_service("service1", "http://service1.local/health")
-        
+
         assert result == False
 
     @pytest.mark.asyncio
     async def test_check_service_no_url(self):
         """Test service health check with no URL"""
         mock_http_client = Mock()
-        
+
         adapter = HTTPHealthCheckAdapter(http_client=mock_http_client)
-        
+
         result = await adapter.check_service("service1", "")
-        
+
         assert result == False
         mock_http_client.get.assert_not_called()
 
@@ -78,11 +78,11 @@ class TestHTTPHealthCheckAdapter:
         """Test service health check with exception"""
         mock_http_client = Mock()
         mock_http_client.get = AsyncMock(side_effect=Exception("Connection error"))
-        
+
         adapter = HTTPHealthCheckAdapter(http_client=mock_http_client)
-        
+
         result = await adapter.check_service("service1", "http://service1.local/health")
-        
+
         assert result == False
 
     @pytest.mark.asyncio
@@ -91,11 +91,11 @@ class TestHTTPHealthCheckAdapter:
         mock_http_client = Mock()
         mock_http_client.get = AsyncMock(return_value=200)
         ssl_config = {"service1": False}
-        
+
         adapter = HTTPHealthCheckAdapter(http_client=mock_http_client, verify_ssl_config=ssl_config)
-        
+
         result = await adapter.check_service("service1", "http://service1.local/health")
-        
+
         assert result == True
         mock_http_client.get.assert_called_once_with("http://service1.local/health", verify_ssl=False)
 
@@ -105,10 +105,10 @@ class TestHTTPHealthCheckAdapter:
         mock_http_client = Mock()
         mock_http_client.get = AsyncMock(return_value=200)
         ssl_config = {"service2": False}
-        
+
         adapter = HTTPHealthCheckAdapter(http_client=mock_http_client, verify_ssl_config=ssl_config)
-        
+
         result = await adapter.check_service("service1", "http://service1.local/health")
-        
+
         assert result == True
         mock_http_client.get.assert_called_once_with("http://service1.local/health", verify_ssl=True)

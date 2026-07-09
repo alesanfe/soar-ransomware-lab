@@ -413,3 +413,13 @@ class SqliteAlertRepository:
             )
             result = cursor.fetchone()[0]
             return float(result) if result else None
+
+    def close(self):
+        """Close the database connection (no-op for this implementation as connections are short-lived)."""
+        # Connections are managed with context managers in each method
+        # This method is provided for API compatibility
+        pass
+
+    def __del__(self):
+        """Cleanup when the repository is garbage collected."""
+        self.close()

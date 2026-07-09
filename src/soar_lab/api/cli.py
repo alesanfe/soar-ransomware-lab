@@ -2,8 +2,11 @@ import argparse
 import json
 from datetime import datetime, timezone
 
+from soar_lab.config.logging import configure_from_env
+
 
 def main() -> int:
+    configure_from_env()
     parser = argparse.ArgumentParser(prog="soar-lab", description="SOAR Ransomware Lab command line interface")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -65,7 +68,7 @@ def main() -> int:
         return 0
 
     if args.command == "generate-secrets":
-        from soar_lab.services.generate_secrets import SecretGeneratorService
+        from soar_lab.infrastructure.setup.generate_secrets import SecretGeneratorService
         from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
         from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
         from soar_lab.config.settings import create_settings

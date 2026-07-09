@@ -97,48 +97,48 @@ class TestDockerRuntimeStatus:
                 assert is_healthy or is_running, f"Container {container['name']} should be healthy or running (status: {status})"
 
     def test_elasticsearch_accessible(self):
-        """Test that Elasticsearch is accessible on port 9201"""
+        """Test that Elasticsearch is accessible on port 9200"""
         try:
             response = requests.get(
-                "http://localhost:9201/_cluster/health",
+                "http://elasticsearch:9200/_cluster/health",
                 timeout=10
             )
             assert response.status_code in [200, 503], f"Elasticsearch should respond (got {response.status_code})"
         except requests.exceptions.ConnectionError:
-            pytest.skip("Elasticsearch not accessible on localhost:9201")
+            pytest.skip("Elasticsearch not accessible on elasticsearch:9200")
 
     def test_thehive_accessible(self):
         """Test that TheHive is accessible on port 9000"""
         try:
             response = requests.get(
-                "http://localhost:9000/api/status",
+                "http://thehive:9000/api/status",
                 timeout=10
             )
             assert response.status_code in [200, 401], f"TheHive should respond (got {response.status_code})"
         except requests.exceptions.ConnectionError:
-            pytest.skip("TheHive not accessible on localhost:9000")
+            pytest.skip("TheHive not accessible on thehive:9000")
 
     def test_cortex_accessible(self):
         """Test that Cortex is accessible on port 9001"""
         try:
             response = requests.get(
-                "http://localhost:9001/api/status",
+                "http://cortex:9001/api/status",
                 timeout=10
             )
             assert response.status_code in [200, 401], f"Cortex should respond (got {response.status_code})"
         except requests.exceptions.ConnectionError:
-            pytest.skip("Cortex not accessible on localhost:9001")
+            pytest.skip("Cortex not accessible on cortex:9001")
 
     def test_shuffle_backend_accessible(self):
         """Test that Shuffle backend is accessible on port 5001"""
         try:
             response = requests.get(
-                "http://localhost:5001/api/v1/health",
+                "http://shuffle-backend:5001/api/v1/health",
                 timeout=10
             )
             assert response.status_code in [200, 401], f"Shuffle backend should respond (got {response.status_code})"
         except requests.exceptions.ConnectionError:
-            pytest.skip("Shuffle backend not accessible on localhost:5001")
+            pytest.skip("Shuffle backend not accessible on shuffle-backend:5001")
 
     def test_api_accessible(self):
         """Test that SOAR API is accessible on port 8000"""

@@ -4,8 +4,8 @@ Unit tests for backup_service.py
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
 from datetime import datetime, timezone
+from unittest.mock import Mock, MagicMock
 
 from soar_lab.services.backup_service import BackupService
 
@@ -17,9 +17,9 @@ class TestBackupService:
         """Test successful initialization"""
         mock_driver = Mock()
         mock_storage = Mock()
-        
+
         service = BackupService(driver=mock_driver, storage=mock_storage)
-        
+
         assert service.driver == mock_driver
         assert service.storage == mock_storage
 
@@ -36,10 +36,10 @@ class TestBackupService:
         mock_storage.get_base_directory.return_value = "/project"
         mock_storage.get_file_size.return_value = 1024 * 1024
         mock_storage.join_path.return_value = "/backups/soar_backup_test.tar.gz"
-        
+
         service = BackupService(driver=mock_driver, storage=mock_storage)
         result = service.create(user="testuser")
-        
+
         assert "filename" in result
         assert result["message"] == "Backup created successfully"
         assert "soar_backup_" in result["filename"]
@@ -54,10 +54,10 @@ class TestBackupService:
         mock_storage.get_base_directory.return_value = "/project"
         mock_storage.get_file_size.return_value = 1024 * 1024
         mock_storage.join_path.return_value = "/backups/soar_backup_test.tar.gz"
-        
+
         service = BackupService(driver=mock_driver, storage=mock_storage)
         result = service.create()
-        
+
         assert result["message"] == "Backup created successfully"
         mock_driver.create.assert_called_once()
 
@@ -73,10 +73,10 @@ class TestBackupService:
             {'size': 2 * 1024 * 1024, 'modified_time': 1609459300}
         ]
         mock_storage.join_path.side_effect = ["/backups/backup1.tar.gz", "/backups/backup2.tar.gz"]
-        
+
         service = BackupService(driver=mock_driver, storage=mock_storage)
         result = service.list_backups()
-        
+
         assert "backups" in result
         assert len(result["backups"]) == 2
 
@@ -86,10 +86,10 @@ class TestBackupService:
         mock_storage = Mock()
         mock_storage.get_backup_directory.return_value = "/backups"
         mock_storage.directory_exists.return_value = False
-        
+
         service = BackupService(driver=mock_driver, storage=mock_storage)
         result = service.list_backups()
-        
+
         assert "backups" in result
         assert result["backups"] == []
 
@@ -101,10 +101,10 @@ class TestBackupService:
         mock_storage.get_base_directory.return_value = "/project"
         mock_storage.file_exists.return_value = True
         mock_storage.join_path.return_value = "/backups/backup1.tar.gz"
-        
+
         service = BackupService(driver=mock_driver, storage=mock_storage)
         result = service.restore("backup1.tar.gz", user="testuser")
-        
+
         assert "message" in result
         assert "restored successfully" in result["message"]
         mock_driver.extract.assert_called_once()
@@ -116,10 +116,53 @@ class TestBackupService:
         mock_storage.get_backup_directory.return_value = "/backups"
         mock_storage.file_exists.return_value = False
         mock_storage.join_path.return_value = "/backups/backup1.tar.gz"
-        
+
         service = BackupService(driver=mock_driver, storage=mock_storage)
-        
+
         with pytest.raises(FileNotFoundError) as exc_info:
             service.restore("backup1.tar.gz")
-        
+
         assert "backup1.tar.gz" in str(exc_info.value)
+
+    def test_create_backup_exception(self):
+        """Test backup creation with exception"""
+        mock_driver = Mock()
+        mock_driver.create.side_effect = Exception("Create failed")
+        mock_storage = Mock()
+        mock_storage.get_backup_directory.return_value = "/backups"
+        mock_storage.get_base_directory.return_value = "/project"
+        mock_storage.get_file_size.return_value = 1024 * 1024
+        mock_storage.join_path.return_value = "/backups/soar_backup_test.tar.gz"
+
+        service = BackupService(driver=mock_driver, storage=mock_storage)
+
+        with pytest.raises(Exception, match="Create failed"):
+            service.create(user="testuser")
+
+    def test_list_backups_exception(self):
+        """Test backup listing with exception"""
+        mock_driver = Mock()
+        mock_storage = Mock()
+        mock_storage.get_backup_directory.return_value = "/backups"
+        mock_storage.directory_exists.return_value = True
+        mock_storage.list_files.side_effect = Exception("List failed")
+
+        service = BackupService(driver=mock_driver, storage=mock_storage)
+
+        with pytest.raises(Exception, match="List failed"):
+            service.list_backups()
+
+    def test_restore_backup_exception(self):
+        """Test backup restoration with generic exception"""
+        mock_driver = Mock()
+        mock_driver.extract.side_effect = Exception("Extract failed")
+        mock_storage = Mock()
+        mock_storage.get_backup_directory.return_value = "/backups"
+        mock_storage.get_base_directory.return_value = "/project"
+        mock_storage.file_exists.return_value = True
+        mock_storage.join_path.return_value = "/backups/backup1.tar.gz"
+
+        service = BackupService(driver=mock_driver, storage=mock_storage)
+
+        with pytest.raises(Exception, match="Extract failed"):
+            service.restore("backup1.tar.gz", user="testuser")

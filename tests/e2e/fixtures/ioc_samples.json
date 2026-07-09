@@ -1,0 +1,225 @@
+{
+  "benign_reference": {
+    "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+    "ip": "172.31.54.117",
+    "domain": "google.com",
+    "url": "https://www.google.com/search",
+    "mail": "user@example.com",
+    "file": "document.pdf",
+    "fqdn": "server.example.com",
+    "hostname": "WORKSTATION-001"
+  },
+  "malicious_test_cases": [
+    {
+      "name": "malicious_hash_1",
+      "hash": "93e670becf64454b97b2efb7537fc1b7e09866f0dec001d8321467f74abc8dba",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_hash_2",
+      "hash": "e48e0f18c5eb8b75eba5024c50e4e5f0d5a8b9c6e7f8a9b0c1d2e3f4a5b6c7d",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_ip_1",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "10.218.224.139",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_ip_2",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.21.44.28",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_domain_1",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "w99ojr.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_domain_2",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "0v5wvc0ajp.ru",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_url_1",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://k23qfut3od2.info/download",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_url_2",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://0s3m7nef.ru/update",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_mail_1",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "attacker@malicious.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_mail_2",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "phishing@scam.net",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_file_1",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "ransomware.exe",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_file_2",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "payload.dll",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_fqdn_1",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "c2-malicious.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_fqdn_2",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "botnet-controller.darknet",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "malicious_hostname_1",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "INFECTED-WIN-001"
+    },
+    {
+      "name": "malicious_hostname_2",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "COMPROMISED-SRV-002"
+    }
+  ],
+  "benign_test_cases": [
+    {
+      "name": "benign_all_fields",
+      "hash": "6c2ed91b8f53686dc6f4165b0fb19bf0df01b7612e2e2b2d9f7ad6313fba9a92",
+      "ip": "172.31.54.117",
+      "domain": "google.com",
+      "url": "https://www.google.com/search",
+      "mail": "user@example.com",
+      "file": "document.pdf",
+      "fqdn": "server.example.com",
+      "hostname": "WORKSTATION-001"
+    },
+    {
+      "name": "benign_mixed_1",
+      "hash": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2",
+      "ip": "172.19.232.120",
+      "domain": "microsoft.com",
+      "url": "https://github.com/user/repo",
+      "mail": "admin@company.org",
+      "file": "presentation.pptx",
+      "fqdn": "workstation.corp.local",
+      "hostname": "SERVER-002"
+    },
+    {
+      "name": "benign_mixed_2",
+      "hash": "2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3",
+      "ip": "10.30.25.152",
+      "domain": "github.com",
+      "url": "https://docs.python.org/3",
+      "mail": "support@service.net",
+      "file": "spreadsheet.xlsx",
+      "fqdn": "app-service.production.com",
+      "hostname": "APP-SERVICE-003"
+    }
+  ]
+}

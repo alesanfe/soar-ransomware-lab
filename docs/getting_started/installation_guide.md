@@ -3,41 +3,41 @@
 ## Índice
 
 - [1. Resumen](#1-resumen)
-  - [1.1 Objetivo](#11-objetivo)
-  - [1.2 Contexto](#12-contexto)
+    - [1.1 Objetivo](#11-objetivo)
+    - [1.2 Contexto](#12-contexto)
 - [2. Alcance](#2-alcance)
-  - [2.1 Qué cubre](#21-qué-cubre)
-  - [2.2 Límites](#22-límites)
-  - [2.3 Dependencias](#23-dependencias)
+    - [2.1 Qué cubre](#21-qué-cubre)
+    - [2.2 Límites](#22-límites)
+    - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
-  - [3.1 Requisitos previos](#31-requisitos-previos)
-    - [3.1.1 Requisitos de hardware](#311-requisitos-de-hardware)
-    - [3.1.2 Requisitos de software](#312-requisitos-de-software)
-    - [3.1.3 Verificación de instalación](#313-verificación-de-instalación)
-  - [3.2 Proceso de instalación](#32-proceso-de-instalación)
-    - [3.2.1 Clonar el repositorio](#321-clonar-el-repositorio)
-    - [3.2.2 Configurar variables de entorno](#322-configurar-variables-de-entorno)
-    - [3.2.3 Desplegar el stack completo](#323-desplegar-el-stack-completo)
-    - [3.2.4 Verificar estado de servicios](#324-verificar-estado-de-servicios)
-  - [3.3 Configuración inicial](#33-configuración-inicial)
-    - [3.3.1 Configuración de Shuffle](#331-configuración-de-shuffle)
-    - [3.3.2 Configuración de TheHive](#332-configuración-de-thehive)
-    - [3.3.3 Configuración de Cortex](#333-configuración-de-cortex)
-  - [3.4 Verificación de instalación](#34-verificación-de-instalación)
-    - [3.4.1 Verificación de servicios](#341-verificación-de-servicios)
-    - [3.4.2 Verificación de integraciones](#342-verificación-de-integraciones)
-  - [3.5 Solución de problemas](#35-solución-de-problemas)
-    - [3.5.1 Docker daemon not running](#351-docker-daemon-not-running)
-    - [3.5.2 Puertos bloqueados](#352-puertos-bloqueados)
-    - [3.5.3 Recursos insuficientes](#353-recursos-insuficientes)
+    - [3.1 Requisitos previos](#31-requisitos-previos)
+        - [3.1.1 Requisitos de hardware](#311-requisitos-de-hardware)
+        - [3.1.2 Requisitos de software](#312-requisitos-de-software)
+        - [3.1.3 Verificación de instalación](#313-verificación-de-instalación)
+    - [3.2 Proceso de instalación](#32-proceso-de-instalación)
+        - [3.2.1 Clonar el repositorio](#321-clonar-el-repositorio)
+        - [3.2.2 Configurar variables de entorno](#322-configurar-variables-de-entorno)
+        - [3.2.3 Desplegar el stack completo](#323-desplegar-el-stack-completo)
+        - [3.2.4 Verificar estado de servicios](#324-verificar-estado-de-servicios)
+    - [3.3 Configuración inicial](#33-configuración-inicial)
+        - [3.3.1 Configuración de Shuffle](#331-configuración-de-shuffle)
+        - [3.3.2 Configuración de TheHive](#332-configuración-de-thehive)
+        - [3.3.3 Configuración de Cortex](#333-configuración-de-cortex)
+    - [3.4 Verificación de instalación](#34-verificación-de-instalación)
+        - [3.4.1 Verificación de servicios](#341-verificación-de-servicios)
+        - [3.4.2 Verificación de integraciones](#342-verificación-de-integraciones)
+    - [3.5 Solución de problemas](#35-solución-de-problemas)
+        - [3.5.1 Docker daemon not running](#351-docker-daemon-not-running)
+        - [3.5.2 Puertos bloqueados](#352-puertos-bloqueados)
+        - [3.5.3 Recursos insuficientes](#353-recursos-insuficientes)
 - [4. Validación](#4-validación)
-  - [4.1 Verificación](#41-verificación)
-  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
-  - [4.3 Evidencias](#43-evidencias)
+    - [4.1 Verificación](#41-verificación)
+    - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+    - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
-  - [5.1 Limitaciones](#51-limitaciones)
-  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
+    - [5.1 Limitaciones](#51-limitaciones)
+    - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+    - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -50,13 +50,16 @@ Esta guía proporciona instrucciones paso a paso para instalar y configurar el S
 
 ### 1.2 Contexto
 
-El laboratorio SOAR Ransomware Lab se basa en Docker Compose para desplegar múltiples servicios de seguridad orquestación (SOAR) en un entorno controlado. Esta guía asume que tienes conocimientos básicos de Docker y línea de comandos.
+El laboratorio SOAR Ransomware Lab se basa en Docker Compose para desplegar múltiples servicios de seguridad
+orquestación (SOAR) en un entorno controlado. Esta guía asume que tienes conocimientos básicos de Docker y línea de
+comandos.
 
 ## 2. Alcance
 
 ### 2.1 Qué cubre
 
 Esta guía cubre:
+
 - Requisitos de hardware y software
 - Instalación de dependencias
 - Clonación del repositorio
@@ -67,6 +70,7 @@ Esta guía cubre:
 ### 2.2 Límites
 
 Esta guía no cubre:
+
 - Configuración avanzada de cada servicio
 - Integración con sistemas externos
 - Despliegue en entornos de producción
@@ -75,6 +79,7 @@ Esta guía no cubre:
 ### 2.3 Dependencias
 
 Esta guía depende de:
+
 - [overview.md](overview.md) - Visión general del laboratorio
 - [user_guide.md](user_guide.md) - Guía de usuario detallada
 - [architecture/docker_architecture.md](../architecture/docker_architecture.md) - Arquitectura Docker detallada
@@ -123,6 +128,7 @@ nano .env.full
 ```
 
 Variables importantes a configurar:
+
 - `ELASTIC_PASSWORD`: Contraseña de Elasticsearch
 - `REDIS_PASSWORD`: Contraseña de Redis
 - `SHUFFLE_DEFAULT_USERNAME`: Usuario admin de Shuffle
@@ -131,19 +137,33 @@ Variables importantes a configurar:
 
 #### 3.2.3 Desplegar el stack completo
 
+**En Windows:**
+
+```bash
+make -f Makefile.win up
+```
+
+**En Linux:**
+
 ```bash
 make up
 ```
 
 Este comando despliega todos los servicios definidos en los archivos Docker Compose:
+
 - Elasticsearch, Redis, TheHive, Cortex
 - Shuffle (frontend + backend + orborus)
 - MISP, MISP DB, MISP Modules
 - Wazuh Manager, Kibana
 - Lab API, Docs Site, Web Management, Nginx
-- Grafana, Grafana DB, Loki, Promtail (logging stack)
+- Stack de logging: Loki, Promtail, Grafana, PostgreSQL
 
 **Nota:** El comando `make up` usa el archivo `.env.full` para configuración de variables de entorno.
+
+**Nota:** `make up` incluye automáticamente la inicialización del webhook de Shuffle (`init_shuffle_webhook.py`). No es
+necesario ejecutar `make init-webhook` manualmente en un despliegue inicial.
+
+**Nota:** En Windows, usar `Makefile.win` que contiene comandos PowerShell compatibles con el sistema operativo.
 
 #### 3.2.4 Verificar estado de servicios
 
@@ -153,26 +173,39 @@ docker ps
 
 ### 3.3 Configuración inicial
 
-#### 3.3.1 Configuración de Shuffle
+#### 3.3.1 Puertos de acceso a servicios
 
-1. Acceder a Shuffle: https://localhost:3001/
+| Servicio               | URL                            | Notas                               |
+|------------------------|--------------------------------|-------------------------------------|
+| Web Management         | https://localhost (puerto 443) | Dashboard principal vía Nginx HTTPS |
+| SOAR API               | http://localhost:8000          | API REST del laboratorio            |
+| Shuffle UI             | http://localhost:8081          | Motor SOAR                          |
+| MISP                   | http://localhost:8083          | Threat Intelligence                 |
+| Grafana                | http://localhost:8084          | KPI Dashboard                       |
+| Web Management directo | http://localhost:8085          |                                     |
+| Docs Site              | http://localhost:8086          | Documentación                       |
+| TheHive                | http://localhost:19000         | Gestión de casos                    |
+| Cortex                 | http://localhost:19001         | Analyzers                           |
+| Elasticsearch          | http://localhost:19200         | Motor de búsqueda                   |
+| Kibana/Wazuh           | http://localhost:15601         | SIEM Dashboard                      |
+
+#### 3.3.2 Configuración de Shuffle
+
+1. Acceder a Shuffle: http://localhost:8081/
+2. Iniciar sesión con credenciales de `.env.full` (`SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD`)
+3. El workflow de ransomware se crea automáticamente durante `make up`
+
+#### 3.3.3 Configuración de TheHive
+
+1. Acceder a TheHive: http://localhost:19000/
 2. Iniciar sesión con credenciales configuradas
-3. Registrar las apps de TheHive, Cortex y otras integraciones
-4. Crear el workflow de respuesta a ransomware
+3. La inicialización de TheHive se ejecuta automáticamente durante `make up`
 
-#### 3.3.2 Configuración de TheHive
+#### 3.3.4 Configuración de Cortex
 
-1. Acceder a TheHive: http://localhost:9000/
+1. Acceder a Cortex: http://localhost:19001/
 2. Iniciar sesión con credenciales configuradas
-3. Configurar usuarios y organizaciones
-4. Configurar alertas y webhooks
-
-#### 3.3.3 Configuración de Cortex
-
-1. Acceder a Cortex: http://localhost:9001/
-2. Iniciar sesión con credenciales configuradas
-3. Configurar analyzers
-4. Configurar API keys para servicios externos (opcional)
+3. La configuración inicial de Cortex se ejecuta automáticamente durante `make up`
 
 ### 3.4 Verificación de instalación
 
@@ -180,16 +213,22 @@ docker ps
 
 ```bash
 # Verificar Elasticsearch
-curl -u elastic:YOUR_PASSWORD http://localhost:9200/_cluster/health
+curl -u elastic:ElasticLab2024SecurePass http://localhost:19200/_cluster/health
 
 # Verificar TheHive
-curl http://localhost:9000/api/status
+curl http://localhost:19000/api/health
 
 # Verificar Cortex
-curl http://localhost:9001/api/status
+curl http://localhost:19001/api/health
 
-# Verificar Shuffle
-curl https://localhost:3001/api/v1/status
+# Verificar API del Lab
+curl http://localhost:8000/health
+
+# Verificar Grafana
+curl http://localhost:8084/api/health
+
+# Verificar Nginx (HTTP→HTTPS)
+curl -I http://localhost/nginx-health
 ```
 
 #### 3.4.2 Verificación de integraciones
@@ -206,6 +245,7 @@ curl https://localhost:3001/api/v1/status
 **Síntoma**: Error al ejecutar comandos de Docker
 
 **Solución**:
+
 ```bash
 # Iniciar Docker Desktop (Windows)
 # O iniciar servicio Docker (Linux)
@@ -217,6 +257,7 @@ sudo systemctl start docker
 **Síntoma**: Error al iniciar servicios debido a puertos en uso
 
 **Solución**:
+
 ```bash
 # Verificar puertos en uso
 netstat -tuln | grep LISTEN
@@ -229,6 +270,7 @@ netstat -tuln | grep LISTEN
 **Síntoma**: Servicios se cierran o fallan al iniciar
 
 **Solución**:
+
 - Aumentar RAM disponible
 - Ajustar límites de recursos en docker-compose.yml
 - Desactivar servicios no críticos
@@ -238,6 +280,7 @@ netstat -tuln | grep LISTEN
 ### 4.1 Verificación
 
 La instalación se considera exitosa cuando:
+
 - Todos los servicios se inician y reportan estado healthy
 - Los servicios son accesibles en sus puertos esperados
 - Las integraciones básicas funcionan correctamente
@@ -245,6 +288,7 @@ La instalación se considera exitosa cuando:
 ### 4.2 Criterios de aceptación
 
 La instalación se considera aceptada cuando:
+
 - El stack completo se despliega sin errores
 - Todos los servicios son accesibles vía web o API
 - Las credenciales configuradas funcionan correctamente
@@ -253,6 +297,7 @@ La instalación se considera aceptada cuando:
 ### 4.3 Evidencias
 
 Las evidencias de instalación exitosa incluyen:
+
 - Logs de contenedores sin errores críticos
 - Acceso web a todos los servicios
 - Ejecución exitosa del playbook E2E
@@ -263,6 +308,7 @@ Las evidencias de instalación exitosa incluyen:
 ### 5.1 Limitaciones
 
 **Limitaciones de la Guía:**
+
 - Asume entorno Windows + Docker Desktop
 - No cubre configuración avanzada
 - No cubre integración con sistemas externos
@@ -270,6 +316,7 @@ Las evidencias de instalación exitosa incluyen:
 ### 5.2 Riesgos o incidencias
 
 **Riesgos de Instalación:**
+
 - Dependencia de servicios externos (Docker Hub)
 - Conflictos de puertos con otros servicios
 - Requisitos de recursos no cumplidos
@@ -277,12 +324,14 @@ Las evidencias de instalación exitosa incluyen:
 ### 5.3 Recomendaciones / troubleshooting
 
 **Recomendaciones:**
+
 - Leer la documentación oficial de cada herramienta
 - Verificar requisitos antes de instalar
 - Usar entornos aislados para pruebas
 - Mantener actualizaciones de seguridad
 
 **Recursos de Soporte:**
+
 - Documentación oficial de Docker: https://docs.docker.com/
 - Documentación de Shuffle: https://shuffler.io/docs
 - Documentación de TheHive: https://docs.strangebee.com/thehive/

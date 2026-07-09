@@ -9,6 +9,23 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock
 
+
+# Pytest markers for test categorization
+def pytest_configure(config):
+    """Configure pytest markers."""
+    config.addinivalue_line("markers", "unit: Unit tests (no external dependencies)")
+    config.addinivalue_line("markers", "integration: Integration tests (require external services)")
+    config.addinivalue_line("markers", "e2e: End-to-end tests (full system)")
+    config.addinivalue_line("markers", "performance: Performance tests")
+    config.addinivalue_line("markers", "security: Security tests")
+    config.addinivalue_line("markers", "contract: Contract tests (API compliance)")
+    config.addinivalue_line("markers", "docker_runtime: Docker runtime tests")
+    config.addinivalue_line("markers", "live: Tests requiring live services")
+    config.addinivalue_line("markers", "offline: Tests that can run without external services")
+    config.addinivalue_line("markers", "smoke: Smoke tests (quick validation)")
+    config.addinivalue_line("markers", "regression: Regression tests")
+
+
 # Set BASE_DIR at module load time so that imports of soar_lab.api (which
 # instantiate Settings() eagerly) do not fail during test collection.
 os.environ.setdefault('BASE_DIR', str(Path(__file__).parent.parent))
@@ -16,6 +33,16 @@ os.environ.setdefault('BASE_DIR', str(Path(__file__).parent.parent))
 # Disable eager instantiation in soar_lab.api.__init__ to allow tests to
 # configure environment before app creation
 os.environ.setdefault('SOAR_SKIP_EAGER_INIT', '1')
+
+# Load .env.full so e2e tests can pick up real tokens (SIEM_WEBHOOK_TOKEN, etc.)
+try:
+    from dotenv import load_dotenv
+
+    _env_file = Path(__file__).parent.parent / '.env.full'
+    if _env_file.exists():
+        load_dotenv(_env_file, override=True)
+except ImportError:
+    pass
 
 
 @pytest.fixture
@@ -30,7 +57,7 @@ def mock_settings():
     settings.TEST_COVERAGE_PATH = "src/soar_lab"
     settings.JWT_SECRET_KEY = "test-secret-key-min-32-chars-long"
     settings.JWT_EXPIRATION_MINUTES = 60
-    settings.CORS_ORIGINS = ["http://localhost:8080"]
+    settings.CORS_ORIGINS = ["http://localhost:8086"]
     return settings
 
 
@@ -93,6 +120,14 @@ def reset_env_vars():
     original_env = os.environ.copy()
     # Set BASE_DIR for tests that import modules that require it
     os.environ.setdefault('BASE_DIR', str(Path(__file__).parent.parent))
+    # Reload .env.full to ensure correct API keys are used
+    try:
+        from dotenv import load_dotenv
+        _env_file = Path(__file__).parent.parent / '.env.full'
+        if _env_file.exists():
+            load_dotenv(_env_file, override=True)
+    except ImportError:
+        pass
     yield
     os.environ.clear()
     os.environ.update(original_env)

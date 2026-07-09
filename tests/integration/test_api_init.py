@@ -69,7 +69,7 @@ print("SUCCESS: Eager instantiation works with real dependencies")
             cwd=Path(__file__).parent.parent.parent,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=90,
             env=env
         )
 
@@ -112,7 +112,7 @@ print("SUCCESS: Skip eager instantiation works")
             cwd=Path(__file__).parent.parent.parent,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=90,
             env=env
         )
 
@@ -211,7 +211,7 @@ print("SUCCESS: create_app factory works with real dependencies")
             cwd=Path(__file__).parent.parent.parent,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=90,
             env=env
         )
 

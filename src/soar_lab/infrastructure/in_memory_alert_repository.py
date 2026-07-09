@@ -42,3 +42,35 @@ class InMemoryAlertRepository:
     def clear(self) -> None:
         """Clear all alerts (useful for test isolation)."""
         self._store.clear()
+
+    def get_test_results(self, hours: int = 24) -> List[Dict[str, Any]]:
+        """Return test results (empty when none stored in memory)."""
+        return []
+
+    def get_alerts(self, hours: int = 24) -> List[Dict[str, Any]]:
+        """Return all alerts within the last N hours."""
+        return list(self._store.values())
+
+    def count_alerts(self) -> int:
+        """Return total number of alerts."""
+        return len(self._store)
+
+    def count_alerts_by_status(self, status: str) -> int:
+        """Return count of alerts with a given status."""
+        return sum(1 for a in self._store.values() if a.get("status") == status)
+
+    def count_cases(self) -> int:
+        """Return total number of cases (0 in memory-only repo)."""
+        return 0
+
+    def count_cases_by_status(self, status: str) -> int:
+        """Return count of cases with a given status (0 in memory-only repo)."""
+        return 0
+
+    def count_backups_by_status(self, status: str) -> int:
+        """Return count of backups with a given status (0 in memory-only repo)."""
+        return 0
+
+    def get_average_test_coverage(self, hours: int = 24) -> float:
+        """Return average test coverage (0.0 when no data available)."""
+        return 0.0

@@ -2,257 +2,260 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Docker API - Documentation</title>
-    <link rel="stylesheet" href="styles.css">
+    <link href="styles.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <h1>Docker API</h1>
-                <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+<div class="container">
+    <header class="header">
+        <div class="header-content">
+            <h1>Docker API</h1>
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <a class="back-link" href="index.html">← Back to Index</a>
+
+        <div class="service-info">
+            <h2>Docker API</h2>
+            <div class="meta">
+                <div class="meta-item"><strong>Access:</strong> Unix Socket (/var/run/docker.sock)</div>
+                <div class="meta-item"><strong>Documentation:</strong> <a href="https://docs.docker.com/engine/api/"
+                                                                          style="color: var(--primary-light);">Docker
+                    Engine API</a></div>
             </div>
-        </header>
+            <p style="color: var(--text-secondary);">Container management and orchestration. Docker provides a RESTful
+                API for managing containers, images, networks, and volumes.</p>
+        </div>
 
-        <main class="main-content">
-            <a href="index.html" class="back-link">← Back to Index</a>
-
-            <div class="service-info">
-                <h2>Docker API</h2>
-                <div class="meta">
-                    <div class="meta-item"><strong>Access:</strong> Unix Socket (/var/run/docker.sock)</div>
-                    <div class="meta-item"><strong>Documentation:</strong> <a href="https://docs.docker.com/engine/api/" style="color: var(--primary-light);">Docker Engine API</a></div>
+        <div class="section">
+            <h3>Containers</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/containers/json</span>
                 </div>
-                <p style="color: var(--text-secondary);">Container management and orchestration. Docker provides a RESTful API for managing containers, images, networks, and volumes.</p>
+                <p class="endpoint-description">List containers</p>
             </div>
-
-            <div class="section">
-                <h3>Containers</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/containers/json</span>
-                    </div>
-                    <p class="endpoint-description">List containers</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/containers/create</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/containers/create</span>
-                    </div>
-                    <p class="endpoint-description">Create container</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/containers/{id}/json</span>
-                    </div>
-                    <p class="endpoint-description">Inspect container</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/containers/{id}/start</span>
-                    </div>
-                    <p class="endpoint-description">Start container</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/containers/{id}/stop</span>
-                    </div>
-                    <p class="endpoint-description">Stop container</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/containers/{id}/restart</span>
-                    </div>
-                    <p class="endpoint-description">Restart container</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method delete">DELETE</span>
-                        <span class="path">/containers/{id}</span>
-                    </div>
-                    <p class="endpoint-description">Delete container</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/containers/{id}/logs</span>
-                    </div>
-                    <p class="endpoint-description">Get container logs</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/containers/{id}/stats</span>
-                    </div>
-                    <p class="endpoint-description">Get container stats</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/containers/{id}/exec</span>
-                    </div>
-                    <p class="endpoint-description">Create exec instance</p>
-                </div>
+                <p class="endpoint-description">Create container</p>
             </div>
-
-            <div class="section">
-                <h3>Images</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/images/json</span>
-                    </div>
-                    <p class="endpoint-description">List images</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/containers/{id}/json</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/images/create</span>
-                    </div>
-                    <p class="endpoint-description">Pull image</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method delete">DELETE</span>
-                        <span class="path">/images/{id}</span>
-                    </div>
-                    <p class="endpoint-description">Delete image</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/images/{id}/json</span>
-                    </div>
-                    <p class="endpoint-description">Inspect image</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/images/{id}/tag</span>
-                    </div>
-                    <p class="endpoint-description">Tag image</p>
-                </div>
+                <p class="endpoint-description">Inspect container</p>
             </div>
-
-            <div class="section">
-                <h3>Networks</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/networks</span>
-                    </div>
-                    <p class="endpoint-description">List networks</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/containers/{id}/start</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/networks/create</span>
-                    </div>
-                    <p class="endpoint-description">Create network</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method delete">DELETE</span>
-                        <span class="path">/networks/{id}</span>
-                    </div>
-                    <p class="endpoint-description">Delete network</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/networks/{id}/connect</span>
-                    </div>
-                    <p class="endpoint-description">Connect container to network</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/networks/{id}/disconnect</span>
-                    </div>
-                    <p class="endpoint-description">Disconnect container from network</p>
-                </div>
+                <p class="endpoint-description">Start container</p>
             </div>
-
-            <div class="section">
-                <h3>Volumes</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/volumes</span>
-                    </div>
-                    <p class="endpoint-description">List volumes</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/containers/{id}/stop</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/volumes/create</span>
-                    </div>
-                    <p class="endpoint-description">Create volume</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method delete">DELETE</span>
-                        <span class="path">/volumes/{name}</span>
-                    </div>
-                    <p class="endpoint-description">Delete volume</p>
-                </div>
+                <p class="endpoint-description">Stop container</p>
             </div>
-
-            <div class="section">
-                <h3>System</h3>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/info</span>
-                    </div>
-                    <p class="endpoint-description">Get system info</p>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/containers/{id}/restart</span>
                 </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/version</span>
-                    </div>
-                    <p class="endpoint-description">Get Docker version</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/events</span>
-                    </div>
-                    <p class="endpoint-description">Get Docker events</p>
-                </div>
-                <div class="endpoint">
-                    <div class="endpoint-header">
-                        <span class="method get">GET</span>
-                        <span class="path">/system/df</span>
-                    </div>
-                    <p class="endpoint-description">Get disk usage</p>
-                </div>
+                <p class="endpoint-description">Restart container</p>
             </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/containers/{id}</span>
+                </div>
+                <p class="endpoint-description">Delete container</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/containers/{id}/logs</span>
+                </div>
+                <p class="endpoint-description">Get container logs</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/containers/{id}/stats</span>
+                </div>
+                <p class="endpoint-description">Get container stats</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/containers/{id}/exec</span>
+                </div>
+                <p class="endpoint-description">Create exec instance</p>
+            </div>
+        </div>
 
-            <div class="section">
-                <h3>Testing Examples</h3>
-                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Using curl</h4>
-                <pre class="code-block"># List Containers
+        <div class="section">
+            <h3>Images</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/images/json</span>
+                </div>
+                <p class="endpoint-description">List images</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/images/create</span>
+                </div>
+                <p class="endpoint-description">Pull image</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/images/{id}</span>
+                </div>
+                <p class="endpoint-description">Delete image</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/images/{id}/json</span>
+                </div>
+                <p class="endpoint-description">Inspect image</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/images/{id}/tag</span>
+                </div>
+                <p class="endpoint-description">Tag image</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Networks</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/networks</span>
+                </div>
+                <p class="endpoint-description">List networks</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/networks/create</span>
+                </div>
+                <p class="endpoint-description">Create network</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/networks/{id}</span>
+                </div>
+                <p class="endpoint-description">Delete network</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/networks/{id}/connect</span>
+                </div>
+                <p class="endpoint-description">Connect container to network</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/networks/{id}/disconnect</span>
+                </div>
+                <p class="endpoint-description">Disconnect container from network</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Volumes</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/volumes</span>
+                </div>
+                <p class="endpoint-description">List volumes</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/volumes/create</span>
+                </div>
+                <p class="endpoint-description">Create volume</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/volumes/{name}</span>
+                </div>
+                <p class="endpoint-description">Delete volume</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>System</h3>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/info</span>
+                </div>
+                <p class="endpoint-description">Get system info</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/version</span>
+                </div>
+                <p class="endpoint-description">Get Docker version</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/events</span>
+                </div>
+                <p class="endpoint-description">Get Docker events</p>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/system/df</span>
+                </div>
+                <p class="endpoint-description">Get disk usage</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Testing Examples</h3>
+            <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Using curl</h4>
+            <pre class="code-block"># List Containers
 curl --unix-socket /var/run/docker.sock http://localhost/containers/json</pre>
 
-                <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Using Python</h4>
-                <pre class="code-block">import docker
+            <h4 style="color: var(--text-color); margin-bottom: 0.5rem;">Using Python</h4>
+            <pre class="code-block">import docker
 
 client = docker.from_env()
 containers = client.containers.list()
 for c in containers:
     print(c.name, c.status)</pre>
-            </div>
-        </main>
-    </div>
+        </div>
+    </main>
+</div>
 
-    <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

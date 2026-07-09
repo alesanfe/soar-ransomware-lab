@@ -158,7 +158,7 @@ que no estaban documentados anteriormente.
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                         Capa de Acceso (Nginx)                            │
-│  :80 Web UI  │  :8080 Proxy Inverso  │  :443 HTTPS                     │
+│  :80 Web UI (redirect to HTTPS)  │  :443 HTTPS                           │
 ├────────────────────────────────────────────────────────────────────────┤
 │                         Capa de Orquestación SOAR                         │
 │  Shuffle UI :8081  │  Shuffle API :5001  │  Orborus (ejecutor worker)  │
@@ -170,10 +170,10 @@ que no estaban documentados anteriormente.
 │  Wazuh Manager :1514-1516 (eventos)  │  Kibana :15601 (dashboards)      │
 ├────────────────────────────────────────────────────────────────────────┤
 │                         Capa de Inteligencia de Amenazas                  │
-│  MISP :8082 (plataforma TI)                                               │
+│  MISP :8083 (plataforma TI)                                               │
 ├────────────────────────────────────────────────────────────────────────┤
 │                         Capa de Gestión y API                           │
-│  Lab API :8000 (FastAPI)  │  Docs Site :8080                           │
+│  Lab API :8000 (FastAPI)  │  Docs Site :8086                           │
 ├────────────────────────────────────────────────────────────────────────┤
 │                         Capa de Datos e Infraestructura                 │
 │  Elasticsearch (interno)  │  Redis (interno)  │  MariaDB (MISP)      │
@@ -240,19 +240,19 @@ que no estaban documentados anteriormente.
 
 #### Acceso y Gestión
 
-10. **Nginx** (`:80`, `:443`, `:8080`)
+10. **Nginx** (`:80`, `:443`)
     - Proxy inverso para todos los servicios
-    - Sirve UI de gestión web estática en `:80`
-    - Proxy de todos los servicios vía prefijo de ruta en `:8080`
+    - Sirve UI de gestión web estática en `:80` (redirect to HTTPS)
+    - Proxy inverso HTTPS en `:443`
 
 11. **Lab API** (`:8000`)
     - Aplicación FastAPI (`apps/api/entrypoint.py`)
     - Endpoints de gestión y automatización del laboratorio
     - Health check en `/health`
 
-12. **Docs Site** (`:8080`)
+12. **Docs Site** (`:8086`)
     - Sitio estático Docusaurus
-    - Servido en `/docs/`
+    - Servido directamente en puerto 8086
 
 #### Zonas de Seguridad
 
@@ -376,19 +376,19 @@ organizado en capas (domain, services, infrastructure), existen acoplamientos y 
 
 #### Acceso y Gestión
 
-10. **Nginx** (`:80`, `:443`, `:8080`)
+10. **Nginx** (`:80`, `:443`)
     - Proxy inverso para todos los servicios
-    - Sirve UI de gestión web estática en `:80`
-    - Proxy de todos los servicios vía prefijo de ruta en `:8080`
+    - Sirve UI de gestión web estática en `:80` (redirect to HTTPS)
+    - Proxy inverso HTTPS en `:443`
 
 11. **Lab API** (`:8000`)
     - Aplicación FastAPI (`apps/api/entrypoint.py`)
     - Endpoints de gestión y automatización del laboratorio
     - Health check en `/health`
 
-12. **Docs Site** (`:8080`)
+12. **Docs Site** (`:8086`)
     - Sitio estático Docusaurus
-    - Servido en `/docs/`
+    - Servido directamente en puerto 8086
 
 ### 3.4 Flujos principales
 
@@ -511,20 +511,20 @@ sequenceDiagram
 | `cortex`           | thehiveproject/cortex:3.1.4-1                         | `${CORTEX_HTTP_PORT:-9001}:9001`                             | soar_net              |
 | `shuffle-backend`  | ghcr.io/shuffle/shuffle-backend:2.2.1*               | `${SHUFFLE_API_PORT:-5001}:5001`                             | soar_net              |
 | `shuffle-frontend` | ghcr.io/shuffle/shuffle-frontend:2.2.1*              | `${SHUFFLE_UI_PORT:-8081}:80`                                | soar_net              |
-| `orborus`          | ghcr.io/shuffle/shuffle-orborus:latest*               | — (interno)                                                  | soar_net              |
+| `orborus`          | ghcr.io/shuffle/shuffle-orborus:2.2.1*               | — (interno)                                                  | soar_net              |
 | `elasticsearch`    | docker.elastic.co/elasticsearch/elasticsearch:7.17.29 | `${ELASTICSEARCH_PORT:-9201}:9200`                           | soar_net, ti_net      |
 | `redis`            | redis:7-alpine                                        | `${REDIS_PORT:-6379}:6379`                                   | soar_net, ti_net      |
 | `kibana`           | docker.elastic.co/kibana/kibana:7.17.29               | `${WAZUH_DASHBOARD_PORT:-15601}:5601`                        | soar_net              |
 | `wazuh-manager`    | wazuh/wazuh-manager:4.14.0                            | `${WAZUH_EVENTS_PORT:-15141}:1514`, `1515:1515`, `1516:1516` | soar_net              |
-| `misp`             | ghcr.io/misp/misp-docker/misp-core:latest*            | `${MISP_PORT:-8082}:80`                                      | soar_net              |
+| `misp`             | ghcr.io/misp/misp-docker/misp-core:2.4.177*           | `${MISP_PORT:-8083}:80`                                      | soar_net              |
 | `misp-db`          | mariadb:10.11                                         | — (interno)                                                  | soar_net              |
-| `misp-modules`     | ghcr.io/misp/misp-docker/misp-modules:latest*         | — (interno)                                                  | soar_net              |
+| `misp-modules`     | ghcr.io/misp/misp-docker/misp-modules:2.4.177*         | — (interno)                                                  | soar_net              |
 | `api`              | build: apps/api/Dockerfile                            | `${API_PORT:-8000}:8000`                                     | soar_net, ti_net      |
 | `web-management`   | build: apps/web-management/Dockerfile                 | `8085:80`                                                    | soar_net              |
-| `docs-site`        | build: apps/docs-site/Dockerfile                      | `${DOCS_PORT:-8080}:3000`                                    | soar_net              |
-| `loki`             | grafana/loki:latest                                   | — (interno)                                                  | logging_net           |
-| `promtail`         | grafana/promtail:latest                               | — (interno)                                                  | logging_net           |
-| `grafana`          | grafana/grafana:latest                                | `${GRAFANA_PORT:-8084}:3000`                                 | logging_net, soar_net |
+| `docs-site`        | build: apps/docs-site/Dockerfile                      | `${DOCS_PORT:-8086}:3000`                                    | soar_net              |
+| `loki`             | grafana/loki:2.9.10                                   | — (interno)                                                  | logging_net           |
+| `promtail`         | grafana/promtail:2.9.10                               | — (interno)                                                  | logging_net           |
+| `grafana`          | grafana/grafana:10.3.4                                | `${GRAFANA_PORT:-8084}:3000`                                 | logging_net, soar_net |
 | `grafana-db`       | postgres:15-alpine                                    | — (interno)                                                  | logging_net           |
 
 #### Redes Docker

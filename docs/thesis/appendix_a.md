@@ -1,10 +1,13 @@
 # Anexo A
 
-Este anexo contiene la configuración técnica y código fuente de los componentes principales del laboratorio SOAR para reproducir el sistema.
+Este anexo contiene la configuración técnica y código fuente de los componentes principales del laboratorio SOAR para
+reproducir el sistema.
 
 ## A.1. Configuración Completa de Docker Compose
 
-La configuración Docker Compose define los servicios, redes, volúmenes y dependencias del laboratorio SOAR. La arquitectura modular permite despliegues desde configuraciones mínimas hasta entornos completos, separando responsabilidades entre componentes.
+La configuración Docker Compose define los servicios, redes, volúmenes y dependencias del laboratorio SOAR. La
+arquitectura modular permite despliegues desde configuraciones mínimas hasta entornos completos, separando
+responsabilidades entre componentes.
 
 ### A.1.1. Archivo docker-compose.yml
 
@@ -15,7 +18,7 @@ name: soar-lab
 services:
   # === Data layer ===
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.29
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
     environment:
       - discovery.type=single-node
@@ -134,7 +137,7 @@ services:
     environment:
       BACKEND_HOSTNAME: shuffle-backend
     ports:
-      - "${SHUFFLE_UI_PORT:-3001}:3001"
+      - "${SHUFFLE_UI_PORT:-8081}:80"
     networks:
       - soar_edge
       - soar_net
@@ -142,7 +145,7 @@ services:
       shuffle-backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:3001 || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -305,7 +308,11 @@ networks:
 
 ### A.1.2. Archivo .env
 
-El archivo de entorno `.env` contiene todas las variables de configuración necesarias para el despliegue del laboratorio SOAR. Este archivo permite la personalización del sistema según las necesidades específicas de cada entorno, facilitando la adaptación a diferentes configuraciones de red, recursos disponibles y requisitos de seguridad. Las variables de entorno incluyen configuraciones de puertos, credenciales, imágenes Docker y parámetros de red, permitiendo una flexibilidad máxima en el despliegue sin necesidad de modificar los archivos de configuración principales.
+El archivo de entorno `.env` contiene todas las variables de configuración necesarias para el despliegue del laboratorio
+SOAR. Este archivo permite la personalización del sistema según las necesidades específicas de cada entorno, facilitando
+la adaptación a diferentes configuraciones de red, recursos disponibles y requisitos de seguridad. Las variables de
+entorno incluyen configuraciones de puertos, credenciales, imágenes Docker y parámetros de red, permitiendo una
+flexibilidad máxima en el despliegue sin necesidad de modificar los archivos de configuración principales.
 
 ```bash
 # Project Configuration
@@ -324,7 +331,7 @@ THEHIVE_HTTP_PORT=9000
 CORTEX_HTTP_PORT=9001
 
 # Shuffle Configuration
-SHUFFLE_UI_PORT=3001
+SHUFFLE_UI_PORT=8081
 SHUFFLE_API_PORT=5001
 SHUFFLE_FRONTEND_IMAGE=ghcr.io/shuffle/shuffle-frontend:2.2.1
 SHUFFLE_BACKEND_IMAGE=ghcr.io/shuffle/shuffle-backend:2.2.1
@@ -349,11 +356,20 @@ OUTER_HOSTNAME=localhost
 
 ## A.2. Scripts de Automatización
 
-Los scripts de automatización desarrollados para el laboratorio SOAR ofrecen las capacidades operativas necesarias para la simulación de incidentes, el cálculo de métricas y la ejecución de acciones de respuesta. Estos scripts representan la materialización práctica de la automatización SOAR, permitiendo la validación del sistema mediante simulaciones controladas y ofreciendo las herramientas necesarias para el análisis de rendimiento. Cada script sigue buenas prácticas de desarrollo software, incluyendo manejo de errores, logging estructurado y documentación completa.
+Los scripts de automatización desarrollados para el laboratorio SOAR ofrecen las capacidades operativas necesarias para
+la simulación de incidentes, el cálculo de métricas y la ejecución de acciones de respuesta. Estos scripts representan
+la materialización práctica de la automatización SOAR, permitiendo la validación del sistema mediante simulaciones
+controladas y ofreciendo las herramientas necesarias para el análisis de rendimiento. Cada script sigue buenas prácticas
+de desarrollo software, incluyendo manejo de errores, logging estructurado y documentación completa.
 
 ### A.2.1. SIEM Simulator (send_alert.py)
 
-El script SIEM Simulator simula alertas de ransomware con datos realistas y las envía al webhook de Shuffle para su procesamiento. Este componente es fundamental para la validación del sistema, ya que permite generar alertas controladas que representan escenarios realistas de ransomware sin exponer el sistema a amenazas reales. La implementación incluye la generación de alertas con IoCs conocidos, soporte para alertas maliciosas y benignas, distribución temporal configurable para pruebas de carga, validación de esquemas JSON y autenticación mediante API token. Este script se utiliza extensivamente en las pruebas E2E del sistema para validar el flujo completo de respuesta a incidentes.
+El script SIEM Simulator simula alertas de ransomware con datos realistas y las envía al webhook de Shuffle para su
+procesamiento. Este componente es fundamental para la validación del sistema, ya que permite generar alertas controladas
+que representan escenarios realistas de ransomware sin exponer el sistema a amenazas reales. La implementación incluye
+la generación de alertas con IoCs conocidos, soporte para alertas maliciosas y benignas, distribución temporal
+configurable para pruebas de carga, validación de esquemas JSON y autenticación mediante API token. Este script se
+utiliza extensivamente en las pruebas E2E del sistema para validar el flujo completo de respuesta a incidentes.
 
 ```python
 #!/usr/bin/env python3
@@ -422,7 +438,12 @@ if __name__ == "__main__":
 
 ### A.2.2. KPI Calculator (AnalyticsService)
 
-El script KPI Calculator calcula métricas MTTR desde logs de ejecución del sistema, ofreciendo la base para evaluar la eficacia de la automatización. Este componente es importante para la validación cuantitativa de los beneficios de SOAR, permitiendo el análisis estadístico de tiempos de respuesta, el cálculo de percentiles, la exportación de resultados a CSV y JSON, y la generación de informes de rendimiento. El script implementa algoritmos de análisis de logs estructurados, extrayendo automáticamente los timestamps de cada etapa del ciclo de respuesta y calculando las duraciones correspondientes. El análisis de rendimiento permite identificar áreas de mejora y optimizar el sistema.
+El script KPI Calculator calcula métricas MTTR desde logs de ejecución del sistema, ofreciendo la base para evaluar la
+eficacia de la automatización. Este componente es importante para la validación cuantitativa de los beneficios de SOAR,
+permitiendo el análisis estadístico de tiempos de respuesta, el cálculo de percentiles, la exportación de resultados a
+CSV y JSON, y la generación de informes de rendimiento. El script implementa algoritmos de análisis de logs
+estructurados, extrayendo automáticamente los timestamps de cada etapa del ciclo de respuesta y calculando las
+duraciones correspondientes. El análisis de rendimiento permite identificar áreas de mejora y optimizar el sistema.
 
 ```python
 #!/usr/bin/env python3
@@ -746,7 +767,13 @@ if __name__ == '__main__':
 
 ## A.3. Plantilla de Caso TheHive
 
-La plantilla de caso TheHive para incidentes de ransomware define la estructura estándar para la documentación forense y la coordinación de respuesta. Esta plantilla asegura que cada incidente capture la información específica necesaria para este tipo de amenazas, incluyendo vectores de entrada, variantes identificadas, estado de cifrado, demanda de rescate y estado de contención. La implementación de campos personalizados permite la captura de información específica de ransomware que no está disponible en plantillas genéricas, mientras que la definición de fases y tareas establece un proceso estructurado de respuesta que guía a los analistas a través de las acciones necesarias desde la detección inicial hasta la recuperación final.
+La plantilla de caso TheHive para incidentes de ransomware define la estructura estándar para la documentación forense y
+la coordinación de respuesta. Esta plantilla asegura que cada incidente capture la información específica necesaria para
+este tipo de amenazas, incluyendo vectores de entrada, variantes identificadas, estado de cifrado, demanda de rescate y
+estado de contención. La implementación de campos personalizados permite la captura de información específica de
+ransomware que no está disponible en plantillas genéricas, mientras que la definición de fases y tareas establece un
+proceso estructurado de respuesta que guía a los analistas a través de las acciones necesarias desde la detección
+inicial hasta la recuperación final.
 
 ### A.3.1. Plantilla Ransomware (thehive_template.json)
 
@@ -1016,7 +1043,7 @@ scrape_configs:
   # Shuffle Frontend metrics
   - job_name: 'shuffle-frontend'
     static_configs:
-      - targets: ['shuffle-frontend:3001']
+      - targets: ['shuffle-frontend:80']
     metrics_path: '/metrics'
     scrape_interval: 30s
 
@@ -1063,7 +1090,7 @@ scrape_configs:
         - http://nginx/nginx-health
         - http://thehive:9000/api/health
         - http://cortex:9001/api/health
-        - http://shuffle-frontend:3001/health
+        - http://shuffle-frontend:80/health
         - http://shuffle-backend:5001/health
     relabel_configs:
       - source_labels: [__address__]
@@ -1288,6 +1315,7 @@ curl -f http://localhost:19200/_cluster/health  # Elasticsearch
 ### A.6.1. Problemas Frecuentes
 
 **Problema: Contenedores no inician**
+
 ```bash
 # Check Docker daemon
 sudo systemctl status docker
@@ -1303,6 +1331,7 @@ sudo systemctl restart docker
 ```
 
 **Problema: Elasticsearch falla**
+
 ```bash
 # Check JVM memory settings
 docker exec soar_elasticsearch env | grep ES_JAVA_OPTS
@@ -1315,6 +1344,7 @@ sudo sysctl -w vm.max_map_count=262144
 ```
 
 **Problema: Conexión entre servicios**
+
 ```bash
 # Check network configuration
 docker network ls
@@ -1345,4 +1375,6 @@ docker logs soar_nginx -f
 
 ---
 
-**Nota**: Esta documentación técnica complementaria incluye detalles específicos de implementación, configuración y operación del laboratorio SOAR. Para información adicional sobre conceptos teóricos y metodología, consulte los capítulos principales del documento.
+**Nota**: Esta documentación técnica complementaria incluye detalles específicos de implementación, configuración y
+operación del laboratorio SOAR. Para información adicional sobre conceptos teóricos y metodología, consulte los
+capítulos principales del documento.

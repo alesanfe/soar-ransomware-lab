@@ -30,6 +30,7 @@ class HTTPAlertSender(AlertTransporter):
         self.api_token = api_token
         self.timeout = timeout
         self._session = requests.Session()
+        self._session.verify = False
         self._session.headers.update(
             {
                 "Authorization": f"Bearer {api_token}",

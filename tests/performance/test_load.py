@@ -17,7 +17,14 @@ from typing import List, Dict, Any, Optional
 
 from soar_lab.config.logging import get_logger
 from soar_lab.config.schemas import RansomwareAlert
-from soar_lab.config.settings import get_setting
+from soar_lab.config.settings import Settings as _Settings
+
+
+def get_setting(key, default=None):
+    import os;
+    os.environ.setdefault('BASE_DIR', str(Path(__file__).parents[3]))
+    return _Settings().get(key, default)
+
 
 logger = get_logger(__name__)
 
@@ -27,7 +34,7 @@ class LoadTester:
 
     def __init__(self):
         self.base_url = get_setting('shuffle_url', 'http://localhost:5001')
-        self.webhook_url = f"{self.base_url}/api/v1/webhooks/siem"
+        self.webhook_url = f"{self.base_url}/api/v1/webhooks/siem"  # noqa
         self.api_token = get_setting('siem_webhook_token', 'test-token')
         self.results = []
 

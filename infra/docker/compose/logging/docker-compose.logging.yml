@@ -9,7 +9,7 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_grafana_db
     environment:
       POSTGRES_USER: grafana
-      POSTGRES_PASSWORD: grafana_password
+      POSTGRES_PASSWORD: ${GRAFANA_DATABASE_PASSWORD:-GrafanaDB2024Secure}
       POSTGRES_DB: grafana
     volumes:
       - grafana_db_data:/var/lib/postgresql/data
@@ -17,37 +17,48 @@ services:
       - logging_net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U grafana"]
+      test: [ "CMD-SHELL", "pg_isready -U grafana" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
 
   grafana:
-    image: grafana/grafana:latest
+
+    image: grafana/grafana:10.3.4
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_grafana
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-GrafanaLab2024Secure}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=https://localhost/grafana/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_ROOT_URL=http://localhost:8084/
       - GF_DATABASE_TYPE=postgres
       - GF_DATABASE_HOST=grafana-db:5432
       - GF_DATABASE_NAME=grafana
       - GF_DATABASE_USER=grafana
-      - GF_DATABASE_PASSWORD=grafana_password
+      - GF_DATABASE_PASSWORD=${GRAFANA_DATABASE_PASSWORD:-GrafanaDB2024Secure}
     networks:
       - logging_net
+      - soar_net
     ports:
-      - "${GRAFANA_PORT:-3002}:3000"
+      - "${GRAFANA_PORT:-8084}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+    configs:
+      - source: grafana_dashboards
+        target: /etc/grafana/provisioning/dashboards/grafana-kpi-dashboard.yml
+      - source: kpi_dashboard_json
+        target: /etc/grafana/provisioning/dashboards/soar-kpi-dashboard.json
+      - source: grafana_datasources
+        target: /etc/grafana/provisioning/datasources/grafana-datasources.yml
     restart: unless-stopped
     depends_on:
       grafana-db:
         condition: service_healthy
+      loki:
+        condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -62,15 +73,12 @@ services:
           memory: 512M
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:2.9.10
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_loki
-    command: -config.file=/etc/loki/local-config.yaml
     networks:
       - logging_net
-    ports:
-      - "${LOKI_PORT:-3100}:3100"
     volumes:
-      - loki_data:/loki
+      - loki_data:/var/lib/loki
     restart: unless-stopped
     deploy:
       resources:
@@ -82,15 +90,19 @@ services:
           memory: 512M
 
   promtail:
-    image: grafana/promtail:latest
+    image: grafana/promtail:2.9.10
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_promtail
     command: -config.file=/etc/promtail/config.yml
     networks:
       - logging_net
+      - soar_net
     volumes:
-      - /var/log:/var/log:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    configs:
+      - source: promtail_config
+        target: /etc/promtail/config.yml
+    depends_on:
+      - loki
     restart: unless-stopped
     deploy:
       resources:
@@ -101,9 +113,23 @@ services:
           cpus: '0.25'
           memory: 256M
 
+configs:
+  promtail_config:
+    file: logging/promtail-config.yml
+  grafana_datasources:
+    file: logging/grafana-datasources.yml
+  grafana_dashboards:
+    file: logging/grafana-kpi-dashboard.yml
+  kpi_dashboard_json:
+    file: logging/kpi-dashboard.json
+
 networks:
   logging_net:
-    driver: bridge
+    name: logging_net
+    external: true
+  soar_net:
+    name: soar_net
+    external: true
 
 volumes:
   grafana_db_data:

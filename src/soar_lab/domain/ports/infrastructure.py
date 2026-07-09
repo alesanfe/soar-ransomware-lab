@@ -127,6 +127,8 @@ class TestRunner(Protocol):
     allowing the application to run tests without subprocess details.
     """
 
+    __test__ = False
+
     def run_suite(self, suite: str, coverage: bool = True) -> Dict[str, Any]:
         """Run a test suite and return results."""
         ...

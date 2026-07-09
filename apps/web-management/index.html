@@ -2,372 +2,378 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>SOAR Lab Management UI</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    <link href="styles.css" rel="stylesheet">
+    <link href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>"
+          rel="icon">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <h1>🛡️ SOAR Lab Management</h1>
-                <div class="header-controls">
-                    <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
-                    <div class="auth-section" id="authSection">
-                        <input class="auth-input" id="username" placeholder="Username" type="text">
-                        <input class="auth-input" id="password" placeholder="Password" type="password">
-                        <button class="btn btn-primary" id="loginBtn">Login</button>
-                        <button class="btn btn-secondary" id="logoutBtn" style="display: none;">Logout</button>
+<div class="container">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>🛡️ SOAR Lab Management</h1>
+            <div class="header-controls">
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+                <div class="auth-section" id="authSection">
+                    <input class="auth-input" id="username" placeholder="Username" type="text">
+                    <input class="auth-input" id="password" placeholder="Password" type="password">
+                    <button class="btn btn-primary" id="loginBtn">Login</button>
+                    <button class="btn btn-secondary" id="logoutBtn" style="display: none;">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent" style="display: none;">
+        <!-- Dashboard Overview -->
+        <section class="dashboard">
+            <h2>📊 System Overview</h2>
+            <div class="cards-grid">
+                <div class="card">
+                    <h3>Services Status</h3>
+                    <div class="status-indicator" id="servicesStatus">
+                        <span class="status-dot loading">⟳</span>
+                        <span>Loading...</span>
+                    </div>
+                    <div class="services-summary" id="servicesSummary" style="display: none;">
+                        <div class="summary-item">
+                            <span class="summary-label">Total:</span>
+                            <span class="summary-value" id="totalServices">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Online:</span>
+                            <span class="summary-value online" id="onlineServices">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Offline:</span>
+                            <span class="summary-value offline" id="offlineServices">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>System Resources</h3>
+                    <div class="metrics">
+                        <div class="metric">
+                            <span>CPU:</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="cpuUsage" style="width: 0%"></div>
+                            </div>
+                            <span id="cpuPercent">0%</span>
+                        </div>
+                        <div class="metric">
+                            <span>RAM:</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="ramUsage" style="width: 0%"></div>
+                            </div>
+                            <span id="ramPercent">0%</span>
+                        </div>
+                        <div class="metric">
+                            <span>Disk:</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="diskUsage" style="width: 0%"></div>
+                            </div>
+                            <span id="diskPercent">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Test Coverage</h3>
+                    <div class="coverage-display">
+                        <div class="coverage-circle" id="coverageCircle">
+                            <span id="coveragePercent">—</span>
+                        </div>
+                        <div class="coverage-details">
+                            <div>Last run: <span id="lastRunTime">-</span></div>
+                            <div>Category: <span id="lastTestCategory">-</span></div>
+                            <div>Duration: <span id="lastTestDuration">-</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>📈 KPIs</h3>
+                    <div class="coverage-details">
+                        <div>MTTR: <span id="kpiMttr">—</span></div>
+                        <div>Total Alerts: <span id="kpiTotalAlerts">—</span></div>
+                        <div>Malicious: <span id="kpiMalicious">—</span></div>
+                        <div>Benign: <span id="kpiBenign">—</span></div>
+                        <div>Detection Rate: <span id="kpiDetectionRate">—</span></div>
                     </div>
                 </div>
             </div>
-        </header>
+        </section>
 
-        <!-- Main Content -->
-        <main class="main-content" id="mainContent" style="display: none;">
-            <!-- Dashboard Overview -->
-            <section class="dashboard">
-                <h2>📊 System Overview</h2>
-                <div class="cards-grid">
-                    <div class="card">
-                        <h3>Services Status</h3>
-                        <div class="status-indicator" id="servicesStatus">
-                            <span class="status-dot loading">⟳</span>
-                            <span>Loading...</span>
+        <!-- Services Links -->
+        <section class="services-section">
+            <h2>🔗 Service Links</h2>
+
+            <!-- SOAR Stack -->
+            <div class="stack-group">
+                <h3>🛡️ SOAR Stack</h3>
+                <div class="services-grid">
+                    <a class="service-link" href="https://localhost/thehive/" target="_blank">
+                        <div class="service-card">
+                            <h3>TheHive</h3>
+                            <p>Case Management</p>
+                            <span class="port">:443 /thehive/</span>
+                            <span class="status" data-service="thehive">●</span>
                         </div>
-                        <div class="services-summary" id="servicesSummary" style="display: none;">
-                            <div class="summary-item">
-                                <span class="summary-label">Total:</span>
-                                <span class="summary-value" id="totalServices">0</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">Online:</span>
-                                <span class="summary-value online" id="onlineServices">0</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">Offline:</span>
-                                <span class="summary-value offline" id="offlineServices">0</span>
-                            </div>
+                    </a>
+                    <a class="service-link" href="https://localhost/cortex/" target="_blank">
+                        <div class="service-card">
+                            <h3>Cortex</h3>
+                            <p>Analysis Engine</p>
+                            <span class="port">:443 /cortex/</span>
+                            <span class="status" data-service="cortex">●</span>
                         </div>
-                    </div>
-                    <div class="card">
-                        <h3>System Resources</h3>
-                        <div class="metrics">
-                            <div class="metric">
-                                <span>CPU:</span>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" id="cpuUsage" style="width: 0%"></div>
-                                </div>
-                                <span id="cpuPercent">0%</span>
-                            </div>
-                            <div class="metric">
-                                <span>RAM:</span>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" id="ramUsage" style="width: 0%"></div>
-                                </div>
-                                <span id="ramPercent">0%</span>
-                            </div>
-                            <div class="metric">
-                                <span>Disk:</span>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" id="diskUsage" style="width: 0%"></div>
-                                </div>
-                                <span id="diskPercent">0%</span>
-                            </div>
+                    </a>
+                    <a class="service-link" href="https://localhost:8081/" target="_blank">
+                        <div class="service-card">
+                            <h3>Shuffle</h3>
+                            <p>Workflow Automation</p>
+                            <span class="port">:8081 (HTTPS)</span>
+                            <span class="status" data-service="shuffle-frontend">●</span>
                         </div>
-                    </div>
-                    <div class="card">
-                        <h3>Test Coverage</h3>
-                        <div class="coverage-display">
-                            <div class="coverage-circle" id="coverageCircle">
-                                <span id="coveragePercent">0%</span>
-                            </div>
-                            <div class="coverage-details">
-                                <div>Unit: <span id="unitCoverage">-</span></div>
-                                <div>Integration: <span id="integrationCoverage">-</span></div>
-                                <div>Overall: <span id="overallCoverage">-</span></div>
-                            </div>
+                    </a>
+                    <a class="service-link" href="https://localhost/shuffle-api/" target="_blank">
+                        <div class="service-card">
+                            <h3>Shuffle API</h3>
+                            <p>Workflow Backend</p>
+                            <span class="port">:443 /shuffle-api/</span>
+                            <span class="status" data-service="shuffle-backend">●</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
-            </section>
+            </div>
 
-            <!-- Services Links -->
-            <section class="services-section">
-                <h2>🔗 Service Links</h2>
-
-                <!-- SOAR Stack -->
-                <div class="stack-group">
-                    <h3>🛡️ SOAR Stack</h3>
-                    <div class="services-grid">
-                        <a class="service-link" href="https://localhost/thehive/" target="_blank">
-                            <div class="service-card">
-                                <h3>TheHive</h3>
-                                <p>Case Management</p>
-                                <span class="port">:443 /thehive/</span>
-                                <span class="status" data-service="thehive">●</span>
-                            </div>
-                        </a>
-                        <a class="service-link" href="https://localhost/cortex/" target="_blank">
-                            <div class="service-card">
-                                <h3>Cortex</h3>
-                                <p>Analysis Engine</p>
-                                <span class="port">:443 /cortex/</span>
-                                <span class="status" data-service="cortex">●</span>
-                            </div>
-                        </a>
-                        <a class="service-link" href="https://localhost:3001/" target="_blank">
-                            <div class="service-card">
-                                <h3>Shuffle</h3>
-                                <p>Workflow Automation</p>
-                                <span class="port">:3001 (HTTPS)</span>
-                                <span class="status" data-service="shuffle-frontend">●</span>
-                            </div>
-                        </a>
-                        <a class="service-link" href="https://localhost/shuffle-api/" target="_blank">
-                            <div class="service-card">
-                                <h3>Shuffle API</h3>
-                                <p>Workflow Backend</p>
-                                <span class="port">:443 /shuffle-api/</span>
-                                <span class="status" data-service="shuffle-backend">●</span>
-                            </div>
-                        </a>
-                        <a class="service-link" href="#" target="_blank">
-                            <div class="service-card">
-                                <h3>Orborus</h3>
-                                <p>Shuffle Worker</p>
-                                <span class="port">🔒 interno</span>
-                                <span class="status" data-service="orborus">●</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Wazuh Stack -->
-                <div class="stack-group">
-                    <h3>🔍 Wazuh Stack</h3>
-                    <div class="services-grid">
-                        <a class="service-link" href="https://localhost/kibana/" target="_blank">
-                            <div class="service-card">
-                                <h3>Wazuh Dashboard</h3>
-                                <p>SIEM/XDR Dashboard</p>
-                                <span class="port">:443 /kibana/</span>
-                                <span class="status" data-service="kibana">●</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Core Stack -->
-                <div class="stack-group">
-                    <h3>⚙️ Core Stack</h3>
-                    <div class="services-grid">
-                        <a class="service-link" href="https://localhost/api/" target="_blank">
-                            <div class="service-card">
-                                <h3>API</h3>
-                                <p>REST API</p>
-                                <span class="port">:443 /api/</span>
-                                <span class="status" data-service="api">●</span>
-                            </div>
-                        </a>
-                        <a class="service-link" href="#" target="_blank">
-                            <div class="service-card">
-                                <h3>Elasticsearch</h3>
-                                <p>Search Engine</p>
-                                <span class="port">🔒 :9201 interno</span>
-                                <span class="status" data-service="elasticsearch">●</span>
-                            </div>
-                        </a>
-                        <a class="service-link" href="#" target="_blank">
-                            <div class="service-card">
-                                <h3>Redis</h3>
-                                <p>Cache & Sessions</p>
-                                <span class="port">🔒 :6379 interno</span>
-                                <span class="status" data-service="redis">●</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Logging Stack -->
-                <div class="stack-group">
-                    <h3>📊 Logging Stack</h3>
-                    <div class="services-grid">
-                        <a class="service-link" href="#" target="_blank">
-                            <div class="service-card">
-                                <h3>Loki</h3>
-                                <p>Log Aggregation</p>
-                                <span class="port">🔒 :3100 interno</span>
-                                <span class="status" data-service="loki">●</span>
-                            </div>
-                        </a>
-                        <a class="service-link" href="https://localhost/grafana/" target="_blank">
-                            <div class="service-card">
-                                <h3>Grafana</h3>
-                                <p>Log Visualization</p>
-                                <span class="port">:443 /grafana/</span>
-                                <span class="status" data-service="grafana">●</span>
-                            </div>
-                        </a>
-                        <a class="service-link" href="#" target="_blank">
-                            <div class="service-card">
-                                <h3>Promtail</h3>
-                                <p>Log Collector</p>
-                                <span class="port">🔒 :9080 interno</span>
-                                <span class="status" data-service="promtail">●</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- MISP Stack -->
-                <div class="stack-group">
-                    <h3>🎯 MISP Stack</h3>
-                    <div class="services-grid">
-                        <a class="service-link" href="https://localhost/misp/" target="_blank">
-                            <div class="service-card">
-                                <h3>MISP</h3>
-                                <p>Threat Intelligence</p>
-                                <span class="port">:443 /misp/</span>
-                                <span class="status" data-service="misp">●</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Infrastructure -->
-                <div class="stack-group">
-                    <h3>🌐 Infrastructure</h3>
-                    <div class="services-grid">
-                        <a class="service-link" href="https://localhost/nginx-health" target="_blank">
-                            <div class="service-card">
-                                <h3>Nginx</h3>
-                                <p>Reverse Proxy</p>
-                                <span class="port">:443 /nginx-health</span>
-                                <span class="status" data-service="nginx">●</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Documentation -->
-                <div class="stack-group">
-                    <h3>📚 Documentation</h3>
-                    <div class="services-grid">
-                        <a class="service-link" href="https://localhost:3000/" target="_blank">
-                            <div class="service-card docs-card">
-                                <h3>Documentation</h3>
-                                <p>Project Documentation</p>
-                                <span class="port">:3000 (HTTPS)</span>
-                                <span class="status" data-service="docs-site">●</span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Testing Section -->
-            <section class="testing-section">
-                <h2>🧪 Test Management</h2>
-                <div class="testing-controls">
-                    <div class="test-categories">
-                        <button class="btn btn-test" data-category="unit" onclick="runTests('unit')">
-                            Unit Tests
-                        </button>
-                        <button class="btn btn-test" data-category="integration" onclick="runTests('integration')">
-                            Integration Tests
-                        </button>
-                        <button class="btn btn-test" data-category="atomic" onclick="runTests('atomic')">
-                            Atomic Tests
-                        </button>
-                        <button class="btn btn-test" data-category="e2e" onclick="runTests('e2e')">
-                            E2E Tests
-                        </button>
-                        <button class="btn btn-test" data-category="performance" onclick="runTests('performance')">
-                            Performance Tests
-                        </button>
-                        <button class="btn btn-test" data-category="security" onclick="runTests('security')">
-                            Security Tests
-                        </button>
-                        <button class="btn btn-primary btn-large" onclick="runTests('all')">
-                            🚀 Run All Tests
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Test Results -->
-                <div class="test-results" id="testResults" style="display: none;">
-                    <h3>Test Results</h3>
-                    <div class="results-summary" id="resultsSummary">
-                        <div class="summary-item passed">
-                            <span class="count" id="passedCount">0</span>
-                            <span class="label">Passed</span>
+            <!-- Wazuh Stack -->
+            <div class="stack-group">
+                <h3>🔍 Wazuh Stack</h3>
+                <div class="services-grid">
+                    <a class="service-link" href="https://localhost:15601/" target="_blank">
+                        <div class="service-card">
+                            <h3>Wazuh Dashboard</h3>
+                            <p>SIEM/XDR Dashboard</p>
+                            <span class="port">:15601 (HTTPS)</span>
+                            <span class="status" data-service="wazuh-dashboard">●</span>
                         </div>
-                        <div class="summary-item failed">
-                            <span class="count" id="failedCount">0</span>
-                            <span class="label">Failed</span>
-                        </div>
-                        <div class="summary-item skipped">
-                            <span class="count" id="skippedCount">0</span>
-                            <span class="label">Skipped</span>
-                        </div>
-                        <div class="summary-item coverage">
-                            <span class="count" id="testCoverage">0%</span>
-                            <span class="label">Coverage</span>
-                        </div>
-                    </div>
-                    <div class="results-details" id="resultsDetails">
-                        <pre id="resultsOutput"></pre>
-                    </div>
+                    </a>
                 </div>
-            </section>
+            </div>
 
-            <!-- Logs Section -->
-            <section class="logs-section">
-                <h2>📋 System Logs</h2>
-                <div class="logs-controls">
-                    <button class="btn btn-secondary" onclick="toggleLogs()">
-                        <span id="logsToggleText">Start Live Logs</span>
+            <!-- Core Stack -->
+            <div class="stack-group">
+                <h3>⚙️ Core Stack</h3>
+                <div class="services-grid">
+                    <a class="service-link" href="https://localhost/api/" target="_blank">
+                        <div class="service-card">
+                            <h3>API</h3>
+                            <p>REST API</p>
+                            <span class="port">:443 /api/</span>
+                            <span class="status" data-service="api">●</span>
+                        </div>
+                    </a>
+                    <a class="service-link" href="#" target="_blank">
+                        <div class="service-card">
+                            <h3>Elasticsearch</h3>
+                            <p>Search Engine</p>
+                            <span class="port">🔒 :9201 interno</span>
+                            <span class="status" data-service="elasticsearch">●</span>
+                        </div>
+                    </a>
+                    <a class="service-link" href="#" target="_blank">
+                        <div class="service-card">
+                            <h3>Redis</h3>
+                            <p>Cache & Sessions</p>
+                            <span class="port">🔒 :6379 interno</span>
+                            <span class="status" data-service="redis">●</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Logging Stack -->
+            <div class="stack-group">
+                <h3>📊 Logging Stack</h3>
+                <div class="services-grid">
+                    <a class="service-link" href="#" target="_blank">
+                        <div class="service-card">
+                            <h3>Loki</h3>
+                            <p>Log Aggregation</p>
+                            <span class="port">🔒 :3100 interno</span>
+                            <span class="status" data-service="loki">●</span>
+                        </div>
+                    </a>
+                    <a class="service-link" href="https://localhost:8084/" target="_blank">
+                        <div class="service-card">
+                            <h3>Grafana</h3>
+                            <p>Log Visualization</p>
+                            <span class="port">:8084 (HTTPS)</span>
+                            <span class="status" data-service="grafana">●</span>
+                        </div>
+                    </a>
+                    <a class="service-link" href="#" target="_blank">
+                        <div class="service-card">
+                            <h3>Promtail</h3>
+                            <p>Log Collector</p>
+                            <span class="port">🔒 :9080 interno</span>
+                            <span class="status" data-service="promtail">●</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- MISP Stack -->
+            <div class="stack-group">
+                <h3>🎯 MISP Stack</h3>
+                <div class="services-grid">
+                    <a class="service-link" href="https://localhost:8083/" target="_blank">
+                        <div class="service-card">
+                            <h3>MISP</h3>
+                            <p>Threat Intelligence</p>
+                            <span class="port">:8083 (HTTPS)</span>
+                            <span class="status" data-service="misp">●</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Infrastructure -->
+            <div class="stack-group">
+                <h3>🌐 Infrastructure</h3>
+                <div class="services-grid">
+                    <a class="service-link" href="https://localhost/nginx-health" target="_blank">
+                        <div class="service-card">
+                            <h3>Nginx</h3>
+                            <p>Reverse Proxy</p>
+                            <span class="port">:443 /nginx-health</span>
+                            <span class="status" data-service="nginx">●</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Documentation -->
+            <div class="stack-group">
+                <h3>📚 Documentation</h3>
+                <div class="services-grid">
+                    <a class="service-link" href="https://localhost:8080/" target="_blank">
+                        <div class="service-card docs-card">
+                            <h3>Documentation</h3>
+                            <p>Project Documentation</p>
+                            <span class="port">:8080 (HTTPS)</span>
+                            <span class="status" data-service="docs-site">●</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testing Section -->
+        <section class="testing-section">
+            <h2>🧪 Test Management</h2>
+            <div class="testing-controls">
+                <div class="test-categories">
+                    <button class="btn btn-test" data-category="unit" onclick="runTests('unit')">
+                        Unit Tests
                     </button>
-                    <select id="logLevel" class="log-select">
-                        <option value="all">All Levels</option>
-                        <option value="error">Errors Only</option>
-                        <option value="warning">Warnings & Errors</option>
-                        <option value="info">Info & Above</option>
-                    </select>
-                    <button class="btn btn-secondary" onclick="clearLogs()">Clear</button>
+                    <button class="btn btn-test" data-category="integration" onclick="runTests('integration')">
+                        Integration Tests
+                    </button>
+                    <button class="btn btn-test" data-category="e2e" onclick="runTests('e2e')">
+                        E2E Tests
+                    </button>
+                    <button class="btn btn-test" data-category="atomic" onclick="runTests('atomic')">
+                        Atomic Tests
+                    </button>
+                    <button class="btn btn-test" data-category="performance" onclick="runTests('performance')">
+                        Performance Tests
+                    </button>
+                    <button class="btn btn-test" data-category="security" onclick="runTests('security')">
+                        Security Tests
+                    </button>
+                    <button class="btn btn-test" data-category="smoke" onclick="runTests('smoke')">
+                        🔥 Smoke Tests
+                    </button>
+                    <button class="btn btn-primary btn-large" onclick="runTests('all')">
+                        🚀 Run All Tests
+                    </button>
                 </div>
-                <div class="logs-container">
-                    <pre id="logsOutput"></pre>
-                </div>
-            </section>
+            </div>
 
-            <!-- Backup Section -->
-            <section class="backup-section">
-                <h2>💾 Backup Management</h2>
-                <div class="backup-controls">
-                    <button class="btn btn-primary" onclick="createBackup()">Create Backup</button>
-                    <button class="btn btn-secondary" onclick="listBackups()">List Backups</button>
-                    <div class="restore-section">
-                        <select id="backupList" class="backup-select">
-                            <option value="">Select backup...</option>
-                        </select>
-                        <button class="btn btn-warning" onclick="restoreBackup()">Restore</button>
+            <!-- Test Results -->
+            <div class="test-results" id="testResults" style="display: none;">
+                <h3>Test Results</h3>
+                <div class="results-summary" id="resultsSummary">
+                    <div class="summary-item passed">
+                        <span class="count" id="passedCount">0</span>
+                        <span class="label">Passed</span>
+                    </div>
+                    <div class="summary-item failed">
+                        <span class="count" id="failedCount">0</span>
+                        <span class="label">Failed</span>
+                    </div>
+                    <div class="summary-item skipped">
+                        <span class="count" id="skippedCount">0</span>
+                        <span class="label">Skipped</span>
+                    </div>
+                    <div class="summary-item coverage">
+                        <span class="count" id="testCoverage">0%</span>
+                        <span class="label">Coverage</span>
                     </div>
                 </div>
-                <div class="backup-status" id="backupStatus"></div>
-            </section>
-        </main>
+                <div class="results-details" id="resultsDetails">
+                    <pre id="resultsOutput"></pre>
+                </div>
+            </div>
+        </section>
 
-        <!-- Loading Overlay -->
-        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-            <div class="loading-spinner"></div>
-            <p>Processing...</p>
-        </div>
+        <!-- Logs Section -->
+        <section class="logs-section">
+            <h2>📋 System Logs</h2>
+            <div class="logs-controls">
+                <button class="btn btn-secondary" onclick="toggleLogs()">
+                    <span id="logsToggleText">Start Live Logs</span>
+                </button>
+                <select class="log-select" id="logLevel">
+                    <option value="all">All Levels</option>
+                    <option value="error">Errors Only</option>
+                    <option value="warning">Warnings & Errors</option>
+                    <option value="info">Info & Above</option>
+                </select>
+                <button class="btn btn-secondary" onclick="clearLogs()">Clear</button>
+            </div>
+            <div class="logs-container">
+                <pre id="logsOutput"></pre>
+            </div>
+        </section>
+
+        <!-- Backup Section -->
+        <section class="backup-section">
+            <h2>💾 Backup Management</h2>
+            <div class="backup-controls">
+                <button class="btn btn-primary" onclick="createBackup()">Create Backup</button>
+                <button class="btn btn-secondary" onclick="listBackups()">List Backups</button>
+                <div class="restore-section">
+                    <select class="backup-select" id="backupList">
+                        <option value="">Select backup...</option>
+                    </select>
+                    <button class="btn btn-warning" onclick="restoreBackup()">Restore</button>
+                </div>
+            </div>
+            <div class="backup-status" id="backupStatus"></div>
+        </section>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Processing...</p>
     </div>
+</div>
 
-    <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

@@ -15,19 +15,19 @@ class TestAlertSendResult:
     def test_bool_true(self):
         """Test AlertSendResult evaluates to True when success is True"""
         result = AlertSendResult(success=True, status_code=200, alert_id="test")
-        
+
         assert bool(result) == True
 
     def test_bool_false(self):
         """Test AlertSendResult evaluates to False when success is False"""
         result = AlertSendResult(success=False, status_code=500, alert_id="test")
-        
+
         assert bool(result) == False
 
     def test_bool_missing_success(self):
         """Test AlertSendResult evaluates to False when success key is missing"""
         result = AlertSendResult(status_code=200, alert_id="test")
-        
+
         assert bool(result) == False
 
 
@@ -41,7 +41,7 @@ class TestHTTPAlertSender:
             api_token="test-token",
             timeout=30
         )
-        
+
         assert sender.webhook_url == "https://example.com/webhook"
         assert sender.api_token == "test-token"
         assert sender.timeout == 30
@@ -54,7 +54,7 @@ class TestHTTPAlertSender:
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
-        
+
         assert sender.timeout == 30
 
     def test_headers_set(self):
@@ -63,7 +63,7 @@ class TestHTTPAlertSender:
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
-        
+
         assert "Authorization" in sender._session.headers
         assert sender._session.headers["Authorization"] == "Bearer test-token"
         assert "Content-Type" in sender._session.headers
@@ -78,15 +78,15 @@ class TestHTTPAlertSender:
         mock_session = Mock()
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
         alert = {"alert_id": "alert-1", "type": "ransomware"}
-        
+
         result = sender.send(alert)
-        
+
         assert result["success"] == True
         assert result["status_code"] == 200
         assert result["alert_id"] == "alert-1"
@@ -107,15 +107,15 @@ class TestHTTPAlertSender:
         mock_session = Mock()
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
         alert = {"alert_id": "alert-1", "type": "ransomware"}
-        
+
         result = sender.send(alert)
-        
+
         assert result["success"] == True
         assert result["status_code"] == 202
         assert sender.alerts_sent == 1
@@ -129,15 +129,15 @@ class TestHTTPAlertSender:
         mock_session = Mock()
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
         alert = {"alert_id": "alert-1", "type": "ransomware"}
-        
+
         result = sender.send(alert)
-        
+
         assert result["success"] == True
         assert result["status_code"] == 204
         assert sender.alerts_sent == 1
@@ -151,15 +151,15 @@ class TestHTTPAlertSender:
         mock_session = Mock()
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
         alert = {"alert_id": "alert-1", "type": "ransomware"}
-        
+
         result = sender.send(alert)
-        
+
         assert result["success"] == False
         assert result["status_code"] == 500
         assert result["alert_id"] == "alert-1"
@@ -175,15 +175,15 @@ class TestHTTPAlertSender:
         mock_session = Mock()
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
         alert = {"alert_id": "alert-1", "type": "ransomware"}
-        
+
         result = sender.send(alert)
-        
+
         assert result["success"] == False
         assert result["status_code"] == 400
         assert sender.alerts_failed == 1
@@ -195,15 +195,15 @@ class TestHTTPAlertSender:
         mock_session = Mock()
         mock_session.post.side_effect = requests.RequestException("Connection error")
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
         alert = {"alert_id": "alert-1", "type": "ransomware"}
-        
+
         result = sender.send(alert)
-        
+
         assert result["success"] == False
         assert result["status_code"] is None
         assert result["alert_id"] == "alert-1"
@@ -217,15 +217,15 @@ class TestHTTPAlertSender:
         mock_session = Mock()
         mock_session.post.side_effect = ValueError("Unexpected error")
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
         alert = {"alert_id": "alert-1", "type": "ransomware"}
-        
+
         result = sender.send(alert)
-        
+
         assert result["success"] == False
         assert result["status_code"] is None
         assert result["alert_id"] == "alert-1"
@@ -242,15 +242,15 @@ class TestHTTPAlertSender:
         mock_session = Mock()
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
         alert = {"type": "ransomware"}
-        
+
         result = sender.send(alert)
-        
+
         assert result["success"] == True
         assert result["alert_id"] == "unknown"
 
@@ -262,9 +262,9 @@ class TestHTTPAlertSender:
         )
         sender.alerts_sent = 5
         sender.alerts_failed = 2
-        
+
         metrics = sender.get_metrics()
-        
+
         assert metrics["alerts_sent"] == 5
         assert metrics["alerts_failed"] == 2
         assert metrics["total_alerts"] == 7
@@ -275,9 +275,9 @@ class TestHTTPAlertSender:
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
-        
+
         metrics = sender.get_metrics()
-        
+
         assert metrics["alerts_sent"] == 0
         assert metrics["alerts_failed"] == 0
         assert metrics["total_alerts"] == 0
@@ -288,11 +288,11 @@ class TestHTTPAlertSender:
         mock_response_success = Mock()
         mock_response_success.status_code = 200
         mock_response_success.text = "OK"
-        
+
         mock_response_failure = Mock()
         mock_response_failure.status_code = 500
         mock_response_failure.text = "Error"
-        
+
         mock_session = Mock()
         mock_session.post.side_effect = [
             mock_response_success,
@@ -301,16 +301,16 @@ class TestHTTPAlertSender:
             mock_response_success
         ]
         mock_session_class.return_value = mock_session
-        
+
         sender = HTTPAlertSender(
             webhook_url="https://example.com/webhook",
             api_token="test-token"
         )
-        
+
         sender.send({"alert_id": "alert-1"})
         sender.send({"alert_id": "alert-2"})
         sender.send({"alert_id": "alert-3"})
         sender.send({"alert_id": "alert-4"})
-        
+
         assert sender.alerts_sent == 3
         assert sender.alerts_failed == 1

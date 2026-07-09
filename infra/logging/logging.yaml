@@ -46,7 +46,7 @@ handlers:
     level: INFO
     formatter: standard
     stream: ext://sys.stdout
-    filters: [security_filter]
+    filters: [ security_filter ]
 
   # File Handlers
   main_file:
@@ -75,7 +75,7 @@ handlers:
     maxBytes: 10485760  # 10MB
     backupCount: 10
     encoding: utf8
-    filters: [security_filter]
+    filters: [ security_filter ]
 
   audit_file:
     class: logging.handlers.RotatingFileHandler
@@ -85,7 +85,7 @@ handlers:
     maxBytes: 10485760  # 10MB
     backupCount: 20
     encoding: utf8
-    filters: [audit_filter]
+    filters: [ audit_filter ]
 
   performance_file:
     class: logging.handlers.RotatingFileHandler
@@ -95,7 +95,7 @@ handlers:
     maxBytes: 10485760  # 10MB
     backupCount: 5
     encoding: utf8
-    filters: [performance_filter]
+    filters: [ performance_filter ]
 
   # Syslog Handler
   syslog:
@@ -134,177 +134,177 @@ loggers:
   # Root Logger
   root:
     level: INFO
-    handlers: [console, main_file, error_file]
+    handlers: [ console, main_file, error_file ]
     propagate: false
 
   # SOAR Application Loggers
   soar:
     level: INFO
-    handlers: [console, main_file, error_file, elasticsearch]
+    handlers: [ console, main_file, error_file, elasticsearch ]
     propagate: false
 
   soar.thehive:
     level: INFO
-    handlers: [console, main_file, audit_file]
+    handlers: [ console, main_file, audit_file ]
     propagate: false
 
   soar.cortex:
     level: INFO
-    handlers: [console, main_file, audit_file]
+    handlers: [ console, main_file, audit_file ]
     propagate: false
 
   soar.shuffle:
     level: INFO
-    handlers: [console, main_file, audit_file]
+    handlers: [ console, main_file, audit_file ]
     propagate: false
 
   # Security Logger
   security:
     level: INFO
-    handlers: [console, security_file, email, elasticsearch]
+    handlers: [ console, security_file, email, elasticsearch ]
     propagate: false
-    filters: [security_filter]
+    filters: [ security_filter ]
 
   # Audit Logger
   audit:
     level: INFO
-    handlers: [console, audit_file, elasticsearch]
+    handlers: [ console, audit_file, elasticsearch ]
     propagate: false
-    filters: [audit_filter]
+    filters: [ audit_filter ]
 
   # Performance Logger
   performance:
     level: INFO
-    handlers: [console, performance_file, elasticsearch]
+    handlers: [ console, performance_file, elasticsearch ]
     propagate: false
-    filters: [performance_filter]
+    filters: [ performance_filter ]
 
   # API Logger
   api:
     level: INFO
-    handlers: [console, main_file, audit_file, elasticsearch]
+    handlers: [ console, main_file, audit_file, elasticsearch ]
     propagate: false
 
   # Database Loggers
   database:
     level: WARNING
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   database.elasticsearch:
     level: WARNING
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   database.postgresql:
     level: WARNING
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   database.mysql:
     level: WARNING
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   database.redis:
     level: WARNING
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   # External Service Loggers
   external:
     level: INFO
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   external.misp:
     level: INFO
-    handlers: [console, main_file, audit_file]
+    handlers: [ console, main_file, audit_file ]
     propagate: false
 
   external.opencti:
     level: INFO
-    handlers: [console, main_file, audit_file]
+    handlers: [ console, main_file, audit_file ]
     propagate: false
 
   # Monitoring Loggers
   monitoring:
     level: INFO
-    handlers: [console, main_file, elasticsearch]
+    handlers: [ console, main_file, elasticsearch ]
     propagate: false
 
   monitoring.prometheus:
     level: INFO
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   monitoring.grafana:
     level: INFO
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   # Third-party Library Loggers
   urllib3:
     level: WARNING
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   requests:
     level: WARNING
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   docker:
     level: WARNING
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   # Test Loggers
   tests:
     level: DEBUG
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   tests.unit:
     level: DEBUG
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   tests.integration:
     level: DEBUG
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   tests.e2e:
     level: DEBUG
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   tests.atomic:
     level: DEBUG
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   tests.performance:
     level: DEBUG
-    handlers: [console, performance_file]
+    handlers: [ console, performance_file ]
     propagate: false
 
   tests.security:
     level: DEBUG
-    handlers: [console, security_file]
+    handlers: [ console, security_file ]
     propagate: false
 
   # Development/Debug Loggers
   debug:
     level: DEBUG
-    handlers: [console, main_file]
+    handlers: [ console, main_file ]
     propagate: false
 
   # WebSocket Logger for Real-time Logs
   websocket:
     level: INFO
-    handlers: [console, elasticsearch]
+    handlers: [ console, elasticsearch ]
     propagate: false
 
 # Special Configuration for Production vs Development

@@ -51,7 +51,7 @@ services:
       - SHUFFLE_CONTAINER=soar_shuffle_backend
       - KIBANA_HEALTH_URL=http://kibana:5601/kibana/api/status
       - KIBANA_CONTAINER=soar_kibana
-      - DOCS_HEALTH_URL=http://docs-site:8080
+      - DOCS_HEALTH_URL=http://docs-site:8086
       - DOCS_CONTAINER=soar_docs_site
       - API_HEALTH_URL=http://api:8000/health
       - API_CONTAINER=soar_api

@@ -7,19 +7,20 @@ services:
     image: mariadb:10.11
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_db
     environment:
-      MYSQL_ROOT_PASSWORD: ${MISP_DB_ROOT_PASSWORD:-MispDbRootPassword123!@#}
+      MYSQL_ROOT_PASSWORD: ${MISP_DB_ROOT_PASSWORD:-Q2x#5mP4$vR8@nQ1tW9!zY3&hF6sD2}
       MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
       MYSQL_USER: ${MISP_DB_USER:-misp}
-      MYSQL_PASSWORD: ${MISP_DB_PASSWORD:-MispDbPassword456!@#}
+      MYSQL_PASSWORD: ${MISP_DB_PASSWORD:-R3y#8mP1$vL9@nQ4tW2!zY7&hF5sD9}
     volumes:
       - misp_db:/var/lib/mysql
     networks:
       - soar_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MISP_DB_ROOT_PASSWORD:-MispDbRootPassword123!@#}"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MISP_DB_ROOT_PASSWORD:-Q2x#5mP4$vR8@nQ1tW9!zY3&hF6sD2}" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
     restart: unless-stopped
     deploy:
       resources:
@@ -34,10 +35,11 @@ services:
     image: ghcr.io/misp/misp-docker/misp-modules:latest
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_modules
     healthcheck:
-      test: ["CMD-SHELL", "/bin/bash -c '</dev/tcp/localhost/6666'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: [ "CMD-SHELL", "python3 -c \"import socket; s=socket.socket(); s.connect(('localhost',6666)); s.close()\" 2>/dev/null || exit 1" ]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 180s
     networks:
       - soar_net
     restart: unless-stopped
@@ -63,28 +65,32 @@ services:
       redis:
         condition: service_healthy
     environment:
-      BASE_URL: http://${MISP_HOSTNAME:-localhost}:${MISP_PORT:-8082}
+      BASE_URL: https://${MISP_HOSTNAME:-localhost}:${MISP_HTTPS_PORT:-8083}
       MYSQL_HOST: misp-db
       MYSQL_PORT: 3306
       MYSQL_USER: ${MISP_DB_USER:-misp}
-      MYSQL_PASSWORD: ${MISP_DB_PASSWORD:-MispDbPassword456!@#}
+      MYSQL_PASSWORD: ${MISP_DB_PASSWORD:-R3y#8mP1$vL9@nQ4tW2!zY7&hF5sD9}
       MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-RedisSecurePassword678!@#}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-M5x#3mP8$vR7@nQ1tW9!zY4&hF2sD6}
       ADMIN_EMAIL: ${MISP_ADMIN_EMAIL:-admin@soar.local}
-      ADMIN_PASSWORD: ${MISP_ADMIN_PASSWORD:-MispAdminPassword123!@#}
+      ADMIN_PASSWORD: ${MISP_ADMIN_PASSWORD:-S4z#2mP6$vL3@nQ7tW5!zY1&hF8sD4}
       ADMIN_ORG: ${MISP_ADMIN_ORG:-SOAR Lab}
       MISP_EMAIL: ${MISP_EMAIL:-noreply@soar.local}
       MISP_CONTACT: ${MISP_CONTACT:-admin@soar.local}
-      ENCRYPTION_KEY: ${MISP_ENCRYPTION_KEY:-random_encryption_key_32_chars_long}
-      SALT: ${MISP_SALT:-random_salt_32_chars_long}
+      ENCRYPTION_KEY: ${MISP_ENCRYPTION_KEY:-a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6}
+      SALT: ${MISP_SALT:-f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1}
       PHP_MEMORY_LIMIT: 2048M
       PHP_MAX_EXECUTION_TIME: 300
       PHP_UPLOAD_MAX_FILESIZE: 50M
       PHP_POST_MAX_SIZE: 50M
+    command: >
+      sh -c "chown -R www-data:www-data /var/www/MISP/app/Config
+             && chmod -R 750 /var/www/MISP/app/Config
+             && exec /entrypoint.sh"
     ports:
-      - "${MISP_PORT:-8082}:80"
+      - "${MISP_PORT:-8083}:80"
     volumes:
       - misp_files:/var/www/MISP/app/files
       - misp_logs:/var/www/MISP/app/tmp/logs
@@ -92,7 +98,7 @@ services:
     networks:
       - soar_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/users/heartbeat"]
+      test: [ "CMD", "curl", "-f", "http://localhost/users/heartbeat" ]
       interval: 15s
       timeout: 10s
       retries: 5

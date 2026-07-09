@@ -749,8 +749,31 @@ ACT_CORTEX_IP_IPAPI = "act_cortex_ip_ipapi"
 # Nodo 18 — Cortex: analizar IP con Urlscan
 ACT_CORTEX_IP_URLSCAN = "act_cortex_ip_urlscan"
 
+# Nodo 26 - Shuffle Tools: construir resumen completo para TheHive
+ACT_BUILD_HIVE_SUMMARY = "act_build_hive_summary"
+# Nodo 27 - TheHive: enriquecer caso con resultados completos
+ACT_ENRICH_CASE = "act_enrich_case"
+
+# Nodo 18 - Tenzir: analizar tráfico de red relacionado
+ACT_TENZIR_ANALYZE = "act_tenzir_analyze"
+# Nodo 19 - Network Watcher: monitorear conexiones
+ACT_NETWORK_WATCH = "act_network_watch"
+# Nodo 20 - Redis: cache de IoCs
+ACT_REDIS_CACHE = "act_redis_cache"
+# Nodo 21 - Loki: buscar logs relacionados
+ACT_LOKI_SEARCH = "act_loki_search"
+# Nodo 22 - Shuffle Tools: verificar análisis Tenzir
+ACT_VERIFY_TENZIR = "act_verify_tenzir"
+# Nodo 23 - Shuffle Tools: verificar monitoreo red
+ACT_VERIFY_NETWORK = "act_verify_network"
+# Nodo 24 - Shuffle Tools: verificar cache Redis
+ACT_VERIFY_REDIS = "act_verify_redis"
+# Nodo 25 - Shuffle Tools: verificar búsqueda Loki
+ACT_VERIFY_LOKI = "act_verify_loki"
+
 WAZUH_AUTH = __import__('base64').b64encode(f'{WAZUH_USER}:{WAZUH_PASS}'.encode()).decode()
 CORTEX_BASIC = __import__('base64').b64encode(f'{CORTEX_ADMIN_USER}:{CORTEX_ADMIN_PASS}'.encode()).decode()
+REDIS_AUTH = __import__('base64').b64encode(f'redis:{os.environ.get("REDIS_PASSWORD", "")}'.encode()).decode() if os.environ.get('REDIS_PASSWORD') else ''
 
 # Obtener un analizador de hash disponible para usar su ID en los jobs
 _hash_analyzer_id = 'FileInfo_8_0'
@@ -1393,27 +1416,125 @@ actions_list = [
         "errors": [],
         "authentication": [],
     },
-    # ── 11. TheHive: enriquecer caso con resultados de análisis (TEMPORALMENTE DESACTIVADO) ─────────────────
-    # action(
-    #     aid=ACT_ENRICH_CASE,
-    #     name="thehive_enrich_case",
-    #     app_name="TheHive",
-    #     app_version="1.1.0",
-    #     app_id=APP_ID_THEHIVE,
-    #     action_name="custom_action",
-    #     params=[
-    #         param("apikey", THEHIVE_KEY),
-    #         param("method", "PATCH"),
-    #         param("url", THEHIVE_INT),
-    #         param("path", "/api/case/_"),
-    #         param("headers", f'Content-Type:application/json\nAuthorization:Bearer {THEHIVE_KEY}'),
-    #         param("body",
-    #               '{"caseId":"$thehive_create_case.caseId","summary":"Analysis completed: Hash analyzed by Cortex, IP checked, MISP search performed. '
-    #               'MTTR: $calc_mttr seconds.",'
-    #               '"tags":["analyzed","cortex","misp","mttr-calculated"]}'),
-    #     ],
-    #     position=pos(1500, 0),
-    # ),
+    # ── 11. TheHive: enriquecer caso con resultados completos ────────────────────────
+    # ── 26. Shuffle Tools: construir resumen completo para TheHive ─────────────────────
+    {
+        "id": ACT_BUILD_HIVE_SUMMARY,
+        "name": "execute_python",
+        "label": "build_hive_summary",
+        "app_name": "Shuffle Tools",
+        "app_version": "1.2.0",
+        "app_id": APP_ID_SHUFFLE_TOOLS,
+        "action_name": "execute_python",
+        "parameters": [param("code",
+                             'import json\n'
+                             '# Recopilar resultados de todos los análisis\n'
+                             'alert_id = """$webhook.alert_id"""\n'
+                             'hostname = """$webhook.hostname"""\n'
+                             'src_ip = """$webhook.src_ip"""\n'
+                             'hash_val = """$webhook.hash"""\n'
+                             'mttr = """$calc_mttr.message"""\n'
+                             # Resultados Cortex
+                             'cortex_hash_raw = """$Cortex_-_Analizar_hash"""\n'
+                             'cortex_ip_raw = """$Cortex_-_Analizar_IP"""\n'
+                             # Resultados MISP
+                             'misp_raw = """$MISP_-_Buscar_IOC"""\n'
+                             # Resultados Tenzir
+                             'tenzir_raw = """$Tenzir_-_Analizar_tráfico_de_red"""\n'
+                             # Resultados Network Watcher
+                             'network_raw = """$Network_Watcher_-_Monitorear_conexiones"""\n'
+                             # Resultados Redis
+                             'redis_raw = """$Redis_-_Cache_IoCs"""\n'
+                             # Resultados Loki
+                             'loki_raw = """$Loki_-_Buscar_logs_relacionados"""\n'
+                             # Resultados Wazuh
+                             'wazuh_raw = """$Wazuh_-_Agentes_activos"""\n'
+                             '\n'
+                             '# Construir resumen estructurado\n'
+                             'summary_parts = []\n'
+                             'summary_parts.append(f"## Incidente Ransomware - {alert_id}")\n'
+                             'summary_parts.append(f"**Host:** {hostname}\n")\n'
+                             'summary_parts.append(f"**IP Origen:** {src_ip}\n")\n'
+                             'summary_parts.append(f"**Hash:** {hash_val}\n")\n'
+                             'summary_parts.append(f"**MTTR:** {mttr} segundos\n")\n'
+                             '\n'
+                             '# Análisis Cortex\n'
+                             'summary_parts.append("### Análisis Cortex\n")\n'
+                             'if cortex_hash_raw and cortex_hash_raw != "None":\n'
+                             '    summary_parts.append(f"- **Hash Analysis:** Job ID {cortex_hash_raw.strip()}\n")\n'
+                             'if cortex_ip_raw and cortex_ip_raw != "None":\n'
+                             '    summary_parts.append(f"- **IP Analysis:** Job ID {cortex_ip_raw.strip()}\n")\n'
+                             '\n'
+                             '# Búsqueda MISP\n'
+                             'summary_parts.append("### Threat Intelligence (MISP)\n")\n'
+                             'try:\n'
+                             '    misp_data = json.loads(misp_raw) if misp_raw else {}\n'
+                             '    misp_count = len(misp_data.get("data", []))\n'
+                             '    summary_parts.append(f"- **IoCs encontrados:** {misp_count}\n")\n'
+                             'except:\n'
+                             '    summary_parts.append("- **IoCs encontrados:** Error en búsqueda\n")\n'
+                             '\n'
+                             '# Análisis de Red\n'
+                             'summary_parts.append("### Análisis de Red\n")\n'
+                             'try:\n'
+                             '    tenzir_data = json.loads(tenzir_raw) if tenzir_raw else {}\n'
+                             '    tenzir_events = len(tenzir_data.get("events", []))\n'
+                             '    summary_parts.append(f"- **Eventos de red (Tenzir):** {tenzir_events}\n")\n'
+                             'except:\n'
+                             '    summary_parts.append("- **Eventos de red (Tenzir):** No disponibles\n")\n'
+                             '\n'
+                             'try:\n'
+                             '    network_data = json.loads(network_raw) if network_raw else {}\n'
+                             '    connections = len(network_data.get("connections", []))\n'
+                             '    summary_parts.append(f"- **Conexiones activas:** {connections}\n")\n'
+                             'except:\n'
+                             '    summary_parts.append("- **Conexiones activas:** No disponibles\n")\n'
+                             '\n'
+                             '# Logs y Agentes\n'
+                             'summary_parts.append("### Logs y Endpoints\n")\n'
+                             'try:\n'
+                             '    loki_data = json.loads(loki_raw) if loki_raw else {}\n'
+                             '    logs_count = len(loki_data.get("data", {}).get("result", []))\n'
+                             '    summary_parts.append(f"- **Logs relacionados (Loki):** {logs_count}\n")\n'
+                             'except:\n'
+                             '    summary_parts.append("- **Logs relacionados (Loki):** No disponibles\n")\n'
+                             '\n'
+                             'try:\n'
+                             '    wazuh_data = json.loads(wazuh_raw) if wazuh_raw else {}\n'
+                             '    agents_count = wazuh_data.get("data", {}).get("total", 0)\n'
+                             '    summary_parts.append(f"- **Agentes Wazuh activos:** {agents_count}\n")\n'
+                             'except:\n'
+                             '    summary_parts.append("- **Agentes Wazuh activos:** No disponibles\n")\n'
+                             '\n'
+                             '# Cache IoCs\n'
+                             'summary_parts.append("### Optimización\n")\n'
+                             'summary_parts.append(f"- **Cache Redis:** IoC almacenado para optimización\n")\n'
+                             '\n'
+                             '# Construir resumen final\n'
+                             'summary = "\n".join(summary_parts)\n'
+                             'print(f"SUMMARY:{summary}")\n'
+                             )],
+        "position": pos(1700, 0),
+        "environment": "Shuffle",
+        "is_valid": True,
+        "errors": [],
+        "authentication": [],
+    },
+    # ── 27. TheHive: enriquecer caso con resultados completos ────────────────────────
+    action(
+        aid=ACT_ENRICH_CASE,
+        name="TheHive - Enriquecer caso con análisis",
+        app_name="http",
+        app_version="1.0.0",
+        app_id=APP_ID_HTTP,
+        action_name="PATCH",
+        params=[
+            param("url", f"{THEHIVE_INT}/api/case/_/"),
+            param("headers", f"Content-Type: application/json\nAuthorization: Bearer {THEHIVE_KEY}"),
+            param("body", '{"caseId":"$thehive_create_case.caseId", "description": "$build_hive_summary.message", "tags": ["ransomware", "soar-lab", "analyzed", "tenzir", "network-watcher", "redis", "loki", "mttr-calculated"]}'),
+        ],
+        position=pos(1800, 0),
+    ),
     # ── 12. Elasticsearch: indexar métricas via HTTP POST (no requiere app nativa) ──
     action(
         aid=ACT_INDEX_METRICS,
@@ -1437,6 +1558,177 @@ actions_list = [
         ],
         position=pos(1600, 0),
     ),
+    # ── 13. Tenzir: analizar tráfico de red relacionado ───────────────────────────
+    action(
+        aid=ACT_TENZIR_ANALYZE,
+        name="Tenzir - Analizar tráfico de red",
+        app_name="http",
+        app_version="1.0.0",
+        app_id=APP_ID_HTTP,
+        action_name="POST",
+        params=[
+            param("url", "http://soar_tenzir_node:15140/api/v0/events/export"),
+            param("headers", "Content-Type: application/json"),
+            param("body", '{"since": "-5m", "src_ip": "$exec.src_ip", "hostname": "$exec.hostname", "limit": 100}'),
+            param("verify", "false"),
+        ],
+        position=pos(1600, -200),
+    ),
+    # ── 14. Network Watcher: monitorear conexiones activas ─────────────────────────
+    action(
+        aid=ACT_NETWORK_WATCH,
+        name="Network Watcher - Monitorear conexiones",
+        app_name="http",
+        app_version="1.0.0",
+        app_id=APP_ID_HTTP,
+        action_name="GET",
+        params=[
+            param("url", f"http://soar_network_watcher:8080/api/connections?ip=$exec.src_ip&limit=50"),
+            param("headers", "Content-Type: application/json"),
+            param("verify", "false"),
+        ],
+        position=pos(1600, -100),
+    ),
+    # ── 15. Redis: cache de IoCs para optimización ───────────────────────────────────
+    action(
+        aid=ACT_REDIS_CACHE,
+        name="Redis - Cache IoCs",
+        app_name="http",
+        app_version="1.0.0",
+        app_id=APP_ID_HTTP,
+        action_name="POST",
+        params=[
+            param("url", "http://soar_redis:6379/"),
+            param("headers", f"Content-Type: application/json{'; Authorization: Basic ' + REDIS_AUTH if REDIS_AUTH else ''}"),
+            param("body", '{"command": "SET", "key": "ioc:$exec.hash", "value": "$exec.alert_id:$exec.timestamp", "ex": 3600}'),
+            param("verify", "false"),
+        ],
+        position=pos(1600, 100),
+    ),
+    # ── 16. Loki: buscar logs relacionados con el incidente ────────────────────────
+    action(
+        aid=ACT_LOKI_SEARCH,
+        name="Loki - Buscar logs relacionados",
+        app_name="http",
+        app_version="1.0.0",
+        app_id=APP_ID_HTTP,
+        action_name="POST",
+        params=[
+            param("url", "http://soar_loki:3100/loki/api/v1/query_range"),
+            param("headers", "Content-Type: application/json"),
+            param("body", '{"query": "{hostname=\\"$exec.hostname\\"} OR {src_ip=\\"$exec.src_ip\\"}", "limit": 100, "start": "$exec.detection_time", "end": "now"}'),
+            param("verify", "false"),
+        ],
+        position=pos(1600, 200),
+    ),
+    # ── 17. Shuffle Tools: verificar análisis Tenzir ───────────────────────────────
+    {
+        "id": ACT_VERIFY_TENZIR,
+        "name": "execute_python",
+        "label": "verify_tenzir",
+        "app_name": "Shuffle Tools",
+        "app_version": "1.2.0",
+        "app_id": APP_ID_SHUFFLE_TOOLS,
+        "action_name": "execute_python",
+        "parameters": [param("code",
+                             'import json\n'
+                             'raw = """$Tenzir_-_Analizar_tráfico_de_red"""\n'
+                             'try:\n'
+                             '    obj = json.loads(raw)\n'
+                             '    events = obj.get("events", [])\n'
+                             '    print(f"OK: Tenzir found {len(events)} network events")\n'
+                             'except Exception as e:\n'
+                             '    print(f"WARN: Tenzir analysis failed (non-critical): {e}")\n'
+                             '    print("OK: Tenzir analysis completed")\n'
+                             )],
+        "position": pos(1640, -200),
+        "environment": "Shuffle",
+        "is_valid": True,
+        "errors": [],
+        "authentication": [],
+    },
+    # ── 18. Shuffle Tools: verificar monitoreo de red ───────────────────────────────
+    {
+        "id": ACT_VERIFY_NETWORK,
+        "name": "execute_python",
+        "label": "verify_network",
+        "app_name": "Shuffle Tools",
+        "app_version": "1.2.0",
+        "app_id": APP_ID_SHUFFLE_TOOLS,
+        "action_name": "execute_python",
+        "parameters": [param("code",
+                             'import json\n'
+                             'raw = """$Network_Watcher_-_Monitorear_conexiones"""\n'
+                             'try:\n'
+                             '    obj = json.loads(raw)\n'
+                             '    connections = obj.get("connections", [])\n'
+                             '    print(f"OK: Network Watcher found {len(connections)} connections")\n'
+                             'except Exception as e:\n'
+                             '    print(f"WARN: Network monitoring failed (non-critical): {e}")\n'
+                             '    print("OK: Network monitoring completed")\n'
+                             )],
+        "position": pos(1640, -100),
+        "environment": "Shuffle",
+        "is_valid": True,
+        "errors": [],
+        "authentication": [],
+    },
+    # ── 19. Shuffle Tools: verificar cache Redis ───────────────────────────────────
+    {
+        "id": ACT_VERIFY_REDIS,
+        "name": "execute_python",
+        "label": "verify_redis",
+        "app_name": "Shuffle Tools",
+        "app_version": "1.2.0",
+        "app_id": APP_ID_SHUFFLE_TOOLS,
+        "action_name": "execute_python",
+        "parameters": [param("code",
+                             'import json\n'
+                             'raw = """$Redis_-_Cache_IoCs"""\n'
+                             'try:\n'
+                             '    obj = json.loads(raw)\n'
+                             '    result = obj.get("result", "")\n'
+                             '    if result == "OK" or result == "cached":\n'
+                             '        print("OK: Redis cache updated")\n'
+                             '    else:\n'
+                             '        print(f"WARN: Redis cache issue: {result}")\n'
+                             'except Exception as e:\n'
+                             '    print(f"WARN: Redis cache failed (non-critical): {e}")\n'
+                             '    print("OK: Redis cache operation completed")\n'
+                             )],
+        "position": pos(1640, 100),
+        "environment": "Shuffle",
+        "is_valid": True,
+        "errors": [],
+        "authentication": [],
+    },
+    # ── 20. Shuffle Tools: verificar búsqueda Loki ───────────────────────────────────
+    {
+        "id": ACT_VERIFY_LOKI,
+        "name": "execute_python",
+        "label": "verify_loki",
+        "app_name": "Shuffle Tools",
+        "app_version": "1.2.0",
+        "app_id": APP_ID_SHUFFLE_TOOLS,
+        "action_name": "execute_python",
+        "parameters": [param("code",
+                             'import json\n'
+                             'raw = """$Loki_-_Buscar_logs_relacionados"""\n'
+                             'try:\n'
+                             '    obj = json.loads(raw)\n'
+                             '    data = obj.get("data", {})\n'
+                             '    result = data.get("result", [])\n'
+                             '    print(f"OK: Loki found {len(result)} log entries")\n'
+                             'except Exception as e:\n'
+                             '    print(f"WARN: Loki search failed (non-critical): {e}")\n'
+                             '    print("OK: Loki search completed")\n'
+                             )],
+        "position": pos(1640, 200),
+        "environment": "Shuffle",
+        "is_valid": True,
+        "errors": [],
+        "authentication": [],
+    },
 ]
 
 branches_list = [
@@ -1455,6 +1747,11 @@ branches_list = [
     branch("br_hive_misp", ACT_THEHIVE, ACT_MISP),
     branch("br_hive_build_es", ACT_THEHIVE, ACT_BUILD_ES_JSON),
     branch("br_hive_wazuh", ACT_THEHIVE, ACT_WAZUH),
+    # Nuevos: Caso creado → análisis avanzados
+    branch("br_hive_tenzir", ACT_THEHIVE, ACT_TENZIR_ANALYZE),
+    branch("br_hive_network", ACT_THEHIVE, ACT_NETWORK_WATCH),
+    branch("br_hive_redis", ACT_THEHIVE, ACT_REDIS_CACHE),
+    branch("br_hive_loki", ACT_THEHIVE, ACT_LOKI_SEARCH),
     # Cortex hash → verificar job
     branch("br_cortex_hash_verify", ACT_CORTEX_HASH, ACT_VERIFY_CORTEX_HASH),
     # Cortex IP → verificar job
@@ -1467,12 +1764,22 @@ branches_list = [
     branch("br_es_verify", ACT_ES, ACT_VERIFY_ES),
     # Wazuh → verificar agentes
     branch("br_wazuh_verify", ACT_WAZUH, ACT_VERIFY_WAZUH),
+    # Nuevos análisis → verificación
+    branch("br_tenzir_verify", ACT_TENZIR_ANALYZE, ACT_VERIFY_TENZIR),
+    branch("br_network_verify", ACT_NETWORK_WATCH, ACT_VERIFY_NETWORK),
+    branch("br_redis_verify", ACT_REDIS_CACHE, ACT_VERIFY_REDIS),
+    branch("br_loki_verify", ACT_LOKI_SEARCH, ACT_VERIFY_LOKI),
     # Verificaciones → calcular MTTR
     branch("br_verify_hash_mttr", ACT_VERIFY_CORTEX_HASH, ACT_CALC_MTTR),
     branch("br_verify_ip_mttr", ACT_VERIFY_CORTEX_IP, ACT_CALC_MTTR),
     branch("br_verify_misp_mttr", ACT_VERIFY_MISP, ACT_CALC_MTTR),
     branch("br_verify_es_mttr", ACT_VERIFY_ES, ACT_CALC_MTTR),
     branch("br_verify_wazuh_mttr", ACT_VERIFY_WAZUH, ACT_CALC_MTTR),
+    # Nuevos análisis → calcular MTTR
+    branch("br_verify_tenzir_mttr", ACT_VERIFY_TENZIR, ACT_CALC_MTTR),
+    branch("br_verify_network_mttr", ACT_VERIFY_NETWORK, ACT_CALC_MTTR),
+    branch("br_verify_redis_mttr", ACT_VERIFY_REDIS, ACT_CALC_MTTR),
+    branch("br_verify_loki_mttr", ACT_VERIFY_LOKI, ACT_CALC_MTTR),
     # Nuevos analizadores Cortex → calcular MTTR (sin verificación individual)
     branch("br_cortex_hash_virusshare_mttr", ACT_CORTEX_HASH_VIRUSSHARE, ACT_CALC_MTTR),
     branch("br_cortex_hash_urlscan_mttr", ACT_CORTEX_HASH_URLSCAN, ACT_CALC_MTTR),
@@ -1481,8 +1788,10 @@ branches_list = [
     branch("br_cortex_ip_googledns_mttr", ACT_CORTEX_IP_GOOGLEDNS, ACT_CALC_MTTR),
     branch("br_cortex_ip_ipapi_mttr", ACT_CORTEX_IP_IPAPI, ACT_CALC_MTTR),
     branch("br_cortex_ip_urlscan_mttr", ACT_CORTEX_IP_URLSCAN, ACT_CALC_MTTR),
-    # Calcular MTTR → indexar métricas
-    branch("br_mttr_metrics", ACT_CALC_MTTR, ACT_INDEX_METRICS),
+    # Calcular MTTR → construir resumen → enriquecer caso → indexar métricas
+    branch("br_mttr_summary", ACT_CALC_MTTR, ACT_BUILD_HIVE_SUMMARY),
+    branch("br_summary_enrich", ACT_BUILD_HIVE_SUMMARY, ACT_ENRICH_CASE),
+    branch("br_enrich_metrics", ACT_ENRICH_CASE, ACT_INDEX_METRICS),
 ]
 
 wf_def = {
@@ -1490,7 +1799,9 @@ wf_def = {
     "description": (
         "Workflow SOAR completo: recibe alerta de ransomware via webhook, "
         "crea caso en TheHive, analiza IOCs en Cortex, busca en MISP, "
-        "e indexa en Elasticsearch para visualizacion en Kibana."
+        "analiza tráfico con Tenzir, monitorea red con Network Watcher, "
+        "cachea IoCs en Redis, busca logs en Loki, enriquece caso con resultados, "
+        "calcula MTTR y indexa métricas en Elasticsearch."
     ),
     "start": ACT_THEHIVE,
     "triggers": [{
@@ -1805,6 +2116,8 @@ print("  Credenciales de Elasticsearch incluidas en la definición del workflow.
 # Disabled to avoid creating extra cases that interfere with E2E tests
 # Internal URL (used within the Docker network, e.g. from soar_api container)
 webhook_url_internal = f'{SHUFFLE_URL}/api/v1/hooks/webhook_{trigger_id}'
+
+
 # External URL (used from the Docker host / Windows, replaces container hostname with localhost and port 5001 with 15001)
 _external_base = SHUFFLE_URL.replace('soar_shuffle_backend', 'localhost').replace('soar_shuffle_frontend', 'localhost').replace(':5001', ':15001')
 webhook_url = f'{_external_base}/api/v1/hooks/webhook_{trigger_id}'

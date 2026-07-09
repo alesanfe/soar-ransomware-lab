@@ -7,8 +7,8 @@ Tests authentication service with mocked dependencies
 import pytest
 from unittest.mock import Mock
 
-from soar_lab.services.auth_service import AuthService
 from soar_lab.exceptions import AuthError
+from soar_lab.services.auth_service import AuthService
 
 
 class TestAuthService:

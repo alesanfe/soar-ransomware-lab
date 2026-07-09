@@ -6,9 +6,9 @@ info:
   contact:
     name: MISP Project
 servers:
-  - url: http://localhost:8082
+  - url: http://localhost:8083
     description: Local development server
-  - url: https://localhost:8082
+  - url: https://localhost:8083
     description: Local development server (SSL)
   - url: http://localhost/misp
     description: Nginx reverse proxy
@@ -39,7 +39,7 @@ paths:
       summary: Create event
       description: Create a new event
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       requestBody:
         required: true
         content:
@@ -53,13 +53,13 @@ paths:
                   type: string
                 threat_level_id:
                   type: integer
-                  enum: [1, 2, 3, 4]
+                  enum: [ 1, 2, 3, 4 ]
                 analysis:
                   type: integer
-                  enum: [0, 1, 2, 3]
+                  enum: [ 0, 1, 2, 3 ]
                 distribution:
                   type: integer
-                  enum: [0, 1, 2, 3, 4]
+                  enum: [ 0, 1, 2, 3, 4 ]
       responses:
         '200':
           description: Event created successfully
@@ -70,7 +70,7 @@ paths:
       summary: Search events
       description: Search for events with filters
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       requestBody:
         required: true
         content:
@@ -94,7 +94,7 @@ paths:
       summary: Get event by ID
       description: Retrieve a specific event
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       parameters:
         - name: event_id
           in: path
@@ -111,7 +111,7 @@ paths:
       summary: Create attribute
       description: Create a new attribute
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       requestBody:
         required: true
         content:
@@ -140,7 +140,7 @@ paths:
       summary: Search attributes
       description: Search for attributes with filters
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       requestBody:
         required: true
         content:
@@ -157,7 +157,7 @@ paths:
       summary: Get attribute by ID
       description: Retrieve a specific attribute
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       parameters:
         - name: attribute_id
           in: path
@@ -173,7 +173,7 @@ paths:
       summary: Delete attribute
       description: Delete an attribute
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       parameters:
         - name: attribute_id
           in: path
@@ -190,7 +190,7 @@ paths:
       summary: List tags
       description: Get list of all tags
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       responses:
         '200':
           description: Tags retrieved successfully
@@ -200,7 +200,7 @@ paths:
       summary: Create tag
       description: Create a new tag
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       requestBody:
         required: true
         content:
@@ -224,7 +224,7 @@ paths:
       summary: List warninglists
       description: Get list of all warninglists
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       responses:
         '200':
           description: Warninglists retrieved successfully
@@ -235,7 +235,7 @@ paths:
       summary: Add sighting
       description: Add a sighting for an attribute
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       requestBody:
         required: true
         content:
@@ -261,7 +261,7 @@ paths:
       summary: Get server info
       description: Get server information
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       responses:
         '200':
           description: Server information retrieved
@@ -272,7 +272,7 @@ paths:
       summary: List organizations
       description: Get list of all organizations
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       responses:
         '200':
           description: Organizations retrieved successfully
@@ -283,7 +283,7 @@ paths:
       summary: List users
       description: Get list of all users
       security:
-        - ApiKeyAuth: []
+        - ApiKeyAuth: [ ]
       responses:
         '200':
           description: Users retrieved successfully

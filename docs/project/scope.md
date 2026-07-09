@@ -42,6 +42,7 @@ que cubra el flujo completo: Webhook → Validación → Caso en TheHive → Adj
 Contención Simulada → Notificación.
 
 Este alcance busca que el proyecto sea:
+
 - **Realista**: Adaptado a un TFM unipersonal sin dependencias externas complejas
 - **Reproducible**: Basado en entornos Docker y scripts documentados
 - **Seguro**: Sin uso de malware real ni riesgos para sistemas productivos
@@ -94,20 +95,31 @@ Este documento depende de:
 #### Componentes Incluidos
 
 - **Playbook E2E Único**: Flujo completo con decisiones automatizadas basadas en score/verdict en Shuffle
-- **Integraciones Simuladas**: SIEM simulado para generación de alertas (`src/soar_lab/infrastructure/http_alert_sender.py`) y scripts para contención simulada
-- **API del Laboratorio**: API REST FastAPI para gestión de servicios, health checks, métricas, tests y backups (`src/soar_lab/api/`, `apps/api/`)
-- **CLI del Laboratorio**: CLI para gestión del laboratorio con comandos para alertas, configuración, validación y operaciones (`src/soar_lab/api/cli.py`)
+- **Integraciones Simuladas**: SIEM simulado para generación de alertas (
+  `src/soar_lab/infrastructure/http_alert_sender.py`) y scripts para contención simulada
+- **API del Laboratorio**: API REST FastAPI para gestión de servicios, health checks, métricas, tests y backups (
+  `src/soar_lab/api/`, `apps/api/`)
+- **CLI del Laboratorio**: CLI para gestión del laboratorio con comandos para alertas, configuración, validación y
+  operaciones (`src/soar_lab/api/cli.py`)
 - **Sitio de Documentación**: Sitio de documentación Docusaurus con getting started y guías de uso (`apps/docs-site/`)
-- **Interfaz Web de Gestión**: Interfaz web para monitoreo del laboratorio, visualización de servicios y operaciones básicas (`apps/web-management/`)
-- **Métricas de Rendimiento (MTTR-demo)**: Cálculo de p50 ≤ 120 s y p90 ≤ 180 s desde alerta hasta contención mediante `src/soar_lab/services/kpi_analyzer.py` → `artifacts/results/kpis.csv`
-- **Analytics de TFM**: Módulos para generación de datos estructurados, visualización de resultados y evidencia académica (`src/soar_lab/services/analytics_service.py`)
-- **Testing Especializado**: Pruebas unitarias (50 archivos), atómicas, integración, seguridad, rendimiento y E2E (`tests/unit/`, `tests/atomic/`, `tests/integration/`, `tests/security/`, `tests/performance/`, `tests/e2e/`)
-- **Automatización Integral**: CI/CD, testing automatizado, backup/restore (`src/soar_lab/services/backup_service.py`, `src/soar_lab/infrastructure/tar_backup_driver.py`)
-- **Seguridad Avanzada**: Validación de esquemas (`src/soar_lab/config/schemas.py`, `src/soar_lab/validation/validators.py`)
-- **Entorno Reproducible**: Arquitectura Docker Compose con TheHive, Cortex, Shuffle SOAR, MISP, Wazuh, Elasticsearch, Redis, MariaDB, Nginx, Grafana, Loki, Promtail (`infra/docker/compose/`)
-- **Documentación Completa**: Diseño del laboratorio, configuración, flujo del playbook, resultados, KPIs, API, CLI y analytics (`docs/`, `apps/api/api-docs.html`, `apps/docs-site/`)
-- **Validación Académica**: Cumplimiento de objetivos SMART con evidencias verificables (`docs/project/objectives.md`, `tests/`)
-- **Stack de Logging**: Grafana, Loki, Promtail para agregación y visualización de logs centralizada (`infra/docker/compose/logging/`)
+- **Interfaz Web de Gestión**: Interfaz web para monitoreo del laboratorio, visualización de servicios y operaciones
+  básicas (`apps/web-management/`)
+- **Métricas de Rendimiento (MTTR-demo)**: Cálculo de p50 ≤ 120 s y p90 ≤ 180 s desde alerta hasta contención mediante
+  `src/soar_lab/services/kpi_analyzer.py` → `artifacts/results/kpis.csv`
+- **Analytics de TFM**: Módulos para generación de datos estructurados, visualización de resultados y evidencia
+  académica (`src/soar_lab/services/analytics_service.py`)
+- **Testing Especializado**: Pruebas unitarias (37 archivos), atómicas, integración, seguridad, rendimiento y E2E (
+  `tests/unit/`, `tests/atomic/`, `tests/integration/`, `tests/security/`, `tests/performance/`, `tests/e2e/`)
+- **Automatización Integral**: CI/CD, testing automatizado, backup/restore (`src/soar_lab/services/backup_service.py`,
+  `src/soar_lab/infrastructure/tar_backup_driver.py`)
+- **Seguridad Avanzada**: Validación de esquemas (`src/soar_lab/config/schemas.py`,
+  `src/soar_lab/validation/validators.py`)
+- **Entorno Reproducible**: Arquitectura Docker Compose con TheHive, Cortex, Shuffle SOAR, MISP, Wazuh, Elasticsearch,
+  Redis, MariaDB, Nginx, Grafana, Loki, Promtail (`infra/docker/compose/`)
+- **Documentación Completa**: Diseño del laboratorio, configuración, flujo del playbook, resultados, KPIs, API, CLI y
+  analytics (`docs/`, `apps/api/api-docs.html`, `apps/docs-site/`)
+- **Validación Académica**: Cumplimiento de objetivos SMART con evidencias verificables (`docs/project/objectives.md`,
+  `tests/`)
 
 #### Componentes Excluidos
 
@@ -120,12 +132,14 @@ Este documento depende de:
 #### Justificación del Alcance
 
 **Viabilidad Técnica:**
+
 - Reducir el tiempo de respuesta ante incidentes mediante automatización demostrable
 - Evitar riesgos asociados al uso de malware real en entorno académico
 - Facilitar la reproducibilidad para otros profesionales y entornos educativos
 - Cumplir con objetivos medibles y realistas en un marco temporal limitado
 
 **Viabilidad Académica:**
+
 - Profundización en conceptos fundamentales de SOAR
 - Validación experimental de hipótesis de investigación
 - Generación de conocimiento aplicado y transferible
@@ -172,7 +186,8 @@ Este proyecto cumple con las siguientes consideraciones éticas:
 
 #### Diagrama del Flujo del Playbook
 
-Este diagrama ilustra el recorrido completo de una alerta desde su recepción hasta la contención y notificación. Cada paso refleja la lógica del playbook y las decisiones basadas en análisis automatizados.
+Este diagrama ilustra el recorrido completo de una alerta desde su recepción hasta la contención y notificación. Cada
+paso refleja la lógica del playbook y las decisiones basadas en análisis automatizados.
 
 ```mermaid
 flowchart TD
@@ -214,11 +229,12 @@ graph LR
 
 #### Infraestructura Recomendada
 
-La infraestructura se diseña para ser segura y fácil de desplegar, evitando complejidad innecesaria y asegurando compatibilidad con entornos académicos.
+La infraestructura se diseña para ser segura y fácil de desplegar, evitando complejidad innecesaria y asegurando
+compatibilidad con entornos académicos.
 
 | Componente       | Descripción                                                                        | Requisitos Mínimos   | Referencias                                                                                    |
 |------------------|------------------------------------------------------------------------------------|----------------------|------------------------------------------------------------------------------------------------|
-| **VM Windows**   | Simulación de endpoint víctima, agente EDR                                         | 4GB RAM, 50GB SSD    | Scripts de contención: `src/soar_lab/services/containment_service.py`                                 |
+| **VM Windows**   | Simulación de endpoint víctima, agente EDR                                         | 4GB RAM, 50GB SSD    | Scripts de contención: `src/soar_lab/services/containment_service.py`                          |
 | **VM Linux**     | Host principal con Docker, herramientas, CI/CD                                     | 8GB RAM, 50GB SSD    | `Makefile`, `infra/docker/compose/`, `scripts/ci/`                                             |
 | **Contenedores** | TheHive, Cortex, Shuffle, PostgreSQL, Redis, API, Nginx, docs-site, web-management | Docker Engine 20.10+ | `infra/docker/compose/docker-compose.yml`, `docker-compose.core.yml`, `docker-compose.api.yml` |
 
@@ -226,7 +242,8 @@ La infraestructura se diseña para ser segura y fácil de desplegar, evitando co
 
 **Métricas Cuantitativas:**
 
-- **Tiempo de Respuesta**: p50 ≤ 120s, p90 ≤ 180s (calculado por `src/soar_lab/services/kpi_analyzer.py` desde timestamps en
+- **Tiempo de Respuesta**: p50 ≤ 120s, p90 ≤ 180s (calculado por `src/soar_lab/services/kpi_analyzer.py` desde
+  timestamps en
   `artifacts/logs/playbook_execution.log`)
 - **Tasa de Éxito**: 100% de ejecuciones completas (pytest tests/e2e/ -v)
 - **Disponibilidad**: ≥ 99% durante pruebas (docker-compose ps para verificar healthy status)
@@ -271,6 +288,7 @@ La infraestructura se diseña para ser segura y fácil de desplegar, evitando co
 - **Cobertura Documental**: 100% de secciones completadas
 
 **Métricas Cualitativas:**
+
 - **Reproducibilidad**: Entorno desplegable en ≤ 30 minutos
 - **Seguridad**: Sin incidentes de seguridad durante pruebas
 - **Usabilidad**: Documentación clara y procedimientos validados
@@ -356,11 +374,13 @@ Las evidencias de validación incluyen:
 ### 5.1 Limitaciones
 
 **Limitaciones Técnicas:**
+
 - Dependencia de APIs externas (VirusTotal, URLHaus)
 - Limitaciones de recursos en entorno de desarrollo
 - Simulación vs escenarios reales de producción
 
 **Restricciones Académicas:**
+
 - Plazo limitado para desarrollo y validación
 - Recursos disponibles para un único desarrollador
 - Alcance definido para TFM unipersonal

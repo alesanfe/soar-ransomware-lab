@@ -1,0 +1,238 @@
+{
+  "dashboard": {
+    "title": "SOAR Ransomware Lab - KPIs Dashboard",
+    "tags": [
+      "soar",
+      "ransomware",
+      "kpi"
+    ],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Alerts Processed",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(alert_total)",
+            "legendFormat": "Total Alerts"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Workflow Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(workflow_success_total[5m])) / sum(rate(workflow_total[5m])) * 100",
+            "legendFormat": "Success Rate %"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Cases Created (24h)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(thehive_cases_created_total[24h]))",
+            "legendFormat": "Cases"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 4,
+        "title": "IOC Detection Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(ioc_detected_total[5m])) / sum(rate(ioc_analyzed_total[5m])) * 100",
+            "legendFormat": "Detection %"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        }
+      },
+      {
+        "id": 5,
+        "title": "IOC Detection by Type",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum by (ioc_type) (ioc_detected_total)",
+            "legendFormat": "{{ioc_type}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        }
+      },
+      {
+        "id": 6,
+        "title": "Service Integration Success Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(service_success_total{service=\"thehive\"}[5m]) / rate(service_total{service=\"thehive\"}[5m]) * 100",
+            "legendFormat": "TheHive"
+          },
+          {
+            "expr": "rate(service_success_total{service=\"cortex\"}[5m]) / rate(service_total{service=\"cortex\"}[5m]) * 100",
+            "legendFormat": "Cortex"
+          },
+          {
+            "expr": "rate(service_success_total{service=\"misp\"}[5m]) / rate(service_total{service=\"misp\"}[5m]) * 100",
+            "legendFormat": "MISP"
+          },
+          {
+            "expr": "rate(service_success_total{service=\"elasticsearch\"}[5m]) / rate(service_total{service=\"elasticsearch\"}[5m]) * 100",
+            "legendFormat": "Elasticsearch"
+          },
+          {
+            "expr": "rate(service_success_total{service=\"wazuh\"}[5m]) / rate(service_total{service=\"wazuh\"}[5m]) * 100",
+            "legendFormat": "Wazuh"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        }
+      },
+      {
+        "id": 7,
+        "title": "Alerts by Severity",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "count by (severity) (alert_total)",
+            "legendFormat": "Severity {{severity}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 12
+        }
+      },
+      {
+        "id": 8,
+        "title": "Alerts by Type",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "count by (alert_type) (alert_total)",
+            "legendFormat": "{{alert_type}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 12
+        }
+      },
+      {
+        "id": 9,
+        "title": "MTTR by Alert Type",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "avg by (alert_type) (mttr_seconds)",
+            "legendFormat": "{{alert_type}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 12
+        }
+      },
+      {
+        "id": 10,
+        "title": "Cortex Analyzer Execution Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(cortex_analyzer_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(cortex_analyzer_duration_seconds_bucket[5m]))",
+            "legendFormat": "p50"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        }
+      },
+      {
+        "id": 11,
+        "title": "System Health Score",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "health_score",
+            "legendFormat": "Health"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 20
+        }
+      },
+      {
+        "id": 12,
+        "title": "Critical Alerts (24h)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(alert_total{severity=\"3\"}[24h]))",
+            "legendFormat": "Critical"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 20
+        }
+      }
+    ]
+  }
+}

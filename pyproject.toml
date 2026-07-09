@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "soar-lab"
-version = "1.0.0"
+version = "1.4.0"
 description = "SOAR Ransomware Lab for Security Research"
-authors = [{name = "SOAR Lab Team", email = "team@soar-lab.org"}]
-license = {text = "MIT"}
+authors = [{ name = "SOAR Lab Team", email = "team@soar-lab.org" }]
+license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -46,6 +46,24 @@ soar-lab = "soar_lab.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m not slow')",
+    "requires_docker: marks tests that require Docker to be running",
+    "requires_external: marks tests that depend on external services (TheHive, Cortex, Shuffle, etc.)",
+    "e2e: marks end-to-end tests that may take longer to run",
+    "unit: marks unit tests that don't require external dependencies",
+    "integration: marks integration tests that require multiple components",
+    "atomic: marks atomic red-team simulation tests",
+    "performance: marks performance and load tests",
+    "security: marks security hardening and vulnerability tests",
+    "smoke: fast post-deployment smoke tests",
+    "smoke_critical: P0 — rollback immediately if these fail",
+    "smoke_high: P1 — investigate immediately, consider rollback",
+    "smoke_medium: P2 — degraded platform, investigate within 24h",
+]
 
 [tool.black]
 line-length = 88

@@ -159,7 +159,7 @@ configure_soaR_ports() {
     # Uncomment if direct access is needed without Nginx proxy
     # ufw allow 9000/tcp comment "TheHive (direct)"
     # ufw allow 9001/tcp comment "Cortex (direct)"
-    # ufw allow 3001/tcp comment "Shuffle Frontend (direct)"
+    # ufw allow 8081/tcp comment "Shuffle Frontend (direct)"
     # ufw allow 5001/tcp comment "Shuffle API (direct)"
     # ufw allow 19200/tcp comment "Elasticsearch (direct)"
     

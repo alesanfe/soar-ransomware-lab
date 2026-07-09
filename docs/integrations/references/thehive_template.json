@@ -5,7 +5,12 @@
   "description": "Template for ransomware security incidents with standardized fields and tags",
   "severity": 2,
   "status": "Open",
-  "tags": ["ransomware", "malware", "incident", "soar"],
+  "tags": [
+    "ransomware",
+    "malware",
+    "incident",
+    "soar"
+  ],
   "tlp": 2,
   "pap": 2,
   "flag": false,

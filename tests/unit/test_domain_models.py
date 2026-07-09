@@ -62,7 +62,7 @@ class TestAlert:
         """Test Alert with IOCs"""
         ioc1 = IOC(ioc_type="hash", value="abc123", source="test")
         ioc2 = IOC(ioc_type="ip", value="10.0.0.1", source="test")
-        
+
         alert = Alert(
             alert_id="ALERT-002",
             hostname="test-host",
@@ -131,7 +131,7 @@ class TestAlert:
         """Test getting critical IOCs"""
         ioc1 = IOC(ioc_type="hash", value="abc123", confidence=0.9, source="test")
         ioc2 = IOC(ioc_type="ip", value="10.0.0.1", confidence=0.5, source="test")
-        
+
         alert = Alert(
             alert_id="ALERT-006",
             hostname="test-host",

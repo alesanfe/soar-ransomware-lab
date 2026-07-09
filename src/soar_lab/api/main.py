@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,9 +14,9 @@ from soar_lab.domain.ports import WebSocketManager
 from soar_lab.exceptions import AuthError
 from .auth import create_get_current_user
 from .models import (
-    LoginRequest, LoginResponse, VerifyAuthResponse, TestRequest, BackupRequest,
-    Metrics, TestResults, BackupListResponse, CreateBackupResponse,
-    RestoreBackupResponse, HealthResponse, ErrorResponse
+    LoginRequest, LoginResponse, VerifyAuthResponse, RunRequest, BackupRequest,
+    Metrics, RunResults, BackupListResponse, CreateBackupResponse,
+    RestoreBackupResponse, ErrorResponse
 )
 
 logger = get_logger(__name__)
@@ -43,6 +44,8 @@ def create_app(
         misp_client=None,
         shuffle_client=None,
         thehive_client=None,
+        elasticsearch_client=None,
+        wazuh_client=None,
         websocket_manager: WebSocketManager = None,
         auth_service=None
 ) -> FastAPI:
@@ -72,8 +75,10 @@ def create_app(
         allow_headers=["*"],
     )
 
-    # Mount static files for docs
-    app_instance.mount("/docs", StaticFiles(directory="/app/docs"), name="docs")
+    # Mount static files for docs (only if the directory exists)
+    _docs_dir = cp.get('DOCS_DIR', '/app/docs')
+    if os.path.isdir(_docs_dir):
+        app_instance.mount("/static-docs", StaticFiles(directory=_docs_dir), name="docs")
 
     # Global exception handler for consistent error responses
     @app_instance.exception_handler(HTTPException)
@@ -117,6 +122,8 @@ def create_app(
     app_instance.state.misp_client = misp_client
     app_instance.state.shuffle_client = shuffle_client
     app_instance.state.thehive_client = thehive_client
+    app_instance.state.elasticsearch_client = elasticsearch_client
+    app_instance.state.wazuh_client = wazuh_client
     app_instance.state.websocket_manager = websocket_manager
     app_instance.state.auth_service = auth_service
 
@@ -209,7 +216,7 @@ def _register_routes(app_instance: FastAPI):
         try:
             if auth.verify_credentials(request.username, request.password):
                 token = auth.create_jwt_token(request.username)
-                return LoginResponse(token=token, message="Login successful", token_type="bearer")
+                return LoginResponse(token=token, message="Login successful")
             else:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
         except AuthError as e:
@@ -221,7 +228,7 @@ def _register_routes(app_instance: FastAPI):
         try:
             get_current_user = app_instance.state.get_current_user
             user = get_current_user(credentials)
-            return VerifyAuthResponse(valid=True, username=user.get("user"))
+            return VerifyAuthResponse(valid=True, user=user if isinstance(user, dict) else {"user": str(user)})
         except Exception as e:
             raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -263,15 +270,12 @@ def _register_routes(app_instance: FastAPI):
     async def create_backup(request: BackupRequest, backup=Depends(get_backup_service)):
         """Create a backup."""
         try:
-            result = backup.create_backup(
-                backup_type=request.backup_type,
-                source_dir=request.source_dir,
-                include_metadata=request.include_metadata
-            )
+            result = backup.create()
             return CreateBackupResponse(
-                backup_name=result.get("backup_name"),
-                status=result.get("status"),
-                message=result.get("message")
+                backup_name=result.get("filename") or result.get("backup_name") or result.get("name",
+                                                                                              request.backup_name),
+                status=result.get("status", "success"),
+                message=result.get("message", "Backup created successfully")
             )
         except Exception as e:
             logger.error(f"Error creating backup: {e}")
@@ -281,8 +285,9 @@ def _register_routes(app_instance: FastAPI):
     async def list_backups(backup=Depends(get_backup_service)):
         """List all backups."""
         try:
-            backups = backup.list_backups()
-            return BackupListResponse(backups=backups)
+            result = backup.list_backups()
+            backup_list = result.get("backups", []) if isinstance(result, dict) else result
+            return BackupListResponse(backups=backup_list)
         except Exception as e:
             logger.error(f"Error listing backups: {e}")
             raise HTTPException(status_code=500, detail="Failed to list backups")
@@ -291,27 +296,24 @@ def _register_routes(app_instance: FastAPI):
     async def restore_backup(request: BackupRequest, backup=Depends(get_backup_service)):
         """Restore a backup."""
         try:
-            result = backup.restore_backup(
-                backup_name=request.backup_name,
-                target_dir=request.target_dir
-            )
+            result = backup.restore(backup_name=request.backup_name)
             return RestoreBackupResponse(
-                backup_name=result.get("backup_name"),
-                status=result.get("status"),
-                message=result.get("message")
+                backup_name=result.get("backup_name", request.backup_name),
+                status=result.get("status", "success"),
+                message=result.get("message", "Backup restored successfully")
             )
         except Exception as e:
             logger.error(f"Error restoring backup: {e}")
             raise HTTPException(status_code=500, detail="Failed to restore backup")
 
-    @app_instance.post("/tests/run", response_model=TestResults)
-    async def run_tests(request: TestRequest):
+    @app_instance.post("/tests/run", response_model=RunResults)
+    async def run_tests(request: RunRequest):
         """Run tests."""
         try:
             test = app_instance.state.test_service
             if test:
                 result = await test.run_tests(category=request.category)
-                return TestResults(
+                return RunResults(
                     category=result.get("category", request.category),
                     passed=result.get("passed", 0),
                     failed=result.get("failed", 0),
@@ -322,7 +324,7 @@ def _register_routes(app_instance: FastAPI):
                 )
             else:
                 # Return mock data if test service not available
-                return TestResults(
+                return RunResults(
                     category=request.category,
                     passed=0,
                     failed=0,
@@ -363,24 +365,451 @@ def _register_routes(app_instance: FastAPI):
             logger.error(f"Error getting services status: {e}")
             raise HTTPException(status_code=500, detail="Failed to get services status")
 
+    # ------------------------------------------------------------------
+    # Integration client dependency helpers
+    # ------------------------------------------------------------------
+
+    def get_thehive_client():
+        client = app_instance.state.thehive_client
+        if client is None:
+            raise HTTPException(status_code=503, detail="TheHive client not available")
+        return client
+
+    def get_cortex_client():
+        client = app_instance.state.cortex_client
+        if client is None:
+            raise HTTPException(status_code=503, detail="Cortex client not available")
+        return client
+
+    def get_misp_client():
+        client = app_instance.state.misp_client
+        if client is None:
+            raise HTTPException(status_code=503, detail="MISP client not available")
+        return client
+
+    def get_shuffle_client():
+        client = app_instance.state.shuffle_client
+        if client is None:
+            raise HTTPException(status_code=503, detail="Shuffle client not available")
+        return client
+
+    def get_elasticsearch_client():
+        client = app_instance.state.elasticsearch_client
+        if client is None:
+            raise HTTPException(status_code=503, detail="Elasticsearch client not available")
+        return client
+
+    def get_wazuh_client():
+        client = app_instance.state.wazuh_client
+        if client is None:
+            raise HTTPException(status_code=503, detail="Wazuh client not available")
+        return client
+
+    # ------------------------------------------------------------------
+    # TheHive routes
+    # ------------------------------------------------------------------
+
+    @app_instance.get("/soar/thehive/cases")
+    async def thehive_list_cases(thehive=Depends(get_thehive_client)):
+        """List all TheHive cases (no 10-item limit)."""
+        try:
+            cases = thehive.search_cases()
+            return {"cases": cases, "count": len(cases)}
+        except Exception as e:
+            logger.error(f"TheHive list_cases error: {e}")
+            raise HTTPException(status_code=502, detail=f"TheHive error: {e}")
+
+    @app_instance.get("/soar/thehive/cases/{case_id}")
+    async def thehive_get_case(case_id: str, thehive=Depends(get_thehive_client)):
+        """Get a single TheHive case by ID."""
+        try:
+            return thehive.get_case(case_id)
+        except Exception as e:
+            logger.error(f"TheHive get_case error: {e}")
+            raise HTTPException(status_code=502, detail=f"TheHive error: {e}")
+
+    @app_instance.get("/soar/thehive/cases/{case_id}/observables")
+    async def thehive_get_observables(case_id: str, thehive=Depends(get_thehive_client)):
+        """List observables (artifacts) attached to a TheHive case."""
+        try:
+            obs = thehive.get_case_observables(case_id)
+            return {"case_id": case_id, "observables": obs, "count": len(obs)}
+        except Exception as e:
+            logger.error(f"TheHive get_observables error: {e}")
+            raise HTTPException(status_code=502, detail=f"TheHive error: {e}")
+
+    @app_instance.get("/soar/thehive/cases/{case_id}/tasks")
+    async def thehive_get_tasks(case_id: str, thehive=Depends(get_thehive_client)):
+        """List tasks for a TheHive case."""
+        try:
+            tasks = thehive.list_case_tasks(case_id)
+            return {"case_id": case_id, "tasks": tasks, "count": len(tasks)}
+        except Exception as e:
+            logger.error(f"TheHive list_tasks error: {e}")
+            raise HTTPException(status_code=502, detail=f"TheHive error: {e}")
+
+    @app_instance.get("/soar/thehive/health")
+    async def thehive_health(thehive=Depends(get_thehive_client)):
+        """TheHive reachability check."""
+        ok = thehive.health_check()
+        return {"service": "thehive", "reachable": ok}
+
+    @app_instance.get("/analytics/kpis/aggregated")
+    async def get_aggregated_kpis(hours: int = 24):
+        """Get aggregated KPI metrics from Elasticsearch soar-metrics index."""
+        try:
+            # Create Elasticsearch client directly
+            from soar_lab.integrations.elasticsearch_client import ElasticsearchClient
+            from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
+            from soar_lab.config.settings import create_settings
+
+            settings = create_settings()
+            config_provider = InfrastructureConfigProvider(settings)
+            es = ElasticsearchClient(
+                base_url=config_provider.get('elasticsearch_url'),
+                config_provider=config_provider
+            )
+
+            # Fetch metrics from Elasticsearch
+            metrics_data = es.get_latest_documents(size=10000, index="soar-metrics")
+
+            if not metrics_data:
+                return {
+                    "period_hours": hours,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "total_alerts": 0,
+                    "by_alert_type": {},
+                    "services": {}
+                }
+
+            # Import KPIAnalyzer and StatisticalCalculator
+            from soar_lab.services.kpi_analyzer import KPIAnalyzer
+            from soar_lab.domain.statistical_calculator import StatisticalCalculator
+
+            # Calculate KPIs
+            statistical_calculator = StatisticalCalculator()
+            kpi_analyzer = KPIAnalyzer(statistical_calculator)
+
+            # Calculate KPIs by alert type
+            kpis_by_type = kpi_analyzer.calculate_kpis_by_alert_type(metrics_data, hours)
+
+            # Calculate service integration KPIs
+            service_kpis = kpi_analyzer.calculate_service_integration_kpis(metrics_data, hours)
+
+            # Extract MTTR values for overall statistics
+            mttr_values = []
+            for metric in metrics_data:
+                mttr_field = metric.get("mttr_seconds", {})
+                if isinstance(mttr_field, dict):
+                    mttr_str = mttr_field.get("message", "")
+                    if "MTTR:" in mttr_str:
+                        try:
+                            mttr = float(mttr_str.split("MTTR:")[1].split("s")[0].strip())
+                            mttr_values.append(mttr)
+                        except (ValueError, IndexError):
+                            pass
+                elif isinstance(mttr_field, (int, float)):
+                    mttr_values.append(mttr_field)
+
+            # Calculate MTTR statistics
+            mttr_stats = {}
+            if mttr_values:
+                mttr_stats = statistical_calculator.calculate_statistical_metrics(mttr_values)
+
+            return {
+                "period_hours": hours,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "total_alerts": len(metrics_data),
+                "mttr_statistics": mttr_stats,
+                "by_alert_type": kpis_by_type.get("by_alert_type", {}),
+                "services": service_kpis.get("services", {})
+            }
+        except Exception as e:
+            logger.error(f"Error getting aggregated KPIs: {e}")
+            raise HTTPException(status_code=500, detail="Failed to get aggregated KPIs")
+
+    # ------------------------------------------------------------------
+    # Cortex routes
+    # ------------------------------------------------------------------
+
+    @app_instance.get("/soar/cortex/analyzers")
+    async def cortex_list_analyzers(data_type: Optional[str] = None,
+                                    cortex=Depends(get_cortex_client)):
+        """List Cortex analyzers, optionally filtered by data_type."""
+        try:
+            if data_type:
+                analyzers = cortex.list_analyzers_by_type(data_type)
+            else:
+                analyzers = cortex.list_analyzers()
+            return {"analyzers": analyzers, "count": len(analyzers)}
+        except Exception as e:
+            logger.error(f"Cortex list_analyzers error: {e}")
+            raise HTTPException(status_code=502, detail=f"Cortex error: {e}")
+
+    @app_instance.get("/soar/cortex/jobs")
+    async def cortex_list_jobs(start: int = 0, count: int = 10,
+                               cortex=Depends(get_cortex_client)):
+        """List recent Cortex analyzer jobs."""
+        try:
+            jobs = cortex.list_jobs(start=start, count=count)
+            return {"jobs": jobs, "count": len(jobs)}
+        except Exception as e:
+            logger.error(f"Cortex list_jobs error: {e}")
+            raise HTTPException(status_code=502, detail=f"Cortex error: {e}")
+
+    @app_instance.get("/soar/cortex/jobs/{job_id}")
+    async def cortex_get_job(job_id: str, cortex=Depends(get_cortex_client)):
+        """Get status and result of a Cortex job."""
+        try:
+            return cortex.get_job(job_id)
+        except Exception as e:
+            logger.error(f"Cortex get_job error: {e}")
+            raise HTTPException(status_code=502, detail=f"Cortex error: {e}")
+
+    @app_instance.get("/soar/cortex/jobs/{job_id}/report")
+    async def cortex_get_job_report(job_id: str, cortex=Depends(get_cortex_client)):
+        """Get full report of a completed Cortex job."""
+        try:
+            return cortex.get_job_report(job_id)
+        except Exception as e:
+            logger.error(f"Cortex get_job_report error: {e}")
+            raise HTTPException(status_code=502, detail=f"Cortex error: {e}")
+
+    @app_instance.get("/soar/cortex/health")
+    async def cortex_health(cortex=Depends(get_cortex_client)):
+        """Cortex reachability check."""
+        ok = cortex.health_check()
+        return {"service": "cortex", "reachable": ok}
+
+    # ------------------------------------------------------------------
+    # MISP routes
+    # ------------------------------------------------------------------
+
+    @app_instance.get("/soar/misp/attributes")
+    async def misp_search_attributes(value: Optional[str] = None,
+                                     attr_type: Optional[str] = None,
+                                     limit: int = 50,
+                                     misp=Depends(get_misp_client)):
+        """Search MISP attributes by value and/or type."""
+        try:
+            attrs = misp.search_attributes(value=value, attr_type=attr_type, limit=limit)
+            return {"attributes": attrs, "count": len(attrs)}
+        except Exception as e:
+            logger.error(f"MISP search_attributes error: {e}")
+            raise HTTPException(status_code=502, detail=f"MISP error: {e}")
+
+    @app_instance.get("/soar/misp/events")
+    async def misp_list_events(limit: int = 20, misp=Depends(get_misp_client)):
+        """List recent MISP events."""
+        try:
+            events = misp.list_events(limit=limit)
+            return {"events": events, "count": len(events)}
+        except Exception as e:
+            logger.error(f"MISP list_events error: {e}")
+            raise HTTPException(status_code=502, detail=f"MISP error: {e}")
+
+    @app_instance.get("/soar/misp/events/{event_id}")
+    async def misp_get_event(event_id: str, misp=Depends(get_misp_client)):
+        """Get a specific MISP event by ID."""
+        try:
+            return misp.get_event(event_id)
+        except Exception as e:
+            logger.error(f"MISP get_event error: {e}")
+            raise HTTPException(status_code=502, detail=f"MISP error: {e}")
+
+    @app_instance.get("/soar/misp/health")
+    async def misp_health(misp=Depends(get_misp_client)):
+        """MISP reachability check."""
+        ok = misp.health_check()
+        return {"service": "misp", "reachable": ok}
+
+    # ------------------------------------------------------------------
+    # Shuffle routes
+    # ------------------------------------------------------------------
+
+    @app_instance.get("/soar/shuffle/workflows")
+    async def shuffle_list_workflows(shuffle=Depends(get_shuffle_client)):
+        """List all Shuffle workflows."""
+        try:
+            wfs = shuffle.list_workflows()
+            return {"workflows": wfs, "count": len(wfs)}
+        except Exception as e:
+            logger.error(f"Shuffle list_workflows error: {e}")
+            raise HTTPException(status_code=502, detail=f"Shuffle error: {e}")
+
+    @app_instance.get("/soar/shuffle/workflows/{workflow_id}")
+    async def shuffle_get_workflow(workflow_id: str, shuffle=Depends(get_shuffle_client)):
+        """Get a specific Shuffle workflow."""
+        try:
+            return shuffle.get_workflow(workflow_id)
+        except Exception as e:
+            logger.error(f"Shuffle get_workflow error: {e}")
+            raise HTTPException(status_code=502, detail=f"Shuffle error: {e}")
+
+    @app_instance.get("/soar/shuffle/workflows/{workflow_id}/executions")
+    async def shuffle_get_executions(workflow_id: str, shuffle=Depends(get_shuffle_client)):
+        """List executions for a Shuffle workflow."""
+        try:
+            execs = shuffle.get_workflow_executions(workflow_id)
+            return {"workflow_id": workflow_id, "executions": execs, "count": len(execs)}
+        except Exception as e:
+            logger.error(f"Shuffle get_executions error: {e}")
+            raise HTTPException(status_code=502, detail=f"Shuffle error: {e}")
+
+    @app_instance.get("/soar/shuffle/workflows/{workflow_id}/executions/{execution_id}")
+    async def shuffle_get_execution(workflow_id: str, execution_id: str,
+                                    shuffle=Depends(get_shuffle_client)):
+        """Get a specific Shuffle workflow execution."""
+        try:
+            ex = shuffle.get_execution(workflow_id, execution_id)
+            if ex is None:
+                raise HTTPException(status_code=404, detail="Execution not found")
+            return ex
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Shuffle get_execution error: {e}")
+            raise HTTPException(status_code=502, detail=f"Shuffle error: {e}")
+
+    @app_instance.get("/soar/shuffle/health")
+    async def shuffle_health(shuffle=Depends(get_shuffle_client)):
+        """Shuffle reachability check."""
+        ok = shuffle.health_check()
+        return {"service": "shuffle", "reachable": ok}
+
+    # ------------------------------------------------------------------
+    # Elasticsearch routes
+    # ------------------------------------------------------------------
+
+    @app_instance.get("/soar/elasticsearch/count")
+    async def es_count(index: Optional[str] = None, es=Depends(get_elasticsearch_client)):
+        """Return total document count for the soar-alerts index (or custom index)."""
+        try:
+            return {"index": index or es.index, "count": es.count(index=index)}
+        except Exception as e:
+            logger.error(f"Elasticsearch count error: {e}")
+            raise HTTPException(status_code=502, detail=f"Elasticsearch error: {e}")
+
+    @app_instance.get("/soar/elasticsearch/latest")
+    async def es_latest(size: int = 10, index: Optional[str] = None,
+                        es=Depends(get_elasticsearch_client)):
+        """Return the most recent documents from soar-alerts."""
+        try:
+            docs = es.get_latest_documents(size=size, index=index)
+            return {"documents": docs, "count": len(docs)}
+        except Exception as e:
+            logger.error(f"Elasticsearch latest error: {e}")
+            raise HTTPException(status_code=502, detail=f"Elasticsearch error: {e}")
+
+    @app_instance.get("/soar/elasticsearch/health")
+    async def es_health(es=Depends(get_elasticsearch_client)):
+        """Elasticsearch cluster health."""
+        try:
+            health = es.cluster_health()
+            return {"service": "elasticsearch", "reachable": True, "status": health.get("status")}
+        except Exception as e:
+            return {"service": "elasticsearch", "reachable": False, "error": str(e)}
+
+    # ------------------------------------------------------------------
+    # Wazuh routes
+    # ------------------------------------------------------------------
+
+    @app_instance.get("/soar/wazuh/agents")
+    async def wazuh_list_agents(status: Optional[str] = None,
+                                wazuh=Depends(get_wazuh_client)):
+        """List Wazuh agents, optionally filtered by status."""
+        try:
+            agents = wazuh.list_agents(status=status)
+            return {"agents": agents, "count": len(agents)}
+        except Exception as e:
+            logger.error(f"Wazuh list_agents error: {e}")
+            raise HTTPException(status_code=502, detail=f"Wazuh error: {e}")
+
+    @app_instance.get("/soar/wazuh/agents/{agent_id}")
+    async def wazuh_get_agent(agent_id: str, wazuh=Depends(get_wazuh_client)):
+        """Get details of a specific Wazuh agent."""
+        try:
+            return wazuh.get_agent(agent_id)
+        except Exception as e:
+            logger.error(f"Wazuh get_agent error: {e}")
+            raise HTTPException(status_code=502, detail=f"Wazuh error: {e}")
+
+    @app_instance.get("/soar/wazuh/agents/{agent_id}/vulnerabilities")
+    async def wazuh_agent_vulns(agent_id: str, limit: int = 50,
+                                wazuh=Depends(get_wazuh_client)):
+        """Return CVEs detected on a Wazuh agent."""
+        try:
+            vulns = wazuh.list_agent_vulnerabilities(agent_id, limit=limit)
+            return {"agent_id": agent_id, "vulnerabilities": vulns, "count": len(vulns)}
+        except Exception as e:
+            logger.error(f"Wazuh vulnerabilities error: {e}")
+            raise HTTPException(status_code=502, detail=f"Wazuh error: {e}")
+
+    @app_instance.get("/soar/wazuh/manager")
+    async def wazuh_manager_info(wazuh=Depends(get_wazuh_client)):
+        """Return Wazuh manager info (version, type)."""
+        try:
+            return wazuh.get_manager_info()
+        except Exception as e:
+            logger.error(f"Wazuh manager info error: {e}")
+            raise HTTPException(status_code=502, detail=f"Wazuh error: {e}")
+
+    @app_instance.get("/soar/wazuh/health")
+    async def wazuh_health(wazuh=Depends(get_wazuh_client)):
+        """Wazuh reachability check."""
+        ok = wazuh.health_check()
+        return {"service": "wazuh", "reachable": ok}
+
+    @app_instance.get("/soar/status")
+    async def soar_status():
+        """Aggregated health check across all SOAR integration clients."""
+        results: Dict[str, Any] = {"timestamp": datetime.now(timezone.utc).isoformat()}
+        for name, client in (
+                ("thehive", app_instance.state.thehive_client),
+                ("cortex", app_instance.state.cortex_client),
+                ("misp", app_instance.state.misp_client),
+                ("shuffle", app_instance.state.shuffle_client),
+                ("elasticsearch", app_instance.state.elasticsearch_client),
+                ("wazuh", app_instance.state.wazuh_client),
+        ):
+            if client is None:
+                results[name] = {"reachable": False, "error": "client not configured"}
+            else:
+                try:
+                    results[name] = {"reachable": client.health_check()}
+                except Exception as e:
+                    results[name] = {"reachable": False, "error": str(e)}
+        results["all_reachable"] = all(
+            v.get("reachable", False) for v in results.values() if isinstance(v, dict)
+        )
+        return results
+
     @app_instance.websocket("/ws/logs")
     async def websocket_logs(websocket: WebSocket, connection_manager=Depends(get_websocket_manager)):
         """WebSocket endpoint for log streaming."""
         if connection_manager is None:
-            raise HTTPException(status_code=503, detail="WebSocket manager not available")
+            await websocket.close(code=1011, reason="WebSocket manager not available")
+            return
 
         await connection_manager.connect(websocket)
 
         try:
-            while True:
-                # Simulate log streaming
-                log_entry = {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "level": "INFO",
-                    "message": "Simulated log entry"
-                }
-                await websocket.send_json(log_entry)
-                await asyncio.sleep(1)
+            # Get log reader from app state if available
+            log_reader = app_instance.state.log_reader
+            if log_reader:
+                # Stream real logs
+                async for log_entry in log_reader.stream_logs():
+                    await websocket.send_json(log_entry)
+            else:
+                # Fallback to simulated logs if log reader not available
+                while True:
+                    log_entry = {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "level": "INFO",
+                        "message": "Log reader not available - simulated log entry"
+                    }
+                    await websocket.send_json(log_entry)
+                    await asyncio.sleep(1)
         except WebSocketDisconnect:
             connection_manager.disconnect(websocket)
             logger.info("WebSocket client disconnected")
@@ -388,15 +817,4 @@ def _register_routes(app_instance: FastAPI):
 
 def _get_fallback_html() -> str:
     """Get fallback HTML when API docs are not available."""
-    try:
-        # Try to read from static file using injected storage
-        storage = app_instance.state.storage if hasattr(app_instance, 'state') else None
-        if storage:
-            fallback_content = storage.read_file("static/fallback.html")
-            if fallback_content:
-                return fallback_content
-    except Exception as e:
-        logger.error(f"Error reading fallback HTML: {e}")
-
-    # Return basic HTML as last resort
     return """<html><head><title>SOAR Lab Management API</title></head><body><h1>SOAR Lab Management API</h1><p>API Documentation: <a href="/docs">/docs</a></p><p>Health Check: <a href="/health">/health</a></p></body></html>"""
