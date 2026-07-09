@@ -1,0 +1,2 @@
+[run]
+omit = src/soar_lab/domain/ports.py
