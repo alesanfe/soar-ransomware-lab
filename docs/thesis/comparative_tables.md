@@ -1,5 +1,3 @@
-
-
 # Tablas Comparativas Complementarias
 
 Este anexo contiene tablas comparativas de plataformas SOAR, evolución de ransomware, objetivos del proyecto,
@@ -72,7 +70,7 @@ las 44 mejoras identificadas.
 | **NF** | MTTR <120s                    | Alta      | Medición continua        | ✅ Cumplido (89s)   |
 | **NF** | Disponibilidad 99.5%          | Media     | Uptime monitoring        | ✅ Cumplido (99.7%) |
 | **NF** | Escalabilidad 100 alertas/h   | Media     | Pruebas de carga         | ✅ Cumplido (125/h) |
-| **NF** | Seguridad TLS 1.3             | Alta      | Certificación SSL        | ✅ Implementado     |
+| **NF** | Seguridad TLS 1.3             | Alta      | Certificación SSL        | ⚠️ Parcial (certificados autofirmados en Nginx; tráfico interno mayoritariamente HTTP) |
 
 Los requisitos funcionales y no funcionales especificados en esta tabla establecen los criterios mínimos que el sistema
 debe cumplir para ser considerado viable para producción [41, 44]. Todos los requisitos se han implementado y verificado
@@ -230,11 +228,11 @@ redundancia y capacidades de recuperación.
 | Variable               | Valor por Defecto | Descripción              | Requerido |
 |------------------------|-------------------|--------------------------|-----------|
 | `COMPOSE_PROJECT_NAME` | soar              | Nombre del proyecto      | No        |
-| `ELASTIC_PASSWORD`     | changeme          | Contraseña Elasticsearch | ✅ Sí      |
-| `THEHIVE_HTTP_PORT`    | 9000              | Puerto TheHive           | No        |
-| `CORTEX_HTTP_PORT`     | 9001              | Puerto Cortex            | No        |
+| `ELASTIC_PASSWORD`     | Ver `.env.full`   | Contraseña Elasticsearch | ✅ Sí      |
+| `THEHIVE_HTTP_PORT`    | 19000             | Puerto TheHive           | No        |
+| `CORTEX_HTTP_PORT`     | 19001             | Puerto Cortex            | No        |
 | `SHUFFLE_UI_PORT`      | 8081              | Puerto Shuffle UI        | No        |
-| `SHUFFLE_API_PORT`     | 5001              | Puerto Shuffle API       | No        |
+| `SHUFFLE_API_PORT`     | 15001             | Puerto Shuffle API       | No        |
 | `HTTP_PORT`            | 80                | Puerto HTTP público      | No        |
 | `HTTPS_PORT`           | 443               | Puerto HTTPS público     | No        |
 
@@ -494,7 +492,7 @@ Impacto (puntos)
 │  ┌─────────────────────soar_edge─────────────────────┐         │
 │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐ │         │
 │  │  │  Nginx  │  │ TheHive │  │ Cortex  │  │ Shuffle │ │         │
-│  │  │ :80/443 │  │ :9000   │  │ :9001   │  │ :8081   │ │         │
+│  │  │ :80/443 │  │ :19000  │  │ :19001  │  │ :8081   │ │         │
 │  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘ │         │
 │  └─────────────────────────────────────────────────────────┘         │
 │           │              │              │              │           │

@@ -85,8 +85,66 @@ def extract_hardcoded_values(file_path: Path, patterns: List[str]) -> Dict[str, 
     return values
 
 
+PLACEHOLDER_VALUES = frozenset(v.lower() for v in (
+    '', 'CHANGE_ME', 'CHANGEME', '***CHANGEME***', 'changeme', 'DEFAULT', 'PASSWORD',
+    'SECRET', 'ADMIN', '123456', 'QWERTY', 'PASSWORD123', '12345678', 'TOOR',
+    'LETMEIN', 'XXX', 'FIXME', 'TODO', 'EXAMPLE', 'SAMPLE', 'TEST', 'TEST123',
+    'NULL', 'NONE', 'N/A', 'NA', 'TBD', 'PLACEHOLDER', 'YOUR_PASSWORD_HERE',
+    'INSERT_PASSWORD', 'REPLACE_ME',
+))
+
+
+def _looks_like_placeholder(value: str) -> bool:
+    """Return True if the value is a known placeholder or weak secret."""
+    return value.lower() in PLACEHOLDER_VALUES
+
+
+def _sync_config_file(config_path: Path, env_vars: Dict[str, str]) -> List[str]:
+    """Synchronize TheHive/Cortex config files with .env.full values.
+
+    Returns a list of human-readable messages describing changes.
+    """
+    changes = []
+    if not config_path.exists():
+        return changes
+
+    content = config_path.read_text(encoding='utf-8')
+    original = content
+
+    # Map each config file to the specific env vars it should use
+    config_name = config_path.name
+    if config_name == 'thehive.conf':
+        file_mappings = [
+            ('THEHIVE_SECRET', r'"play":\s*\{\s*"secret":\s*"([^"]+)"'),
+        ]
+    elif config_name == 'cortex.conf':
+        file_mappings = [
+            ('CORTEX_SECRET', r'"play":\s*\{\s*"secret":\s*"([^"]+)"'),
+            ('ELASTIC_PASSWORD', r'"search":\s*\{[^}]*"password":\s*"([^"]+)"'),
+        ]
+    else:
+        file_mappings = []
+
+    for env_key, regex in file_mappings:
+        if env_key not in env_vars:
+            continue
+        for match in re.finditer(regex, content):
+            old_value = match.group(1)
+            new_value = env_vars[env_key]
+            if old_value != new_value:
+                matched_text = match.group(0)
+                new_text = matched_text.replace(f'"{old_value}"', f'"{new_value}"', 1)
+                content = content.replace(matched_text, new_text, 1)
+                changes.append(f"{config_path.name}: updated {env_key} value")
+
+    if content != original:
+        config_path.write_text(content, encoding='utf-8')
+
+    return changes
+
+
 def validate_credentials():
-    """Validate that credentials are synchronized."""
+    """Validate that credentials are synchronized and not placeholders."""
     repo_root = Path(__file__).parent.parent.parent.parent
     env_full = repo_root / '.env.full'
 
@@ -110,14 +168,12 @@ def validate_credentials():
     ]
 
     python_scripts = [
-        repo_root / 'src' / 'soar_lab' / 'infrastructure' / 'execute_workflow.py',
-        repo_root / 'src' / 'soar_lab' / 'infrastructure' / 'setup' / 'init_thehive.py',
-        repo_root / 'src' / 'soar_lab' / 'infrastructure' / 'setup' / 'init_shuffle_webhook.py',
-        repo_root / 'src' / 'soar_lab' / 'infrastructure' / 'setup' / 'init_shuffle_webhook_wazuh.py',
-        repo_root / 'src' / 'soar_lab' / 'infrastructure' / 'setup' / 'reset_cortex.py',
-        repo_root / 'src' / 'soar_lab' / 'integrations' / 'cortex_client.py',
-        repo_root / 'src' / 'soar_lab' / 'infrastructure' / 'setup' / 'setup_analyzers_and_iocs.py',
-        repo_root / 'src' / 'soar_lab' / 'infrastructure' / 'diagnose_cortex_es.py',
+        repo_root / 'src' / 'soar_lab' / 'scripts' / 'setup' / 'init_thehive.py',
+        repo_root / 'src' / 'soar_lab' / 'scripts' / 'setup' / 'init_shuffle_webhook.py',
+        repo_root / 'src' / 'soar_lab' / 'scripts' / 'setup' / 'fix_org_users.py',
+        repo_root / 'src' / 'soar_lab' / 'scripts' / 'setup' / 'reset_cortex.py',
+        repo_root / 'src' / 'soar_lab' / 'infrastructure' / 'external' / 'integrations' / 'cortex_client.py',
+        repo_root / 'src' / 'soar_lab' / 'scripts' / 'setup' / 'setup_analyzers_and_iocs.py',
     ]
 
     config_files = [
@@ -156,8 +212,14 @@ def validate_credentials():
 
     errors = []
     warnings = []
+    info = []
 
-    # Validate docker-compose files
+    # Validate .env.full values are not placeholders
+    for var in critical_vars:
+        if var in env_vars and _looks_like_placeholder(env_vars[var]):
+            errors.append(f".env.full: {var} contains a placeholder or weak value")
+
+    # Validate docker-compose files: env overrides default, so only warn on differences
     print("\n--- Validating docker-compose files ---")
     for compose_file in docker_compose_files:
         if not compose_file.exists():
@@ -170,10 +232,10 @@ def validate_credentials():
         for var in critical_vars:
             if var in env_vars and var in defaults:
                 if env_vars[var] != defaults[var]:
-                    errors.append(
-                        f"{compose_file.name}: {var} - .env.full='{env_vars[var]}' vs default='{defaults[var]}'")
+                    info.append(
+                        f"{compose_file.name}: {var} - .env.full overrides default '{defaults[var]}'")
 
-    # Validate Python scripts
+    # Validate Python scripts: env overrides default, so only warn on differences
     print("\n--- Validating Python scripts ---")
     for script in python_scripts:
         if not script.exists():
@@ -186,53 +248,25 @@ def validate_credentials():
         for var in critical_vars:
             if var in env_vars and var in defaults:
                 if env_vars[var] != defaults[var]:
-                    errors.append(f"{script.name}: {var} - .env.full='{env_vars[var]}' vs default='{defaults[var]}'")
+                    info.append(f"{script.name}: {var} - .env.full overrides default '{defaults[var]}'")
 
-    # Validate config files (hardcoded)
+    # Validate and sync config files (hardcoded)
     print("\n--- Validating config files ---")
-    thehive_conf = repo_root / 'infra' / 'docker' / 'thehive.application.conf' / 'thehive.conf'
-    cortex_conf = repo_root / 'infra' / 'docker' / 'cortex.application.conf' / 'cortex.conf'
-
-    if thehive_conf.exists():
-        with open(thehive_conf, 'r') as f:
-            content = f.read()
-            # Extract play.secret
-            play_secret_match = re.search(r'"play":\s*\{\s*"secret":\s*"([^"]+)"', content)
-            if play_secret_match:
-                play_secret = play_secret_match.group(1)
-                if 'THEHIVE_SECRET' in env_vars and env_vars['THEHIVE_SECRET'] != play_secret:
-                    errors.append(
-                        f"thehive.conf: play.secret - .env.full='{env_vars['THEHIVE_SECRET']}' vs hardcoded='{play_secret}'")
-
-        # Extract search.password
-        search_pass_match = re.search(r'"search":\s*\{[^}]*"password":\s*"([^"]+)"', content)
-        if search_pass_match:
-            search_pass = search_pass_match.group(1)
-            if 'ELASTIC_PASSWORD' in env_vars and env_vars['ELASTIC_PASSWORD'] != search_pass:
-                errors.append(
-                    f"thehive.conf: search.password - .env.full='{env_vars['ELASTIC_PASSWORD']}' vs hardcoded='{search_pass}'")
-
-    if cortex_conf.exists():
-        with open(cortex_conf, 'r') as f:
-            content = f.read()
-            # Extract play.secret
-            play_secret_match = re.search(r'"play":\s*\{\s*"secret":\s*"([^"]+)"', content)
-            if play_secret_match:
-                play_secret = play_secret_match.group(1)
-                if 'CORTEX_SECRET' in env_vars and env_vars['CORTEX_SECRET'] != play_secret:
-                    errors.append(
-                        f"cortex.conf: play.secret - .env.full='{env_vars['CORTEX_SECRET']}' vs hardcoded='{play_secret}'")
-
-        # Extract search.password
-        search_pass_match = re.search(r'"search":\s*\{[^}]*"password":\s*"([^"]+)"', content)
-        if search_pass_match:
-            search_pass = search_pass_match.group(1)
-            if 'ELASTIC_PASSWORD' in env_vars and env_vars['ELASTIC_PASSWORD'] != search_pass:
-                errors.append(
-                    f"cortex.conf: search.password - .env.full='{env_vars['ELASTIC_PASSWORD']}' vs hardcoded='{search_pass}'")
+    for config_file in config_files:
+        if not config_file.exists():
+            warnings.append(f"File not found: {config_file}")
+            continue
+        changes = _sync_config_file(config_file, env_vars)
+        for change in changes:
+            info.append(change)
 
     # Report results
     print("\n=== Results ===")
+
+    if info:
+        print(f"\n[INFO] Informational ({len(info)}):")
+        for msg in info:
+            print(f"  - {msg}")
 
     if warnings:
         print(f"\n[WARNING] Warnings ({len(warnings)}):")
@@ -243,10 +277,10 @@ def validate_credentials():
         print(f"\n[ERROR] Errors ({len(errors)}):")
         for error in errors:
             print(f"  - {error}")
-        print("\n[FAIL] Validation failed: Credentials are not synchronized")
+        print("\n[FAIL] Validation failed: Credentials contain placeholders or are not synchronized")
         return False
     else:
-        print("\n[OK] Validation successful: All credentials are synchronized")
+        print("\n[OK] Validation successful: Credentials are valid and synchronized")
         return True
 
 

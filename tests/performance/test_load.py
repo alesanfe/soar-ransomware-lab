@@ -7,9 +7,9 @@ Performance and load testing for SOAR components
 import aiohttp
 import asyncio
 import json
+import pytest
 import statistics
 import time
-import unittest
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -88,10 +88,10 @@ class LoadTester:
             }
 
             async with session.post(
-                    self.webhook_url,
-                    json=payload,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=30)
+                self.webhook_url,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=30)
             ) as response:
                 end_time = time.time()
                 response_time = (end_time - start_time) * 1000  # Convert to ms
@@ -404,35 +404,36 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 
-class TestLoadPerformance(unittest.TestCase):
+class TestLoadPerformance:
     """Unit tests for load testing functionality"""
 
-    def setUp(self):
+    @pytest.fixture
+    def load_tester(self):
         """Set up test fixtures"""
-        self.load_tester = LoadTester()
+        return LoadTester()
 
-    def test_generate_test_alert(self):
+    def test_generate_test_alert(self, load_tester):
         """Test alert generation for load testing"""
-        alert = self.load_tester.generate_test_alert("ALERT-TEST-001")
+        alert = load_tester.generate_test_alert("ALERT-TEST-001")
 
-        self.assertIn("alert_id", alert)
-        self.assertEqual(alert["alert_id"], "ALERT-TEST-001")
-        self.assertIn("hostname", alert)
-        self.assertIn("src_ip", alert)
-        self.assertIn("hash", alert)
-        self.assertIn("sha256", alert["hash"])
-        self.assertIn("severity", alert)
-        self.assertIn("source", alert)
-        self.assertIn("detection_time", alert)
-        self.assertIn("event_type", alert)
-        self.assertIn("description", alert)
+        assert "alert_id" in alert
+        assert alert["alert_id"] == "ALERT-TEST-001"
+        assert "hostname" in alert
+        assert "src_ip" in alert
+        assert "hash" in alert
+        assert "sha256" in alert["hash"]
+        assert "severity" in alert
+        assert "source" in alert
+        assert "detection_time" in alert
+        assert "event_type" in alert
+        assert "description" in alert
 
-    def test_analyze_results_empty(self):
+    def test_analyze_results_empty(self, load_tester):
         """Test result analysis with empty results"""
-        analysis = self.load_tester.analyze_results([])
-        self.assertIn("error", analysis)
+        analysis = load_tester.analyze_results([])
+        assert "error" in analysis
 
-    def test_analyze_results_successful(self):
+    def test_analyze_results_successful(self, load_tester):
         """Test result analysis with successful requests"""
         results = [
             {
@@ -451,28 +452,28 @@ class TestLoadPerformance(unittest.TestCase):
             }
         ]
 
-        analysis = self.load_tester.analyze_results(results)
+        analysis = load_tester.analyze_results(results)
 
-        self.assertEqual(analysis["total_requests"], 2)
-        self.assertEqual(analysis["successful_requests"], 2)
-        self.assertEqual(analysis["failed_requests"], 0)
-        self.assertEqual(analysis["success_rate"], 100.0)
-        self.assertIn("avg_response_time_ms", analysis)
-        self.assertIn("median_response_time_ms", analysis)
-        self.assertIn("min_response_time_ms", analysis)
-        self.assertIn("max_response_time_ms", analysis)
+        assert analysis["total_requests"] == 2
+        assert analysis["successful_requests"] == 2
+        assert analysis["failed_requests"] == 0
+        assert analysis["success_rate"] == 100.0
+        assert "avg_response_time_ms" in analysis
+        assert "median_response_time_ms" in analysis
+        assert "min_response_time_ms" in analysis
+        assert "max_response_time_ms" in analysis
 
-    def test_percentile_calculation(self):
+    def test_percentile_calculation(self, load_tester):
         """Test percentile calculation"""
         data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-        p50 = self.load_tester._percentile(data, 50)
-        p95 = self.load_tester._percentile(data, 95)
+        p50 = load_tester._percentile(data, 50)
+        p95 = load_tester._percentile(data, 95)
 
-        self.assertEqual(p50, 5.5)  # Median of even number of items
-        self.assertAlmostEqual(p95, 9.55, places=2)  # 95th percentile (allow floating point precision)
+        assert p50 == 5.5  # Median of even number of items
+        assert abs(p95 - 9.55) < 0.01  # 95th percentile (allow floating point precision)
 
-    def test_save_results(self):
+    def test_save_results(self, load_tester):
         """Test saving results to file"""
         results = [
             {
@@ -484,14 +485,14 @@ class TestLoadPerformance(unittest.TestCase):
             }
         ]
 
-        analysis = self.load_tester.analyze_results(results)
+        analysis = load_tester.analyze_results(results)
 
         # Test saving (this will create a file)
-        self.load_tester.save_results(results, analysis, "test_save")
+        load_tester.save_results(results, analysis, "test_save")
 
         # Check if file was created
         results_file = Path(__file__).parent.parent.parent / "artifacts" / "results" / "load_tests" / "test_save.json"
-        self.assertTrue(results_file.exists())
+        assert results_file.exists()
 
         # Clean up
         if results_file.exists():

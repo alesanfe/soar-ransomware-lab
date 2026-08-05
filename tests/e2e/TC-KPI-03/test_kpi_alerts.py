@@ -41,7 +41,7 @@ class TestKPIAlerts(unittest.TestCase):
 
         env = _load_env()
         sys.path.insert(0, str(REPO_ROOT / "src"))
-        from soar_lab.integrations.elasticsearch_client import ElasticsearchClient
+        from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
 
         self.es = ElasticsearchClient(
             base_url=env.get("ES_URL", "http://soar_elasticsearch:9200"),
@@ -58,7 +58,7 @@ class TestKPIAlerts(unittest.TestCase):
 
         # Step 1: Import KPI alert manager
         self._log("STEP 1: Initializing KPI alert manager")
-        from soar_lab.services.kpi_alerts import KPIAlertManager
+        from soar_lab.infrastructure.monitoring.kpi_alerts import KPIAlertManager
 
         alert_manager = KPIAlertManager(self.es)
         self._log("  + KPI alert manager initialized")
@@ -70,7 +70,7 @@ class TestKPIAlerts(unittest.TestCase):
 
         # Step 3: Check service health using KPIAnalyzer
         self._log("STEP 3: Checking service health via KPIAnalyzer")
-        from soar_lab.services.kpi_analyzer import KPIAnalyzer
+        from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
         from soar_lab.domain.statistical_calculator import StatisticalCalculator
 
         # Get metrics data from ES
@@ -111,8 +111,8 @@ class TestKPIAlerts(unittest.TestCase):
         self._log(f"  + Overall status: {all_checks.get('overall_status')}")
 
         # Verify alert manager is functional
-        self.assertIn("checks", all_checks, "Missing checks in alert manager response")
-        self.assertIn("overall_status", all_checks, "Missing overall status")
+        assert "checks" in all_checks, "Missing checks in alert manager response"
+        assert "overall_status" in all_checks, "Missing overall status"
         self._log("  + Alert manager is functional")
 
         elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()

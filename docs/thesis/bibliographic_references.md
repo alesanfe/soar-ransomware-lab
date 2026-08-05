@@ -312,17 +312,14 @@ at: https://github.com/alesanfe/soar-ransomware-lab
 operaciones, integraciones, testing, proyecto)
 
 [108] **Scripts de Automatización**. "Scripts de automatización y orquestación." Disponible en:
-`src/soar_lab/infrastructure/setup/` y `src/soar_lab/infrastructure/security/` (gen_certs.sh, setup_firewall.sh,
-check_deps.sh, scan_vulnerabilities.sh)
+`src/soar_lab/scripts/setup/` (`gen_certs.sh`, `check_deps.sh`) y `src/soar_lab/infrastructure/security/`
+(`setup_firewall.sh`, `scan_vulnerabilities.sh`).
 
-[109] **Módulos Python**. "Código fuente del laboratorio SOAR." Disponible en: `src/soar_lab/` (api, data, integrations,
-services)
+[109] **Módulos Python**. "Código fuente del laboratorio SOAR." Disponible en: `src/soar_lab/` (api, analytics, application, auth, common, config, data, db, domain, infrastructure, interfaces, logging, resilience, scripts, security, simulator, validation)
 
-[110] **Suite de Pruebas**. "Pruebas automatizadas unitarias, integración y E2E." Disponible en: `tests/` (unit,
-integration, e2e)
+[110] **Suite de Pruebas**. "Pruebas automatizadas unitarias, integración, E2E y especializadas." Disponible en: `tests/` (unit, integration, e2e, atomic, performance, security, general)
 
-[111] **Configuración Docker**. "Archivos de configuración Docker Compose." Disponible en: `infra/docker/compose/` (
-docker-compose.yml, docker-compose.core.yml, docker-compose.misp.yml, docker-compose.wazuh.yml, docker-compose.api.yml)
+[111] **Configuración Docker**. "Archivos de configuración Docker Compose." Disponible en: `infra/docker/compose/` (`docker-compose.yml`, `docker-compose.core.yml`, `docker-compose.misp.yml`, `docker-compose.opensearch.yml`, `docker-compose.vagrant.yml`, `docker-compose.wazuh.yml`, `docker-compose.api.yml` y `docker-compose.logging.yml` bajo `infra/docker/compose/logging/`; `docker-compose.analyzers.yml` está planificado como opcional)
 
 [112] **Playbooks de Respuesta**. "Documentación de playbooks de respuesta a ransomware." Disponible en:
 `docs/operations/playbooks/ransomware_playbook_e2e.md`

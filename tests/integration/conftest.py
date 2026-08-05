@@ -24,3 +24,10 @@ class MockStaticFiles:
 
 
 staticfiles.StaticFiles = MockStaticFiles
+
+
+def pytest_collection_modifyitems(items):
+    """Add @pytest.mark.integration to all integration tests automatically."""
+    for item in items:
+        if item.nodeid.startswith('tests/integration/'):
+            item.add_marker(pytest.mark.integration)

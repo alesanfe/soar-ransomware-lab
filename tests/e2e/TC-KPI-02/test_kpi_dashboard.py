@@ -6,10 +6,10 @@ Tests that Grafana dashboard displays KPIs correctly.
 
 import json
 import os
+import pytest
 import requests
 import sys
 import time
-import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -36,14 +36,14 @@ def _load_env() -> dict:
         "GRAFANA_ADMIN_USER": os.environ.get("GRAFANA_ADMIN_USER"),
         "GRAFANA_ADMIN_PASSWORD": os.environ.get("GRAFANA_ADMIN_PASSWORD"),
     }
-    
+
     # Filter out None values
     result = {k: v for k, v in env_vars.items() if v is not None}
-    
+
     # If not all required env vars are set, load from .env.full file
     if not ENV_FULL.exists():
         return result
-    
+
     for line in ENV_FULL.read_text().splitlines():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
@@ -56,19 +56,26 @@ def _load_env() -> dict:
     return result
 
 
-class TestKPIDashboard(unittest.TestCase):
+class TestKPIDashboard:
     """
     TC-KPI-02 — KPI Dashboard: Verify Grafana dashboard displays KPIs.
     """
 
-    def setUp(self):
-        self.t0 = datetime.now(timezone.utc)
+    def setup_method(self, method):
+        """Set up test clients and environment"""
+        t0 = datetime.now(timezone.utc)
         (ARTIFACTS_DIR / "results").mkdir(parents=True, exist_ok=True)
 
         env = _load_env()
-        self.grafana_url = env.get("GRAFANA_URL", "http://grafana:3000")
-        self.grafana_user = env.get("GRAFANA_ADMIN_USER", env.get("GRAFANA_USER", "admin"))
-        self.grafana_pass = env.get("GRAFANA_ADMIN_PASSWORD", env.get("GRAFANA_PASS", "GrafanaLab2024Secure"))
+        grafana_url = env.get("GRAFANA_URL", "http://grafana:3000")
+        grafana_user = env.get("GRAFANA_ADMIN_USER", env.get("GRAFANA_USER", "admin"))
+        grafana_pass = env.get("GRAFANA_ADMIN_PASSWORD", env.get("GRAFANA_PASS", ""))
+
+        self.t0 = t0
+        self.grafana_url = grafana_url
+        self.grafana_user = grafana_user
+        self.grafana_pass = grafana_pass
+
 
     def _log(self, msg: str):
         elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
@@ -82,18 +89,20 @@ class TestKPIDashboard(unittest.TestCase):
         self._log("STEP 1: Checking Grafana accessibility")
         try:
             r = requests.get(f"{self.grafana_url}/api/health", timeout=10)
-            self.assertEqual(r.status_code, 200,
-                             f"Grafana not accessible: HTTP {r.status_code}")
+            assert isinstance(r.status_code, int), "Status code must be integer"
+            assert r.status_code == 200, f"Grafana not accessible: HTTP {r.status_code}"
             self._log("  + Grafana is accessible")
         except Exception as e:
-            self.skipTest(f"Grafana not accessible: {e}")
+            pytest.skip(f"Grafana not accessible: {e}")
 
         # Step 2: Verify Grafana credentials with Basic Auth
         self._log("STEP 2: Verifying Grafana credentials")
         auth = (self.grafana_user, self.grafana_pass)
         r = requests.get(f"{self.grafana_url}/api/org", auth=auth, timeout=10)
         if r.status_code == 200:
-            self._log(f"  + Authenticated as {r.json().get('name', self.grafana_user)}")
+            data = r.json()
+            assert isinstance(data, dict), "Response must be JSON object"
+            self._log(f"  + Authenticated as {data.get('name', self.grafana_user)}")
             authenticated = True
         else:
             self._log(f"  + Auth failed (HTTP {r.status_code}), using unauthenticated API")
@@ -108,9 +117,11 @@ class TestKPIDashboard(unittest.TestCase):
             r = requests.get(f"{self.grafana_url}/api/search?query=SOAR", auth=auth, timeout=10)
             if r.status_code == 200:
                 dashboards = r.json()
+                assert isinstance(dashboards, list), "Dashboards must be a list"
                 soar_dashboard = next((d for d in dashboards if "SOAR" in d.get("title", "")), None)
 
                 if soar_dashboard:
+                    assert isinstance(soar_dashboard, dict), "Dashboard must be a dict"
                     self._log(f"  + Found dashboard: {soar_dashboard.get('title')}")
                     dashboard_uid = soar_dashboard.get("uid")
                 else:
@@ -147,7 +158,7 @@ class TestKPIDashboard(unittest.TestCase):
         # Step 4: Verify Elasticsearch has metrics data
         self._log("STEP 4: Verifying Elasticsearch has metrics data")
         sys.path.insert(0, str(REPO_ROOT / "src"))
-        from soar_lab.integrations.elasticsearch_client import ElasticsearchClient
+        from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
 
         env = _load_env()
         es = ElasticsearchClient(
@@ -159,11 +170,15 @@ class TestKPIDashboard(unittest.TestCase):
         try:
             total = es.count(index="soar-metrics")
             self._log(f"  + {total} total metric(s) in soar-metrics index")
-            self.assertGreater(total, 0, "soar-metrics index is empty — no workflow has run yet")
+            assert total > 0, "soar-metrics index is empty — no workflow has run yet"
+
+            # Validate that KPI dashboard can display metrics
+            self._log("✓ KPI dashboard validated - metrics available for display")
         except Exception as e:
             self._log(f"  + Metrics query failed: {e}")
 
         elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        assert elapsed > 0, "Elapsed time should be positive"
         self._log(f"=== TC-KPI-02 COMPLETED — DASHBOARD VERIFIED (Elapsed: {elapsed:.1f}s) ===")
 
         # Save report
@@ -181,10 +196,3 @@ class TestKPIDashboard(unittest.TestCase):
         report_path = ARTIFACTS_DIR / "results" / "TC-KPI-02_kpi_dashboard_report.json"
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
         self._log(f"+ Report saved: {report_path}")
-
-
-if __name__ == "__main__":
-    import sys
-
-    sys.path.insert(0, str(REPO_ROOT / "src"))
-    unittest.main()

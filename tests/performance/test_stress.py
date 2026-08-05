@@ -8,11 +8,11 @@ import asyncio
 import gc
 import json
 import os
+import pytest
 import statistics
 import sys
 import threading
 import time
-import unittest
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -76,13 +76,13 @@ class StressTester:
             payload = self.generate_test_alert(alert_id)
 
             async with session.post(
-                    self.webhook_url,
-                    headers={
-                        'Authorization': f'Bearer {self.api_token}',
-                        'Content-Type': 'application/json'
-                    },
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=30)
+                self.webhook_url,
+                headers={
+                    'Authorization': f'Bearer {self.api_token}',
+                    'Content-Type': 'application/json'
+                },
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=30)
             ) as response:
                 end_time = time.time()
 
@@ -494,34 +494,35 @@ if __name__ == '__main__':
     asyncio.run(main())
 
 
-class TestStressPerformance(unittest.TestCase):
+class TestStressPerformance:
     """Unit tests for stress testing functionality"""
 
-    def setUp(self):
+    @pytest.fixture
+    def stress_tester(self):
         """Set up test fixtures"""
-        self.stress_tester = StressTester()
+        return StressTester()
 
-    def test_generate_test_alert(self):
+    def test_generate_test_alert(self, stress_tester):
         """Test alert generation for stress testing"""
-        alert = self.stress_tester.generate_test_alert("STRESS-TEST-001")
+        alert = stress_tester.generate_test_alert("STRESS-TEST-001")
 
-        self.assertIn("alert_id", alert)
-        self.assertEqual(alert["alert_id"], "STRESS-TEST-001")
-        self.assertIn("hostname", alert)
-        self.assertIn("src_ip", alert)
-        self.assertIn("hash", alert)
-        self.assertIn("severity", alert)
-        self.assertIn("source", alert)
-        self.assertIn("detection_time", alert)
-        self.assertIn("event_type", alert)
+        assert "alert_id" in alert
+        assert alert["alert_id"] == "STRESS-TEST-001"
+        assert "hostname" in alert
+        assert "src_ip" in alert
+        assert "hash" in alert
+        assert "severity" in alert
+        assert "source" in alert
+        assert "detection_time" in alert
+        assert "event_type" in alert
 
-    def test_stress_tester_initialization(self):
+    def test_stress_tester_initialization(self, stress_tester):
         """Test stress tester initialization"""
-        self.assertEqual(self.stress_tester.base_url, 'http://soar_shuffle_backend:5001')
-        self.assertEqual(self.stress_tester.webhook_url, 'http://soar_shuffle_backend:5001/api/v1/webhooks/siem')
-        self.assertIsInstance(self.stress_tester.api_token, str)
-        self.assertEqual(self.stress_tester.results, [])
-        self.assertEqual(self.stress_tester.system_metrics, [])
+        assert stress_tester.base_url == 'http://soar_shuffle_backend:5001'
+        assert stress_tester.webhook_url == 'http://soar_shuffle_backend:5001/api/v1/webhooks/siem'
+        assert isinstance(stress_tester.api_token, str)
+        assert stress_tester.results == []
+        assert stress_tester.system_metrics == []
 
     def test_stress_test_integration(self):
         """Integration test for stress testing"""

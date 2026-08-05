@@ -94,27 +94,36 @@ El SOAR Ransomware Lab tiene como propósito principal:
 
 El laboratorio integra los siguientes componentes principales:
 
-#### 3.2.1 Plataformas SOAR
+#### 3.2.1 Plataformas de orquestación y gestión de casos
 
-- **Shuffle SOAR**: Plataforma de orquestación de workflows de seguridad
-- **TheHive**: Plataforma de gestión de casos e incidentes
-- **Cortex**: Motor de análisis de observables y amenazas
+- **Shuffle SOAR**: plataforma de orquestación de workflows de seguridad (v2.2.1).
+- **TheHive**: plataforma de gestión de casos e incidentes (v3.5.2).
+- **Cortex**: motor de análisis de observables e IOCs (v3.1.4).
 
-#### 3.2.2 Servicios de soporte
+#### 3.2.2 Inteligencia de amenazas y SIEM
 
-- **MISP**: Plataforma de inteligencia de amenazas
-- **Wazuh**: Plataforma SIEM/XDR para detección de alertas
-- **Elasticsearch**: Motor de búsqueda y almacenamiento de datos
+- **MISP**: plataforma de inteligencia de amenazas.
+- **Wazuh**: plataforma SIEM/XDR compuesta por `wazuh.manager`, `wazuh.indexer` y `wazuh.dashboard` (v4.14.0). Estado real: manager, indexer y dashboard operativos en Docker; alertas reales de endpoints requieren agentes adicionales.
+- **Elasticsearch**: motor de búsqueda y métricas usado por TheHive, Cortex, Shuffle y Grafana.
 
-#### 3.2.3 Infraestructura
+#### 3.2.3 Aplicaciones propias
 
-- **Redis**: Caché y broker de mensajes
-- **MariaDB**: Base de datos para MISP
-- **Nginx**: Reverse proxy
-- **Elasticsearch**: Motor de búsqueda y almacenamiento (compartido por TheHive, Shuffle, Kibana)
-- **Grafana**: Dashboards de logging centralizado
-- **Loki**: Agregación de logs
-- **Promtail**: Recopilación de logs
+- **Lab API** (`apps/api`): API FastAPI con autenticación JWT, alertas, métricas, backups, tests y WebSocket de logs.
+- **Web Management** (`apps/web-management`): SPA HTML/JS consumidora de la API; acceso por Nginx (`/`) y directo (`8085`).
+- **Docs Site** (`apps/docs-site`): portal Docusaurus con la documentación del proyecto (`8086`).
+
+#### 3.2.4 Infraestructura y soporte
+
+- **Redis**: cache/cola con autenticación por contraseña.
+- **MariaDB**: base de datos de MISP (`misp_db`).
+- **PostgreSQL**: base de datos de Grafana (`grafana-db`).
+- **Nginx**: proxy inverso y terminación TLS; punto de entrada canónico `https://soar.local`.
+- **Loki + Promtail + Grafana**: stack de observabilidad centralizado (logs y KPIs).
+- **Network Watcher**: servicio de diagnóstico y recuperación de conectividad para Shuffle workers.
+- **Orborus**: ejecutor de contenedores de analizadores de Shuffle/Cortex.
+- **Tenzir Node**: nodo de ingestión de logs/alertas (modo desarrollo).
+
+> **Estado funcional:** Las capacidades de respuesta activa (aislamiento de red, bloqueo de cuentas, contención de endpoints) están **simuladas** salvo que se desplieguen agentes reales en endpoints gestionados.
 
 ### 3.3 Casos de uso
 
@@ -122,18 +131,18 @@ El laboratorio soporta los siguientes casos de uso:
 
 #### 3.3.1 Respuesta a incidentes
 
-- **Respuesta a ransomware**: Detección y contención automatizada de incidentes de ransomware
-- **Gestión de casos**: Gestión centralizada de incidentes de seguridad
+- **Respuesta a ransomware** (simulada/parcial): detección y contención automatizada de incidentes de ransomware. Los workflows generan casos, notificaciones e IOCs, pero el aislamiento real de endpoints requiere agentes EDR desplegados.
+- **Gestión de casos** (implementada): creación, enriquecimiento y seguimiento de casos en TheHive a partir de alertas del SOAR.
 
 #### 3.3.2 Análisis de amenazas
 
-- **Análisis de IoCs**: Análisis de indicadores de compromiso usando analyzers de Cortex
-- **Enriquecimiento de alertas**: Enriquecimiento de alertas de SIEM con inteligencia de amenazas
+- **Análisis de IoCs** (implementada): ejecución de analizadores de Cortex sobre IPs, dominios, hashes y URLs.
+- **Enriquecimiento de alertas** (implementada): consulta de MISP y otras fuentes de inteligencia desde Shuffle para enriquecer observables.
 
 #### 3.3.3 Validación y aprendizaje
 
-- **Validación de integraciones**: Pruebas de integración entre herramientas de seguridad
-- **Aprendizaje**: Entorno educativo para aprender sobre SOAR y respuesta a incidentes
+- **Validación de integraciones** (implementada): pruebas unitarias, de integración, E2E, atómicas y de rendimiento ejecutadas con pytest y validadas vía Makefile.
+- **Aprendizaje** (implementada): entorno educativo para experimentar con arquitectura hexagonal, pipelines SOAR e integraciones de seguridad.
 
 ### 3.4 Requisitos
 
@@ -158,7 +167,7 @@ El laboratorio sigue una arquitectura basada en contenedores Docker con las sigu
 
 - **Single-host**: Todos los servicios ejecutan en un único host
 - **Contenedores Docker**: Cada servicio se ejecuta en un contenedor aislado
-- **Docker Compose**: Orquestación de servicios mediante docker-compose
+- **Docker Compose**: Orquestación de servicios mediante `docker compose`
 
 #### 3.5.2 Redes y comunicación
 
@@ -168,10 +177,11 @@ El laboratorio sigue una arquitectura basada en contenedores Docker con las sigu
 
 #### 3.5.3 Persistencia y almacenamiento
 
-- **Persistencia de datos**: Volúmenes bind mounts para persistencia de datos
-- **Elasticsearch**: Motor de búsqueda y almacenamiento de datos
-- **PostgreSQL**: Base de datos para Shuffle
-- **Redis**: Caché y broker de mensajes
+- **Persistencia de datos**: bind mounts bajo `artifacts/data/` para mayoría de servicios; volúmenes Docker normales para `misp_db` y Wazuh indexer/dashboard.
+- **Elasticsearch**: motor de búsqueda y métricas usado por TheHive, Cortex, Shuffle y Grafana.
+- **PostgreSQL**: base de datos de Grafana (`grafana-db`).
+- **MariaDB**: base de datos de MISP (`misp_db`).
+- **Redis**: cache/cola con autenticación por contraseña.
 
 ## 4. Validación
 
@@ -207,11 +217,12 @@ Las evidencias de funcionamiento incluyen:
 
 ### 5.1 Limitaciones
 
-**Limitaciones del Entorno:**
+**Limitaciones del entorno:**
 
-- Single-host: No soporta alta disponibilidad
-- Recursos limitados: Depende de recursos del host
-- Simulación: Usa componentes simulados para algunas integraciones
+- **Single-host**: el stack completo se ejecuta en un único nodo Docker; no soporta alta disponibilidad ni clustering.
+- **Recursos limitados**: requiere al menos 16 GB de RAM y 4 cores para el stack completo; con 8 GB se pueden omitir perfiles opcionales.
+- **Respuesta activa simulada**: el aislamiento de red, bloqueo de cuentas y contención de endpoints se simulan mediante workflows; no se ejecutan acciones reales sobre endpoints sin agentes EDR desplegados.
+- **Entorno de laboratorio**: no es apto para producción sin hardening adicional (TLS revalidado, secretos rotados, firewalls, RBAC, etc.).
 
 ### 5.2 Riesgos o incidencias
 

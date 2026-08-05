@@ -1,0 +1,95 @@
+name: soar-lab-opensearch
+
+# === SOAR Ransomware Lab - OpenSearch Staging ===
+# Este archivo reemplaza Elasticsearch por OpenSearch 2.10.0 para resolver
+# la incompatibilidad de Shuffle 2.2.1 con Elasticsearch (error 405).
+#
+# Uso (staging, con datos separados):
+#   docker compose --env-file ../../.env.full -f compose/docker-compose.opensearch.yml up -d
+
+networks:
+  soar_net:
+    name: soar_net
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: soar_net
+    ipam:
+      config:
+        - subnet: 10.100.0.0/16
+
+volumes:
+  opensearch_data:
+    driver: local
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.10.0
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_opensearch
+    environment:
+      - cluster.name=soar-opensearch
+      - node.name=soar-opensearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true"
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}
+      - plugins.security.disabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    ports:
+      - "${OPENSEARCH_PORT:-19201}:9200"
+    networks:
+      - soar_net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1" ]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 90s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.10.0
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_opensearch_dashboards
+    environment:
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    ports:
+      - "${OPENSEARCH_DASHBOARDS_PORT:-5602}:5601"
+    networks:
+      - soar_net
+    depends_on:
+      - opensearch
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

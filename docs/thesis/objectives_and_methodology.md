@@ -35,15 +35,15 @@ Este objetivo consiste en implementar un playbook E2E en Shuffle con integració
 considera exitoso cuando hay un playbook funcional E2E en dos escenarios, una integración operativa sin intervención
 manual, un simulador SIEM funcional y una lógica de contención simulada operativa. Las evidencias incluyen el playbook
 en `docs/operations/playbooks/ransomware_playbook_e2e.md`, los scripts en
-`src/soar_lab/infrastructure/http_alert_sender.py`, `src/soar_lab/services/send_alert.py`,
-`src/soar_lab/services/analytics_service.py` y los logs en `artifacts/logs/`.
+`src/soar_lab/simulator/simulate_alerts.py`, `src/soar_lab/infrastructure/messaging/send_alert.py`,
+`src/soar_lab/application/use_cases/analytics_service.py` y los logs en `artifacts/logs/`.
 
 - **Evaluación Experimental**
 
 El objetivo es validar la eficacia mediante métricas cuantitativas como MTTR y tasa de éxito. Los criterios de éxito son
 MTTR p50 ≤ 120s y p90 ≤ 180s, tasa de éxito ≥ 95%, un dataset de al menos 50 ejecuciones por escenario y un análisis
 estadístico con significancia. Las evidencias se encuentran en `artifacts/results/`, los servicios de análisis en
-`src/soar_lab/services/`, el calculador estadístico en `src/soar_lab/domain/statistical_calculator.py`, el script de
+`src/soar_lab/application/use_cases/`, el calculador estadístico en `src/soar_lab/domain/statistical_calculator.py`, el script de
 cálculo en `src/soar_lab/data/calc_kpis.py`, los resultados en `artifacts/results/kpis.csv` y los tests en `tests/e2e/`
 y `tests/integration/`.
 
@@ -52,7 +52,7 @@ y `tests/integration/`.
 Este objetivo busca documentar exhaustivamente el proceso para facilitar la reproducción por terceros. El éxito se mide
 por una guía de instalación y configuración completa, documentación de playbooks con contexto, validación de
 reproducción mediante Makefile y documentación técnica completa. Las evidencias se encuentran en `docs/`,
-`docs/operations/configuration_manual.md`, el Makefile, la documentación de la API en `apps/api/api-docs.html` y el
+`docs/operations/configuration_manual.md`, el Makefile, la documentación de la API en `docs/integrations/api_contracts.md` y el
 sitio de documentación en `apps/docs-site/`.
 
 - **Optimización Iterativa**

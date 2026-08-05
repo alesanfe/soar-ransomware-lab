@@ -4,16 +4,6 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first for better caching (build context = repo root)
-COPY apps/api/requirements.txt .
-
-# Copy application source code (build context must be repo root)
-COPY src ./src
-COPY pyproject.toml .
-COPY tests ./tests
-COPY apps/api/api-docs.html ./api-docs.html
-COPY apps/api/docs ./docs
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -23,11 +13,19 @@ RUN apt-get update && apt-get install -y \
     docker.io \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy package definition and source first for dependency resolution
+COPY pyproject.toml .
+COPY src ./src
 
-# Install testing dependencies (container is used for running tests)
-RUN pip install --no-cache-dir pytest pytest-asyncio pytest-cov
+# Install the package plus test dependencies (container is used for running tests)
+RUN pip install --no-cache-dir .[test]
+
+# Copy test suite (after install so test-only changes don't invalidate the package layer)
+COPY tests ./tests
+
+# Copy static API docs used by main.py root/static-docs handlers
+COPY apps/api/api-docs.html ./api-docs.html
+COPY apps/api/docs ./docs
 
 # Create directories
 RUN mkdir -p /app/results /app/backups
@@ -47,5 +45,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "soar_lab.api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application using the composition root factory
+CMD ["uvicorn", "soar_lab.interfaces.api.composition:create_app", "--host", "0.0.0.0", "--port", "8000", "--factory"]

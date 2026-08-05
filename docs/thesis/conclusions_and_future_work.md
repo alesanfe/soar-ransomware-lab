@@ -9,7 +9,7 @@ La reducción del 60.2% en MTTR (p<0.001) respalda la hipótesis de que la autom
 frente a los procesos manuales.
 
 El diseño aplica arquitectura hexagonal al código Python: `domain/ports.py` (432 líneas) define los contratos y cada
-capa de infraestructura los implementa de forma independiente. En el plano del despliegue, seis archivos Docker Compose
+capa de infraestructura los implementa de forma independiente. En el plano del despliegue, siete archivos Docker Compose (incluyendo el stack de logging y analizadores)
 modulares permiten configuraciones desde mínimas hasta completas. Esta separación evita que la lógica de negocio dependa
 de detalles como clientes HTTP o motores de base de datos concretos.
 

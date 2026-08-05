@@ -4,8 +4,8 @@ Security tests for the SOAR Ransomware Lab
 """
 
 import os
+import pytest
 import subprocess
-import unittest
 from pathlib import Path
 
 
@@ -30,7 +30,7 @@ def read_all_compose_files():
     return content
 
 
-class TestFilePermissions(unittest.TestCase):
+class TestFilePermissions:
     """Test cases for file permissions"""
 
     def test_env_file_not_in_git(self):
@@ -41,7 +41,7 @@ class TestFilePermissions(unittest.TestCase):
             text=True
         )
         # Should not be tracked
-        self.assertEqual(result.stdout.strip(), '')
+        assert result.stdout.strip() == ''
 
     def test_certificates_directory_exists(self):
         """Test that certs directory exists or is ignored"""
@@ -53,10 +53,10 @@ class TestFilePermissions(unittest.TestCase):
                 capture_output=True,
                 text=True
             )
-            self.assertEqual(result.stdout.strip(), '', "certs/ should not be tracked by git")
+            assert result.stdout.strip() == '', "certs/ should not be tracked by git"
 
 
-class TestConfigurationSecurity(unittest.TestCase):
+class TestConfigurationSecurity:
     """Test cases for configuration security"""
 
     def test_tls_enabled_in_env_example(self):
@@ -65,8 +65,8 @@ class TestConfigurationSecurity(unittest.TestCase):
         if secure_compose_path.exists():
             content = read_file_utf8(secure_compose_path)
             # Check for SSL/TLS configuration in nginx
-            self.assertIn('ssl_certificate', content)
-            self.assertIn('ssl_certificate_key', content)
+            assert 'ssl_certificate' in content
+            assert 'ssl_certificate_key' in content
         else:
             # If secure compose file doesn't exist, check if TLS is in main compose
             content = read_all_compose_files()
@@ -74,25 +74,25 @@ class TestConfigurationSecurity(unittest.TestCase):
             # If not present, that's acceptable for lab environment
             if 'ssl_certificate' not in content:
                 # TLS not configured in main compose - acceptable for lab
-                self.assertTrue(True)
+                assert True
 
     def test_cortex_secret_key_not_default(self):
         """Test that Cortex secret key is not default value"""
         cortex_conf_path = Path('infra/docker/docker/cortex.application.conf/cortex.conf')
         if cortex_conf_path.exists():
             content = read_file_utf8(cortex_conf_path)
-            self.assertNotIn('***CHANGEME***', content)
+            assert '***CHANGEME***' not in content
             # Cortex may use play.secret, play.http.secret.key, or "play": {"secret": ...}
-            has_secret = ('play.secret' in content or 
-                         'play.http.secret.key' in content or 
-                         '"play"' in content and '"secret"' in content)
-            self.assertTrue(has_secret, "Cortex config should have a secret key configured")
+            has_secret = ('play.secret' in content or
+                          'play.http.secret.key' in content or
+                          '"play"' in content and '"secret"' in content)
+            assert has_secret, "Cortex config should have a secret key configured"
         else:
             # Check in .env.full for Cortex secret
             env_path = Path('.env.full')
             if env_path.exists():
                 content = read_file_utf8(env_path)
-                self.assertNotIn('***CHANGEME***', content)
+                assert '***CHANGEME***' not in content
 
     def test_env_example_has_secure_defaults(self):
         """Test that .env.example has secure default values"""
@@ -103,7 +103,7 @@ class TestConfigurationSecurity(unittest.TestCase):
         elif env_full_path.exists():
             content = read_file_utf8(env_full_path)
         else:
-            self.skipTest('.env.example and .env.full not found')
+            pytest.skip('.env.example and .env.full not found')
             return
 
         optional_prefixes = ('smtp', 'mail', 'email', 'notify')
@@ -113,18 +113,18 @@ class TestConfigurationSecurity(unittest.TestCase):
                 key, value = line.split('=', 1)
                 if 'password' in key.lower() and not value.strip():
                     if not any(key.lower().startswith(p) for p in optional_prefixes):
-                        self.fail(f"Empty password found for {key}")
+                        pytest.fail(f"Empty password found for {key}")
 
         # Either placeholders or real configured values are acceptable
         # (lab environment may have real values already set)
-        self.assertTrue(len(content) > 0, 'Env file should not be empty')
+        assert len(content) > 0, 'Env file should not be empty'
 
     def test_no_hardcoded_secrets_in_scripts(self):
         """Test that scripts don't contain hardcoded secrets"""
         script_files = [
-            'src/soar_lab/services/send_alert.py',
-            'src/soar_lab/infrastructure/setup/notify.sh',
-            'src/soar_lab/infrastructure/security/isolate_host.sh'
+            'src/soar_lab/infrastructure/messaging/send_alert.py',
+            'src/soar_lab/scripts/setup/notify.sh',
+            'src/soar_lab/infrastructure/security/setup_firewall.sh'
         ]
 
         secret_patterns = ['password=', 'secret=', 'api_key=', 'token=']
@@ -140,31 +140,30 @@ class TestConfigurationSecurity(unittest.TestCase):
                         if pattern in line and not line.strip().startswith('#'):
                             # Allow environment variable references and argparse variable bindings
                             if '$' not in line and '${' not in line and 'args.' not in line:
-                                self.fail(f"Possible hardcoded secret in {script}: {line}")
+                                pytest.fail(f"Possible hardcoded secret in {script}: {line}")
 
 
-class TestScriptSecurity(unittest.TestCase):
+class TestScriptSecurity:
     """Test cases for script security"""
 
     def test_scripts_use_set_e(self):
         """Test that bash scripts use set -e for error handling"""
         bash_scripts = [
-            'src/soar_lab/infrastructure/security/isolate_host.sh',
-            'src/soar_lab/infrastructure/setup/notify.sh',
-            'src/soar_lab/infrastructure/security/setup_firewall.sh'
+            'src/soar_lab/infrastructure/security/setup_firewall.sh',
+            'src/soar_lab/scripts/setup/notify.sh'
         ]
 
         for script in bash_scripts:
             script_path = Path(script)
             if script_path.exists():
                 content = read_file_utf8(script_path)
-                self.assertIn('set -e', content, f"{script} should use set -e")
+                assert 'set -e' in content, f"{script} should use set -e"
 
     def test_no_temp_files_left_behind(self):
         """Test that scripts clean up temporary files"""
         # This is a code review test - check scripts for cleanup
         bash_scripts = [
-            'src/soar_lab/infrastructure/setup/gen_certs.sh'
+            'src/soar_lab/scripts/setup/gen_certs.sh'
         ]
 
         for script in bash_scripts:
@@ -172,16 +171,15 @@ class TestScriptSecurity(unittest.TestCase):
             if script_path.exists():
                 content = read_file_utf8(script_path)
                 # Check for cleanup commands
-                self.assertTrue(
-                    'rm' in content or 'cleanup' in content.lower(),
-                    f"{script} should have cleanup logic"
-                )
+                assert (
+                    'rm' in content or 'cleanup' in content.lower()
+                ), f"{script} should have cleanup logic"
 
     def test_no_echo_of_passwords(self):
         """Test that scripts don't echo passwords"""
         bash_scripts = [
-            'src/soar_lab/infrastructure/setup/notify.sh',
-            'src/soar_lab/infrastructure/security/isolate_host.sh'
+            'src/soar_lab/scripts/setup/notify.sh',
+            'src/soar_lab/infrastructure/security/setup_firewall.sh'
         ]
 
         for script in bash_scripts:
@@ -192,15 +190,11 @@ class TestScriptSecurity(unittest.TestCase):
                 lines = content.split('\n')
                 for line in lines:
                     if 'echo' in line.lower():
-                        self.assertNotIn('password', line.lower())
-                        self.assertNotIn('secret', line.lower())
+                        assert 'password' not in line.lower()
+                        assert 'secret' not in line.lower()
 
 
-class TestInputValidation(unittest.TestCase):
+class TestInputValidation:
     """Test cases for input validation"""
     # Removed tests that depend on non-existent scripts (isolate_host.sh, notify.sh)
     # These scripts were part of the old architecture and no longer exist
-
-
-if __name__ == '__main__':
-    unittest.main()

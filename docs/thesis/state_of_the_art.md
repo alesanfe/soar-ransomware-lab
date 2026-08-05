@@ -1,4 +1,3 @@
-
 # 2. Estado del arte
 
 Este capítulo revisa la literatura sobre respuesta a incidentes, automatización y orquestación en SOC, con especial

@@ -414,6 +414,55 @@ class SqliteAlertRepository:
             result = cursor.fetchone()[0]
             return float(result) if result else None
 
+    def count_alerts_by_status(self, status: str) -> int:
+        """Count alerts by status."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT COUNT(*) FROM alerts WHERE status = ?",
+                (status,)
+            )
+            return cursor.fetchone()[0]
+
+    def count_cases(self) -> int:
+        """Count total cases."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM cases")
+            return cursor.fetchone()[0]
+
+    def count_backups_by_status(self, status: str) -> int:
+        """Count backups by status."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT COUNT(*) FROM backups WHERE status = ?",
+                (status,)
+            )
+            return cursor.fetchone()[0]
+
+    def get_test_results(self, hours: int = 24) -> List[Dict[str, Any]]:
+        """Return test coverage rows from the last N hours."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM test_coverage WHERE timestamp > datetime('now', '-{} hours') "
+                "ORDER BY timestamp DESC".format(hours)
+            )
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'id': row['id'],
+                    'test_category': row['test_category'],
+                    'coverage_percentage': row['coverage_percentage'],
+                    'tests_run': row['tests_run'],
+                    'tests_passed': row['tests_passed'],
+                    'tests_failed': row['tests_failed'],
+                    'timestamp': row['timestamp'],
+                })
+            return results
+
     def close(self):
         """Close the database connection (no-op for this implementation as connections are short-lived)."""
         # Connections are managed with context managers in each method

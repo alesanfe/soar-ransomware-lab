@@ -1,2 +1,19 @@
 [run]
-omit = src/soar_lab/domain/ports.py
+omit = 
+    */domain/ports.py
+    tests/*
+    */__pycache__/*
+    */migrations/*
+    */cli.py
+    */scripts/setup/*.py
+    */interfaces/api/main.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod

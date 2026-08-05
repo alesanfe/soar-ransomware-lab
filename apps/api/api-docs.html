@@ -3,136 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>SOAR Lab API Documentation - Index</title>
-    <link href="docs/styles.css" rel="stylesheet">
+    <title>SOAR Lab API Documentation</title>
+    <link href="docs/legacy/styles.css" rel="stylesheet">
 </head>
 <body>
 <div class="container">
     <header class="header">
         <div class="header-content">
-            <h1>🚀 SOAR Lab API Documentation</h1>
-            <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+            <h1>SOAR Lab API</h1>
         </div>
     </header>
 
     <main class="main-content">
         <div class="intro">
-            <h2>Complete API Reference</h2>
-            <p>Comprehensive documentation for all services and containers in the SOAR Ransomware Lab environment.
-                Select a service below to view detailed API documentation.</p>
+            <h2>Management API Reference</h2>
+            <p>This FastAPI service exposes the SOAR Lab management endpoints. Use the links below to browse the live documentation and OpenAPI schema.</p>
         </div>
 
-        <h3 class="section-title">Core SOAR Services</h3>
+        <h3 class="section-title">Live Documentation</h3>
         <div class="services-grid">
-            <a class="service-card" href="docs/soar-lab-api.html">
-                <h3>SOAR Lab Management API</h3>
-                <p>Custom FastAPI-based management interface for the SOAR lab environment</p>
-                <span class="port">Port: 8000</span>
-                <span class="badge api">REST API</span>
+            <a class="service-card" href="/docs">
+                <h3>Swagger UI</h3>
+                <p>Interactive OpenAPI documentation served by FastAPI.</p>
+                <span class="port">http://localhost:8000/docs</span>
+                <span class="badge api">OpenAPI</span>
             </a>
-
-            <a class="service-card" href="docs/thehive-api.html">
-                <h3>TheHive API</h3>
-                <p>Collaborative case management platform for incident response</p>
-                <span class="port">Port: 9000</span>
-                <span class="badge api">REST API</span>
+            <a class="service-card" href="/redoc">
+                <h3>ReDoc</h3>
+                <p>Alternative OpenAPI rendering.</p>
+                <span class="port">/redoc</span>
+                <span class="badge api">OpenAPI</span>
             </a>
-
-            <a class="service-card" href="docs/cortex-api.html">
-                <h3>Cortex API</h3>
-                <p>Security analysis platform for observable enrichment and automation</p>
-                <span class="port">Port: 9001</span>
-                <span class="badge api">REST API</span>
+            <a class="service-card" href="/openapi.json">
+                <h3>OpenAPI JSON</h3>
+                <p>Source-of-truth schema for the management API.</p>
+                <span class="port">/openapi.json</span>
+                <span class="badge api">JSON</span>
             </a>
-
-            <a class="service-card" href="docs/shuffle-api.html">
-                <h3>Shuffle API</h3>
-                <p>Open-source SOAR platform for workflow automation</p>
-                <span class="port">Port: 5001</span>
-                <span class="badge api">REST API</span>
-            </a>
-        </div>
-
-        <h3 class="section-title">Threat Intelligence</h3>
-        <div class="services-grid">
-            <a class="service-card" href="docs/misp-api.html">
-                <h3>MISP API</h3>
-                <p>Threat intelligence sharing and collaboration platform</p>
-                <span class="port">Port: 8082</span>
-                <span class="badge api">REST API</span>
-            </a>
-
-            <a class="service-card" href="docs/misp-modules-api.html">
-                <h3>MISP Modules API</h3>
-                <p>Expansion, import, and export modules for MISP enrichment</p>
-                <span class="port">Port: 6666</span>
-                <span class="badge internal">Internal</span>
-            </a>
-        </div>
-
-        <h3 class="section-title">SIEM & Monitoring</h3>
-        <div class="services-grid">
-            <a class="service-card" href="docs/wazuh-api.html">
-                <h3>Wazuh API</h3>
-                <p>Security information and event management platform</p>
-                <span class="port">Port: 55000</span>
-                <span class="badge api">REST API</span>
-            </a>
-
-            <a class="service-card" href="docs/elasticsearch-api.html">
-                <h3>Elasticsearch API</h3>
-                <p>Distributed search and analytics engine</p>
-                <span class="port">Port: 9201</span>
-                <span class="badge api">REST API</span>
-            </a>
-
-            <a class="service-card" href="docs/kibana-api.html">
-                <h3>Kibana API</h3>
-                <p>Visualization and dashboard platform for Elasticsearch</p>
-                <span class="port">Port: 15601</span>
-                <span class="badge api">REST API</span>
-            </a>
-        </div>
-
-        <h3 class="section-title">Data & Infrastructure</h3>
-        <div class="services-grid">
-            <a class="service-card" href="docs/redis-api.html">
-                <h3>Redis API</h3>
-                <p>In-memory data store and cache</p>
-                <span class="port">Port: 6379</span>
-                <span class="badge api">Redis Protocol</span>
-            </a>
-
-            <a class="service-card" href="docs/docker-api.html">
-                <h3>Docker API</h3>
-                <p>Container management and orchestration</p>
-                <span class="port">Unix Socket</span>
-                <span class="badge api">REST API</span>
-            </a>
-        </div>
-
-        <h3 class="section-title">Internal Services</h3>
-        <div class="services-grid">
-            <a class="service-card" href="docs/internal-services.html">
-                <h3>Internal Services</h3>
-                <p>Orborus workflow scheduler and Network Watcher</p>
-                <span class="port">Internal</span>
-                <span class="badge internal">No HTTP API</span>
-            </a>
-        </div>
-
-        <h3 class="section-title">Web & Proxy</h3>
-        <div class="services-grid">
-            <a class="service-card" href="docs/web-nginx.html">
-                <h3>Web Management UI & Nginx</h3>
-                <p>Web interface and reverse proxy configuration</p>
-                <span class="port">80, 443, 8081</span>
-                <span class="badge support">Infrastructure</span>
+            <a class="service-card" href="docs/legacy/index.html">
+                <h3>Legacy Static Docs</h3>
+                <p>Old static HTML service references (archived).</p>
+                <span class="port">legacy</span>
+                <span class="badge internal">Archived</span>
             </a>
         </div>
     </main>
 </div>
-
-<script src="docs/script.js"></script>
 </body>
 </html>

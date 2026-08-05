@@ -218,11 +218,18 @@ Webhook (Wazuh/SIEM)
 
 ### 3.3 Integraciones
 
-#### 3.3.1 N1 — recepción y validación de alerta
+**Leyenda de estado funcional:**
+
+- **\[REAL\]**: Implementado y ejecutado por el workflow de Shuffle en el laboratorio.
+- **\[PARCIAL\]**: Funcionalidad operativa con limitaciones o dependencias opcionales (p. ej., analyzers online).
+- **\[SIMULADO\]**: Acción ejecutada por el workflow pero sin efecto real sobre endpoints/firewalls.
+- **\[PLANIFICADO\]**: Identificado en el diseño pero aún no implementado.
+
+#### 3.3.1 N1 — recepción y validación de alerta \[REAL\]
 
 | Campo                   | Detalle                                                                                        |
 |-------------------------|------------------------------------------------------------------------------------------------|
-| **Trigger**             | HTTP POST al webhook de Shuffle (`http://localhost:5001/webhook/<id>`)                         |
+| **Trigger**             | HTTP POST al webhook de Shuffle (`http://localhost:15001/api/v1/hooks/<id>`)                     |
 | **Autenticación**       | `Authorization: Bearer <SHUFFLE_WEBHOOK_TOKEN>`                                                |
 | **Entrada**             | JSON con esquema definido en `src/soar_lab/config/schemas.py`                                  |
 | **Campos obligatorios** | `alert_id`, `hostname`, `src_ip`, `hash`, `severity`, `source`, `detection_time`, `event_type` |
@@ -263,7 +270,7 @@ Webhook (Wazuh/SIEM)
 
 ---
 
-#### 3.3.2 N2 — normalización y extracción de IoCs
+#### 3.3.2 N2 — normalización y extracción de IoCs \[REAL\]
 
 | Campo              | Detalle                                                                                                        |
 |--------------------|----------------------------------------------------------------------------------------------------------------|
@@ -275,11 +282,11 @@ Webhook (Wazuh/SIEM)
 
 ---
 
-#### 3.3.3 N3 — creación de caso en TheHive
+#### 3.3.3 N3 — creación de caso en TheHive \[REAL\]
 
 | Campo                     | Detalle                                                                                |
 |---------------------------|----------------------------------------------------------------------------------------|
-| **Servicio**              | TheHive API `http://thehive:9000/api/v0/case`                                          |
+| **Servicio**              | TheHive API `http://thehive:9000/api/case`                                          |
 | **Autenticación**         | `Authorization: Bearer <THEHIVE_API_KEY>`                                              |
 | **Entrada**               | IoCs de N2 + campos de alerta original                                                 |
 | **Cuerpo de la petición** | `title`, `description`, `severity` (1–3), `tags: ["ransomware", "soar-lab"]`, `tlp: 2` |
@@ -290,11 +297,11 @@ Webhook (Wazuh/SIEM)
 
 ---
 
-#### 3.3.4 N4 — adjuntar observables al caso
+#### 3.3.4 N4 — adjuntar observables al caso \[REAL\]
 
 | Campo                   | Detalle                                                                                  |
 |-------------------------|------------------------------------------------------------------------------------------|
-| **Servicio**            | TheHive API `POST /api/v0/case/<case_id>/artifact`                                       |
+| **Servicio**            | TheHive API `POST /api/case/<case_id>/artifact`                                       |
 | **Entrada**             | `case_id` de N3 + lista de IoCs de N2                                                    |
 | **Tipos de observable** | `hash` (MD5/SHA256), `ip` (src_ip), `fqdn` (hostname)                                    |
 | **Salida (OK)**         | Lista de `observable_id` creados en TheHive                                              |
@@ -303,7 +310,7 @@ Webhook (Wazuh/SIEM)
 
 ---
 
-#### 3.3.5 N5 — ejecución de analyzers en Cortex
+#### 3.3.5 N5 — ejecución de analyzers en Cortex \[PARCIAL\]
 
 | Campo                 | Detalle                                                                                                                                            |
 |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -318,7 +325,7 @@ Webhook (Wazuh/SIEM)
 
 ---
 
-#### 3.3.6 N6 — decisión: ¿contención?
+#### 3.3.6 N6 — decisión: ¿contención? \[REAL\]
 
 | Campo                    | Detalle                                                                                                                      |
 |--------------------------|------------------------------------------------------------------------------------------------------------------------------|
@@ -339,7 +346,7 @@ score_max < 80 AND verdict != "malicious"
 
 ---
 
-#### 3.3.7 N7 — contención simulada
+#### 3.3.7 N7 — contención simulada \[SIMULADO\]
 
 | Campo                  | Detalle                                                                                                                   |
 |------------------------|---------------------------------------------------------------------------------------------------------------------------|
@@ -351,22 +358,22 @@ score_max < 80 AND verdict != "malicious"
 | **Salida (Error)**     | Exit code ≠ 0 del script → log de error; continuar al N8 con flag `containment_failed=true`                               |
 | **Ruta de error**      | Notificar operador manualmente; registrar en caso TheHive                                                                 |
 
-#### 3.3.8 N7b — marcar como benigno
+#### 3.3.8 N7b — marcar como benigno \[REAL\]
 
 | Campo              | Detalle                                                                                           |
 |--------------------|---------------------------------------------------------------------------------------------------|
 | **Entrada**        | `case_id` + `decision = "observe"`                                                                |
-| **Operación**      | `PATCH /api/v0/case/<case_id>` con `{status: "FalsePositive", resolutionStatus: "FalsePositive"}` |
+| **Operación**      | `PATCH /api/case/<case_id>` con `{status: "FalsePositive", resolutionStatus: "FalsePositive"}` |
 | **Salida (OK)**    | Caso TheHive actualizado; ninguna acción de contención ejecutada                                  |
 | **Salida (Error)** | Error de API → log; caso queda en estado `Open` para revisión manual                              |
 
 ---
 
-#### 3.3.9 N8/N8b — actualización del caso
+#### 3.3.9 N8/N8b — actualización del caso \[REAL\]
 
 | Campo                   | Detalle                                                                                     |
 |-------------------------|---------------------------------------------------------------------------------------------|
-| **Servicio**            | TheHive API `PATCH /api/v0/case/<case_id>`                                                  |
+| **Servicio**            | TheHive API `PATCH /api/case/<case_id>`                                                  |
 | **Rama malicioso (N8)** | `{status: "InProgress", customFields: {containment_executed: true, mttr_end: <timestamp>}}` |
 | **Rama benigno (N8b)**  | `{status: "Resolved", resolutionStatus: "FalsePositive"}`                                   |
 | **Salida (OK)**         | Caso actualizado con timestamps y resultado                                                 |
@@ -374,7 +381,7 @@ score_max < 80 AND verdict != "malicious"
 
 ---
 
-#### 3.3.10 N9/N9b — notificación
+#### 3.3.10 N9/N9b — notificación \[SIMULADO\]
 
 | Campo                   | Detalle                                                                                                             |
 |-------------------------|---------------------------------------------------------------------------------------------------------------------|
@@ -386,13 +393,13 @@ score_max < 80 AND verdict != "malicious"
 
 ---
 
-#### 3.3.11 N10/N10b — registro MTTR
+#### 3.3.11 N10/N10b — registro MTTR \[REAL\]
 
 | Campo                 | Detalle                                                                                                                           |
 |-----------------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | **Entrada**           | `t_alert = detection_time` del payload; `t_contain = timestamp` de N7/N7b                                                         |
 | **Cálculo**           | `MTTR = t_contain - t_alert` (segundos)                                                                                           |
-| **Salida**            | Entrada en `artifacts/logs/notify.log`; actualización de `artifacts/results/kpis.csv` vía `src/soar_lab/services/kpi_analyzer.py` |
+| **Salida**            | Entrada en `artifacts/logs/notify.log`; actualización de `artifacts/results/kpis.csv` vía `src/soar_lab/domain/services/kpi_analyzer.py` |
 | **Umbrales objetivo** | p50 ≤ 120 s; p90 ≤ 180 s                                                                                                          |
 
 #### 3.3.12 Diagrama de decisión
@@ -425,9 +432,9 @@ flowchart TD
 
 | Test  | Payload              | `confidence` | Decisión esperada | Resultado esperado                                   |
 |-------|----------------------|--------------|-------------------|------------------------------------------------------|
-| TC-01 | `payload_case1.json` | 95           | CONTAIN           | Caso TheHive `InProgress`, `containment.log` escrito |
-| TC-02 | `payload_case2.json` | 25           | OBSERVE           | Caso TheHive `FalsePositive`, sin `containment.log`  |
-| TC-03 | Edge cases           | varios       | Varios            | Sistema estable, sin excepciones no controladas      |
+| TC-01 | `tests/e2e/TC-01/test_malicious.py` | 95           | CONTAIN           | Caso TheHive `InProgress`, `containment.log` escrito |
+| TC-02 | `tests/e2e/TC-02/test_benign.py`      | 20           | OBSERVE           | Caso TheHive `FalsePositive`, sin `containment.log`  |
+| TC-03 | `tests/e2e/TC-03/test_edge_cases.py`  | varios       | Varios            | Sistema estable, sin excepciones no controladas      |
 
 #### 3.3.14 Configuración requerida
 
@@ -458,7 +465,7 @@ flowchart TD
 
 **Descripción**: Alerta con confidence=25 debe clasificar como falso positivo.
 
-**Entrada**: Payload con `confidence=25`, `event_type="suspicious_activity"`
+**Entrada**: Payload con `confidence=20`, `event_type="file_monitoring"`
 
 **Salida esperada**:
 
@@ -573,18 +580,15 @@ echo $CORTEX_API_KEY
 **Schema inválido:**
 
 ```bash
-# Validar payload contra esquema
-python3 -c "import json; json.load(open('tests/fixtures/payloads/payload_case1.json'))"
-
-# Verificar esquema
-python3 -c "from src.soar_lab.config.schemas import ALERT_SCHEMA; print(ALERT_SCHEMA)"
+# Verificar esquema Pydantic de alertas
+python3 -c "from src.soar_lab.config.schemas import RansomwareAlert; print(RansomwareAlert.model_json_schema())"
 ```
 
 **Analyzers fallidos:**
 
 ```bash
 # Verificar estado de Cortex
-curl http://localhost:9001/api/analyzer
+curl http://localhost:19001/api/analyzer
 
 # Verificar logs de Cortex
 docker logs soar_cortex
@@ -596,14 +600,17 @@ echo $VIRUSTOTAL_API_KEY
 **Script de contención fallido:**
 
 ```bash
-# Ejecutar script manualmente en modo simulación
-SIMULATION_MODE=true python3 -m src.soar_lab.services.containment_service WIN-001 test-case-id
+# Simular una alerta maliciosa manualmente (genera caso + contención simulada)
+PYTHONPATH=src python3 -m soar_lab.simulator.simulate_alerts \
+  --count 1 \
+  --delay 0 \
+  --webhook http://localhost:15001/api/v1/hooks/<workflow_id>
 
-# Verificar logs de contención
-cat artifacts/logs/containment.log
+# Verificar logs de ejecución del workflow
+docker logs soar_shuffle_backend
 
-# Verificar módulo de contención
-ls -la src/soar_lab/services/containment_service.py
+# Verificar logs del API Lab
+docker logs soar_api
 ```
 
 **MTTR fuera de umbral:**
@@ -632,7 +639,7 @@ cat artifacts/logs/notify.log
 - **Esquema de alerta**: `src/soar_lab/config/schemas.py`
 - **Script de contención**: Simulado en código Python (módulo de contención)
 - Tests E2E: `tests/e2e/TC-01/`, `tests/e2e/TC-02/`, `tests/e2e/TC-03/`
-- KPIs: `src/soar_lab/services/kpi_analyzer.py` → `artifacts/results/kpis.csv`
+- KPIs: `src/soar_lab/domain/services/kpi_analyzer.py` → `artifacts/results/kpis.csv`
 
 ---
 

@@ -7,10 +7,10 @@ Safe, consistent wrapper around subprocess.run / asyncio subprocess.
 import asyncio
 import subprocess
 import time
+from soar_lab.common.exceptions import SubprocessError
 from typing import Any, Dict, List, Optional
 
 from soar_lab.config.logging import get_logger
-from soar_lab.exceptions import SubprocessError
 
 logger = get_logger(__name__)
 
@@ -21,13 +21,13 @@ class SubprocessResult:
     __slots__ = ("success", "returncode", "stdout", "stderr", "duration")
 
     def __init__(
-            self,
-            *,
-            success: bool,
-            returncode: int,
-            stdout: str = "",
-            stderr: str = "",
-            duration: float = 0.0,
+        self,
+        *,
+        success: bool,
+        returncode: int,
+        stdout: str = "",
+        stderr: str = "",
+        duration: float = 0.0,
     ) -> None:
         self.success = success
         self.returncode = returncode
@@ -49,19 +49,19 @@ class SubprocessRunner:
     """Safe synchronous/async subprocess execution with consistent error handling."""
 
     def __init__(
-            self,
-            cwd: Optional[str] = None,
-            default_timeout: int = 300,
+        self,
+        cwd: Optional[str] = None,
+        default_timeout: int = 300,
     ) -> None:
         self.cwd = cwd
         self.default_timeout = default_timeout
 
     def run(
-            self,
-            cmd: List[str],
-            timeout: Optional[int] = None,
-            cwd: Optional[str] = None,
-            raise_on_error: bool = False,
+        self,
+        cmd: List[str],
+        timeout: Optional[int] = None,
+        cwd: Optional[str] = None,
+        raise_on_error: bool = False,
     ) -> SubprocessResult:
         """Run *cmd* synchronously.
 
@@ -111,11 +111,11 @@ class SubprocessRunner:
             )
 
     async def run_async(
-            self,
-            cmd: List[str],
-            timeout: Optional[int] = None,
-            cwd: Optional[str] = None,
-            raise_on_error: bool = False,
+        self,
+        cmd: List[str],
+        timeout: Optional[int] = None,
+        cwd: Optional[str] = None,
+        raise_on_error: bool = False,
     ) -> SubprocessResult:
         """Run *cmd* asynchronously.
 

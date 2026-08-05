@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # ==============================================================================
 # SOAR Ransomware Lab - Ubuntu VM Provisioning
 # Instala Docker, Compose, el stack SOAR completo y el simulador SIEM
@@ -60,7 +60,7 @@ mkdir -p "${LOCAL_ARTIFACTS_DIR}/data/wazuh/queue" "${LOCAL_ARTIFACTS_DIR}/data/
 mkdir -p "${LOCAL_ARTIFACTS_DIR}/data/wazuh/integration_files" "${LOCAL_ARTIFACTS_DIR}/data/wazuh/active_response"
 mkdir -p "${LOCAL_ARTIFACTS_DIR}/data/wazuh/wodles" "${LOCAL_ARTIFACTS_DIR}/data/wazuh/logs"
 mkdir -p "${LOCAL_ARTIFACTS_DIR}/data/kibana" "${LOCAL_ARTIFACTS_DIR}/data/loki" "${LOCAL_ARTIFACTS_DIR}/data/grafana"
-mkdir -p "${LOCAL_ARTIFACTS_DIR}/backups" "${LOCAL_ARTIFACTS_DIR}/results" "${LOCAL_ARTIFACTS_DIR}/coverage"
+mkdir -p "${LOCAL_ARTIFACTS_DIR}/backups" "${LOCAL_ARTIFACTS_DIR}/logs" "${LOCAL_ARTIFACTS_DIR}/results" "${LOCAL_ARTIFACTS_DIR}/coverage"
 mkdir -p "${REPO_DIR}/artifacts/logs" "${REPO_DIR}/artifacts/results"
 # Compartir logs y results con el host via mount --bind
 mountpoint -q "${LOCAL_ARTIFACTS_DIR}/logs" && umount "${LOCAL_ARTIFACTS_DIR}/logs"
@@ -74,11 +74,7 @@ if ! grep -q "${LOCAL_ARTIFACTS_DIR}/logs" /etc/fstab; then
 fi
 
 # Establecer ARTIFACTS_DIR para que los binds de Docker apunten al directorio local
-if ! grep -q "^ARTIFACTS_DIR=" .env.full; then
-    echo "ARTIFACTS_DIR=${LOCAL_ARTIFACTS_DIR}" >> .env.full
-else
-    sed -i "s|^ARTIFACTS_DIR=.*|ARTIFACTS_DIR=${LOCAL_ARTIFACTS_DIR}|" .env.full
-fi
+export ARTIFACTS_DIR="${LOCAL_ARTIFACTS_DIR}"
 
 echo "==> [5/8] Generando certificados SSL..."
 SSL_DIR="${REPO_DIR}/infra/docker/nginx/ssl"
@@ -172,7 +168,7 @@ for i in $(seq 1 30); do
     echo "    Esperando Elasticsearch... (${i}/30)"
     sleep 10
 done
-docker exec soar_api python /app/src/soar_lab/infrastructure/setup/reset_cortex.py || true
+docker exec soar_api python /app/src/soar_lab/scripts/setup/reset_cortex.py || true
 
 echo "==> [7/9] Instalando simulador SIEM Python..."
 cd "${REPO_DIR}"
@@ -191,7 +187,7 @@ done
 sleep 10  # Esperar inicialización completa
 
 # Registrar el webhook via script Python desde dentro del contenedor
-docker exec soar_api python /app/src/soar_lab/infrastructure/setup/init_shuffle_webhook.py || echo "    (webhook init diferido - ejecutar manualmente)"
+docker exec soar_api python /app/src/soar_lab/scripts/setup/init_shuffle_webhook.py || echo "    (webhook init diferido - ejecutar manualmente)"
 
 echo ""
 echo "==> [8b/9] Conectando soar_api a logging_net (para Grafana)..."

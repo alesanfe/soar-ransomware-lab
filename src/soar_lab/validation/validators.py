@@ -6,9 +6,8 @@ Single source of truth for IP, hash, alert and path validation.
 
 import re
 from pathlib import Path
+from soar_lab.common.exceptions import ValidationError
 from typing import Any, Dict
-
-from soar_lab.exceptions import ValidationError
 
 
 class IPValidator:
@@ -64,6 +63,16 @@ class AlertValidator:
         "alert_id", "hostname", "src_ip", "hash", "severity", "event_type"
     )
     VALID_SEVERITIES = (0, 1, 2, 3)
+    HOSTNAME_RE = re.compile(r"^.{1,255}$", re.UNICODE)
+
+    @classmethod
+    def _is_valid_hostname(cls, hostname: Any) -> bool:
+        """Return True for a non-empty hostname up to 255 chars."""
+        if not hostname or not isinstance(hostname, str):
+            return False
+        if len(hostname) > 255:
+            return False
+        return cls.HOSTNAME_RE.match(hostname) is not None
 
     @classmethod
     def validate(cls, alert: Any) -> bool:
@@ -74,18 +83,20 @@ class AlertValidator:
             if not alert.get(field):
                 return False
         return (
-                IPValidator.validate(alert["src_ip"])
-                and HashValidator.validate(alert["hash"])
+            IPValidator.validate(alert["src_ip"])
+            and HashValidator.validate(alert["hash"])
         )
 
     @classmethod
     def validate_structure(cls, alert: Any) -> bool:
-        """Full structural validation including severity."""
+        """Full structural validation including severity and hostname."""
         if not alert or not isinstance(alert, dict):
             return False
         for field in cls.FULL_REQUIRED_FIELDS:
-            if field not in alert:
+            if field not in alert or alert[field] is None or alert[field] == "":
                 return False
+        if not cls._is_valid_hostname(alert.get("hostname")):
+            return False
         try:
             severity = int(alert["severity"])
         except (ValueError, TypeError):
@@ -93,8 +104,8 @@ class AlertValidator:
         if severity not in cls.VALID_SEVERITIES:
             return False
         return (
-                IPValidator.validate(alert["src_ip"])
-                and HashValidator.validate(alert["hash"])
+            IPValidator.validate(alert["src_ip"])
+            and HashValidator.validate(alert["hash"])
         )
 
     @classmethod

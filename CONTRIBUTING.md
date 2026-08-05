@@ -8,10 +8,12 @@
 1. [Getting Started](#getting-started)
 2. [Development Setup](#development-setup)
 3. [Code Standards](#code-standards)
-4. [Testing](#testing)
-5. [Submitting Changes](#submitting-changes)
-6. [Review Process](#review-process)
-7. [Community Guidelines](#community-guidelines)
+4. [Herramientas de calidad y CI](#herramientas-de-calidad-y-ci)
+5. [Testing](#testing)
+6. [Seguridad y gestión de secretos](#seguridad-y-gesti%C3%B3n-de-secretos)
+7. [Submitting Changes](#submitting-changes)
+8. [Review Process](#review-process)
+9. [Community Guidelines](#community-guidelines)
 
 ---
 
@@ -20,7 +22,7 @@
 ### Prerequisites
 
 - Docker and Docker Compose
-- Python 3.9+
+- Python 3.11+
 - Git
 - Make (optional but recommended)
 
@@ -50,25 +52,50 @@ git checkout -b feature/your-feature-name
 
 ### Environment Setup
 
-1. Copy the environment file:
+1. Copy the environment template to the canonical file `.env.full`:
    ```bash
-   cp docker/.env.example docker/.env
+   cp .env.example .env.full
    ```
 
-2. Generate secure secrets:
+2. Generate secure secrets and append them to `.env.full`:
    ```bash
-   make generate-secrets
+   make generate-secrets >> .env.full
+   # o desde el entorno Python:
+   soar-lab generate-secrets --env >> .env.full
    ```
 
-3. Start the development environment:
+3. Add a strong JWT secret manually (`generate-secrets` does not emit it):
+   ```bash
+   # Linux/macOS/PowerShell:
+   echo "JWT_SECRET_KEY=$(openssl rand -base64 64 | tr -d '\n')" >> .env.full
+   ```
+
+4. Validate the environment file:
+   ```bash
+   make validate-credentials
+   ```
+
+5. (Opcional) Install pre-commit hooks:
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+6. Start the development environment:
    ```bash
    make up
    ```
 
-4. Install Python dependencies:
+7. Install Python dependencies from `pyproject.toml`:
    ```bash
-   make deps
-   make deps-test
+   make deps       # pip install -e .
+   make deps-test  # pip install -e ".[test]"
+   ```
+
+8. Build and preview documentation locally (Docusaurus):
+   ```bash
+   make docs-build
+   make docs-serve
    ```
 
 ### Development Workflow
@@ -122,9 +149,13 @@ Configure settings in `.vscode/settings.json`:
 We follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) with additional guidelines:
 
 - Use Black for formatting
-- Maximum line length: 88 characters
+- Maximum line length: 100 characters (matches `pyproject.toml`)
+- Use isort for import sorting
 - Use type hints where appropriate
 - Follow Google-style docstrings
+- Respect the hexagonal architecture under `src/soar_lab/`: `domain/`, `application/`, `infrastructure/`, `interfaces/`
+- Wire dependencies through the Composition Root (`src/soar_lab/interfaces/api/composition.py`)
+- Keep domain code free of infrastructure imports
 
 #### Example
 
@@ -300,18 +331,62 @@ mttr = sum(execution_times) / len(execution_times)
 
 ---
 
+## Herramientas de calidad y CI
+
+El proyecto usa **Python 3.11+**. Las herramientas y versiones se declaran en `pyproject.toml` y se ejecutan en `.github/workflows/ci.yml`:
+
+- **Black** (`>=23.0.0`, `line-length = 100`, `target-version = ['py311']`)
+- **isort** (`>=5.12.0`, perfil `black`, longitud 100)
+- **flake8** (`>=6.0.0`; en CI se ejecutan dos pasos: `E9,F63,F7,F82` y `max-line-length=100`)
+- **mypy** (`>=1.0.0`, `python_version = "3.11"`, `warn_return_any`, `warn_unused_configs`)
+- **pytest** (`>=7.0.0`, con `pytest-asyncio`, `pytest-cov`, `pytest-mock`, `pytest-timeout`)
+- **pre-commit** (`>=3.0.0`)
+
+Para ejecutar localmente las comprobaciones equivalentes a CI:
+
+```bash
+# Instalar entorno de desarrollo
+pip install -e ".[dev]"
+
+# Formateo y ordenación de imports
+black src/soar_lab
+isort src/soar_lab
+
+# Lint (dos pasos como en CI)
+flake8 src/soar_lab --count --select=E9,F63,F7,F82 --show-source --statistics
+flake8 src/soar_lab --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+
+# Comprobación de tipos
+mypy src/soar_lab --ignore-missing-imports
+
+# Tests unitarios con cobertura
+pytest tests/unit/ -v --cov=src.soar_lab --cov-report=xml
+```
+
+> **Nota**: `make lint` y `make test-all` en los Makefiles ejecutan estos pasos de forma agrupada según la plataforma.
+
+---
+
 ## Testing
 
-### Test Structure
+### Estructura de tests
 
 ```
 tests/
-├── unit/           # Unit tests
-├── integration/    # Integration tests
-├── e2e/           # End-to-end tests
-├── performance/   # Performance tests
-└── security/      # Security tests
+├── unit/          # Tests unitarios (sin dependencias externas)
+├── integration/   # Tests de integración
+├── e2e/           # Tests end-to-end (workflows completos)
+├── atomic/        # Validaciones rápidas
+├── smoke/         # Tests post-despliegue
+├── performance/   # Benchmarks y KPIs
+├── security/      # Tests de seguridad
+└── general/       # Tests transversales
 ```
+
+> Los conteos exactos varían con el código. Para obtener el número real de casos recogidos usar:
+> ```bash
+> python -m pytest tests/ --collect-only -q
+> ```
 
 ### Writing Tests
 
@@ -320,35 +395,35 @@ tests/
 ```python
 import pytest
 from unittest.mock import Mock, patch
-from scripts.send_alert import SIEMSimulator
+from src.soar_lab.simulator.simulate_alerts import SIEMSimulator
 
 class TestSIEMSimulator:
     """Test cases for SIEMSimulator class."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
-        self.webhook_url = "http://localhost:5001/webhook"
-        self.api_token = "test-token"
+        self.webhook_url = "http://localhost:15001/api/v1/hooks/<workflow_id>"
+        self.api_token = "<test-token>"
         self.simulator = SIEMSimulator(self.webhook_url, self.api_token)
-    
+
     def test_generate_alert_malicious(self):
         """Test malicious alert generation."""
         alert = self.simulator.generate_alert(alert_type='malicious')
-        
+
         assert alert['severity'] in [2, 3]
         assert alert['event_type'] == 'ransomware_detection'
         assert 'malicious' in alert['source']
-    
+
     @patch('requests.post')
     def test_send_alert_success(self, mock_post):
         """Test successful alert sending."""
         mock_response = Mock()
         mock_response.status_code = 200
         mock_post.return_value = mock_response
-        
+
         alert = self.simulator.generate_alert()
         result = self.simulator.send_alert(alert)
-        
+
         assert result is True
         mock_post.assert_called_once()
 ```
@@ -617,38 +692,56 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-### Pre-commit Configuration
+### Configuración de pre-commit
 
-`.pre-commit-config.yaml`:
+El archivo `.pre-commit-config.yaml` del repositorio ejecuta automáticamente
+Black, isort, flake8, markdownlint, detect-secrets y el comprobador de
+terminología propio (`src/soar_lab/scripts/ci/terminology_check.py`):
 
-```yaml
-repos:
-  - repo: https://github.com/psf/black
-    rev: 22.3.0
-    hooks:
-      - id: black
-        language_version: python3.9
+Ver el archivo `.pre-commit-config.yaml` del repositorio para la configuración exacta. Resumen de los hooks activos:
 
-  - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
-    hooks:
-      - id: isort
+- `pre-commit-hooks`: elimina espacios finales, valida YAML/JSON y ficheros grandes.
+- `black` (`python3.11`, `--line-length 100`).
+- `isort` (`--profile black`).
+- `flake8` (`--max-line-length=100`, `--extend-ignore=E203,W503`).
+- `detect-secrets` con baseline `.secrets.baseline`.
+- `markdownlint-cli` con configuración `.markdownlint.json`.
+- Hook local `terminology-check` ejecutando `python src/soar_lab/scripts/ci/terminology_check.py`.
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 4.0.1
-    hooks:
-      - id: flake8
+> Asegúrate de que `python3.11` esté disponible para Black y de que los
+> archivos Markdown no contengan términos legacy tras el `terminology-check`.
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.942
-    hooks:
-      - id: mypy
+---
 
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.8.0.4
-    hooks:
-      - id: shellcheck
-```
+## Seguridad y gestión de secretos
+
+### Credenciales y API keys
+
+- **Nunca incluir valores reales** de credenciales, API keys, JWT tokens, contraseñas, workflow IDs, trigger IDs u org IDs en documentación, commits, capturas de pantalla ni scripts versionados.
+- Usar **placeholders inequívocos** del estilo `<JWT_SECRET_KEY>`, `<THEHIVE_API_KEY>`, `<SHUFFLE_DEFAULT_APIKEY>`, `<...>`.
+- Las credenciales operativas se almacenan únicamente en `.env.full` (ignorado por Git) y se generan mediante:
+  ```bash
+  make generate-secrets >> .env.full
+  # o
+  soar-lab generate-secrets --env >> .env.full
+  ```
+- Las variables canónicas para JWT son:
+  - `JWT_SECRET_KEY` (clave primaria, `>= 32` caracteres; `generate-secrets` produce 64 caracteres alfanuméricos).
+  - `API_AUTH_SECRET` (compatibilidad legacy; `AuthService` y `Settings` lo usan como fallback).
+  - `JWT_EXPIRATION_MINUTES` (por defecto `60`).
+  - `JWT_ALGORITHM` (`HS256`).
+
+### Prevención de fugas en commits
+
+- `detect-secrets` (hook de `pre-commit` y workflow de CI) escanea cambios en busca de secretos conocidos usando `.secrets.baseline`.
+- `docs_quality.py` (`src/soar_lab/scripts/ci/docs_quality.py`) verifica que la documentación no incluya patrones prohibidos como `SiemToken` ni URLs/credenciales obsoletas.
+- Si `detect-secrets` o `docs_quality.py` bloquean un cambio, auditar el historial del repositorio y **rotar cualquier valor expuesto**; no basta con corregir el archivo actual.
+
+### Referencias
+
+- `docs/architecture/security.md` — matriz de controles y estado de implementación.
+- `.pre-commit-config.yaml` — hooks activos, incluido `detect-secrets`.
+- `.github/workflows/ci.yml` — validación de secretos y documentación en CI.
 
 ---
 
@@ -663,9 +756,9 @@ repos:
 docker system prune -a
 
 # Rebuild containers
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up -d
+docker compose down -v
+docker compose build --no-cache
+docker compose up -d
 ```
 
 #### Python Issues
@@ -678,8 +771,8 @@ source venv/bin/activate  # Linux/Mac
 venv\Scripts\activate  # Windows
 
 # Install dependencies
-pip install -r requirements.txt
-pip install -r requirements-test.txt
+pip install -e .
+pip install -e .[test]
 ```
 
 #### Test Issues
@@ -694,7 +787,7 @@ pytest tests/unit/test_file.py::TestClass::test_method -vvs
 
 ### Getting Help
 
-1. Check the [troubleshooting guide](docs/troubleshooting.md)
+1. Check the [troubleshooting guide](docs/operations/troubleshooting.md)
 2. Search existing GitHub issues
 3. Create a new issue with:
     - Clear description of the problem

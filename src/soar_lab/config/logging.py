@@ -30,10 +30,10 @@ def _make_formatter(log_format: str) -> logging.Formatter:
 
 
 def setup_logging(
-        log_level: str = "INFO",
-        log_format: str = "text",
-        log_dir: Optional[Path] = None,
-        log_filename: str = "soar_lab.log",
+    log_level: str = "INFO",
+    log_format: str = "text",
+    log_dir: Optional[Path] = None,
+    log_filename: str = "soar_lab.log",
 ) -> None:
     """Configure logging for the entire application.
 
@@ -45,6 +45,10 @@ def setup_logging(
             logging is used.
         log_filename: Name of the log file when *log_dir* is provided.
     """
+    if log_level is None:
+        log_level = "INFO"
+    if log_format is None:
+        log_format = "text"
     level = getattr(logging, log_level.upper(), logging.INFO)
     formatter = _make_formatter(log_format)
 

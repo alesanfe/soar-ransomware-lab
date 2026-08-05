@@ -1,0 +1,162 @@
+{
+  "workflows": {
+    "ransomware_workflow": {
+      "name": "Ransomware Response Workflow",
+      "description": "Automated response to ransomware detection",
+      "expected_actions": [
+        {
+          "name": "verify_es",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "calc_mttr",
+          "type": "execute_python",
+          "expected_status": "success"
+        },
+        {
+          "name": "index_metrics",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "create_thehive_case",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "enrich_cortex",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "check_misp",
+          "type": "http",
+          "expected_status": "success"
+        }
+      ],
+      "expected_observables": [
+        "hash",
+        "ip",
+        "domain",
+        "file"
+      ],
+      "expected_tags": [
+        "ransomware",
+        "T1486",
+        "T1059"
+      ],
+      "expected_severity": "critical"
+    },
+    "benign_workflow": {
+      "name": "Benign Alert Workflow",
+      "description": "Processing of benign alerts",
+      "expected_actions": [
+        {
+          "name": "verify_es",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "calc_mttr",
+          "type": "execute_python",
+          "expected_status": "success"
+        },
+        {
+          "name": "index_metrics",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "create_thehive_case",
+          "type": "http",
+          "expected_status": "success"
+        }
+      ],
+      "expected_observables": [
+        "hash",
+        "ip",
+        "domain"
+      ],
+      "expected_tags": [
+        "benign"
+      ],
+      "expected_severity": "low"
+    },
+    "critical_severity_workflow": {
+      "name": "Critical Severity Workflow",
+      "description": "High-priority response for critical alerts",
+      "expected_actions": [
+        {
+          "name": "verify_es",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "calc_mttr",
+          "type": "execute_python",
+          "expected_status": "success"
+        },
+        {
+          "name": "index_metrics",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "create_thehive_case",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "enrich_cortex",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "check_misp",
+          "type": "http",
+          "expected_status": "success"
+        },
+        {
+          "name": "isolate_host",
+          "type": "http",
+          "expected_status": "success"
+        }
+      ],
+      "expected_observables": [
+        "hash",
+        "ip",
+        "domain",
+        "file"
+      ],
+      "expected_tags": [
+        "critical",
+        "T1486"
+      ],
+      "expected_severity": "critical"
+    }
+  },
+  "action_mappings": {
+    "http": {
+      "verify": "response status code 200-299",
+      "timeout": "response within 30 seconds"
+    },
+    "execute_python": {
+      "verify": "no exceptions raised",
+      "timeout": "response within 60 seconds"
+    }
+  },
+  "state_transitions": {
+    "new": [
+      "in_progress"
+    ],
+    "in_progress": [
+      "resolved",
+      "closed"
+    ],
+    "resolved": [
+      "closed"
+    ],
+    "closed": []
+  }
+}

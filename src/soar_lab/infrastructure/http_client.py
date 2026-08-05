@@ -52,8 +52,8 @@ class AioHTTPClient:
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
 
             async with aiohttp.ClientSession(
-                    connector=connector,
-                    timeout=aiohttp.ClientTimeout(total=effective_timeout)
+                connector=connector,
+                timeout=aiohttp.ClientTimeout(total=effective_timeout)
             ) as session:
                 async with session.get(url, allow_redirects=True) as response:
                     return response.status
@@ -86,8 +86,8 @@ class AioHTTPClient:
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
 
             async with aiohttp.ClientSession(
-                    connector=connector,
-                    timeout=aiohttp.ClientTimeout(total=effective_timeout)
+                connector=connector,
+                timeout=aiohttp.ClientTimeout(total=effective_timeout)
             ) as session:
                 async with session.get(url, allow_redirects=True) as response:
                     response.raise_for_status()

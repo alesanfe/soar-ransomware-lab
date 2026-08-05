@@ -82,7 +82,7 @@ def main() -> None:
     from soar_lab.infrastructure.path_service import PathService
     from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
     from soar_lab.domain.statistical_calculator import StatisticalCalculator
-    from soar_lab.services.kpi_analyzer import KPIAnalyzer
+    from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
     from soar_lab.config.settings import create_settings
 
     settings = create_settings()
@@ -102,11 +102,15 @@ def main() -> None:
     execution_times = []
 
     if args.source == "es":
-        es_url = os.environ.get("ELASTICSEARCH_URL", settings.elasticsearch_url if hasattr(settings,
-                                                                                           'elasticsearch_url') else "http://localhost:19200")
+        es_url = (
+            os.environ.get("ELASTICSEARCH_URL")
+            or os.environ.get("ES_URL")
+            or (settings.get("elasticsearch_url") if hasattr(settings, "get") else None)
+            or "http://elasticsearch:9200"
+        )
         es_user = os.environ.get("ELASTIC_USER", os.environ.get("ELASTIC_USERNAME", "elastic"))
         es_pass = os.environ.get("ELASTIC_PASSWORD",
-                                 os.environ.get("ELASTICSEARCH_PASSWORD", "ElasticLab2024SecurePass"))
+                                 os.environ.get("ELASTICSEARCH_PASSWORD", ""))
         print(f"[calc_kpis] Fetching MTTR data from Elasticsearch: {es_url}/soar-metrics")
         execution_times = _fetch_mttr_from_es(es_url, es_user, es_pass)
         if execution_times:
@@ -144,7 +148,14 @@ def main() -> None:
                     "total": {"value_count": {"field": "alert_id"}},
                     "by_type": {"terms": {"field": "alert_type", "size": 10}},
                     "critical": {"filter": {"term": {"severity": 3}}},
-                    "thehive_ok": {"filter": {"exists": {"field": "thehive_case_id"}}},
+                    "thehive_ok": {"filter": {"bool": {
+                        "must": {"exists": {"field": "thehive_case_id"}},
+                        "must_not": {"term": {"thehive_case_id": ""}}
+                    }}},
+                    "non_empty_alert_type": {"filter": {"bool": {
+                        "must": {"exists": {"field": "alert_type"}},
+                        "must_not": {"term": {"alert_type": ""}}
+                    }}},
                 }}
             )
             aggs = r_agg.json().get("aggregations", {})

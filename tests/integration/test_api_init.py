@@ -149,18 +149,18 @@ staticfiles.StaticFiles = MockStaticFiles
 # Import factory and dependencies
 from soar_lab.api.main import create_app
 from soar_lab.config.settings import Settings
-from soar_lab.services.auth_service import AuthService
+from soar_lab.application.use_cases.auth_service import AuthService
 from soar_lab.infrastructure.jwt_token_provider import JWTTokenProvider
 from soar_lab.infrastructure.system_metrics_driver import SystemMetricsDriver
 from soar_lab.infrastructure.http_client import AioHTTPClient
 from soar_lab.infrastructure.health_check_adapter import HTTPHealthCheckAdapter
-from soar_lab.services.health_service import HealthService
+from soar_lab.infrastructure.monitoring.health_service import HealthService
 from soar_lab.infrastructure.path_service import PathService
 from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
 from soar_lab.infrastructure.in_memory_alert_repository import InMemoryAlertRepository
 from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner
 from soar_lab.infrastructure.pytest_output_parser import PytestOutputParser
-from soar_lab.services.test_service import TestService
+from soar_lab.scripts.test_service import TestService
 
 # Create real dependencies
 settings = Settings()

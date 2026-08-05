@@ -5,8 +5,6 @@ Tests FastAPI dependency injection functions
 """
 
 import pytest
-from unittest.mock import Mock
-
 from soar_lab.api.dependencies import (
     get_composition_root,
     get_config_provider,
@@ -24,6 +22,7 @@ from soar_lab.api.dependencies import (
     TestServiceDep,
     HealthServiceDep
 )
+from unittest.mock import Mock
 
 
 class TestGetCompositionRoot:

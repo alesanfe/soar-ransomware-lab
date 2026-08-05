@@ -39,10 +39,18 @@ test = [
     "pytest-cov>=4.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-mock>=3.10.0",
+    "pytest-timeout>=2.1.0",
+    "jsonschema>=4.19.0",
+    "requests-mock>=1.11.0",
+    "redis>=4.6.0",
+    "selenium>=4.15.0",
+    "webdriver-manager>=3.8.0",
+    "httpx>=0.27.0",
+    "pyyaml>=6.0.0",
 ]
 
 [project.scripts]
-soar-lab = "soar_lab.cli:main"
+soar-lab = "soar_lab.interfaces.api.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -59,6 +67,7 @@ markers = [
     "atomic: marks atomic red-team simulation tests",
     "performance: marks performance and load tests",
     "security: marks security hardening and vulnerability tests",
+    "kpi: marks KPI-related tests",
     "smoke: fast post-deployment smoke tests",
     "smoke_critical: P0 — rollback immediately if these fail",
     "smoke_high: P1 — investigate immediately, consider rollback",
@@ -66,7 +75,7 @@ markers = [
 ]
 
 [tool.black]
-line-length = 88
+line-length = 100
 target-version = ['py311']
 include = '\.pyi?$'
 extend-exclude = '''
@@ -90,7 +99,7 @@ include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
-line_length = 88
+line_length = 100
 
 [tool.mypy]
 python_version = "3.11"

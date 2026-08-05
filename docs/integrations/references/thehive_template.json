@@ -88,10 +88,31 @@
     },
     {
       "name": "containment_status",
-      "description": "Current status of containment actions (pending/in_progress/completed)",
+      "description": "Current simulated containment status (pending/in_progress/completed). Real endpoint containment requires a real EDR/agent integration.",
       "type": "string",
       "mandatory": false,
       "defaultValue": "pending"
+    },
+    {
+      "name": "containment_action_id",
+      "description": "Identifier of the simulated/documented containment action executed (e.g., network_isolation_001). Real endpoint containment is only simulated unless an external EDR enforces it.",
+      "type": "string",
+      "mandatory": false,
+      "defaultValue": ""
+    },
+    {
+      "name": "containment_status_history",
+      "description": "Comma-separated history of simulated containment status transitions (e.g., pending,in_progress,completed). Does not prove real containment on endpoints.",
+      "type": "string",
+      "mandatory": false,
+      "defaultValue": ""
+    },
+    {
+      "name": "mitre_tactic_id",
+      "description": "Primary MITRE ATT&CK tactic ID associated with the incident (e.g., TA0040)",
+      "type": "string",
+      "mandatory": false,
+      "defaultValue": ""
     },
     {
       "name": "analyzer_score",

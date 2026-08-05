@@ -5,6 +5,7 @@ Tests individual validation functions in isolation
 """
 
 import json
+import pytest
 import unittest
 
 from soar_lab.validation.validators import AlertValidator
@@ -12,11 +13,6 @@ from soar_lab.validation.validators import AlertValidator
 
 class TestAlertValidationAtomic(unittest.TestCase):
     """Atomic tests for individual alert validation functions"""
-
-    def setUp(self):
-        """Set up test fixtures"""
-        # Use AlertValidator directly instead of SIEMSimulator
-        pass
 
     def test_validate_alert_structure_complete(self):
         """Test alert structure validation with complete data"""
@@ -28,7 +24,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 2,
             'event_type': 'ransomware_detection'
         }
-        self.assertTrue(AlertValidator.validate_structure(alert))
+        assert AlertValidator.validate_structure(alert)
 
     def test_validate_alert_structure_missing_required_fields(self):
         """Test alert structure validation with missing required fields"""
@@ -40,7 +36,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
         ]
 
         for alert in invalid_alerts:
-            self.assertFalse(AlertValidator.validate_structure(alert))
+            assert not AlertValidator.validate_structure(alert)
 
     def test_validate_alert_structure_invalid_severity(self):
         """Test alert structure validation with invalid severity"""
@@ -52,7 +48,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 99,  # Invalid severity
             'event_type': 'ransomware_detection'
         }
-        self.assertFalse(AlertValidator.validate_structure(alert))
+        assert not AlertValidator.validate_structure(alert)
 
     def test_validate_alert_structure_invalid_hash(self):
         """Test alert structure validation with invalid hash"""
@@ -64,7 +60,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 2,
             'event_type': 'ransomware_detection'
         }
-        self.assertFalse(AlertValidator.validate_structure(alert))
+        assert not AlertValidator.validate_structure(alert)
 
     def test_validate_alert_structure_invalid_ip(self):
         """Test alert structure validation with invalid IP"""
@@ -76,7 +72,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 2,
             'event_type': 'ransomware_detection'
         }
-        self.assertFalse(AlertValidator.validate_structure(alert))
+        assert not AlertValidator.validate_structure(alert)
 
     def test_validate_alert_structure_edge_cases(self):
         """Test alert structure validation with edge cases"""
@@ -93,7 +89,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'event_type': 'ransomware_detection',
             'extra_field': 'extra_value'
         }
-        self.assertTrue(AlertValidator.validate_structure(alert_with_extra))
+        assert AlertValidator.validate_structure(alert_with_extra)
 
     def test_validate_alert_structure_unicode_handling(self):
         """Test alert structure validation with unicode characters"""
@@ -105,7 +101,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
             'severity': 2,
             'event_type': 'ransomware_detection'
         }
-        self.assertTrue(AlertValidator.validate_structure(alert))
+        assert AlertValidator.validate_structure(alert)
 
     def test_validate_alert_structure_numeric_severity(self):
         """Test alert structure validation with numeric severity values"""
@@ -119,7 +115,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
                 'severity': severity,
                 'event_type': 'ransomware_detection'
             }
-            self.assertTrue(AlertValidator.validate_structure(alert))
+            assert AlertValidator.validate_structure(alert)
 
     def test_validate_alert_structure_hash_formats(self):
         """Test alert structure validation with different hash formats"""
@@ -139,7 +135,7 @@ class TestAlertValidationAtomic(unittest.TestCase):
                 'severity': 2,
                 'event_type': 'ransomware_detection'
             }
-            self.assertTrue(AlertValidator.validate_structure(alert))
+            assert AlertValidator.validate_structure(alert)
 
     def test_validate_alert_structure_ip_formats(self):
         """Test alert structure validation with different IP formats"""
@@ -160,8 +156,156 @@ class TestAlertValidationAtomic(unittest.TestCase):
                 'severity': 2,
                 'event_type': 'ransomware_detection'
             }
-            self.assertTrue(AlertValidator.validate_structure(alert))
+            assert AlertValidator.validate_structure(alert)
 
+    def test_edge_case_empty_alert_id(self):
+        """Test edge case: empty alert_id"""
+        alert = {
+            'alert_id': '',
+            'hostname': 'test-host',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 2,
+            'event_type': 'ransomware_detection'
+        }
+        assert not AlertValidator.validate_structure(alert)
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_edge_case_very_long_hostname(self):
+        """Test edge case: very long hostname"""
+        alert = {
+            'alert_id': 'TEST-EDGE-001',
+            'hostname': 'a' * 1000,
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 2,
+            'event_type': 'ransomware_detection'
+        }
+        # Should either reject or truncate
+        is_valid = AlertValidator.validate_structure(alert)
+        # If valid, hostname should be truncated
+        if is_valid:
+            assert len(alert['hostname']) <= 255
+        else:
+            assert len(alert['hostname']) > 255
+
+    def test_edge_case_zero_severity(self):
+        """Test edge case: severity 0"""
+        alert = {
+            'alert_id': 'TEST-EDGE-002',
+            'hostname': 'test-host',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 0,
+            'event_type': 'ransomware_detection'
+        }
+        # Severity 0 might be valid or invalid depending on requirements
+        AlertValidator.validate_structure(alert)
+
+    def test_edge_case_max_severity(self):
+        """Test edge case: maximum severity"""
+        alert = {
+            'alert_id': 'TEST-EDGE-003',
+            'hostname': 'test-host',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 100,
+            'event_type': 'ransomware_detection'
+        }
+        # Should handle max severity gracefully
+        AlertValidator.validate_structure(alert)
+
+    def test_edge_case_negative_severity(self):
+        """Test edge case: negative severity"""
+        alert = {
+            'alert_id': 'TEST-EDGE-004',
+            'hostname': 'test-host',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': -1,
+            'event_type': 'ransomware_detection'
+        }
+        assert not AlertValidator.validate_structure(alert)
+
+    def test_edge_case_special_characters_in_hostname(self):
+        """Test edge case: special characters in hostname"""
+        alert = {
+            'alert_id': 'TEST-EDGE-005',
+            'hostname': 'test-host!@#$%^&*()',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 2,
+            'event_type': 'ransomware_detection'
+        }
+        # Should handle special characters
+        AlertValidator.validate_structure(alert)
+
+    def test_edge_case_unicode_in_hostname(self):
+        """Test edge case: unicode characters in hostname"""
+        alert = {
+            'alert_id': 'TEST-EDGE-006',
+            'hostname': 'höst-näme-тест',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 2,
+            'event_type': 'ransomware_detection'
+        }
+        # Should handle unicode
+        AlertValidator.validate_structure(alert)
+
+    def test_edge_case_null_bytes_in_fields(self):
+        """Test edge case: null bytes in fields"""
+        alert = {
+            'alert_id': 'TEST-EDGE-007\x00',
+            'hostname': 'test-host\x00',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 2,
+            'event_type': 'ransomware_detection'
+        }
+        # Should handle null bytes
+        AlertValidator.validate_structure(alert)
+
+    def test_edge_case_mixed_case_hash(self):
+        """Test edge case: mixed case hash"""
+        alert = {
+            'alert_id': 'TEST-EDGE-008',
+            'hostname': 'test-host',
+            'src_ip': '192.168.1.1',
+            'hash': 'A' * 32 + 'b' * 32,
+            'severity': 2,
+            'event_type': 'ransomware_detection'
+        }
+        # Should handle mixed case
+        AlertValidator.validate_structure(alert)
+
+    def test_edge_case_future_timestamp(self):
+        """Test edge case: future timestamp"""
+        from datetime import datetime, timezone, timedelta
+        future_time = (datetime.now(timezone.utc) + timedelta(days=365)).isoformat()
+        alert = {
+            'alert_id': 'TEST-EDGE-009',
+            'hostname': 'test-host',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 2,
+            'event_type': 'ransomware_detection',
+            'detection_time': future_time
+        }
+        # Should handle future timestamp
+        AlertValidator.validate_structure(alert)
+
+    def test_edge_case_very_old_timestamp(self):
+        """Test edge case: very old timestamp"""
+        from datetime import datetime, timezone, timedelta
+        old_time = (datetime.now(timezone.utc) - timedelta(days=3650)).isoformat()
+        alert = {
+            'alert_id': 'TEST-EDGE-010',
+            'hostname': 'test-host',
+            'src_ip': '192.168.1.1',
+            'hash': 'a' * 64,
+            'severity': 2,
+            'event_type': 'ransomware_detection',
+            'detection_time': old_time
+        }
+        # Should handle old timestamp
+        AlertValidator.validate_structure(alert)

@@ -1,5 +1,9 @@
 # Anexo A
 
+> **Aviso de sincronización**: este anexo es una instantánea estática de la configuración Docker Compose y variables de
+> entorno. La versión canónica y actualizada del stack se encuentra en `infra/docker/compose/` (y `.env.example`/`.env.full`).
+> En caso de discrepancia, prevalecen los archivos Compose del repositorio.
+
 Este anexo contiene la configuración técnica y código fuente de los componentes principales del laboratorio SOAR para
 reproducir el sistema.
 
@@ -75,7 +79,7 @@ services:
       - soar_edge
       - soar_net
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/status || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -176,15 +180,15 @@ services:
       SHUFFLE_FILE_LOCATION: /shuffle-files
       SHUFFLE_APP_DOWNLOAD_LOCATION: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
       SHUFFLE_DEFAULT_USERNAME: ${SHUFFLE_DEFAULT_USERNAME:-admin}
-      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD:-ChangeMe!}
-      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY:-changeme-api-key}
+      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD}
+      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY}
       DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.44}
     volumes:
       - shuffle_app_storage:/shuffle-apps
       - shuffle_file_storage:/shuffle-files
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
-      - "${SHUFFLE_API_PORT:-5001}:5001"
+      - "${SHUFFLE_API_PORT:-15001}:5001"
     networks:
       - soar_edge
       - soar_net
@@ -306,9 +310,9 @@ networks:
     internal: true
 ```
 
-### A.1.2. Archivo .env
+### A.1.2. Archivo .env.full
 
-El archivo de entorno `.env` contiene todas las variables de configuración necesarias para el despliegue del laboratorio
+El archivo de entorno `.env.full` contiene todas las variables de configuración necesarias para el despliegue del laboratorio
 SOAR. Este archivo permite la personalización del sistema según las necesidades específicas de cada entorno, facilitando
 la adaptación a diferentes configuraciones de red, recursos disponibles y requisitos de seguridad. Las variables de
 entorno incluyen configuraciones de puertos, credenciales, imágenes Docker y parámetros de red, permitiendo una
@@ -321,24 +325,24 @@ COMPOSE_PROJECT_NAME=soar
 # Elasticsearch Configuration
 ELASTICSEARCH_PORT=19200
 ELASTIC_SECURITY_ENABLED=true
-ELASTIC_PASSWORD=changeme_elastic_password
+ELASTIC_PASSWORD=<ELASTIC_PASSWORD>
 ES_JAVA_OPTS=-Xms1g -Xmx1g
 
 # TheHive Configuration
-THEHIVE_HTTP_PORT=9000
+THEHIVE_HTTP_PORT=19000
 
 # Cortex Configuration
-CORTEX_HTTP_PORT=9001
+CORTEX_HTTP_PORT=19001
 
 # Shuffle Configuration
 SHUFFLE_UI_PORT=8081
-SHUFFLE_API_PORT=5001
+SHUFFLE_API_PORT=15001
 SHUFFLE_FRONTEND_IMAGE=ghcr.io/shuffle/shuffle-frontend:2.2.1
 SHUFFLE_BACKEND_IMAGE=ghcr.io/shuffle/shuffle-backend:2.2.1
 SHUFFLE_APP_DOWNLOAD_LOCATION=https://github.com/shuffle/python-apps
 SHUFFLE_DEFAULT_USERNAME=admin
-SHUFFLE_DEFAULT_PASSWORD=ChangeMe!
-SHUFFLE_DEFAULT_APIKEY=changeme-api-key
+SHUFFLE_DEFAULT_PASSWORD=<SHUFFLE_DEFAULT_PASSWORD>
+SHUFFLE_DEFAULT_APIKEY=<SHUFFLE_DEFAULT_APIKEY>
 
 # Orborus Configuration
 ORBORUS_IMAGE=ghcr.io/shuffle/shuffle-orborus:latest
@@ -384,14 +388,14 @@ import sys
 import time
 from pathlib import Path
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Send SOAR alert payloads to webhook")
-    parser.add_argument("--type", choices=["malicious", "benign"], default="malicious")
     parser.add_argument("--single", action="store_true")
     parser.add_argument("--num-alerts", type=int, default=1)
     parser.add_argument("--delay", type=int, default=3)
-    parser.add_argument("--webhook-url", default=os.environ.get("SHUFFLE_WEBHOOK_URL", "http://localhost:5001/api/v1/hooks/webhook"))
-    parser.add_argument("--api-token", default=os.environ.get("SHUFFLE_API_TOKEN", "SiemToken123!@#"))
+    parser.add_argument("--webhook-url",
+                        default=os.environ.get("SHUFFLE_WEBHOOK_URL", ""))
     args = parser.parse_args()
 
     # Bootstrap dependencies
@@ -400,37 +404,34 @@ def main() -> None:
     os.environ.setdefault("BASE_DIR", str(base_dir))
     os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
 
-    from soar_lab.infrastructure.http_alert_sender import HTTPAlertSender
-    from soar_lab.domain.alert_generator import AlertGenerator
+    from soar_lab.simulator.simulate_alerts import generate_malicious_alert, send_alert
     from soar_lab.config.logging import get_logger
 
     logger = get_logger(__name__)
-    alert_generator = AlertGenerator()
-    sender = HTTPAlertSender(webhook_url=args.webhook_url, api_token=args.api_token)
 
     num_alerts = 1 if args.single else args.num_alerts
-    alert_type = args.type
+    webhook_url = args.webhook_url
 
-    logger.info(f"Sending {num_alerts} {alert_type} alert(s) to {args.webhook_url}")
+    logger.info(f"Sending {num_alerts} alert(s) to {webhook_url}")
 
-    for i in range(num_alerts):
-        if alert_type == "malicious":
-            alert = alert_generator.generate_malicious_alert()
+    sent = 0
+    failed = 0
+    for i in range(1, num_alerts + 1):
+        alert = generate_malicious_alert(i)
+        ok, status = send_alert(alert, webhook_url)
+        if ok:
+            sent += 1
+            print(f"[{i}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
         else:
-            alert = alert_generator.generate_benign_alert()
-
-        result = sender.send(alert)
-        if result.get("success"):
-            print(f"[{i+1}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
-        else:
-            print(f"[{i+1}/{num_alerts}] Failed to send alert: {result.get('error', 'Unknown error')}")
+            failed += 1
+            print(f"[{i}/{num_alerts}] Failed to send alert: HTTP {status}")
             sys.exit(1)
 
-        if i < num_alerts - 1 and args.delay > 0:
+        if i < num_alerts and args.delay > 0:
             time.sleep(args.delay)
 
-    metrics = sender.get_metrics()
-    print(f"\nSummary: {metrics['alerts_sent']} sent, {metrics['alerts_failed']} failed")
+    print(f"\nSummary: {sent} sent, {failed} failed")
+
 
 if __name__ == "__main__":
     main()
@@ -1088,7 +1089,7 @@ scrape_configs:
     static_configs:
       - targets:
         - http://nginx/nginx-health
-        - http://thehive:9000/api/health
+        - http://thehive:9000/api/status
         - http://cortex:9001/api/health
         - http://shuffle-frontend:80/health
         - http://shuffle-backend:5001/health
@@ -1252,7 +1253,7 @@ scrape_configs:
 
 # Software Installation (Ubuntu/Debian)
 sudo apt update
-sudo apt install -y docker.io docker-compose python3 python3-pip
+sudo apt install -y docker.io docker-compose-plugin python3 python3-pip
 
 # Add user to docker group
 sudo usermod -aG docker $USER
@@ -1263,7 +1264,7 @@ pip3 install requests jsonschema pytest
 
 # Verify installation
 docker --version
-docker-compose --version
+docker compose version
 python3 --version
 ```
 
@@ -1275,11 +1276,11 @@ git clone https://github.com/your-org/soar-ransomware-lab.git
 cd soar-ransomware-lab
 
 # 2. Configure environment
-cp docker/.env.example docker/.env
-nano docker/.env  # Edit with your configuration
+cp .env.example .env.full
+nano .env.full  # Edit with your configuration
 
 # 3. Generate TLS certificates
-bash src/soar_lab/infrastructure/setup/gen_certs.sh
+bash src/soar_lab/scripts/setup/gen_certs.sh
 
 # 4. Start services
 make up
@@ -1298,15 +1299,15 @@ make metrics
 
 ```bash
 # Check service status
-docker compose -f docker/docker-compose.yml ps
+docker compose -f infra/docker/compose/docker-compose.yml ps
 
 # Check logs
-docker compose -f docker/docker-compose.yml logs -f
+docker compose -f infra/docker/compose/docker-compose.yml logs -f
 
-# Test web interfaces
-curl -f http://localhost:9000/api/health  # TheHive
-curl -f http://localhost:9001/api/health  # Cortex
-curl -f http://localhost:5001/health      # Shuffle
+# Test web interfaces (ajustar puertos según .env.full)
+curl -f http://localhost:19000/api/status  # TheHive
+curl -f http://localhost:19001/api/health  # Cortex
+curl -f http://localhost:15001/api/v1/health      # Shuffle
 curl -f http://localhost:19200/_cluster/health  # Elasticsearch
 ```
 
@@ -1314,47 +1315,271 @@ curl -f http://localhost:19200/_cluster/health  # Elasticsearch
 
 ### A.6.1. Problemas Frecuentes
 
-**Problema: Contenedores no inician**
+A continuación se recogen los problemas más frecuentes detectados durante el despliegue y operación del laboratorio, junto con pasos operativos concretos, criterios de verificación y casos de error asociados.
+
+#### 1. Contenedores no inician
+
+**Causas típicas:**
+
+- Docker daemon no está en ejecución.
+- Falta de espacio en disco o memoria insuficiente.
+- Límites de recursos (`deploy.resources`) superan los disponibles en el host.
+- Volúmenes huérfanos de una ejecución anterior en estado inconsistente.
+
+**Pasos operativos:**
 
 ```bash
-# Check Docker daemon
+# 1. Verificar el daemon de Docker
 sudo systemctl status docker
 
-# Check disk space
+# 2. Comprobar espacio en disco y memoria libre
 df -h
-
-# Check memory usage
 free -h
 
-# Restart Docker
+# 3. Listar contenedores y volúmenes detenidos/huérfanos
+docker ps -a
+docker volume ls
+
+# 4. Limpiar (solo en desarrollo; conservar .env.full)
+docker system prune -f
+
+# 5. Reiniciar Docker si es necesario
 sudo systemctl restart docker
 ```
 
-**Problema: Elasticsearch falla**
+**Criterio de verificación:**
+
+- `docker ps` muestra el contenedor en estado `Up` o `healthy` tras `make up`.
+- `docker compose ps` no reporta `Exit` o `unhealthy` persistentes.
+
+---
+
+#### 2. Elasticsearch/OpenSearch falla o se reinicia continuamente
+
+**Causas típicas:**
+
+- `vm.max_map_count` insuficiente en Linux.
+- Permisos incorrectos en los volúmenes de datos.
+- Configuración de memoria JVM inadecuada para el host.
+- Volcado de heap por falta de RAM.
+
+**Pasos operativos:**
 
 ```bash
-# Check JVM memory settings
+# 1. Verificar opciones JVM
 docker exec soar_elasticsearch env | grep ES_JAVA_OPTS
 
-# Check disk permissions
-ls -la docker/volumes/
+# 2. Verificar permisos del volumen
+ls -la artifacts/data/elasticsearch/
 
-# Increase virtual memory
+# 3. Aumentar el límite de map_count en Linux
 sudo sysctl -w vm.max_map_count=262144
+
+# 4. Para Windows/WSL
+wsl -d docker-desktop sysctl -w vm.max_map_count=262144
 ```
 
-**Problema: Conexión entre servicios**
+**Criterio de verificación:**
+
+- `docker logs soar_elasticsearch` termina con `"Cluster health status changed from [YELLOW] to [GREEN]"`.
+- `curl -f http://localhost:19200/_cluster/health` devuelve `status` `green` o `yellow`.
+
+---
+
+#### 3. Conexión entre servicios (DNS/red)
+
+**Causas típicas:**
+
+- Un servicio no se conectó a `soar_net`.
+- El `network-watcher` no inyectó entradas `/etc/hosts` en los workers de Shuffle.
+- Un servicio arrancó antes de que sus dependencias estuvieran realmente listas.
+
+**Pasos operativos:**
 
 ```bash
-# Check network configuration
+# 1. Listar redes
 docker network ls
+
+# 2. Inspeccionar la red principal
 docker network inspect soar-lab_soar_net
 
-# Check DNS resolution
+# 3. Probar resolución DNS entre contenedores
 docker exec soar_thehive nslookup elasticsearch
+docker exec soar_shuffle_backend nslookup redis
+
+# 4. Verificar logs del network-watcher
+docker logs -f soar_network_watcher
+
+# 5. Reconectar manualmente un worker si falla
+WORKER_ID=$(docker ps -q --filter name=worker- | head -1)
+docker network connect soar_net $WORKER_ID
+docker restart $WORKER_ID
 ```
 
-### A.6.2. Logs de Depuración
+**Criterio de verificación:**
+
+- Los `healthcheck` de los servicios afectados pasan.
+- `docker exec <contenedor> getent hosts <servicio>` resuelve correctamente.
+
+---
+
+#### 4. Errores E2E en `soar_shuffle-backend`
+
+**Causas típicas:**
+
+- Workflow no creado o trigger no activado.
+- `SHUFFLE_DEFAULT_APIKEY` desactualizada tras `make reset && make up`.
+- Timeouts por concurrencia insuficiente (`SHUFFLE_ORBORUS_EXECUTION_CONCURRENCY`).
+
+**Pasos operativos:**
+
+```bash
+# 1. Verificar estado de Shuffle
+docker logs -f soar_shuffle_backend
+
+# 2. Comprobar que el workflow existe y su ID
+cat artifacts/webhook_info.json
+
+# 3. Actualizar SHUFFLE_DEFAULT_APIKEY si es necesario
+docker exec soar_api cat /app/.env.full | grep SHUFFLE_DEFAULT_APIKEY
+
+# 4. Verificar ejecuciones del workflow desde Shuffle UI o ES
+curl http://localhost:19200/users* -u elastic:$ELASTIC_PASSWORD
+```
+
+**Criterio de verificación:**
+
+- La ejecución del workflow finaliza con estado `SUCCESS`.
+- `pytest tests/e2e/` devuelve 16/16 PASSED (o el total actual del proyecto).
+
+---
+
+#### 5. Grafana no muestra métricas (`soar-metrics` vacío)
+
+**Causas típicas:**
+
+- Plugin Elasticsearch no instalado en Grafana 13.
+- Grafana no puede resolver `elasticsearch`.
+- Mapping incorrecto del índice (`mttr_seconds` como `object` en lugar de `float`).
+- Falta `@timestamp` en los documentos.
+
+**Pasos operativos:**
+
+```bash
+# 1. Verificar que Grafana tiene el plugin
+docker exec soar_grafana grafana-cli plugins ls | grep elasticsearch
+
+# 2. Comprobar redes de Grafana
+docker network inspect soar-lab_logging_net
+docker network inspect soar-lab_soar_net
+
+# 3. Verificar mapping del índice
+curl http://localhost:19200/soar-metrics-v2/_mapping -u elastic:$ELASTIC_PASSWORD
+
+# 4. Reindexar si es necesario (ver docs/operations/logging_and_observability.md)
+```
+
+**Criterio de verificación:**
+
+- `curl http://localhost:19200/soar-metrics/_count` devuelve documentos.
+- Grafana muestra datos en el dashboard KPI.
+
+---
+
+#### 6. MISP DB: error `Permission denied` en operaciones de MariaDB
+
+**Causas típicas:**
+
+- `misp_db` se configura como bind mount en Windows/Docker Desktop.
+- Permisos de `rename` sobre bind mounts NTFS.
+
+**Pasos operativos:**
+
+```bash
+# 1. Comprobar que misp_db es volumen Docker normal
+docker volume ls | grep misp_db
+
+# 2. Si existía un bind mount antiguo, eliminarlo manualmente (Windows)
+Remove-Item -Recurse -Force artifacts/data/misp/db   # PowerShell
+
+# 3. Recrear volumen
+make down -v
+make up
+```
+
+**Criterio de verificación:**
+
+- `docker inspect soar_misp_db` muestra `"Type": "volume"`.
+- `docker compose ps` marca `misp-db` como `healthy`.
+
+---
+
+#### 7. Autenticación JWT / Lab API (`401 Unauthorized`)
+
+**Causas típicas:**
+
+- `API_AUTH_SECRET` / `JWT_SECRET_KEY` no definidos o desfasados.
+- Ejemplos con contraseñas por defecto no actualizadas.
+
+**Pasos operativos:**
+
+```bash
+# 1. Verificar secretos en .env.full
+grep -E 'JWT_SECRET_KEY|API_AUTH_SECRET|WEB_UI_PASSWORD' .env.full
+
+# 2. Probar login
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}'
+
+# 3. Verificar token
+export TOKEN=<token>
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/auth/verify
+```
+
+**Criterio de verificación:**
+
+- `POST /auth/login` devuelve `200` con `token`.
+- `POST /auth/verify` devuelve `{"valid": true, ...}`.
+
+---
+
+#### 8. Certificado SSL de `soar.local` no es confiado
+
+**Causas típicas:**
+
+- Certificado autofirmado no instalado en el almacén de confianza del host.
+- Nginx expira el certificado.
+
+**Pasos operativos:**
+
+```bash
+# 1. Comprobar validez del certificado
+openssl x509 -in infra/docker/config/nginx/ssl/soar.local.crt -noout -dates -subject
+
+# 2. Verificar nginx -t
+docker exec soar_nginx nginx -t
+
+# 3. Instalar certificado en Windows
+Import-Certificate -FilePath "infra\docker\config\nginx\ssl\soar.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
+```
+
+**Criterio de verificación:**
+
+- `nginx -t` devuelve `syntax is ok` / `test is successful`.
+- `curl -k https://soar.local` devuelve la página correspondiente.
+
+---
+
+### A.6.2. Criterios generales de aceptación para troubleshooting
+
+1. Se ha identificado la causa raíz del problema.
+2. Los pasos documentados son reproducibles en un entorno limpio.
+3. Se han recogido evidencias (logs, capturas, salidas de comando) con fecha y entorno.
+4. La solución no introduce fugas de secretos ni cambios no versionados en configuraciones canónicas.
+5. Tras aplicar la solución, los healthchecks y tests relacionados pasan.
+
+### A.6.3. Logs de Depuración
 
 ```bash
 # TheHive logs

@@ -1,0 +1,1683 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SOAR Lab Management API",
+    "description": "REST API for SOAR Ransomware Lab Management",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint - API documentation.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Health check endpoint.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login",
+        "description": "Login endpoint - returns JWT token.",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify": {
+      "post": {
+        "summary": "Verify Auth",
+        "description": "Verify JWT token endpoint.",
+        "operationId": "verify_auth_auth_verify_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyAuthResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/analytics/metrics": {
+      "get": {
+        "summary": "Get Metrics",
+        "description": "Get system metrics.",
+        "operationId": "get_metrics_analytics_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Metrics"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/kpis": {
+      "get": {
+        "summary": "Get Kpis",
+        "description": "Get KPI metrics.",
+        "operationId": "get_kpis_analytics_kpis_get",
+        "parameters": [
+          {
+            "name": "log_file_path",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Log File Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backup/create": {
+      "post": {
+        "summary": "Create Backup",
+        "description": "Create a backup.",
+        "operationId": "create_backup_backup_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBackupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backup/list": {
+      "get": {
+        "summary": "List Backups",
+        "description": "List all backups.",
+        "operationId": "list_backups_backup_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backup/restore": {
+      "post": {
+        "summary": "Restore Backup",
+        "description": "Restore a backup.",
+        "operationId": "restore_backup_backup_restore_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreBackupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tests/run": {
+      "post": {
+        "summary": "Run Tests",
+        "description": "Run tests.",
+        "operationId": "run_tests_tests_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResults"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/status": {
+      "get": {
+        "summary": "Get Services Status",
+        "description": "Get status of all services.",
+        "operationId": "get_services_status_services_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/cases": {
+      "get": {
+        "summary": "Thehive List Cases",
+        "description": "List all TheHive cases (no 10-item limit).",
+        "operationId": "thehive_list_cases_soar_thehive_cases_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/cases/{case_id}": {
+      "get": {
+        "summary": "Thehive Get Case",
+        "description": "Get a single TheHive case by ID.",
+        "operationId": "thehive_get_case_soar_thehive_cases__case_id__get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/cases/{case_id}/observables": {
+      "get": {
+        "summary": "Thehive Get Observables",
+        "description": "List observables (artifacts) attached to a TheHive case.",
+        "operationId": "thehive_get_observables_soar_thehive_cases__case_id__observables_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/cases/{case_id}/tasks": {
+      "get": {
+        "summary": "Thehive Get Tasks",
+        "description": "List tasks for a TheHive case.",
+        "operationId": "thehive_get_tasks_soar_thehive_cases__case_id__tasks_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/health": {
+      "get": {
+        "summary": "Thehive Health",
+        "description": "TheHive reachability check.",
+        "operationId": "thehive_health_soar_thehive_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/kpis/aggregated": {
+      "get": {
+        "summary": "Get Aggregated Kpis",
+        "description": "Get aggregated KPI metrics from Elasticsearch soar-metrics index.",
+        "operationId": "get_aggregated_kpis_analytics_kpis_aggregated_get",
+        "parameters": [
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 24,
+              "title": "Hours"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/analyzers": {
+      "get": {
+        "summary": "Cortex List Analyzers",
+        "description": "List Cortex analyzers, optionally filtered by data_type.",
+        "operationId": "cortex_list_analyzers_soar_cortex_analyzers_get",
+        "parameters": [
+          {
+            "name": "data_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/jobs": {
+      "get": {
+        "summary": "Cortex List Jobs",
+        "description": "List recent Cortex analyzer jobs.",
+        "operationId": "cortex_list_jobs_soar_cortex_jobs_get",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Start"
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "title": "Count"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/jobs/{job_id}": {
+      "get": {
+        "summary": "Cortex Get Job",
+        "description": "Get status and result of a Cortex job.",
+        "operationId": "cortex_get_job_soar_cortex_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/jobs/{job_id}/report": {
+      "get": {
+        "summary": "Cortex Get Job Report",
+        "description": "Get full report of a completed Cortex job.",
+        "operationId": "cortex_get_job_report_soar_cortex_jobs__job_id__report_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/health": {
+      "get": {
+        "summary": "Cortex Health",
+        "description": "Cortex reachability check.",
+        "operationId": "cortex_health_soar_cortex_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/misp/attributes": {
+      "get": {
+        "summary": "Misp Search Attributes",
+        "description": "Search MISP attributes by value and/or type.",
+        "operationId": "misp_search_attributes_soar_misp_attributes_get",
+        "parameters": [
+          {
+            "name": "value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Value"
+            }
+          },
+          {
+            "name": "attr_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Attr Type"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/misp/events": {
+      "get": {
+        "summary": "Misp List Events",
+        "description": "List recent MISP events.",
+        "operationId": "misp_list_events_soar_misp_events_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/misp/events/{event_id}": {
+      "get": {
+        "summary": "Misp Get Event",
+        "description": "Get a specific MISP event by ID.",
+        "operationId": "misp_get_event_soar_misp_events__event_id__get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/misp/health": {
+      "get": {
+        "summary": "Misp Health",
+        "description": "MISP reachability check.",
+        "operationId": "misp_health_soar_misp_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/workflows": {
+      "get": {
+        "summary": "Shuffle List Workflows",
+        "description": "List all Shuffle workflows.",
+        "operationId": "shuffle_list_workflows_soar_shuffle_workflows_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/workflows/{workflow_id}": {
+      "get": {
+        "summary": "Shuffle Get Workflow",
+        "description": "Get a specific Shuffle workflow.",
+        "operationId": "shuffle_get_workflow_soar_shuffle_workflows__workflow_id__get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/workflows/{workflow_id}/executions": {
+      "get": {
+        "summary": "Shuffle Get Executions",
+        "description": "List executions for a Shuffle workflow.",
+        "operationId": "shuffle_get_executions_soar_shuffle_workflows__workflow_id__executions_get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/workflows/{workflow_id}/executions/{execution_id}": {
+      "get": {
+        "summary": "Shuffle Get Execution",
+        "description": "Get a specific Shuffle workflow execution.",
+        "operationId": "shuffle_get_execution_soar_shuffle_workflows__workflow_id__executions__execution_id__get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workflow Id"
+            }
+          },
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Execution Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/health": {
+      "get": {
+        "summary": "Shuffle Health",
+        "description": "Shuffle reachability check.",
+        "operationId": "shuffle_health_soar_shuffle_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/elasticsearch/count": {
+      "get": {
+        "summary": "Es Count",
+        "description": "Return total document count for the soar-alerts index (or custom index).",
+        "operationId": "es_count_soar_elasticsearch_count_get",
+        "parameters": [
+          {
+            "name": "index",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Index"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/elasticsearch/latest": {
+      "get": {
+        "summary": "Es Latest",
+        "description": "Return the most recent documents from soar-alerts.",
+        "operationId": "es_latest_soar_elasticsearch_latest_get",
+        "parameters": [
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "title": "Size"
+            }
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Index"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/elasticsearch/health": {
+      "get": {
+        "summary": "Es Health",
+        "description": "Elasticsearch cluster health.",
+        "operationId": "es_health_soar_elasticsearch_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/wazuh/agents": {
+      "get": {
+        "summary": "Wazuh List Agents",
+        "description": "List Wazuh agents, optionally filtered by status.",
+        "operationId": "wazuh_list_agents_soar_wazuh_agents_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/wazuh/agents/{agent_id}": {
+      "get": {
+        "summary": "Wazuh Get Agent",
+        "description": "Get details of a specific Wazuh agent.",
+        "operationId": "wazuh_get_agent_soar_wazuh_agents__agent_id__get",
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/wazuh/agents/{agent_id}/vulnerabilities": {
+      "get": {
+        "summary": "Wazuh Agent Vulns",
+        "description": "Return CVEs detected on a Wazuh agent.",
+        "operationId": "wazuh_agent_vulns_soar_wazuh_agents__agent_id__vulnerabilities_get",
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/wazuh/manager": {
+      "get": {
+        "summary": "Wazuh Manager Info",
+        "description": "Return Wazuh manager info (version, type).",
+        "operationId": "wazuh_manager_info_soar_wazuh_manager_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/wazuh/health": {
+      "get": {
+        "summary": "Wazuh Health",
+        "description": "Wazuh reachability check.",
+        "operationId": "wazuh_health_soar_wazuh_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/status": {
+      "get": {
+        "summary": "Soar Status",
+        "description": "Aggregated health check across all SOAR integration clients.",
+        "operationId": "soar_status_soar_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BackupInfo": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Backup file name"
+          },
+          "size": {
+            "type": "string",
+            "title": "Size",
+            "description": "Backup file size"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "Backup creation date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "size",
+          "date"
+        ],
+        "title": "BackupInfo",
+        "description": "Backup information model."
+      },
+      "BackupListResponse": {
+        "properties": {
+          "backups": {
+            "items": {
+              "$ref": "#/components/schemas/BackupInfo"
+            },
+            "type": "array",
+            "title": "Backups",
+            "description": "List of available backups"
+          }
+        },
+        "type": "object",
+        "title": "BackupListResponse",
+        "description": "Backup list response model."
+      },
+      "BackupRequest": {
+        "properties": {
+          "backup_name": {
+            "type": "string",
+            "title": "Backup Name",
+            "description": "Name of the backup file to restore"
+          }
+        },
+        "type": "object",
+        "required": [
+          "backup_name"
+        ],
+        "title": "BackupRequest",
+        "description": "Backup request model."
+      },
+      "CreateBackupResponse": {
+        "properties": {
+          "backup_name": {
+            "type": "string",
+            "title": "Backup Name",
+            "description": "Created backup name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "Operation status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "backup_name",
+          "message"
+        ],
+        "title": "CreateBackupResponse",
+        "description": "Create backup response model."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "description": "Login request model."
+      },
+      "LoginResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "Authentication token"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "description": "Token type",
+            "default": "Bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "message"
+        ],
+        "title": "LoginResponse",
+        "description": "Login response model."
+      },
+      "Metrics": {
+        "properties": {
+          "cpu": {
+            "type": "number",
+            "title": "Cpu",
+            "description": "CPU usage percentage"
+          },
+          "memory": {
+            "type": "number",
+            "title": "Memory",
+            "description": "Memory usage percentage"
+          },
+          "disk": {
+            "type": "number",
+            "title": "Disk",
+            "description": "Disk usage percentage"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Timestamp of metrics collection"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cpu",
+          "memory",
+          "disk",
+          "timestamp"
+        ],
+        "title": "Metrics",
+        "description": "System metrics model."
+      },
+      "RestoreBackupResponse": {
+        "properties": {
+          "backup_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backup Name",
+            "description": "Restored backup name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "Operation status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "RestoreBackupResponse",
+        "description": "Restore backup response model."
+      },
+      "RunRequest": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Test category (e.g., 'unit', 'integration', 'all')"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category"
+        ],
+        "title": "RunRequest",
+        "description": "Test execution request model."
+      },
+      "RunResults": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Test category"
+          },
+          "passed": {
+            "type": "integer",
+            "title": "Passed",
+            "description": "Number of passed tests"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "description": "Number of failed tests"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "description": "Number of skipped tests"
+          },
+          "coverage": {
+            "type": "number",
+            "title": "Coverage",
+            "description": "Test coverage percentage"
+          },
+          "output": {
+            "type": "string",
+            "title": "Output",
+            "description": "Test output"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration",
+            "description": "Test execution duration in seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "passed",
+          "failed",
+          "skipped",
+          "coverage",
+          "output",
+          "duration"
+        ],
+        "title": "RunResults",
+        "description": "Test results model."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VerifyAuthResponse": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid",
+            "description": "Whether the token is valid"
+          },
+          "user": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User",
+            "description": "User information"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid",
+          "user"
+        ],
+        "title": "VerifyAuthResponse",
+        "description": "Verify authentication response model."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

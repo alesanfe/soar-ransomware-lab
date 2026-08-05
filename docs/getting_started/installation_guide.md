@@ -98,19 +98,29 @@ Esta guía depende de:
 
 - **Docker Engine**: 20.10+
 - **Docker Compose**: 2.0+
-- **Python**: 3.11+
+- **Python**: 3.11+ (versión canónica definida en `pyproject.toml` y en el workflow de CI)
 - **Git**: para clonar el repositorio
 
 #### 3.1.3 Verificación de instalación
 
 ```bash
 docker --version
-docker-compose --version
+docker compose version
 python --version
+# En sistemas donde Python 3 está disponible como `python3`:
+python3 --version
 git --version
 ```
 
+Asegúrate de que la salida de `python --version` (o `python3 --version`) indique **3.11 o superior**. En entornos con varias versiones, utiliza el intérprete que cumpla este requisito para ejecutar los scripts del proyecto.
+
 ### 3.2 Proceso de instalación
+
+Salvo que se indique lo contrario, **todos los comandos de esta sección se ejecutan desde la raíz del repositorio** (`soar-ransomware-lab`). Tras clonar, sitúate en el directorio del proyecto con:
+
+```bash
+cd soar-ransomware-lab
+```
 
 #### 3.2.1 Clonar el repositorio
 
@@ -121,32 +131,132 @@ cd soar-ransomware-lab
 
 #### 3.2.2 Configurar variables de entorno
 
-Editar el archivo `.env.full` con las credenciales necesarias:
+El archivo canónico de configuración es **`.env.full`**. Se genera automáticamente a partir de `.env.example` (plantilla saneada con marcadores de relleno) y reemplaza todos los secretos por valores aleatorios:
 
 ```bash
-nano .env.full
+# Linux / macOS / Windows
+make generate-secrets
+# o directamente:
+python src/soar_lab/scripts/setup/generate_env.py
 ```
 
-Variables importantes a configurar:
+Tras generarlo, revisa `.env.full` y ajusta los valores no secretos (puertos, hosts, perfiles) antes del despliegue.
 
-- `ELASTIC_PASSWORD`: Contraseña de Elasticsearch
-- `REDIS_PASSWORD`: Contraseña de Redis
-- `SHUFFLE_DEFAULT_USERNAME`: Usuario admin de Shuffle
-- `SHUFFLE_DEFAULT_PASSWORD`: Contraseña admin de Shuffle
-- `THEHIVE_SECRET`: Secret de TheHive
+> **Nota sobre `.env.full` vs `.env` / `docker/.env`:** El proyecto no utiliza un archivo `docker/.env`. Todos los targets de `Makefile` / `Makefile.win` y los comandos `docker compose` documentados cargan explícitamente **`.env.full`** con `--env-file .env.full`. Si existiera un `.env` en la raíz del repositorio, un `docker compose` ejecutado sin `--env-file` podría leerlo por defecto; por eso los ejemplos manuales incluyen siempre `--env-file .env.full`. Mantén la información sensible solo en `.env.full` y nunca la copies a `.env` ni la versiones.
 
-#### 3.2.3 Desplegar el stack completo
+Variables críticas a revisar antes del despliegue:
 
-**En Windows:**
+- `JWT_SECRET_KEY`: Secret preferente de firma de tokens JWT (mínimo 32 caracteres).
+- `JWT_EXPIRATION_MINUTES`: Tiempo de expiración del token (por defecto 60 minutos).
+- `JWT_ALGORITHM`: Algoritmo de firma (por defecto `HS256`).
+- `WEB_UI_USER` / `WEB_UI_PASSWORD`: Credenciales de acceso al Web Management.
+- `API_AUTH_SECRET`: Secret legacy de firma JWT; solo se usa si `JWT_SECRET_KEY` no está definido.
+- `CORS_ORIGINS`: Orígenes permitidos para CORS (por ejemplo `https://soar.local,http://localhost:8085`).
+- `ELASTIC_PASSWORD`: Contraseña de Elasticsearch.
+- `REDIS_PASSWORD`: Contraseña de Redis.
+- `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD`: Credenciales admin de Shuffle.
+- `THEHIVE_SECRET` / `THEHIVE_API_KEY`: Secret y API key de TheHive.
+- `CORTEX_SECRET` / `CORTEX_API_KEY`: Secret y API key de Cortex.
+- `SIEM_WEBHOOK_TOKEN` / `EDR_SIM_TOKEN` / `FIREWALL_SIM_TOKEN`: Tokens de simulación de integraciones.
 
-```bash
-make -f Makefile.win up
-```
+> **Nunca subas `.env.full` ni `.env` a Git.** Ambos nombres están en `.gitignore`.
 
-**En Linux:**
+#### 3.2.3 Configurar DNS local y certificados SSL
+
+El laboratorio usa `soar.local` como dominio interno y Nginx termina TLS con certificados autofirmados. Antes de desplegar:
+
+1. Añadir `soar.local` al archivo hosts del sistema operativo:
+
+   **Linux / macOS:**
+
+   ```bash
+   sudo sh -c 'echo "127.0.0.1 soar.local" >> /etc/hosts'
+   ```
+
+   **Windows:** El archivo hosts está en `C:\Windows\System32\drivers\etc\hosts`. Abre **Notepad como Administrador**, selecciona *Archivo → Abrir* y navega a esa ruta literal. Añade al final:
+
+   ```text
+   127.0.0.1 soar.local
+   ```
+
+   También puedes ejecutar en una PowerShell con privilegios de administrador:
+
+   ```powershell
+   Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "127.0.0.1 soar.local"
+   ```
+
+   Valida que la entrada existe:
+
+   ```bash
+   # Linux / macOS
+   grep soar.local /etc/hosts
+
+   # Windows (PowerShell)
+   Select-String -Path "C:\Windows\System32\drivers\etc\hosts" -Pattern "soar.local"
+   ```
+
+2. Generar certificados para Nginx (si no existen):
+
+   ```bash
+   make certs
+   # o manualmente
+   src/soar_lab/scripts/setup/gen_certs.sh
+   ```
+
+3. (Opcional) Importar `infra/docker/config/nginx/ssl/soar.local.crt` como autoridad de confianza en el navegador para
+   evitar advertencias de certificado. En Windows, usa el complemento *Certificados* (`certmgr.msc`) → *Autoridades de certificación raíz de confianza* → *Importar*.
+
+4. Generar certificados de Wazuh Indexer (solo en despliegue nuevo):
+
+   Wazuh utiliza certificados TLS propios para la comunicación segura entre el manager, el indexer y el dashboard. El archivo `infra/docker/wazuh/generate-indexer-certs.yml` levanta temporalmente el generador oficial de certificados de Wazuh y deposita los archivos en el directorio configurado. Ejecuta el siguiente comando desde la raíz del repositorio:
+
+   ```bash
+   docker compose -f infra/docker/wazuh/generate-indexer-certs.yml run --rm generator
+   ```
+
+   El generador utiliza la imagen `wazuh/wazuh-certs-generator:0.0.2` y crea los certificados necesarios en `infra/docker/wazuh/config/wazuh_indexer_ssl_certs/` para `wazuh.indexer`, `wazuh.dashboard` y `wazuh.manager`, junto con el certificado de la CA (`root-ca.pem`) y el par de claves del administrador (`admin.pem` / `admin-key.pem`). Solo es necesario ejecutarlo una vez por despliegue o cuando se regeneren los certificados.
+
+5. (Opcional) Importar la CA de Wazuh en el almacén de confianza del sistema o del navegador:
+
+   El certificado raíz usado por Wazuh se encuentra en `infra/docker/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem`. Importarlo evita advertencias de seguridad al acceder al Wazuh Dashboard en `https://localhost:15601`.
+
+   - **Windows** (PowerShell como Administrador):
+
+     ```powershell
+     Import-Certificate -FilePath "infra\docker\wazuh\config\wazuh_indexer_ssl_certs\root-ca.pem" -CertStoreLocation Cert:\LocalMachine\Root
+     ```
+
+   - **Linux** (Debian/Ubuntu):
+
+     ```bash
+     sudo cp infra/docker/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem /usr/local/share/ca-certificates/wazuh-root-ca.crt
+     sudo update-ca-certificates
+     ```
+
+   - **macOS**:
+
+     ```bash
+     sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain infra/docker/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem
+     ```
+
+   - **Navegadores**: importar `infra/docker/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem` en las *Autoridades de certificación raíz de confianza*.
+
+6. Validar resolución y certificados:
+
+   ```bash
+   ping soar.local
+   curl -k https://soar.local/nginx-health
+   curl -k https://localhost:15601/app/login
+   ```
+
+#### 3.2.4 Despliegue automático
+
+**En Windows (ambos comandos funcionan; `Makefile` delega a `Makefile.win`):**
 
 ```bash
 make up
+# o
+make -f Makefile.win up
 ```
 
 Este comando despliega todos los servicios definidos en los archivos Docker Compose:
@@ -154,21 +264,56 @@ Este comando despliega todos los servicios definidos en los archivos Docker Comp
 - Elasticsearch, Redis, TheHive, Cortex
 - Shuffle (frontend + backend + orborus)
 - MISP, MISP DB, MISP Modules
-- Wazuh Manager, Kibana
+- Wazuh Manager, Wazuh Dashboard
 - Lab API, Docs Site, Web Management, Nginx
-- Stack de logging: Loki, Promtail, Grafana, PostgreSQL
+- Stack de logging: Loki, Promtail, Grafana, PostgreSQL (Grafana DB)
 
 **Nota:** El comando `make up` usa el archivo `.env.full` para configuración de variables de entorno.
 
-**Nota:** `make up` incluye automáticamente la inicialización del webhook de Shuffle (`init_shuffle_webhook.py`). No es
-necesario ejecutar `make init-webhook` manualmente en un despliegue inicial.
+**Nota:** `make up` incluye automáticamente la creación de directorios, la inicialización de la configuración de Wazuh y la configuración de Cortex/TheHive, además del webhook de Shuffle (`init_shuffle_webhook.py`). No es necesario ejecutar `make init-webhook` manualmente en un despliegue inicial.
 
 **Nota:** En Windows, usar `Makefile.win` que contiene comandos PowerShell compatibles con el sistema operativo.
 
-#### 3.2.4 Verificar estado de servicios
+#### 3.2.5 Despliegue manual (equivalente a `make up`)
+
+Si prefieres no usar `make`, ejecuta los siguientes pasos desde la raíz del repositorio. El orden importa porque varios archivos `-f` se combinan y el último tiene prioridad:
 
 ```bash
-docker ps
+# 1. Crear redes y directorios necesarios (omite si ya existen)
+mkdir -p artifacts/data/{elasticsearch,thehive/files,cortex,shuffle/apps,shuffle/files,redis,misp/db,misp/files,misp/configs,misp/logs,wazuh/{api_config,etc,queue,var_multigroups,integration_files,wodles,logs},loki,grafana} artifacts/{backups,logs,results,coverage}
+
+# 2. Levantar el stack
+docker compose -p soar \
+  -f infra/docker/compose/docker-compose.yml \
+  -f infra/docker/compose/docker-compose.core.yml \
+  -f infra/docker/compose/docker-compose.misp.yml \
+  -f infra/docker/compose/docker-compose.wazuh.yml \
+  -f infra/docker/compose/docker-compose.api.yml \
+  -f infra/docker/compose/docker-compose.opensearch.yml \
+  -f infra/docker/compose/logging/docker-compose.logging.yml \
+  --env-file .env.full up -d --build
+
+# 3. Ejecutar los scripts de inicialización
+#    - seed_wazuh.py se ejecuta en el host porque crea directorios y arranca un contenedor Docker temporal.
+#    - El resto se ejecutan dentro del contenedor soar_api para poder resolver los nombres de servicio (elasticsearch, cortex, thehive, shuffle-backend) en soar_net.
+python src/soar_lab/scripts/setup/seed_wazuh.py
+
+docker exec soar_api python /app/src/soar_lab/scripts/setup/configure_es.py
+docker exec soar_api python /app/src/soar_lab/scripts/setup/reset_cortex.py
+docker exec soar_api python /app/src/soar_lab/scripts/setup/init_thehive.py
+docker exec soar_api python /app/src/soar_lab/scripts/setup/init_shuffle_webhook.py
+```
+
+> Si alguno de los scripts de inicialización falla por un servicio aún no listo, espera unos segundos y vuelve a ejecutarlo.
+
+#### 3.2.6 Validación del despliegue
+
+Tras el despliegue, verifica el estado general antes de continuar con la configuración inicial:
+
+```bash
+make health
+# o
+docker compose -p soar ps
 ```
 
 ### 3.3 Configuración inicial
@@ -177,23 +322,37 @@ docker ps
 
 | Servicio               | URL                            | Notas                               |
 |------------------------|--------------------------------|-------------------------------------|
-| Web Management         | https://localhost (puerto 443) | Dashboard principal vía Nginx HTTPS |
-| SOAR API               | http://localhost:8000          | API REST del laboratorio            |
+| Web Management (Nginx) | https://soar.local             | Dashboard principal vía HTTPS 443   |
+| SOAR API (base)        | http://localhost:8000          | API REST del laboratorio            |
+| SOAR API (Swagger UI)  | http://localhost:8000/docs     | Documentación interactiva OpenAPI   |
+| SOAR API (ReDoc)       | http://localhost:8000/redoc    | Documentación OpenAPI alternativa   |
+| SOAR API (OpenAPI JSON)| http://localhost:8000/openapi.json | Esquema OpenAPI exportable      |
 | Shuffle UI             | http://localhost:8081          | Motor SOAR                          |
 | MISP                   | http://localhost:8083          | Threat Intelligence                 |
 | Grafana                | http://localhost:8084          | KPI Dashboard                       |
-| Web Management directo | http://localhost:8085          |                                     |
-| Docs Site              | http://localhost:8086          | Documentación                       |
-| TheHive                | http://localhost:19000         | Gestión de casos                    |
+| Web Management directo | http://localhost:8085          | Acceso directo sin Nginx            |
+| Docs Site              | http://localhost:8086          | Documentación Docusaurus            |
+| TheHive                | http://localhost:19000        | Gestión de casos                    |
 | Cortex                 | http://localhost:19001         | Analyzers                           |
 | Elasticsearch          | http://localhost:19200         | Motor de búsqueda                   |
-| Kibana/Wazuh           | http://localhost:15601         | SIEM Dashboard                      |
+| Wazuh Dashboard        | https://localhost:15601         | SIEM Dashboard                      |
+
+**Notas de acceso:**
+
+- Nginx escucha en 80 (redirección a HTTPS) y 443 (proxy inverso a Web Management).
+- Los servicios con puertos directos (`8081`, `8083`, `8084`, `8085`, `8086`, `19000`, `19001`, `15601`)
+  son accesibles directamente sin pasar por Nginx. El Wazuh Dashboard requiere HTTPS (`https://localhost:15601`).
+- Wazuh Manager/Indexer/Dashboard requieren una contraseña de alta complejidad: mayúsculas, minúsculas, números y un carácter especial como `.` o `-` (sin `@` ni `!`).
+  Ejemplo: `<WAZUH_API_PASSWORD>` (valor real en `.env.full` bajo `WAZUH_API_PASSWORD`, `WAZUH_INDEXER_PASSWORD` y `WAZUH_DASHBOARD_PASSWORD`).
 
 #### 3.3.2 Configuración de Shuffle
 
 1. Acceder a Shuffle: http://localhost:8081/
 2. Iniciar sesión con credenciales de `.env.full` (`SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD`)
-3. El workflow de ransomware se crea automáticamente durante `make up`
+3. El workflow de ransomware se crea automáticamente durante `make up`.
+4. Tras `make reset` y `make up`, Shuffle genera una nueva API key y la almacena en Elasticsearch. `SHUFFLE_DEFAULT_APIKEY` de `.env.full` puede quedar desactualizada.
+   - El `ShuffleClient` se auto-sana (`_fetch_real_apikey()`) leyendo la clave real de ES en runtime.
+   - Para evitar warnings, actualiza `SHUFFLE_DEFAULT_APIKEY` con el valor de `artifacts/webhook_info.json` o del campo `apikey` del usuario `admin` en el índice `users_<org>` de Elasticsearch.
 
 #### 3.3.3 Configuración de TheHive
 
@@ -213,10 +372,10 @@ docker ps
 
 ```bash
 # Verificar Elasticsearch
-curl -u elastic:ElasticLab2024SecurePass http://localhost:19200/_cluster/health
+curl -u elastic:<ELASTIC_PASSWORD> http://localhost:19200/_cluster/health
 
 # Verificar TheHive
-curl http://localhost:19000/api/health
+curl http://localhost:19000/api/status
 
 # Verificar Cortex
 curl http://localhost:19001/api/health
@@ -228,7 +387,7 @@ curl http://localhost:8000/health
 curl http://localhost:8084/api/health
 
 # Verificar Nginx (HTTP→HTTPS)
-curl -I http://localhost/nginx-health
+curl -I http://localhost
 ```
 
 #### 3.4.2 Verificación de integraciones
@@ -237,6 +396,50 @@ curl -I http://localhost/nginx-health
 - Verificar que se crean casos en TheHive
 - Verificar que se ejecutan analyzers en Cortex
 - Verificar que los workflows de Shuffle se ejecutan correctamente
+
+#### 3.4.3 Checks post-`make up`
+
+Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es funcional antes de pasar a la configuración inicial:
+
+1. **Contenedores en ejecución:**
+
+   ```bash
+   docker compose -p soar ps
+   # o
+   make ps
+   ```
+
+   Todos los servicios críticos (`soar_api`, `soar_nginx`, `soar_elasticsearch`, `soar_thehive`, `soar_cortex`, `soar_shuffle_backend`, `soar_wazuh_*`, `soar_grafana`) deben aparecer como `Up`.
+
+2. **Healthchecks principales:**
+
+   ```bash
+   make health
+   ```
+
+   `make health` comprueba los endpoints de: TheHive (`:19000`), Cortex (`:19001`), Shuffle (`:15001`), Elasticsearch (`:19200`), API (`:8000/health`), Web Management (`:8085`), MISP (`:8083`), Wazuh Dashboard, Grafana (`:8084`), Redis, Nginx y Tenzir.
+
+3. **URLs de acceso:**
+
+   Revisa la tabla de la sección [3.3.1 Puertos de acceso a servicios](#331-puertos-de-acceso-a-servicios) y confirma que las URLs responden (`curl -I` o navegador).
+
+4. **Credenciales de acceso:**
+
+   - Usa los valores de `.env.full` para los usuarios/contraseñas.
+   - Realiza al menos un login en: Web Management (`https://soar.local`), Shuffle (`http://localhost:8081`), TheHive (`http://localhost:19000`) y Grafana (`http://localhost:8084`).
+   - (Opcional) Valida la sincronización de credenciales:
+
+     ```bash
+     make validate-credentials
+     ```
+
+5. **Logs críticos:**
+
+   ```bash
+   make logs
+   ```
+
+   Si algún servicio falla, inspecciona `soar_api`, `soar_wazuh_indexer`, `soar_elasticsearch` y `soar_shuffle_backend`.
 
 ### 3.5 Solución de problemas
 
@@ -272,8 +475,71 @@ netstat -tuln | grep LISTEN
 **Solución**:
 
 - Aumentar RAM disponible
-- Ajustar límites de recursos en docker-compose.yml
+- Ajustar límites de recursos en `infra/docker/compose/docker-compose*.yml`
 - Desactivar servicios no críticos
+
+#### 3.5.4 CORS, SSL, DNS, memoria y disk watermark
+
+**CORS (errores `403` / `CORS policy` en el navegador)**
+
+- **Síntoma**: El navegador bloquea peticiones desde Web Management hacia la API.
+- **Solución**: Asegúrate de que `CORS_ORIGINS` en `.env.full` incluya todos los orígenes desde los que se accede, separados por comas. Ejemplo:
+
+  ```text
+  CORS_ORIGINS=https://soar.local,http://localhost:8085,http://localhost:3000
+  ```
+
+  Reinicia el contenedor `soar_api` para que tome la nueva variable:
+
+  ```bash
+  docker compose -p soar restart api
+  ```
+
+**SSL / certificado autofirmado**
+
+- **Síntoma**: El navegador muestra advertencia de seguridad o `curl` falla con error de certificado.
+- **Solución**: Importa la CA local en el sistema o navegador (ver sección [3.2.3 Configurar DNS local y certificados SSL](#323-configurar-dns-local-y-certificados-ssl)). Para pruebas con `curl`, usa `-k`/`--insecure`. Verifica la validez del certificado con:
+
+  ```bash
+  openssl x509 -in infra/docker/config/nginx/ssl/soar.local.crt -noout -dates
+  ```
+
+**DNS no resuelve `soar.local`**
+
+- **Síntoma**: `ping soar.local` no responde.
+- **Solución**: Revisa el archivo `hosts` (sección [3.2.3 Configurar DNS local y certificados SSL](#323-configurar-dns-local-y-certificados-ssl)) y limpia la caché DNS:
+  - **Windows**: `ipconfig /flushdns`
+  - **Linux**: `sudo systemd-resolve --flush-caches` (distros con systemd) o `sudo systemctl restart nscd`
+  - **macOS**: `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`
+
+**Memoria insuficiente (Elasticsearch / Wazuh / OOM)**
+
+- **Síntoma**: Contenedores se reinician, logs muestran `OutOfMemory` o Elasticsearch/Wazuh no arranca.
+- **Solución**:
+  - Aumenta la memoria asignada a Docker Desktop (mínimo recomendado **16 GB**, swap **4 GB**).
+  - Ajusta `mem_limit` en los archivos `infra/docker/compose/docker-compose*.yml` si es necesario.
+  - En Linux, configura `vm.max_map_count=262144` para Elasticsearch y Wazuh:
+
+    ```bash
+    sudo sysctl -w vm.max_map_count=262144
+    # Persistir tras reinicio:
+    echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+    ```
+
+**Disk watermark de Elasticsearch**
+
+- **Síntoma**: Elasticsearch pasa a solo lectura con errores tipo `FORBIDDEN/12/index read-only / allow delete (api)`.
+- **Solución**: Libera espacio en disco y elimina el bloqueo de solo lectura:
+
+  ```bash
+  curl -X PUT -u elastic:<ELASTIC_PASSWORD> "http://localhost:19200/_all/_settings" -H 'Content-Type: application/json' -d '{"index.blocks.read_only_allow_delete": null}'
+  ```
+
+  Si los umbrales por defecto son demasiado bajos para el disco del host, ajústalos temporalmente:
+
+  ```bash
+  curl -X PUT -u elastic:<ELASTIC_PASSWORD> "http://localhost:19200/_cluster/settings" -H 'Content-Type: application/json' -d '{"transient":{"cluster.routing.allocation.disk.watermark.low":"85%","cluster.routing.allocation.disk.watermark.high":"90%","cluster.routing.allocation.disk.watermark.flood_stage":"95%"}}'
+  ```
 
 ## 4. Validación
 

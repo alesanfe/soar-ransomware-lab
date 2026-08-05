@@ -5,10 +5,10 @@ encapsulating the technical details of JWT token creation and verification.
 """
 
 from datetime import datetime, timedelta, timezone
+from soar_lab.common.exceptions import AuthError
 from typing import Dict, Any
 
 from soar_lab.config.logging import get_logger
-from soar_lab.exceptions import AuthError
 
 try:
     from jose import JWTError, jwt

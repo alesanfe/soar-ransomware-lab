@@ -6,7 +6,11 @@ tiempos de respuesta, análisis de percentiles, tasas de éxito por tipo de aler
 el proyecto, impacto de mejororas implementadas por categoría y análisis costo-beneficio comparativo entre diferentes
 soluciones SOAR. Cada visualización se presenta con contexto explicativo que facilita su interpretación y conexión con
 los análisis cuantitativos desarrollados en los capítulos principales. Los valores mostrados corresponden a los
-resultados experimentales obtenidos durante la validación del sistema.
+resultados experimentales obtenidos durante la validación del sistema; las mediciones manuales son estimaciones y deben
+sustituirse por los valores reales medidos durante la ejecución de los tests.
+
+> Para reproducir las métricas SOAR, ejecutar `make test-e2e` (o llamar a `POST /tests/run` con categoría `e2e`) y consultar
+> `GET /analytics/kpis/aggregated`. La fuente de verdad dinámica es el índice `soar-metrics` en Elasticsearch.
 
 ## Gráficos Estadísticos Detallados
 
@@ -15,7 +19,7 @@ resultados experimentales obtenidos durante la validación del sistema.
 ```
 TIEMPO DE RESPUESTA (segundos) - DESCOMPOSICIÓN
 
-Manual ({total_time_manual: tiempo manual baseline - usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py})s total):
+Manual (baseline estimado 225 s total):
 ┌─────────────────────────────────────────────────────────────────┐
 │ Recepción Triaje ({reception_manual: tiempo manual triaje - medir desde logs de ejecución})s ████████████████████████████████████████ │
 │ Análisis IoCs ({analysis_manual: tiempo manual análisis IoCs - medir desde logs de ejecución})s   ████████████████████████████████████████ │
@@ -23,7 +27,7 @@ Manual ({total_time_manual: tiempo manual baseline - usar KPIAnalyzer.calculate_
 │ Contención ({containment_manual: tiempo manual contención - medir desde logs de ejecución})s     ████████████████████████████████████████ │
 └─────────────────────────────────────────────────────────────────┘
 
-SOAR ({total_time_soaR: tiempo SOAR real - usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py})s total):
+SOAR ({total_time_soaR: tiempo SOAR real - usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py})s total):
 ┌─────────────────────────────────────────────────────────────────┐
 │ Recepción Triaje ({reception_soaR: tiempo SOAR triaje - medir desde logs de Shuffle})s   ████████                              │
 │ Análisis IoCs ({analysis_soaR: tiempo SOAR análisis IoCs - medir desde logs de Cortex})s     ████████████████                      │
@@ -236,7 +240,7 @@ observabilidad.
 
 **Nota Importante:** La lógica de cálculo de KPIs existe en el código fuente en:
 
-- `src/soar_lab/services/kpi_analyzer.py` - KPIAnalyzer.calculate_mttr_metrics() para MTTR, calculate_performance_kpis()
+- `src/soar_lab/domain/services/kpi_analyzer.py` - KPIAnalyzer.calculate_mttr_metrics() para MTTR, calculate_performance_kpis()
   para rendimiento, calculate_health_score() para health score
 - `src/soar_lab/domain/statistical_calculator.py` - StatisticalCalculator.calculate_statistical_metrics() para
   percentiles (p50, p90, etc.) y métricas estadísticas
@@ -298,7 +302,7 @@ ROI (Retorno de Inversión %):
     Manual  SOAR OS  Híbrido  XSOAR  Resilient
 
 MTTR Promedio (segundos):
-250 ┤ ● Manual: {mttr_manual: promediar tiempos de respuesta manual - usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py}s
+250 ┤ ● Manual: {mttr_manual: promediar tiempos de respuesta manual - usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py}s
 225 ┤ ●
 200 ┤ ●
 175 ┤ ●
@@ -306,7 +310,7 @@ MTTR Promedio (segundos):
 125 ┤                     ● XSOAR: {mttr_xsoar: promediar tiempos de respuesta XSOAR - ver [comparative_tables.md](comparative_tables.md)}s
 100 ┤                     ●
  75 ┤                     ●    ● Híbrido: {mttr_hybrid: promediar tiempos de respuesta híbrido - ver [comparative_tables.md](comparative_tables.md)}s
- 50 ┤                     ●    ●    ● SOAR OS: {mttr_opensource: promediar tiempos de respuesta open source - usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py}s
+ 50 ┤                     ●    ●    ● SOAR OS: {mttr_opensource: promediar tiempos de respuesta open source - usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py}s
  25 ┤                     ●    ●    ●
   0 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
     Manual  SOAR OS  Híbrido  XSOAR  Resilient
@@ -315,7 +319,7 @@ MTTR Promedio (segundos):
 Este gráfico presenta el análisis costo-beneficio comparativo entre diferentes soluciones SOAR (manual, open source,
 híbrido, comerciales XSOAR y Resilient) durante un periodo de 3 años. La visualización muestra el costo total, el ROI y
 el MTTR promedio para cada solución. **Los valores numéricos requieren usar los módulos de cálculo en
-src/soar_lab/services/kpi_analyzer.py.**
+src/soar_lab/domain/services/kpi_analyzer.py.**
 
 ## Diagramas de Flujo Detallados
 
@@ -539,7 +543,7 @@ comprehensiva del rendimiento del sistema.
 | **Alertas/hora**      | {alerts_light: medir desde logs de Shuffle)}                                                       | {alerts_medium: medir desde logs de Shuffle)}                                                       | {alerts_heavy: medir desde logs de Shuffle)}                                                       | {alerts_limit: configuración de Docker)}  |
 | **CPU Usage**         | {cpu_light: medir desde Docker stats)}%                                                            | {cpu_medium: medir desde Docker stats)}%                                                            | {cpu_heavy: medir desde Docker stats)}%                                                            | {cpu_limit: configuración de Docker)}%    |
 | **Memory Usage**      | {memory_light: medir desde Docker stats)}%                                                         | {memory_medium: medir desde Docker stats)}%                                                         | {memory_heavy: medir desde Docker stats)}%                                                         | {memory_limit: configuración de Docker)}% |
-| **MTTR**              | {mttr_light: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py)}s | {mttr_medium: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py)}s | {mttr_heavy: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py)}s | {mttr_limit: objetivo de SLA)}s           |
+| **MTTR**              | {mttr_light: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py)}s | {mttr_medium: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py)}s | {mttr_heavy: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py)}s | {mttr_limit: objetivo de SLA)}s           |
 | **Success Rate**      | {success_light: calcular desde tests e2e)}%                                                        | {success_medium: calcular desde tests e2e)}%                                                        | {success_heavy: calcular desde tests e2e)}%                                                        | {success_limit: objetivo de SLA)}%        |
 | **Queue Depth**       | {queue_light: medir desde logs de Shuffle)}                                                        | {queue_medium: medir desde logs de Shuffle)}                                                        | {queue_heavy: medir desde logs de Shuffle)}                                                        | {queue_limit: configuración de Shuffle)}  |
 | **Response Time API** | {response_light: medir desde logs de TheHive API)}ms                                               | {response_medium: medir desde logs de TheHive API)}ms                                               | {response_heavy: medir desde logs de TheHive API)}ms                                               | {response_limit: objetivo de SLA)}ms      |
@@ -578,7 +582,7 @@ evolución futura.
 
 | KPI                       | PYME                                                                                              | Mediana                                                                                              | Grande                                                                                              | Enterprise                                                                                               |
 |---------------------------|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
-| **MTTR Objetivo**         | <{mttr_sme: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py)}s | <{mttr_medium: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py)}s | <{mttr_large: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py)}s | <{mttr_enterprise: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py)}s |
+| **MTTR Objetivo**         | <{mttr_sme: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py)}s | <{mttr_medium: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py)}s | <{mttr_large: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py)}s | <{mttr_enterprise: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py)}s |
 | **Costo Incidente**       | <${cost_sme: calcular desde comparative_tables.md}K                                               | <${cost_medium: calcular desde comparative_tables.md}K                                               | <${cost_large: calcular desde comparative_tables.md}K                                               | <${cost_enterprise: calcular desde comparative_tables.md}M                                               |
 | **ROI SOAR**              | >{roi_sme: calcular desde comparative_tables.md}%                                                 | >{roi_medium: calcular desde comparative_tables.md}%                                                 | >{roi_large: calcular desde comparative_tables.md}%                                                 | >{roi_enterprise: calcular desde comparative_tables.md}%                                                 |
 | **Time to Value**         | {value_sme: estimar desde tiempo de implementación} semanas                                       | {value_medium: estimar desde tiempo de implementación} semanas                                       | {value_large: estimar desde tiempo de implementación} semanas                                       | {value_enterprise: estimar desde tiempo de implementación} semanas                                       |
@@ -646,7 +650,7 @@ ANTES vs DESPUÉS - COMPARACIÓN VISUAL
 │  Contención ──▶ Shuffle Playbooks ──▶ {soar_containment: medir desde logs de Shuffle)}s                      │
 │                          │                                   │
 │                          ▼                                   │
-│  Total MTTR: {soar_total: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/services/kpi_analyzer.py} segundos                                       │
+│  Total MTTR: {soar_total: usar KPIAnalyzer.calculate_mttr_metrics() en src/soar_lab/domain/services/kpi_analyzer.py} segundos                                       │
 │  Success Rate: {soar_success: calcular desde tests e2e}%                                                │
 │  Consistency: Alta                                               │
 │                                                                 │
@@ -661,3 +665,20 @@ MEJORAS CLAVE:
 
 Estas visualizaciones complementan las tablas y diagramas previos, ofreciendo una visión completa de los aspectos del
 proyecto SOAR Ransomware Lab, desde métricas técnicas hasta análisis de negocio.
+
+
+## Visualizaciones de Logs
+
+El stack de observabilidad (Loki + Promtail + Grafana) permite visualizar logs de todos los contenedores desde Grafana (`http://localhost:8084`). Promtail etiqueta los logs por contenedor y envía cada línea a Loki, donde se consultan con LogQL. La configuración se encuentra en `infra/docker/compose/logging/promtail-config.yml` y en `infra/docker/compose/logging/docker-compose.logging.yml`.
+
+### Ejemplo de consulta LogQL
+
+```logql
+{container_name="soar_api"} |= "error"
+```
+
+### Dashboards recomendados
+
+- **Logs por servicio**: filtrar por `container_name` y `level`.
+- **Errores E2E**: `{container_name="soar_shuffle-backend"} |= "error"`.
+- **Métricas de KPI**: datasource Elasticsearch/OpenSearch con índice `soar-metrics` (`mttr_seconds`, `@timestamp`).

@@ -232,7 +232,6 @@ sys.path.insert(0, str(Path.cwd() / 'src'))
 # Set environment variables with test credentials
 os.environ['BASE_DIR'] = str(Path.cwd())
 os.environ['WEB_UI_USER'] = 'admin'
-os.environ['WEB_UI_PASSWORD'] = 'WebUILab2024Secure'
 os.environ['JWT_SECRET_KEY'] = 'test-secret-key-32chars-minimum-length'
 os.environ.pop('SOAR_SKIP_EAGER_INIT', None)
 
@@ -274,7 +273,7 @@ time.sleep(3)
 try:
     response = requests.post(
         f"http://127.0.0.1:{port}/auth/login",
-        json={"username": "admin", "password": "WebUILab2024Secure"},
+        json={"username": "admin", "password": os.environ['WEB_UI_PASSWORD']},
         timeout=5
     )
     assert response.status_code == 200, f"Login failed: {response.status_code}"
@@ -471,7 +470,6 @@ sys.path.insert(0, str(Path.cwd() / 'src'))
 # Set environment variables with test credentials
 os.environ['BASE_DIR'] = str(Path.cwd())
 os.environ['WEB_UI_USER'] = 'admin'
-os.environ['WEB_UI_PASSWORD'] = 'WebUILab2024Secure'
 os.environ['JWT_SECRET_KEY'] = 'test-secret-key-32chars-minimum-length'
 os.environ.pop('SOAR_SKIP_EAGER_INIT', None)
 
@@ -513,7 +511,7 @@ time.sleep(3)
 try:
     login_response = requests.post(
         f"http://127.0.0.1:{port}/auth/login",
-        json={"username": "admin", "password": "WebUILab2024Secure"},
+        json={"username": "admin", "password": os.environ['WEB_UI_PASSWORD']},
         timeout=5
     )
     assert login_response.status_code == 200, f"Login failed: {login_response.status_code}"

@@ -39,7 +39,8 @@ despliegue.
 
 El SOAR Ransomware Lab es una plataforma de orquestación de seguridad integral diseñada específicamente para la
 respuesta ante incidentes de ransomware. Integra múltiples herramientas de seguridad (Shuffle, TheHive, Cortex, MISP,
-Wazuh, Kibana) en un entorno Docker Compose unificado para proporcionar capacidades de detección, análisis y respuesta
+Wazuh, Wazuh Dashboard) en un entorno Docker Compose unificado para proporcionar capacidades de detección, análisis y
+respuesta
 automatizada.
 
 ## 2. Alcance
@@ -77,6 +78,8 @@ Este documento depende de:
 - Documentación de seguridad (docs/architecture/security.md)
 - Guía de usuario (docs/getting_started/user_guide.md)
 - Estrategia de Docker (docs/architecture/docker_architecture.md)
+- Estructura del paquete Python (docs/architecture/hexagonal-structure.md)
+- Estructura del código fuente (docs/architecture/code_structure.md)
 
 ## 3. Contenido principal
 
@@ -84,118 +87,138 @@ Este documento depende de:
 
 #### Arquitectura de Código (Python)
 
-El código Python sigue una arquitectura en capas con influencia del patrón hexagonal:
+El código Python sigue una **arquitectura hexagonal (Ports and Adapters)**. Las dependencias apuntan siempre hacia el
+interior; el dominio no conoce detalles de infraestructura ni de interfaces de usuario.
 
 ```
 src/soar_lab/
-├── api/                    # Capa de presentación (FastAPI)
-│   ├── main.py            # FastAPI application
-│   ├── composition.py     # Dependency injection
-│   ├── dependencies.py   # FastAPI dependencies
-│   ├── auth.py           # Authentication endpoints
-│   ├── models.py         # Pydantic models
-│   └── cli.py            # CLI commands
-├── domain/                # Capa de dominio (business logic)
-│   ├── models.py         # Domain entities (Alert, Case, IOC)
-│   ├── ports.py          # Domain ports/interfaces (433 líneas de protocolos)
-│   ├── ports/            # Port definitions
-│   ├── alert_generator.py # Alert generation logic
-│   ├── ioc_generator.py  # IOC generation logic
-│   └── statistical_calculator.py # Statistical calculations
-├── services/              # Capa de servicios (application logic)
-│   ├── analytics_service.py
-│   ├── auth_service.py
-│   ├── backup_service.py
-│   ├── health_service.py
-│   ├── kpi_analyzer.py
-│   ├── test_service.py
-│   └── generate_secrets.py
-├── infrastructure/        # Capa de infraestructura (adapters)
-│   ├── persistence/      # Data persistence
-│   ├── clients.py        # Integration clients factory
-│   ├── http_client.py    # HTTP client
-│   ├── file_log_reader.py
-│   ├── path_service.py
-│   ├── cleanup_service.py
-│   ├── health_check_adapter.py
-│   ├── http_alert_sender.py
-│   ├── in_memory_alert_repository.py
-│   ├── in_memory_storage.py
-│   ├── jwt_token_provider.py
-│   ├── kpi_formatter.py
-│   ├── log_parser.py
-│   ├── pytest_output_parser.py
-│   ├── pytest_test_runner.py
-│   ├── subprocess_runner.py
-│   ├── system_metrics_driver.py
-│   ├── tar_backup_driver.py
-│   ├── websocket_manager.py
-│   ├── checksum_utils.py
-│   ├── config_provider.py
-│   ├── filesystem_storage.py
-│   └── security/         # Security-related infrastructure
-├── integrations/          # External integrations
-│   ├── base_client.py
-│   ├── cortex_client.py
-│   ├── misp_client.py
-│   ├── shuffle_client.py
-│   ├── thehive_client.py
-│   └── shuffle/          # Shuffle-specific integration code
-├── config/                # Configuration
-│   ├── settings.py
-│   ├── schemas.py
-│   └── logging.py
-├── validation/            # Validation logic
-│   └── validators.py
-└── exceptions.py         # Custom exceptions
+├── application/              # Capa de aplicación
+│   ├── dto/                  # Objetos de transferencia (DTOs)
+│   └── use_cases/            # analytics_service, auth_service, backup_service, etc.
+├── common/                   # Excepciones y utilidades compartidas
+├── config/                   # Configuración, esquemas y logging
+├── data/                     # Esquemas y utilidades de datos
+├── domain/                   # Capa de dominio
+│   ├── models.py             # Entidades: IOC, Alert, Case
+│   ├── ports/                # Protocolos (repositories, integrations, infrastructure)
+│   ├── ports.py              # Protocolos alternativos/concentrados
+│   ├── services/             # kpi_analyzer, ioc_generator
+│   ├── statistical_calculator.py  # Cálculos estadísticos puros
+│   └── value_objects/
+├── infrastructure/           # Capa de infraestructura
+│   ├── artifacts/            # Artefactos generados en runtime
+│   ├── external/             # Clientes externos (Shuffle, TheHive, Cortex, MISP, Wazuh)
+│   ├── messaging/            # Envío de alertas
+│   ├── monitoring/           # Health checks, HealthService, SystemMetricsDriver, KPIAlertManager
+│   ├── network_watcher/      # Conectividad dinámica de workers Shuffle
+│   ├── persistence/          # Repositorios (SQLite, InMemory)
+│   ├── persistence_backup/   # Respaldo de datos de persistencia
+│   ├── scripts/              # Scripts auxiliares (patch, edge cases, performance)
+│   ├── security/             # Scripts de hardening
+│   ├── templates/            # Plantillas de configuración
+│   ├── utils/                # Utilidades de archivos
+│   ├── jwt_token_provider.py # Generación y validación de tokens JWT
+│   ├── pytest_test_runner.py # Ejecución remota de pruebas
+│   ├── tar_backup_driver.py  # Driver de backups en tar
+│   └── validate_credentials.py # Validación de credenciales de servicios
+├── interfaces/               # Capa de interfaces
+│   └── api/                  # FastAPI: main.py, auth.py, models.py, cli.py, composition.py
+├── scripts/                  # Scripts del laboratorio
+│   ├── debug/                # Scripts de depuración
+│   ├── maintenance/          # Scripts de mantenimiento
+│   ├── setup/                # Scripts de inicialización y despliegue
+│   ├── generate_kpi_data.py
+│   ├── send_to_both_workflows.py
+│   ├── send_wazuh_alert.py
+│   └── test_service.py
+├── simulator/                # Simulador de alertas SIEM
+└── validation/               # Validadores reutilizables
 ```
 
-**Nota:** La estructura actual incluye directorios adicionales como `infrastructure/security/` e `integrations/shuffle/`
-que no estaban documentados anteriormente.
+**Composition Root:** `src/soar_lab/interfaces/api/composition.py` centraliza el cableado de dependencias. Es el único
+lugar donde se instancian adaptadores de infraestructura y se inyectan en los servicios de aplicación y dominio.
+Nuevos adaptadores o servicios deben registrarse aquí para mantener la separación de capas.
+
+> **Matrices de referencia**: versiones en [`version_matrix.md`](version_matrix.md) y mapeo de puertos/URLs en
+> [`operations/ports_and_urls.md`](../operations/ports_and_urls.md).
 
 #### Arquitectura de Despliegue (Docker)
 
+```mermaid
+graph TD
+    subgraph "Acceso recomendado (soar.local 443 / Nginx)"
+        User -->|https://soar.local| Nginx
+        Nginx -->|/| WebMgmt[Web Management]
+        Nginx -->|/api/| LabAPI[Lab API]
+        Nginx -->|/thehive/| TheHive
+        Nginx -->|/cortex/| Cortex
+        Nginx -->|/shuffle-api/| ShuffleBackend
+    end
+
+    subgraph "Acceso directo (solo diagnóstico)"
+        ShuffleUI[Shuffle UI :8081]
+        WazuhDash[Wazuh Dashboard :15601]
+        MISP[MISP :8083]
+        Grafana[Grafana :8084]
+        DocsSite[Docs Site :8086]
+    end
+
+    subgraph "Docker network: soar_net"
+        LabAPI -- HTTP --> ShuffleBackend[Shuffle Backend :5001]
+        LabAPI -- HTTP --> TheHive[TheHive :9000]
+        LabAPI -- HTTP --> Cortex[Cortex :9001]
+        LabAPI -- HTTP --> ES[Elasticsearch :9200]
+        LabAPI -- HTTP --> Redis[Redis :6379]
+        LabAPI -- HTTP --> WazuhManager[Wazuh Manager :55000]
+        LabAPI -- HTTP --> MISPInternal[MISP :80]
+        LabAPI -- HTTP --> GrafanaInternal[Grafana :3000]
+
+        ShuffleBackend -- HTTP --> ES
+        ShuffleBackend -- HTTP --> Redis
+        ShuffleBackend -- HTTP --> Orborus[Orborus :5000]
+
+        TheHive -- HTTP --> ES
+        TheHive -- HTTP --> Cortex
+
+        Cortex -- HTTP --> ES
+        Cortex -- HTTP --> MISPInternal
+
+        WazuhManager -- HTTP --> ES
+
+        MISPInternal -- SQL --> MariaDB[MariaDB :3306]
+
+        GrafanaInternal -- HTTP --> ES
+        GrafanaInternal -- HTTP --> Loki[Loki :3100]
+        Promtail[Promtail] --> Loki
+    end
+
+    subgraph "Docker network: logging_net"
+        Promtail
+        Loki
+        GrafanaInternal
+    end
+
+    Nginx -. Directo .-> LabAPI
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                         Capa de Acceso (Nginx)                            │
-│  :80 Web UI (redirect to HTTPS)  │  :443 HTTPS                           │
-├────────────────────────────────────────────────────────────────────────┤
-│                         Capa de Orquestación SOAR                         │
-│  Shuffle UI :8081  │  Shuffle API :5001  │  Orborus (ejecutor worker)  │
-├────────────────────────────────────────────────────────────────────────┤
-│                         Capa de Respuesta a Incidentes                   │
-│  TheHive :9000 (casos)  │  Cortex :9001 (analyzers)                    │
-├────────────────────────────────────────────────────────────────────────┤
-│                         Capa de SIEM / Detección                          │
-│  Wazuh Manager :1514-1516 (eventos)  │  Kibana :15601 (dashboards)      │
-├────────────────────────────────────────────────────────────────────────┤
-│                         Capa de Inteligencia de Amenazas                  │
-│  MISP :8083 (plataforma TI)                                               │
-├────────────────────────────────────────────────────────────────────────┤
-│                         Capa de Gestión y API                           │
-│  Lab API :8000 (FastAPI)  │  Docs Site :8086                           │
-├────────────────────────────────────────────────────────────────────────┤
-│                         Capa de Datos e Infraestructura                 │
-│  Elasticsearch (interno)  │  Redis (interno)  │  MariaDB (MISP)      │
-└────────────────────────────────────────────────────────────────────────┘
-```
+
+> **Nota sobre accesos directos:** Shuffle UI, Wazuh Dashboard, MISP, Grafana y Docs Site usan SPA/assets absolutos y no funcionan correctamente bajo subpath en Nginx. Se acceden por sus puertos de host (`8081`, `15601`, `8083`, `8084`, `8086`).
 
 #### Servicios SOAR Core
 
-1. **Shuffle** (`:8081` UI / `:5001` API`)
+1. **Shuffle** (`:8081` UI host / `:15001` API host)
     - Orquestador SOAR principal
     - Constructor de workflows drag-and-drop
     - Recibe alertas de Wazuh vía webhook
     - Ejecuta playbooks de respuesta automatizada
     - Orborus ejecuta contenedores de apps como workers
 
-2. **TheHive** (`:9000`)
+2. **TheHive** (`:19000` host → `:9000` container)
     - Plataforma de gestión de casos de incidentes
     - Seguimiento de evidencias y observables
     - Asignación de tareas y línea de tiempo
     - Se integra con Cortex para enriquecimiento
 
-3. **Cortex** (`:9001`)
+3. **Cortex** (`:19001` host → `:9001` container)
     - Motor de análisis de IoCs
     - Ejecuta analyzers y responders
     - Se integra con MISP, VirusTotal, etc.
@@ -203,21 +226,21 @@ que no estaban documentados anteriormente.
 
 #### SIEM / Detección
 
-4. **Wazuh Manager** (`:1514-1516` eventos, `:55100` API interno)
+4. **Wazuh Manager** (`:55100` host → `:55000` API, `:15141` host → `:1514` eventos)
     - Detección basada en agentes SIEM/XDR
     - Monitoreo de integridad de archivos
     - Recolección y correlación de logs
     - Envía alertas a Shuffle vía webhook
 
-5. **Kibana** (`:15601`)
-    - Frontend de visualización para Elasticsearch
+5. **Wazuh Dashboard** (`:15601` host → `:5601` container)
+    - Frontend de visualización para Wazuh Indexer (OpenSearch)
     - Dashboards para datos de eventos de Wazuh
     - Exploración de logs vía Discover
-    - Imagen: `docker.elastic.co/kibana/kibana:7.17.29`
+    - Imagen: `wazuh/wazuh-dashboard:4.14.0` (basado en OpenSearch Dashboards)
 
 #### Inteligencia de Amenazas
 
-6. **MISP** (`:8082`)
+6. **MISP** (`:8083`)
     - Plataforma de inteligencia de amenazas open-source
     - Compartición y gestión de IoCs
     - Integración de feeds
@@ -226,10 +249,11 @@ que no estaban documentados anteriormente.
 #### Capa de Datos
 
 7. **Elasticsearch** (red Docker interna)
-    - `docker.elastic.co/elasticsearch/elasticsearch:7.17.29`
-    - Backend compartido para Shuffle, TheHive y Kibana
+    - `docker.elastic.co/elasticsearch/elasticsearch:7.10.2`
+    - Backend para TheHive, Cortex, métricas del Lab API (`soar-metrics`) y datasource de Grafana
     - Agregación de logs y búsqueda full-text
-    - Configuración single-node con xpack.security habilitado
+    - Configuración single-node con `xpack.security.enabled=false`; se mantiene un password canónico `ELASTIC_PASSWORD=ElasticLab2024SecurePass` en `.env.full` y en las aplicaciones para compatibilidad con clientes que sí envían credenciales.
+    - **No es redundancia**: OpenSearch 2.10.0 se despliega en paralelo porque Shuffle requiere un motor OpenSearch nativo, mientras que TheHive/Cortex dependen de `elastic4play` / ES 7.x (ver [Motores de búsqueda: coexistencia de Elasticsearch y OpenSearch](search_engine_coexistence.md)).
 
 8. **Redis** (interno)
     - Almacenamiento de sesiones y caché para Shuffle
@@ -238,17 +262,24 @@ que no estaban documentados anteriormente.
 9. **MariaDB** (interno)
     - Backend de base de datos para MISP
 
+10. **Tenzir** (nodo de desarrollo, opcional)
+    - Imagen: `tenzir/tenzir:main`
+    - Puertos host: `15160` → `5160`, `15140` → `1514/udp`
+    - Estado: desplegado en `docker-compose.core.yml` pero su pipeline de ingestión no está integrado en los playbooks activos del laboratorio.
+
 #### Acceso y Gestión
 
 10. **Nginx** (`:80`, `:443`)
-    - Proxy inverso para todos los servicios
-    - Sirve UI de gestión web estática en `:80` (redirect to HTTPS)
-    - Proxy inverso HTTPS en `:443`
+    - Terminación TLS y proxy inverso en `:443`; `:80` redirige a HTTPS
+    - Expone `/` → Web Management, `/thehive/` → TheHive, `/cortex/` → Cortex, `/shuffle-api/` → Shuffle Backend
+    - Shuffle UI (`:8081`), Web Management (`:8085`), Docs Site (`:8086`) y Grafana (`:8084`) se acceden directamente por sus puertos
+    - **Shuffle UI no soporta subpath en Nginx** (`/shuffle` no funciona por rutas SPA absolutas); usar siempre `http://localhost:8081`
 
 11. **Lab API** (`:8000`)
-    - Aplicación FastAPI (`apps/api/entrypoint.py`)
+    - Aplicación FastAPI (`src/soar_lab/interfaces/api/main.py`)
     - Endpoints de gestión y automatización del laboratorio
     - Health check en `/health`
+    - WebSocket `/api/ws/logs` para streaming de logs en vivo
 
 12. **Docs Site** (`:8086`)
     - Sitio estático Docusaurus
@@ -265,7 +296,7 @@ que no estaban documentados anteriormente.
 │  FastAPI  │  Lógica de Negocio  │  Autenticación               │
 ├─────────────────────────────────────────────────────────────┤
 │                    Zona de Datos                                  │
-│  TheHive  │  Cortex  │  Elasticsearch  │  PostgreSQL         │
+│  TheHive  │  Cortex  │  OpenSearch  │  PostgreSQL         │
 ├─────────────────────────────────────────────────────────────┤
 │                    Zona de Gestión                             │
 │  Docker  │  Monitoreo  │  Logging  │  Backup                 │
@@ -276,39 +307,34 @@ que no estaban documentados anteriormente.
 
 #### Estado Actual de la Arquitectura Hexagonal
 
-**Nota Importante:** La implementación actual no sigue estrictamente el patrón hexagonal. Aunque el código está
-organizado en capas (domain, services, infrastructure), existen acoplamientos y desviaciones:
+El proyecto organiza el código en capas con dirección de dependencias hacia el interior:
 
-- **domain/ports.py**: Contiene 433 líneas definiendo múltiples protocolos (AlertRepository, IocRepository,
-  StorageProvider, BackupDriver, TestRunner, etc.) pero su uso es limitado
-- **services/**: Tiene dependencias directas a domain/ports.py (no a infrastructure directamente), lo cual es correcto
-  según el patrón
-- **infrastructure/**: Contiene implementaciones concretas de los protocolos definidos en domain/ports.py
-- **integrations/**: Los clientes de integración (Cortex, MISP, Shuffle, TheHive) están implementados pero su uso es
-  limitado en la aplicación actual
+- **`src/soar_lab/domain/`**: modelos (`models.py`), puertos (`ports/`, `ports.py`) y servicios de dominio (`services/`).
+- **`src/soar_lab/application/`**: casos de uso (`use_cases/`) que dependen de los puertos del dominio.
+- **`src/soar_lab/infrastructure/`**: adaptadores concretos (`external/integrations/*_client`, `persistence/*`, `monitoring/`, `messaging/`, `jwt_token_provider.py`, etc.).
+- **`src/soar_lab/interfaces/api/composition.py`**: Composition Root que crea los adaptadores, repositorios y servicios y los inyecta en la aplicación FastAPI.
 
 **Deuda Técnica:**
 
-- Los ports definidos en domain/ports.py no se utilizan consistentemente en toda la aplicación
-- Algunos servicios tienen dependencias directas a implementaciones de infrastructure en lugar de depender solo de
-  interfaces
-- La inyección de dependencias no está completamente implementada
+- `domain/ports.py` es extenso; su adopción parcial hace que algunos scripts y helpers aún usen implementaciones concretas.
+- Los clientes externos (`infrastructure/external/integrations/`) se usan mayoritariamente vía la fachada de la API y tests; parte del wiring legacy queda por migrar al CompositionRoot.
+- La trayectoria es seguir consolidando el CompositionRoot como único punto de creación de instancias.
 
 #### Lógica de Negocio / Servicios (Python)
 
-**Servicios Actuales (src/soar_lab/services/):**
+**Servicios Actuales:**
 
-- **analytics_service.py**: Servicio de análisis de alertas y métricas. Depende de domain/ports (AlertRepository,
+- **`src/soar_lab/application/use_cases/analytics_service.py`**: Servicio de análisis de alertas y métricas. Depende de domain/ports (AlertRepository,
   MetricRepository, IocRepository, IOCGenerator, StatisticalCalculatorInterface)
-- **auth_service.py**: Servicio de autenticación y autorización. Depende de domain/ports (TokenProviderInterface)
-- **backup_service.py**: Servicio de backup y restauración. Depende de domain/ports (BackupDriver,
+- **`src/soar_lab/application/use_cases/auth_service.py`**: Servicio de autenticación y autorización. Depende de domain/ports (TokenProviderInterface)
+- **`src/soar_lab/application/use_cases/backup_service.py`**: Servicio de backup y restauración. Depende de domain/ports (BackupDriver,
   BackupStorageProvider)
-- **health_service.py**: Servicio de health checks. Depende de domain/ports (HealthCheckInterface,
+- **`src/soar_lab/infrastructure/monitoring/health_service.py`**: Servicio de health checks. Depende de domain/ports (HealthCheckInterface,
   SystemMetricsInterface)
-- **kpi_analyzer.py**: Analizador de KPIs y métricas. Depende de domain/ports (StatisticalCalculatorInterface)
-- **test_service.py**: Servicio de ejecución de pruebas. Depende de domain/ports (CacheInterface, TestRunner,
+- **`src/soar_lab/domain/services/kpi_analyzer.py`**: Analizador de KPIs y métricas. Depende de domain/ports (StatisticalCalculatorInterface)
+- **`src/soar_lab/scripts/test_service.py`**: Servicio de ejecución de pruebas. Depende de domain/ports (CacheInterface, TestRunner,
   TestResultParserInterface)
-- **generate_secrets.py**: Generador de secretos y claves. Depende de domain/ports (FileSystemInterface)
+- **`src/soar_lab/scripts/setup/generate_secrets.py`**: Generador de secretos y claves. Depende de domain/ports (FileSystemInterface)
 
 **Dependencias:**
 
@@ -318,20 +344,20 @@ organizado en capas (domain, services, infrastructure), existen acoplamientos y 
 
 #### Servicios SOAR Core
 
-1. **Shuffle** (`:8081` UI / `:5001` API`)
+1. **Shuffle** (`:8081` UI host / `:15001` API host)
     - Orquestador SOAR principal
     - Constructor de workflows drag-and-drop
     - Recibe alertas de Wazuh vía webhook
     - Ejecuta playbooks de respuesta automatizada
     - Orborus ejecuta contenedores de apps como workers
 
-2. **TheHive** (`:9000`)
+2. **TheHive** (`:19000` host → `:9000` container)
     - Plataforma de gestión de casos de incidentes
     - Seguimiento de evidencias y observables
     - Asignación de tareas y línea de tiempo
     - Se integra con Cortex para enriquecimiento
 
-3. **Cortex** (`:9001`)
+3. **Cortex** (`:19001` host → `:9001` container)
     - Motor de análisis de IoCs
     - Ejecuta analyzers y responders
     - Se integra con MISP, VirusTotal, etc.
@@ -339,21 +365,21 @@ organizado en capas (domain, services, infrastructure), existen acoplamientos y 
 
 #### SIEM / Detección
 
-4. **Wazuh Manager** (`:1514-1516` eventos, `:55100` API interno)
+4. **Wazuh Manager** (`:55100` host → `:55000` API, `:15141` host → `:1514` eventos)
     - Detección basada en agentes SIEM/XDR
     - Monitoreo de integridad de archivos
     - Recolección y correlación de logs
     - Envía alertas a Shuffle vía webhook
 
-5. **Kibana** (`:15601`)
-    - Frontend de visualización para Elasticsearch
+5. **Wazuh Dashboard** (`:15601` host → `:5601` container)
+    - Frontend de visualización para Wazuh Indexer (OpenSearch)
     - Dashboards para datos de eventos de Wazuh
     - Exploración de logs vía Discover
-    - Imagen: `docker.elastic.co/kibana/kibana:7.17.29`
+    - Imagen: `wazuh/wazuh-dashboard:4.14.0` (basado en OpenSearch Dashboards)
 
 #### Inteligencia de Amenazas
 
-6. **MISP** (`:8082`)
+6. **MISP** (`:8083`)
     - Plataforma de inteligencia de amenazas open-source
     - Compartición y gestión de IoCs
     - Integración de feeds
@@ -362,10 +388,11 @@ organizado en capas (domain, services, infrastructure), existen acoplamientos y 
 #### Capa de Datos
 
 7. **Elasticsearch** (red Docker interna)
-    - `docker.elastic.co/elasticsearch/elasticsearch:7.17.29`
-    - Backend compartido para Shuffle, TheHive y Kibana
+    - `docker.elastic.co/elasticsearch/elasticsearch:7.10.2`
+    - Backend para TheHive, Cortex, métricas del Lab API (`soar-metrics`) y datasource de Grafana
     - Agregación de logs y búsqueda full-text
-    - Configuración single-node con xpack.security habilitado
+    - Configuración single-node con `xpack.security.enabled=false`; se mantiene un password canónico `ELASTIC_PASSWORD=ElasticLab2024SecurePass` en `.env.full` y en las aplicaciones para compatibilidad con clientes que sí envían credenciales.
+    - **No es redundancia**: OpenSearch 2.10.0 se despliega en paralelo porque Shuffle requiere un motor OpenSearch nativo, mientras que TheHive/Cortex dependen de `elastic4play` / ES 7.x (ver [Motores de búsqueda: coexistencia de Elasticsearch y OpenSearch](search_engine_coexistence.md)).
 
 8. **Redis** (interno)
     - Almacenamiento de sesiones y caché para Shuffle
@@ -374,17 +401,23 @@ organizado en capas (domain, services, infrastructure), existen acoplamientos y 
 9. **MariaDB** (interno)
     - Backend de base de datos para MISP
 
+10. **Tenzir** (nodo de desarrollo, opcional)
+    - Imagen: `tenzir/tenzir:main`
+    - Puertos host: `15160` → `5160`, `15140` → `1514/udp`
+    - Estado: desplegado en `docker-compose.core.yml` pero su pipeline de ingestión no está integrado en los playbooks activos del laboratorio.
+
 #### Acceso y Gestión
 
 10. **Nginx** (`:80`, `:443`)
-    - Proxy inverso para todos los servicios
-    - Sirve UI de gestión web estática en `:80` (redirect to HTTPS)
-    - Proxy inverso HTTPS en `:443`
+    - Terminación TLS y proxy inverso en `:443`; `:80` redirige a HTTPS
+    - Expone `/` → Web Management, `/thehive/` → TheHive, `/cortex/` → Cortex, `/shuffle-api/` → Shuffle Backend
+    - Shuffle UI (`:8081`), Web Management (`:8085`), Docs Site (`:8086`) y Grafana (`:8084`) se acceden directamente por sus puertos
 
 11. **Lab API** (`:8000`)
-    - Aplicación FastAPI (`apps/api/entrypoint.py`)
+    - Aplicación FastAPI (`src/soar_lab/interfaces/api/main.py`)
     - Endpoints de gestión y automatización del laboratorio
     - Health check en `/health`
+    - WebSocket `/api/ws/logs` para streaming de logs en vivo
 
 12. **Docs Site** (`:8086`)
     - Sitio estático Docusaurus
@@ -402,7 +435,7 @@ Fuentes de Alertas → API de Ingestión → Validación → Enriquecimiento →
 2. **Validación**: Validación de esquema y normalización de datos
 3. **Enriquecimiento**: Extracción de IoCs, búsqueda de inteligencia de amenazas
 4. **Scoring**: Evaluación automatizada de severidad
-5. **Almacenamiento**: Almacenamiento persistente en TheHive/Elasticsearch
+5. **Almacenamiento**: Almacenamiento persistente en TheHive/OpenSearch
 6. **Análisis**: Reconocimiento de patrones y detección de anomalías
 7. **Respuesta**: Ejecución automatizada de playbooks
 
@@ -411,6 +444,21 @@ Fuentes de Alertas → API de Ingestión → Validación → Enriquecimiento →
 ```
 Detección de Alerta → Triage → Investigación → Contención → Erradicación → Recuperación → Reporte
 ```
+
+#### Real vs. Simulado en la Respuesta
+
+| Fase | Estado | Evidencia / Notas |
+|------|--------|-------------------|
+| Detección (Wazuh) | Real | Agentes y manager levantados en Docker; alertas generadas por simulador o agente real |
+| Ingesta Webhook (Shuffle) | Real | `init_shuffle_webhook.py` crea workflow y webhook en Shuffle |
+| Triage (Shuffle) | Real | Reglas del workflow evalúan severidad y contexto |
+| Enriquecimiento (Cortex/MISP) | Real | Analyzers y búsquedas en MISP ejecutados en contenedores |
+| Creación de caso (TheHive) | Real | Caso, observables y tareas creados por API |
+| Contención de endpoint | Simulado | `notify.sh` / acciones de contención notifican pero no aíslan la red real; requiere agente EDR real para acción real |
+| Erradicación/Recuperación | Simulado | Scripts de notificación y métricas; no se eliminan amenazas reales |
+| Métricas (MTTR/KPIs) | Real | Cálculo e indexación en `soar-metrics` y Grafana |
+
+> Ver también [`docs/architecture/security.md`](security.md#estado-de-implementación-de-controles-clave) para la matriz de controles de seguridad.
 
 #### Integraciones Externas
 
@@ -462,7 +510,7 @@ sequenceDiagram
     participant Backend as Shuffle Backend
     participant TheHive as TheHive API
     participant Cortex as Cortex API
-    participant ES as Elasticsearch
+    participant ES as OpenSearch
 
     SIEM->>Shuffle: POST /api/v1/hooks/webhook (alert)
     Shuffle->>Backend: Reenvía alerta
@@ -504,28 +552,28 @@ sequenceDiagram
 
 #### Servicios, Puertos y Redes
 
-| Servicio           | Imagen                                                | Puerto host→contenedor                                       | Redes                 |
-|--------------------|-------------------------------------------------------|--------------------------------------------------------------|-----------------------|
-| `nginx`            | nginx:1.25-alpine                                     | `80:80`, `8085:80`*                                          | soar_net, logging_net |
-| `thehive`          | thehiveproject/thehive:3.5.2-1                        | `${THEHIVE_HTTP_PORT:-9000}:9000`                            | soar_net              |
-| `cortex`           | thehiveproject/cortex:3.1.4-1                         | `${CORTEX_HTTP_PORT:-9001}:9001`                             | soar_net              |
-| `shuffle-backend`  | ghcr.io/shuffle/shuffle-backend:2.2.1*               | `${SHUFFLE_API_PORT:-5001}:5001`                             | soar_net              |
-| `shuffle-frontend` | ghcr.io/shuffle/shuffle-frontend:2.2.1*              | `${SHUFFLE_UI_PORT:-8081}:80`                                | soar_net              |
-| `orborus`          | ghcr.io/shuffle/shuffle-orborus:2.2.1*               | — (interno)                                                  | soar_net              |
-| `elasticsearch`    | docker.elastic.co/elasticsearch/elasticsearch:7.17.29 | `${ELASTICSEARCH_PORT:-9201}:9200`                           | soar_net, ti_net      |
-| `redis`            | redis:7-alpine                                        | `${REDIS_PORT:-6379}:6379`                                   | soar_net, ti_net      |
-| `kibana`           | docker.elastic.co/kibana/kibana:7.17.29               | `${WAZUH_DASHBOARD_PORT:-15601}:5601`                        | soar_net              |
-| `wazuh-manager`    | wazuh/wazuh-manager:4.14.0                            | `${WAZUH_EVENTS_PORT:-15141}:1514`, `1515:1515`, `1516:1516` | soar_net              |
-| `misp`             | ghcr.io/misp/misp-docker/misp-core:2.4.177*           | `${MISP_PORT:-8083}:80`                                      | soar_net              |
-| `misp-db`          | mariadb:10.11                                         | — (interno)                                                  | soar_net              |
-| `misp-modules`     | ghcr.io/misp/misp-docker/misp-modules:2.4.177*         | — (interno)                                                  | soar_net              |
-| `api`              | build: apps/api/Dockerfile                            | `${API_PORT:-8000}:8000`                                     | soar_net, ti_net      |
-| `web-management`   | build: apps/web-management/Dockerfile                 | `8085:80`                                                    | soar_net              |
-| `docs-site`        | build: apps/docs-site/Dockerfile                      | `${DOCS_PORT:-8086}:3000`                                    | soar_net              |
-| `loki`             | grafana/loki:2.9.10                                   | — (interno)                                                  | logging_net           |
-| `promtail`         | grafana/promtail:2.9.10                               | — (interno)                                                  | logging_net           |
-| `grafana`          | grafana/grafana:10.3.4                                | `${GRAFANA_PORT:-8084}:3000`                                 | logging_net, soar_net |
-| `grafana-db`       | postgres:15-alpine                                    | — (interno)                                                  | logging_net           |
+| Servicio           | Imagen                                                | Puerto host→contenedor                | Redes                 |
+|--------------------|-------------------------------------------------------|---------------------------------------|-----------------------|
+| `nginx`            | nginx:1.25-alpine                                     | `80:80`, `443:443`                    | soar_net, logging_net |
+| `thehive`          | thehiveproject/thehive:3.5.2-1                        | `${THEHIVE_HTTP_PORT:-9000}:9000`    | soar_net              |
+| `cortex`           | thehiveproject/cortex:3.1.4-1                         | `${CORTEX_HTTP_PORT:-19001}:9001`     | soar_net              |
+| `shuffle-backend`  | ghcr.io/shuffle/shuffle-backend:2.2.1*                | `${SHUFFLE_API_PORT:-15001}:5001`     | soar_net              |
+| `shuffle-frontend` | ghcr.io/shuffle/shuffle-frontend:2.2.1*               | `${SHUFFLE_UI_PORT:-8081}:80`         | soar_net              |
+| `orborus`          | ghcr.io/shuffle/shuffle-orborus:2.2.1*                | — (interno)                           | soar_net              |
+| `elasticsearch`    | docker.elastic.co/elasticsearch/elasticsearch:7.10.2    | `${ELASTICSEARCH_PORT:-19200}:9200`   | soar_net, ti_net      |
+| `redis`            | redis:7-alpine                                        | `${REDIS_PORT:-6379}:6379`            | soar_net, ti_net      |
+| `wazuh.dashboard`  | wazuh/wazuh-dashboard:4.14.0                          | `${WAZUH_DASHBOARD_PORT:-15601}:5601` | soar_net              |
+| `wazuh-manager`    | wazuh/wazuh-manager:4.14.0                            | `${WAZUH_API_PORT:-55100}:55000`      | soar_net              |
+| `misp`             | ghcr.io/misp/misp-docker/misp-core:2.4.177*           | `${MISP_PORT:-8083}:80`               | soar_net              |
+| `misp-db`          | mariadb:10.11                                         | — (interno)                           | soar_net              |
+| `misp-modules`     | ghcr.io/misp/misp-docker/misp-modules:2.4.177*        | — (interno)                           | soar_net              |
+| `api`              | build: apps/api/Dockerfile                            | `${API_PORT:-8000}:8000`              | soar_net, ti_net      |
+| `web-management`   | build: apps/web-management/Dockerfile                 | `8085:80`                             | soar_net              |
+| `docs-site`        | build: apps/docs-site/Dockerfile                      | `${DOCS_PORT:-8086}:3000`             | soar_net              |
+| `loki`             | grafana/loki:2.9.10                                   | — (interno)                           | logging_net           |
+| `promtail`         | grafana/promtail:2.9.10                               | — (interno)                           | logging_net           |
+| `grafana`          | grafana/grafana:10.3.4                                | `${GRAFANA_PORT:-8084}:3000`          | logging_net, soar_net |
+| `grafana-db`       | postgres:14-alpine                                    | — (interno)                           | logging_net           |
 
 #### Redes Docker
 
@@ -541,63 +589,63 @@ sequenceDiagram
 
 #### Volúmenes Persistentes
 
-| Volumen                   | Servicio        | Contenido persistido                                   |
-|---------------------------|-----------------|--------------------------------------------------------|
-| `thehive_files`           | thehive         | Ficheros adjuntos a casos e incidentes                 |
-| `cortex_data`             | cortex          | Configuración y datos de analyzers                     |
-| `es_data`                 | elasticsearch   | Índices y datos de búsqueda (TheHive, Shuffle, Kibana) |
-| `redis_data`              | redis           | Persistencia de sesiones y caché de Shuffle            |
-| `kibana_data`             | kibana          | Configuración de dashboards y visualizaciones          |
-| `shuffle_apps`            | shuffle-backend | Apps y workflows de Shuffle                            |
-| `shuffle_files`           | shuffle-backend | Ficheros subidos al orquestador                        |
-| `misp_files`              | misp            | Eventos e IoCs de MISP                                 |
-| `misp_db`                 | misp-db         | Base de datos MariaDB de MISP                          |
-| `misp_configs`            | misp            | Configuración de MISP                                  |
-| `misp_logs`               | misp            | Logs de aplicación de MISP                             |
-| `nginx_logs`              | nginx           | Logs de acceso y error del proxy                       |
-| `wazuh_config`            | wazuh-manager   | Configuración del agente Wazuh                         |
-| `wazuh_etc`               | wazuh-manager   | Configuración de ossec                                 |
-| `wazuh_logs`              | wazuh-manager   | Logs de alertas y eventos                              |
-| `wazuh_queue`             | wazuh-manager   | Cola de eventos pendientes                             |
-| `wazuh_api_config`        | wazuh-manager   | Credenciales de la API Wazuh                           |
-| `wazuh_active_response`   | wazuh-manager   | Scripts de respuesta activa                            |
-| `wazuh_wodles`            | wazuh-manager   | Módulos de integración Wazuh                           |
-| `wazuh_var_multigroups`   | wazuh-manager   | Grupos de agentes                                      |
-| `wazuh_integration_files` | wazuh-manager   | Integraciones externas de Wazuh                        |
-| `loki_data`               | loki            | Logs almacenados en Loki                               |
-| `grafana_data`            | grafana         | Configuración y dashboards de Grafana                  |
-| `grafana_db_data`         | grafana-db      | Base de datos PostgreSQL de Grafana                    |
+| Volumen                   | Servicio        | Contenido persistido                                             |
+|---------------------------|-----------------|------------------------------------------------------------------|
+| `thehive_files`           | thehive         | Ficheros adjuntos a casos e incidentes                           |
+| `cortex_data`             | cortex          | Configuración y datos de analyzers                               |
+| `es_data`                 | elasticsearch   | Índices y datos de búsqueda (TheHive, Shuffle, métricas del Lab API) |
+| `redis_data`              | redis           | Persistencia de sesiones y caché de Shuffle                      |
+| `wazuh-dashboard-config`  | wazuh.dashboard | Configuración y personalización de Wazuh Dashboard               |
+| `shuffle_apps`            | shuffle-backend | Apps y workflows de Shuffle                                      |
+| `shuffle_files`           | shuffle-backend | Ficheros subidos al orquestador                                  |
+| `misp_files`              | misp            | Eventos e IoCs de MISP                                           |
+| `misp_db`                 | misp-db         | Base de datos MariaDB de MISP                                    |
+| `misp_configs`            | misp            | Configuración de MISP                                            |
+| `misp_logs`               | misp            | Logs de aplicación de MISP                                       |
+| `nginx_logs`              | nginx           | Logs de acceso y error del proxy                                 |
+| `wazuh_config`            | wazuh-manager   | Configuración del agente Wazuh                                   |
+| `wazuh_etc`               | wazuh-manager   | Configuración de ossec                                           |
+| `wazuh_logs`              | wazuh-manager   | Logs de alertas y eventos                                        |
+| `wazuh_queue`             | wazuh-manager   | Cola de eventos pendientes                                       |
+| `wazuh_api_config`        | wazuh-manager   | Credenciales de la API Wazuh                                     |
+| `wazuh_active_response`   | wazuh-manager   | Scripts de respuesta activa                                      |
+| `wazuh_wodles`            | wazuh-manager   | Módulos de integración Wazuh                                     |
+| `wazuh_var_multigroups`   | wazuh-manager   | Grupos de agentes                                                |
+| `wazuh_integration_files` | wazuh-manager   | Integraciones externas de Wazuh                                  |
+| `loki_data`               | loki            | Logs almacenados en Loki                                         |
+| `grafana_data`            | grafana         | Configuración y dashboards de Grafana                            |
+| `grafana_db_data`         | grafana-db      | Base de datos PostgreSQL de Grafana                              |
 
 #### Stack Tecnológico
 
-**Core Technologies**
+**Tecnologías principales**
 
-- **Backend**: Python 3.11, FastAPI (`apps/api/entrypoint.py`)
-- **Frontend**: Static HTML/JS (web-management), React (Shuffle)
+- **Backend**: Python 3.11, FastAPI (`src/soar_lab/interfaces/api/main.py`)
+- **Frontend**: HTML/JS estático (Web Management), React (Shuffle)
 - **SIEM**: Wazuh Manager 4.14.0
-- **Visualization**: Kibana 7.17.29
-- **SOAR**: Shuffle (backend + frontend + orborus)
-- **Case Management**: TheHive 5 + Cortex
-- **Threat Intel**: MISP
-- **Search**: Elasticsearch 7.17.29
-- **Cache**: Redis 7
-- **Proxy**: Nginx 1.25
-- **Docs**: Docusaurus 3
-- **Containerization**: Docker Compose 2
+- **Visualización**: Wazuh Dashboard 4.14.0 (OpenSearch Dashboards) en `:15601`
+- **Orquestación SOAR**: Shuffle (`ghcr.io/shuffle/shuffle-backend`, `-frontend`, `-orborus` 2.2.1)
+- **Gestión de casos**: TheHive 3.5.2-1 + Cortex 3.1.4-1
+- **Inteligencia de amenazas**: MISP 2.4.177 (`ghcr.io/misp/misp-docker/misp-core`)
+- **Búsqueda e índices**: Elasticsearch 7.10.2
+- **Caché**: Redis 7
+- **Proxy inverso / TLS**: Nginx 1.25
+- **Documentación**: Docusaurus 3 (`apps/docs-site`)
+- **Contenerización**: Docker Compose 2
 
-**Security Technologies**
+**Tecnologías de seguridad**
 
-- **Authentication**: JWT, OAuth 2.0
-- **Encryption**: TLS 1.3, AES-256
-- **Vulnerability Scanning**: OWASP ZAP, Snyk
-- **Secret Management**: HashiCorp Vault
+- **Autenticación**: JWT con `python-jose`, algoritmo `HS256`
+- **Cifrado en tránsito**: TLS 1.2/1.3 vía Nginx con certificados autofirmados
+- **Escaneo de vulnerabilidades**: Script `scan_vulnerabilities.sh` (Trivy a verificar en CI)
+- **Gestión de secretos**: Variables de entorno `.env.full`; generación mediante `soar-lab generate-secrets`
 
-**Development Tools**
+**Herramientas de desarrollo**
 
-- **Version Control**: Git, GitHub
-- **CI/CD**: GitHub Actions, Jenkins
-- **Testing**: pytest, Selenium, Playwright
-- **Documentation**: MkDocs, Swagger
+- **Control de versiones**: Git, GitHub
+- **CI/CD**: GitHub Actions
+- **Pruebas**: pytest, Playwright/Selenium para UI
+- **Documentación**: Docusaurus (portal oficial); Swagger/OpenAPI como fuente de contratos HTTP
 
 ### 3.5 Diagramas y tablas de apoyo
 
@@ -610,6 +658,33 @@ desde la capa de acceso hasta la capa de datos e infraestructura.
 
 El diagrama de zonas de seguridad presentado en la sección 3.1 muestra la segmentación de red en cuatro zonas
 principales: DMZ, Aplicación, Datos y Gestión.
+
+#### Matriz de estado funcional por componente
+
+| Componente / Capacidad | Estado | Evidencia / Notas |
+|------------------------|--------|---------------------|
+| Nginx (proxy inverso + TLS) | Parcial | Termina TLS en `https://soar.local`; no incluye WAF ni rate limiting avanzado |
+| Lab API (FastAPI) | Implementado | Endpoints de auth, analytics, backups, tests y proxy SOAR en `src/soar_lab/interfaces/api/main.py` |
+| Shuffle (workflows + webhook) | Implementado | Contenedores `shuffle-frontend`, `shuffle-backend`, `orborus`; workflow creado por `init_shuffle_webhook.py` |
+| TheHive | Implementado | Gestión de casos vía API en `soar_thehive:9000`; conexión con Cortex |
+| Cortex | Implementado | Analyzers ejecutados en contenedor; conexión con TheHive y MISP |
+| MISP | Implementado | Servicio `misp` en Docker; enriquecimiento de IoCs |
+| Wazuh (manager/indexer/dashboard) | Implementado | Stack Wazuh 4.14.0 levantado; alertas vía webhook o agente |
+| Elasticsearch | Implementado | `elasticsearch:9200`; backend para Shuffle, TheHive, métricas `soar-metrics` |
+| Redis | Implementado | Sesiones/caché de Shuffle |
+| Grafana + Loki + Promtail | Implementado | Dashboards en `:8084`; logs centralizados; plugin ES instalado |
+| Web Management | Implementado | SPA en `:8085` |
+| Network Watcher | Implementado | Reconecta workers de Shuffle a `soar_net` |
+| Tenzir Node | Parcial / No verificado | Desplegado en `docker-compose.core.yml` pero pipeline no integrado en playbooks activos |
+| Autenticación JWT | Implementado | Firma `HS256`; secret en `.env.full`; endpoints `/auth/login` y `/auth/verify` |
+| Autenticación MFA | Planificado | No hay implementación operativa |
+| Single Sign-On (SSO/SAML/OIDC) | Planificado | No implementado |
+| WAF | No verificado / Planificado | Nginx no está configurado como WAF |
+| DMZ / segmentación de red real | Simulado | Diagramas conceptuales; contenedores comparten Docker networks |
+| Contención de endpoints | Simulado | Acciones de contención son notificaciones/logs; no aísla endpoints reales sin agente EDR |
+| Erradicación / recuperación automatizada | Simulado | Backups y métricas reales; la erradicación real no se ejecuta |
+| Cifrado en tránsito (TLS) | Parcial | TLS en Nginx y Wazuh; tráfico interno Docker mayoritariamente HTTP |
+| Cifrado en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch/Wazuh Indexer |
 
 ## 4. Validación
 
@@ -638,7 +713,7 @@ La arquitectura se considera válida cuando:
 
 Las evidencias de validación incluyen:
 
-- Logs de Docker Compose (`docker-compose up`)
+- Logs de Docker Compose (`docker compose up`)
 - Salida de `docker ps` mostrando contenedores en ejecución
 - Logs de health checks
 - Resultados de pruebas automatizadas
@@ -666,14 +741,17 @@ Las evidencias de validación incluyen:
 
 - **Backup**: Implementar backup automatizado de volúmenes persistentes
   ```bash
-  # Script de backup disponible en scripts/infra/backup.sh
-  make backup
+  # Crear backup vía API
+  curl -X POST http://localhost:8000/api/backup/create \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"name": "manual-backup"}'
   ```
 - **Procedimiento de Backup de Volúmenes**:
     - Los volúmenes Docker usan bind mounts a `artifacts/data/`
     - Backup manual: Copiar directorio `artifacts/data/` a ubicación segura
-    - Backup automatizado: Usar `scripts/infra/backup.sh` o configurar crontab
-    - Restauración: Usar `scripts/infra/restore.sh` con el backup deseado
+    - Backup automatizado: Llamar al endpoint `/api/backup/create` o programar tarea con `curl`
+    - Restauración: Llamar al endpoint `/api/backup/restore` con el nombre del backup
 - **Monitoreo**: Configurar alertas para health checks y métricas de recursos
 - **Seguridad**: Revisar y hardening de configuración antes de despliegue en producción
 - **Documentación**: Mantener documentación actualizada con cambios de configuración

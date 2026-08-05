@@ -1,13 +1,10 @@
-#!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - HTTP Alert Sender (Infrastructure)
+"""SOAR Ransomware Lab - HTTP Alert Sender (Infrastructure)
 Sends alert payloads to external SOAR tools via HTTP.
 Responsibility: transport only (no payload generation, no validation logic).
-This is infrastructure - implements the AlertTransporter port from domain.
 """
 
 import requests
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from soar_lab.config.logging import get_logger
 from soar_lab.domain.ports import AlertTransporter
@@ -31,24 +28,15 @@ class HTTPAlertSender(AlertTransporter):
         self.timeout = timeout
         self._session = requests.Session()
         self._session.verify = False
-        self._session.headers.update(
-            {
-                "Authorization": f"Bearer {api_token}",
-                "Content-Type": "application/json",
-            }
-        )
+        headers = {"Content-Type": "application/json"}
+        if api_token:
+            headers["Authorization"] = f"Bearer {api_token}"
+        self._session.headers.update(headers)
         self.alerts_sent = 0
         self.alerts_failed = 0
 
     def send(self, alert: Dict[str, Any]) -> Dict[str, Any]:
-        """Send a single alert to the webhook URL.
-
-        Args:
-            alert: Alert payload dict.
-
-        Returns:
-            AlertSendResult with keys: success, status_code, alert_id.
-        """
+        """Send a single alert to the webhook URL."""
         alert_id = alert.get("alert_id", "unknown")
         try:
             logger.info(f"Sending alert {alert_id} to {self.webhook_url}")

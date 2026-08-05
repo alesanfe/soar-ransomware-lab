@@ -9,8 +9,27 @@ $WAZUH_MANAGER_IP = $SOAR_IP
 $WAZUH_AGENT_VERSION = "4.7.3-1"
 $PYTHON_VERSION = "3.11.9"
 $REPO_DIR = "C:\vagrant"
-$SIEM_WEBHOOK_URL = "http://${SOAR_IP}:5001/api/v1/hooks/siem-alerts"
-$SIEM_WEBHOOK_TOKEN = "SiemToken123!@#"
+# Token del webhook de Shuffle. NUNCA se debe hardcodear.
+# Se toma de la variable de entorno SIEM_WEBHOOK_TOKEN o del archivo webhook_info.json generado
+# por init_shuffle_webhook.py. El valor debe coincidir con el trigger_id del workflow activo.
+$SIEM_WEBHOOK_TOKEN = $env:SIEM_WEBHOOK_TOKEN
+if (-not $SIEM_WEBHOOK_TOKEN) {
+    $webhookInfoPath = "$REPO_DIR\artifacts\results\webhook_info.json"
+    if (Test-Path $webhookInfoPath) {
+        try {
+            $webhookInfo = Get-Content $webhookInfoPath -Raw | ConvertFrom-Json -ErrorAction Stop
+            $candidate = if ($webhookInfo.webhook_url_host) { $webhookInfo.webhook_url_host } else { $webhookInfo.webhook_url }
+            if ($candidate -match "hooks/(.+)$") { $SIEM_WEBHOOK_TOKEN = $Matches[1] }
+        } catch {
+            Write-Warning "No se pudo leer webhook_info.json: $_"
+        }
+    }
+}
+if (-not $SIEM_WEBHOOK_TOKEN) {
+    Write-Error "SIEM_WEBHOOK_TOKEN no está configurado y no se encontró webhook_info.json. Configure el token del workflow activo antes de continuar."
+    exit 1
+}
+$SIEM_WEBHOOK_URL = "http://${SOAR_IP}:5001/api/v1/hooks/${SIEM_WEBHOOK_TOKEN}"
 
 Write-Host "==> [1/5] Instalando Chocolatey..."
 if (-not (Get-Command choco -ErrorAction SilentlyContinue))
@@ -65,7 +84,7 @@ Write-Host "  SOAR IP     : ${SOAR_IP}"
 Write-Host "  Webhook URL : `$env:SHUFFLE_WEBHOOK_URL"
 Write-Host ""
 
-python -m soar_lab.services.send_alert --type malicious --num-alerts 5 --delay 3 --webhook-url `$env:SHUFFLE_WEBHOOK_URL --api-token `$env:SIEM_WEBHOOK_TOKEN
+python -m soar_lab.simulator.simulate_alerts --count 5 --delay 3 --webhook `$env:SHUFFLE_WEBHOOK_URL
 "@
 $simulateScript | Out-File -FilePath "C:\simulate-attack.ps1" -Encoding UTF8
 

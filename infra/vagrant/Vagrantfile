@@ -43,7 +43,7 @@ Vagrant.configure("2") do |config|
 
     # Recursos: Elasticsearch + todos los servicios necesitan memoria y disco
     ub.vm.provider "virtualbox" do |vb|
-      vb.name   = "soar-ransomware-lab-ubuntu-v2"
+      vb.name   = ENV.fetch("SOAR_VM_NAME", "soar-ransomware-lab-ubuntu-v3")
       vb.memory = 12288
       vb.cpus   = 4
       vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
@@ -64,9 +64,9 @@ Vagrant.configure("2") do |config|
          Web Management : https://localhost:9443/
          TheHive        : https://localhost:9443/thehive/
          Cortex         : https://localhost:9443/cortex/
-         Kibana/Wazuh   : https://localhost:9443/kibana/
          Shuffle        : https://localhost:9081/
          Shuffle API    : http://localhost:9001/
+         Wazuh Dashboard: no reenviado por defecto (añadir forwarded_port 15601 si es necesario)
          SOAR IP (red interna): #{SOAR_IP}
          Nota: puertos 9080/9081/9443/9001 para no colisionar con stack Docker local
     MSG

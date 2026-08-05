@@ -8,9 +8,9 @@ import asyncio
 import pytest
 import subprocess
 from pathlib import Path
+from soar_lab.common.exceptions import SubprocessError
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from soar_lab.exceptions import SubprocessError
 from soar_lab.infrastructure.subprocess_runner import (
     SubprocessResult,
     SubprocessRunner
@@ -243,7 +243,7 @@ class TestSubprocessRunner:
         runner = SubprocessRunner(default_timeout=300)
 
         with patch('asyncio.wait_for') as mock_wait, \
-                patch('asyncio.create_subprocess_exec') as mock_create:
+            patch('asyncio.create_subprocess_exec') as mock_create:
             mock_proc = AsyncMock()
             mock_proc.returncode = 0
             mock_proc.communicate.return_value = (b"test", b"")

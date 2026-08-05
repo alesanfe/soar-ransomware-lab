@@ -40,7 +40,7 @@ configuración de redes, persistencia de datos y procedimientos de despliegue.
 ### 1.2 Contexto
 
 El SOAR Ransomware Lab utiliza Docker Compose para orquestar 16 servicios a través de 4 redes con mejoras en networking,
-persistencia de datos y logging. Para la arquitectura completa del sistema, ver [README.md](README.md).
+persistencia de datos y logging. Para la arquitectura completa del sistema, ver [README.md](../../README.md).
 
 ## 2. Alcance
 
@@ -80,271 +80,187 @@ Este documento depende de:
 
 ### 3.1 Estrategia de contenerización
 
-#### Organización de Archivos Compose
+#### Organización de archivos Compose
 
-Los archivos Docker Compose están organizados en `infra/docker/compose/` para mejor mantenibilidad:
+La orquestación se divide en varios archivos `docker-compose*.yml` bajo `infra/docker/compose/` para facilitar perfiles y arranque selectivo:
+
+| Archivo | Propósito | Servicios principales |
+|---|---|---|
+| `infra/docker/compose/docker-compose.yml` | Redes, volúmenes globales y `elasticsearch` | `elasticsearch` |
+| `infra/docker/compose/docker-compose.core.yml` | Core SOAR | `redis`, `thehive`, `cortex`, `shuffle-frontend`, `shuffle-backend`, `orborus`, `network-watcher`, `tenzir-node` |
+| `infra/docker/compose/docker-compose.misp.yml` | Inteligencia de amenazas | `misp-db`, `misp-modules`, `misp` |
+| `infra/docker/compose/docker-compose.wazuh.yml` | SIEM Wazuh | `wazuh.manager`, `wazuh.indexer`, `wazuh.dashboard` |
+| `infra/docker/compose/docker-compose.api.yml` | API, portal y proxy | `api`, `docs-site`, `web-management`, `nginx` |
+| `infra/docker/compose/logging/docker-compose.logging.yml` | Observabilidad | `grafana-db`, `grafana`, `loki`, `promtail` |
+
+> Nota: Todos los comandos se ejecutan desde la raíz del repositorio, salvo indicación expresa.
+
+#### Configuración auxiliar de logging
 
 ```
-infra/docker/compose/
-├── docker-compose.yml           # Main orchestrator (networks, volumes, elasticsearch)
-├── docker-compose.core.yml      # Redis, TheHive, Cortex, Shuffle
-├── docker-compose.misp.yml      # MISP threat intelligence stack
-├── docker-compose.wazuh.yml     # Wazuh SIEM stack
-├── docker-compose.api.yml       # API, docs, web-management, nginx
-└── logging/
-    ├── docker-compose.logging.yml  # Loki, Promtail, Grafana, PostgreSQL
-    ├── loki-config.yml             # Loki configuration
-    ├── promtail-config.yml         # Promtail configuration
-    └── grafana-datasources.yml     # Grafana datasource configuration
+infra/docker/compose/logging/
+├── docker-compose.logging.yml
+├── promtail-config.yml        # descubrimiento de contenedores Docker → Loki
+├── loki-config.yml            # archivo de referencia; compose usa la config por defecto de la imagen
+├── grafana-datasources.yml    # datasource Elasticsearch para KPIs
+├── grafana-kpi-dashboard.yml  # provisioning del dashboard
+└── kpi-dashboard.json         # definición del dashboard de KPIs
 ```
 
-#### Iniciar Servicios
+#### Iniciar servicios
 
-Para iniciar todos los servicios usando el Makefile (recomendado):
+Desde la raíz, con `make up` (recomendado, incluye logging):
 
 ```bash
 make up
 ```
 
-Este comando inicia todos los servicios incluyendo el stack de logging (Grafana, Loki, Promtail).
-
-Para iniciar manualmente con Docker Compose:
+Equivalente manual:
 
 ```bash
 docker compose --env-file .env.full -f infra/docker/compose/docker-compose.yml -f infra/docker/compose/docker-compose.core.yml -f infra/docker/compose/docker-compose.misp.yml -f infra/docker/compose/docker-compose.wazuh.yml -f infra/docker/compose/docker-compose.api.yml -f infra/docker/compose/logging/docker-compose.logging.yml up -d
 ```
 
-#### Consideraciones de Seguridad Docker
+#### Consideraciones de seguridad
 
-- Redes internas aisladas con `internal: true`
-- Servicios solo expuestos en redes necesarias
-- Límites de recursos previenen agotamiento de recursos
-- Healthchecks detectan servicios no saludables
-- Bind mounts para control directo de datos
+- `ti_net` es `internal: true`; `soar_net` y `logging_net` no son internas en esta versión de laboratorio.
+- `soar_edge` se define en el Compose base pero actualmente no se asigna a ningún servicio; la exposición externa se realiza mediante `ports:` mapeadas.
+- `orborus` y `cortex` montan el socket Docker del host para lanzar analizadores; implica riesgo de escalada de privilegios y está limitado a entornos controlados.
+- Los healthchecks se ejecutan dentro del contenedor y deben distinguirse entre *liveness*, *readiness* y salud funcional completa.
 
 ### 3.2 Servicios y composición
 
-#### Servicios SOAR Core
+#### Tabla canónica de servicios
 
-| Servicio         | Imagen                         | Puertos | Redes               | Propósito             |
-|------------------|--------------------------------|---------|---------------------|-----------------------|
-| elasticsearch    | elasticsearch:7.17.29          | 9201    | soar_net, ti_net    | Búsqueda y análisis   |
-| redis            | redis:7-alpine                 | 6379    | ti_net, soar_net    | Caching y cola        |
-| thehive          | thehiveproject/thehive:3.5.2-1 | 9000    | soar_edge, soar_net | Gestión de casos      |
-| cortex           | thehiveproject/cortex:3.1.4-1  | 9001    | soar_edge, soar_net | Motor de análisis     |
-| shuffle-frontend | shuffle-frontend:latest        | 8081    | soar_edge, soar_net | UI de workflows       |
-| shuffle-backend  | shuffle-backend:latest         | 5001    | soar_edge, soar_net | Motor de workflows    |
-| orborus          | shuffle-orborus:latest         | -       | soar_net            | Ejecutor de workflows |
+| Servicio | Imagen / build | Contenedor (por defecto) | Puerto host → contenedor | Redes | Healthcheck | Propósito |
+|---|---|---|---|---|---|---|
+| elasticsearch | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `soar_elasticsearch` | `${ELASTICSEARCH_PORT:-19200}` → 9200 | `soar_net`, `ti_net` | `GET /_cluster/health` | Motor de búsqueda y métricas |
+| redis | `redis:7-alpine` | `soar_redis` | 6379 → 6379 | `ti_net`, `soar_net` | `nc -z 127.0.0.1 6379` | Cache/cola con autenticación |
+| thehive | `thehiveproject/thehive:3.5.2-1` | `soar_thehive` | `${THEHIVE_HTTP_PORT:-9000}` → 9000 | `soar_net` | `GET /api/status` | Gestión de casos |
+| cortex | build `infra/docker/images/cortex/Dockerfile` | `soar_cortex` | `${CORTEX_HTTP_PORT:-19001}` → 9001 | `soar_net` | HTTP 2xx/3xx en `:9001/` | Motor de analizadores; monta `/var/run/docker.sock` |
+| shuffle-frontend | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | `soar_shuffle_frontend` | `${SHUFFLE_UI_PORT:-8081}` → 80 | `soar_net`, `ti_net` | `GET http://localhost:80` | UI de workflows |
+| shuffle-backend | `ghcr.io/shuffle/shuffle-backend:2.2.1` | `soar_shuffle_backend` | `${SHUFFLE_API_PORT:-15001}` → 5001 | `soar_net`, `ti_net` | deshabilitado | Motor de workflows |
+| orborus | `ghcr.io/shuffle/shuffle-orborus:2.2.1` | `soar_orborus` | — | `soar_net` | `nc -z shuffle-backend 5001` | Ejecutor de contenedores de analizadores |
+| network-watcher | build `src/soar_lab/infrastructure/network_watcher` | `soar_network_watcher` | `${NETWORK_WATCHER_PORT:-15130}` → 8080 | `soar_net` | `GET /health` en `:8080` | Diagnóstico/recuperación de red (sincroniza `/etc/hosts` de workers) |
+| tenzir-node | `tenzir/tenzir:main` | `soar_tenzir_node` | 15160 → 5160, 15140 → 1514 | `soar_net` | — | Nodo Tenzir (modo dev) |
+| misp-db | `mariadb:10.11` | `soar_misp_db` | — | `soar_net` | `mysqladmin ping` | BD MISP (volumen Docker, no bind) |
+| misp-modules | `ghcr.io/misp/misp-docker/misp-modules:latest` | `soar_misp_modules` | — | `soar_net` | socket `localhost:6666` | Módulos MISP |
+| misp | `ghcr.io/misp/misp-docker/misp-core:latest` | `soar_misp` | `${MISP_PORT:-8083}` → 80 | `soar_net` | `GET /users/heartbeat` | Plataforma de inteligencia de amenazas |
+| wazuh.manager | `wazuh/wazuh-manager:4.14.0` | `soar_wazuh_manager` | `${WAZUH_EVENTS_PORT:-15141}` → 1514, `${WAZUH_ENROLLMENT_PORT:-1515}` → 1515, `${WAZUH_SYSLOG_PORT:-514}` → 514/udp, `${WAZUH_API_PORT:-55100}` → 55000 | `soar_net` | `wazuh-control status` | Manager SIEM |
+| wazuh.indexer | `wazuh/wazuh-indexer:4.14.0` | `soar_wazuh_indexer` | `${WAZUH_INDEXER_PORT:-9200}` → 9200 | `soar_net` | `GET /_cluster/health` (HTTPS, auth) | Índice Wazuh (OpenSearch) |
+| wazuh.dashboard | `wazuh/wazuh-dashboard:4.14.0` | `soar_wazuh_dashboard` | `${WAZUH_DASHBOARD_PORT:-15601}` → 5601 | `soar_net` | deshabilitado | Dashboard Wazuh |
+| api | build `apps/api/Dockerfile` (contexto raíz) | `soar_api` | `${API_PORT:-8000}` → 8000 | `soar_net`, `ti_net`, `logging_net` | `GET /health` | API FastAPI |
+| docs-site | build `apps/docs-site/Dockerfile` (contexto raíz) | `soar_docs_site` | `${DOCS_PORT:-8086}` → 8080 | `soar_net` | deshabilitado | Portal Docusaurus |
+| web-management | build `apps/web-management/Dockerfile` | `soar_web_management` | 8085 → 80 | `soar_net` | `pgrep nginx` | SPA web de operación |
+| nginx | `nginx:1.25-alpine` | `soar_nginx` | 80 → 80, 443 → 443 | `soar_net`, `logging_net` | `GET /nginx-health` | Proxy inverso y TLS |
+| grafana-db | `postgres:14-alpine` | `soar_grafana_db` | — | `logging_net` | `pg_isready -U grafana` | BD Grafana |
+| grafana | `grafana/grafana:10.3.4` | `soar_grafana` | `${GRAFANA_PORT:-8084}` → 3000 | `logging_net`, `soar_net` | `GET /api/health` | Visualización KPIs/logs |
+| loki | `grafana/loki:2.9.10` | `soar_loki` | — | `logging_net` | — (imagen sin shell) | Agregación de logs |
+| promtail | `grafana/promtail:2.9.10` | `soar_promtail` | — | `logging_net`, `soar_net` | — | Envío de logs Docker a Loki |
 
-#### Stack de Inteligencia de Amenazas
+**Notas de nomenclatura**:
+- Los nombres de contenedor usan el prefijo `${COMPOSE_PROJECT_NAME:-soar}_` y `_` como separador (ej. `soar_api`).
+- Los nombres de servicio con guión (`shuffle-frontend`, `wazuh.manager`) son los nombres internos de Docker Compose.
+- `soar_api` es el nombre del **contenedor**; el **servicio** Compose es `api` y el **hostname** interno es `api`.
 
-| Servicio     | Imagen              | Puertos | Redes               | Propósito                              |
-|--------------|---------------------|---------|---------------------|----------------------------------------|
-| misp-db      | mariadb:10.11       | -       | soar_net            | Base de datos MISP                     |
-| misp-modules | misp-modules:latest | -       | soar_net            | Analizadores MISP                      |
-| misp         | misp-core:latest    | 8082    | soar_edge, soar_net | Plataforma de inteligencia de amenazas |
+#### Healthchecks y dependencias
 
-#### Stack SIEM
+- `shuffle-backend` no tiene healthcheck configurado; `orborus` lo monitoriza mediante `nc -z shuffle-backend 5001`.
+- `loki` usa la imagen mínima de Grafana Loki (`2.9.10`), sin shell ni curl, por lo que no dispone de healthcheck.
+- `docs-site` y `wazuh.dashboard` tienen healthchecks deshabilitados en la configuración actual por requisitos de autenticación o tiempos de arranque.
+- `thehive` usa `/api/status` para evitar falsos negativos mientras Elasticsearch prepara sus índices.
 
-| Servicio      | Imagen               | Puertos         | Redes               | Propósito     |
-|---------------|----------------------|-----------------|---------------------|---------------|
-| wazuh-manager | wazuh-manager:4.14.0 | 15141,1515-1516 | soar_net, soar_edge | Gestor SIEM   |
-| kibana        | kibana:7.17.29       | 15601           | soar_edge, soar_net | Visualización |
+#### Límites de recursos
 
-#### API y Documentación
+Valores extraídos de los archivos Compose; pueden ajustarse en `.env.full` o directamente en `deploy.resources`:
 
-| Servicio       | Imagen              | Puertos | Redes                       | Propósito           |
-|----------------|---------------------|---------|-----------------------------|---------------------|
-| api            | soar-api            | 8000    | soar_edge, soar_net, ti_net | API del laboratorio |
-| docs-site      | soar-docs-site      | 8086    | soar_edge, soar_net         | Documentación       |
-| web-management | soar-web-management | 8085    | soar_edge, soar_net         | UI de gestión       |
-
-#### Proxy Inverso
-
-| Servicio | Imagen            | Puertos | Redes               | Propósito     |
-|----------|-------------------|---------|---------------------|---------------|
-| nginx    | nginx:1.25-alpine | 80,443  | soar_edge, soar_net | Proxy inverso |
-
-#### Healthchecks
-
-Todos los servicios tienen healthchecks configurados:
-
-- **elasticsearch**: Verificación de salud del cluster
-- **redis**: Redis ping
-- **thehive**: Endpoint de salud de API
-- **cortex**: Verificación de estado HTTP
-- **shuffle-frontend**: Verificación HTTP
-- **shuffle-backend**: Verificación de endpoint de login
-- **orborus**: Verificación de salud del backend de Shuffle
-- **misp-db**: MySQL ping
-- **misp-modules**: Verificación de puerto 6666
-- **misp**: Endpoint de heartbeat
-- **wazuh-manager**: Verificación de endpoint de API
-- **kibana**: Verificación de API de estado
-- **api**: Verificación de endpoint de salud
-- **docs-site**: Verificación de puerto 8080
-- **web-management**: Verificación de proceso Nginx
-- **nginx**: Verificación de endpoint de salud
-
-#### Límites de Recursos
-
-Los servicios tienen límites de recursos configurados:
-
-- **Servicios grandes** (elasticsearch, thehive, cortex, shuffle-backend, misp):
-    - CPU: límite de 2.0 cores, 1.0 cores reservados
-    - Memoria: límite de 4GB, 2GB reservados
-
-- **Servicios medianos** (redis, shuffle-frontend, orborus, wazuh-manager, kibana, nginx, api):
-    - CPU: límite de 1.0 cores, 0.5 cores reservados
-    - Memoria: límite de 1-2GB, 512MB-1GB reservados
-
-- **Servicios pequeños** (docs-site, web-management):
-    - CPU: límite de 0.5 cores, 0.25 cores reservados
-    - Memoria: límite de 256-512MB, 128-256MB reservados
+| Grupo | Servicios | CPU límite / reserva | Memoria límite / reserva |
+|---|---|---|---|
+| Grandes | `elasticsearch`, `thehive`, `cortex`, `shuffle-backend`, `misp` | 2.0 / 1.0 cores | 4GB / 2GB |
+| Medianos | `redis`, `shuffle-frontend`, `orborus`, `wazuh.manager`, `wazuh.indexer`, `grafana`, `api` | 1.0 / 0.5 cores | 1-2GB / 0.5-1GB |
+| Pequeños | `docs-site`, `web-management`, `promtail` | 0.5 / 0.25 cores | 256-512MB / 128-256MB |
 
 ### 3.3 Redes y volúmenes
 
-#### Topología de Red
+#### Topología de red
 
-- **soar_edge** (172.18.0.0/16)
-    - Red orientada al exterior
-    - Servicios expuestos al host: nginx, thehive, cortex, shuffle-frontend, shuffle-backend, wazuh-manager, kibana,
-      misp, api, docs-site, web-management
-    - Propósito: Acceso a Internet y exposición de servicios externos
+| Red | CIDR | Tipo | Servicios | Propósito |
+|---|---|---|---|---|
+| `bridge` | — | `external: true` | Ninguno directamente | Red por defecto de Docker; declarada por compatibilidad |
+| `soar_edge` | dinámico | bridge | Ningún servicio en la versión actual | Definida en el Compose base pero no asignada; la exposición externa se hace por `ports:` |
+| `soar_net` | `10.100.0.0/16` | bridge | `elasticsearch`, `redis`, `thehive`, `cortex`, `shuffle-*`, `orborus`, `network-watcher`, `tenzir-node`, `misp*`, `wazuh.*`, `api`, `web-management`, `nginx`, `grafana`, `promtail` | Red principal del laboratorio |
+| `ti_net` | `172.22.0.0/16` | `internal: true` | `elasticsearch`, `redis`, `api` | Aislada del exterior; tráfico de inteligencia de amenazas |
+| `logging_net` | `172.23.0.0/16` | bridge | `grafana-db`, `grafana`, `loki`, `promtail`, `nginx` | Tráfico de observabilidad |
 
-- **soar_net** (172.20.0.0/16)
-    - Red interna para servicios SOAR
-    - Servicios: elasticsearch, redis, thehive, cortex, shuffle services, api, nginx
-    - Aislada del acceso externo
-    - Propósito: Comunicación interna segura entre componentes SOAR
+> **Importante:** `soar_edge` no conecta actualmente a los servicios; no confundirla con `soar_net`. El acceso externo se controla mediante mapeos de puertos del host.
 
-- **ti_net** (172.21.0.0/16)
-    - Red interna para Inteligencia de Amenazas
-    - Servicios: redis, misp, misp-modules, api
-    - Aislada del acceso externo
-    - Propósito: Comunicación segura para componentes de inteligencia de amenazas
+#### DNS y aliases
 
-- **logging_net** (172.23.0.0/16)
-    - Red dedicada para infraestructura de logging
-    - Servicios: Loki, Promtail, Grafana, PostgreSQL
-    - Propósito: Tráfico de logging aislado
+- Docker Compose crea un servidor DNS interno (`127.0.0.11`) en cada red.
+- Los nombres de servicio (`api`, `thehive`, `elasticsearch`) resuelven a la IP del contenedor dentro de la red.
+- `orborus` lanza contenedores de analizadores en la red `soar_net` (o `${COMPOSE_PROJECT_NAME}_net` según `SHUFFLE_APP_NETWORK`); requiere que exista la red y que el socket Docker tenga permisos adecuados.
+- `network-watcher` puede modificar `/etc/hosts` o DNS de contenedores dependientes para resolver problemas de conectividad (ver `docs/operations/network_watcher.md`).
 
-#### Seguridad de Red
+#### Seguridad de red
 
-- Las redes internas (soar_net, ti_net) están configuradas con `internal: true` para prevenir acceso externo
-- Nombres de bridge personalizados para identificación más fácil de redes
-- Subredes IPAM definidas para direccionamiento IP predecible
-- Servicios solo expuestos en redes necesarias
+- `ti_net` es la única red marcada como `internal: true`; no tiene salida a Internet.
+- Los servicios expuestos al host (`ports:`) no están necesariamente en una red externa; el aislamiento depende del firewall del host.
+- `api` pertenece a `soar_net`, `ti_net` y `logging_net` para orquestar integraciones y consumir métricas/logs.
+- `nginx` conecta a `soar_net` y `logging_net`; termina TLS y enruta a `api` y `web-management`.
 
-#### Estrategia de Volúmenes
+#### Estrategia de volúmenes
 
-Todos los datos críticos se persisten usando bind mounts a `artifacts/data/` para mejor control:
+Los volúmenes se declaran en `infra/docker/compose/docker-compose.yml`. La mayoría son bind mounts que apuntan a `artifacts/`:
 
 ```
 artifacts/
 ├── data/
-│   ├── elasticsearch/     # Elasticsearch data
-│   ├── thehive/
-│   │   └── files/         # TheHive file storage
-│   ├── cortex/            # Cortex data
-│   ├── shuffle/
-│   │   ├── apps/         # Shuffle applications
-│   │   └── files/        # Shuffle file storage
-│   ├── redis/            # Redis persistence
-│   ├── misp/
-│   │   ├── db/           # MISP database
-│   │   ├── files/        # MISP files
-│   │   └── configs/      # MISP configurations
-│   ├── wazuh/
-│   │   ├── config/       # Wazuh configuration
-│   │   ├── api_config/   # Wazuh API config
-│   │   ├── etc/          # Wazuh etc directory
-│   │   ├── queue/        # Wazuh queue
-│   │   ├── var_multigroups/ # Wazuh multigroups
-│   │   ├── integration_files/ # Wazuh integrations
-│   │   ├── active_response/    # Wazuh active response
-│   │   └── wodles/       # Wazuh wodles
-│   └── kibana/           # Kibana data
-│   ├── loki/             # Loki logs storage
-│   └── grafana/          # Grafana data
-└── logs/
-    ├── nginx/            # Nginx logs
-    └── wazuh/            # Wazuh logs
+│   ├── elasticsearch/   # es_data
+│   ├── thehive/files/   # thehive_files
+│   ├── cortex/          # cortex_data
+│   ├── shuffle/apps/    # shuffle_apps
+│   ├── shuffle/files/   # shuffle_files
+│   ├── redis/           # redis_data
+│   ├── misp/files/      # misp_files
+│   ├── misp/configs/    # misp_configs
+│   ├── wazuh/...        # múltiples bind mounts Wazuh
+│   ├── loki/            # loki_data
+│   └── grafana/         # grafana_data
+├── logs/
+│   ├── nginx/           # nginx_logs
+│   └── misp/            # misp_logs
+└── backups/             # montado en /app/backups (api)
 ```
 
-**Nota Importante:** Los datos se almacenan en `artifacts/data/` en el host. Esto permite backup directo del directorio
-`artifacts/` para preservar todos los datos del laboratorio.
+**Casos especiales:**
 
-**Advertencia:** El uso de bind mounts a `artifacts/data/` crea una dependencia fuerte entre el código y la estructura
-de directorios del host. Esto puede causar problemas si la estructura de `artifacts/` cambia.
-
-#### Benefits of Bind Mounts
-
-- Direct access to data from host system
-- Easier backup and recovery
-- Better control over data location
-- Simplified data migration
-- Integration with existing backup scripts (now pointing to `artifacts/backups/`)
+- `misp_db` es un **volumen Docker normal** (no bind mount). En Windows/Docker Desktop, bind mounts de MariaDB generan errores de permisos (`rename`). Usar `docker compose down -v` elimina el volumen lógico, no un directorio local.
+- Wazuh utiliza numerosos bind mounts bajo `artifacts/data/wazuh/` para `api_config`, `etc`, `logs`, `queue`, `var_multigroups`, `integrations`, `active_response`, `agentless`, `wodles`, `filebeat_etc` y `filebeat_var`.
+- `wazuh-indexer-data`, `wazuh-dashboard-config` y `wazuh-dashboard-custom` son volúmenes Docker normales gestionados por el stack Wazuh.
+- El logging stack usa volúmenes Docker normales para `grafana_db_data`, `grafana_data` y `loki_data`.
 
 #### Logging
 
-**Configuración Actual:**
+Cada servicio utiliza el driver `json-file` con rotación:
 
-Cada servicio usa el driver json-file con:
+- `max-size`: 10 MB
+- `max-file`: 3 archivos
+- Total aproximado: ~30 MB por servicio en disco de Docker.
 
-- Tamaño máximo: 10MB por archivo
-- Archivos máximos: 3 por servicio
-- Total: ~30MB por servicio
+Ubicaciones adicionales:
 
-**Ubicaciones de Logs:**
+- Host: `artifacts/logs/nginx/` y `artifacts/logs/misp/` (bind mounts explícitos).
+- Streaming en vivo: `api` expone `/ws/logs` (WebSocket) y `/api/ws/logs` vía Nginx.
+- Logging centralizado:
+  - `promtail` descubre contenedores por el socket Docker y envía a `loki`.
+  - `grafana` consulta `loki` y `elasticsearch` (`soar-metrics`) para logs y KPIs.
 
-Los logs se almacenan en:
+#### Estrategia de backup
 
-- `artifacts/logs/nginx/` - Logs de Nginx
-- `artifacts/logs/wazuh/` - Logs de Wazuh
-- Logs de contenedores accesibles vía `docker logs`
+- El servicio de backup reside en `src/soar_lab/application/use_cases/backup_service.py` y se expone en `/backup/create` y `/backup/restore`.
+- Los artefactos se escriben en `artifacts/backups/` (montado en `/app/backups` del contenedor `api`).
+- Para backup completo del laboratorio se recomienda detener el stack y copiar `artifacts/` (incluidos `data/` y `logs/`), además de exportar volúmenes Docker normales (`misp_db`, `wazuh-indexer-data`, etc.).
 
-**Futuro: Logging Centralizado:**
-
-El logging centralizado está disponible vía el archivo compose de logging:
-
-- Loki para agregación de logs (activo)
-- Promtail para recolección de logs (activo)
-- Grafana para visualización de logs (activo con PostgreSQL)
-- Base de datos PostgreSQL para Grafana (activo)
-- Archivos de configuración en `compose/logging/`
-- Logs almacenados en `artifacts/data/loki/` y `artifacts/data/grafana/`
-
-**Nota:** Grafana usa PostgreSQL en lugar de SQLite para evitar errores de I/O de disco en Windows Docker Desktop. El
-servicio PostgreSQL está incluido en el stack de logging.
-
-Para habilitar:
-
-```bash
-docker compose --env-file ../../.env.full -f compose/docker-compose.yml -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml -f compose/docker-compose.wazuh.yml -f compose/docker-compose.api.yml -f compose/logging/docker-compose.logging.yml up -d
-```
-
-#### Estrategia de Backup
-
-**Configuración Actual:**
-
-- Script de backup: `scripts/infra/backup.sh`
-- Script de restore: `scripts/infra/restore.sh`
-- Ubicación de backup: `artifacts/backups/`
-- Componentes con backup:
-    - Archivos de configuración
-    - Volúmenes Docker
-    - Logs
-    - Resultados de tests
-
-**Automatización de Backup:**
-
-Para automatizar backups:
-
-```bash
-# Añadir a crontab para backups diarios a las 2 AM
-0 2 * * * /path/to/soar-ransomware-lab/scripts/infra/backup.sh
-```
 
 ### 3.4 Comandos y operaciones
 
@@ -375,7 +291,7 @@ docker exec -it soar_thehive bash
 **Actualizaciones:**
 
 - Actualizar imágenes Docker regularmente
-- Revisar y actualizar archivos docker-compose.yml
+- Revisar y actualizar archivos `infra/docker/compose/docker-compose*.yml`
 - Aplicar parches de seguridad a contenedores
 
 **Monitoreo:**
@@ -434,16 +350,16 @@ netstat -tuln | grep <port>
 # Verificar uso de recursos
 docker stats
 
-# Ajustar límites de recursos en docker-compose.yml
+# Ajustar límites de recursos en infra/docker/compose/docker-compose*.yml
 ```
 
 #### Elasticsearch lento
 
 ```bash
 # Verificar salud de Elasticsearch
-curl http://localhost:9201/_cluster/health
+curl http://localhost:19200/_cluster/health
 
-# Aumentar límite de memoria en docker-compose.yml
+# Aumentar límite de memoria en infra/docker/compose/docker-compose*.yml
 ```
 
 #### Problema de Índice de Elasticsearch en TheHive

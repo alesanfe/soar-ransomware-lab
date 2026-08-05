@@ -47,7 +47,7 @@ services:
       - "${THEHIVE_HTTP_PORT:-9000}:9000"
     volumes:
       - thehive_files:/opt/thp/thehive/files
-      - ../thehive.application.conf/thehive.conf:/etc/thehive/application.conf:ro
+      - ../config/thehive.application.conf/thehive.conf:/etc/thehive/application.conf:ro
     networks:
       - soar_net
     healthcheck:
@@ -73,7 +73,7 @@ services:
 
   cortex:
     build:
-      context: ../cortex
+      context: ../images/cortex
       dockerfile: Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
     depends_on:
@@ -83,7 +83,7 @@ services:
       - "${CORTEX_HTTP_PORT:-19001}:9001"
     volumes:
       - cortex_data:/var/lib/cortex
-      - ../cortex.application.conf/cortex.conf:/etc/cortex/application.conf:ro
+      - ../config/cortex.application.conf/cortex.conf:/etc/cortex/application.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - soar_net
@@ -91,8 +91,8 @@ services:
       test: [ "CMD-SHELL", "curl -sk -o /dev/null -w '%{http_code}' http://localhost:9001/ | grep -qE '^[23]' || exit 1" ]
       interval: 30s
       timeout: 10s
-      start_period: 120s
-      retries: 5
+      start_period: 180s
+      retries: 15
     restart: unless-stopped
     deploy:
       resources:
@@ -148,21 +148,22 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend
     environment:
       SHUFFLE_ELASTIC: "true"
-      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
+      SHUFFLE_OPENSEARCH_URL: http://opensearch:9200
       SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "true"
-      SHUFFLE_OPENSEARCH_USERNAME: ${ELASTIC_USERNAME:-elastic}
-      SHUFFLE_OPENSEARCH_PASSWORD: ${ELASTIC_PASSWORD}
+      SHUFFLE_OPENSEARCH_USERNAME: ${OPENSEARCH_USERNAME:-admin}
+      SHUFFLE_OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
       OUTER_HOSTNAME: ${OUTER_HOSTNAME:-host.docker.internal}
       SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
       SHUFFLE_FILE_LOCATION: /shuffle-files
       SHUFFLE_APP_DOWNLOAD_LOCATION: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
       SHUFFLE_APP_FORCE_UPDATE: "true"
       SHUFFLE_DEFAULT_USERNAME: ${SHUFFLE_DEFAULT_USERNAME:-admin}
-      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD:-ShuffleLab2024Secure}
-      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY:-f2a8b3c9-d4e1-5f6a-7b8c-9d0e1f2a3b4c}
+      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD}
+      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY}
       SHUFFLE_SWAGGER_ENABLED: "true"
       SHUFFLE_AUTH_MODE: "multi"
-      SHUFFLE_HEALTHCHECK_DISABLED: "false"
+      SHUFFLE_HEALTHCHECK_DISABLED: "true"
+      SHUFFLE_DISABLE_RERUN_AND_ABORT: "true"
       DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.45}
     volumes:
       - shuffle_apps:/shuffle-apps
@@ -174,7 +175,7 @@ services:
       - soar_net
       - ti_net
     depends_on:
-      elasticsearch:
+      opensearch:
         condition: service_started
     healthcheck:
       disable: true
@@ -194,14 +195,22 @@ services:
         max-file: "3"
 
   network-watcher:
-    build: network-watcher
+    build: ../../../src/soar_lab/infrastructure/network_watcher
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_network_watcher
     environment:
-      TARGET_NETWORK: ${COMPOSE_PROJECT_NAME:-soar}_soar_net
+      TARGET_NETWORK: soar_net
+    ports:
+      - "${NETWORK_WATCHER_PORT:-15130}:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - soar_net
+    healthcheck:
+      test: [ "CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/health')\" || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
     restart: unless-stopped
 
   tenzir-node:
@@ -230,15 +239,19 @@ services:
         max-file: "3"
 
   orborus:
-    image: ghcr.io/shuffle/shuffle-orborus:2.2.1
+    build:
+      context: ../../docker/images/orborus
+      dockerfile: Dockerfile
+    image: ghcr.io/shuffle/shuffle-orborus:2.2.1-patched
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_orborus
     environment:
       SHUFFLE_APP_SDK_TIMEOUT: 300
       SHUFFLE_ORBORUS_EXECUTION_CONCURRENCY: "5"
+      SHUFFLE_ORBORUS_UUID: "69a3f786-b6ee-4410-9c54-7b8277710cec"
       ENVIRONMENT_NAME: ${SHUFFLE_ENV_NAME:-Shuffle}
       ORG_ID: ${SHUFFLE_ORG_ID:-Shuffle}
       BASE_URL: http://soar_shuffle_backend:5001
-      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
+      SHUFFLE_OPENSEARCH_URL: http://opensearch:9200
       EXECUTION_ENVIRONMENT: docker
       SHUFFLE_APP_SDK_URL: "https://github.com/shuffle/python-apps"
       SHUFFLE_STATS_DISABLED: true
@@ -246,16 +259,17 @@ services:
       SHUFFLE_SWARM_CONFIG: docker
       CLEANUP: true
       SHUFFLE_WORKER_IMAGE: ghcr.io/shuffle/shuffle-worker:2.2.1
-      SHUFFLE_PIPELINE_AUTH: ${SHUFFLE_DEFAULT_APIKEY:-f2a8b3c9-d4e1-5f6a-7b8c-9d0e1f2a3b4c}
+      SHUFFLE_PIPELINE_AUTH: ${SHUFFLE_DEFAULT_APIKEY}
       SHUFFLE_PIPELINE_URL: http://tenzir-node:5160
-      SHUFFLE_APP_NETWORK: ${COMPOSE_PROJECT_NAME:-soar}_soar_net
+      SHUFFLE_APP_NETWORK: ${COMPOSE_PROJECT_NAME:-soar}_net
+      SHUFFLE_BASE_IMAGE_NAME: ghcr.io/shuffle/shuffle-worker
       ORBORUS_CONTAINER_NAME: ${COMPOSE_PROJECT_NAME:-soar}_orborus
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - soar_net
     depends_on:
-      elasticsearch:
+      opensearch:
         condition: service_started
       shuffle-backend:
         condition: service_started
@@ -271,10 +285,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
+          cpus: '2.0'
           memory: 2G
         reservations:
-          cpus: '0.5'
+          cpus: '1.0'
           memory: 1G
     logging:
       driver: "json-file"

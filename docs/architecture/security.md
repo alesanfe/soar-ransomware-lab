@@ -191,43 +191,117 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
     - Segmentación de red
     - Logging de auditoría
 
+### Estado de implementación de controles clave
+
+> Matriz de clasificación funcional del despliegue de laboratorio, siguiendo la taxonomía: Implementado, Parcialmente implementado, Simulado, Planificado, No verificado, Histórico/Obsoleto.
+
+| Control | Estado | Evidencia / Notas |
+|---------|--------|---------------------|
+| Autenticación JWT (`JwtTokenProvider`) | Implementado | `src/soar_lab/infrastructure/jwt_token_provider.py`; algoritmo `HS256`; secretos gestionados por `AuthService` en `src/soar_lab/application/use_cases/auth_service.py`; rutas críticas protegidas en `interfaces/api/main.py` |
+| Autorización / RBAC | Parcial | JWT valida identidad; granularidad de permisos limitada; roles definidos solo a nivel documental |
+| Autenticación MFA | Planificado / No verificado | No existe implementación operativa en el laboratorio |
+| Single Sign-On (SSO/SAML/OIDC) | Planificado | No implementado en el laboratorio actual |
+| WAF | No verificado | Nginx actúa como proxy inverso; módulo WAF no configurado |
+| DMZ / segmentación de red | Simulado | Diagramas conceptuales; sin zonas de red reales entre contenedores |
+| Contención real de endpoints | Simulado | `src/soar_lab/scripts/setup/notify.sh` registra notificaciones; no hay agente EDR ni aislamiento de red real |
+| Escaneo de vulnerabilidades | Implementado (script + CI) | `src/soar_lab/infrastructure/security/scan_vulnerabilities.sh` y `.github/workflows/ci.yml` (`aquasecurity/trivy-action@master`, `scan-type: fs`) |
+| TLS/SSL en tránsito | Parcial | Certificados autofirmados vía Nginx (`soar.local.crt`); tráfico interno entre contenedores es mayoritariamente HTTP |
+| Encriptación en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch/Wazuh Indexer en Compose |
+| Network Watcher | Implementado | `src/soar_lab/infrastructure/network_watcher/` conecta workers de Shuffle a `soar_net` |
+| Logging centralizado | Implementado | Loki + Promtail + Grafana (`infra/docker/compose/logging/docker-compose.logging.yml`) |
+| Trivy / escaneo de imágenes en CI | Implementado | Workflow `trivy-scan` en `.github/workflows/ci.yml` genera `trivy-results.sarif` |
+| Secretos estáticos / tokens SIEM | Mitigado | Los valores operativos han sido sustituidos en documentación por placeholders (`<...>`) y `<SIEM_TOKEN>`; se recomienda auditar historial Git, logs, Vagrant snapshots y artefactos |
+
+> **Nota:** Las recomendaciones de producción (MFA, SSO, WAF, DMZ real, RBAC completo, TLS mútuo, encriptación forzada) deben tratarse como trabajo futuro, no como capacidades activas del laboratorio.
+
+---
+
 ### 3.3 Controles implementados
 
 #### Autenticación y Autorización
 
-**Métodos de Autenticación:**
+> **Ámbito real del laboratorio:** La autenticación operativa de la Lab API se basa únicamente en **JWT**. Los siguientes mecanismos se listan como capacidades futuras o arquitectónicas; **no deben afirmarse como implementados** hasta que cuenten con evidencia de prueba.
 
-1. **Autenticación Multi-Factor (MFA)**
-    - OTP basado en tiempo (TOTP)
-    - Verificación basada en SMS
-    - Tokens de hardware
-    - Autenticación biométrica
+**Implementado:**
 
-2. **Single Sign-On (SSO)**
-    - Integración SAML 2.0
-    - OAuth 2.0 / OpenID Connect
-    - LDAP/Active Directory
-    - Proveedores de identidad personalizados
+1. **Autenticación JWT**
+    - Tokens firmados con `HS256`
+    - Secret gestionado por `JWT_SECRET_KEY` / fallback `API_AUTH_SECRET` en `.env.full`
+    - Expiración configurable mediante `JWT_EXPIRATION_MINUTES` (default 60)
+    - Endpoints `/auth/login` y `/auth/verify`
 
-3. **Gestión de Sesiones**
-    - Tokens de sesión seguros
-    - Políticas de timeout de sesión
-    - Límites de sesiones concurrentes
-    - Procedimientos de logout seguro
+**Futuro / No verificado en este despliegue:**
 
-**Políticas de Control de Acceso:**
+2. **Autenticación Multi-Factor (MFA)**
+    - Planificada: OTP basado en tiempo, SMS, tokens de hardware, biometría
 
-1. **Principio de Mínimo Privilegio**
-    - Permisos mínimos requeridos
-    - Acceso just-in-time
-    - Escalada temporal de privilegios
-    - Procedimientos de revisión de acceso
+3. **Single Sign-On (SSO)**
+    - Planificado: SAML 2.0, OAuth 2.0 / OpenID Connect, LDAP/Active Directory
 
-2. **Separación de Deberes**
-    - Segregación de tareas críticas
-    - Workflows de aprobación
-    - Prevención de conflictos
-    - Mantenimiento de rastro de auditoría
+**Control de Acceso:**
+
+- **Principio de Mínimo Privilegio**: aplicado a nivel de configuración y variables `.env`; RBAC con roles granulares no está implementado.
+- **Separación de Deberes**: conceptual en los workflows; no cuenta con aprobaciones automáticas en este despliegue.
+
+#### Implementación de JWT
+
+La autenticación de la API se implementa mediante tokens JWT gestionados por `AuthService` y `JWTTokenProvider`.
+
+| Aspecto | Valor / Comportamiento | Ubicación |
+|---------|------------------------|-----------|
+| Algoritmo | `HS256` | `src/soar_lab/infrastructure/jwt_token_provider.py` |
+| Librería | `python-jose` | `src/soar_lab/infrastructure/jwt_token_provider.py` |
+| Secret | `config_provider.get('jwt_secret_key')` o fallback `api_auth_secret` | `src/soar_lab/application/use_cases/auth_service.py` |
+| Longitud mínima | 32 caracteres (se rechaza si es menor, salvo `API_AUTH_SECRET` legacy) | `auth_service.py` |
+| Expiración | `JWT_EXPIRATION_MINUTES` (por defecto 60 minutos) | `auth_service.py` |
+| Claims | `sub` (usuario), `iat`, `exp`, `scope: access` | `jwt_token_provider.py` |
+| Verificación | `POST /auth/verify` con `Authorization: Bearer <token>` | `src/soar_lab/interfaces/api/main.py` |
+
+**Rotación, almacenamiento y buenas prácticas:**
+
+- El secreto JWT (`JWT_SECRET_KEY` o fallback `API_AUTH_SECRET`) se almacena únicamente en `.env.full` y se inyecta vía `config_provider`; nunca se codifica en fuente.
+- La longitud mínima recomendada es 32 caracteres; `auth_service.py` rechaza secretos más cortos salvo que se use `API_AUTH_SECRET` legacy.
+- El secreto debe regenerarse con `soar-lab generate-secrets --env > .env.full` (o el `Makefile` equivalente) y nunca publicarse en repositorios.
+- Tras cambiar `JWT_SECRET_KEY` / `API_AUTH_SECRET`, los tokens emitidos con el secreto anterior quedan inválidos; los usuarios deben volver a autenticarse.
+- Los endpoints protegidos usan el dependency `create_get_current_user(auth_service)`.
+- JWT no cifra los claims; solo garantiza integridad. No debe transmitirse información sensible (PII, contraseñas) dentro del token.
+
+#### Seguridad de WebSocket (`/ws/logs`)
+
+- El endpoint `/ws/logs` de la Lab API transmite logs en tiempo real usando WebSocket.
+- Actualmente no implementa autenticación en la apertura del socket; la autorización se basa en que la API esté levantada y accesible dentro de la red interna o vía Nginx.
+- El SPA web-management construye la URL dinámicamente:
+  ```javascript
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}/api/ws/logs`;
+  ```
+- Si el cliente se accede por `https://soar.local`, la conexión usa `wss://soar.local/api/ws/logs`; si es por `http://localhost:8000`, usa `ws://localhost:8000/ws/logs`.
+- Nginx reenvía `/api/ws/logs` al backend y añade las cabeceras `Upgrade` y `Connection`.
+- **Consideraciones de seguridad**:
+  - Usar siempre HTTPS/WSS en entornos no locales para evitar exposición del token y los logs.
+  - Validar origen en el servidor (`Origin`/`Host`) antes de aceptar conexiones si se expone la API fuera de `localhost`.
+  - Limitar el tamaño y frecuencia de mensajes para mitigar DoS.
+  - No enviar credenciales, PII ni datos clasificados a través del canal de logs.
+  - La reconexión es manual en `web-management/script.js`; en producción se recomienda implementar reconexión con backoff y notificación de desconexión.
+
+#### Credenciales de ejemplo y valores por defecto del laboratorio
+
+> **Ámbito:** Los siguientes valores son **funcionales para el entorno de laboratorio local**. Están codificados o configurados como *fallbacks* para que el stack arranque cuando `.env.full` no sobrescribe una variable, **pero no deben considerarse secretos operativos**.
+
+| Variable / secreto | Valor por defecto en el laboratorio | Ubicación típica |
+|--------------------|--------------------------------------|------------------|
+| `ELASTIC_PASSWORD` | `<ELASTIC_PASSWORD>` (generado por `make generate-secrets`) | `.env.full`, `grafana-datasources.yml` (provisioning) |
+| `WAZUH_API_PASSWORD` | `<WAZUH_API_PASSWORD>` (generado; ejemplo de complejidad: `<WAZUH_API_PASSWORD>`) | `.env.full`, `infra/docker/compose/docker-compose.wazuh.yml` |
+| `GRAFANA_ADMIN_PASSWORD` | `<GRAFANA_ADMIN_PASSWORD>` (generado; ejemplo: `${GRAFANA_ADMIN_PASSWORD}`) | `.env.full`, scripts de setup de Grafana |
+| OpenSearch `AUTH` | `admin` / `<OPENSEARCH_PASSWORD>` (fallback `<OPENSEARCH_PASSWORD>`) | `.env.full`, `docker-compose.core.yml` y `docker-compose.opensearch.yml` |
+| `API_AUTH_SECRET` (fallback) | `<API_AUTH_SECRET>` | `.env.full`, `infra/docker/compose/docker-compose.api.yml` |
+| `JWT_SECRET_KEY` (fallback) | `<JWT_SECRET_KEY>` (mínimo 32 caracteres) | `.env.full`, `src/soar_lab/config/settings.py` |
+
+**Recomendaciones:**
+
+- Antes de cualquier despliegue no local, generar valores seguros con `soar-lab generate-secrets --env > .env.full` y sobrescribir todos los valores anteriores.
+- La documentación y los ejemplos de comandos deben usar placeholders inequívocos del tipo `<ELASTIC_PASSWORD>`, `<JWT_SECRET_KEY>`, etc.
+- No publicar capturas de pantalla, logs, artefactos ni backups que contengan estas credenciales sin enmascararlas.
 
 #### Protección de Datos
 
@@ -325,28 +399,33 @@ docker logs soar_thehive > artifacts/forensic/thehive_<timestamp>.log
 
 **Fase 2: Análisis y Contención (15-60 minutos)**
 
+> **Nota sobre contención activa:** No existe un `containment_service.py` en el repositorio. La contención real de endpoints (aislamiento de red, bloqueo de cuentas, terminación de procesos) **está simulada**: el workflow de Shuffle decide y, en caso malicioso, invoca `src/soar_lab/scripts/setup/notify.sh` para registrar la notificación y generar métricas. Una respuesta activa real requeriría un agente EDR o responder conectado.
+
 ```bash
 # 1. Analizar logs de alertas
 cat artifacts/logs/notify.log | grep -i ransomware
 
 # 2. Verificar integridad de datos
-python3 -m soar_lab.security.scan_vulnerabilities
+bash src/soar_lab/infrastructure/security/scan_vulnerabilities.sh
 
 # 3. Ejecutar scripts de contención simulada
-python3 -m src.soar_lab.services.containment_service <hostname>
+bash src/soar_lab/scripts/setup/notify.sh
 ```
 
 **Fase 3: Erradicación y Recuperación (1-4 horas)**
 
 ```bash
 # 1. Restaurar desde backup limpio
-bash scripts/infra/restore.sh BACKUP=<clean_backup_name>
+curl -X POST http://localhost:8000/backup/restore \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "<clean_backup_name>"}'
 
 # 2. Verificar integridad de servicios
 make health
 
 # 3. Actualizar credenciales comprometidas
-python3 -m soar_lab.services.generate_secrets
+soar-lab generate-secrets --env > .env.full
 ```
 
 ### 3.4 Cumplimiento y protección de datos
@@ -375,15 +454,15 @@ python3 -m soar_lab.services.generate_secrets
 | Logging de auditoría        | ✓            | ✓           | ✓              | ✓              | Docker logs (implementado)                                  |
 | Retención de datos          | ✓            | ✓           | ✓              | ✓              | Configuración por definir                                   |
 | Respuesta a incidentes      | ✓            | ✓           | ✓              | ✓              | Playbook E2E (implementado)                                 |
-| Backups automatizados       | ✓            | ✓           | ✓              | ✓              | scripts/infra/backup.sh (implementado)                      |
-| Escaneo de vulnerabilidades | ✓            | ✓           | ✓              | ✓              | src/soar_lab/services/containment_service.py (implementado) |
+| Backups automatizados       | ✓            | ✓           | ✓              | ✓              | API `/backup/create` (implementado)                         |
+| Escaneo de vulnerabilidades | ✓            | ✓           | ✓              | ✓              | `src/soar_lab/infrastructure/security/scan_vulnerabilities.sh` (implementado) |
 
 **Nota:** Los controles marcados como "pendiente" son recomendaciones para producción que no están implementados en el
 laboratorio actual.
 
 #### Cumplimiento Regulatorio
 
-El laboratorio cumple con:
+El laboratorio está orientado hacia los siguientes marcos de referencia, pero **no constituye una certificación** ni garantía formal:
 
 - **GDPR**: Protección de datos personales
 - **SOC 2**: Seguridad y disponibilidad

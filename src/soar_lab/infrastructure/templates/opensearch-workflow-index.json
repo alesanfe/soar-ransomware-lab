@@ -1,0 +1,43 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "index.mapping.total_fields.limit": 5000,
+    "index.mapping.nested_objects.limit": 10000,
+    "index.mapping.depth.limit": 20,
+    "index.mapping.nested_fields.limit": 1000
+  },
+  "mappings": {
+    "dynamic": "true",
+    "date_detection": false,
+    "properties": {
+      "actions": {
+        "type": "nested",
+        "properties": {
+          "parameters": {
+            "type": "nested",
+            "properties": {
+              "value": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 2048
+                  }
+                }
+              },
+              "name": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "aliases": {
+    "workflow": {
+      "is_write_index": true
+    }
+  }
+}

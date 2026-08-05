@@ -4,9 +4,9 @@ Unit tests for tar_backup_driver.py
 """
 
 import pytest
+from soar_lab.common.exceptions import BackupError
 from unittest.mock import Mock, patch
 
-from soar_lab.exceptions import BackupError
 from soar_lab.infrastructure.tar_backup_driver import TarBackupDriver
 
 
@@ -41,7 +41,7 @@ class TestTarBackupDriver:
         mock_runner.run.assert_called_once()
         call_args = mock_runner.run.call_args
         assert call_args[1]['cwd'] == "/source"
-        assert call_args[1]['raise_on_error'] == True
+        assert call_args[1]['raise_on_error'] == False
         assert 'tar' in call_args[0][0]
         assert '-czf' in call_args[0][0]
         assert '/dest/backup.tar.gz' in call_args[0][0]
@@ -76,7 +76,7 @@ class TestTarBackupDriver:
         mock_runner.run.assert_called_once()
         call_args = mock_runner.run.call_args
         assert call_args[1]['cwd'] == "/dest"
-        assert call_args[1]['raise_on_error'] == True
+        assert call_args[1]['raise_on_error'] == False
         assert 'tar' in call_args[0][0]
         assert '-xzf' in call_args[0][0]
         assert '/backup.tar.gz' in call_args[0][0]

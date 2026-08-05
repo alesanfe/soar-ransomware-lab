@@ -130,11 +130,11 @@ class Settings:
 
             # === Service URLs (single source of truth) ===
             'thehive_url': os.getenv('THEHIVE_URL', 'http://thehive:9000'),
-            'cortex_url': os.getenv('CORTEX_URL', 'http://localhost:9001'),
-            'shuffle_url': os.getenv('SHUFFLE_URL', 'http://localhost:5001'),
+            'cortex_url': os.getenv('CORTEX_URL', 'http://cortex:9001'),
+            'shuffle_url': os.getenv('SHUFFLE_URL', 'http://soar_shuffle_backend:5001'),
             'kibana_url': os.getenv('KIBANA_URL', 'http://localhost:15601'),
-            'wazuh_url': os.getenv('WAZUH_URL', 'http://localhost:55100'),
-            'misp_url': os.getenv('MISP_URL', 'http://localhost:8083'),
+            'wazuh_url': os.getenv('WAZUH_URL', 'https://wazuh-manager:55000'),
+            'misp_url': os.getenv('MISP_URL', 'https://soar_misp:443'),
             'elasticsearch_url': os.getenv('ES_URL', os.getenv('ELASTICSEARCH_URL', 'http://elasticsearch:9200')),
             'shuffle_webhook_url': os.getenv('SHUFFLE_WEBHOOK_URL', 'http://localhost:5001/api/v1/hooks'),
 
