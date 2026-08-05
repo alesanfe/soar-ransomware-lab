@@ -92,32 +92,40 @@ Este documento depende de:
 
 ### 3.1 Definición del alcance
 
+#### Supuestos
+
+- Las credenciales y certificados se generan con `make generate-secrets` y no se versionan en texto plano.
+- Los puertos y hosts se definen en `.env.full`; la tabla canónica es `docs/operations/ports_and_urls.md`.
+- Las pruebas E2E requieren el stack Docker completo; el resto de pruebas pueden ejecutarse con `pytest --collect-only`.
+- La contención de endpoints es simulada; no se despliegan agentes EDR ni acciones destructivas reales.
+- Los documentos de `docs/audit/legacy/` son históricos y no deben tomarse como referencia operativa.
+
 #### Componentes Incluidos
 
 - **Playbook E2E Único**: Flujo completo con decisiones automatizadas basadas en score/verdict en Shuffle
 - **Integraciones Simuladas**: SIEM simulado para generación de alertas (
-  `src/soar_lab/infrastructure/http_alert_sender.py`) y scripts para contención simulada
+  `src/soar_lab/simulator/simulate_alerts.py`) y scripts para contención simulada
 - **API del Laboratorio**: API REST FastAPI para gestión de servicios, health checks, métricas, tests y backups (
-  `src/soar_lab/api/`, `apps/api/`)
+  `src/soar_lab/interfaces/api/`, `apps/api/Dockerfile`)
 - **CLI del Laboratorio**: CLI para gestión del laboratorio con comandos para alertas, configuración, validación y
-  operaciones (`src/soar_lab/api/cli.py`)
+  operaciones (`src/soar_lab/interfaces/api/cli.py`)
 - **Sitio de Documentación**: Sitio de documentación Docusaurus con getting started y guías de uso (`apps/docs-site/`)
 - **Interfaz Web de Gestión**: Interfaz web para monitoreo del laboratorio, visualización de servicios y operaciones
   básicas (`apps/web-management/`)
 - **Métricas de Rendimiento (MTTR-demo)**: Cálculo de p50 ≤ 120 s y p90 ≤ 180 s desde alerta hasta contención mediante
-  `src/soar_lab/services/kpi_analyzer.py` → `artifacts/results/kpis.csv`
+  `src/soar_lab/domain/services/kpi_analyzer.py` → `artifacts/results/kpis.csv`
 - **Analytics de TFM**: Módulos para generación de datos estructurados, visualización de resultados y evidencia
-  académica (`src/soar_lab/services/analytics_service.py`)
-- **Testing Especializado**: Pruebas unitarias (37 archivos), atómicas, integración, seguridad, rendimiento y E2E (
+  académica (`src/soar_lab/application/use_cases/analytics_service.py`)
+- **Testing Especializado**: Pruebas unitarias (conteo dinámico vía `pytest --collect-only -q tests/unit/ | find /c /v ""` / `| wc -l`), atómicas, integración, seguridad, rendimiento y E2E (
   `tests/unit/`, `tests/atomic/`, `tests/integration/`, `tests/security/`, `tests/performance/`, `tests/e2e/`)
-- **Automatización Integral**: CI/CD, testing automatizado, backup/restore (`src/soar_lab/services/backup_service.py`,
+- **Automatización Integral**: CI/CD, testing automatizado, backup/restore (`src/soar_lab/application/use_cases/backup_service.py`,
   `src/soar_lab/infrastructure/tar_backup_driver.py`)
 - **Seguridad Avanzada**: Validación de esquemas (`src/soar_lab/config/schemas.py`,
   `src/soar_lab/validation/validators.py`)
 - **Entorno Reproducible**: Arquitectura Docker Compose con TheHive, Cortex, Shuffle SOAR, MISP, Wazuh, Elasticsearch,
   Redis, MariaDB, Nginx, Grafana, Loki, Promtail (`infra/docker/compose/`)
 - **Documentación Completa**: Diseño del laboratorio, configuración, flujo del playbook, resultados, KPIs, API, CLI y
-  analytics (`docs/`, `apps/api/api-docs.html`, `apps/docs-site/`)
+  analytics (`docs/`, `docs/integrations/api_contracts.md`, `apps/docs-site/`)
 - **Validación Académica**: Cumplimiento de objetivos SMART con evidencias verificables (`docs/project/objectives.md`,
   `tests/`)
 
@@ -213,14 +221,18 @@ graph LR
  subgraph Host Único
  TheHive --> Cortex
  Cortex --> Shuffle
- Shuffle --> PostgreSQL
+ Shuffle --> Elasticsearch
  Shuffle --> Redis
  API --> TheHive
  API --> Cortex
  API --> Shuffle
+ API --> MISP
+ API --> Wazuh
  Nginx --> API
  Nginx --> Docs_Site
  Nginx --> Web_Management
+ Grafana --> Loki
+ Promtail --> Loki
  end
  SIEM_Simulado --> Shuffle
  Shuffle --> Scripts_Contención
@@ -232,21 +244,21 @@ graph LR
 La infraestructura se diseña para ser segura y fácil de desplegar, evitando complejidad innecesaria y asegurando
 compatibilidad con entornos académicos.
 
-| Componente       | Descripción                                                                        | Requisitos Mínimos   | Referencias                                                                                    |
-|------------------|------------------------------------------------------------------------------------|----------------------|------------------------------------------------------------------------------------------------|
-| **VM Windows**   | Simulación de endpoint víctima, agente EDR                                         | 4GB RAM, 50GB SSD    | Scripts de contención: `src/soar_lab/services/containment_service.py`                          |
-| **VM Linux**     | Host principal con Docker, herramientas, CI/CD                                     | 8GB RAM, 50GB SSD    | `Makefile`, `infra/docker/compose/`, `scripts/ci/`                                             |
-| **Contenedores** | TheHive, Cortex, Shuffle, PostgreSQL, Redis, API, Nginx, docs-site, web-management | Docker Engine 20.10+ | `infra/docker/compose/docker-compose.yml`, `docker-compose.core.yml`, `docker-compose.api.yml` |
+| Componente       | Descripción                                                                                                                                 | Requisitos Mínimos   | Referencias                                                           |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------|----------------------|-----------------------------------------------------------------------|
+| **VM Windows**   | Simulación de endpoint víctima, agente EDR                                                                                                  | 4GB RAM, 50GB SSD    | Playbook E2E de contención: `docs/operations/playbooks/ransomware_playbook_e2e.md` |
+| **VM Linux**     | Host principal con Docker, herramientas, CI/CD                                                                                              | 8GB RAM, 50GB SSD    | `Makefile`, `infra/docker/compose/`, `.github/workflows/`             |
+| **Contenedores** | TheHive, Cortex, Shuffle, MISP, Wazuh, Elasticsearch, PostgreSQL, Redis, MariaDB, Nginx, Grafana, Loki, Promtail, docs-site, web-management | Docker Engine 20.10+ | `infra/docker/compose/docker-compose*.yml`                            |
 
 #### Métricas de Éxito
 
 **Métricas Cuantitativas:**
 
-- **Tiempo de Respuesta**: p50 ≤ 120s, p90 ≤ 180s (calculado por `src/soar_lab/services/kpi_analyzer.py` desde
+- **Tiempo de Respuesta**: p50 ≤ 120s, p90 ≤ 180s (calculado por `src/soar_lab/domain/services/kpi_analyzer.py` desde
   timestamps en
   `artifacts/logs/playbook_execution.log`)
 - **Tasa de Éxito**: 100% de ejecuciones completas (pytest tests/e2e/ -v)
-- **Disponibilidad**: ≥ 99% durante pruebas (docker-compose ps para verificar healthy status)
+- **Disponibilidad**: ≥ 99% durante pruebas (docker compose ps para verificar healthy status)
 
 #### Matriz de Trazabilidad: Componentes vs Objetivos SMART
 
@@ -337,8 +349,8 @@ compatibilidad con entornos académicos.
 El alcance se verifica mediante:
 
 - Revisión de componentes incluidos y excluidos (matriz de alcance en este documento)
-- Validación de viabilidad técnica y académica (`docker-compose ps`, `pytest tests/e2e/`)
-- Confirmación de criterios de aceptación (`src/soar_lab/services/kpi_analyzer.py` → `artifacts/results/kpis.csv`)
+- Validación de viabilidad técnica y académica (`docker compose ps`, `pytest tests/e2e/`)
+- Confirmación de criterios de aceptación (`src/soar_lab/domain/services/kpi_analyzer.py` → `artifacts/results/kpis.csv`)
 - Verificación de métricas de éxito
 - Revisión de consideraciones éticas
 
@@ -366,7 +378,7 @@ Las evidencias de validación incluyen:
 - Matriz de alcance con justificaciones (sección 3.1)
 - Diagramas de arquitectura y flujo (diagramas Mermaid en este documento)
 - Tabla de infraestructura recomendada (sección 3.2)
-- Métricas de éxito definidas (sección 3.2, validadas por `src/soar_lab/services/kpi_analyzer.py`)
+- Métricas de éxito definidas (sección 3.2, validadas por `src/soar_lab/domain/services/kpi_analyzer.py`)
 - Consideraciones éticas documentadas (sección 3.4)
 
 ## 5. Problemas y consideraciones
@@ -387,10 +399,11 @@ Las evidencias de validación incluyen:
 
 ### 5.2 Riesgos o incidencias
 
-- **Deriva de alcance**: Añadir componentes no planificados
-- **Complejidad excesiva**: Añadir múltiples playbooks o integraciones
-- **Incumplimiento de umbrales**: MTTR fuera de objetivos
-- **Falta de reproducibilidad**: Entorno difícil de desplegar
+- **Deriva de alcance**: Añadir componentes no planificados.
+- **Complejidad excesiva**: Añadir múltiples playbooks o integraciones.
+- **Incumplimiento de umbrales**: MTTR fuera de objetivos.
+- **Falta de reproducibilidad**: Entorno difícil de desplegar.
+- **Deuda de documentación y configuración**: Fragmentación de Compose, duplicación de puertos/URLs o referencias legacy (`<SIEM_TOKEN>` placeholders, `<OLD_PATH>`) pueden desincronizar los documentos. Mitigación: `make generate-secrets`, validador `src/soar_lab/scripts/ci/docs_quality.py` y `docs/audit/TRACEABILITY_VALIDATION.md`.
 
 ### 5.3 Recomendaciones / troubleshooting
 
@@ -544,7 +557,7 @@ Las evidencias de validación incluyen:
 **Falta de reproducibilidad:**
 
 ```bash
-# Verificar docker-compose.yml
+# Verificar archivos docker-compose*.yml
 # Validar .env.full
 # Ejecutar make up en entorno limpio
 ```

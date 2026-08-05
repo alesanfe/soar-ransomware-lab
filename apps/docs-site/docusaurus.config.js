@@ -7,7 +7,7 @@ const config = {
     title: 'SOAR Ransomware Lab',
     tagline: 'Security Orchestration, Automation and Response Laboratory',
     favicon: 'img/favicon.ico',
-    url: 'http://localhost:8080',
+    url: 'http://localhost:8086',
     baseUrl: '/',
     organizationName: 'soar-lab',
     projectName: 'soar-ransomware-lab',
@@ -58,12 +58,12 @@ const config = {
                         label: 'Documentation',
                     },
                     {
-                        to: '/api',
+                        href: 'http://localhost:8000/docs',
                         label: 'API',
-                        position: 'left'
+                        position: 'left',
                     },
                     {
-                        href: 'http://localhost:8080',
+                        href: 'http://localhost:8085',
                         label: 'Management UI',
                         position: 'right'
                     },
@@ -90,7 +90,7 @@ const config = {
                             },
                             {
                                 label: 'API Reference',
-                                to: '/api',
+                                href: 'http://localhost:8000/docs',
                             },
                         ],
                     },
@@ -108,7 +108,7 @@ const config = {
                         items: [
                             {
                                 label: 'Management UI',
-                                href: 'http://localhost:8080',
+                                href: 'http://localhost:8085',
                             },
                         ],
                     },

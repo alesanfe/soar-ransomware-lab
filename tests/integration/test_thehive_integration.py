@@ -7,10 +7,9 @@ Tests TheHive client functionality using mocks when service is not available.
 import os
 import pytest
 import requests
+from soar_lab.common.exceptions import IntegrationError
+from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
 from unittest.mock import patch, MagicMock
-
-from soar_lab.exceptions import IntegrationError
-from soar_lab.integrations.thehive_client import TheHiveClient
 
 THEHIVE_URL = os.getenv("THEHIVE_URL", "http://localhost:9000")
 THEHIVE_API_KEY = os.getenv("THEHIVE_API_KEY", "")

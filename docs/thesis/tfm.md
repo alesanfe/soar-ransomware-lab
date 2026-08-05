@@ -441,7 +441,10 @@ incluyen:
 - Configuración de infraestructura con Docker Compose
 - Desarrollo de playbooks de automatización para ransomware
 - Integración de componentes SOAR (TheHive-Cortex-Shuffle)
-- Scripts de orquestación y automatización (`src/soar_lab/services/`)
+
+
+
+- Scripts de orquestación y automatización (`src/soar_lab/scripts/setup/`, `src/soar_lab/application/use_cases/`, `src/soar_lab/domain/services/`, `src/soar_lab/infrastructure/monitoring/`)
 - Implementación de mejoras de seguridad (TLS 1.3, firewall, hardening)
 
 ---
@@ -529,12 +532,12 @@ documentos académicos cuando están disponibles.
 
 Los anexos técnicos completos se encuentran en los siguientes archivos del proyecto:
 
-- **Anexo A: Configuración Completa de Docker Compose** - Ver `appendix_a.md` (Configuración YAML completa de todos los
-  servicios)
+- **Anexo A: Configuración Completa de Docker Compose** - Ver `appendix_a.md` (instantánea de configuración YAML; versión
+  canónica en `infra/docker/compose/` y `.env.full`)
 - **Anexo B: Playbooks de Automatización** - Ver `docs/operations/playbooks/ransomware_playbook_e2e.md` (Flujo completo
   de respuesta a ransomware)
-- **Anexo C: Scripts de Orquestación** - Ver `src/soar_lab/infrastructure/setup/` y
-  `src/soar_lab/infrastructure/security/` (gen_certs.sh, setup_firewall.sh, check_deps.sh, scan_vulnerabilities.sh)
+- **Anexo C: Scripts de Orquestación** - Ver `src/soar_lab/scripts/setup/` (`gen_certs.sh`, `check_deps.sh`) y
+  `src/soar_lab/infrastructure/security/` (`setup_firewall.sh`, `scan_vulnerabilities.sh`).
 - **Anexo D: Resultados Experimentales Detallados** - Ver `data_visualizations.md` (Visualizaciones ASCII de métricas,
   gráficos de MTTR, análisis estadístico)
 - **Anexo E: Métricas y Análisis Estadístico** - Ver `comparative_tables.md` (Tablas comparativas de plataformas,

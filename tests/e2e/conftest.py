@@ -1,0 +1,300 @@
+"""Shared fixtures and configuration for E2E tests."""
+import json
+import logging
+import os
+import pytest
+import socket
+import ssl
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, Any, List
+
+# Enforce a hard 60-second cap on all socket operations. Some libraries
+# (urllib3/requests) pass Timeout objects or None to socket.settimeout(),
+# which can leave the underlying socket in blocking mode.
+#
+# socket.socket is replaced with a subclass whose settimeout() caps the
+# value.  socket.setdefaulttimeout() catches sockets that never have
+# settimeout() called.  ssl.SSLSocket.settimeout is also capped because
+# SSLSocket does not inherit from our socket subclass.
+_MAX_SOCKET_TIMEOUT = 60.0
+
+
+def _cap_timeout(value):
+    if value is None:
+        return _MAX_SOCKET_TIMEOUT
+    if not isinstance(value, (int, float)):
+        # urllib3 passes a urllib3.util.timeout.Timeout object; cap it.
+        return _MAX_SOCKET_TIMEOUT
+    if value > _MAX_SOCKET_TIMEOUT:
+        return _MAX_SOCKET_TIMEOUT
+    return value
+
+
+class _CappedTimeoutSocket(socket.socket):
+    def settimeout(self, value):
+        return super().settimeout(_cap_timeout(value))
+
+
+_ORIGINAL_SSL_SETTIMEOUT = ssl.SSLSocket.settimeout
+
+
+def _capped_ssl_settimeout(self, value):
+    return _ORIGINAL_SSL_SETTIMEOUT(self, _cap_timeout(value))
+
+
+socket.socket = _CappedTimeoutSocket
+ssl.SSLSocket.settimeout = _capped_ssl_settimeout
+socket.setdefaulttimeout(_MAX_SOCKET_TIMEOUT)
+
+
+def pytest_collection_modifyitems(items):
+    """Add @pytest.mark.e2e to all E2E tests automatically.
+
+    Also apply per-suite timeouts from TIMEOUTS so a single hanging
+    network call cannot block the entire run.
+    """
+    for item in items:
+        # All tests under tests/e2e are E2E tests. nodeids are relative to the
+        # rootdir (/app/tests/e2e) and start with "TC-..." (including TC-KPI).
+        if not item.nodeid.startswith(('TC-', 'test_')):
+            continue
+        item.add_marker(pytest.mark.e2e)
+        timeout = DEFAULT_TIMEOUT
+        for tc_id, tc_timeout in TIMEOUTS.items():
+            if tc_id in item.nodeid:
+                timeout = tc_timeout
+                break
+        item.add_marker(pytest.mark.timeout(timeout, method='signal'))
+
+
+# Configure logging with levels
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('tests/e2e/test.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Configurable timeouts per test (can be overridden in individual tests)
+DEFAULT_TIMEOUT = 900
+TIMEOUTS = {
+    'TC-00': 900,
+    'TC-01': 900,
+    'TC-02': 900,
+    'TC-03': 1200,
+    'TC-04': 2400,
+    'TC-05': 900,
+    'TC-06': 900,
+    'TC-07': 900,
+    'TC-08': 900,
+    'TC-09': 900,
+    'TC-10': 900,
+    'TC-11': 900,
+    'TC-12': 900,
+    'TC-13': 900,
+    'TC-14': 900,
+    'TC-15': 900,
+    'TC-16': 900,
+    'TC-17': 900,
+    'TC-18': 900,
+    'TC-19': 900,
+    'TC-20': 900,
+    'TC-21': 900,
+    'TC-22': 900,
+    'TC-23': 900,
+    'TC-24': 900,
+    'TC-25': 900,
+    'TC-26': 1200,
+    'TC-27': 900,
+    'TC-28': 900,
+    'TC-29': 900,
+    'TC-30': 900,
+    'TC-31': 900,
+    'TC-32': 900,
+    'TC-KPI-01': 900,
+    'TC-KPI-02': 900,
+    'TC-KPI-03': 900,
+    'TC-KPI-04': 900,
+    'TC-KPI-05': 900,
+    'TC-KPI-06': 900,
+}
+
+# Cleanup registry for automatic cleanup
+_cleanup_registry: List[callable] = []
+
+
+def register_cleanup(func: callable):
+    """Register a cleanup function to be called after test completion."""
+    _cleanup_registry.append(func)
+
+
+def run_cleanup():
+    """Execute all registered cleanup functions."""
+    for func in reversed(_cleanup_registry):
+        try:
+            func()
+        except Exception as e:
+            logger.error(f"Cleanup function failed: {e}")
+    _cleanup_registry.clear()
+
+
+def _is_inside_container():
+    """Detect whether tests are running inside a Docker container."""
+    if os.environ.get('container', '').lower() == 'oci':
+        return True
+    if os.environ.get('container', '').lower() == 'docker':
+        return True
+    if Path('/.dockerenv').exists():
+        return True
+    if Path('/app/webhook_info.json').exists():
+        return True
+    if Path('/app/src/soar_lab/infrastructure/artifacts/webhook_info.json').exists():
+        return True
+    # Fallback: if /app exists we are likely inside the test container
+    if Path('/app').exists():
+        return True
+    return False
+
+
+# Resolve webhook_info.json from host or container path.
+_INFO_PATHS = [
+    Path('/app/webhook_info.json'),
+    Path('/app/src/soar_lab/infrastructure/artifacts/webhook_info.json'),
+    Path(__file__).resolve().parent.parent.parent / 'artifacts' / 'results' / 'webhook_info.json',
+    Path(
+        __file__).resolve().parent.parent.parent / 'src' / 'soar_lab' / 'infrastructure' / 'artifacts' / 'webhook_info.json',
+]
+
+WEBHOOK_INFO = {}
+_inside_container = _is_inside_container()
+for _p in _INFO_PATHS:
+    if _p.exists():
+        try:
+            WEBHOOK_INFO = json.loads(_p.read_text())
+            break
+        except Exception:
+            pass
+
+SHUFFLE_WORKFLOW_ID = WEBHOOK_INFO.get('workflow_id', '')
+SHUFFLE_TRIGGER_ID = WEBHOOK_INFO.get('trigger_id', '')
+SHUFFLE_ORG_ID = WEBHOOK_INFO.get('org_id', '')
+
+# Inside a Docker container use the internal Docker URL. On the host use the localhost URL.
+if _inside_container:
+    SHUFFLE_WEBHOOK_URL = WEBHOOK_INFO.get('webhook_url', '')
+else:
+    SHUFFLE_WEBHOOK_URL = WEBHOOK_INFO.get('webhook_url_host', '') or WEBHOOK_INFO.get('webhook_url', '')
+
+SHUFFLE_API_KEY = os.environ.get('SHUFFLE_DEFAULT_APIKEY', 'c8410826-0c52-484f-a894-8aceafa5ffd0')
+
+# Shuffle backend URL based on execution environment
+if _inside_container:
+    SHUFFLE_BASE_URL = 'http://soar_shuffle_backend:5001'
+else:
+    SHUFFLE_BASE_URL = 'http://localhost:15001'
+
+# Service URLs based on environment (container vs host)
+if _inside_container:
+    # Inside container, use container names and internal ports
+    TENZIR_URL = "http://soar_tenzir_node:5160/api/v0/status"
+    NETWORK_WATCHER_URL = "http://soar_network_watcher:8080"
+    REDIS_URL = "redis://soar_redis:6379"
+    LOKI_URL = "http://soar_loki:3100"
+    ELASTICSEARCH_URL = 'http://elasticsearch:9200'
+else:
+    # On host, use localhost with exposed ports
+    TENZIR_URL = "http://localhost:15160/api/v0/status"
+    NETWORK_WATCHER_URL = "http://localhost:15130"  # If exposed, otherwise skip
+    REDIS_URL = "redis://localhost:6379"  # If exposed, otherwise skip
+    LOKI_URL = "http://localhost:3100"  # If exposed, otherwise skip
+    ELASTICSEARCH_URL = 'http://localhost:19200'
+
+# Tenzir export URL (base without /status)
+if _inside_container:
+    TENZIR_EXPORT_URL = 'http://soar_tenzir_node:5160/api/v0/events/export'
+else:
+    TENZIR_EXPORT_URL = 'http://localhost:15160/api/v0/events/export'
+
+# Redis host/port/password for direct redis client
+if _inside_container:
+    REDIS_HOST = 'soar_redis'
+else:
+    REDIS_HOST = 'localhost'
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', '')
+
+
+# Pytest fixtures
+@pytest.fixture(scope="session")
+def test_config():
+    """Provide test configuration including timeouts and environment info."""
+    return {
+        'inside_container': _inside_container,
+        'default_timeout': DEFAULT_TIMEOUT,
+        'timeouts': TIMEOUTS,
+        'repo_root': Path(__file__).resolve().parent.parent.parent,
+        'artifacts_dir': Path('/app/results') if Path('/app').exists() else Path(
+            __file__).resolve().parent.parent.parent / 'artifacts',
+    }
+
+
+@pytest.fixture(scope="function")
+def test_logger():
+    """Provide a test-specific logger with detailed output."""
+    test_logger = logging.getLogger(
+        f"test.{pytest.current_test.nodeid if hasattr(pytest.current_test, 'nodeid') else 'unknown'}")
+    test_logger.setLevel(logging.DEBUG)
+    return test_logger
+
+
+@pytest.fixture(scope="function")
+def cleanup_after_test():
+    """Ensure cleanup functions are called after each test."""
+    yield
+    run_cleanup()
+
+
+@pytest.fixture(scope="function")
+def test_timeout(test_config):
+    """Get timeout for current test based on test ID."""
+    test_id = pytest.current_test.nodeid if hasattr(pytest.current_test, 'nodeid') else 'default'
+    # Extract TC number from test ID
+    for tc_id, timeout in TIMEOUTS.items():
+        if tc_id in test_id:
+            return timeout
+    return test_config['default_timeout']
+
+
+@pytest.fixture(scope="function")
+def unique_test_id():
+    """Generate a unique ID for each test run for idempotency."""
+    return f"test_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{os.urandom(4).hex()}"
+
+
+@pytest.fixture(scope="function")
+def deterministic_test_data():
+    """Provide deterministic test data for reproducible tests."""
+    return {
+        'alert_id': 'ALERT-TEST-001',
+        'source_ip': '192.168.1.100',
+        'destination_ip': '10.0.0.50',
+        'timestamp': '2024-01-15T10:30:00Z',
+        'severity': 'high',
+        'mitre_techniques': ['T1486', 'T1059'],
+        'description': 'Test ransomware alert for E2E testing',
+    }
+
+
+# Expose helpers for non-pytest imports.
+__all__ = [
+    'WEBHOOK_INFO', 'SHUFFLE_WORKFLOW_ID', 'SHUFFLE_TRIGGER_ID', 'SHUFFLE_ORG_ID',
+    'SHUFFLE_WEBHOOK_URL', 'SHUFFLE_BASE_URL', 'SHUFFLE_API_KEY',
+    'TENZIR_URL', 'TENZIR_EXPORT_URL', 'NETWORK_WATCHER_URL', 'REDIS_URL', 'REDIS_HOST', 'REDIS_PORT', 'REDIS_PASSWORD',
+    'LOKI_URL', 'ELASTICSEARCH_URL',
+    '_inside_container', 'TIMEOUTS', 'DEFAULT_TIMEOUT', 'register_cleanup', 'run_cleanup', 'logger'
+]

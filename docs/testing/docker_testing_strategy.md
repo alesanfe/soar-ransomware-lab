@@ -73,7 +73,7 @@ proporciona confianza en que el entorno Docker funcionará correctamente en prod
 Este documento cubre:
 
 - Estrategia de pruebas de Docker en tres niveles (configuración, runtime, navegador)
-- Validación de servicios SOAR core (Elasticsearch, TheHive, Cortex, Shuffle, Kibana, Wazuh)
+- Validación de servicios SOAR core (Elasticsearch, TheHive, Cortex, Shuffle, Wazuh Dashboard, Wazuh)
 - Validación de servicios de threat intelligence (MISP, Redis, MariaDB)
 - Validación de redes, volúmenes, health checks, rendimiento y seguridad
 - Integración con CI/CD mediante GitHub Actions
@@ -106,45 +106,73 @@ Este documento depende de:
 
 **Nivel 1: Validación de Configuración**
 
-- Archivos: `tests/unit/test_docker_services_validation.py`, `tests/unit/test_docker_services_validation_real.py`
-- Propósito: Validar configuración de docker-compose.yml sin requerir Docker daemon
+- Archivos: `tests/integration/test_docker_compose_validation.py`, `tests/integration/test_docker_build_validation.py`
+- Propósito: Validar configuración de `infra/docker/compose/docker-compose*.yml` sin requerir Docker daemon
 - Ventajas: Ejecución rápida, puede ejecutarse en cualquier entorno, amigable para CI/CD
 - Limitaciones: No valida inicio real de servicios, conectividad de red real, funcionalidad de servicios
 
 **Nivel 2: Validación de Runtime**
 
-- Archivo: `tests/integration/test_docker_runtime_validation.py`
+- Archivos: `tests/integration/test_docker_runtime_status.py`, `tests/integration/test_docker_partial_failure.py`
 - Propósito: Validar funcionalidad del entorno Docker real
-- Requisitos: Docker daemon ejecutándose, docker-compose disponible, recursos suficientes
+- Requisitos: Docker daemon ejecutándose, docker compose disponible, recursos suficientes
 
 **Nivel 3: Validación de Navegador/UI**
 
-- Archivo: `tests/browser/test_live_web_services_validation.py`
+- Archivo: `tests/e2e/test_complete_soar_integration.py`
 - Propósito: Validar interfaces web con automatización de navegador real
 - Requisitos: Selenium WebDriver, navegador Chrome/Chromium, servicios Docker ejecutándose
 
 #### 3.1.2 Fases de ejecución
 
-1. **Fase 1**: Pruebas de configuración (siempre ejecutar)
-2. **Fase 2**: Pruebas de runtime (cuando Docker esté disponible)
-3. **Fase 3**: Pruebas de navegador (cuando los servicios estén ejecutándose)
+Flujo canónico con `make`:
+
+```bash
+# 1. Preparar secretos, IOCs y limpiar entorno
+make generate-secrets
+make generate-iocs
+make reset
+
+# 2. Levantar stack y verificar salud
+make up
+make health
+
+# 3. Ejecutar tests según nivel
+make test-unit          # Fase de pruebas unitarias (no requiere Docker)
+make test-integration   # Fase de runtime e integración
+make test-e2e           # Fase de navegador/UI y flujos completos
+make test-all           # Ejecuta todo el suite
+```
+
+**Selección de perfiles de Docker Compose:**
+
+El proyecto no utiliza el campo `profiles:` de Docker Compose; en su lugar, `Makefile.linux` / `Makefile.win` definen `COMPOSE_FILES` como conjunto de archivos `docker-compose*.yml` y el target `make` selecciona el escenario:
+
+| Escenario | Archivos de compose incluidos | Target make |
+|-----------|------------------------------|-------------|
+| Stack completo | `docker-compose.yml`, `docker-compose.core.yml`, `docker-compose.misp.yml`, `docker-compose.wazuh.yml`, `docker-compose.logging.yml` | `make up` |
+| Tests unitarios | Ninguno | `make test-unit` |
+| Tests de integración | Stack completo + contenedor `soar_api` | `make test-integration` |
+| Tests E2E | Stack completo + `soar_api` | `make test-e2e` |
+
+> Para escenarios personalizados, sobreescribir `COMPOSE_FILES` o `ENV_FILE`: `make up ENV_FILE=.env.testing`.
 
 ### 3.2 Tipos de pruebas
 
 #### 3.2.1 Fase 1: pruebas de configuración
 
 ```bash
-python -m pytest tests/unit/test_docker_services_validation*.py -v
+python -m pytest tests/integration/test_docker_compose_validation.py -v
 ```
 
-- Validación rápida de docker-compose.yml
+- Validación rápida de `infra/docker/compose/docker-compose*.yml`
 - Puede ejecutarse durante el desarrollo
 - Integración en pipeline CI/CD
 
 #### 3.2.2 Fase 2: pruebas de runtime
 
 ```bash
-python -m pytest tests/integration/test_docker_runtime_validation.py -v
+python -m pytest tests/integration/test_docker_runtime_status.py tests/integration/test_docker_partial_failure.py -v
 ```
 
 - Validación completa del entorno Docker
@@ -155,7 +183,7 @@ python -m pytest tests/integration/test_docker_runtime_validation.py -v
 #### 3.2.3 Fase 3: pruebas de navegador
 
 ```bash
-python -m pytest tests/browser/test_live_web_services_validation.py -v
+python -m pytest tests/e2e/test_complete_soar_integration.py -v
 ```
 
 - Validación de interfaces web
@@ -168,22 +196,23 @@ python -m pytest tests/browser/test_live_web_services_validation.py -v
 
 ### Servicios SOAR Core
 
-| Servicio          | Puerto | Configuración                       | Runtime                                        | Navegador                                 |
-|-------------------|--------|-------------------------------------|------------------------------------------------|-------------------------------------------|
-| **Elasticsearch** | 9200   | Imagen, puertos, volúmenes, entorno | Salud del cluster, accesibilidad de API        | No aplicable (solo API)                   |
-| **TheHive**       | 9000   | Imagen, puertos, volúmenes, redes   | Salud del contenedor, endpoints de API         | Interfaz de login, UI de gestión de casos |
-| **Cortex**        | 9001   | Imagen, puertos, volúmenes, redes   | Container health, analyzer endpoints           | Login interface, analyzer management      |
-| **Shuffle**       | 8081   | Imagen, puertos, volúmenes, redes   | Container health, workflow engine              | Login interface, workflow builder         |
-| **Kibana**        | 15601  | Imagen, puertos, volúmenes, redes   | Dashboard rendering, Elasticsearch integration | Login interface, visualization dashboards |
-| **Wazuh Manager** | 55100  | Imagen, puertos, volúmenes, redes   | SIEM/XDR functionality, API endpoints          | No aplicable (API only)                   |
+| Servicio            | Puerto | Configuración                       | Runtime                                        | Navegador                                 |
+|---------------------|--------|-------------------------------------|------------------------------------------------|-------------------------------------------|
+| **Elasticsearch**   | 19200  | Imagen, puertos, volúmenes, entorno | Salud del cluster, accesibilidad de API        | No aplicable (solo API)                   |
+| **TheHive**         | 19000  | Imagen, puertos, volúmenes, redes   | Salud del contenedor (`/api/status`), endpoints de API | Interfaz de login, UI de gestión de casos |
+| **Cortex**          | 19001  | Imagen, puertos, volúmenes, redes   | Container health, analyzer endpoints           | Login interface, analyzer management      |
+| **Shuffle**         | 8081   | Imagen, puertos, volúmenes, redes   | Container health, workflow engine              | Login interface, workflow builder         |
+| **Wazuh Dashboard** | 15601  | Imagen, puertos, volúmenes, redes   | Dashboard rendering, OpenSearch integration | Login interface, visualization dashboards |
+| **Wazuh Manager**   | 55100  | Imagen, puertos, volúmenes, redes   | SIEM/XDR functionality, API endpoints          | No aplicable (API only)                   |
+| **Wazuh Indexer**   | 9200   | Imagen, puertos, volúmenes, redes   | Indexación y búsqueda de logs                  | No aplicable (API only)                   |
 
 ### Threat Intelligence
 
-| Servicio    | Configuración                     | Runtime                            | Navegador                               |
-|-------------|-----------------------------------|------------------------------------|-----------------------------------------|
-| **MISP**    | Imagen, puertos, volúmenes, redes | Threat intelligence platform       | Login interface, threat data management |
-| **Redis**   | Imagen, puertos, volúmenes, redes | Cache and message broker           | No aplicable (data service)             |
-| **MariaDB** | Imagen, puertos, volúmenes, redes | Database for TheHive, Cortex, MISP | No aplicable (data service)             |
+| Servicio    | Configuración                     | Runtime                      | Navegador                               |
+|-------------|-----------------------------------|------------------------------|-----------------------------------------|
+| **MISP**    | Imagen, puertos, volúmenes, redes | Threat intelligence platform | Login interface, threat data management |
+| **Redis**   | Imagen, puertos, volúmenes, redes | Cache and message broker     | No aplicable (data service)             |
+| **MariaDB** | Imagen, puertos, volúmenes, redes | Database for MISP            | No aplicable (data service)             |
 
 #### 3.3.2 Validación de red
 
@@ -229,28 +258,53 @@ python -m pytest tests/browser/test_live_web_services_validation.py -v
 
 #### 3.4.1 Comandos de ejecución
 
+Los comandos canónicos para ejecutar tests del stack Docker son los targets `make`. `pytest` directo funciona para desarrollo aislado pero no configura el entorno completo.
+
 **Ejecutar todas las pruebas:**
 
 ```bash
-make test
+make test-all
 ```
 
-**Ejecutar solo pruebas de configuración:**
+**Ejecutar pruebas por nivel:**
 
 ```bash
-python -m pytest tests/unit/test_docker_services_validation*.py -v
+make test-unit          # No requiere Docker
+make test-integration   # Requiere make up + make health
+make test-e2e          # Requiere stack completo
 ```
 
-**Ejecutar solo pruebas de runtime:**
+**Ejecutar pruebas de configuración directas:**
 
 ```bash
-python -m pytest tests/integration/test_docker_runtime_validation.py -v
+python -m pytest tests/integration/test_docker_compose_validation.py -v
 ```
 
-**Ejecutar solo pruebas de navegador:**
+**Ejecutar pruebas de runtime directas:**
 
 ```bash
-python -m pytest tests/browser/test_live_web_services_validation.py -v
+python -m pytest tests/integration/test_docker_runtime_status.py tests/integration/test_docker_partial_failure.py -v
+```
+
+**Ejecutar pruebas de navegador directas:**
+
+```bash
+python -m pytest tests/e2e/test_complete_soar_integration.py -v
+```
+
+**Generar reporte de cobertura:**
+
+```bash
+make test-coverage
+```
+
+> Los reportes se generan en `artifacts/coverage/htmlcov/` y `artifacts/coverage/coverage.xml`.
+
+**Controles previos en CI:**
+
+```bash
+python -m pytest --collect-only -q
+make docs-lint
 ```
 
 #### 3.4.2 Integración CI/CD
@@ -299,7 +353,7 @@ Las pruebas se integran en GitHub Actions mediante workflows en `.github/workflo
 - Container startup time
 - Health check frequency
 - Failure detection and recovery
-- Health status reporting para servicios core (Elasticsearch, TheHive, Cortex, Shuffle, Kibana, MISP)
+- Health status reporting para servicios core (Elasticsearch, TheHive, Cortex, Shuffle, Wazuh Dashboard, MISP)
 
 #### 4.1.2 Validación de rendimiento
 
@@ -427,11 +481,11 @@ docker info
 
 # Check running containers
 docker ps
-docker-compose ps
+docker compose ps
 
 # Check container logs
 docker logs <container_name>
-docker-compose logs <service_name>
+docker compose logs <service_name>
 
 # Check network status
 docker network ls

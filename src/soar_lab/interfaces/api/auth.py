@@ -1,0 +1,49 @@
+"""Authentication adapter for SOAR Lab API.
+
+This module acts as a FastAPI adapter for the AuthService,
+delegating authentication logic to the service layer.
+"""
+
+from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from soar_lab.common.exceptions import AuthError
+from typing import Dict, Any
+
+from soar_lab.config.logging import get_logger
+
+logger = get_logger(__name__)
+
+security = HTTPBearer()
+
+
+def create_get_current_user(auth_service) -> object:
+    """
+    Factory that creates a get_current_user dependency with injected auth_service.
+
+    Args:
+        auth_service: AuthService instance (injected dependency)
+
+    Returns:
+        FastAPI dependency function for authentication
+    """
+    if not auth_service:
+        raise ValueError("auth_service is required for create_get_current_user")
+
+    def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
+        """
+        Verify JWT token and return user information.
+        Delegates to AuthService for actual authentication logic.
+        """
+        logger.info("get_current_user called")
+        token = credentials.credentials
+        logger.info(f"Token received (first 20 chars): {token[:20] if token else 'None'}")
+
+        try:
+            user_info = auth_service.verify_jwt_token(token)
+            logger.info(f"User authenticated: {user_info.get('user', 'unknown')}")
+            return user_info
+        except AuthError as e:
+            logger.warning(f"Authentication failed: {e}")
+            raise HTTPException(status_code=e.status_code, detail=str(e))
+
+    return get_current_user

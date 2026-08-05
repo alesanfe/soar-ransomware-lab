@@ -97,18 +97,18 @@ Cada objetivo corresponde a tareas específicas del EDT:
 - **Documentación y cierre (EDT 8.x)**: Objetivos 4, 11, 12, 20.
 
 La estructura del repositorio soporta esta organización, con carpetas dedicadas para pruebas (`tests/`), resultados (
-`artifacts/results/`), documentación (`docs/`) y scripts (`scripts/`), garantizando la trazabilidad necesaria para un
+`artifacts/results/`), documentación (`docs/`) y scripts (`src/soar_lab/scripts/`), garantizando la trazabilidad necesaria para un
 TFM académico riguroso.
 
 **Estructura del repositorio:**
 
-- `tests/unit/` - 37 archivos de pruebas unitarias de componentes individuales
+- `tests/unit/` - pruebas unitarias de componentes individuales (conteo dinámico: `pytest --collect-only -q tests/unit/ | find /c /v ""` en Windows o `| wc -l` en Linux/macOS)
 - `tests/e2e/TC-01/test_malicious.py` - Test E2E escenario malicioso
 - `tests/e2e/TC-02/test_benign.py` - Test E2E escenario benigno
 - `tests/e2e/TC-03/test_edge_cases.py` - Test E2E casos extremos
-- `artifacts/results/kpis.csv` - Archivo CSV con KPIs calculados por `src/soar_lab/services/kpi_analyzer.py`
-- `src/soar_lab/infrastructure/http_alert_sender.py` - Módulo para enviar alertas simuladas
-- `src/soar_lab/services/backup_service.py` - Servicio de backup/restore
+- `artifacts/results/kpis.csv` - Archivo CSV con KPIs calculados por `src/soar_lab/domain/services/kpi_analyzer.py`
+- `src/soar_lab/simulator/simulate_alerts.py` - Módulo para enviar alertas simuladas
+- `src/soar_lab/application/use_cases/backup_service.py` - Servicio de backup/restore
 - `infra/docker/compose/docker-compose.yml` - Compose principal
 - `infra/docker/compose/docker-compose.core.yml` - Compose servicios core
 - `infra/docker/compose/docker-compose.misp.yml` - Compose MISP
@@ -133,26 +133,26 @@ TFM académico riguroso.
 
 | Nº | Objetivo                       | Descripción                                                                                                                                                                                                    | Métrica               | Umbral                             | Método de Medida                                                             | Evidencia                                                                                                                 |
 |----|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|------------------------------------|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| 1  | Implementación del Laboratorio | Desplegar entorno reproducible con TheHive, Cortex y Shuffle mediante Docker Compose (`infra/docker/compose/docker-compose.yml`, `infra/docker/compose/docker-compose.core.yml`).                              | Servicios activos     | 100% contenedores funcionando      | Verificación con `docker ps` y `make up`                                     | Capturas en `docs/operations/configuration_manual.md`                                                                     |
-| 2  | Desarrollo del Playbook E2E    | Crear flujo automatizado desde alerta hasta contención simulada en Shuffle (`playbooks/shuffle/`).                                                                                                             | Ejecución completa    | 2 escenarios (malicioso y benigno) | Logs del SOAR y casos en TheHive                                             | Evidencias en `tests/e2e/TC-01/test_malicious.py` y `tests/e2e/TC-02/test_benign.py`                                      |
-| 3  | Validación de Métricas MTTR    | Medir tiempo de respuesta desde alerta hasta contención mediante timestamps en logs.                                                                                                                           | Percentiles p50 y p90 | p50 ≤ 120 s; p90 ≤ 180 s           | Timestamps y cálculo estadístico con `src/soar_lab/services/kpi_analyzer.py` | `artifacts/results/kpis.csv` y `docs/operations/playbooks/ransomware_playbook_e2e.md`                                     |
-| 4  | Documentación Técnica          | Generar documentación completa (arquitectura, configuración, resultados, API, docs-site, CLI, analytics).                                                                                                      | Documento final       | 100% apartados completados         | Checklist y revisión                                                         | `docs/` (architecture/overview.md, apps/api/api-docs.html, apps/docs-site/, src/soar_lab/cli.py, src/soar_lab/analytics/) |
-| 5  | Integración SIEM Simulada      | Configurar SIEM simulado para generar alertas mediante `src/soar_lab/infrastructure/http_alert_sender.py`.                                                                                                     | Alertas procesadas    | 100% sin errores                   | Logs en Shuffle y casos en TheHive                                           | `src/soar_lab/infrastructure/http_alert_sender.py` + capturas en `docs/operations/playbooks/ransomware_playbook_e2e.md`   |
-| 6  | Contención Simulada            | Implementar contención simulada en código Python (`src/soar_lab/services/containment_service.py`).                                                                                                             | Acciones ejecutadas   | 100% completadas                   | Logs del servicio y confirmación en flujo                                    | `src/soar_lab/services/containment_service.py`                                                                            |
-| 7  | Seguridad del Entorno          | Garantizar uso exclusivo de muestras inertes, gestión de certificados SSL (`scripts/utils/gen_certs.sh`) y validación de esquemas (`src/soar_lab/validation/`, `src/soar_lab/schemas/`).                       | Incidentes            | 0 incidentes                       | Revisión del contenido y validación                                          | `docs/architecture/security.md`, certificados en `infra/docker/certs/`                                                    |
-| 8  | Automatización Integral        | Implementar despliegue con Makefiles, Docker Compose, CI/CD (`scripts/ci/`), testing automatizado (`scripts/testing/`, `scripts/automation/`), backup/restore (`scripts/infra/`) y Vagrant (`infra/vagrant/`). | Despliegue automático | 100% servicios levantados          | Ejecución de scripts y verificación                                          | `Makefile`, `infra/docker/compose/`, `scripts/ci/`, `scripts/infra/`, `infra/vagrant/`                                    |
-| 9  | Pruebas Atómicas               | Ejecutar pruebas atómicas de componentes individuales (`tests/atomic/`: alertas, IoCs, KPIs, esquemas, secrets).                                                                                               | Casos probados        | 90% pruebas pasan                  | `pytest tests/atomic/ -v`                                                    | Resultados en `artifacts/results/atomic_tests.json`                                                                       |
-| 10 | Pruebas de Integración         | Ejecutar pruebas de integración entre TheHive, Cortex, Shuffle, API y otros componentes (`tests/integration/`).                                                                                                | Casos probados        | 85% pruebas pasan                  | `pytest tests/integration/ -v`                                               | Resultados en `artifacts/results/integration_tests.json`                                                                  |
-| 11 | Pruebas de Seguridad           | Ejecutar pruebas de seguridad para validar autenticación, autorización, validación de entrada y controles de acceso (`tests/security/`).                                                                       | Casos probados        | 100% pruebas pasan                 | `pytest tests/security/ -v`                                                  | Resultados en `artifacts/results/security_tests.json`                                                                     |
-| 12 | Pruebas de Rendimiento         | Ejecutar pruebas de rendimiento para validar tiempos de respuesta de API, analyzers y componentes críticos (`tests/performance/`).                                                                             | Tiempos de respuesta  | ≤ umbrales definidos               | `pytest tests/performance/ -v`                                               | Resultados en `artifacts/results/performance_tests.json`                                                                  |
-| 13 | Pruebas de Producción          | Ejecutar smoke tests para validación rápida de despliegues en producción (`tests/production/`).                                                                                                                | Casos probados        | 100% pruebas pasan                 | `pytest tests/production/ -v`                                                | Resultados en `artifacts/results/smoke_tests.json`                                                                        |
-| 14 | KPIs y Análisis                | Calcular KPIs, analytics de TFM (`src/soar_lab/analytics/`) y métricas de servicios (`scripts/metrics/`).                                                                                                      | KPIs calculados       | Informe con gráficos               | Análisis estadístico y visualización                                         | `artifacts/results/kpis.csv`, `src/soar_lab/analytics/`, `scripts/metrics/`                                               |
-| 15 | Preparación Defensa TFM        | Crear presentación, resumen ejecutivo y analytics para evidencia académica (`src/soar_lab/analytics/`).                                                                                                        | Presentación lista    | 100% diapositivas completadas      | Validación y ensayo                                                          | Documentación en `docs/project/`, datos en `artifacts/data/`                                                              |
-| 16 | Evidencia de Aprobación        | Obtener validación formal del alcance y objetivos.                                                                                                                                                             | Archivo firmado       | Documento archivado                | Confirmación por correo y almacenamiento                                     | Carpeta `docs/project/` (scope.md, objectives.md, plan.md)                                                                |
-| 17 | API del Laboratorio            | Implementar y desplegar la API REST del laboratorio con FastAPI para gestión de servicios, health checks, métricas, tests y backups (`src/soar_lab/api/`, `apps/api/`).                                        | Endpoints funcionales | Cobertura ≥ 80%                    | Tests de integración, `/docs`                                                | `apps/api/api-docs.html`, logs `soar_api`                                                                                 |
-| 18 | CLI del Laboratorio            | Implementar CLI para gestión del laboratorio con comandos para alertas, configuración, validación y operaciones comunes (`src/soar_lab/cli.py`).                                                               | Comandos funcionales  | 100% comandos ejecutan             | Tests unitarios, `--help`                                                    | `src/soar_lab/cli.py`, documentación en README                                                                            |
-| 19 | Sitio de Documentación         | Desplegar sitio de documentación Docusaurus con documentación completa del laboratorio, getting started y guías de uso (`apps/docs-site/`).                                                                    | Sitio funcional       | 100% páginas renderizan            | Tests de navegador, revisión enlaces                                         | `apps/docs-site/`, capturas de pantalla                                                                                   |
-| 20 | Interfaz Web de Gestión        | Desplegar interfaz web de gestión para monitoreo del laboratorio, visualización de servicios y operaciones básicas (`apps/web-management/`).                                                                   | UI funcional          | Dashboard muestra estado real      | Tests de navegador, pruebas manuales                                         | `apps/web-management/`, capturas de pantalla                                                                              |
+| 1 | Implementación del Laboratorio | Desplegar entorno reproducible con TheHive, Cortex y Shuffle mediante Docker Compose (`infra/docker/compose/docker-compose.yml`, `infra/docker/compose/docker-compose.core.yml`). | Servicios activos | 100% contenedores funcionando | Verificación con `docker ps` y `make up` | Implementado |
+| 2 | Desarrollo del Playbook E2E | Crear flujo automatizado desde alerta hasta contención simulada en Shuffle (`docs/operations/playbooks/ransomware_playbook_e2e.md`). | Ejecución completa | 2 escenarios (malicioso y benigno) | Logs del SOAR y casos en TheHive | Implementado |
+| 3 | Validación de Métricas MTTR | Medir tiempo de respuesta desde alerta hasta contención mediante timestamps en logs. | Percentiles p50 y p90 | p50 ≤ 120 s; p90 ≤ 180 s | Timestamps y cálculo estadístico con `src/soar_lab/domain/services/kpi_analyzer.py` | Implementado |
+| 4 | Documentación Técnica | Generar documentación completa (arquitectura, configuración, resultados, API, docs-site, CLI, analytics). | Documento final | 100% apartados completados | Checklist y revisión | En progreso |
+| 5 | Integración SIEM Simulada | Configurar SIEM simulado para generar alertas mediante `src/soar_lab/simulator/simulate_alerts.py`. | Alertas procesadas | 100% sin errores | Logs en Shuffle y casos en TheHive | Simulado |
+| 6 | Contención Simulada | Implementar contención simulada en el playbook E2E (`docs/operations/playbooks/ransomware_playbook_e2e.md`). | Acciones ejecutadas | 100% completadas | Logs del servicio y confirmación en flujo | Simulado |
+| 7 | Seguridad del Entorno | Garantizar uso exclusivo de muestras inertes, gestión de certificados SSL (`src/soar_lab/scripts/setup/gen_certs.sh`) y validación de esquemas (`src/soar_lab/config/schemas.py`). | Incidentes | 0 incidentes | Revisión del contenido y validación | Parcial |
+| 8 | Automatización Integral | Implementar despliegue con Makefiles, Docker Compose, CI/CD (`.github/workflows/`), testing automatizado (`tests/`, `src/soar_lab/scripts/maintenance/`), backup/restore (`src/soar_lab/application/use_cases/backup_service.py`) y Vagrant (`infra/vagrant/`). | Despliegue automático | 100% servicios levantados | Ejecución de scripts y verificación | Parcial |
+| 9 | Pruebas Atómicas | Ejecutar pruebas atómicas de componentes individuales (`tests/atomic/`: alertas, IoCs, KPIs, esquemas, secrets). | Casos probados | 90% pruebas pasan | `pytest tests/atomic/ -v` | Parcial |
+| 10 | Pruebas de Integración | Ejecutar pruebas de integración entre TheHive, Cortex, Shuffle, API y otros componentes (`tests/integration/`). | Casos probados | 85% pruebas pasan | `pytest tests/integration/ -v` | Parcial |
+| 11 | Pruebas de Seguridad | Ejecutar pruebas de seguridad para validar autenticación, autorización, validación de entrada y controles de acceso (`tests/security/`). | Casos probados | 100% pruebas pasan | `pytest tests/security/ -v` | Parcial |
+| 12 | Pruebas de Rendimiento | Ejecutar pruebas de rendimiento para validar tiempos de respuesta de API, analyzers y componentes críticos (`tests/performance/`). | Tiempos de respuesta | ≤ umbrales definidos | `pytest tests/performance/ -v` | Parcial |
+| 13 | Pruebas de Producción | Ejecutar smoke tests para validación rápida de despliegues en producción (`tests/production/`). | Casos probados | 100% pruebas pasan | `pytest tests/production/ -v` | Parcial |
+| 14 | KPIs y Análisis | Calcular KPIs, analytics de TFM (`docs/thesis/data_visualizations.md`) y métricas de servicios (`src/soar_lab/application/use_cases/analytics_service.py`). | KPIs calculados | Informe con gráficos | Análisis estadístico y visualización | Implementado |
+| 15 | Preparación Defensa TFM | Crear presentación, resumen ejecutivo y analytics para evidencia académica (`docs/thesis/data_visualizations.md`). | Presentación lista | 100% diapositivas completadas | Validación y ensayo | Pendiente |
+| 16 | Evidencia de Aprobación | Obtener validación formal del alcance y objetivos. | Archivo firmado | Documento archivado | Confirmación por correo y almacenamiento | Pendiente |
+| 17 | API del Laboratorio | Implementar y desplegar la API REST del laboratorio con FastAPI para gestión de servicios, health checks, métricas, tests y backups (`src/soar_lab/interfaces/api/`). | Endpoints funcionales | Cobertura ≥ 80% | Tests de integración, `/docs` | Implementado |
+| 18 | CLI del Laboratorio | Implementar CLI para gestión del laboratorio con comandos para alertas, configuración, validación y operaciones comunes (`src/soar_lab/interfaces/api/cli.py`). | Comandos funcionales | 100% comandos ejecutan | Tests unitarios, `--help` | Implementado |
+| 19 | Sitio de Documentación | Desplegar sitio de documentación Docusaurus con documentación completa del laboratorio, getting started y guías de uso (`apps/docs-site/`). | Sitio funcional | 100% páginas renderizan | Tests de navegador, revisión enlaces | Implementado |
+| 20 | Interfaz Web de Gestión | Desplegar interfaz web de gestión para monitoreo del laboratorio, visualización de servicios y operaciones básicas (`apps/web-management/`). | UI funcional | Dashboard muestra estado real | Tests de navegador, pruebas manuales | Implementado |
 
 ### 3.4 Cronograma
 
@@ -202,26 +202,26 @@ gantt
 
 | Objetivo | Entregable Principal                | Entregable Secundario                | Ubicación en Repositorio                                                    | EDT Relacionada | Estado    |
 |----------|-------------------------------------|--------------------------------------|-----------------------------------------------------------------------------|-----------------|-----------|
-| 1        | Laboratorio SOAR desplegado         | Capturas de servicios                | `docs/operations/configuration_manual.md`                                   | EDT 4.1         | Pendiente |
-| 2        | Playbook E2E implementado           | Logs de ejecución                    | `tests/e2e/TC-01/test_malicious.py`, `tests/e2e/TC-02/test_benign.py`       | EDT 5.1         | Pendiente |
-| 3        | Métricas MTTR validadas             | Archivo KPIs                         | `artifacts/results/kpis.csv`                                                | EDT 7.1         | Pendiente |
-| 4        | Documentación técnica completa      | Revisión                             | `docs/architecture/`, `apps/api/api-docs.html`, `apps/docs-site/`           | EDT 8.1         | Pendiente |
-| 5        | Integración SIEM simulada           | Script de alertas                    | `src/soar_lab/infrastructure/http_alert_sender.py`                          | EDT 5.2         | Pendiente |
-| 6        | Scripts de contención               | Logs de ejecución                    | `src/soar_lab/services/containment_service.py`                              | EDT 6.1         | Pendiente |
-| 7        | Seguridad validada                  | Documento de seguridad, certificados | `docs/architecture/security.md`, `infra/docker/certs/`                      | EDT 4.2         | Pendiente |
-| 8        | Automatización integral configurada | Scripts CI/CD, backup                | `Makefile`, `scripts/ci/`, `scripts/infra/`, `infra/vagrant/`               | EDT 4.3         | Pendiente |
-| 9        | Pruebas atómicas completadas        | Informe de pruebas                   | `tests/atomic/`, `artifacts/results/atomic_tests.json`                      | EDT 7.2         | Pendiente |
-| 10       | Pruebas de integración completadas  | Informe de pruebas                   | `tests/integration/`, `artifacts/results/integration_tests.json`            | EDT 7.2         | Pendiente |
-| 11       | Pruebas de seguridad completadas    | Informe de pruebas                   | `tests/security/`, `artifacts/results/security_tests.json`                  | EDT 7.2         | Pendiente |
-| 12       | Pruebas de rendimiento completadas  | Informe de pruebas                   | `tests/performance/`, `artifacts/results/performance_tests.json`            | EDT 7.2         | Pendiente |
-| 13       | Pruebas de producción completadas   | Informe de pruebas                   | `tests/production/`, `artifacts/results/smoke_tests.json`                   | EDT 7.2         | Pendiente |
-| 14       | KPIs calculados y analizados        | Gráficos y análisis                  | `artifacts/results/kpis.csv`, `src/soar_lab/analytics/`, `scripts/metrics/` | EDT 7.3         | Pendiente |
-| 15       | Presentación TFM preparada          | Diapositivas, analytics              | `docs/project/`, `artifacts/data/`                                          | EDT 8.2         | Pendiente |
-| 16       | Evidencia de aprobación             | Documento firmado                    | `docs/project/` (scope.md, objectives.md, plan.md)                          | EDT 8.3         | Pendiente |
-| 17       | API del Laboratorio desplegada      | API funcional                        | `src/soar_lab/api/`, `apps/api/api-docs.html`                               | EDT 4.1         | Pendiente |
-| 18       | CLI del Laboratorio implementada    | CLI funcional                        | `src/soar_lab/cli.py`, README.md                                            | EDT 4.1         | Pendiente |
-| 19       | Sitio de Documentación desplegado   | Sitio funcional                      | `apps/docs-site/`, capturas de pantalla                                     | EDT 8.1         | Pendiente |
-| 20       | Interfaz Web de Gestión desplegada  | UI funcional                         | `apps/web-management/`, capturas de pantalla                                | EDT 4.1         | Pendiente |
+| 1 | Laboratorio SOAR desplegado | Capturas de servicios | `docs/operations/configuration_manual.md` | EDT 4.1 | Implementado |
+| 2 | Playbook E2E implementado | Logs de ejecución | `tests/e2e/TC-01/test_malicious.py`, `tests/e2e/TC-02/test_benign.py` | EDT 5.1 | Implementado |
+| 3 | Métricas MTTR validadas | Archivo KPIs | `artifacts/results/kpis.csv` | EDT 7.1 | Implementado |
+| 4 | Documentación técnica completa | Revisión | `docs/architecture/`, `docs/integrations/api_contracts.md`, `apps/docs-site/` | EDT 8.1 | En progreso |
+| 5 | Integración SIEM simulada | Script de alertas | `src/soar_lab/simulator/simulate_alerts.py` | EDT 5.2 | Simulado |
+| 6 | Scripts de contención | Logs de ejecución | `docs/operations/playbooks/ransomware_playbook_e2e.md` | EDT 6.1 | Simulado |
+| 7 | Seguridad validada | Documento de seguridad, certificados | `docs/architecture/security.md`, `infra/docker/config/nginx/ssl/` | EDT 4.2 | Parcial |
+| 8 | Automatización integral configurada | Scripts CI/CD, backup | `Makefile`, `.github/workflows/`, `src/soar_lab/scripts/`, `infra/vagrant/` | EDT 4.3 | Parcial |
+| 9 | Pruebas atómicas completadas | Informe de pruebas | `tests/atomic/`, `artifacts/results/atomic_tests.json` | EDT 7.2 | Parcial |
+| 10 | Pruebas de integración completadas | Informe de pruebas | `tests/integration/`, `artifacts/results/integration_tests.json` | EDT 7.2 | Parcial |
+| 11 | Pruebas de seguridad completadas | Informe de pruebas | `tests/security/`, `artifacts/results/security_tests.json` | EDT 7.2 | Parcial |
+| 12 | Pruebas de rendimiento completadas | Informe de pruebas | `tests/performance/`, `artifacts/results/performance_tests.json` | EDT 7.2 | Parcial |
+| 13 | Pruebas de producción completadas | Informe de pruebas | `tests/production/`, `artifacts/results/smoke_tests.json` | EDT 7.2 | Parcial |
+| 14 | KPIs calculados y analizados | Gráficos y análisis | `artifacts/results/kpis.csv`, `docs/thesis/data_visualizations.md`, `src/soar_lab/application/use_cases/analytics_service.py` | EDT 7.3 | Implementado |
+| 15 | Presentación TFM preparada | Diapositivas, analytics | `docs/project/`, `artifacts/data/` | EDT 8.2 | Pendiente |
+| 16 | Evidencia de aprobación | Documento firmado | `docs/project/` (scope.md, objectives.md, plan.md) | EDT 8.3 | Pendiente |
+| 17 | API del Laboratorio desplegada | API funcional | `src/soar_lab/interfaces/api/`, `docs/integrations/api_contracts.md` | EDT 4.1 | Implementado |
+| 18 | CLI del Laboratorio implementada | CLI funcional | `src/soar_lab/interfaces/api/cli.py`, `docs/operations/cli_manual.md` | EDT 4.1 | Implementado |
+| 19 | Sitio de Documentación desplegado | Sitio funcional | `apps/docs-site/`, capturas de pantalla | EDT 8.1 | Implementado |
+| 20 | Interfaz Web de Gestión desplegada | UI funcional | `apps/web-management/`, capturas de pantalla | EDT 4.1 | Implementado |
 
 **Leyenda de EDT:**
 
@@ -246,7 +246,7 @@ Los objetivos se verifican mediante:
 
 - Ejecución de pruebas automatizadas (`pytest tests/unit/`, `pytest tests/e2e/`)
 - Revisión de evidencias en ubicaciones especificadas (`tests/e2e/TC-01/`, `tests/e2e/TC-02/`, `artifacts/results/`)
-- Validación de métricas contra umbrales definidos mediante `src/soar_lab/services/kpi_analyzer.py`
+- Validación de métricas contra umbrales definidos mediante `src/soar_lab/domain/services/kpi_analyzer.py`
 - Revisión de documentación (`docs/architecture/`, `docs/project/`)
 - Confirmación de aprobación formal
 
@@ -346,5 +346,4 @@ pytest tests/e2e/ --generate-kpis
 - **Alcance del Proyecto**: [docs/project/scope.md](scope.md)
 
 ---
-
 

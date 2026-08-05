@@ -12,6 +12,13 @@ from soar_lab.infrastructure.in_memory_alert_repository import InMemoryAlertRepo
 from soar_lab.infrastructure.in_memory_storage import InMemoryStorage
 
 
+def pytest_collection_modifyitems(items):
+    """Add @pytest.mark.unit to all unit tests automatically."""
+    for item in items:
+        if item.nodeid.startswith('tests/unit/'):
+            item.add_marker(pytest.mark.unit)
+
+
 @pytest.fixture
 def in_memory_alert_repository():
     """In-memory AlertRepository for unit tests."""

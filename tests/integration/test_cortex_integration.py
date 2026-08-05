@@ -7,10 +7,9 @@ Tests Cortex client functionality using mocks when service is not available.
 import os
 import pytest
 import requests
+from soar_lab.common.exceptions import IntegrationError
+from soar_lab.infrastructure.external.integrations.cortex_client import CortexClient
 from unittest.mock import patch, MagicMock
-
-from soar_lab.exceptions import IntegrationError
-from soar_lab.integrations.cortex_client import CortexClient
 
 CORTEX_URL = os.getenv("CORTEX_URL", "http://localhost:9001")
 CORTEX_API_KEY = os.getenv("CORTEX_API_KEY", "")

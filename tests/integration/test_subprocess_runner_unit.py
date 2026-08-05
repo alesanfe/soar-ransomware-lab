@@ -223,7 +223,7 @@ class TestSubprocessRunner:
     async def test_run_async_raise_on_error_true(self, mock_subprocess_exec):
         """Test running a command asynchronously with raise_on_error=True"""
         from unittest.mock import AsyncMock
-        from soar_lab.exceptions import SubprocessError
+        from soar_lab.common.exceptions import SubprocessError
 
         mock_proc = AsyncMock()
         mock_proc.returncode = 1

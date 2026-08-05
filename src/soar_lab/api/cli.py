@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 
 from soar_lab.config.logging import configure_from_env
 
+__all__ = ["main", "configure_from_env"]
+
 
 def main() -> int:
     configure_from_env()
@@ -35,13 +37,13 @@ def main() -> int:
 
     if args.command == "api":
         import uvicorn
-        from soar_lab.api.composition import create_app as create_composed_app
+        from soar_lab.interfaces.api.composition import create_app as create_composed_app
         app_instance = create_composed_app()
         uvicorn.run(app_instance, host=args.host, port=args.port)
         return 0
 
     if args.command == "generate-iocs":
-        from soar_lab.domain.ioc_generator import SimulatedIOCGenerator
+        from soar_lab.domain.services.ioc_generator import SimulatedIOCGenerator
         from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
         from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
         from soar_lab.config.settings import create_settings
@@ -68,7 +70,7 @@ def main() -> int:
         return 0
 
     if args.command == "generate-secrets":
-        from soar_lab.infrastructure.setup.generate_secrets import SecretGeneratorService
+        from soar_lab.scripts.setup.generate_secrets import SecretGeneratorService
         from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
         from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
         from soar_lab.config.settings import create_settings
@@ -105,11 +107,15 @@ def main() -> int:
                 'FIREWALL_SIM_TOKEN': secret_service.generate_token(48),
                 'POSTGRES_PASSWORD': secret_service.generate_password(32),
                 'REDIS_PASSWORD': secret_service.generate_password(32),
+                'JWT_SECRET_KEY': secret_service.generate_jwt_secret(64),
+                'JWT_EXPIRATION_MINUTES': '60',
+                'JWT_ALGORITHM': 'HS256',
             }
             for key, value in secrets_dict.items():
                 print(f"{key}={value}")
-            print("Copy these values to your docker/.env file")
-            print("DO NOT commit the .env file to version control!")
+            print("# Redirect these values to your .env.full file, for example:")
+            print("#   soar-lab generate-secrets --env > .env.full")
+            print("# DO NOT commit the .env file to version control!")
         else:
             print(json.dumps(secrets_data, indent=4))
         return 0

@@ -1,10 +1,20 @@
-
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "SOAR Ransomware Lab Alert Schema",
   "description": "JSON schema for validating ransomware detection alerts sent to Shuffle webhook",
   "type": "object",
-  "required": ["alert_id", "hostname", "hash", "src_ip", "severity", "source", "detection_time", "event_type", "timestamp", "ip_address"],
+  "required": [
+    "alert_id",
+    "hostname",
+    "hash",
+    "src_ip",
+    "severity",
+    "source",
+    "detection_time",
+    "event_type",
+    "timestamp",
+    "ip_address"
+  ],
   "properties": {
     "alert_id": {
       "type": "string",
@@ -41,7 +51,13 @@
     "source": {
       "type": "string",
       "description": "Source system that generated the alert",
-      "enum": ["siem-ransomware-detection", "siem-file-monitoring", "siem-network-monitoring", "edr-alert", "manual-report"]
+      "enum": [
+        "siem-ransomware-detection",
+        "siem-file-monitoring",
+        "siem-network-monitoring",
+        "edr-alert",
+        "manual-report"
+      ]
     },
     "detection_time": {
       "type": "string",
@@ -56,7 +72,13 @@
     "event_type": {
       "type": "string",
       "description": "Type of security event detected",
-      "enum": ["ransomware_detection", "file_monitoring", "network_intrusion", "malware_execution", "suspicious_behavior"]
+      "enum": [
+        "ransomware_detection",
+        "file_monitoring",
+        "network_intrusion",
+        "malware_execution",
+        "suspicious_behavior"
+      ]
     },
     "description": {
       "type": "string",
@@ -93,8 +115,18 @@
       "type": "object",
       "description": "MITRE ATT&CK details",
       "properties": {
-        "tactics": {"type": "array", "items": {"type": "string"}},
-        "techniques": {"type": "array", "items": {"type": "string"}}
+        "tactics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "techniques": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "user_account": {
@@ -135,15 +167,45 @@
       "description": "Network connections established by the suspicious process",
       "items": {
         "type": "object",
-        "required": ["dst_ip", "dst_port", "protocol"],
+        "required": [
+          "dst_ip",
+          "dst_port",
+          "protocol"
+        ],
         "properties": {
-          "dst_ip": {"type": "string", "format": "ipv4"},
-          "destination_ip": {"type": "string", "format": "ipv4"},
-          "dst_port": {"type": "integer", "minimum": 1, "maximum": 65535},
-          "destination_port": {"type": "integer", "minimum": 1, "maximum": 65535},
-          "protocol": {"type": "string", "enum": ["tcp", "udp"]},
-          "bytes_sent": {"type": "integer", "minimum": 0},
-          "bytes_received": {"type": "integer", "minimum": 0}
+          "dst_ip": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "destination_ip": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "dst_port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "destination_port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "tcp",
+              "udp"
+            ]
+          },
+          "bytes_sent": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bytes_received": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       }
     },
@@ -172,14 +234,51 @@
     "impact_assessment": {
       "type": "object",
       "description": "Assessment of the potential impact",
-      "required": ["data_affected", "systems_affected", "business_impact", "recovery_time_estimate", "affected_hosts", "files_encrypted"],
+      "required": [
+        "data_affected",
+        "systems_affected",
+        "business_impact",
+        "recovery_time_estimate",
+        "affected_hosts",
+        "files_encrypted"
+      ],
       "properties": {
-        "data_affected": {"type": "string", "enum": ["Low", "Medium", "High", "Critical"]},
-        "systems_affected": {"type": "integer", "minimum": 0},
-        "affected_hosts": {"type": "array", "items": {"type": "string"}},
-        "business_impact": {"type": "string", "enum": ["Low", "Medium", "High", "Critical"]},
-        "recovery_time_estimate": {"type": "string", "maxLength": 50},
-        "files_encrypted": {"type": "integer", "minimum": 0}
+        "data_affected": {
+          "type": "string",
+          "enum": [
+            "Low",
+            "Medium",
+            "High",
+            "Critical"
+          ]
+        },
+        "systems_affected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "affected_hosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "business_impact": {
+          "type": "string",
+          "enum": [
+            "Low",
+            "Medium",
+            "High",
+            "Critical"
+          ]
+        },
+        "recovery_time_estimate": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "files_encrypted": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "false_positive_indicators": {
@@ -193,7 +292,12 @@
     "whitelist_status": {
       "type": "string",
       "description": "Whitelist status of the detected item",
-      "enum": ["not_whitelisted", "pending_review", "confirmed_false_positive", "whitelisted"]
+      "enum": [
+        "not_whitelisted",
+        "pending_review",
+        "confirmed_false_positive",
+        "whitelisted"
+      ]
     }
   },
   "additionalProperties": false

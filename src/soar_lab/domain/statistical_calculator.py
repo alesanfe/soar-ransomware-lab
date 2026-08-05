@@ -31,6 +31,8 @@ class StatisticalCalculator:
                 'median': 0.0,
                 'p50': 0.0,
                 'p90': 0.0,
+                'p95': 0.0,
+                'p99': 0.0,
                 'min': 0.0,
                 'max': 0.0,
                 'std_dev': 0.0,
@@ -56,10 +58,15 @@ class StatisticalCalculator:
         p50 = statistics.median(sorted_times)
 
         # p90: nearest-rank method
-        p90_idx = min(math.ceil(n * 0.9) - 1, n - 1)
-        if p90_idx < 0:
-            p90_idx = 0
-        p90 = sorted_times[p90_idx]
+        def _nearest_rank(p: float) -> float:
+            idx = min(math.ceil(n * p) - 1, n - 1)
+            if idx < 0:
+                idx = 0
+            return sorted_times[idx]
+
+        p90 = _nearest_rank(0.9)
+        p95 = _nearest_rank(0.95)
+        p99 = _nearest_rank(0.99)
 
         # Standard deviation
         std_dev = statistics.stdev(valid_times) if len(valid_times) > 1 else 0.0
@@ -70,6 +77,8 @@ class StatisticalCalculator:
             'median': round(median_time, 2),
             'p50': round(p50, 2),
             'p90': round(p90, 2),
+            'p95': round(p95, 2),
+            'p99': round(p99, 2),
             'min': round(min(valid_times), 2),
             'max': round(max(valid_times), 2),
             'std_dev': round(std_dev, 2),
@@ -79,10 +88,10 @@ class StatisticalCalculator:
 
     @staticmethod
     def calculate_health_score(
-            cpu_percent: float,
-            memory_percent: float,
-            disk_percent: float,
-            test_coverage: float
+        cpu_percent: float,
+        memory_percent: float,
+        disk_percent: float,
+        test_coverage: float
     ) -> Dict[str, Any]:
         """
         Calculate overall system health score based on various metrics.

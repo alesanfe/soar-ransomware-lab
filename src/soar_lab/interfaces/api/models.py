@@ -1,0 +1,135 @@
+"""Pydantic models for SOAR Lab API."""
+import json
+from datetime import datetime
+from fastapi import Response
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional, Dict, List, Any
+
+
+class LoginRequest(BaseModel):
+    """Login request model."""
+    username: str = Field(..., description="Username")
+    password: str = Field(..., description="Password")
+
+
+class LoginResponse(BaseModel):
+    """Login response model."""
+    token: str = Field(..., description="Authentication token")
+    message: str = Field(..., description="Response message")
+    token_type: str = Field(default="Bearer", description="Token type")
+
+
+class VerifyAuthResponse(BaseModel):
+    """Verify authentication response model."""
+    valid: bool = Field(..., description="Whether the token is valid")
+    user: Dict[str, Any] = Field(..., description="User information")
+
+
+class RunRequest(BaseModel):
+    """Test execution request model."""
+    category: str = Field(..., description="Test category (e.g., 'unit', 'integration', 'all')")
+
+    @field_validator('category')
+    @classmethod
+    def validate_category(cls, v: str) -> str:
+        allowed_categories = [
+            'unit', 'integration', 'e2e', 'atomic',
+            'performance', 'security', 'smoke', 'all',
+        ]
+        if v not in allowed_categories:
+            raise ValueError(f"Category must be one of: {', '.join(allowed_categories)}")
+        return v
+
+
+class BackupRequest(BaseModel):
+    """Backup request model."""
+    backup_name: str = Field(..., description="Name of the backup file to restore")
+
+    @field_validator('backup_name')
+    @classmethod
+    def validate_backup_name(cls, v: str) -> str:
+        if '..' in v or '/' in v or '\\' in v:
+            raise ValueError("Invalid backup name: path traversal not allowed")
+        if not v.endswith('.tar.gz'):
+            raise ValueError("Backup name must end with .tar.gz")
+        return v
+
+
+class ServiceStatus(BaseModel):
+    """Service status model."""
+    service: str = Field(..., description="Service name")
+    status: bool = Field(..., description="Whether the service is running")
+    url: str = Field(..., description="Service health check URL")
+
+
+class Metrics(BaseModel):
+    """System metrics model."""
+    cpu: float = Field(..., description="CPU usage percentage")
+    memory: float = Field(..., description="Memory usage percentage")
+    disk: float = Field(..., description="Disk usage percentage")
+    timestamp: datetime = Field(..., description="Timestamp of metrics collection")
+
+
+class RunResults(BaseModel):
+    """Test results model."""
+    category: str = Field(..., description="Test category")
+    passed: int = Field(..., description="Number of passed tests")
+    failed: int = Field(..., description="Number of failed tests")
+    skipped: int = Field(..., description="Number of skipped tests")
+    coverage: float = Field(..., description="Test coverage percentage")
+    output: str = Field(..., description="Test output")
+    duration: float = Field(..., description="Test execution duration in seconds")
+
+
+class CoverageData(BaseModel):
+    """Coverage data model."""
+    unit: float = Field(default=0.0, description="Unit test coverage")
+    integration: float = Field(default=0.0, description="Integration test coverage")
+    overall: float = Field(default=0.0, description="Overall coverage")
+
+
+class BackupInfo(BaseModel):
+    """Backup information model."""
+    name: str = Field(..., description="Backup file name")
+    size: str = Field(..., description="Backup file size")
+    date: str = Field(..., description="Backup creation date")
+
+
+class BackupListResponse(BaseModel):
+    """Backup list response model."""
+    backups: List[BackupInfo] = Field(default_factory=list, description="List of available backups")
+
+
+class CreateBackupResponse(BaseModel):
+    """Create backup response model."""
+    backup_name: str = Field(..., description="Created backup name")
+    status: Optional[str] = Field(default=None, description="Operation status")
+    message: str = Field(..., description="Response message")
+
+
+class RestoreBackupResponse(BaseModel):
+    """Restore backup response model."""
+    backup_name: Optional[str] = Field(default=None, description="Restored backup name")
+    status: Optional[str] = Field(default=None, description="Operation status")
+    message: str = Field(..., description="Response message")
+
+
+class ErrorResponse(BaseModel):
+    """Standard error response model."""
+    error: Dict[str, str] = Field(..., description="Error details")
+
+    @classmethod
+    def create(cls, code: str, message: str, status_code: int = 500):
+        """Create an error response."""
+        return Response(
+            status_code=status_code,
+            content=json.dumps({"error": {"code": code, "message": message}}),
+            media_type="application/json"
+        )
+
+
+class HealthResponse(BaseModel):
+    """Health check response model."""
+    status: str = Field(..., description="Health status")
+    timestamp: str = Field(..., description="ISO format timestamp")
+    version: str = Field(..., description="API version")

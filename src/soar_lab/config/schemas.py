@@ -55,7 +55,7 @@ class FileHash(BaseModel):
 class MITREInfo(BaseModel):
     """MITRE ATT&CK information"""
     tactics: List[str] = Field(default_factory=list, description="MITRE tactics")
-    techniques: List[str] = Field(default_factory=list, description="MITRE techniques")
+    techniques: List[Any] = Field(default_factory=list, description="MITRE techniques")
     sub_techniques: List[str] = Field(default_factory=list, description="MITRE sub-techniques")
 
     @field_validator('tactics')
@@ -69,6 +69,24 @@ class MITREInfo(BaseModel):
             if tactic not in valid_tactics:
                 raise ValueError(f"Invalid MITRE tactic: {tactic}")
         return v
+
+    @field_validator('techniques')
+    @classmethod
+    def validate_techniques(cls, v: List[Any]) -> List[Any]:
+        normalized = []
+        for item in v:
+            if isinstance(item, dict):
+                tech_id = item.get("id", "")
+                if not re.match(r"^T\d{4}(\.\d{3})?$", tech_id):
+                    raise ValueError(f"Invalid MITRE technique ID: {tech_id}")
+                normalized.append(item)
+            elif isinstance(item, str):
+                if not re.match(r"^T\d{4}(\.\d{3})?$", item):
+                    raise ValueError(f"Invalid MITRE technique ID: {item}")
+                normalized.append(item)
+            else:
+                raise ValueError(f"MITRE technique must be string or dict, got {type(item)}")
+        return normalized
 
 
 class AffectedFile(BaseModel):

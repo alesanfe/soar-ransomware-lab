@@ -11,7 +11,7 @@ contención simulada.
 La propuesta se valida mediante escenarios benigno y malicioso, midiendo el tiempo desde la alerta hasta la contención
 simulada usando percentiles p50 y p90. El trabajo genera evidencias verificables como logs y métricas. Con un ámbito
 académico y educativo, el estudio demuestra que la automatización mejora la consistencia, la trazabilidad y la
-eficiencia operativa en un entorno controlado.
+eficiencia operativa en un entorno controlado. La suite de pruebas contiene 1944 casos recogidos (1911 seleccionados, 33 deseleccionados) y los tests E2E del playbook se ejecutan correctamente (16/16 passed).
 
 **Palabras clave:** SOAR, ransomware, automatización, playbook, MTTR
 

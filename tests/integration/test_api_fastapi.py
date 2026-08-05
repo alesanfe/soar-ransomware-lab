@@ -20,9 +20,8 @@ import json
 import pytest
 from datetime import datetime, timezone
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, MagicMock, patch
-
 from soar_lab.api.main import create_app
+from unittest.mock import AsyncMock, MagicMock, patch
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -130,14 +129,14 @@ def mock_websocket_manager():
 
 @pytest.fixture
 def client(
-        mock_config,
-        mock_auth_service,
-        mock_analytics_service,
-        mock_backup_service,
-        mock_test_service,
-        mock_health_service,
-        mock_system_metrics,
-        mock_websocket_manager,
+    mock_config,
+    mock_auth_service,
+    mock_analytics_service,
+    mock_backup_service,
+    mock_test_service,
+    mock_health_service,
+    mock_system_metrics,
+    mock_websocket_manager,
 ):
     app = create_app(
         config_provider=mock_config,
@@ -216,7 +215,7 @@ class TestAuthLogin:
         assert r.status_code == 422
 
     def test_login_auth_error_returns_401(self, client, mock_auth_service):
-        from soar_lab.exceptions import AuthError
+        from soar_lab.common.exceptions import AuthError
         mock_auth_service.verify_credentials.side_effect = AuthError("locked", status_code=401)
         r = client.post("/auth/login", json={"username": "admin", "password": "x"})
         assert r.status_code == 401

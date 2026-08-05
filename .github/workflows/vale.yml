@@ -1,0 +1,21 @@
+name: Vale Spanish/English prose lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  vale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Vale
+        uses: errata-ai/vale-action@v2.1.1
+        with:
+          files: docs/
+          fail_on_error: false
+          vale_flags: "--no-exit"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

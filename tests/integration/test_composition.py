@@ -5,9 +5,8 @@ Tests composition root and dependency injection
 """
 
 import pytest
-from unittest.mock import Mock, patch
-
 from soar_lab.api.composition import create_app
+from unittest.mock import Mock, patch
 
 
 class TestCreateApp:

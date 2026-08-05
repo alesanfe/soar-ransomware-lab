@@ -6,11 +6,10 @@ Tests authentication adapter
 
 import pytest
 from fastapi import HTTPException
+from soar_lab.interfaces.api.auth import create_get_current_user
+from soar_lab.common.exceptions import AuthError
+from soar_lab.application.use_cases.auth_service import AuthService
 from unittest.mock import Mock, AsyncMock
-
-from soar_lab.api.auth import create_get_current_user
-from soar_lab.exceptions import AuthError
-from soar_lab.services.auth_service import AuthService
 
 
 class TestAuthAdapter:

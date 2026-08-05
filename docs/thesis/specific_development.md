@@ -442,13 +442,13 @@ graph TD
         V3[Datos persistentes]
     end
 
-    subgraph Archivo principal docker-compose.yml
+    subgraph Archivo principal infra/docker/compose/docker-compose.yml
         DC1[Definición de redes]
         DC2[Definición de volúmenes]
         DC3[Elasticsearch]
     end
 
-    subgraph Archivo de componentes docker-compose.core.yml
+    subgraph Archivo de componentes infra/docker/compose/docker-compose.core.yml
         CC1[Redis]
         CC2[TheHive]
         CC3[Cortex]
@@ -461,10 +461,11 @@ graph TD
     end
 
     subgraph Archivos opcionales
-        OC1[docker-compose.api.yml]
-        OC2[docker-compose.misp.yml]
-        OC3[docker-compose.wazuh.yml]
-        OC4[docker-compose.logging.yml]
+        OC1[infra/docker/compose/docker-compose.api.yml]
+        OC2[infra/docker/compose/docker-compose.misp.yml]
+        OC3[infra/docker/compose/docker-compose.wazuh.yml]
+        OC4[Opcional: infra/docker/compose/docker-compose.analyzers.yml]
+        OC5[infra/docker/compose/logging/docker-compose.logging.yml]
     end
 
     DC1 --> R1
@@ -487,17 +488,17 @@ graph TD
 La infraestructura se define con varios archivos Docker Compose que se combinan para desplegar el sistema completo. Esto
 permite configuraciones que van desde entornos mínimos de desarrollo hasta despliegues completos en producción.
 
-El archivo principal `docker-compose.yml` define las redes y los volúmenes persistentes. Las redes incluyen la red
+El archivo principal `infra/docker/compose/docker-compose.yml` define las redes y los volúmenes persistentes. Las redes incluyen la red
 perimetral bridge accesible desde el host, la red interna soar_net de componentes SOAR, la red de inteligencia ti_net y
 la red de monitoreo logging_net. También incluye Elasticsearch como base de datos centralizada.
 
-El archivo de componentes principales `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle Frontend,
+El archivo de componentes principales `infra/docker/compose/docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle Frontend,
 Shuffle Backend, Orborus y Network Watcher. Cada servicio tiene verificaciones de salud, límites de recursos y
 dependencias entre servicios. Redis se conecta a la red de inteligencia para integración con servicios externos.
 
-Los archivos opcionales añaden funcionalidades adicionales: `docker-compose.api.yml` para la API FastAPI y
-documentación, `docker-compose.misp.yml` para MISP (threat intelligence), `docker-compose.wazuh.yml` para Wazuh (SIEM) y
-`docker-compose.logging.yml` para el stack de monitoreo (Loki, Promtail, Grafana, PostgreSQL).
+Los archivos opcionales añaden funcionalidades adicionales: `infra/docker/compose/docker-compose.api.yml` para la API FastAPI y
+documentación, `infra/docker/compose/docker-compose.misp.yml` para MISP (threat intelligence), `infra/docker/compose/docker-compose.wazuh.yml` para Wazuh (SIEM) y
+`infra/docker/compose/logging/docker-compose.logging.yml` para el stack de monitoreo (Loki, Promtail, Grafana, PostgreSQL).
 
 La segmentación de redes sigue un modelo por zonas de seguridad. La red perimetral bridge es accesible desde el host. La
 red interna soar_net conecta los componentes SOAR. La red de inteligencia ti_net vincula Redis y Cortex con servicios
@@ -608,7 +609,7 @@ analyzers de Cortex en paralelo, crea el caso en TheHive mediante API y activa l
 riesgo supera el umbral configurado. El analista no interviene durante la ejecución, aunque conserva visibilidad sobre
 el proceso en tiempo real. El ciclo se cierra con la generación automática del registro de evidencias.
 
-`AnalyticsService` (en `src/soar_lab/services/analytics_service.py`) calcula las métricas desde los logs, extrayendo
+`AnalyticsService` (en `src/soar_lab/application/use_cases/analytics_service.py`) calcula las métricas desde los logs, extrayendo
 timestamps con `LogParser`. El cálculo estadístico se delega a `KPIAnalyzer` y `StatisticalCalculator`. Las métricas
 recogidas son: tiempo de recepción a triage, tiempo de análisis de IoCs, tiempo de creación de caso, tiempo de
 contención y MTTR total. Los resultados se exportan a CSV con `KPIFormatter`.

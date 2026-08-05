@@ -54,19 +54,20 @@ make down
 
 ## Servicios y URLs
 
-| Servicio          | URL                         |
-|-------------------|-----------------------------|
-| Web Management UI | http://localhost            |
-| Nginx Proxy       | http://localhost            |
-| TheHive           | http://localhost:9000       |
-| Cortex            | http://localhost:9001       |
-| Shuffle           | http://localhost:8081       |
-| Kibana            | http://localhost:15601      |
-| Grafana           | http://localhost:8084       |
-| MISP              | http://localhost:8083       |
-| API REST          | http://localhost:8000       |
-| Web Management    | http://localhost:8085       |
-| Documentación     | http://localhost:8086/docs/ |
+| Servicio            | Acceso recomendado       | Acceso directo              |
+|---------------------|--------------------------|-----------------------------|
+| Nginx (proxy)       | https://soar.local/      | http://localhost (→ HTTPS)  |
+| Web Management UI   | https://soar.local/      | http://localhost:8085       |
+| API REST            | https://soar.local/api/  | http://localhost:8000       |
+| Documentación       | —                        | http://localhost:8086/docs/ |
+| TheHive           | https://soar.local/thehive/ | http://localhost:9000     |
+| Cortex            | https://soar.local/cortex/  | http://localhost:19001    |
+| Shuffle UI        | —                          | http://localhost:8081      |
+| Wazuh Dashboard   | —                          | https://localhost:15601    |
+| Grafana           | —                          | http://localhost:8084      |
+| MISP              | —                          | https://localhost:8083     |
+
+> Nota: los subpath por Nginx (`/thehive/`, `/cortex/`, `/api/`) solo funcionan a través de `https://soar.local/`. Las interfaces que no soportan subpath (Shuffle, Wazuh Dashboard, MISP, Grafana, docs-site) se acceden por su puerto directo.
 
 ## Notas para Windows (Docker Desktop)
 

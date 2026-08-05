@@ -7,10 +7,9 @@ Tests Shuffle client functionality using mocks when service is not available.
 import os
 import pytest
 import requests
+from soar_lab.common.exceptions import IntegrationError
+from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
 from unittest.mock import patch, MagicMock
-
-from soar_lab.exceptions import IntegrationError
-from soar_lab.integrations.shuffle_client import ShuffleClient
 
 SHUFFLE_URL = os.getenv("SHUFFLE_URL", "http://localhost:5001")
 SHUFFLE_API_KEY = os.getenv("SHUFFLE_DEFAULT_APIKEY", "")

@@ -1,7 +1,86 @@
-# Docker build context exclusions
-artifacts/
-.git/
-node_modules/
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vagrant
 .vagrant/
+
+# Project specific
+results/
+backups/
+artifacts/logs/
+artifacts/results/
+
+# Ignore data directories at root level, but keep src/soar_lab/data/ for code
+/data/
+./data/
+
+# Backup metadata files generated at root
+soar_backup_*.metadata.json
+
+# Test output files
+xpassed_output.txt
+
+# Temporary scripts in root (one-off helpers, not part of the package)
+get_*.py
+set_*.py
+fix_*.py
+debug_*.py
+add_*.py
+patch_*.py
+reorganize_*.py
+rewrite_*.py
+finalize_*.py
+verify_*.py
+live_test.py
+test_api_live.py
+test_misp.py
+test_wazuh.py
+
+# Refact
+.refact/
+.junie/
+
+# GitHub
+.github/
+
+# Security
+*.key
+*.pem
+*.crt
+certs/
+
+# Environment files — real secrets must not be committed
+.env
+.env.full
+.env.full.bak
+.env.full.reset.bak
+.env.full.new
+!.env.example

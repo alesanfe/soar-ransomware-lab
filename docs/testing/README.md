@@ -87,10 +87,11 @@ tests/
 ├── unit/                    # Pruebas unitarias para componentes individuales
 ├── atomic/                  # Pruebas atómicas para validación granular de funciones
 ├── integration/             # Pruebas de integración para interacciones de componentes
-├── browser/                 # Pruebas de navegador con automatización Selenium
+├── browser/                 # Pruebas de navegador con automatización Selenium (no activas; se usan pruebas E2E)
 ├── performance/             # Pruebas de rendimiento y estrés
 ├── security/                # Pruebas de escaneo de seguridad y vulnerabilidades
 ├── e2e/                     # Pruebas de flujo de trabajo de extremo a extremo
+├── general/                 # Pruebas transversales no asociadas a una categoría
 ├── conftest.py              # Configuración de Pytest y fixtures
 ├── TEST_ELIMINATIONS.md     # Documentación de pruebas eliminadas
 └── runners/                 # Utilidades de ejecución de pruebas
@@ -100,37 +101,49 @@ tests/
 
 La suite de pruebas valida los siguientes servicios:
 
-- **Elasticsearch** (localhost:9201) - Motor de búsqueda y analytics
-- **TheHive** (localhost:9000) - Plataforma de respuesta a incidentes
-- **Cortex** (localhost:9001) - Motor de análisis de amenazas
+- **Elasticsearch** (localhost:19200) - Motor de búsqueda y analytics
+- **TheHive** (localhost:19000) - Plataforma de respuesta a incidentes
+- **Cortex** (localhost:19001) - Motor de análisis de amenazas
 - **Shuffle** (localhost:8081) - Orquestación de workflows
-- **Kibana** (localhost:15601) - Dashboard de visualización
+- **Wazuh Dashboard** (localhost:15601) - Dashboard de visualización
 - **Wazuh Manager** (localhost:55100) - Plataforma SIEM/XDR
-- **MISP** (localhost:8082) - Plataforma de inteligencia de amenazas
+- **MISP** (localhost:8083) - Plataforma de inteligencia de amenazas
 - **Redis** - Caché y broker de mensajes
-- **MariaDB** - Base de datos para TheHive, Cortex, MISP
+- **PostgreSQL** - Base de datos para TheHive
+- **MariaDB** - Base de datos para MISP
 
 ### 3.2 Tipos de pruebas
 
 #### Estado Actual de las Pruebas
 
-**Nota Importante:** La estructura actual de pruebas difiere significativamente de la documentación anterior:
+**Nota Importante:** La estructura actual de pruebas ha sido reconciliada con la implementación. Última actualización: 2026-07-18.
 
-- **tests/unit/**: 37 archivos de prueba
-- **tests/atomic/**: 4 archivos de prueba
-- **tests/integration/**: 23 archivos de prueba
-- **tests/e2e/**: 3 archivos de prueba
-- **tests/performance/**: 2 archivos de prueba
-- **tests/security/**: 2 archivos de prueba
-- **tests/fixtures/**: 9 archivos de fixtures
-- **tests/runners/**: 2 archivos de ejecutores
+```
+# Conteo de archivos test_*.py por categoría
+- unit:           66 archivos, 993 funciones definidas
+- integration:    36 archivos, 420 funciones definidas
+- e2e:            44 archivos, 285 funciones definidas
+- atomic:          4 archivos, 110 funciones definidas
+- performance:     4 archivos,  30 funciones definidas
+- security:        1 archivo,   26 funciones definidas
+- general:         2 archivos,  20 funciones definidas
+- Total:         158 archivos, ~1884 funciones definidas
+```
+
+```
+# Recolección canónica
+python -m pytest --collect-only -q
+collected 1944 items / 33 deselected / 1911 selected
+```
+
+> Todos los errores previos de recolección (`ModuleNotFoundError`, `NameError`, `SyntaxError`) están resueltos. La fuente de verdad para conteos detallados es `baseline/tests_inventory.json`.
 
 **Objetivo de Cobertura:**
 
 - El objetivo mínimo es **≥ 80% de coverage**
-- **Estado actual**: No se ha verificado recientemente si se cumple este objetivo
+- **Estado actual**: `pytest --collect-only` finaliza con 0 errores de importación/sintaxis; 1911 casos seleccionados
 - Las pruebas unitarias cubren la mayoría del código Python en `src/soar_lab/`
-- **Limitación**: No hay un reporte de coverage actual disponible en `artifacts/coverage/`
+- El reporte de coverage se genera con `make test-coverage` (ver `artifacts/coverage/`)
 
 **Dependencias de Pruebas:**
 
@@ -141,6 +154,9 @@ La suite de pruebas valida los siguientes servicios:
 #### Inicio Rápido
 
 ```bash
+# Listar casos recolectables antes de ejecutar
+python -m pytest --collect-only -q
+
 # Ejecutar todas las pruebas
 make test-all
 
@@ -153,7 +169,16 @@ make test-e2e
 
 # Ejecutar con cobertura
 make test-coverage
+
+# Ejecutar suite E2E remota desde la API (requiere token JWT)
+curl -s -X POST http://localhost:8000/tests/run \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"category":"e2e","coverage":false}'
 ```
+
+> Los resultados exactos dependen del entorno y del estado de los servicios Docker. Consulta `test_suite.md` para detalles
+> de recolección, reportes y ejecución remota.
 
 ### 3.3 Herramientas y frameworks
 
@@ -199,6 +224,8 @@ make test-coverage
 - **Local**: Ejecución en máquina de desarrollo
 - **CI/CD**: Ejecución automática en GitHub Actions
 - **Docker**: Ejecución dentro de contenedores
+- **Remoto vía API / Web Management**: a través del endpoint `POST /tests/run` delegado a `PytestTestRunner`
+  (`src/soar_lab/infrastructure/pytest_test_runner.py`). Ver [test_suite.md](test_suite.md#343-ejecución-remota-vía-pytesttestrunner).
 
 ### 3.5 Reportes y métricas
 
@@ -288,6 +315,7 @@ No hay riesgos o incidencias conocidas actualmente. Todas las pruebas han sido c
 - **Estrategia de Pruebas de Docker**: [docs/testing/docker_testing_strategy.md](docker_testing_strategy.md)
 - **Documentación de Arquitectura**: [docs/architecture/overview.md](../architecture/overview.md)
 - **README Principal**: [/README.md](../README.md)
+- **Auditorías e Informes Históricos**: [docs/audit/legacy/](../audit/legacy/)
 - **Documentación de Pytest**: https://docs.pytest.org/
 - **Documentación de Playwright**: https://playwright.dev/
 - **Documentación de Docker**: https://docs.docker.com/

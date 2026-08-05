@@ -1,0 +1,109 @@
+{
+  "malformed_json": [
+    {
+      "name": "broken_json_structure",
+      "payload": "{invalid json structure"
+    },
+    {
+      "name": "missing_closing_brace",
+      "payload": "{\"data\": \"test\""
+    },
+    {
+      "name": "unclosed_string",
+      "payload": "{\"data\": \"test"
+    },
+    {
+      "name": "trailing_comma",
+      "payload": "{\"data\": \"test\",}"
+    }
+  ],
+  "invalid_data_types": [
+    {
+      "name": "hash_as_number",
+      "payload": "{\"hash\": 123456}"
+    },
+    {
+      "name": "ip_as_boolean",
+      "payload": "{\"ip\": true}"
+    },
+    {
+      "name": "severity_as_string",
+      "payload": "{\"severity\": \"high\"}"
+    },
+    {
+      "name": "timestamp_as_null",
+      "payload": "{\"timestamp\": null}"
+    }
+  ],
+  "missing_required_fields": [
+    {
+      "name": "missing_hash",
+      "payload": "{\"ip\": \"10.0.0.1\"}"
+    },
+    {
+      "name": "missing_ip",
+      "payload": "{\"hash\": \"abc123\"}"
+    },
+    {
+      "name": "missing_severity",
+      "payload": "{\"hash\": \"abc123\", \"ip\": \"10.0.0.1\"}"
+    },
+    {
+      "name": "missing_timestamp",
+      "payload": "{\"hash\": \"abc123\", \"ip\": \"10.0.0.1\", \"severity\": \"high\"}"
+    }
+  ],
+  "edge_cases": [
+    {
+      "name": "empty_string_values",
+      "payload": "{\"hash\": \"\", \"ip\": \"\", \"domain\": \"\"}"
+    },
+    {
+      "name": "null_values",
+      "payload": "{\"hash\": null, \"ip\": null, \"domain\": null}"
+    },
+    {
+      "name": "empty_arrays",
+      "payload": "{\"observables\": [], \"tags\": []}"
+    },
+    {
+      "name": "excessively_nested",
+      "payload": "{\"data\": {\"nested\": {\"deep\": {\"level\": {\"value\": \"test\"}}}}}"
+    },
+    {
+      "name": "unicode_characters",
+      "payload": "{\"hash\": \"αβγδεζηθ\", \"description\": \"测试中文\"}"
+    },
+    {
+      "name": "special_characters",
+      "payload": "{\"description\": \"Test \\n \\r \\t \\b \\f\"}"
+    },
+    {
+      "name": "oversized_payload",
+      "payload": "{\"data\": \""
+      +
+      "A"
+      .repeat(1000000)
+      +
+      "\"}"
+    }
+  ],
+  "security_test_cases": [
+    {
+      "name": "sql_injection_attempt",
+      "payload": "{\"hash\": \"' OR '1'='1\"}"
+    },
+    {
+      "name": "xss_attempt",
+      "payload": "{\"description\": \"<script>alert('xss')</script>\"}"
+    },
+    {
+      "name": "path_traversal",
+      "payload": "{\"file\": \"../../../etc/passwd\"}"
+    },
+    {
+      "name": "command_injection",
+      "payload": "{\"command\": \"; rm -rf /\"}"
+    }
+  ]
+}

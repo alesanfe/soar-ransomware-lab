@@ -2,11 +2,22 @@
 
 ## Resumen en Español
 
-Este trabajo diseña un laboratorio SOAR mínimo viable para evaluar si la automatización acelera la respuesta a incidentes de ransomware y mejora la consistencia en el manejo de alertas. La metodología consiste en implementar un playbook automatizado que integra TheHive, Cortex y Shuffle mediante Docker Compose, ejecutando pruebas con alertas maliciosas y benignas para medir tiempos de respuesta. Los resultados demuestran que el laboratorio es reproducible y permite medir métricas como MTTR, proporcionando evidencias de que la automatización reduce tiempos y estandariza procesos. Se concluye que el enfoque es viable para entornos de SOC y CSIRT, permitiendo comparaciones y extensiones futuras.
+Este trabajo diseña un laboratorio SOAR mínimo viable para evaluar si la automatización acelera la respuesta a
+incidentes de ransomware y mejora la consistencia en el manejo de alertas. La metodología consiste en implementar un
+playbook automatizado que integra TheHive, Cortex y Shuffle mediante Docker Compose, ejecutando pruebas con alertas
+maliciosas y benignas para medir tiempos de respuesta. Los resultados demuestran que el laboratorio es reproducible y
+permite medir métricas como MTTR, proporcionando evidencias de que la automatización reduce tiempos y estandariza
+procesos. Se concluye que el enfoque es viable para entornos de SOC y CSIRT, permitiendo comparaciones y extensiones
+futuras.
 
 ## English Summary
 
-This work designs a minimum viable SOAR laboratory to evaluate whether automation accelerates ransomware incident response and improves consistency in alert handling. The methodology involves implementing an automated playbook integrating TheHive, Cortex, and Shuffle via Docker Compose, executing tests with malicious and benign alerts to measure response times. Results demonstrate that the laboratory is reproducible and allows measuring metrics such as MTTR, providing evidence that automation reduces times and standardizes processes. It is concluded that the approach is viable for SOC and CSIRT environments, enabling comparisons and future extensions.
+This work designs a minimum viable SOAR laboratory to evaluate whether automation accelerates ransomware incident
+response and improves consistency in alert handling. The methodology involves implementing an automated playbook
+integrating TheHive, Cortex, and Shuffle via Docker Compose, executing tests with malicious and benign alerts to measure
+response times. Results demonstrate that the laboratory is reproducible and allows measuring metrics such as MTTR,
+providing evidence that automation reduces times and standardizes processes. It is concluded that the approach is viable
+for SOC and CSIRT environments, enabling comparisons and future extensions.
 
 Este trabajo diseña un laboratorio para responder a incidentes de ransomware. El objetivo es ver si la automatización
 acelera la respuesta. También examina si mejoraría la consistencia en el manejo de alertas. El trabajo se encuentra en
@@ -22,8 +33,8 @@ evidencias adecuadas.
 Se presenta una contribución central que constituye un manual automatizado dedicado al manejo de una alerta. El
 procedimiento comienza cuando el evento llega por medio de un webhook. Se verifican los datos, se crea un caso en
 TheHive e incluyen también los marcadores de compromiso. Para el enriquecimiento de la información se emplean
-herramientas como AbuseIPDB, VirusTotal y MISP, proporcionando contexto respecto a IPs, dominios o hashes. Así, con esta
-data, el procedimiento decida activar la simulación de una contención o cerrar el caso como inofensivo. En ese momento,
+herramientas como AbuseIPDB, VirusTotal y MISP, proporcionando contexto respecto a IPs, dominios o hashes. Así, con estos
+datos, el procedimiento decide activar la simulación de una contención o cerrar el caso como inofensivo. En ese momento,
 se registra el resultado en TheHive y se comunica.
 
 El laboratorio está diseñado para un proyecto independiente. Evita dependencias complicadas y utiliza Docker Compose
@@ -31,15 +42,9 @@ para replicar el ambiente. La arquitectura combina TheHive, Cortex y Shuffle com
 organizado en bloques separando la lógica de negocio de la infraestructura. Esta separación facilita las pruebas y
 reduce la adhesión.
 
-El despliegue es gestionado mediante múltiples archivos Docker Compose. Esta estrategia simplifica la creación de
-componentes solapados únicos durante cada prueba. Las redes son diferenciadas en múltiples áreas para limitar la exposal
-entre servicios.
+El despliegue se gestiona con varios archivos Docker Compose. Esta estrategia simplifica la creación de componentes aislados durante cada prueba. Las redes se segmentan para limitar la exposición entre servicios.
 
-La validación consiste en ejecutar el script de playbooks en dos situaciones, una maliciosa y otra benévola. La duración
-desde el aviso hasta la contención virtual o cerrado de la incidencia es medible. Los servicios especializados procesan
-registros de ejecución, realizan las cuentas estadísticas e implementan los cálculos para llegar a los porcentilios. El
-análisis usa pruebas como registros de ejecución, grabaciones y métricas. La memoria registra el desarrollo de ambos el
-laboratorio y del script de playbooks utilizando este marco como base de conclusión.
+La validación ejecuta el playbook E2E en dos escenarios (malicioso y benigno), midiendo el tiempo desde la alerta hasta la contención simulada o el cierre benigno. El componente de análisis de KPIs procesa los logs de ejecución, calcula estadísticas y percentiles, y genera las métricas que alimentan el dashboard de Grafana.
 
 ## 1.1. Motivación
 
@@ -71,6 +76,8 @@ mediante APIs. Es un patrón usado en contextos de SOC y CSIRT que aquí se eval
 
 ## 1.2. Planteamiento del problema
 
+### Descripción del problema
+
 En muchos SOC, la gestión de incidentes de ransomware se basa en procesos manuales, integraciones parciales y criterios
 no estandarizados [2, 11]. Esta situación incrementa los tiempos de respuesta, introduce variabilidad y dificulta
 generar evidencias completas. Como la demora en la contención amplifica el impacto del cifrado, esa variabilidad puede
@@ -81,6 +88,8 @@ manual y ordenar los procesos de decisión [11, 12]. Esto no implica eliminar la
 acciones de mayor impacto. Pero su adopción plantea dificultades como la complejidad de los entornos productivos, las
 licencias comerciales y la dificultad de medir su impacto en condiciones controladas.
 
+### Propuesta de solución
+
 Este trabajo propone el diseño e implementación de un laboratorio SOAR mínimo viable, reproducible y autocontenido que
 materialice un playbook orientado a ransomware. No se pretende desplegar una solución de producción completa. El
 objetivo es mostrar cómo un flujo automatizado puede integrar la recepción de alertas, la normalización de datos, la
@@ -88,6 +97,28 @@ gestión de casos, el enriquecimiento de observables y la contención simulada d
 
 Al ser reproducible, el laboratorio permite evaluar cambios del playbook sobre una misma línea base. Esto facilita
 comparaciones y deja margen para extensiones futuras.
+
+### Pasos operativos para reproducir el problema y controlar la hipótesis
+
+1. **Definir la línea base manual.** Simular la recepción de una alerta de ransomware y contabilizar el tiempo empleado en validación, apertura de caso, enriquecimiento, decisión y cierre.
+2. **Implementar el laboratorio.** Clonar el repositorio, ejecutar `make generate-secrets` y `make up` siguiendo `docs/getting_started/installation_guide.md`.
+3. **Ejecutar el playbook E2E.** Lanzar `pytest tests/e2e/` para las dos líneas de alerta: maliciosa y benigna.
+4. **Medir MTTR.** Extraer `mttr_seconds` del índice `soar-metrics` o del cálculo del workflow.
+5. **Comparar manual vs automatizado.** Evaluar si el MTTR y la consistencia mejoran respecto a la línea base manual.
+
+### Casos de error esperados
+
+- Falta de recursos (`vm.max_map_count`, memoria) impide el arranque de Elasticsearch.
+- Errores de DNS entre contenedores hacen que los workers de Shuffle no resuelvan `shuffle-backend`.
+- La API key de Shuffle cambia tras `make reset` y queda desactualizada en `.env.full`.
+- Credenciales con `@` o `!` provocan errores de escaping en MariaDB u otros servicios.
+
+### Criterios de verificación
+
+- `make up` finaliza con todos los contenedores `healthy` según `docker compose ps`.
+- `pytest tests/e2e/` devuelve el 100 % de tests PASSED.
+- El dashboard de Grafana muestra métricas (`mttr_seconds`, `p50`, `p90`) y confirma p50 < 120 s.
+- Los logs del playbook y las entradas en TheHive/Cortex demuestran trazabilidad completa de la alerta.
 
 ## 1.3. Estructura del trabajo
 

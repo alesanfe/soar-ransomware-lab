@@ -15,35 +15,23 @@ class SystemMetricsDriver:
 
     @staticmethod
     def get_hardware_metrics(disk_path: str = None) -> Dict[str, Any]:
-        """
-        Collect hardware metrics (CPU, memory, disk).
-
-        Args:
-            disk_path: Path to check disk usage (defaults to root directory).
-
-        Returns:
-            Dict with hardware metrics including percentages and timestamps
-        """
+        """Collect hardware metrics (CPU, memory, disk)."""
         try:
-            # CPU metrics
             cpu_percent = psutil.cpu_percent(interval=1)
             cpu_count = psutil.cpu_count()
 
-            # Memory metrics
             memory = psutil.virtual_memory()
             memory_percent = memory.percent
             memory_used_gb = memory.used / (1024 ** 3)
             memory_total_gb = memory.total / (1024 ** 3)
 
-            # Disk metrics - use portable path
             if disk_path is None:
-                disk_path = os.path.abspath(os.sep)  # Root directory for current OS
+                disk_path = os.path.abspath(os.sep)
             disk = psutil.disk_usage(disk_path)
             disk_percent = disk.percent
             disk_used_gb = disk.used / (1024 ** 3)
             disk_total_gb = disk.total / (1024 ** 3)
 
-            # Network metrics
             network = psutil.net_io_counters()
             bytes_sent = network.bytes_sent
             bytes_recv = network.bytes_recv
@@ -71,7 +59,6 @@ class SystemMetricsDriver:
             }
 
         except Exception as e:
-            # Return empty metrics if psutil fails
             return {
                 'cpu': {'percent': 0, 'count': 0},
                 'memory': {'percent': 0, 'used_gb': 0, 'total_gb': 0},
@@ -83,15 +70,9 @@ class SystemMetricsDriver:
 
     @staticmethod
     def get_process_metrics() -> Dict[str, Any]:
-        """
-        Collect process-specific metrics.
-        
-        Returns:
-            Dict with process metrics
-        """
+        """Collect process-specific metrics."""
         try:
             current_process = psutil.Process()
-
             return {
                 'pid': current_process.pid,
                 'cpu_percent': current_process.cpu_percent(),
@@ -102,7 +83,6 @@ class SystemMetricsDriver:
                 'status': current_process.status(),
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }
-
         except Exception as e:
             return {
                 'pid': 0,
@@ -118,12 +98,7 @@ class SystemMetricsDriver:
 
     @staticmethod
     def get_system_load() -> Dict[str, Any]:
-        """
-        Get system load averages (Unix-like systems).
-        
-        Returns:
-            Dict with load averages or empty dict on Windows
-        """
+        """Get system load averages (Unix-like systems)."""
         try:
             if hasattr(psutil, 'getloadavg'):
                 load1, load5, load15 = psutil.getloadavg()
@@ -134,7 +109,6 @@ class SystemMetricsDriver:
                     'timestamp': datetime.now(timezone.utc).isoformat()
                 }
             else:
-                # Windows doesn't have load averages
                 return {
                     'load_1min': 0,
                     'load_5min': 0,

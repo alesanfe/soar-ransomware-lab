@@ -118,18 +118,10 @@ volumes:
       device: ${ARTIFACTS_DIR:-../../../artifacts}/data/misp/configs
 
   # Wazuh volumes
-  wazuh_config:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/wazuh/config
+  # wazuh_api_config is a named volume (not bind) because SQLite on a Windows
+  # bind mount returns disk I/O errors during the API user creation step.
   wazuh_api_config:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/wazuh/api_config
   wazuh_etc:
     driver: local
     driver_opts:
@@ -195,11 +187,12 @@ volumes:
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
+      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-false}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - action.auto_create_index=true
       - cluster.routing.allocation.disk.threshold_enabled=false
       - "ES_JAVA_OPTS=-Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true -Xlog:gc*=warning"
@@ -219,7 +212,7 @@ services:
       - soar_net
       - ti_net
     healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1" ]
+      test: [ "CMD-SHELL", "curl -fsS -u elastic:${ELASTIC_PASSWORD} 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1" ]
       interval: 30s
       timeout: 15s
       retries: 10

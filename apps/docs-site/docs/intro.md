@@ -26,7 +26,8 @@ Este laboratorio integra:
 - **TheHive** - Gestión de casos de incidentes
 - **Cortex** - Análisis de indicadores de compromiso (IoCs)
 - **Wazuh** - SIEM/XDR para detección de amenazas
-- **Kibana** - Visualización de logs y dashboards
+- **Wazuh Dashboard (OpenSearch Dashboards)** - Dashboards SIEM/XDR
+- **Grafana** - Visualización de logs y métricas
 - **MISP** - Plataforma de inteligencia de amenazas
 
 ## Objetivo del Laboratorio

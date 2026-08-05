@@ -12,6 +12,23 @@ pruebas completas y automatización mediante **Makefile**.
 
 ---
 
+## Índice
+
+- [Objetivos del Laboratorio](#objetivos-del-laboratorio)
+- [Arquitectura General](#arquitectura-general)
+- [Resumen de Arquitectura](#resumen-de-arquitectura)
+- [Estructura del Repositorio](#estructura-del-repositorio)
+- [Documentación del Proyecto](#documentación-del-proyecto)
+- [Instalación Rápida](#instalación-rápida)
+- [Automatización Opcional](#automatización-opcional)
+- [Buenas Prácticas](#buenas-prácticas)
+- [Métricas y Pruebas](#métricas-y-pruebas)
+- [Contexto Académico](#contexto-académico)
+- [Referencias Clave](#referencias-clave)
+- [Licencia y Uso](#licencia-y-uso)
+
+---
+
 ## 🎯 Objetivos del Laboratorio
 
 - Simular incidentes de ransomware en un entorno controlado y seguro
@@ -25,6 +42,12 @@ pruebas completas y automatización mediante **Makefile**.
 
 ## 🏗️ Arquitectura General
 
+El laboratorio sigue una **arquitectura hexagonal (Ports and Adapters)** en el código Python y una **arquitectura modular de
+Docker Compose** en el despliegue. El dominio (`src/soar_lab/domain/`) define modelos, puertos y casos de uso; la
+infraestructura (`src/soar_lab/infrastructure/`) provee los adaptadores concretos (clientes HTTP, repositorios, drivers, JWT,
+backup); y las interfaces (`src/soar_lab/interfaces/`) exponen una API FastAPI, un panel web y la CLI. El cableado de
+dependencias se centraliza en `src/soar_lab/interfaces/api/composition.py`.
+
 ```mermaid
 flowchart LR
   SIEM[(SIEM/XDR)] -- Webhook/Feeder --> Shuffle
@@ -34,10 +57,25 @@ flowchart LR
   Shuffle -- Responder/API --> EDR[(EDR/Defender for Endpoint)]
   TheHive <--> Elasticsearch
   Cortex <--> Redis
-  Shuffle <--> Elasticsearch
-  Wazuh[Wazuh SIEM] --> Elasticsearch
+  Shuffle <--> OpenSearch[OpenSearch]
+  Wazuh[Wazuh Manager] --> WazuhIndexer[Wazuh Indexer]
   Wazuh --> Shuffle
+  Wazuh --> WazuhDashboard[Wazuh Dashboard]
+  WazuhIndexer --> WazuhDashboard
+  Shuffle -- Metrics --> Elasticsearch
+  Elasticsearch --> Grafana[Grafana]
+  Promtail[Promtail] --> Loki[Loki]
+  Loki --> Grafana
+  Promtail --> Elasticsearch
+  Grafana --> Elasticsearch
 ```
+
+### Resumen de Arquitectura
+
+En el flujo operativo, Wazuh o el simulador generan alertas que Shuffle consume mediante webhook. Shuffle orquesta la
+creación de casos en TheHive, el enriquecimiento de observables en Cortex y la decisión de contención simulada. Las
+métricas se indexan en Elasticsearch y se visualizan en Grafana; los logs se agregan en Loki. Nginx actúa como proxy
+inverso HTTPS para los servicios que lo soportan, mientras que otros servicios se acceden directamente por puerto.
 
 **Componentes Principales:**
 
@@ -45,13 +83,21 @@ flowchart LR
 - **TheHive**: Gestiona casos de incidentes y evidencias forenses
 - **Cortex**: Analiza Indicadores de Compromiso (IoCs) mediante analyzers especializados
 - **Wazuh Manager**: Plataforma SIEM/XDR para detección de amenazas y respuesta a incidentes
-- **Kibana**: Dashboard de visualización de datos y logs de Wazuh/Elasticsearch
-- **Elasticsearch**: Motor de búsqueda y análisis para logs (compartido por todos los servicios)
+- **Wazuh Dashboard**: Dashboard de visualización de datos y logs de Wazuh/Wazuh Indexer
+- **Elasticsearch 7.10.2**: Motor de búsqueda para TheHive, Cortex y las métricas indexadas por Shuffle
+- **OpenSearch 2.10.0**: Motor de búsqueda usado por Shuffle y el backend del stack de logging
+- **Wazuh Indexer**: Clúster OpenSearch interno de Wazuh para almacenar alertas y logs del SIEM
 - **Redis**: Servicio de soporte para persistencia y caché
+- **PostgreSQL**: Base de datos para TheHive y Grafana
+- **MariaDB**: Base de datos para MISP
 - **MISP**: Plataforma de inteligencia de amenazas (Threat Intelligence)
 - **Nginx**: Reverse proxy centralizado para acceso a todos los servicios
 - **API**: API REST (FastAPI) para gestión y automatización del laboratorio
+- **Web Management**: Panel de control web centralizado
 - **Docs Site**: Sitio de documentación Docusaurus
+- **Grafana**: Dashboards de KPIs y observabilidad
+- **Loki**: Agregación de logs
+- **Promtail**: Recolección de logs de contenedores
 
 ---
 
@@ -67,44 +113,78 @@ soar-ransomware-lab/
 ├── pytest.ini                  # Configuración de pytest
 ├── requirements-test.txt         # Dependencias para testing
 ├── .gitignore                  # Archivos ignorados por git
-├── .env.full                   # Variables de entorno completas
-├── .env.example                # Plantilla de variables de entorno
+├── .env.full                   # Variables de entorno completas (generado por `make generate-secrets`, .gitignore)
+├── .env.example                # Plantilla saneada de variables de entorno con marcadores de relleno
 ├── CHANGELOG.md                # Historial de cambios
 ├── CONTRIBUTING.md              # Guía de contribución
-├── API_DOCUMENTATION.md        # Documentación de la API
+├── docs/API_DOCUMENTATION.md   # Documentación de la API
 ├── infra/                      # Infraestructura como código
-│   ├── docker/                # Configuración Docker Compose
+│   ├── docker/                # Configuración Docker
 │   │   ├── compose/           # Archivos docker-compose yml
 │   │   │   ├── docker-compose.yml
 │   │   │   ├── docker-compose.core.yml
 │   │   │   ├── docker-compose.misp.yml
+│   │   │   ├── docker-compose.opensearch.yml
+│   │   │   ├── docker-compose.vagrant.yml
 │   │   │   ├── docker-compose.wazuh.yml
 │   │   │   ├── docker-compose.api.yml
-│   │   │   └── logging/
-│   │   │       └── docker-compose.logging.yml
-│   │   └── nginx/             # Configuración Nginx
-│   │       ├── nginx.conf
-│   │       └── ssl/            # Certificados SSL
-│   └── vagrant/              # Automatización opcional con Vagrant
-│       └── Vagrantfile
-├── src/soar_lab/             # Código fuente principal
-│   ├── api/                   # API FastAPI
-│   ├── config/                # Configuración y esquemas
-│   ├── data/                  # Gestión de datos y KPIs
-│   ├── domain/                # Dominio y puertos
-│   ├── infrastructure/        # Implementaciones de infraestructura
-│   ├── integrations/          # Clientes de integraciones
-│   ├── services/              # Servicios principales
+│   │   │   └── logging/       # Stack de logging (Loki, Promtail, Grafana)
+│   │   ├── config/            # Configuraciones centralizadas
+│   │   │   ├── nginx/
+│   │   │   ├── cortex.application.conf/
+│   │   │   └── thehive.application.conf/
+│   │   ├── images/            # Dockerfiles personalizados
+│   │   │   └── cortex/
+│   │   └── wazuh/             # Configuración Wazuh + certificados
+│   └── vagrant/              # Automatización con Vagrant
+│       ├── Vagrantfile
+│       ├── provision.sh
+│       └── provision-windows.ps1
+├── apps/                       # Aplicaciones del proyecto
+│   ├── api/                   # Contenedor API FastAPI (Dockerfile)
+│   ├── docs-site/             # Sitio de documentación Docusaurus
+│   └── web-management/        # Panel de gestión web (HTML/JS estático)
+├── src/soar_lab/             # Código fuente principal (Hexagonal Architecture)
+│   ├── application/           # Casos de uso y servicios de aplicación
+│   │   └── use_cases/         # analytics, auth, backup, etc.
+│   ├── common/                # Excepciones y utilidades compartidas
+│   ├── config/                # Configuración y logging
+│   ├── data/                  # Esquemas y utilidades de datos
+│   ├── domain/                # Lógica de negocio pura
+│   │   ├── models.py          # Entidades de dominio (dataclasses)
+│   │   ├── ports/             # Interfaces (Protocolos)
+│   │   ├── services/          # Servicios de dominio (kpi_analyzer, ioc_generator)
+│   │   ├── statistical_calculator.py
+│   │   └── value_objects/
+│   ├── infrastructure/        # Adaptadores e implementaciones
+│   │   ├── external/          # Clientes de integraciones (Shuffle, MISP, etc.)
+│   │   ├── messaging/         # Envío de alertas
+│   │   ├── monitoring/        # Health checks, métricas, KPI alerts
+│   │   ├── network_watcher/   # Conectividad dinámica de workers Shuffle
+│   │   ├── persistence/       # Repositorios (SQLite)
+│   │   ├── scripts/           # Scripts de setup y utilidades
+│   │   └── security/          # JWT y credenciales
+│   ├── interfaces/            # Puntos de entrada (API, CLI, Webhooks)
+│   │   └── api/               # FastAPI routes, models, auth
+│   ├── scripts/               # Scripts CLI del laboratorio
+│   ├── simulator/             # Simulador de alertas SIEM
 │   └── validation/            # Validadores
 ├── tests/                      # Suite de pruebas completa
 │   ├── unit/                  # Pruebas unitarias
+│   ├── atomic/                # Pruebas atómicas
 │   ├── integration/           # Pruebas de integración
-│   ├── e2e/                  # Pruebas end-to-end
-│   ├── fixtures/              # Datos de prueba y fixtures
+│   ├── e2e/                   # Pruebas end-to-end
+│   ├── general/               # Pruebas generales
+│   ├── performance/           # Pruebas de rendimiento
+│   ├── security/              # Pruebas de seguridad
+│   ├── fixtures/              # Datos de prueba
+│   ├── runners/               # Ejecutores de tests
 │   └── conftest.py            # Configuración pytest
 ├── docs/                       # Documentación completa
 │   ├── architecture/          # Documentación de arquitectura
+│   ├── audit/                 # Informes de auditoría
 │   ├── getting_started/       # Guías de inicio
+│   ├── integrations/          # Integraciones y contratos
 │   ├── operations/            # Guías operativas
 │   ├── project/               # Documentación de proyecto
 │   ├── testing/               # Documentación de pruebas
@@ -119,6 +199,22 @@ soar-ransomware-lab/
 
 ---
 
+## Estado Documental
+
+| Área | Documento principal | Estado |
+|------|---------------------|--------|
+| Arquitectura | [architecture/overview.md](docs/architecture/overview.md) | En revisión |
+| Operaciones | [operations/configuration_manual.md](docs/operations/configuration_manual.md) | En revisión |
+| Integraciones | [integrations/overview.md](docs/integrations/overview.md) | En revisión |
+| Pruebas | [testing/test_suite.md](docs/testing/test_suite.md) | Actualizado |
+| Proyecto | [project/glossary.md](docs/project/glossary.md) | En revisión |
+| Tesis | [thesis/introduction.md](docs/thesis/introduction.md) | En revisión |
+| Índice completo | [docs/README.md](docs/README.md) | En revisión |
+
+> La tabla detallada con fechas de última revisión y responsable está en [`docs/README.md`](docs/README.md).
+
+---
+
 ## 📚 Documentación del Proyecto
 
 Este proyecto incluye documentación técnica completa organizada en el directorio `docs/`:
@@ -126,8 +222,8 @@ Este proyecto incluye documentación técnica completa organizada en el director
 ### Documentación Principal
 
 - **[Índice de Documentación](docs/README.md)** - Índice completo de toda la documentación del proyecto
-- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Documentación completa de todas las APIs del sistema
-- **[CHANGELOG.md](CHANGELOG.md)** - Historial de cambios y versiones del proyecto
+- **[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)** - Documentación completa de todas las APIs del sistema. La fuente de verdad de contratos es `docs/api/openapi.json` generado por FastAPI.
+- **[CHANGELOG.md](docs/thesis/CHANGELOG_THESIS_UPDATE.md)** - Historial de cambios y versiones del proyecto
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guía para desarrolladores y contribuidores
 
 ### Documentación Técnica
@@ -182,46 +278,50 @@ Este proyecto incluye documentación técnica completa organizada en el director
 
 1. **Configurar Variables de Entorno**:
    ```bash
-   # El archivo .env.full contiene la configuración completa
-   # Editar credenciales antes de arrancar
-   nano .env.full
+   # Generar .env.full desde .env.example con todos los secretos (incluido JWT)
+   make generate-secrets
+   # o manualmente
+   python src/soar_lab/scripts/setup/generate_env.py
    ```
+   Edita `.env.full` para ajustar puertos, hosts y credenciales.
 
 2. **Iniciar el Stack Completo**:
    ```bash
-   # Linux/Mac
+   # Windows (make uses Makefile, which delegates to Makefile.win)
    make up
-   
-   # Windows
+   # o
    make -f Makefile.win up
    ```
 
 3. **Detener Servicios**:
    ```bash
-   # Linux/Mac
-   make down
-   
    # Windows
+   make down
+   # o
    make -f Makefile.win down
    ```
 
 ### Servicios y Accesos
 
-| Servicio              | URL                         | Descripción                            |
-|-----------------------|-----------------------------|----------------------------------------|
-| **Web Management UI** | http://localhost:8085       | Panel de gestión principal             |
-| **Nginx Proxy**       | http://localhost            | Proxy inverso a todos los servicios    |
-| **TheHive**           | http://localhost:19000      | Gestión de casos e incidentes          |
-| **Cortex**            | http://localhost:19001      | Análisis de IoCs y analyzers           |
-| **Shuffle UI**        | http://localhost:8081       | Orquestador SOAR                       |
-| **Shuffle API**       | http://localhost:15001      | API REST de Shuffle                    |
-| **Kibana**            | http://localhost:15601      | Dashboards y visualización de logs     |
-| **Grafana**           | http://localhost:8084       | Dashboards de logging centralizado     |
-| **MISP**              | http://localhost:8083       | Inteligencia de amenazas               |
-| **API REST**          | http://localhost:8000       | API de gestión del laboratorio         |
-| **Docs Site**         | http://localhost:8086/docs/ | Documentación del proyecto             |
-| **Elasticsearch**     | http://localhost:19200      | Motor de búsqueda (puerto externo)     |
-| **Wazuh Manager**     | interno Docker              | SIEM/XDR (API en puerto 55100 interno) |
+| Servicio              | URL                                    | Vía Nginx | Descripción                            |
+|-----------------------|----------------------------------------|-----------|----------------------------------------|
+| **Nginx Proxy**       | `https://soar.local`                   | —         | Proxy inverso HTTPS principal          |
+| **Web Management UI** | `http://localhost:8085` / `/`        | Sí (/)    | Panel de gestión principal             |
+| **API REST**          | `http://localhost:8000` / `/api/`    | Sí        | API de gestión del laboratorio         |
+| **Shuffle UI**        | `http://localhost:8081`                | No        | Orquestador SOAR                       |
+| **Shuffle API**       | `http://localhost:15001` / `/shuffle-api/` | Sí     | API REST de Shuffle                    |
+| **TheHive**           | `http://localhost:19000` / `/thehive/`| Sí        | Gestión de casos e incidentes          |
+| **Cortex**            | `http://localhost:19001` / `/cortex/` | Sí        | Análisis de IoCs y analyzers           |
+| **MISP**              | `http://localhost:8083`                | No        | Inteligencia de amenazas               |
+| **Grafana**           | `http://localhost:8084`                | No        | Dashboards de KPIs y logging           |
+| **Wazuh Dashboard**   | `https://localhost:15601`               | No        | Dashboards y visualización de logs (TLS)     |
+| **Docs Site**         | `http://localhost:8086`                | No        | Documentación Docusaurus               |
+| **Elasticsearch**     | `http://localhost:19200`               | No        | Motor de búsqueda (puerto externo)     |
+| **Wazuh Manager**     | `https://localhost:55100`              | No        | SIEM/XDR API                           |
+
+> **Swagger/OpenAPI** de la API: `http://localhost:8000/docs` (o `https://soar.local/api/docs` a través de Nginx).
+
+> Servicios marcados como *No* en la columna *Vía Nginx* usan SPA/assets absolutos o no soportan subpath proxy; accede a ellos directamente por puerto.
 
 > **Nota Windows/Docker Desktop**: Los puertos de Wazuh API (55000) y Elasticsearch están bloqueados por rangos de
 > exclusión de Hyper-V. Todos los servicios internos funcionan correctamente a través de la red Docker.
@@ -230,29 +330,45 @@ Este proyecto incluye documentación técnica completa organizada en el director
 
 ## 🔧 Automatización Opcional
 
+### Lint de documentación
+
+El target `make docs-lint` ejecuta las validaciones documentales antes de un commit:
+
+- `markdownlint` sobre `docs/`
+- `lychee` (comprobación de enlaces rotos)
+- `src/soar_lab/scripts/ci/docs_quality.py` (calidad de docs, OpenAPI, tests)
+- `pytest --collect-only` (verificación de la suite de pruebas)
+
+Windows:
+```powershell
+make -f Makefile.win docs-lint
+```
+
+Linux/macOS:
+```bash
+make docs-lint
+```
+
 ### Vagrant
 
 ```bash
 # Crear entorno automatizado
-vagrant up
+make vagrant-up
+# o directamente
+vagrant up soar-ubuntu
 
-# Incluir máquina Windows opcional
-vagrant up windows
+# La VM Windows victima está deshabilitada por incompatibilidades
+# (ver infra/vagrant/Vagrantfile)
 ```
 
-### Ansible
-
-```bash
-# Despliegue en múltiples hosts
-ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
-```
+> **Nota:** Ansible no está configurado en este repositorio.
 
 ---
 
 ## 🛡️ Buenas Prácticas
 
 - No subir archivos `.env` ni certificados al repositorio (usar `.gitignore`)
-- Documentar pruebas en `tests/e2e` y resultados en `docs/test_report.md`
+- Documentar pruebas en `tests/e2e` y resultados en `docs/testing/test_suite.md`
 - Utilizar TLS y credenciales seguras en todo momento
 - Realizar copias de seguridad periódicas de la configuración
 - Mantener actualizadas las dependencias y Docker images
@@ -267,19 +383,10 @@ Para ejecutar pruebas, consultar la documentación completa en **[docs/testing/t
 **:
 
 ```bash
-# Linux/Mac - Ejecutar todas las pruebas
-make test-all
-
 # Windows - Ejecutar todas las pruebas
+make test-all
+# o
 make -f Makefile.win test-all
-
-# Ejecutar categorías específicas (Linux/Mac)
-make test-unit
-make test-atomic
-make test-security
-make test-integration
-make test-performance
-make test-e2e
 
 # Ejecutar categorías específicas (Windows)
 make -f Makefile.win test-unit
@@ -290,27 +397,24 @@ make -f Makefile.win test-performance
 make -f Makefile.win test-e2e
 
 # Ejecutar con cobertura (mínimo 80% requerido)
-make test-coverage  # Linux/Mac
-make -f Makefile.win test-coverage  # Windows
+make -f Makefile.win test-coverage
 
 # Enviar alerta maliciosa de prueba
-python3 -m soar_lab.services.send_alert --type malicious --single
+python src/soar_lab/infrastructure/messaging/send_alert.py --type malicious --single
 
 # Enviar alerta benigna de prueba
-python3 -m soar_lab.services.send_alert --type benign --single
+python src/soar_lab/infrastructure/messaging/send_alert.py --type benign --single
 ```
 
 **Estado Actual de Tests (v1.4.0):**
-- Total tests: 1393 passed, 5 skipped ✅
-- Unit tests: 1000+ passed ✅
-- Integration tests: 277+ passed ✅
-- E2E tests: 16 passed ✅
-- Atomic tests: 86 passed ✅
-- Security tests: 5 passed ✅
-- Performance tests: 9 passed ✅
-- Coverage: 84%+ ✅ (objetivo >=80%)
-- Última ejecución: 2026-07-06
-- Correcciones: Elasticsearch disk watermark assertion ajustado a 90%, health check Shuffle backend corregido (puerto 15001)
+
+- Archivos de prueba (`test_*.py`): 157
+  - Unit: 66 · Atomic: 4 · Integration: 36 · E2E: 44 · Security: 1 · Performance: 4 · General: 2
+- Funciones definidas: ~1884
+- Recolección reproducible (`python -m pytest --collect-only -q`): 1944 items / 33 deselected / 1911 seleccionados (0 errores de colección).
+- Todos los errores previos de recolección (`ModuleNotFoundError`, `NameError`, `SyntaxError`) han sido resueltos.
+- El desglose completo se mantiene en `docs/testing/test_suite.md` y `baseline/tests_inventory.json`.
+- Última sincronización documental: 2026-07-18.
 
 ### Cálculo de KPIs
 
@@ -389,5 +493,5 @@ fomentado, siempre que se cite adecuadamente la fuente.
 **Autor**: [Nombre del Autor]  
 **Director/a**: [Nombre del Director/a]  
 **Universidad**: [Nombre de la Universidad]  
-**Año Académico**: 2024-2025  
+**Año Académico**: 2025-2026  
 **Versión**: 1.4.0

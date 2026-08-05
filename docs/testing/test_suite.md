@@ -13,6 +13,8 @@
     - [3.1 Estructura de pruebas](#31-estructura-de-pruebas)
         - [3.1.1 Estructura de directorios](#311-estructura-de-directorios)
         - [3.1.2 Categorías de pruebas](#312-categorías-de-pruebas)
+        - [3.1.3 Recuento de casos recogidos](#313-recuento-de-casos-recogidos)
+        - [3.1.4 Variables de entorno requeridas](#314-variables-de-entorno-requeridas)
     - [3.2 Categorías de pruebas](#32-categorías-de-pruebas)
         - [3.2.1 Ejecución de pruebas](#321-ejecución-de-pruebas)
         - [3.2.2 Eliminaciones de pruebas](#322-eliminaciones-de-pruebas)
@@ -20,6 +22,7 @@
         - [3.2.4 Script de ejecución](#324-script-de-ejecución)
         - [3.2.5 Configuración de pruebas](#325-configuración-de-pruebas)
         - [3.2.6 Datos y fixtures](#326-datos-y-fixtures)
+        - [3.2.7 Tests de autenticación JWT](#327-tests-de-autenticación-jwt)
     - [3.3 Casos de prueba](#33-casos-de-prueba)
         - [3.3.1 Objetivos de cobertura](#331-objetivos-de-cobertura)
         - [3.3.2 Entornos de pruebas](#332-entornos-de-pruebas)
@@ -27,6 +30,9 @@
     - [3.4 Ejecución de pruebas](#34-ejecución-de-pruebas)
         - [3.4.1 Comandos de ejecución](#341-comandos-de-ejecución)
         - [3.4.2 Entornos de ejecución](#342-entornos-de-ejecución)
+
+
+        - [3.4.3 Ejecución remota vía `PytestTestRunner`](#343-ejecución-remota-vía-pytesttestrunner)
     - [3.5 Reportes y métricas](#35-reportes-y-métricas)
         - [3.5.1 Reportes generados](#351-reportes-generados)
         - [3.5.2 Métricas clave](#352-métricas-clave)
@@ -101,68 +107,29 @@ Este documento depende de:
 
 #### 3.1.1 Estructura de directorios
 
-**Estado Actual (Enero 2026):**
+**Estado Actual:**
 
 ```
 tests/
-├── unit/                    # 37 archivos de pruebas unitarias
-│   ├── test_alert_generator.py
-│   ├── test_analytics_service.py
-│   ├── test_api_models.py
-│   ├── test_auth.py
-│   ├── test_backup_service.py
-│   ├── test_base_client.py
-│   ├── test_checksum_utils.py
-│   ├── test_cleanup_service.py
-│   ├── test_clients.py
-│   ├── test_composition.py
-│   ├── test_config_provider.py
-│   ├── test_config_schemas.py
-│   ├── test_dependencies.py
-│   ├── test_domain_models.py
-│   ├── test_domain_ports.py
-│   ├── test_file_log_reader.py
-│   ├── test_filesystem_storage.py
-│   ├── test_generate_secrets.py
-│   ├── test_health_check_adapter.py
-│   ├── test_health_service.py
-│   ├── test_http_alert_sender.py
-│   ├── test_http_client.py
-│   ├── test_in_memory_alert_repository.py
-│   ├── test_in_memory_storage.py
-│   ├── test_integration_clients_unit.py
-│   ├── test_ioc_generator.py
-│   ├── test_jwt_token_provider.py
-│   ├── test_kpi_analyzer.py
-│   ├── test_kpi_formatter.py
-│   ├── test_log_parser.py
-│   ├── test_logging.py
-│   ├── test_misp_client_unit.py
-│   ├── test_path_service.py
-│   ├── test_pytest_output_parser.py
-│   ├── test_pytest_test_runner.py
-│   ├── test_settings.py
-│   ├── test_sqlite_alert_repository.py
-│   ├── test_statistical_calculator.py
-│   ├── test_subprocess_runner.py
-│   ├── test_system_metrics_driver.py
-│   ├── test_tar_backup_driver.py
-│   ├── test_test_service.py
-│   ├── test_validators.py
-│   └── test_websocket_manager.py
+├── unit/                    # 66 archivos de pruebas unitarias (test_*.py)
 ├── atomic/                  # 4 archivos de pruebas atómicas
-├── integration/             # 23 archivos de pruebas de integración
-├── e2e/                     # 3 archivos de pruebas E2E
-├── performance/             # 2 archivos de pruebas de rendimiento
-├── security/                # 2 archivos de pruebas de seguridad
-├── fixtures/                # 9 archivos de fixtures
-├── runners/                 # 2 archivos de ejecutores
-├── conftest.py              # Configuración de Pytest
+├── integration/             # 36 archivos de pruebas de integración
+├── e2e/                     # 44 archivos de pruebas E2E
+├── performance/             # 4 archivos de pruebas de rendimiento
+├── security/                # 1 archivo de pruebas de seguridad
+├── general/                 # 2 archivos de utilidades generales
+├── fixtures/                # Datos de prueba compartidos
+├── runners/                 # Scripts de ejecución de suites
+├── conftest.py              # Configuración global de Pytest
 └── __init__.py
 ```
 
-**Nota:** La estructura actual difiere significativamente de la documentación anterior. Las pruebas unitarias ahora
-cubren exhaustivamente el código Python en `src/soar_lab/` con 37 archivos de prueba.
+**Conteo total de archivos `test_*.py`:** 158 archivos.
+
+> **Nota:** No existe `tests/smoke/` como directorio; los tests marcados `smoke` se encuentran en `tests/integration/test_smoke.py` y mediante el marcador `smoke` de pytest.
+
+**Nota:** Los tests unitarios cubren `src/soar_lab/` de forma aislada; los E2E validan workflows completos del playbook
+Shuffle, TheHive, Cortex, MISP y Wazuh; las pruebas de integración verifican adaptadores y servicios del dominio.
 
 #### 3.1.2 Categorías de pruebas
 
@@ -179,6 +146,115 @@ cubren exhaustivamente el código Python en `src/soar_lab/` con 37 archivos de p
 **Pruebas de Seguridad:** Prueban aspectos de seguridad y detección de vulnerabilidades.
 
 **Pruebas E2E:** Prueban workflows completos de principio a fin.
+
+#### 3.1.3 Recuento de casos recogidos
+
+El recuento exacto depende de la versión actual del código. El inventario detallado se encuentra en `baseline/tests_inventory.json`. Para obtener el recuento reproducible en cualquier entorno:
+
+```bash
+python -m pytest --collect-only -q
+```
+
+**Conceptos de recuento:**
+
+- `collected`: todos los casos encontrados por `pytest`.
+- `deselected`: casos filtrados por los marcadores de `pytest.ini` (por defecto `-m "not requires_docker"`).
+- `selected`: casos que finalmente se ejecutarían.
+- `skipped`: casos que se omiten en runtime por dependencias no disponibles.
+
+> Para actualizar el inventario o validar el recuento, ejecutar el comando anterior y comparar con `baseline/tests_inventory.json`.
+
+#### 3.1.4 Variables de entorno requeridas
+
+La suite usa `tests/conftest.py` para fijar unas variables mínimas y delega las credenciales operativas a `.env.full` (cuando existe) o a los overrides del entorno de ejecución.
+
+**Variables internas (fijadas por `conftest.py`):**
+
+| Variable | Propósito | Ejemplo / Origen |
+|----------|-----------|------------------|
+| `BASE_DIR` | Raíz del repositorio para `Settings()` | `<repositorio>` |
+| `SOAR_SKIP_EAGER_INIT` | Evita la creación temprana de la app FastAPI durante la recogida de tests | `1` |
+
+**Variables operativas (esperadas en `.env.full` o `docker exec -e`):**
+
+| Variable | Servicio / Uso | Notas |
+|----------|----------------|-------|
+| `SHUFFLE_DEFAULT_APIKEY` | Cliente Shuffle API | Obligatorio para tests E2E contra Shuffle |
+| `SHUFFLE_DEFAULT_PASSWORD` | Autenticación admin Shuffle | Solo necesario si se regeneran credenciales |
+| `THEHIVE_API_KEY` | Cliente TheHive API | Obligatorio para tests E2E |
+| `CORTEX_API_KEY` | Cliente Cortex API | Obligatorio para tests E2E |
+| `MISP_API_KEY` | Cliente MISP API | Obligatorio para tests E2E |
+| `WAZUH_API_USER` | API de Wazuh Manager | Valor por defecto en `.env.example` |
+| `WAZUH_API_PASSWORD` | API de Wazuh Manager | Requiere mayúsculas, minúsculas, números y un carácter especial permitido |
+| `REDIS_PASSWORD` | Conexión Redis / Shuffle | Se escapa en conexiones `redis://` |
+| `ELASTIC_PASSWORD` | Elasticsearch + Grafana datasource | También usado por `E2E` para indexar métricas |
+| `JWT_SECRET_KEY` | Firma/validación de tokens JWT | `>=32` caracteres; el `conftest.py` usa un secreto de prueba si no existe |
+
+> **Seguridad:** No se deben incluir valores reales en este documento. Las credenciales se cargan desde `.env.full` y se tratan como secretos. Para ejecuciones locales se recomienda usar `cp .env.example .env.full` y ejecutar `make generate-secrets` / `soar-lab generate-secrets`.
+
+#### 3.1.5 Flujo real y recomendado de pruebas
+
+El flujo canónico en un entorno local utiliza los targets `make` definidos en `Makefile.linux` / `Makefile.win`. No se recomienda ejecutar `pytest` directamente sin el entorno y perfiles Docker correctos.
+
+```bash
+# 1. Generar secretos e IOCs previos a los tests
+make generate-secrets
+make generate-iocs
+
+# 2. Limpiar entorno previo (volúmenes, contenedores, redes y artefactos)
+make reset
+
+# 3. Levantar el stack completo
+make up
+
+# 4. Verificar salud de los servicios antes de lanzar tests de integración/E2E
+make health
+
+# 5. Ejecutar tests según la categoría
+make test-unit          # No requiere Docker (usa mocks)
+make test-atomic
+make test-integration   # Requiere stack completo levantado y saludable
+make test-smoke         # Requiere stack mínimo post-deploy
+make test-e2e           # Requiere stack completo y Shuffle configurado
+make test-performance
+make test-security
+make test-all           # Requiere stack completo y saludable
+
+# 6. Generar cobertura y reportes
+make test-coverage
+```
+
+**Targets Make disponibles:**
+
+| Target | Requiere Docker | Descripción |
+|--------|-----------------|-------------|
+| `make test` (sin alias) | No* | Equivalente a `pytest` base; evitar en flujo operativo |
+| `make test-unit` | No | Ejecuta `tests/unit/`; no requiere servicios |
+| `make test-atomic` | No | Ejecuta `tests/atomic/` |
+| `make test-integration` | Sí | Ejecuta `tests/integration/`; requiere `make up` y `make health` |
+| `make test-smoke` | Sí | Ejecuta tests marcados `smoke`; validación rápida post-deploy |
+| `make test-e2e` | Sí | Ejecuta `tests/e2e/`; requiere todos los servicios y el workflow Shuffle |
+| `make test-performance` | Sí | Ejecuta `tests/performance/` |
+| `make test-security` | No/Sí* | Ejecuta `tests/security/`; algunos casos escanean dependencias |
+| `make test-all` | Sí | Ejecuta todas las categorías; requiere stack completo |
+| `make test-coverage` | Sí (para E2E/integración) | Genera reporte HTML/XML de cobertura en `artifacts/coverage/` |
+
+> *`make test-security` puede ejecutar análisis estático sin Docker; los tests de seguridad del repositorio requieren el entorno de Python.
+
+**Prerrequisitos por categoría:**
+
+- **Unit / Atomic**: Python 3.11+, dependencias de desarrollo (`make deps-test`), `.env.full` con placeholders o secretos.
+- **Integración / E2E / Smoke / Performance**: Stack Docker levantado (`make up`), `make health` exitoso, `.env.full` con credenciales reales, workflow Shuffle inicializado (`make init-webhook`), índices `soar-metrics` disponibles.
+
+**Control previo en CI:**
+
+```bash
+# Asegurar que pytest puede recolectar todos los tests sin errores de importación
+python -m pytest --collect-only -q
+
+# Control de calidad de documentación
+make docs-lint
+```
 
 ### 3.2 Categorías de pruebas
 
@@ -203,10 +279,12 @@ make test-e2e
 make test-coverage
 ```
 
-#### 3.2.2 Eliminaciones de pruebas
+#### 3.2.2 Eliminaciones y omisiones
 
-Varios archivos de prueba han sido eliminados para mantener una alta relación señal-ruido. Todas las pruebas han sido
-corregidas exitosamente y ahora están pasando con cero saltos.
+Varios archivos de prueba obsoletos han sido eliminados para mantener una alta relación señal-ruido. Algunas pruebas usan
+`pytest.skip` en runtime cuando faltan dependencias externas (Docker, servicios SOAR levantados, API keys, workflow
+creado) o cuando se ejecutan dentro de un contenedor sin acceso al código/host. Esto se refleja en el recuento final de
+`pytest` como `skipped`, no como `error`.
 
 #### 3.2.3 Ejecución individual
 
@@ -233,7 +311,7 @@ python3 -m pytest tests/e2e/ -v
 python3 -m pytest tests/unit/test_calc_kpis.py -v
 
 # Ejecutar con cobertura
-python3 -m pytest tests/ --cov=scripts --cov=config --cov-report=html --cov-report=term --cov-fail-under=80
+python3 -m pytest tests/ --cov=src/soar_lab --cov-report=html --cov-report=term --cov-fail-under=80
 ```
 
 #### 3.2.4 Script de ejecución
@@ -253,20 +331,25 @@ python tests/run_all_tests.py --generate-report
 
 **Configuración pytest.ini:**
 
-```ini
-[pytest]
-python_files = test_*.py
-python_classes = Test*
-python_functions = test_*
-testpaths = tests
-addopts = -v --strict-markers --tb=short --disable-warnings
-markers =
-    unit: Unit tests
-    integration: Integration tests
-    e2e: End-to-end tests
-    slow: Slow running tests
-    docker: Tests requiring Docker
-    network: Tests requiring network access
+```toml
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m not slow')",
+    "requires_docker: marks tests that require Docker to be running",
+    "requires_external: marks tests that depend on external services (TheHive, Cortex, Shuffle, etc.)",
+    "e2e: marks end-to-end tests that may take longer to run",
+    "unit: marks unit tests that don't require external dependencies",
+    "integration: marks integration tests that require multiple components",
+    "atomic: marks atomic red-team simulation tests",
+    "performance: marks performance and load tests",
+    "security: marks security hardening and vulnerability tests",
+    "kpi: marks KPI-related tests",
+    "smoke: fast post-deployment smoke tests",
+    "smoke_critical: P0 — rollback immediately if these fail",
+    "smoke_high: P1 — investigate immediately, consider rollback",
+    "smoke_medium: P2 — degraded platform, investigate within 24h",
+]
 ```
 
 **Marcadores de Pruebas:**
@@ -285,8 +368,13 @@ pytest -m e2e
 pytest -m "not slow"
 
 # Ejecutar pruebas que requieren Docker
-pytest -m docker
+pytest -m requires_docker
+
+# Ejecutar pruebas que requieren servicios externos levantados
+pytest -m requires_external
 ```
+
+> **Conceptos de recuento**: `collected` son todos los casos encontrados; `deselected` los filtrados por `-m`; `selected` los que finalmente se ejecutarán. `skipped` aparece cuando una prueba llama a `pytest.skip` en runtime (por ejemplo, falta de servicio externo o ejecución dentro del contenedor). `xfail` indica un caso marcado como fallo esperado; en este repositorio no se usa `xfail` de forma masiva, pero puede existir en pruebas experimentales.
 
 #### 3.2.6 Datos y fixtures
 
@@ -318,6 +406,41 @@ def mock_thehive_client():
         yield mock
 ```
 
+#### 3.2.7 Tests de autenticación JWT
+
+Los tests del proveedor JWT y del servicio de autenticación se encuentran en:
+
+- `tests/unit/infrastructure/test_jwt_token_provider.py`
+- `tests/integration/test_authorization.py`
+
+**Escenarios cubiertos por `test_jwt_token_provider.py`:**
+
+| Escenario | Entrada esperada | Comportamiento validado |
+|-----------|------------------|-------------------------|
+| Creación exitosa | `username`, secret `>= 32` chars, `expiration_minutes=60`, algoritmo `HS256` | Token JWT no vacío y verificable |
+| Secret corto | secret `short` (menos de 32 chars) | `python-jose` permite crear el token; la validación de longitud se delega a `AuthService` |
+| Verificación exitosa | Token creado con el mismo secret | Payload con `user`, `method=jwt` y `exp` |
+| Token inválido | Cadena aleatoria | `AuthError` con mensaje de credenciales inválidas |
+| Secret incorrecto | Token firmado con `secret1`, verificado con `secret2` | `AuthError` |
+| Expiración personalizada | `expiration_minutes=120` | Token verificable y payload correcto |
+| Algoritmo inválido | `INVALID_ALGORITHM` | `AuthError` "Failed to create authentication token" |
+| Payload sin `sub` | Token sin claim `sub` | `AuthError` "Invalid token payload" |
+| Token expirado | `exp` en el pasado | `AuthError` "Invalid authentication credentials" |
+
+**Algoritmo y expiración canónicos:**
+
+- Algoritmo: `HS256` (`src/soar_lab/config/settings.py` → `JWT_ALGORITHM`).
+- Expiración por defecto: `60` minutos (`JWT_EXPIRATION_MINUTES`).
+- Secret canónico: `JWT_SECRET_KEY`; fallback legacy `API_AUTH_SECRET`.
+- Longitud mínima de secret: `32` caracteres (validada en `src/soar_lab/application/use_cases/auth_service.py`).
+
+**Ejecución:**
+
+```bash
+python -m pytest tests/unit/infrastructure/test_jwt_token_provider.py -v
+python -m pytest tests/integration/test_authorization.py -v
+```
+
 ### 3.3 Casos de prueba
 
 #### 3.3.1 Objetivos de cobertura
@@ -332,23 +455,25 @@ def mock_thehive_client():
 | Pruebas de rendimiento | N/A (benchmarks de rendimiento) |
 | Pruebas E2E            | >50%                            |
 
-**Estado Actual del Coverage (v1.4.0):**
+**Estado Actual del Suite (v1.4.0):**
 
-- **Objetivo mínimo global**: ≥ 80% de coverage
-- **Estado actual**: 84% de coverage ✅ (excede el objetivo)
-- **Total de pruebas**: 1393 tests pasando
-  - Unit tests: 1000 passed
-  - Integration tests: 277 passed
-  - E2E tests: 16 passed
-  - Atomic tests: 86 passed
-  - Security tests: 5 passed
-  - Performance tests: 9 passed
-- **Última ejecución**: 2026-07-02
-- **Correcciones aplicadas**:
-  - Elasticsearch disk watermark assertion ajustado de `<= 85` a `<= 90` en `tests/integration/test_smoke.py`
-  - Requisito documentado: cambios en archivos de prueba requieren reconstrucción del contenedor `api`
-- **Reporte de coverage**: Disponible en `artifacts/coverage/htmlcov/` y `artifacts/coverage/coverage.xml`
-- **Comando para generar reporte**: `make test-coverage` (Linux/Mac) o `make -f Makefile.win test-coverage` (Windows)
+- **Python soportado**: `>=3.11` (declarado en `pyproject.toml`; CI y entorno de desarrollo usan 3.11.x).
+- **Objetivo mínimo global**: ≥ 80% de cobertura.
+- **Inventario de tests**: `baseline/tests_inventory.json` (actualizado mediante `pytest --collect-only`); para el recuento real ejecutar:
+
+  ```bash
+  python -m pytest --collect-only -q
+  ```
+
+  > El recuento exacto depende de la versión actual del código, parametrizaciones y entorno. Los conteos detallados por directorio se encuentran en `baseline/tests_inventory.json`.
+
+- **Ejecución real (`pytest -q`)**: el número de `passed`/`failed`/`skipped`/`error` depende del entorno. Con los servicios levantados la mayoría de E2E e integración pasan; sin servicios externos se observan `skipped` en tests marcados con `requires_external` o `requires_docker`.
+
+- **Restricciones de plataforma**: algunas pruebas de Docker e integración se omiten si no se detecta el socket de Docker (`/var/run/docker.sock` o equivalente) o si se ejecutan dentro de un contenedor sin acceso al repo/host. En Windows se recomienda ejecutar pruebas E2E e integración con Docker Desktop activo.
+
+- **Smoke tests**: marcador `smoke` de pytest; archivo principal `tests/integration/test_smoke.py`.
+- **Reporte de coverage**: `artifacts/coverage/htmlcov/` y `artifacts/coverage/coverage.xml`.
+- **Comando para generar reporte**: `make test-coverage` (Linux/Mac) o `make -f Makefile.win test-coverage` (Windows).
 
 #### 3.3.2 Entornos de pruebas
 
@@ -373,7 +498,7 @@ Las pruebas se ejecutan automáticamente en:
 
 ```bash
 # Ejecutar pruebas en Docker
-docker-compose -f infra/docker/docker-compose.yml up
+docker compose --env-file .env.full -f infra/docker/compose/docker-compose.yml -f infra/docker/compose/docker-compose.core.yml -f infra/docker/compose/docker-compose.misp.yml -f infra/docker/compose/docker-compose.wazuh.yml -f infra/docker/compose/docker-compose.api.yml -f infra/docker/compose/logging/docker-compose.logging.yml up -d
 python -m pytest tests/ -v
 ```
 
@@ -400,6 +525,22 @@ open htmlcov/index.html
 - HTML: Reportes de cobertura legibles por humanos
 - JUnit XML: Integración CI/CD
 - Consola: Salida en tiempo real
+
+#### 3.3.4 Smoke tests y cobertura histórica
+
+**Smoke tests (`pytest -m smoke`)**
+
+- Valoran la salud mínima del despliegue después de `make up`.
+- Marcadores: `smoke`, `smoke_critical`, `smoke_high`, `smoke_medium`.
+- Ejecución: `make test-smoke` o `pytest -m smoke`.
+- Cubren endpoints críticos como `GET /health`, `GET /services/status`, login y el webhook de Shuffle.
+
+**Cobertura histórica en SQLite**
+
+- Los resultados históricos de cobertura se almacenan en `artifacts/coverage/history.db` (o similar en SQLite) para comparar
+  evolución entre despliegues.
+- `make test-coverage` genera tanto el reporte HTML como la métrica consolidada.
+- El CLI `soar-lab` y el dashboard de `web-management` pueden consultar los datos de cobertura actuales via API.
 
 ### 3.4 Ejecución de pruebas
 
@@ -432,6 +573,37 @@ make test-coverage
 - **Local**: Ejecución en máquina de desarrollo
 - **CI/CD**: Ejecución automática en GitHub Actions
 - **Docker**: Ejecución dentro de contenedores
+- **Remoto vía API / Web Management**: La API SOAR expone `POST /tests/run` que delega en `PytestTestRunner`
+  (`src/soar_lab/infrastructure/pytest_test_runner.py`).
+
+#### 3.4.3 Ejecución remota vía `PytestTestRunner`
+
+`PytestTestRunner` es el adaptador de infraestructura que encapsula la ejecución de `pytest`:
+
+- Ubicación: `src/soar_lab/infrastructure/pytest_test_runner.py`
+- Métodos: `run_suite(category, coverage)` (síncrono) y `run_suite_async(category, coverage)` (para FastAPI).
+- Categorías soportadas: `unit`, `integration`, `e2e`, `atomic`, `performance`, `security`, `smoke`, `all`.
+- Timeout por defecto: 300 s. Ajustable en la inyección del `CompositionRoot`.
+- Cobertura: si `coverage=True`, añade `--cov=src/soar_lab --cov-report=json`.
+- Resultados: se devuelven como JSON con `status`, `output`, `error`, `duration` y `returncode`.
+
+Ejemplo de uso desde el panel Web Management o cURL:
+
+```bash
+# Obtener token JWT
+TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | jq -r '.access_token')
+
+# Lanzar suite E2E
+curl -s -X POST http://localhost:8000/tests/run \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"category":"e2e","coverage":false}'
+```
+
+> **Nota:** La ejecución remota requiere que el contenedor `soar_api` tenga acceso al socket/código y a las variables
+> de entorno de `.env.full`. Para tests E2E e integración, los servicios Docker deben estar levantados.
 
 ### 3.5 Reportes y métricas
 
@@ -458,8 +630,7 @@ make test-coverage
 
 ### 4.1 Verificación
 
-Varios archivos de prueba han sido eliminados para mantener una alta relación señal-ruido. Todas las pruebas han sido
-corregidas exitosamente y ahora están pasando con cero saltos.
+La suite ha sido depurada de referencias a módulos heredados y errores de sintaxis. `pytest --collect-only` finaliza sin errores de importación (`0 errors`). Los conteos se actualizan de forma reproducible con `baseline/tests_inventory.json`.
 
 ### 4.2 Criterios de Aceptación
 
@@ -527,7 +698,7 @@ chmod +x tests/**/*.py
 ```bash
 # Limpiar entorno Docker
 docker system prune -f
-docker-compose down -v
+docker compose down -v
 ```
 
 ### 5.3 Recomendaciones / troubleshooting
@@ -588,7 +759,7 @@ pytest -x tests/
 Las pruebas se ejecutan en:
 
 - Ejecutores de Ubuntu y Windows
-- Python 3.9+
+- Python 3.11
 - Múltiples versiones de Docker
 
 **Matriz de Pruebas:**
@@ -596,7 +767,7 @@ Las pruebas se ejecutan en:
 ```yaml
 strategy:
   matrix:
-    python-version: [3.9, '3.10', 3.11]
+    python-version: [3.11]
     os: [ubuntu-latest, windows-latest]
 ```
 
@@ -651,7 +822,57 @@ Al agregar nuevas pruebas:
 - **Fugas de Memoria:** Verificar fugas de memoria
 - **Rendimiento de Base de Datos:** Probar rendimiento de consultas bajo carga
 
-## 6. Referencias
+#### 5.3.7 Tests fallan por servicios no listos, recursos insuficientes o Docker Desktop
+
+**Síntoma:**
+Tests de integración/E2E fallan con `ConnectionRefusedError`, `skipped`, timeouts o `docker.errors.DockerException`.
+
+**Causas probables y soluciones:**
+
+1. **Servicios no listos:**
+   - Ejecutar `make health` antes de tests. No basta con `docker compose ps` (contenedor en ejecución != servicio listo).
+   - Verificar logs: `docker compose logs <servicio>`.
+   - Aumentar `HEALTHCHECK` esperas si los servicios arrancan lentamente.
+
+2. **Recursos insuficientes:**
+   - Asignar al menos 8 GB de RAM y 4 vCPU a Docker Desktop / WSL.
+   - Wazuh y Elasticsearch requieren varios GB. Si hay `OOMKilled`, aumentar memoria o limitar `OPENSEARCH_JAVA_OPTS` / `ES_JAVA_OPTS`.
+
+3. **Docker Desktop / WSL en Windows:**
+   - Activar integración de WSL2 y file sharing para el directorio del repo.
+   - Usar PowerShell o WSL; en `cmd` puede fallar la interpretación de variables `$(...)`.
+   - Si `make` no está disponible en Windows, usar `Makefile.win`: `make -f Makefile.win <target>` o ejecutar comandos equivalentes manualmente.
+
+4. **Variables de entorno o `.env.full` ausentes:**
+   - Asegurar `cp .env.example .env.full` y regenerar secretos: `make generate-secrets`.
+   - Tras `make reset`, `make init-webhook` puede cambiar `SHUFFLE_DEFAULT_APIKEY`; actualizar `.env.full` o confiar en el self-heal de `ShuffleClient`.
+
+5. **Contenedores sin acceso al socket de Docker:**
+   - Algunos tests `requires_docker` necesitan acceso al socket (`/var/run/docker.sock`). En Windows/WSL montar el socket correctamente o ejecutar esos tests desde el host.
+
+## 5.4 Matriz de incongruencias (FASE 49)
+
+Se mantiene la matriz de incongruencias detectadas entre documentación, código, infraestructura y tests en [`docs/project/inconsistency_matrix.md`](../project/inconsistency_matrix.md).
+
+Los puntos principales son:
+
+- `.env.full` sigue en el historial de Git (no se purga por decisión del usuario).
+- Algunos `docker-compose` y scripts de mantenimiento conservan valores fallback para contraseñas; deben prevalecer las variables de `.env.full`.
+- Tests unitarios usan contraseñas dummy (aceptable con mocks), pero tests de integración deben evitar secrets hardcodeados.
+- `grafana-datasources.yml` generado en runtime está en `.gitignore`; el template usa placeholders.
+
+## 6. Gobernanza del backlog y evidencias (FASEs 54–65)
+
+- El plan consolidado de trazabilidad, gobernanza, validación reproducible, arquitectura, seguridad, API, Docker, observabilidad, testing y cierre se encuentra en [`docs/project/governance_and_validation_plan.md`](../project/governance_and_validation_plan.md).
+- Plantilla de manifiesto de evidencias y convención de retención definidas en ese documento.
+- Registro de decisiones documentales y checklist de privacidad antes de publicar artefactos.
+
+## 7. Arquitectura hexagonal
+
+- `tests/architecture/test_hexagonal_imports.py` valida que `src/soar_lab/domain` no importe `infrastructure`, `interfaces`, `application`, `scripts`, etc.
+- Marcador registrado en `pytest.ini`: `pytest -m architecture`.
+
+## 8. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
 - **Documentación de Pytest**: https://docs.pytest.org/
@@ -660,5 +881,6 @@ Al agregar nuevas pruebas:
 - **Guía de Pruebas de Shuffle**: https://shuffler.io/docs/testing
 - **Documentación de TheHive**: https://docs.strangebee.com/thehive/
 - **Documentación de Cortex**: https://docs.strangebee.com/cortex/
+- **Plan de Gobernanza y Validación**: [../project/governance_and_validation_plan.md](../project/governance_and_validation_plan.md)
 - **README Principal**: [/README.md](../README.md)
 - **Documentación del Proyecto**: [../](../)

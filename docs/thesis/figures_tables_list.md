@@ -1,5 +1,4 @@
-﻿
-# Lista de Figuras y Tablas
+﻿# Lista de Figuras y Tablas
 
 ## Lista de Figuras
 

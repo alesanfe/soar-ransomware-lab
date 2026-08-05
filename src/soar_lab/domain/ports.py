@@ -49,12 +49,12 @@ class MetricRepository(Protocol):
     """Repository for storing and retrieving metrics."""
 
     def store(
-            self,
-            name: str,
-            value: float,
-            unit: str = None,
-            source: str = None,
-            tags: Dict[str, str] = None
+        self,
+        name: str,
+        value: float,
+        unit: str = None,
+        source: str = None,
+        tags: Dict[str, str] = None
     ) -> None:
         """Store a metric."""
         ...
@@ -84,12 +84,12 @@ class BackupRepository(Protocol):
         ...
 
     def update_status(
-            self,
-            backup_name: str,
-            status: str,
-            file_path: str = None,
-            size_bytes: int = None,
-            checksum: str = None
+        self,
+        backup_name: str,
+        status: str,
+        file_path: str = None,
+        size_bytes: int = None,
+        checksum: str = None
     ) -> None:
         """Update backup status and metadata."""
         ...

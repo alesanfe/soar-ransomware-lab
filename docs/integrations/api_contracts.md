@@ -29,6 +29,9 @@
         - [3.4.2 Resumen de variables de entorno por API](#342-resumen-de-variables-de-entorno-por-api)
     - [3.5 Ejemplos de uso](#35-ejemplos-de-uso)
         - [3.5.1 Flujo de integración de APIs](#351-flujo-de-integración-de-apis)
+        - [3.5.2 Procedimientos Específicos de Rotación de API Keys](#352-procedimientos-específicos-de-rotación-de-api-keys)
+        - [3.5.3 Ejemplo completo de autenticación JWT](#353-ejemplo-completo-de-autenticación-jwt)
+        - [3.5.4 Ejemplos de Error Handling para Cada API](#354-ejemplos-de-error-handling-para-cada-api)
 - [4. Validación](#4-validación)
     - [4.1 Verificación](#41-verificación)
     - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
@@ -95,18 +98,23 @@ Este documento depende de:
 
 #### 3.1.1 Clasificación de APIs
 
-| API              | Tipo         | Servicio                           | Puerto |
-|------------------|--------------|------------------------------------|--------|
-| **TheHive**      | ✅ Real       | Gestión de casos e incidentes      | `9000` |
-| **Cortex**       | ✅ Real       | Análisis de IoCs (analyzers)       | `9001` |
-| **Shuffle**      | ✅ Real       | Orquestador SOAR (webhook + API)   | `5001` |
-| **Lab API**      | ✅ Real       | FastAPI de gestión del laboratorio | `8000` |
-| **SIEM (Wazuh)** | ⚙️ Simulado* | Generación de alertas vía script   | —      |
-| **EDR**          | 🔲 Simulado  | Contención de endpoints vía script | —      |
-| **Firewall**     | 🔲 Simulado  | Bloqueo de IPs vía script          | —      |
+| API                         | Tipo         | Servicio                              | Puerto host / Proxy              |
+|-----------------------------|--------------|---------------------------------------|----------------------------------|
+| **TheHive**                 | ✅ Real       | Gestión de casos e incidentes         | `19000` / `/thehive/`            |
+| **Cortex**                  | ✅ Real       | Análisis de IoCs (analyzers)          | `19001` / `/cortex/`             |
+| **Shuffle UI**              | ✅ Real       | Interfaz del orquestador SOAR         | `8081` (directo, no Nginx)       |
+| **Shuffle Backend API**     | ✅ Real       | API del motor de Shuffle (y webhooks)   | `15001` / `/shuffle-api/`        |
+| **Lab API**                 | ✅ Real       | FastAPI de gestión del laboratorio    | `8000` / `/api/`                 |
+| **MISP**                    | ✅ Real       | Inteligencia de amenazas              | `8083` (directo, no Nginx)       |
+| **Elasticsearch**           | ✅ Real       | Motor de búsqueda / métricas          | `19200` (no expuesto)            |
+| **Wazuh Manager API**       | ✅ Real       | API de gestión de agentes y alertas   | `55100` (no expuesto)            |
+| **Wazuh Dashboard**         | ✅ Real       | Dashboards Wazuh                      | `15601` (directo, no Nginx)      |
+| **EDR / Contención**        | ⚙️ Simulado* | Contención de endpoints vía scripts   | —                                |
+| **Firewall**                | 🔲 Simulado  | Bloqueo de IPs vía scripts            | —                                |
 
-> *Wazuh Manager está desplegado como contenedor real pero la **generación de alertas** hacia Shuffle se simula con
-`src/soar_lab/infrastructure/http_alert_sender.py` en el contexto del TFM.
+> *La contención de endpoints (aislamiento de red, bloqueo de cuentas, terminación de procesos) se simula en el
+laboratorio. El sistema rastrea estados (`pending`, `executed`, `failed`) pero no ejecuta acciones destructivas reales.
+La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simulate_alerts.py`.
 
 #### 3.1.2 APIs reales
 
@@ -142,7 +150,7 @@ Este documento depende de:
 
 **SIEM Simulado (Wazuh):**
 
-- Generación de alertas mediante módulo `src/soar_lab/infrastructure/http_alert_sender.py`
+- Generación de alertas mediante módulo `src/soar_lab/simulator/simulate_alerts.py`
 - POST directo al webhook de Shuffle
 - Sin endpoint HTTP externo
 
@@ -162,15 +170,15 @@ Este documento depende de:
 
 #### 3.2.1 TheHive API
 
-**Base URL**: `http://localhost:${THEHIVE_HTTP_PORT:-9000}`  
+**Base URL**: `http://localhost:${THEHIVE_HTTP_PORT:-19000}`  
 **Autenticación**: `Authorization: Bearer ${THEHIVE_API_KEY}`  
-**Variable .env**: `THEHIVE_API_KEY=thehive-api-key-456-secure`
+**Variable .env**: `THEHIVE_API_KEY=<thehive-api-key>`
 
 **Endpoints utilizados:**
 
 | Método  | Endpoint                         | Descripción                               |
 |---------|----------------------------------|-------------------------------------------|
-| `GET`   | `/api/health`                    | Health check del servicio                 |
+| `GET`   | `/api/status`                    | Health check del servicio                 |
 | `GET`   | `/api/case`                      | Listar todos los casos                    |
 | `POST`  | `/api/case`                      | Crear nuevo caso                          |
 | `GET`   | `/api/case/{case_id}`            | Obtener caso por ID                       |
@@ -217,9 +225,9 @@ Este documento depende de:
 
 #### 3.2.2 Cortex API
 
-**Base URL**: `http://localhost:${CORTEX_HTTP_PORT:-9001}`  
+**Base URL**: `http://localhost:${CORTEX_HTTP_PORT:-19001}`  
 **Autenticación**: `Authorization: Bearer ${CORTEX_API_KEY}`  
-**Variable .env**: `CORTEX_API_KEY=cortex-api-key-012-secure`
+**Variable .env**: `CORTEX_API_KEY=<cortex-api-key>`
 
 **Endpoints utilizados:**
 
@@ -260,18 +268,18 @@ Este documento depende de:
 
 #### 3.2.3 Shuffle webhook
 
-**Base URL**: `http://localhost:${SHUFFLE_API_PORT:-5001}`  
-**Autenticación**: `Authorization: Bearer ${SIEM_WEBHOOK_TOKEN}`  
-**Variable .env**: `SIEM_WEBHOOK_TOKEN=SiemToken123!@#`
+**Base URL**: `http://localhost:${SHUFFLE_API_PORT:-15001}/api/v1/hooks/webhook_{trigger_id}` (URL devuelta por `init_shuffle_webhook.py`)  
+**Autenticación**: Token de ruta (`trigger_id`); el `Authorization` Bearer no es requerido por el endpoint de hooks.  
+**Variables .env**: `SHUFFLE_DEFAULT_APIKEY` (para API de backend), `SIEM_WEBHOOK_TOKEN` (token usado por `simulate_alerts.py` cuando no se dispone de `webhook_info.json`)
 
 **Endpoints utilizados:**
 
 | Método | Endpoint                 | Descripción                             |
 |--------|--------------------------|-----------------------------------------|
 | `GET`  | `/health`                | Health check del backend                |
-| `POST` | `/webhook/{workflow_id}` | Disparar workflow con payload de alerta |
+| `POST` | `/api/v1/hooks/{workflow_id}` | Disparar workflow con payload de alerta |
 
-**Payload — Webhook de alerta (`POST /webhook/{workflow_id}`):**
+**Payload — Webhook de alerta (`POST /api/v1/hooks/{workflow_id}`):**
 
 ```json
 {
@@ -299,10 +307,13 @@ Este documento depende de:
 
 #### 3.2.4 Lab API — FastAPI
 
-**Base URL**: `http://localhost:${API_PORT:-8000}`  
+> **Fuente de verdad**: el contrato de la API del laboratorio se encuentra en `docs/api/openapi.json` y `baseline/openapi.json` (generado automáticamente por FastAPI). Los modelos de datos de entrada/salida se definen en `src/soar_lab/config/schemas.py` (validaciones Pydantic) y `src/soar_lab/interfaces/api/models.py` (modelos de dominio del API). Puede explorarse en vivo en `http://localhost:8000/docs` / `https://soar.local/api/docs`. En caso de discrepancia entre este documento, `openapi.json` y el código, prevalecen el esquema Pydantic y el `openapi.json` actual.
+
+**Base URL**: `http://localhost:${API_PORT:-8000}` (directo) / `https://soar.local/api` (vía Nginx)  
 **Autenticación**: JWT Bearer token (obtenido vía `POST /auth/login`)  
-**Variable .env**: `API_AUTH_SECRET=ApiAuthSecretKey456!@#7890123456`  
-**Swagger UI**: `http://localhost:8000/docs`
+**Variables .env**: `JWT_SECRET_KEY` (preferente, leído por `AuthService`) o `API_AUTH_SECRET` (legacy fallback) para firmar/validar tokens; `JWT_EXPIRATION_MINUTES` (default 60).  
+**Swagger UI**: `https://soar.local/api/docs` (Nginx) o `http://localhost:8000/docs` (directo)
+**ReDoc**: `https://soar.local/api/redoc` (Nginx) o `http://localhost:8000/redoc` (directo)
 
 **Endpoints:**
 
@@ -312,19 +323,48 @@ Este documento depende de:
 | `GET`  | `/`                  | No   | Documentación HTML                   |
 | `POST` | `/auth/login`        | No   | Obtener JWT token                    |
 | `POST` | `/auth/verify`       | JWT  | Verificar token                      |
-| `GET`  | `/analytics/metrics` | No   | CPU, memoria y disco del host        |
-| `GET`  | `/analytics/kpis`    | No   | KPIs calculados (MTTR, detecciones…) |
-| `GET`  | `/services/status`   | No   | Estado de todos los contenedores     |
-| `POST` | `/tests/run`         | No   | Ejecutar suite de tests              |
-| `POST` | `/backup/create`     | No   | Crear backup                         |
-| `GET`  | `/backup/list`       | No   | Listar backups disponibles           |
-| `POST` | `/backup/restore`    | No   | Restaurar backup                     |
-| `WS`   | `/ws/logs`           | No   | Stream de logs en tiempo real        |
+| `GET`  | `/analytics/metrics`              | No   | CPU, memoria y disco del host             |
+| `GET`  | `/analytics/kpis`                 | No   | KPIs calculados (MTTR, detecciones…)      |
+| `GET`  | `/analytics/kpis/aggregated`      | No   | KPIs agregados desde Elasticsearch        |
+| `GET`  | `/services/status`                | No   | Estado de todos los contenedores          |
+| `POST` | `/tests/run`                      | No   | Ejecutar suite de tests                   |
+| `POST` | `/backup/create`                  | No   | Crear backup                              |
+| `GET`  | `/backup/list`                    | No   | Listar backups disponibles                |
+| `POST` | `/backup/restore`                 | No   | Restaurar backup                          |
+| `WS`   | `/ws/logs`                        | No   | Stream de logs en tiempo real             |
+| `GET`  | `/soar/status`                    | No   | Health agregado de todas las integraciones|
+| `GET`  | `/soar/thehive/cases`             | No   | Listar casos de TheHive                   |
+| `GET`  | `/soar/thehive/cases/{case_id}`        | No   | Obtener caso de TheHive                   |
+| `GET`  | `/soar/thehive/cases/{case_id}/observables` | No   | Observables de un caso              |
+| `GET`  | `/soar/thehive/cases/{case_id}/tasks`  | No   | Tareas de un caso                         |
+| `GET`  | `/soar/thehive/health`            | No   | Health check de TheHive                   |
+| `GET`  | `/soar/cortex/analyzers`          | No   | Listar analyzers de Cortex                |
+| `GET`  | `/soar/cortex/jobs`               | No   | Listar jobs de Cortex                     |
+| `GET`  | `/soar/cortex/jobs/{job_id}`          | No   | Estado de un job de Cortex                |
+| `GET`  | `/soar/cortex/jobs/{job_id}/report`   | No   | Reporte de un job de Cortex               |
+| `GET`  | `/soar/cortex/health`             | No   | Health check de Cortex                    |
+| `GET`  | `/soar/misp/attributes`           | No   | Buscar atributos en MISP                  |
+| `GET`  | `/soar/misp/events`               | No   | Listar eventos de MISP                    |
+| `GET`  | `/soar/misp/events/{event_id}`          | No   | Obtener evento de MISP                    |
+| `GET`  | `/soar/misp/health`               | No   | Health check de MISP                      |
+| `GET`  | `/soar/shuffle/workflows`         | No   | Listar workflows de Shuffle               |
+| `GET`  | `/soar/shuffle/workflows/{workflow_id}`    | No   | Obtener workflow de Shuffle               |
+| `GET`  | `/soar/shuffle/workflows/{workflow_id}/executions` | No   | Ejecuciones de un workflow        |
+| `GET`  | `/soar/shuffle/workflows/{workflow_id}/executions/{execution_id}` | No   | Ejecución específica     |
+| `GET`  | `/soar/shuffle/health`            | No   | Health check de Shuffle                   |
+| `GET`  | `/soar/elasticsearch/count`       | No   | Contar documentos en un índice            |
+| `GET`  | `/soar/elasticsearch/latest`      | No   | Documentos recientes de un índice         |
+| `GET`  | `/soar/elasticsearch/health`      | No   | Health de Elasticsearch                   |
+| `GET`  | `/soar/wazuh/agents`              | No   | Listar agentes de Wazuh                   |
+| `GET`  | `/soar/wazuh/agents/{agent_id}`         | No   | Obtener agente de Wazuh                   |
+| `GET`  | `/soar/wazuh/agents/{agent_id}/vulnerabilities` | No   | CVEs de un agente             |
+| `GET`  | `/soar/wazuh/manager`             | No   | Información del manager Wazuh             |
+| `GET`  | `/soar/wazuh/health`              | No   | Health check de Wazuh                     |
 
 **Payload — Login (`POST /auth/login`):**
 
 ```json
-{ "username": "admin", "password": "X9e#5mP3$vL7@nQ4tW8!zY2&hF6sD1" }
+{ "username": "admin", "password": "<WEB_UI_PASSWORD>" }
 ```
 
 **Payload — Ejecutar tests (`POST /tests/run`):**
@@ -335,20 +375,70 @@ Este documento depende de:
 
 Valores válidos para `category`: `unit`, `integration`, `e2e`, `atomic`, `performance`, `security`, `smoke`, `all`.
 
+**Respuesta — `GET /analytics/metrics` (`Metrics`)**
+
+```json
+{
+  "cpu": 12.5,
+  "memory": 45.2,
+  "disk": 67.8,
+  "timestamp": "2026-07-19T10:30:00Z"
+}
+```
+
+**Parámetros y respuesta — `GET /analytics/kpis`**
+
+- **Query**: `log_file_path` (opcional). Ruta del archivo de logs para calcular KPIs en modo archivo.
+- **Response 200**: Diccionario con métricas calculadas por el servicio de analytics (por ejemplo, MTTR, total de ejecuciones, alertas por tipo). El formato exacto depende del adapter disponible.
+- **Errores**: `500` si el servicio de analytics no está disponible.
+
+**Respuesta — `GET /analytics/kpis/aggregated`**
+
+```json
+{
+  "period_hours": 24,
+  "timestamp": "2026-07-19T10:30:00Z",
+  "total_alerts": 42,
+  "mttr_statistics": {
+    "mean": 45.2,
+    "median": 38.0,
+    "p90": 89.5,
+    "min": 12.0,
+    "max": 120.0
+  },
+  "by_alert_type": {
+    "malicious": {"count": 30, "mean_mttr": 41.1},
+    "benign": {"count": 12, "mean_mttr": 52.3}
+  },
+  "services": {
+    "thehive": {"reachable": true, "alerts_processed": 30},
+    "cortex": {"reachable": true, "analyzers_run": 28},
+    "misp": {"reachable": true, "attributes_enriched": 15}
+  }
+}
+```
+
 #### 3.2.5 Resumen de variables de entorno por API
 
 | Variable                   | API               | Descripción                                |
 |----------------------------|-------------------|--------------------------------------------|
 | `THEHIVE_API_KEY`          | TheHive           | API key de autenticación                   |
-| `THEHIVE_HTTP_PORT`        | TheHive           | Puerto host (default 9000)                 |
+| `THEHIVE_HTTP_PORT`        | TheHive           | Puerto host (default 9000)                |
 | `CORTEX_API_KEY`           | Cortex            | API key de autenticación                   |
-| `CORTEX_HTTP_PORT`         | Cortex            | Puerto host (default 9001)                 |
-| `SHUFFLE_API_PORT`         | Shuffle           | Puerto del backend (default 5001)          |
+| `CORTEX_HTTP_PORT`         | Cortex            | Puerto host (default 19001)                |
+| `SHUFFLE_API_PORT`         | Shuffle           | Puerto del backend (default 5001, expuesto 8081) |
+| `SHUFFLE_UI_PORT`          | Shuffle UI        | Puerto host (default 8081)                 |
 | `SIEM_WEBHOOK_TOKEN`       | Shuffle webhook   | Token Bearer del webhook                   |
 | `API_PORT`                 | Lab API           | Puerto del servidor FastAPI (default 8000) |
-| `API_AUTH_SECRET`          | Lab API           | Clave para firmar JWT                      |
-| `EDR_SIM_TOKEN`            | EDR simulado      | Token reservado                            |
-| `FIREWALL_SIM_TOKEN`       | Firewall simulado | Token reservado                            |
+| `JWT_SECRET_KEY`           | Lab API           | Secreto preferente de firma JWT (>=32 chars) |
+| `JWT_ALGORITHM`            | Lab API           | Algoritmo de firma JWT (default `HS256`)   |
+| `JWT_EXPIRATION_MINUTES`   | Lab API           | Tiempo de expiración del token (default 60) |
+| `API_AUTH_SECRET`          | Lab API           | Secreto legacy de firma JWT (fallback)     |
+| `WEB_UI_USER`              | Lab API           | Usuario para `/auth/login`                 |
+| `WEB_UI_PASSWORD`          | Lab API           | Contraseña para `/auth/login`              |
+| `CORS_ORIGINS`             | Lab API           | Orígenes permitidos para CORS              |
+| `EDR_SIM_TOKEN`            | EDR simulado      | Token reservado (simulado)                 |
+| `FIREWALL_SIM_TOKEN`       | Firewall simulado | Token reservado (simulado)                 |
 | `MAX_CONCURRENT_ANALYZERS` | Cortex            | Máx. analyzers en paralelo                 |
 | `ANALYZER_TIMEOUT`         | Cortex            | Timeout por job (segundos)                 |
 | `WEBHOOK_RATE_LIMIT`       | Shuffle           | Máx. peticiones/min al webhook             |
@@ -359,21 +449,49 @@ Valores válidos para `category`: `unit`, `integration`, `e2e`, `atomic`, `perfo
 
 #### 3.3.1 Payload de alerta
 
+Modelo canónico: `RansomwareAlert` en `src/soar_lab/config/schemas.py`. Todos los campos deben cumplir las validaciones Pydantic del esquema.
+
 ```json
 {
-  "alert_id": "ALERT-2025-001234",
+  "alert_id": "ALERT-2025050318-0001",
   "hostname": "WIN-001",
   "src_ip": "185.220.101.182",
-  "hash": "44d88612fea8a8f36de82e1278abb02f",
-  "severity": 3,
+  "hash": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "md5": "d41d8cd98f00b204e9800998ecf8427e",
+    "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+  },
+  "severity": "3",
   "source": "siem-ransomware-detection",
   "detection_time": "2025-05-03T18:42:15Z",
   "event_type": "ransomware_detection",
-  "confidence": 95,
-  "process_name": "ransomware.exe",
-  "mitre_techniques": ["T1486"]
+  "description": "Ransomware activity detected on WIN-001 - suspicious file encryption patterns observed",
+  "affected_files": [
+    {
+      "path": "C:/Users/victim/Documents/encrypted.docx",
+      "name": "encrypted.docx",
+      "size": 10240,
+      "extension": ".docx",
+      "encrypted": true
+    }
+  ],
+  "mitre_tactics": ["TA0010"],
+  "mitre_techniques": ["T1486"],
+  "network_events": [
+    {
+      "src_ip": "192.168.1.10",
+      "dst_ip": "185.220.101.182",
+      "src_port": 49152,
+      "dst_port": 443,
+      "protocol": "TCP"
+    }
+  ],
+  "user_context": {"user": "alice"},
+  "process_info": {"name": "ransomware.exe", "pid": 1234}
 }
 ```
+
+> **Nota:** `severity` es un string del enum `"0"` (Low), `"1"` (Medium), `"2"` (High), `"3"` (Critical). `alert_id` debe cumplir `^ALERT-\d{10}-\d{4}$`. `hash.sha256` es obligatorio y debe ser 64 caracteres hexadecimales. Valores extra como `confidence` o `process_name` no están en `RansomwareAlert`; si se envían al webhook de Shuffle, deben colocarse en `metadata` del `WebhookPayload` para no violar el esquema.
 
 #### 3.3.2 Payload de caso
 
@@ -398,6 +516,72 @@ Valores válidos para `category`: `unit`, `integration`, `e2e`, `atomic`, `perfo
 }
 ```
 
+#### 3.3.4 Modelos Pydantic de Lab API
+
+**`LoginRequest`**
+
+```json
+{
+  "username": "admin",
+  "password": "..."
+}
+```
+
+**`LoginResponse`**
+
+```json
+{
+  "token": "eyJ0...",
+  "message": "Login successful",
+  "token_type": "Bearer"
+}
+```
+
+**`RunRequest`**
+
+```json
+{
+  "category": "unit"
+}
+```
+
+Valores válidos: `unit`, `integration`, `e2e`, `atomic`, `performance`, `security`, `smoke`, `all`.
+
+**`BackupRequest`**
+
+```json
+{
+  "backup_name": "manual-backup.tar.gz"
+}
+```
+
+Validación: no permite `..`, `/`, `\` y requiere extensión `.tar.gz`.
+
+**`Metrics`**
+
+```json
+{
+  "cpu": 12.5,
+  "memory": 45.2,
+  "disk": 67.8,
+  "timestamp": "2026-07-18T00:00:00Z"
+}
+```
+
+**`RunResults`**
+
+```json
+{
+  "category": "unit",
+  "passed": 79,
+  "failed": 0,
+  "skipped": 0,
+  "coverage": 85.4,
+  "output": "...",
+  "duration": 12.3
+}
+```
+
 ### 3.4 Autenticación y autorización
 
 #### 3.4.1 Configuración de autenticación
@@ -406,23 +590,60 @@ Todas las APIs requieren configuración de autenticación vía variables de ento
 
 - API keys para servicios externos
 - Tokens Bearer para webhooks
-- Secret para firma JWT en Lab API
+- `JWT_SECRET_KEY` (preferente) o `API_AUTH_SECRET` (legacy fallback) para firma/verificación JWT en Lab API
+- `JWT_ALGORITHM` (default `HS256`) y `JWT_EXPIRATION_MINUTES` (default 60)
+- `WEB_UI_USER` y `WEB_UI_PASSWORD` para `/auth/login`
 - Tokens reservados para integraciones futuras (EDR, Firewall)
 
 #### 3.4.2 Resumen de variables de entorno por API
 
-| Variable             | API               | Descripción                                |
-|----------------------|-------------------|--------------------------------------------|
-| `THEHIVE_API_KEY`    | TheHive           | API key de autenticación                   |
-| `THEHIVE_HTTP_PORT`  | TheHive           | Puerto host (default 9000)                 |
-| `CORTEX_API_KEY`     | Cortex            | API key de autenticación                   |
-| `CORTEX_HTTP_PORT`   | Cortex            | Puerto host (default 9001)                 |
-| `SHUFFLE_API_PORT`   | Shuffle           | Puerto del backend (default 5001)          |
-| `SIEM_WEBHOOK_TOKEN` | Shuffle webhook   | Token Bearer del webhook                   |
-| `API_PORT`           | Lab API           | Puerto del servidor FastAPI (default 8000) |
-| `API_AUTH_SECRET`    | Lab API           | Clave para firmar JWT                      |
-| `EDR_SIM_TOKEN`      | EDR simulado      | Token reservado                            |
-| `FIREWALL_SIM_TOKEN` | Firewall simulado | Token reservado                            |
+| Variable                   | API               | Descripción                                |
+|----------------------------|-------------------|--------------------------------------------|
+| `THEHIVE_API_KEY`          | TheHive           | API key de autenticación                   |
+| `THEHIVE_HTTP_PORT`        | TheHive           | Puerto host (default 9000)                |
+| `CORTEX_API_KEY`           | Cortex            | API key de autenticación                   |
+| `CORTEX_HTTP_PORT`         | Cortex            | Puerto host (default 19001)                |
+| `SHUFFLE_API_PORT`         | Shuffle           | Puerto del backend (default 5001, expuesto 8081) |
+| `SHUFFLE_UI_PORT`          | Shuffle UI        | Puerto host (default 8081)                 |
+| `SIEM_WEBHOOK_TOKEN`       | Shuffle webhook   | Token Bearer del webhook                   |
+| `API_PORT`                 | Lab API           | Puerto del servidor FastAPI (default 8000) |
+| `JWT_SECRET_KEY`           | Lab API           | Secreto preferente de firma JWT (>=32 chars) |
+| `JWT_ALGORITHM`            | Lab API           | Algoritmo de firma JWT (default `HS256`)   |
+| `JWT_EXPIRATION_MINUTES`   | Lab API           | Tiempo de expiración del token (default 60) |
+| `API_AUTH_SECRET`          | Lab API           | Secreto legacy de firma JWT (fallback)     |
+| `WEB_UI_USER`              | Lab API           | Usuario para `/auth/login`                 |
+| `WEB_UI_PASSWORD`          | Lab API           | Contraseña para `/auth/login`              |
+| `CORS_ORIGINS`             | Lab API           | Orígenes permitidos para CORS              |
+| `EDR_SIM_TOKEN`            | EDR simulado      | Token reservado (simulado)                 |
+| `FIREWALL_SIM_TOKEN`       | Firewall simulado | Token reservado (simulado)                 |
+
+#### 3.4.3 Detalle de autenticación JWT de Lab API
+
+**`POST /auth/login`**
+
+- **Body** (`LoginRequest`):
+  ```json
+  {"username": "admin", "password": "<WEB_UI_PASSWORD>"}
+  ```
+- **Response 200** (`LoginResponse`):
+  ```json
+  {"token": "eyJ0...", "message": "Login successful", "token_type": "Bearer"}
+  ```
+- **Errores**:
+  - `401 Unauthorized`: credenciales incorrectas (`WEB_UI_USER` / `WEB_UI_PASSWORD`).
+  - `500 Internal Server Error`: `JWT_SECRET_KEY`/`API_AUTH_SECRET` no configurado o error interno.
+
+**`POST /auth/verify`**
+
+- **Auth**: `Authorization: Bearer <token>`
+- **Response 200** (`VerifyAuthResponse`):
+  ```json
+  {"valid": true, "user": {"user": "admin"}}
+  ```
+- **Errores**:
+  - `401 Unauthorized`: token inválido, expirado o ausente.
+
+> **Nota**: El token JWT contiene claims `sub` (usuario), `iat`, `exp` y `scope: access`. Tras rotar `JWT_SECRET_KEY` o `API_AUTH_SECRET`, los tokens emitidos previamente quedan inválidos; los clientes deben renovarlos llamando de nuevo a `/auth/login`.
 
 ### 3.5 Ejemplos de uso
 
@@ -432,41 +653,41 @@ Todas las APIs requieren configuración de autenticación vía variables de ento
 
 ```mermaid
 sequenceDiagram
-    participant SIEM as SIEM Simulado
+    participant Sim as Simulador / Wazuh
     participant Shuffle as Shuffle Webhook
     participant Backend as Shuffle Backend
     participant TheHive as TheHive API
     participant Cortex as Cortex API
+    participant MISP as MISP API
     participant LabAPI as Lab API
-    participant EDR as EDR Simulado
 
-    SIEM->>Shuffle: POST /webhook/{workflow_id} (alert)
+    Sim->>Shuffle: POST /api/v1/hooks/{workflow_id} (alert)
     Shuffle->>Backend: Reenvía alerta
     Backend->>TheHive: POST /api/case (crear caso)
     TheHive-->>Backend: Case ID
     Backend->>Cortex: POST /api/analyzer/run (analyzers)
     Cortex-->>Backend: Resultados (score, verdict)
+    Backend->>MISP: POST /events/add (enriquecimiento IoC)
+    MISP-->>Backend: Evento creado
     Backend->>Backend: Decisión (score >= 80?)
     alt Score ≥ 80 o verdict malicioso
-        Backend->>EDR: POST /isolate (contención)
-        EDR-->>Backend: Confirmación aislamiento
+        Backend->>Backend: Acción de contención simulada
         Backend->>TheHive: PATCH /api/case (actualizar estado)
     else Score < 80 y verdict benigno
         Backend->>TheHive: PATCH /api/case (marcar benigno)
     end
-    Backend->>LabAPI: POST /tests/run (validación)
-    LabAPI-->>Backend: Resultados tests
-    Backend-->>SIEM: Confirmación procesamiento
+    LabAPI->>Backend: GET /soar/status /metrics
 ```
 
 **Pasos del flujo:**
 
-1. **Ingestión de Alertas**: SIEM simulado genera alerta vía script
-2. **Disparo de Workflow**: Alerta enviada a Shuffle webhook
-3. **Creación de Caso**: Shuffle crea caso en TheHive
-4. **Análisis de IoCs**: Cortex ejecuta analyzers sobre observables
-5. **Contención**: EDR simulado aísla endpoint si es necesario
-6. **Gestión**: Lab API monitorea y gestiona el sistema
+1. **Ingestión de Alertas**: Wazuh detecta actividad sospechosa o el simulador `src/soar_lab/simulator/simulate_alerts.py` genera alertas de prueba.
+2. **Disparo de Workflow**: La alerta se envía al webhook de Shuffle configurado en `init_shuffle_webhook.py`.
+3. **Creación de Caso**: Shuffle crea caso en TheHive con observables.
+4. **Análisis de IoCs**: Cortex ejecuta analyzers sobre los observables.
+5. **Enriquecimiento**: MISP recibe y enriquece IoCs cuando corresponde.
+6. **Contención**: El playbook registra acciones de contención simuladas con estados `pending`, `executed` o `failed`.
+7. **Observabilidad**: Lab API expone métricas, KPIs y estado de integraciones vía REST y WebSocket `/ws/logs`.
 
 #### 3.5.2 Procedimientos Específicos de Rotación de API Keys
 
@@ -474,7 +695,7 @@ sequenceDiagram
 
 ```bash
 # 1. Generar nueva API key desde TheHive UI
-# Acceder a http://localhost:9000/#/administration/users
+# Acceder a http://localhost:19000/#/administration/users
 # Seleccionar usuario y generar nueva API key
 
 # 2. Actualizar .env.full
@@ -482,17 +703,17 @@ nano .env.full
 THEHIVE_API_KEY=<nueva_api_key>
 
 # 3. Reiniciar servicios que usan TheHive
-docker-compose restart shuffle-backend shuffle-frontend
+docker compose restart shuffle-backend shuffle-frontend
 
 # 4. Verificar conexión
-curl -H "Authorization: Bearer $THEHIVE_API_KEY" http://localhost:9000/api/case
+curl -H "Authorization: Bearer $THEHIVE_API_KEY" http://localhost:19000/api/case
 ```
 
 **Rotación de API Keys para Cortex:**
 
 ```bash
 # 1. Generar nueva API key desde Cortex UI
-# Acceder a http://localhost:9001/#/management/users
+# Acceder a http://localhost:19001/#/management/users
 # Seleccionar usuario y generar nueva API key
 
 # 2. Actualizar .env.full
@@ -500,14 +721,14 @@ nano .env.full
 CORTEX_API_KEY=<nueva_api_key>
 
 # 3. Actualizar TheHive con nueva key de Cortex
-# Acceder a http://localhost:9000/#/administration/organizations
+# Acceder a http://localhost:19000/#/administration/organizations
 # Editar organización y actualizar Cortex API key
 
 # 4. Reiniciar servicios
-docker-compose restart shuffle-backend
+docker compose restart shuffle-backend
 
 # 5. Verificar conexión
-curl -H "Authorization: Bearer $CORTEX_API_KEY" http://localhost:9001/api/analyzer
+curl -H "Authorization: Bearer $CORTEX_API_KEY" http://localhost:19001/api/analyzer
 ```
 
 **Rotación de Webhook Token de Shuffle:**
@@ -520,15 +741,14 @@ python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 nano .env.full
 SIEM_WEBHOOK_TOKEN=<nuevo_token>
 
-# 3. Actualizar script de simulación SIEM
-nano scripts/simulate.py
-# Actualizar SIMULATE_TOKEN con nuevo valor
+# 3. Verificar simulador SIEM
+# El simulador lee SIEM_WEBHOOK_URL o SIEM_WEBHOOK_TOKEN desde .env.full/webhook_info.json
 
 # 4. Reiniciar Shuffle
-docker-compose restart shuffle-backend shuffle-frontend
+docker compose restart shuffle-backend shuffle-frontend
 
 # 5. Verificar webhook
-curl -H "Authorization: Bearer $SIEM_WEBHOOK_TOKEN" http://localhost:5001/health
+curl -H "Authorization: Bearer $SIEM_WEBHOOK_TOKEN" http://localhost:15001/api/v1/health
 ```
 
 **Rotación de JWT Secret para Lab API:**
@@ -542,16 +762,48 @@ nano .env.full
 API_AUTH_SECRET=<nuevo_secret>
 
 # 3. Reiniciar Lab API
-docker-compose restart api
+docker compose restart api
 
 # 4. Regenerar todos los tokens JWT existentes
 # Los usuarios deben hacer login nuevamente
 
 # 5. Verificar
-curl -X POST http://localhost:8000/auth/login -d '{"username":"admin","password":"X9e#5mP3$vL7@nQ4tW8!zY2&hF6sD1"}'
+curl -X POST http://localhost:8000/auth/login -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}'
 ```
 
-#### 3.5.3 Ejemplos de Error Handling para Cada API
+#### 3.5.3 Ejemplo completo de autenticación JWT
+
+**Swagger / OpenAPI:** La interfaz interactiva de documentación se encuentra en:
+
+- Directo: `http://localhost:8000/docs` y `http://localhost:8000/redoc`
+- Vía Nginx: `https://soar.local/api/docs` y `https://soar.local/api/redoc`
+
+**Ejemplo de login y uso con `curl`:**
+
+```bash
+# 1. Login y guardar token
+TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | \
+  python -c "import sys, json; print(json.load(sys.stdin).get('token',''))")
+
+# 2. Verificar token
+curl -X POST http://localhost:8000/auth/verify \
+  -H "Authorization: Bearer $TOKEN"
+
+# 3. Llamar a un endpoint protegido (ejemplo: health no requiere auth; kpis tampoco requiere auth)
+# Para endpoints JWT-protegidos:
+curl -X GET http://localhost:8000/<endpoint-protegido> \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Consideraciones:**
+
+- El token incluye claims `sub`, `iat`, `exp` y `scope: access`.
+- El algoritmo por defecto es `HS256` y el secreto se lee de `JWT_SECRET_KEY` (preferente) o `API_AUTH_SECRET` (fallback).
+- Tras rotar el secreto, los tokens emitidos previamente quedan inválidos.
+
+#### 3.5.4 Ejemplos de Error Handling para Cada API
 
 **Error Handling para TheHive API:**
 
@@ -620,7 +872,7 @@ def run_cortex_analyzer(analyzer_id, data_type, data):
 def send_alert_to_shuffle(alert_data):
     try:
         response = requests.post(
-            f"http://localhost:{SHUFFLE_API_PORT}/webhook/{WORKFLOW_ID}",
+            f"http://localhost:{SHUFFLE_API_PORT}/api/v1/hooks/{WORKFLOW_ID}",
             headers={"Authorization": f"Bearer {SIEM_WEBHOOK_TOKEN}"},
             json=alert_data,
             timeout=10
@@ -650,11 +902,11 @@ def execute_lab_tests(category):
         # Primero obtener JWT token
         auth_response = requests.post(
             f"http://localhost:{API_PORT}/auth/login",
-            json={"username": "admin", "password": "X9e#5mP3$vL7@nQ4tW8!zY2&hF6sD1"},
+            json={"username": "admin", "password": "<WEB_UI_PASSWORD>"},
             timeout=10
         )
         auth_response.raise_for_status()
-        token = auth_response.json().get("access_token")
+        token = auth_response.json().get("token")
         
         # Ejecutar tests con token
         response = requests.post(
@@ -684,13 +936,15 @@ def execute_lab_tests(category):
 
 Las APIs se verifican mediante:
 
-- Health checks de cada servicio (`curl http://localhost:9000/api/health` para TheHive, `curl http://localhost:9001/`
-  para Cortex, `curl http://localhost:5001/health` para Shuffle, `curl http://localhost:8000/health` para Lab API)
+- Health checks de cada servicio (`curl http://localhost:19000/api/status` para TheHive,
+  `curl http://localhost:19001/api/status`
+  para Cortex, `curl http://localhost:15001/api/v1/health` para Shuffle, `curl http://localhost:8000/health` para Lab
+  API)
 - Verificación de tokens de autenticación (variables en `.env.full`: `THEHIVE_API_KEY`, `CORTEX_API_KEY`,
-  `SHUFFLE_API_KEY`)
+  `SHUFFLE_DEFAULT_APIKEY`)
 - Ejecución de tests de integración (`pytest tests/integration/ -v`)
 - Verificación de rate limiting y límites de uso (`.env.full`: `WEBHOOK_RATE_LIMIT`, `MAX_CONCURRENT_ANALYZERS`)
-- Validación de payloads con esquemas JSON (`src/soar_lab/config/schemas.py`)
+- Validación de payloads con Pydantic (`src/soar_lab/interfaces/api/models.py`)
 
 ### 4.2 Criterios de aceptación
 
@@ -711,7 +965,7 @@ Las evidencias de validación incluyen:
   `docker logs soar_shuffle-backend`)
 - Respuestas HTTP de endpoints de prueba (capturas en `tests/integration/`)
 - Resultados de tests de integración (`pytest tests/integration/ -v` output)
-- Logs de scripts de simulación (`artifacts/logs/containment.log`, `src/soar_lab/infrastructure/http_alert_sender.py`
+- Logs de scripts de simulación (`artifacts/logs/soar_lab.log`, `src/soar_lab/simulator/simulate_alerts.py`
   logs)
 
 ## 5. Problemas y consideraciones
@@ -736,9 +990,9 @@ Las evidencias de validación incluyen:
 
 ```bash
 # Verificar health check
-curl http://localhost:9000/api/health  # TheHive
-curl http://localhost:9001/           # Cortex
-curl http://localhost:5001/health    # Shuffle
+curl http://localhost:19000/api/status  # TheHive
+curl http://localhost:19001/api/status  # Cortex
+curl http://localhost:15001/api/v1/health    # Shuffle
 curl http://localhost:8000/health    # Lab API
 
 # Verificar logs de contenedor
@@ -759,7 +1013,7 @@ echo $SIEM_WEBHOOK_TOKEN
 # Verificar token JWT
 curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "X9e#5mP3$vL7@nQ4tW8!zY2&hF6sD1"}'
+  -d '{"username": "admin", "password": "<WEB_UI_PASSWORD>"}'
 ```
 
 **Rate limiting excedido:**
@@ -776,11 +1030,56 @@ make down && make up
 **Script de simulación fallido:**
 
 ```bash
-# Verificar script con dry-run
-python3 -m src.soar_lab.infrastructure.http_alert_sender --alert-file tests/fixtures/payloads/payload_case1.json --dry-run
+# Verificar script de simulación
+PYTHONPATH=src python3 -m soar_lab.simulator.simulate_alerts --count 5 --delay 1 --webhook http://localhost:15001/api/v1/hooks/<workflow_id>
 
 # Verificar logs de simulación
-cat artifacts/logs/containment.log
+cat artifacts/logs/soar_lab.log
+```
+
+### 3.3.5 Modelos avanzados: contención, KPIs y seguridad
+
+Los modelos definidos en `src/soar_lab/config/schemas.py` extienden las validaciones de payloads y son la fuente de verdad
+para los campos que llegan a `init_shuffle_webhook.py` y a la API.
+
+| Modelo | Campos principales | Validaciones |
+|---|---|---|
+| `RansomwareAlert` | `alert_id`, `hostname`, `src_ip`, `hash`, `severity`, `source`, `detection_time`, `event_type`, `description`, `affected_files`, `mitre_tactics`, `mitre_techniques`, `network_events` | `alert_id`: `^ALERT-\d{10}-\d{4}$`; `hostname`: `[a-zA-Z0-9\-]{1,255}`; `detection_time` no futuro; `hash.sha256` 64 hex. |
+| `MITREInfo` | `tactics`, `techniques`, `sub_techniques` | Tácticas limitadas a `TA0001`–`TA0011`, `TA0040`–`TA0043`. |
+| `ContainmentAction` | `action_id`, `alert_id`, `hostname`, `action_type`, `status`, `execution_time`, `details`, `error_message` | `action_id`: `^ACTION-\d{10}-\d{4}$`; `action_type` ∈ `{network_isolation, process_termination, account_lockdown}`; `status` ∈ `{pending, executed, failed, completed}`. |
+| `KPIReport` | `total_executions`, `mean_mttr`, `median_mttr`, `p50_mttr`, `p90_mttr`, `min_mttr`, `max_mttr`, `std_deviation`, `threshold_p50` (120 s), `threshold_p90` (180 s) | Valores `>= 0`; `p50_within_threshold = p50_mttr <= threshold_p50`; `p90_within_threshold = p90_mttr <= threshold_p90`. |
+| `HealthCheck` | `service_name`, `status`, `timestamp`, `response_time_ms`, `error_message`, `metadata` | `status` ∈ `{healthy, unhealthy, degraded}`; `response_time_ms <= 30000`. |
+| `BackupReport` | `backup_id`, `timestamp`, `backup_type`, `components`, `total_size_mb`, `compression_ratio`, `success`, `retention_days` | `backup_id`: `^BACKUP-\d{8}_\d{6}$`; `backup_type` ∈ `{manual, scheduled, auto}`; `retention_days >= 1`. |
+| `SecurityScan` | `scan_id`, `timestamp`, `scanner`, `target`, `vulnerabilities`, `total_vulnerabilities`, `scan_duration_seconds`, `success`, `recommendations` | `scan_id`: `^SCAN-\d{8}_\d{6}$`; severidades válidas: `critical`, `high`, `medium`, `low`, `info`; counts `>= 0`. |
+
+**Ejemplo `ContainmentAction`:**
+
+```json
+{
+  "action_id": "ACTION-2025071812-0001",
+  "alert_id": "ALERT-2025071812-0001",
+  "hostname": "WIN-001",
+  "action_type": "network_isolation",
+  "status": "executed",
+  "execution_time": "2025-07-18T12:05:00Z",
+  "details": {"isolated_by": "soar-lab", "rule_id": "drop-ransomware-001"}
+}
+```
+
+**Ejemplo `KPIReport`:**
+
+```json
+{
+  "total_executions": 16,
+  "mean_mttr": 45.2,
+  "median_mttr": 42.0,
+  "p50_mttr": 41.0,
+  "p90_mttr": 78.5,
+  "threshold_p50": 120.0,
+  "threshold_p90": 180.0,
+  "p50_within_threshold": true,
+  "p90_within_threshold": true
+}
 ```
 
 ## 6. Referencias
