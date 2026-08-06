@@ -11,14 +11,14 @@ _meta:
 ## Demo users
 
 admin:
-  hash: '$2y$12$bLa9RKYkHQkPZV82RL39.exq54ZoRcjdPnER5vtVYX31ZJc86OzFu'
+  hash: '$2y$12$tE04ZwTbtwZvnPMdHF42be38uDuEz8k5YlLZ6cft/NhwOPJDzvfDq'
   reserved: true
   backend_roles:
     - "admin"
   description: "SOAR admin user"
 
 kibanaserver:
-  hash: '$2y$12$En7rx82zMUOqDpOR.cuqguyozVOPk8SYAxlLeZ5f5rPheTm59kTXy'
+  hash: '$2y$12$CQL0kUlhESACkEp0Z8IfyOvIWNG0yiUQTT.7OoT2fokAGVwwPkZem'
   reserved: true
   description: "SOAR kibanaserver user"
 

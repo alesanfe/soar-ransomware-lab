@@ -95,8 +95,7 @@ class TestSecurity:
         deadline = time.time() + 180
         status = "EXECUTING"
         while time.time() < deadline:
-            executions = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            match = next((e for e in executions if e.get("execution_id") == exec_id), None)
+            match = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if match:
                 status = match.get("status", "EXECUTING")
                 if status not in ("EXECUTING", ""):

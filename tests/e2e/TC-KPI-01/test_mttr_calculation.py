@@ -162,16 +162,14 @@ class TestMTRRCalculation:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            assert isinstance(execs, list), "Workflow executions must be a list"
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex:
                 assert isinstance(ex, dict), "Execution must be a dict"
                 if ex.get("status") not in ("EXECUTING", ""):
                     break
             time.sleep(POLL_INTERVAL)
 
-        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
+        assert ex and ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status') if ex else 'missing'}"
         self._log("  + Workflow completed")
 
         # Verify MTTR in metrics index (optional - workflow may not be fully configured)

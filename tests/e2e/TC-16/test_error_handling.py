@@ -167,9 +167,7 @@ class TestErrorHandling:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            assert isinstance(execs, list), "Workflow executions must be a list"
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -180,6 +178,8 @@ class TestErrorHandling:
 
         # Analyze node results for errors
         self._log("STEP 3: Analyzing node results for errors")
+        # Fetch full execution with results for node analysis
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True) or ex
         results = ex.get("results", [])
         assert isinstance(results, list), "Results must be a list"
         error_nodes = []
@@ -294,9 +294,7 @@ class TestErrorHandling:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            assert isinstance(execs, list), "Workflow executions must be a list"
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -396,9 +394,7 @@ class TestErrorHandling:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            assert isinstance(execs, list), "Workflow executions must be a list"
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -409,6 +405,8 @@ class TestErrorHandling:
     
         # Analyze which nodes succeeded in degraded mode
         self._log("STEP 3: Analyzing degraded mode node results")
+        # Fetch full execution with results for node analysis
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True) or ex
         results = ex.get("results", [])
         assert isinstance(results, list), "Results must be a list"
     
@@ -503,8 +501,7 @@ class TestErrorHandling:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)

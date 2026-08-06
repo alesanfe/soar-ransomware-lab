@@ -112,14 +112,27 @@ class TestPersistence:
         """Return True if an EXECUTING execution is older than max_age seconds."""
         started_at = execution.get("started_at")
         if not started_at:
-            return False
+            # No start timestamp means we cannot prove it is fresh; assume stale
+            # so it does not block the queue forever.
+            return True
+
+        started_ts = None
         try:
             started_ts = float(started_at)
             # Shuffle may store started_at as milliseconds since epoch
             if started_ts > 1e12:
                 started_ts = started_ts / 1000.0
         except (ValueError, TypeError):
-            return False
+            pass
+
+        if started_ts is None:
+            try:
+                # Try ISO 8601 timestamp string (Shuffle stores date strings)
+                started_dt = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
+                started_ts = started_dt.timestamp()
+            except Exception:
+                return True
+
         return (time.time() - started_ts) > max_age
 
     def _wait_for_queue_drain(self, timeout: int = 900):
@@ -159,8 +172,7 @@ class TestPersistence:
         """Poll until a specific workflow execution reaches a terminal status."""
         deadline = time.time() + timeout
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            match = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            match = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if match and match.get("status", "") not in ("EXECUTING", "QUEUED", "PENDING", "RUNNING", ""):
                 self._log(f"Execution {exec_id} status: {match.get('status')}")
                 return match

@@ -157,8 +157,7 @@ class TestResilience:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -169,6 +168,8 @@ class TestResilience:
 
         # Analyze Cortex node results
         self._log("STEP 3: Analyzing Cortex node results")
+        # Fetch full execution with results for node analysis
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True) or ex
         results = ex.get("results", [])
         assert isinstance(results, list), "Results should be a list"
         cortex_nodes = [n for n in results if "cortex" in n.get("action", {}).get("label", "").lower()]
@@ -256,8 +257,7 @@ class TestResilience:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -268,6 +268,8 @@ class TestResilience:
 
         # Analyze MISP node results
         self._log("STEP 3: Analyzing MISP node results")
+        # Fetch full execution with results for node analysis
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True) or ex
         results = ex.get("results", [])
         assert isinstance(results, list), "Results should be a list"
         misp_nodes = [n for n in results if "misp" in n.get("action", {}).get("label", "").lower()]
@@ -343,8 +345,7 @@ class TestResilience:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -414,8 +415,7 @@ class TestResilience:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -468,8 +468,7 @@ class TestResilience:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -480,6 +479,8 @@ class TestResilience:
 
         # Analyze timeout handling
         self._log("STEP 3: Analyzing timeout handling")
+        # Fetch full execution with results for node analysis
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True) or ex
         results = ex.get("results", [])
         assert isinstance(results, list), "Results should be a list"
         timeout_nodes = [n for n in results if n.get("status") in ["ERROR", "SKIPPED"]]
@@ -531,8 +532,7 @@ class TestResilience:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
@@ -543,6 +543,8 @@ class TestResilience:
 
         # Verify workflow can recover from partial failures
         self._log("STEP 3: Verifying workflow recovery")
+        # Fetch full execution with results for node analysis
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True) or ex
         results = ex.get("results", [])
         assert isinstance(results, list), "Results should be a list"
         completed_nodes = [n for n in results if n.get("status") == "SUCCESS"]

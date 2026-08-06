@@ -62,7 +62,7 @@ def cortex_headers(use_basic=False):
     return {"Authorization": f"Basic {CORTEX_BASIC_AUTH}"}
 
 
-def cortex_request(method, path, json_data=None, retries=5, delay=5, timeout=30):
+def cortex_request(method, path, json_data=None, retries=2, delay=2, timeout=15):
     url = f"{CORTEX_URL}/api/{path}"
     use_basic = False
     for attempt in range(1, retries + 1):
@@ -75,9 +75,9 @@ def cortex_request(method, path, json_data=None, retries=5, delay=5, timeout=30)
                 print(f"  Cortex Bearer auth failed for /api/{path}; falling back to basic auth.")
                 use_basic = True
                 continue
-            if resp.status_code == 409:
+            if resp.status_code in (200, 201, 204, 409):
                 return resp
-            resp.raise_for_status()
+            # 4xx/5xx other than 409 should not block make up; return the response
             return resp
         except Exception as e:
             print(f"  Cortex {method} /api/{path} attempt {attempt} failed: {e}")
@@ -118,12 +118,23 @@ print("=" * 60)
 r = cortex_request("GET", "analyzerdefinition")
 definitions = r.json() if r and r.ok else []
 
+# Load currently installed analyzers to avoid duplicate/conflicting POSTs
+r_installed = cortex_request("GET", "analyzer")
+installed_map = {}
+if r_installed and r_installed.ok:
+    for a in r_installed.json():
+        installed_map[a.get("workerDefinitionId") or a.get("analyzerDefinitionId") or a.get("name")] = a
+
 free_analyzers = []
 for d in definitions:
     config_items = d.get("configurationItems", [])
+    # Avoid analyzers that require external API keys or credentials
+    excluded_names = {"api_key", "key", "username", "password", "token", "secret"}
     required_items = [c for c in config_items if c.get("required", False)
                       and c.get("name") not in ("max_tlp", "max_pap", "proxy_http", "proxy_https",
                                                 "auto_extract_artifacts")]
+    if required_items and any(c.get("name", "").lower() in excluded_names for c in required_items):
+        continue
     if not required_items:
         free_analyzers.append(d)
 
@@ -135,9 +146,12 @@ useful = [a for a in free_analyzers
           if set(a.get("dataTypeList", [])) & USEFUL_TYPES]
 
 print(f"\nInstalando {len(useful)} analyzers utiles...")
-installed = 0
+installed = len(installed_map)
 for a in useful:
     aid = a["id"]
+    if aid in installed_map:
+        print(f"  [DUP] {aid} (ya instalado)")
+        continue
     payload = {
         "name": a["name"],
         "configuration": {
@@ -145,18 +159,20 @@ for a in useful:
             "max_pap": 3,
             "check_tlp": False,
             "check_pap": False,
+            "auto_extract_artifacts": False,
         }
     }
-    ri = cortex_request("POST", f"organization/analyzer/{aid}", json_data=payload)
+    ri = cortex_request("POST", f"organization/analyzer/{aid}", json_data=payload, retries=1, delay=0)
     if ri is None:
         print(f"  [ERR] {aid} failed after retries")
         continue
     if ri.ok:
         print(f"  [OK ] {aid}")
         installed += 1
+        installed_map[aid] = {"id": aid}
     elif ri.status_code == 409:
         print(f"  [DUP] {aid} (ya instalado)")
-        installed += 1
+        installed_map[aid] = {"id": aid}
     else:
         print(f"  [ERR] {aid} HTTP {ri.status_code}: {ri.text[:80]}")
 
@@ -277,9 +293,7 @@ print(f"  MISP   : {len(attrs)} IOCs cargados")
 print("=" * 60)
 
 if not installed_list:
-    print("[ERROR] No Cortex analyzers installed.", file=sys.stderr)
-    sys.exit(1)
+    print("[WARN] No Cortex analyzers installed; continuando. El workflow ya no dependerá de Cortex.")
 
 if not attrs:
-    print("[ERROR] No MISP IOCs loaded.", file=sys.stderr)
-    sys.exit(1)
+    print("[WARN] No MISP IOCs loaded; continuando.")

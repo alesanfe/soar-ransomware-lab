@@ -109,14 +109,27 @@ class TestForensic:
         """Return True if an EXECUTING execution is older than max_age seconds."""
         started_at = execution.get("started_at")
         if not started_at:
-            return False
+            # No start timestamp means we cannot prove it is fresh; assume stale
+            # so it does not block the queue forever.
+            return True
+
+        started_ts = None
         try:
             started_ts = float(started_at)
             # Shuffle may store started_at as milliseconds since epoch
             if started_ts > 1e12:
                 started_ts = started_ts / 1000.0
         except (ValueError, TypeError):
-            return False
+            pass
+
+        if started_ts is None:
+            try:
+                # Try ISO 8601 timestamp string (Shuffle stores date strings)
+                started_dt = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
+                started_ts = started_dt.timestamp()
+            except Exception:
+                return True
+
         return (time.time() - started_ts) > max_age
 
     def _wait_for_queue_drain(self, timeout: int = 900):
@@ -208,15 +221,11 @@ class TestForensic:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            assert isinstance(execs, list), "Workflow executions must be a list"
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex:
-                assert isinstance(ex, dict), "Execution must be a dict"
-                if ex.get("status") not in ("EXECUTING", ""):
-                    break
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
+            if ex and ex.get("status") not in ("EXECUTING", ""):
+                break
             time.sleep(POLL_INTERVAL)
-        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
+        assert ex and ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status') if ex else 'missing'}"
 
         # Build chain of custody
         self._log("STEP 3: Building chain of custody")
@@ -328,12 +337,14 @@ class TestForensic:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
-        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
+        assert ex and ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status') if ex else 'missing'}"
+
+        # Fetch full execution with node results for audit trail
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True)
 
         # Build audit trail
         self._log("STEP 3: Building audit trail")
