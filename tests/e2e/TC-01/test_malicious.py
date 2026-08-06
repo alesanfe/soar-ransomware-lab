@@ -210,20 +210,25 @@ class TestMaliciousAlert:
     def _wait_for_executions(self, execution_ids: list, num_expected: int) -> dict:
         """Poll Shuffle until all supplied executions finish and return them by id."""
         deadline = time.time() + WORKFLOW_TIMEOUT
+        pending_ids = set(execution_ids)
         completed = {}
-        pending_ids = list(execution_ids)
         while time.time() < deadline and len(completed) < num_expected:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=pending_ids)
+            execs = self.shuffle.get_workflow_executions(self.workflow_id)
             by_id = {e.get("execution_id"): e for e in execs if e.get("execution_id")}
             for exec_id in list(pending_ids):
                 ex = by_id.get(exec_id)
                 if ex and ex.get("status") not in ("EXECUTING", ""):
                     completed[exec_id] = ex
-                    pending_ids.remove(exec_id)
+                    pending_ids.discard(exec_id)
                     self._log(f"  + Execution {exec_id[:8]}... finished ({len(completed)}/{num_expected})")
             if pending_ids:
                 time.sleep(POLL_INTERVAL)
         assert len(completed) == num_expected, f"Only {len(completed)}/{num_expected} workflows completed within {WORKFLOW_TIMEOUT}s"
+        # Fetch full execution results once per completed workflow
+        for exec_id in completed:
+            full_ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True)
+            if full_ex:
+                completed[exec_id] = full_ex
         return completed
 
     def _step_assert_workflow_success(self, ex: dict):

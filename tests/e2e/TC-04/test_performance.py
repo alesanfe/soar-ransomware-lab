@@ -130,8 +130,7 @@ class TestPerformance:
         """Poll workflow execution until completion."""
         deadline = time.time() + timeout
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if isinstance(ex, dict) and ex.get("status") not in ("EXECUTING", ""):
                 return ex
             time.sleep(POLL_INTERVAL)
@@ -208,7 +207,7 @@ class TestPerformance:
         completed = []
         deadline = time.time() + WORKFLOW_TIMEOUT
         while pending and time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=list(pending.keys()))
+            execs = self.shuffle.get_workflow_executions(self.workflow_id)
             by_id = {execution.get("execution_id"): execution for execution in execs}
             for execution_id, submission in list(pending.items()):
                 execution = by_id.get(execution_id)

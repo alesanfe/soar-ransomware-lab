@@ -11,6 +11,7 @@ Uso:
 import base64
 import json
 import os
+import re
 import requests
 import sys
 from pathlib import Path
@@ -40,11 +41,9 @@ CORTEX_ADMIN_USER = os.environ.get('CORTEX_ADMIN_USER', 'admin')
 CORTEX_ADMIN_PASS = os.environ.get('CORTEX_ADMIN_PASSWORD', '')
 
 if not THEHIVE_ADMIN_PASS:
-    print('[ERROR] Falta THEHIVE_ADMIN_PASSWORD', file=sys.stderr)
-    sys.exit(1)
+    print('[WARN] Falta THEHIVE_ADMIN_PASSWORD; se regenerará durante el setup')
 if not CORTEX_ADMIN_PASS:
-    print('[ERROR] Falta CORTEX_ADMIN_PASSWORD', file=sys.stderr)
-    sys.exit(1)
+    print('[WARN] Falta CORTEX_ADMIN_PASSWORD; se regenerará durante el setup')
 
 
 def load_credentials():
@@ -59,24 +58,52 @@ def load_credentials():
         with open(CREDENTIALS_FILE_HOST) as f:
             return json.load(f)
 
-    print("[ERROR] No se encontró archivo de credenciales preservadas")
+    print("[WARN] No se encontró archivo de credenciales preservadas")
     print(f"  Buscando en: {CREDENTIALS_FILE}")
     print(f"  Buscando en: {CREDENTIALS_FILE_HOST}")
     return None
 
 
-def restore_thehive_credentials(api_key):
-    """Restaura la API key de TheHive actualizando .env.full."""
-    if not api_key:
-        print("[SKIP] TheHive API key no preservada")
-        return False
+def _get_current_thehive_key():
+    """Lee la THEHIVE_API_KEY actual de .env.full."""
+    for env_file in [Path('.env.full'), Path('/app/.env.full')]:
+        if env_file.exists():
+            content = env_file.read_text()
+            m = re.search(r'^THEHIVE_API_KEY=(.+)$', content, re.MULTILINE)
+            if m:
+                return m.group(1).strip(), env_file
+    return None, None
 
-    # Verificar si la key preservada es válida
+
+def _validate_thehive_key(key):
+    """Devuelve True si la key es aceptada por TheHive."""
     try:
         r = requests.get(f'{THEHIVE_URL}/api/user/admin',
-                         headers={'Authorization': f'Bearer {api_key}'},
+                         headers={'Authorization': f'Bearer {key}'},
                          timeout=10)
-        if r.ok:
+        return r.ok
+    except Exception:
+        return False
+
+
+def restore_thehive_credentials(api_key):
+    """Restaura la API key de TheHive actualizando .env.full.
+
+    Si .env.full ya tiene una key válida, la conserva para no invalidar
+    workflows creados posteriormente.
+    """
+    current_key, env_file = _get_current_thehive_key()
+    if current_key and _validate_thehive_key(current_key):
+        print("[OK] TheHive API key actual en .env.full es válida, se conserva")
+        # Si el backup no coincide, igual escribimos la valida actual
+        api_key = current_key
+    else:
+        if not api_key:
+            print("[SKIP] TheHive API key no preservada y no hay key válida en .env.full")
+            return False
+
+        # Verificar si la key preservada es válida
+        if _validate_thehive_key(api_key):
             print("[OK] TheHive API key preservada aún válida")
         else:
             print(f"[WARN] TheHive API key preservada inválida, generando nueva...")
@@ -93,9 +120,6 @@ def restore_thehive_credentials(api_key):
             else:
                 print(f"[ERROR] No se pudo generar nueva TheHive API key: HTTP {r.status_code}")
                 return False
-    except Exception as e:
-        print(f"[WARN] Error verificando TheHive API key: {e}")
-        return False
 
     # Actualizar .env.full
     try:
@@ -191,8 +215,11 @@ def main():
 
     credentials = load_credentials()
     if not credentials:
-        print("[ERROR] No se pudieron cargar credenciales preservadas")
-        sys.exit(1)
+        print("[WARN] No se pudieron cargar credenciales preservadas; continuando con setup inicial")
+        print("=" * 60)
+        print("RESTAURACIÓN COMPLETADA (sin credenciales previas)")
+        print("=" * 60)
+        return
 
     print(f"[INFO] Credenciales preservadas el: {credentials.get('timestamp', 'desconocido')}")
     print()

@@ -5,6 +5,19 @@ import json
 import os
 import requests
 from datetime import datetime
+from pathlib import Path
+
+# Load environment variables from .env.full
+for _env_path in ['.env.full', '/app/.env.full']:
+    _p = Path(_env_path)
+    if _p.exists():
+        with open(_p) as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith('#') and '=' in _line:
+                    _k, _v = _line.split('=', 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+        break
 
 # Grafana configuration
 GRAFANA_URL = os.getenv('GRAFANA_URL', 'http://localhost:8084')
@@ -32,7 +45,11 @@ def create_grafana_datasource():
 
     # Check if datasource already exists
     list_url = f"{GRAFANA_URL}/api/datasources"
-    response = requests.get(list_url, auth=auth, verify=False)
+    try:
+        response = requests.get(list_url, auth=auth, verify=False, timeout=10)
+    except Exception as e:
+        print(f"Could not list Grafana datasources: {e}")
+        return None
     if response.status_code == 200:
         datasources = response.json()
         for ds in datasources:
@@ -41,7 +58,11 @@ def create_grafana_datasource():
                 return ds['id']
 
     # Create datasource
-    response = requests.post(url, json=datasource_config, auth=auth, verify=False)
+    try:
+        response = requests.post(url, json=datasource_config, auth=auth, verify=False, timeout=10)
+    except Exception as e:
+        print(f"Could not create Grafana datasource: {e}")
+        return None
     if response.status_code == 200:
         result = response.json()
         print(f"Created datasource 'SOAR API' with ID: {result['id']}")
@@ -140,7 +161,11 @@ def create_grafana_dashboard():
         "overwrite": True
     }
 
-    response = requests.post(url, json=dashboard_config, auth=auth, verify=False)
+    try:
+        response = requests.post(url, json=dashboard_config, auth=auth, verify=False, timeout=10)
+    except Exception as e:
+        print(f"Could not create Grafana dashboard: {e}")
+        return None
     if response.status_code == 200:
         result = response.json()
         print(f"Created dashboard 'SOAR KPI Dashboard' with UID: {result['uid']}")
@@ -157,15 +182,22 @@ def main():
     print(f"API URL: {API_URL}")
 
     # Create datasource
-    datasource_id = create_grafana_datasource()
+    for attempt in range(3):
+        datasource_id = create_grafana_datasource()
+        if datasource_id:
+            break
+        print(f"Datasource setup failed (attempt {attempt + 1}/3), retrying in 5s...")
+        import time
+        time.sleep(5)
+
     if not datasource_id:
-        print("Failed to create datasource. Exiting.")
+        print("Failed to create datasource. Continuing without dashboard.")
         return
 
     # Create dashboard
     dashboard_uid = create_grafana_dashboard()
     if not dashboard_uid:
-        print("Failed to create dashboard. Exiting.")
+        print("Failed to create dashboard. Continuing.")
         return
 
     print(f"\nGrafana KPI dashboard setup complete!")

@@ -356,7 +356,7 @@ class ShuffleClient(BaseHTTPClient):
             query = {
                 "query": {"bool": {"must": must}},
                 "sort": [{"started_at": {"order": "desc"}}],
-                "size": len(execution_ids) if execution_ids else 20,
+                "size": len(execution_ids) if execution_ids else 1000,
                 "_source": source,
             }
             resp = _req.get(search_url, json=query, auth=auth, timeout=10, verify=verify)
@@ -368,7 +368,7 @@ class ShuffleClient(BaseHTTPClient):
             logger.debug("ES execution lookup failed: %s", exc)
 
         # Fallback to API if ES is unavailable
-        url = self._url(f"/api/v1/workflows/{workflow_id}/executions")
+        url = self._url(f"/api/v1/workflows/{workflow_id}/executions?limit=1000")
         last_exc = None
         for attempt in range(retries + 1):
             try:

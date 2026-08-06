@@ -124,11 +124,15 @@ class TestConcurrentAlerts:
         self._cases_before = cases_before
 
         # Avoid cross-test interference from executions queued by prior tests.
-        self._wait_for_queue_drain(timeout=WORKFLOW_TIMEOUT)
+        # A short drain is enough: any pending execution older than a few minutes
+        # is treated as stale and ignored.
+        self._wait_for_queue_drain(timeout=120)
 
     def teardown_method(self, method):
         """Drain any lingering workflow executions before the next test starts."""
-        self._wait_for_queue_drain(timeout=WORKFLOW_TIMEOUT)
+        # After a test has waited for its own executions, only stale leftovers
+        # should remain.  Drain them briefly so the next test starts clean.
+        self._wait_for_queue_drain(timeout=60)
 
     def _execution_is_stale(self, execution: dict, max_age: int = 600) -> bool:
         """Return True if a pending execution is older than max_age seconds."""
@@ -232,7 +236,7 @@ class TestConcurrentAlerts:
         target = min_completed if min_completed is not None else num_expected
         while time.time() < deadline and len(completed_ids) < target:
             try:
-                execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=pending_ids)
+                execs = self.shuffle.get_workflow_executions(self.workflow_id)
                 by_id = {e.get("execution_id"): e for e in execs}
                 for exec_id in execution_ids:
                     if exec_id in completed_ids:

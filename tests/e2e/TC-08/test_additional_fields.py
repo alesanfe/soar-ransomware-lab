@@ -166,9 +166,7 @@ class TestAdditionalFields:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            assert isinstance(execs, list), "Workflow executions must be a list"
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex:
                 assert isinstance(ex, dict), "Execution must be a dict"
                 if ex.get("status") not in ("EXECUTING", ""):
@@ -177,6 +175,8 @@ class TestAdditionalFields:
 
         assert ex is not None, f"Execution {exec_id} not found in Shuffle"
         assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
+        # Fetch full execution with results for node verification
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True) or ex
         self._log("  + Workflow completed successfully")
 
         # Verify TheHive case
@@ -284,14 +284,15 @@ class TestAdditionalFields:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
 
         assert ex is not None, f"Execution {exec_id} not found"
         assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
+        # Fetch full execution with results for node verification
+        ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True) or ex
 
         # Validate all workflow nodes succeeded
         self._log("STEP 3: Verifying all workflow nodes succeeded")
@@ -349,11 +350,13 @@ class TestAdditionalFields:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
+
+        assert ex is not None, f"Execution {exec_id} not found"
+        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
 
         self._log("STEP 3: Verifying metadata in Elasticsearch")
         doc = self.es.search_by_alert_id(payload["alert_id"])
@@ -419,11 +422,13 @@ class TestAdditionalFields:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
+
+        assert ex is not None, f"Execution {exec_id} not found"
+        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
 
         self._log("STEP 3: Verifying internal fields were not overridden")
         doc = self.es.search_by_alert_id(payload["alert_id"])
@@ -496,11 +501,13 @@ class TestAdditionalFields:
         deadline = time.time() + WORKFLOW_TIMEOUT
         ex = None
         while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id, execution_ids=[exec_id])
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
+            ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if ex and ex.get("status") not in ("EXECUTING", ""):
                 break
             time.sleep(POLL_INTERVAL)
+
+        assert ex is not None, f"Execution {exec_id} not found"
+        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
 
         self._log("STEP 3: Verifying mass assignment was prevented")
         doc = self.es.search_by_alert_id(payload["alert_id"])
