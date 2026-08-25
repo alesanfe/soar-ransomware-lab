@@ -1,5 +1,0 @@
-Linea original 204 con caracteres chinos:
-El presente Trabajo Fin de Máster aborda el diseño, implementación y evaluación de un laboratorio SOAR (Security Orchestration, Automation and Response) especializado en la respuesta ante incidentes de ransomware. La investigación parte de la necesidad de reducir el Tiempo Medio de Respuesta (MTTR) ante amenazas que han incrementado su frecuencia en los últimos años, según reportes de威胁情报。
-
-Linea corregida:
-El presente Trabajo Fin de Máster aborda el diseño, implementación y evaluación de un laboratorio SOAR (Security Orchestration, Automation and Response) especializado en la respuesta ante incidentes de ransomware. La investigación parte de la necesidad de reducir el Tiempo Medio de Respuesta (MTTR) ante amenazas que han incrementado su frecuencia en los últimos años, según reportes de inteligencia de amenazas.
