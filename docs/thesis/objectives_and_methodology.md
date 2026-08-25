@@ -48,10 +48,8 @@ Los objetivos estratégicos descritos se resumen en la **Tabla 3**, que asocia c
 | **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
 | **TE-5** | Optimización iterativa     | Mejoras implementadas  | 44 mejoras     | Análisis pre/post           |
 
-Los objetivos de esta tabla se evalúan mediante métricas cuantificables y evidencias verificables. Todos los objetivos
-se cumplieron: el diseño integra más de 5 componentes, la implementación entregó un playbook E2E con dos escenarios
-(malicioso y benigno), la validación mostró reducción del 92.3% en MTTR (superando el 50% objetivo), la documentación
-alcanzó cobertura completa y se implementaron las 44 mejoras identificadas.
+Los objetivos de esta tabla se evalúan mediante métricas cuantificables y evidencias verificables. El cumplimiento de
+cada objetivo se reporta en el Capítulo 4 (Resultados) y se discute en el Capítulo 6 (Conclusiones).
 
 ### 3.2.2. Objetivos Operativos
 
