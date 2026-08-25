@@ -34,7 +34,7 @@
 - Si Resumen + Abstract (`executive_summary.md`, también en `introduction.md`)
 - Si Palabras clave (`executive_summary.md`)
 - Si Índice general (`table_of_contents.md`)
-- Si Lista de figuras y tablas (`figures_tables_list.md`)
+- Si Índice de figuras (`figures_list.md`) y índice de tablas (`tables_list.md`)
 - Si Lista de abreviaturas (`abbreviations_list.md`)
 - Si Glosario (`glossary.md`)
 
@@ -187,7 +187,7 @@ Las conclusiones (capítulo 5) mezclan resultados, interpretación y trabajo fut
 
 ### Hallazgo 9.1 — CRÍTICO: Figuras no referenciadas en el texto
 
-`figures_tables_list.md` enumera 29 figuras (Figura 1.1 a 5.5) con números de página asignados, pero:
+`figures_list.md` enumera 39 figuras (Figura 1.1 a J.13) con números de página asignados, pero:
 
 - **0 figuras** se referencian en el cuerpo de la tesis (`introduction.md`, `state_of_the_art.md`, etc.)
 - **0 imágenes** están embebidas en los archivos markdown del cuerpo

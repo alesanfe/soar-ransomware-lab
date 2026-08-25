@@ -16,7 +16,7 @@
   - Referenciado `make generate-secrets` y `soar-lab generate-secrets` como mecanismos oficiales para generar `.env.full` sin secretos por defecto en el repositorio.
 
 - **Tesis / Tablas y secciones operativas.**
-  - `docs/thesis/figures_tables_list.md` y `table_of_contents.md` mantienen la estructura; las tablas operativas se actualizan en `appendix_c.md` y el resto del corpus de la tesis es una instantánea estática de la remediación.
+  - `docs/thesis/figures_list.md`, `tables_list.md` y `table_of_contents.md` mantienen la estructura; las tablas operativas se actualizan en `appendix_c.md` y el resto del corpus de la tesis es una instantánea estática de la remediación.
 
 ## 2026-07-18 — Remediación documental masiva
 
