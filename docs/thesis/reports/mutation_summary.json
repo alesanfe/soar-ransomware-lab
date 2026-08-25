@@ -1,0 +1,16 @@
+{
+  "generated": "2026-08-22T21:55:05.776057+00:00",
+  "stats": {
+    "killed": 0,
+    "timeout": 0,
+    "suspicious": 0,
+    "survived": 0,
+    "skipped": 0,
+    "not_seen": 0,
+    "total": 0,
+    "mutation_score": 0
+  },
+  "survived_count": 0,
+  "survived_files": [],
+  "run_info": {}
+}

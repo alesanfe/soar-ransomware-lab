@@ -1,0 +1,332 @@
+{
+  "generated": "2026-08-24T10:14:30.998936+00:00",
+  "layers": {
+    "L1": {
+      "L1a": {
+        "available": true,
+        "has_contracts": false,
+        "violations": 0,
+        "passed": true,
+        "score": 100.0
+      },
+      "L1b": {
+        "available": true,
+        "total_blocks": 814,
+        "grades": {
+          "A": 735,
+          "B": 61,
+          "C": 18,
+          "D": 0,
+          "E": 0,
+          "F": 0
+        },
+        "max_complexity": 15,
+        "score": 98.6
+      },
+      "L1c": {
+        "available": true,
+        "errors": 0,
+        "score": 100
+      },
+      "L1d": {
+        "available": true,
+        "dead_items": 18,
+        "score": 78.8
+      }
+    },
+    "L2": {
+      "L2a": {
+        "available": true,
+        "total": 2041,
+        "categories": {
+          "architecture": 1,
+          "atomic": 101,
+          "baseline": 0,
+          "contracts": 0,
+          "e2e": 281,
+          "general": 20,
+          "integration": 336,
+          "performance": 30,
+          "quality": 0,
+          "reports": 0,
+          "runners": 0,
+          "runtime": 0,
+          "security": 27,
+          "unit": 1245
+        },
+        "pyramid": {
+          "unit": 1346,
+          "integration": 336,
+          "e2e": 281,
+          "other": 78
+        },
+        "percentages": {
+          "unit": 65.9,
+          "integration": 16.5,
+          "e2e": 13.8
+        },
+        "deviation": 5.7,
+        "score": 94.3
+      },
+      "L2b": {
+        "available": true,
+        "total_tests": 2093,
+        "skipped": 2,
+        "xfail": 0,
+        "expected_skips": 2,
+        "unexpected_skips": 0,
+        "skip_reasons": {
+          "Tenzir REST API not available (404 on /api/v0/status)": 1,
+          "docker compose not available inside container \u2014 test requires host execution": 1
+        },
+        "score": 99.9
+      },
+      "L2c": {
+        "available": true,
+        "requires_docker": 35,
+        "requires_external": 83,
+        "docker_ratio": 1.7,
+        "external_ratio": 4.0,
+        "score": 97.5
+      }
+    },
+    "L3": {
+      "L3a": {
+        "available": true,
+        "issues": 0,
+        "errors": 0,
+        "score": 100
+      },
+      "L3b": {
+        "available": true,
+        "total_issues": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "score": 100
+      },
+      "L3c": {
+        "available": true,
+        "covered": 964,
+        "total": 1019,
+        "percentage": 94.6,
+        "score": 94.6
+      }
+    },
+    "L4": {
+      "L4a": {
+        "available": true,
+        "compose_files": 5,
+        "valid_files": 5,
+        "total_services": 18,
+        "file_names": [
+          "docker-compose.api.yml",
+          "docker-compose.core.yml",
+          "docker-compose.misp.yml",
+          "docker-compose.opensearch.yml",
+          "docker-compose.yml"
+        ],
+        "errors": [],
+        "score": 100.0
+      },
+      "L4b": {
+        "available": true,
+        "valid": true,
+        "openapi_version": "3.1.0",
+        "title": "SOAR Lab Management API",
+        "endpoints": 38,
+        "has_paths": true,
+        "has_info": true,
+        "has_servers": false,
+        "score": 100
+      },
+      "L4c": {
+        "available": true,
+        "example_vars": 131,
+        "full_vars": 131,
+        "covered": 131,
+        "missing": [],
+        "coverage": 100.0,
+        "score": 100.0
+      }
+    },
+    "L5": {
+      "L5a": {
+        "available": true,
+        "md_files": 33,
+        "total_links": 260,
+        "broken_links": 34,
+        "broken": [
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/threshold_compliance.png",
+            "text": "Cumplimiento de Objetivos"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/service_health.png",
+            "text": "Estado de Salud de Servicios"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/GE1_component_timings.png",
+            "text": "GE1: Tiempos por Componente"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/GE2_percentiles.png",
+            "text": "GE2: Percentiles MTTR"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/Fig5_1_mttr_results.png",
+            "text": "Fig 5.1: Resultados MTTR"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/Fig1_3_mttr_comparison.png",
+            "text": "Fig 1.3: MTTR Manual vs Automatizado"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/GE3_success_rates.png",
+            "text": "GE3: Tasa de \u00c9xito por Tipo"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/GE5_improvements.png",
+            "text": "MTTR por Severidad"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/GE4_metrics_evolution.png",
+            "text": "GE4: Evoluci\u00f3n de M\u00e9tricas"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/decision_distribution.png",
+            "text": "Distribuci\u00f3n de Decisiones"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/alert_distribution.png",
+            "text": "Distribuci\u00f3n de Alertas por Tipo"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/severity_distribution.png",
+            "text": "Distribuci\u00f3n por Severidad"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/workflow_notifications.png",
+            "text": "Notificaciones por Nodo"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/mttr_by_phase.png",
+            "text": "MTTR por Fase"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/cortex_job_status.png",
+            "text": "Jobs Cortex por Estado"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/org_daily_stats.png",
+            "text": "Ejecuciones por D\u00eda"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/thehive_case_status.png",
+            "text": "Estado de Casos TheHive"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/workflow_durations.png",
+            "text": "Duraci\u00f3n de Ejecuciones Recientes"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/loki_log_volume.png",
+            "text": "Volumen de Logs por Servicio"
+          },
+          {
+            "file": "docs/thesis/reports/e2e_report.md",
+            "link": "./charts/loki_log_heatmap.png",
+            "text": "Heatmap de Logs"
+          }
+        ],
+        "score": 86.9
+      },
+      "L5b": {
+        "available": true,
+        "total_files": 8,
+        "compliant": 7,
+        "non_compliant": [
+          {
+            "file": "docs/glossary.md",
+            "found_sections": [
+              "Contenido"
+            ],
+            "missing": [
+              "Resumen",
+              "Alcance",
+              "Validaci\u00f3n",
+              "Problemas",
+              "Referencias"
+            ]
+          }
+        ],
+        "score": 87.5
+      },
+      "L5c": {
+        "available": true,
+        "total_refs": 402,
+        "broken_refs": 8,
+        "broken": [
+          {
+            "file": "docs/thesis/CHANGELOG_THESIS_UPDATE.md",
+            "ref": "src/soar_lab/scripts/setup/generate_env.py"
+          },
+          {
+            "file": "docs/thesis/CHANGELOG_THESIS_UPDATE.md",
+            "ref": "infra/docker/compose/logging/grafana-datasources.yml"
+          },
+          {
+            "file": "docs/thesis/data_visualizations.md",
+            "ref": "infra/docker/compose/logging/promtail-config.yml"
+          },
+          {
+            "file": "docs/thesis/specific_development.md",
+            "ref": "infra/docker/compose/docker-compose.wazuh.yml"
+          },
+          {
+            "file": "docs/thesis/reports/holistic_review_report.md",
+            "ref": "src/soar_lab/scripts/setup/generate_env.py"
+          },
+          {
+            "file": "docs/thesis/reports/holistic_review_report.md",
+            "ref": "infra/docker/compose/logging/grafana-datasources.yml"
+          },
+          {
+            "file": "docs/thesis/reports/holistic_review_report.md",
+            "ref": "infra/docker/compose/logging/promtail-config.yml"
+          },
+          {
+            "file": "docs/thesis/reports/holistic_review_report.md",
+            "ref": "infra/docker/compose/docker-compose.wazuh.yml"
+          }
+        ],
+        "score": 98.0
+      }
+    }
+  },
+  "coverage": {
+    "available": false
+  },
+  "mutation": {
+    "available": false
+  }
+}

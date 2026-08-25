@@ -1,0 +1,327 @@
+{
+  "generated_at": "2026-08-20T21:28:39.584238",
+  "score": {
+    "score": 72.0,
+    "classification": "Acceptable",
+    "category_scores": {
+      "maintainability": 0,
+      "coverage": 84.9,
+      "complexity": 100,
+      "linting": 100,
+      "typing": 100,
+      "security": 100,
+      "documentation": 0,
+      "architecture": 100
+    },
+    "weights": {
+      "maintainability": 0.2,
+      "coverage": 0.2,
+      "complexity": 0.15,
+      "linting": 0.15,
+      "typing": 0.1,
+      "security": 0.1,
+      "documentation": 0.05,
+      "architecture": 0.05
+    }
+  },
+  "metrics": {
+    "_path": "src/",
+    "coverage": {
+      "global_line_coverage": 84.93,
+      "global_branch_coverage": 0.0,
+      "total_files": 98,
+      "total_lines": 5559,
+      "total_lines_covered": 4721,
+      "files_below_threshold": [
+        {
+          "filepath": "application/ports/output/__init__.py",
+          "line_coverage": 0.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 2,
+          "lines_covered": 0
+        },
+        {
+          "filepath": "interfaces/api/__init__.py",
+          "line_coverage": 12.5,
+          "branch_coverage": 0.0,
+          "lines_valid": 56,
+          "lines_covered": 7
+        },
+        {
+          "filepath": "infrastructure/subprocess_runner.py",
+          "line_coverage": 30.65,
+          "branch_coverage": 0.0,
+          "lines_valid": 62,
+          "lines_covered": 19
+        },
+        {
+          "filepath": "interfaces/api/route_helpers.py",
+          "line_coverage": 40.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 15,
+          "lines_covered": 6
+        },
+        {
+          "filepath": "infrastructure/integrations/shuffle/shuffle_helpers.py",
+          "line_coverage": 44.3,
+          "branch_coverage": 0.0,
+          "lines_valid": 149,
+          "lines_covered": 66
+        },
+        {
+          "filepath": "application/use_cases/auth_service.py",
+          "line_coverage": 52.46,
+          "branch_coverage": 0.0,
+          "lines_valid": 122,
+          "lines_covered": 64
+        },
+        {
+          "filepath": "infrastructure/integrations/base_client.py",
+          "line_coverage": 53.59,
+          "branch_coverage": 0.0,
+          "lines_valid": 181,
+          "lines_covered": 97
+        },
+        {
+          "filepath": "infrastructure/auth_defaults.py",
+          "line_coverage": 54.84,
+          "branch_coverage": 0.0,
+          "lines_valid": 31,
+          "lines_covered": 17
+        },
+        {
+          "filepath": "interfaces/api/composition.py",
+          "line_coverage": 57.32,
+          "branch_coverage": 0.0,
+          "lines_valid": 82,
+          "lines_covered": 47
+        },
+        {
+          "filepath": "infrastructure/integrations/misp/client.py",
+          "line_coverage": 57.59,
+          "branch_coverage": 0.0,
+          "lines_valid": 158,
+          "lines_covered": 91
+        },
+        {
+          "filepath": "domain/ports/integrations.py",
+          "line_coverage": 58.82,
+          "branch_coverage": 0.0,
+          "lines_valid": 17,
+          "lines_covered": 10
+        },
+        {
+          "filepath": "domain/ports/infrastructure.py",
+          "line_coverage": 59.84,
+          "branch_coverage": 0.0,
+          "lines_valid": 127,
+          "lines_covered": 76
+        },
+        {
+          "filepath": "domain/ports/repositories.py",
+          "line_coverage": 61.54,
+          "branch_coverage": 0.0,
+          "lines_valid": 39,
+          "lines_covered": 24
+        },
+        {
+          "filepath": "interfaces/api/routes_services.py",
+          "line_coverage": 61.9,
+          "branch_coverage": 0.0,
+          "lines_valid": 42,
+          "lines_covered": 26
+        },
+        {
+          "filepath": "application/ports/input/__init__.py",
+          "line_coverage": 65.22,
+          "branch_coverage": 0.0,
+          "lines_valid": 23,
+          "lines_covered": 15
+        },
+        {
+          "filepath": "infrastructure/integrations/thehive/client.py",
+          "line_coverage": 69.91,
+          "branch_coverage": 0.0,
+          "lines_valid": 113,
+          "lines_covered": 79
+        },
+        {
+          "filepath": "interfaces/api/routes_analytics.py",
+          "line_coverage": 74.68,
+          "branch_coverage": 0.0,
+          "lines_valid": 79,
+          "lines_covered": 59
+        }
+      ],
+      "files_below_count": 17,
+      "worst_files": [
+        {
+          "filepath": "application/ports/output/__init__.py",
+          "line_coverage": 0.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 2,
+          "lines_covered": 0
+        },
+        {
+          "filepath": "interfaces/api/__init__.py",
+          "line_coverage": 12.5,
+          "branch_coverage": 0.0,
+          "lines_valid": 56,
+          "lines_covered": 7
+        },
+        {
+          "filepath": "infrastructure/subprocess_runner.py",
+          "line_coverage": 30.65,
+          "branch_coverage": 0.0,
+          "lines_valid": 62,
+          "lines_covered": 19
+        },
+        {
+          "filepath": "interfaces/api/route_helpers.py",
+          "line_coverage": 40.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 15,
+          "lines_covered": 6
+        },
+        {
+          "filepath": "infrastructure/integrations/shuffle/shuffle_helpers.py",
+          "line_coverage": 44.3,
+          "branch_coverage": 0.0,
+          "lines_valid": 149,
+          "lines_covered": 66
+        },
+        {
+          "filepath": "application/use_cases/auth_service.py",
+          "line_coverage": 52.46,
+          "branch_coverage": 0.0,
+          "lines_valid": 122,
+          "lines_covered": 64
+        },
+        {
+          "filepath": "infrastructure/integrations/base_client.py",
+          "line_coverage": 53.59,
+          "branch_coverage": 0.0,
+          "lines_valid": 181,
+          "lines_covered": 97
+        },
+        {
+          "filepath": "infrastructure/auth_defaults.py",
+          "line_coverage": 54.84,
+          "branch_coverage": 0.0,
+          "lines_valid": 31,
+          "lines_covered": 17
+        },
+        {
+          "filepath": "interfaces/api/composition.py",
+          "line_coverage": 57.32,
+          "branch_coverage": 0.0,
+          "lines_valid": 82,
+          "lines_covered": 47
+        },
+        {
+          "filepath": "infrastructure/integrations/misp/client.py",
+          "line_coverage": 57.59,
+          "branch_coverage": 0.0,
+          "lines_valid": 158,
+          "lines_covered": 91
+        }
+      ],
+      "best_files": [
+        {
+          "filepath": "infrastructure/monitoring/system_metrics_driver.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 42,
+          "lines_covered": 42
+        },
+        {
+          "filepath": "infrastructure/network_watcher/_constants.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 5,
+          "lines_covered": 5
+        },
+        {
+          "filepath": "infrastructure/persistence/sqlite_alert_repository.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 145,
+          "lines_covered": 145
+        },
+        {
+          "filepath": "interfaces/api/auth.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 22,
+          "lines_covered": 22
+        },
+        {
+          "filepath": "interfaces/api/contracts.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 41,
+          "lines_covered": 41
+        },
+        {
+          "filepath": "interfaces/api/models.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 104,
+          "lines_covered": 104
+        },
+        {
+          "filepath": "interfaces/api/routes_soar.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 190,
+          "lines_covered": 190
+        },
+        {
+          "filepath": "interfaces/api/validation.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 52,
+          "lines_covered": 52
+        },
+        {
+          "filepath": "interfaces/api/middleware/__init__.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 2,
+          "lines_covered": 2
+        },
+        {
+          "filepath": "interfaces/api/middleware/trace_id.py",
+          "line_coverage": 100.0,
+          "branch_coverage": 0.0,
+          "lines_valid": 22,
+          "lines_covered": 22
+        }
+      ]
+    },
+    "score": {
+      "score": 72.0,
+      "classification": "Acceptable",
+      "category_scores": {
+        "maintainability": 0,
+        "coverage": 84.9,
+        "complexity": 100,
+        "linting": 100,
+        "typing": 100,
+        "security": 100,
+        "documentation": 0,
+        "architecture": 100
+      },
+      "weights": {
+        "maintainability": 0.2,
+        "coverage": 0.2,
+        "complexity": 0.15,
+        "linting": 0.15,
+        "typing": 0.1,
+        "security": 0.1,
+        "documentation": 0.05,
+        "architecture": 0.05
+      }
+    }
+  }
+}

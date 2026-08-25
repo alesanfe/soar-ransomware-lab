@@ -1,0 +1,85 @@
+{
+  "total_blocks": 902,
+  "average_complexity": 2.56,
+  "max_complexity": 28,
+  "grade_distribution": {
+    "A": 816,
+    "B": 62,
+    "C": 22,
+    "D": 2,
+    "E": 0,
+    "F": 0
+  },
+  "hotspots": [
+    {
+      "name": "calculate_execution_times",
+      "filepath": "src\\soar_lab\\domain\\statistical_calculator.py",
+      "complexity": 28,
+      "rank": "D",
+      "line": 138
+    },
+    {
+      "name": "validate_credentials",
+      "filepath": "src\\soar_lab\\infrastructure\\validate_credentials.py",
+      "complexity": 26,
+      "rank": "D",
+      "line": 156
+    },
+    {
+      "name": "main",
+      "filepath": "src\\soar_lab\\data\\calc_kpis.py",
+      "complexity": 20,
+      "rank": "C",
+      "line": 57
+    },
+    {
+      "name": "calculate_service_integration_kpis",
+      "filepath": "src\\soar_lab\\domain\\services\\kpi_analyzer.py",
+      "complexity": 20,
+      "rank": "C",
+      "line": 201
+    },
+    {
+      "name": "extract_timings",
+      "filepath": "src\\soar_lab\\application\\use_cases\\node_timing_extractor.py",
+      "complexity": 15,
+      "rank": "C",
+      "line": 123
+    },
+    {
+      "name": "PytestOutputParser",
+      "filepath": "src\\soar_lab\\infrastructure\\pytest_output_parser.py",
+      "complexity": 15,
+      "rank": "C",
+      "line": 12
+    },
+    {
+      "name": "resolve_webhook_url",
+      "filepath": "src\\soar_lab\\config\\webhook.py",
+      "complexity": 14,
+      "rank": "C",
+      "line": 21
+    },
+    {
+      "name": "StatisticalCalculator",
+      "filepath": "src\\soar_lab\\domain\\statistical_calculator.py",
+      "complexity": 14,
+      "rank": "C",
+      "line": 13
+    },
+    {
+      "name": "parse",
+      "filepath": "src\\soar_lab\\infrastructure\\pytest_output_parser.py",
+      "complexity": 14,
+      "rank": "C",
+      "line": 15
+    },
+    {
+      "name": "can_access_endpoint",
+      "filepath": "src\\soar_lab\\application\\use_cases\\auth_service.py",
+      "complexity": 13,
+      "rank": "C",
+      "line": 143
+    }
+  ]
+}

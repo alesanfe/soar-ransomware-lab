@@ -1,0 +1,2192 @@
+{
+  "generated_at": "2026-08-24T09:16:42.045294+00:00",
+  "environment": {
+    "inside_container": true,
+    "es_url": "http://elasticsearch:9200",
+    "os_url": "http://opensearch:9200",
+    "loki_url": "http://loki:3100",
+    "promtail_url": "http://promtail:9080",
+    "grafana_url": "http://grafana:3000",
+    "api_url": "http://api:8000"
+  },
+  "test_results": {
+    "test_cases": [],
+    "total_cases": 0
+  },
+  "es_indices": {
+    "indices": [
+      {
+        "name": "cortex",
+        "docs_count": "0",
+        "store_size": "208b"
+      },
+      {
+        "name": "soar-metrics",
+        "docs_count": "50",
+        "store_size": "78.7kb"
+      },
+      {
+        "name": "cortex_6",
+        "docs_count": "652",
+        "store_size": "1009.8kb"
+      },
+      {
+        "name": "the_hive",
+        "docs_count": "0",
+        "store_size": "208b"
+      },
+      {
+        "name": "the_hive_17",
+        "docs_count": "477",
+        "store_size": "391.1kb"
+      },
+      {
+        "name": "soar-alerts",
+        "docs_count": "50",
+        "store_size": "111.1kb"
+      }
+    ]
+  },
+  "soar_metrics": {
+    "metric_types": [
+      {
+        "type": "workflow_execution",
+        "count": 50
+      }
+    ],
+    "mttr": {
+      "count": 50,
+      "mean_s": 277.15,
+      "min_s": 65.38,
+      "max_s": 652.92,
+      "p50_s": 193.19,
+      "p75_s": 345.78,
+      "p90_s": 621.83,
+      "p95_s": 644.46,
+      "p99_s": 651.16,
+      "std_s": 187.61,
+      "by_type": {
+        "infostealer": {
+          "count": 1,
+          "mean_s": 601.25,
+          "p50_s": 601.25,
+          "p95_s": 601.25
+        },
+        "ransomware": {
+          "count": 45,
+          "mean_s": 261.42,
+          "p50_s": 191.14,
+          "p95_s": 645.01
+        },
+        "rat": {
+          "count": 2,
+          "mean_s": 146.88,
+          "p50_s": 146.88,
+          "p95_s": 159.37
+        },
+        "trojan": {
+          "count": 2,
+          "mean_s": 599.21,
+          "p50_s": 599.21,
+          "p95_s": 604.46
+        }
+      },
+      "by_severity": {
+        "2": {
+          "count": 7,
+          "mean_s": 274.11
+        },
+        "3": {
+          "count": 43,
+          "mean_s": 277.64
+        }
+      },
+      "by_decision": {
+        "contain": {
+          "count": 46,
+          "mean_s": 259.23
+        },
+        "observe": {
+          "count": 4,
+          "mean_s": 483.17
+        }
+      },
+      "timeline": [
+        {
+          "timestamp": "2026-08-24T08:36:58.315089+00:00",
+          "mttr": 65.38,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:37:10.063117+00:00",
+          "mttr": 102.01,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:37:20.859409+00:00",
+          "mttr": 101.13,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:37:35.952520+00:00",
+          "mttr": 93.26,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:37:50.125151+00:00",
+          "mttr": 92.3,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:38:05.395005+00:00",
+          "mttr": 132.99,
+          "alert_type": "rat"
+        },
+        {
+          "timestamp": "2026-08-24T08:38:25.203163+00:00",
+          "mttr": 138.2,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:38:42.337368+00:00",
+          "mttr": 134.71,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:39:01.641514+00:00",
+          "mttr": 128.21,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:39:14.786078+00:00",
+          "mttr": 128.59,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:39:29.531841+00:00",
+          "mttr": 166.75,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:39:41.549572+00:00",
+          "mttr": 182.79,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:40:00.034952+00:00",
+          "mttr": 176.56,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:40:14.809077+00:00",
+          "mttr": 174.41,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:40:28.738908+00:00",
+          "mttr": 169.97,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:40:43.595790+00:00",
+          "mttr": 363.67,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:40:58.803855+00:00",
+          "mttr": 470.8,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:41:10.746361+00:00",
+          "mttr": 298.04,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:41:23.441175+00:00",
+          "mttr": 314.23,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:41:37.693529+00:00",
+          "mttr": 156.63,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:41:52.345906+00:00",
+          "mttr": 168.96,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:42:10.463712+00:00",
+          "mttr": 160.76,
+          "alert_type": "rat"
+        },
+        {
+          "timestamp": "2026-08-24T08:42:26.263503+00:00",
+          "mttr": 162.81,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:42:43.515081+00:00",
+          "mttr": 156.56,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:43:00.736454+00:00",
+          "mttr": 356.3,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:43:12.196432+00:00",
+          "mttr": 645.46,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:43:25.296291+00:00",
+          "mttr": 652.92,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:43:39.905614+00:00",
+          "mttr": 649.32,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:43:54.319084+00:00",
+          "mttr": 643.23,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:44:10.313537+00:00",
+          "mttr": 171.71,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:44:22.275089+00:00",
+          "mttr": 170.9,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:44:39.303440+00:00",
+          "mttr": 204.09,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:44:52.818224+00:00",
+          "mttr": 206.15,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:45:04.174146+00:00",
+          "mttr": 213.26,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:45:16.942831+00:00",
+          "mttr": 567.97,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:45:31.505147+00:00",
+          "mttr": 622.91,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:45:47.819853+00:00",
+          "mttr": 621.71,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:46:08.997362+00:00",
+          "mttr": 605.04,
+          "alert_type": "trojan"
+        },
+        {
+          "timestamp": "2026-08-24T08:46:20.555336+00:00",
+          "mttr": 601.25,
+          "alert_type": "infostealer"
+        },
+        {
+          "timestamp": "2026-08-24T08:46:35.968407+00:00",
+          "mttr": 593.39,
+          "alert_type": "trojan"
+        },
+        {
+          "timestamp": "2026-08-24T08:46:51.338336+00:00",
+          "mttr": 185.15,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:47:02.716596+00:00",
+          "mttr": 197.09,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:47:15.165276+00:00",
+          "mttr": 195.23,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:47:33.554296+00:00",
+          "mttr": 191.14,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:47:48.243605+00:00",
+          "mttr": 180.75,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:48:06.688691+00:00",
+          "mttr": 222.26,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:48:20.025637+00:00",
+          "mttr": 231.33,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:48:33.861882+00:00",
+          "mttr": 229.69,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:48:45.768689+00:00",
+          "mttr": 232.96,
+          "alert_type": "ransomware"
+        },
+        {
+          "timestamp": "2026-08-24T08:48:57.314517+00:00",
+          "mttr": 226.54,
+          "alert_type": "ransomware"
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "decision": "contain",
+        "count": 46
+      },
+      {
+        "decision": "observe",
+        "count": 4
+      }
+    ],
+    "severities": [
+      {
+        "severity": 2,
+        "count": 7
+      },
+      {
+        "severity": 3,
+        "count": 43
+      }
+    ],
+    "nodes": [
+      {
+        "label": "build_case_json",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "calc_decision",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "calc_mttr",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "containment",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "cortex_hash",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "cortex_hash_virusshare",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "cortex_ip",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "cortex_ip_dshield",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "cortex_ip_googledns",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "cortex_ip_ipapi",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "cortex_ip_mnemonic_pdns",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "enrich_case",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "es_index",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "es_index_metrics",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "loki_search",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "misp_create",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "misp_search",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "network_watch",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "normalize_inputs",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "redis_cache",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "tenzir_analyze",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "thehive_add_task",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "thehive_create_case",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "thehive_obs_hash",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      },
+      {
+        "label": "thehive_obs_ip",
+        "count": 0,
+        "mean_duration_s": 0,
+        "min_duration_s": 0,
+        "max_duration_s": 0,
+        "success_rate": 0.0
+      }
+    ],
+    "total_nodes": 25,
+    "workflow_duration": {
+      "avg_s": 277.1,
+      "max_s": 652.9,
+      "min_s": 65.4
+    }
+  },
+  "soar_alerts": {
+    "by_type": [
+      {
+        "type": "ransomware",
+        "count": 45
+      },
+      {
+        "type": "rat",
+        "count": 2
+      },
+      {
+        "type": "trojan",
+        "count": 2
+      },
+      {
+        "type": "infostealer",
+        "count": 1
+      }
+    ],
+    "by_severity": [
+      {
+        "severity": 2,
+        "count": 7
+      },
+      {
+        "severity": 3,
+        "count": 43
+      }
+    ],
+    "by_status": [
+      {
+        "status": "processed",
+        "count": 50
+      }
+    ],
+    "total": 50,
+    "by_mitre_tactics": [
+      {
+        "tactic": "Impact",
+        "count": 36
+      },
+      {
+        "tactic": "Execution",
+        "count": 21
+      },
+      {
+        "tactic": "Exfiltration",
+        "count": 14
+      },
+      {
+        "tactic": "Defense Evasion",
+        "count": 10
+      },
+      {
+        "tactic": "Initial Access",
+        "count": 9
+      },
+      {
+        "tactic": "Persistence",
+        "count": 7
+      },
+      {
+        "tactic": "Credential Access",
+        "count": 6
+      },
+      {
+        "tactic": "Discovery",
+        "count": 4
+      },
+      {
+        "tactic": "Lateral Movement",
+        "count": 4
+      },
+      {
+        "tactic": "Command and Control",
+        "count": 1
+      }
+    ]
+  },
+  "thehive_cases": {
+    "total": 50,
+    "total_raw": 50,
+    "duplicates_removed": 0,
+    "by_status": [
+      {
+        "status": "Open",
+        "count": 46
+      },
+      {
+        "status": "Resolved",
+        "count": 4
+      }
+    ],
+    "source": "api"
+  },
+  "cortex_jobs": {
+    "by_status": [
+      {
+        "status": "Success",
+        "count": 255
+      },
+      {
+        "status": "Failure",
+        "count": 2
+      }
+    ],
+    "total": 257
+  },
+  "cortex_job_details": {
+    "by_worker": [
+      {
+        "worker": "IP-API_1_1",
+        "count": 79
+      },
+      {
+        "worker": "DShield_lookup_1_0",
+        "count": 51
+      },
+      {
+        "worker": "GoogleDNS_resolve_1_0_0",
+        "count": 46
+      },
+      {
+        "worker": "Mnemonic_pDNS_Public_3_0",
+        "count": 46
+      },
+      {
+        "worker": "Hashdd_Status_2_0",
+        "count": 23
+      },
+      {
+        "worker": "DomainMailSPFDMARC_1_2",
+        "count": 12
+      }
+    ],
+    "by_status": [
+      {
+        "status": "Success",
+        "count": 255
+      },
+      {
+        "status": "Failure",
+        "count": 2
+      }
+    ],
+    "by_data_type": [
+      {
+        "type": "ip",
+        "count": 186
+      },
+      {
+        "type": "domain",
+        "count": 48
+      },
+      {
+        "type": "hash",
+        "count": 23
+      }
+    ],
+    "recent_failures": [
+      {
+        "worker": "Mnemonic_pDNS_Public_3_0",
+        "error": "Traceback (most recent call last):\n  File \"/root/.local/lib/python3.14/site-packages/requests/models.py\", line 1116, in json\n    return complexjson.lo",
+        "data_type": "ip"
+      },
+      {
+        "worker": "Mnemonic_pDNS_Public_3_0",
+        "error": "Traceback (most recent call last):\n  File \"/root/.local/lib/python3.14/site-packages/requests/models.py\", line 937, in generate\n    yield from self.ra",
+        "data_type": "ip"
+      }
+    ]
+  },
+  "mttr_by_phase": {
+    "reception_s": 103.92,
+    "analysis_s": 2393.46,
+    "case_creation_s": 2773.48,
+    "containment_s": 422.0,
+    "total_mttr_s": 277.15,
+    "source": "workflowexecution_node_timings"
+  },
+  "workflow_executions": {
+    "status_distribution": [],
+    "total": 50,
+    "recent_executions": [
+      {
+        "execution_id": "3f526a5c-eb29-49e6-82d6-9daed8848344",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 253,
+        "started_at": "2026-08-24 08:48:57"
+      },
+      {
+        "execution_id": "034ec7e5-60a8-4d97-9aa3-ff58534bbdfa",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 257,
+        "started_at": "2026-08-24 08:48:45"
+      },
+      {
+        "execution_id": "7075975c-7a8a-4cce-b12a-f41b208a1a4f",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 242,
+        "started_at": "2026-08-24 08:48:33"
+      },
+      {
+        "execution_id": "71556af4-dfc8-4a65-bce8-93ab3fb65a88",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 252,
+        "started_at": "2026-08-24 08:48:20"
+      },
+      {
+        "execution_id": "a7407403-7138-4a0c-9be6-5ba68b5b66f3",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 254,
+        "started_at": "2026-08-24 08:48:06"
+      },
+      {
+        "execution_id": "76880671-c7c6-4bc6-943c-7cebd8b9612e",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 209,
+        "started_at": "2026-08-24 08:47:48"
+      },
+      {
+        "execution_id": "3464f4da-9873-44cc-be89-262c0ba1c330",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 211,
+        "started_at": "2026-08-24 08:47:33"
+      },
+      {
+        "execution_id": "88c39d06-7792-4aec-b56d-cd74ad94a324",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 206,
+        "started_at": "2026-08-24 08:47:15"
+      },
+      {
+        "execution_id": "cd5d6956-a32f-4069-92b9-dd8a25dbb5ef",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 214,
+        "started_at": "2026-08-24 08:47:02"
+      },
+      {
+        "execution_id": "9292204f-3b22-4c8e-a316-053554f1cdd2",
+        "status": "FINISHED",
+        "node_count": 49,
+        "duration_s": 214,
+        "started_at": "2026-08-24 08:46:51"
+      }
+    ],
+    "avg_duration_s": 231.2
+  },
+  "workflow_notifications": {
+    "total": 4,
+    "by_node": [
+      {
+        "node": "build_metrics_json",
+        "count": 1
+      },
+      {
+        "node": "cortex_ip_dshield",
+        "count": 1
+      },
+      {
+        "node": "normalize_inputs",
+        "count": 1
+      },
+      {
+        "node": "tenzir_serve",
+        "count": 1
+      }
+    ],
+    "recent": [
+      {
+        "title": "Potential error in Workflow 'SOAR-Ransomware-Response'",
+        "description": "Node 'tenzir_serve' in Workflow 'SOAR-Ransomware-Response' failed silently. Failure Reason: An exception occurred while running this function (2). See exception for more details and contact support if",
+        "node_label": "tenzir_serve",
+        "failure_reason": "Node 'tenzir_serve' in Workflow 'SOAR-Ransomware-Response' failed silently. Failure Reason: An exception occurred while running this function (2). See exception for more details and contact support if",
+        "action_name": "POST",
+        "execution_id": "76880671-c7c6-4bc6-9"
+      },
+      {
+        "title": "Potential error in Workflow 'SOAR-Ransomware-Response'",
+        "description": "Node 'cortex_ip_dshield' in Workflow 'SOAR-Ransomware-Response' failed silently. Failure Reason: An exception occurred while running this function (2). See exception for more details and contact suppo",
+        "node_label": "cortex_ip_dshield",
+        "failure_reason": "Node 'cortex_ip_dshield' in Workflow 'SOAR-Ransomware-Response' failed silently. Failure Reason: An exception occurred while running this function (2). See exception for more details and contact suppo",
+        "action_name": "POST",
+        "execution_id": "9da9b14b-6340-4bcb-8"
+      },
+      {
+        "title": "App error for node build_metrics_json in Workflow SOAR-Ransomware-Response: shuffle_variable_error",
+        "description": "The node build_metrics_json (act_build_metrics_json) in workflow SOAR-Ransomware-Response (143f1474-b4e7-486c-aceb-04731eddded9) had the error: 'Failed finding 'var'' based on error 'shuffle_variable_",
+        "node_label": "build_metrics_json",
+        "failure_reason": "The node build_metrics_json (act_build_metrics_json) in workflow SOAR-Ransomware-Response (143f1474-b4e7-486c-aceb-04731eddded9) had the error: 'Failed finding 'var'' based on error 'shuffle_variable_",
+        "action_name": "execute_python",
+        "execution_id": "5025fbf8-e23f-4699-b"
+      },
+      {
+        "title": "App error for node normalize_inputs in Workflow SOAR-Ransomware-Response: shuffle_variable_error",
+        "description": "The node normalize_inputs (act_normalize_inputs) in workflow SOAR-Ransomware-Response (143f1474-b4e7-486c-aceb-04731eddded9) had the error: 'Failed finding 'normalize_inputs . message . '' based on er",
+        "node_label": "normalize_inputs",
+        "failure_reason": "The node normalize_inputs (act_normalize_inputs) in workflow SOAR-Ransomware-Response (143f1474-b4e7-486c-aceb-04731eddded9) had the error: 'Failed finding 'normalize_inputs . message . '' based on er",
+        "action_name": "execute_python",
+        "execution_id": "5025fbf8-e23f-4699-b"
+      }
+    ]
+  },
+  "org_statistics": {
+    "org_name": "default",
+    "daily_stats": [
+      {
+        "date": "2026-08-23",
+        "app_executions": 0,
+        "app_executions_failed": 0,
+        "workflow_executions": 0,
+        "workflow_executions_finished": 0,
+        "workflow_executions_failed": 0,
+        "onprem_executions": 0,
+        "api_usage": 9
+      },
+      {
+        "date": "2026-08-24",
+        "app_executions": 2842,
+        "app_executions_failed": 0,
+        "workflow_executions": 50,
+        "workflow_executions_finished": 50,
+        "workflow_executions_failed": 0,
+        "onprem_executions": 45,
+        "api_usage": 108
+      }
+    ]
+  },
+  "loki_metrics": {
+    "url": "http://loki:3100",
+    "ready": "ready",
+    "labels": [
+      "compose_project",
+      "compose_service",
+      "container",
+      "filename",
+      "job",
+      "network"
+    ],
+    "log_volume_by_service": [
+      {
+        "service": "loki",
+        "logs_1h": 24331
+      },
+      {
+        "service": "cortex",
+        "logs_1h": 10984
+      },
+      {
+        "service": "shuffle-backend",
+        "logs_1h": 2433
+      },
+      {
+        "service": "misp",
+        "logs_1h": 2272
+      },
+      {
+        "service": "promtail",
+        "logs_1h": 1587
+      },
+      {
+        "service": "grafana",
+        "logs_1h": 1429
+      },
+      {
+        "service": "opensearch",
+        "logs_1h": 967
+      },
+      {
+        "service": "api",
+        "logs_1h": 274
+      },
+      {
+        "service": "network-watcher",
+        "logs_1h": 250
+      },
+      {
+        "service": "misp-modules",
+        "logs_1h": 202
+      },
+      {
+        "service": "shuffle-frontend",
+        "logs_1h": 190
+      },
+      {
+        "service": "elasticsearch",
+        "logs_1h": 163
+      },
+      {
+        "service": "orborus",
+        "logs_1h": 145
+      },
+      {
+        "service": "opensearch-dashboards",
+        "logs_1h": 113
+      },
+      {
+        "service": "misp-db",
+        "logs_1h": 75
+      },
+      {
+        "service": "grafana-db",
+        "logs_1h": 58
+      },
+      {
+        "service": "thehive",
+        "logs_1h": 48
+      },
+      {
+        "service": "web-management",
+        "logs_1h": 32
+      },
+      {
+        "service": "docs-site",
+        "logs_1h": 26
+      },
+      {
+        "service": "tenzir-node",
+        "logs_1h": 15
+      },
+      {
+        "service": "nginx",
+        "logs_1h": 9
+      },
+      {
+        "service": "redis",
+        "logs_1h": 7
+      },
+      {
+        "service": "grafana-renderer",
+        "logs_1h": 1
+      }
+    ],
+    "log_volume_by_container": [
+      {
+        "container": "soar_loki",
+        "logs_1h": 24331
+      },
+      {
+        "container": "soar_cortex",
+        "logs_1h": 10984
+      },
+      {
+        "container": "soar_shuffle_backend",
+        "logs_1h": 2433
+      },
+      {
+        "container": "soar_misp",
+        "logs_1h": 2272
+      },
+      {
+        "container": "soar_promtail",
+        "logs_1h": 1587
+      },
+      {
+        "container": "soar_grafana",
+        "logs_1h": 1429
+      },
+      {
+        "container": "soar_opensearch",
+        "logs_1h": 967
+      },
+      {
+        "container": "worker-921d2f6a-8b0b-4700-b188-c201e30a423a",
+        "logs_1h": 496
+      },
+      {
+        "container": "worker-f7c22d7c-501f-4fc5-9619-c9417a78ad8a",
+        "logs_1h": 495
+      },
+      {
+        "container": "worker-863bcaa9-8072-4951-a3d3-2f5d9e7d56af",
+        "logs_1h": 491
+      },
+      {
+        "container": "worker-3e052eba-7f3a-46db-8f1a-be2b9f897270",
+        "logs_1h": 489
+      },
+      {
+        "container": "worker-acf1e313-b3e5-4185-9843-4d50bd35828e",
+        "logs_1h": 489
+      },
+      {
+        "container": "worker-7aaa2ba1-f510-4c00-8406-09d077a0e7e7",
+        "logs_1h": 486
+      },
+      {
+        "container": "worker-2592a0a1-221f-4a76-9bf2-478b0d34a2ec",
+        "logs_1h": 479
+      },
+      {
+        "container": "worker-29f23698-b699-4d2d-ad53-2d6ea788a96b",
+        "logs_1h": 473
+      },
+      {
+        "container": "worker-c1bee00b-721e-4257-ae2b-cec60c49248a",
+        "logs_1h": 469
+      },
+      {
+        "container": "worker-ac80bdd4-3dd8-473b-b471-86a47268d969",
+        "logs_1h": 468
+      },
+      {
+        "container": "worker-2d172f47-2e66-4235-adcd-89969423198c",
+        "logs_1h": 466
+      },
+      {
+        "container": "worker-9fa44ac6-3f9e-4192-b386-097e4ef1961a",
+        "logs_1h": 465
+      },
+      {
+        "container": "worker-a7407403-7138-4a0c-9be6-5ba68b5b66f3",
+        "logs_1h": 461
+      }
+    ],
+    "error_logs_by_container": [
+      {
+        "container": "soar_loki",
+        "errors_1h": 264
+      },
+      {
+        "container": "soar_shuffle_backend",
+        "errors_1h": 2
+      },
+      {
+        "container": "soar_misp",
+        "errors_1h": 1
+      },
+      {
+        "container": "soar_opensearch",
+        "errors_1h": 1
+      }
+    ],
+    "total_errors_1h": 268,
+    "warning_logs_by_container": [
+      {
+        "container": "soar_shuffle_backend",
+        "warnings_1h": 866
+      },
+      {
+        "container": "soar_loki",
+        "warnings_1h": 264
+      },
+      {
+        "container": "soar_orborus",
+        "warnings_1h": 51
+      },
+      {
+        "container": "soar_opensearch",
+        "warnings_1h": 12
+      },
+      {
+        "container": "soar_docs_site",
+        "warnings_1h": 8
+      },
+      {
+        "container": "soar_misp",
+        "warnings_1h": 5
+      },
+      {
+        "container": "soar_cortex",
+        "warnings_1h": 2
+      },
+      {
+        "container": "soar_elasticsearch",
+        "warnings_1h": 2
+      },
+      {
+        "container": "soar_grafana_db",
+        "warnings_1h": 1
+      },
+      {
+        "container": "worker-034ec7e5-60a8-4d97-9aa3-ff58534bbdfa",
+        "warnings_1h": 1
+      }
+    ],
+    "total_warnings_1h": 1261,
+    "log_volume_24h": [
+      {
+        "hour": "09:00",
+        "lines": 2
+      },
+      {
+        "hour": "10:00",
+        "lines": 2
+      },
+      {
+        "hour": "11:00",
+        "lines": 2
+      },
+      {
+        "hour": "12:00",
+        "lines": 2
+      },
+      {
+        "hour": "13:00",
+        "lines": 2
+      },
+      {
+        "hour": "14:00",
+        "lines": 2
+      },
+      {
+        "hour": "15:00",
+        "lines": 2
+      },
+      {
+        "hour": "16:00",
+        "lines": 2
+      },
+      {
+        "hour": "17:00",
+        "lines": 2
+      },
+      {
+        "hour": "18:00",
+        "lines": 2
+      },
+      {
+        "hour": "19:00",
+        "lines": 2
+      },
+      {
+        "hour": "20:00",
+        "lines": 2
+      },
+      {
+        "hour": "21:00",
+        "lines": 2
+      },
+      {
+        "hour": "22:00",
+        "lines": 2
+      },
+      {
+        "hour": "23:00",
+        "lines": 2
+      },
+      {
+        "hour": "00:00",
+        "lines": 2
+      },
+      {
+        "hour": "01:00",
+        "lines": 2
+      },
+      {
+        "hour": "02:00",
+        "lines": 2
+      },
+      {
+        "hour": "03:00",
+        "lines": 2
+      },
+      {
+        "hour": "04:00",
+        "lines": 2
+      },
+      {
+        "hour": "05:00",
+        "lines": 2
+      },
+      {
+        "hour": "06:00",
+        "lines": 2
+      },
+      {
+        "hour": "07:00",
+        "lines": 2
+      },
+      {
+        "hour": "08:00",
+        "lines": 2
+      },
+      {
+        "hour": "09:00",
+        "lines": 63070
+      },
+      {
+        "hour": "10:00",
+        "lines": 5348
+      }
+    ],
+    "ingestion_metrics": {
+      "total_bytes_ingested": 18998636.0,
+      "total_lines_ingested": 68834.0,
+      "dropped_entries_total": 0
+    }
+  },
+  "promtail_metrics": {
+    "url": "http://promtail:9080",
+    "metrics": {
+      "total_entries_collected": 69608.0,
+      "total_bytes_encoded": 4646523.0,
+      "active_files": 3.0,
+      "dropped_entries_total": 0.0
+    }
+  },
+  "grafana_info": {
+    "url": "http://grafana:3000",
+    "health": {
+      "commit": "5bde27379c62c22183dd5e9deb7e66d90fada639",
+      "database": "ok",
+      "version": "10.3.4"
+    },
+    "datasources": [
+      {
+        "name": "Elasticsearch",
+        "type": "elasticsearch",
+        "url": "http://elasticsearch:9200"
+      },
+      {
+        "name": "Loki",
+        "type": "loki",
+        "url": "http://loki:3100"
+      },
+      {
+        "name": "SOAR API",
+        "type": "json",
+        "url": "http://api:8000"
+      }
+    ],
+    "dashboards": [
+      {
+        "uid": "soar-kpi-main",
+        "title": "SOAR KPI Dashboard",
+        "panel_count": 15,
+        "panels": [
+          {
+            "title": "Total Alerts Processed",
+            "type": "stat"
+          },
+          {
+            "title": "MTTR Medio (s) — Grafico 4.4",
+            "type": "stat"
+          },
+          {
+            "title": "Alertas Criticas (severity=3)",
+            "type": "stat"
+          },
+          {
+            "title": "MTTR p50 (Mediana) — Grafico 4.4",
+            "type": "stat"
+          },
+          {
+            "title": "MTTR p90 — Grafico 4.4",
+            "type": "stat"
+          },
+          {
+            "title": "Grafico 4.4 — Analisis de Percentiles MTTR (distribucion completa)",
+            "type": "timeseries"
+          },
+          {
+            "title": "Grafico 5.3 — Evolucion MTTR (tendencia diaria)",
+            "type": "timeseries"
+          },
+          {
+            "title": "Grafico 4.5 — Tasa de Exito por Tipo de Alerta",
+            "type": "piechart"
+          },
+          {
+            "title": "Grafico 4.3 — Alertas por Severidad (distribucion SOAR)",
+            "type": "barchart"
+          },
+          {
+            "title": "Grafico 4.5 — Tasa de Exito Servicios (TheHive / Cortex / MISP)",
+            "type": "timeseries"
+          },
+          {
+            "title": "MTTR Max / Min — Rango de variabilidad",
+            "type": "stat"
+          },
+          {
+            "title": "Grafico 5.4 — Alertas procesadas por hora (throughput SOAR)",
+            "type": "timeseries"
+          },
+          {
+            "title": "MTTR por Tipo de Alerta",
+            "type": "barchart"
+          },
+          {
+            "title": "Tasa de Éxito por Severidad",
+            "type": "barchart"
+          },
+          {
+            "title": "Evolución de Alertas por Tipo",
+            "type": "timeseries"
+          }
+        ]
+      }
+    ]
+  },
+  "grafana_panel_images": {
+    "panels": {
+      "5": {
+        "title": "Grafico 4.4 — Analisis de Percentiles MTTR (distribucion completa)",
+        "path": "./charts/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png",
+        "size": 26827
+      },
+      "10": {
+        "title": "Grafico 5.3 — Evolucion MTTR (tendencia diaria)",
+        "path": "./charts/grafana_panel_10_Grafico_5_3___Evolucion_MTTR__tendencia_diaria_.png",
+        "size": 30939
+      },
+      "4": {
+        "title": "Grafico 4.5 — Tasa de Exito por Tipo de Alerta",
+        "path": "./charts/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png",
+        "size": 68208
+      },
+      "7": {
+        "title": "Grafico 4.3 — Alertas por Severidad (distribucion SOAR)",
+        "path": "./charts/grafana_panel_7_Grafico_4_3___Alertas_por_Severidad__distribucion_.png",
+        "size": 14215
+      },
+      "6": {
+        "title": "Grafico 4.5 — Tasa de Exito Servicios (TheHive / Cortex / MISP)",
+        "path": "./charts/grafana_panel_6_Grafico_4_5___Tasa_de_Exito_Servicios__TheHive___C.png",
+        "size": 20897
+      },
+      "12": {
+        "title": "Grafico 5.4 — Alertas procesadas por hora (throughput SOAR)",
+        "path": "./charts/grafana_panel_12_Grafico_5_4___Alertas_procesadas_por_hora__through.png",
+        "size": 19817
+      },
+      "13": {
+        "title": "MTTR por Tipo de Alerta",
+        "path": "./charts/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png",
+        "size": 22918
+      },
+      "14": {
+        "title": "Tasa de Éxito por Severidad",
+        "path": "./charts/grafana_panel_14_Tasa_de__xito_por_Severidad.png",
+        "size": 11312
+      },
+      "15": {
+        "title": "Evolución de Alertas por Tipo",
+        "path": "./charts/grafana_panel_15_Evoluci_n_de_Alertas_por_Tipo.png",
+        "size": 10191
+      }
+    },
+    "count": 9
+  },
+  "service_health": {
+    "api": {
+      "url": "http://api:8000/health",
+      "status_code": 200,
+      "healthy": true
+    },
+    "thehive": {
+      "url": "http://thehive:9000/api/status",
+      "status_code": 200,
+      "healthy": true
+    },
+    "shuffle": {
+      "url": "http://shuffle-backend:5001/api/v1/health",
+      "status_code": 200,
+      "healthy": true
+    },
+    "elasticsearch": {
+      "url": "http://elasticsearch:9200/_cluster/health",
+      "status_code": 200,
+      "healthy": true
+    },
+    "opensearch": {
+      "url": "http://opensearch:9200/_cluster/health",
+      "status_code": 200,
+      "healthy": true
+    },
+    "cortex": {
+      "url": "http://cortex:9001",
+      "status_code": 200,
+      "healthy": true
+    },
+    "misp": {
+      "url": "http://misp:80/users/heartbeat",
+      "status_code": 200,
+      "healthy": true
+    },
+    "grafana": {
+      "url": "http://grafana:3000/api/health",
+      "status_code": 200,
+      "healthy": true
+    },
+    "loki": {
+      "url": "http://loki:3100/ready",
+      "status_code": 200,
+      "healthy": true
+    },
+    "promtail": {
+      "url": "http://promtail:9080/metrics",
+      "status_code": 200,
+      "healthy": true
+    }
+  },
+  "api_analytics": {
+    "/analytics/kpis/aggregated": {
+      "period_hours": 24,
+      "timestamp": "2026-08-24T09:17:14.595277+00:00",
+      "total_alerts": 50,
+      "mttr_statistics": {
+        "total_executions": 50,
+        "mean": 277.15,
+        "median": 193.19,
+        "p50": 193.19,
+        "p90": 621.71,
+        "p95": 645.46,
+        "p99": 652.92,
+        "min": 65.38,
+        "max": 652.92,
+        "std_dev": 187.61,
+        "mttr_seconds": 277.15,
+        "mttr_minutes": 4.62
+      },
+      "by_alert_type": {
+        "ransomware": {
+          "count": 45,
+          "avg_mttr_seconds": 261.42,
+          "avg_severity": 2.91,
+          "critical_count": 41,
+          "critical_rate": 91.11
+        },
+        "rat": {
+          "count": 2,
+          "avg_mttr_seconds": 146.88,
+          "avg_severity": 2.5,
+          "critical_count": 1,
+          "critical_rate": 50.0
+        },
+        "trojan": {
+          "count": 2,
+          "avg_mttr_seconds": 599.21,
+          "avg_severity": 2.0,
+          "critical_count": 0,
+          "critical_rate": 0.0
+        },
+        "infostealer": {
+          "count": 1,
+          "avg_mttr_seconds": 601.25,
+          "avg_severity": 3.0,
+          "critical_count": 1,
+          "critical_rate": 100.0
+        }
+      },
+      "services": {
+        "thehive": {
+          "success_count": 50,
+          "failure_count": 0,
+          "total": 50,
+          "success_rate_percent": 100.0
+        },
+        "cortex": {
+          "success_count": 50,
+          "failure_count": 0,
+          "total": 50,
+          "success_rate_percent": 100.0
+        },
+        "misp": {
+          "success_count": 50,
+          "failure_count": 0,
+          "total": 50,
+          "success_rate_percent": 100.0
+        },
+        "elasticsearch": {
+          "success_count": 50,
+          "failure_count": 0,
+          "total": 50,
+          "success_rate_percent": 100.0
+        }
+      }
+    },
+    "/analytics/node-timings": {
+      "period_hours": 1,
+      "timestamp": "2026-08-24T09:17:14.602174+00:00",
+      "total_executions": 0,
+      "executions": []
+    }
+  },
+  "security_metrics": {
+    "decision_distribution": {
+      "contain": 46,
+      "observe": 4
+    },
+    "total": 50,
+    "containment_rate": 92.0,
+    "observe_rate": 8.0,
+    "success_distribution": {
+      "1": 50
+    },
+    "containment_executed_distribution": {
+      "1": 46,
+      "0": 4
+    },
+    "mttr_by_severity": [
+      {
+        "severity": 2,
+        "count": 7,
+        "avg": 274.1,
+        "p50": 166.8,
+        "p90": 602.7,
+        "p95": 605.0
+      },
+      {
+        "severity": 3,
+        "count": 43,
+        "avg": 277.6,
+        "p50": 197.1,
+        "p90": 627.0,
+        "p95": 646.8
+      }
+    ],
+    "mttr_by_decision": [
+      {
+        "decision": "contain",
+        "count": 46,
+        "avg_mttr": 259.2,
+        "p50": 188.1,
+        "p90": 622.8
+      },
+      {
+        "decision": "observe",
+        "count": 4,
+        "avg_mttr": 483.2,
+        "p50": 597.3,
+        "p90": 605.0
+      }
+    ],
+    "decision_severity_crosstab": [
+      {
+        "decision": "contain",
+        "count": 46,
+        "by_severity": {
+          "2": 5,
+          "3": 41
+        }
+      },
+      {
+        "decision": "observe",
+        "count": 4,
+        "by_severity": {
+          "2": 2,
+          "3": 2
+        }
+      }
+    ],
+    "mitre_tactics": [
+      {
+        "tactic": "Impact",
+        "count": 36
+      },
+      {
+        "tactic": "Execution",
+        "count": 21
+      },
+      {
+        "tactic": "Exfiltration",
+        "count": 14
+      },
+      {
+        "tactic": "Defense Evasion",
+        "count": 10
+      },
+      {
+        "tactic": "Initial Access",
+        "count": 9
+      },
+      {
+        "tactic": "Persistence",
+        "count": 7
+      },
+      {
+        "tactic": "Credential Access",
+        "count": 6
+      },
+      {
+        "tactic": "Discovery",
+        "count": 4
+      },
+      {
+        "tactic": "Lateral Movement",
+        "count": 4
+      },
+      {
+        "tactic": "Command and Control",
+        "count": 1
+      }
+    ],
+    "mitre_techniques": [
+      {
+        "technique": "T1486",
+        "count": 36
+      },
+      {
+        "technique": "T1567",
+        "count": 13
+      },
+      {
+        "technique": "T1059.001",
+        "count": 11
+      },
+      {
+        "technique": "T1059",
+        "count": 10
+      },
+      {
+        "technique": "T1068",
+        "count": 7
+      },
+      {
+        "technique": "T1190",
+        "count": 7
+      },
+      {
+        "technique": "T1547.001",
+        "count": 7
+      },
+      {
+        "technique": "T1078",
+        "count": 5
+      },
+      {
+        "technique": "T1003",
+        "count": 4
+      },
+      {
+        "technique": "T1018",
+        "count": 4
+      },
+      {
+        "technique": "T1021.001",
+        "count": 4
+      },
+      {
+        "technique": "T1046",
+        "count": 4
+      },
+      {
+        "technique": "T1098",
+        "count": 4
+      },
+      {
+        "technique": "T1110.003",
+        "count": 4
+      },
+      {
+        "technique": "T1136",
+        "count": 4
+      },
+      {
+        "technique": "T1219",
+        "count": 4
+      },
+      {
+        "technique": "T1562.001",
+        "count": 4
+      },
+      {
+        "technique": "T1021.004",
+        "count": 3
+      },
+      {
+        "technique": "T1027",
+        "count": 3
+      },
+      {
+        "technique": "T1041",
+        "count": 3
+      },
+      {
+        "technique": "T1491",
+        "count": 3
+      },
+      {
+        "technique": "T1566.001",
+        "count": 3
+      },
+      {
+        "technique": "T1572",
+        "count": 3
+      },
+      {
+        "technique": "T1491.001",
+        "count": 2
+      },
+      {
+        "technique": "T1566.002",
+        "count": 2
+      },
+      {
+        "technique": "T1056.001",
+        "count": 1
+      },
+      {
+        "technique": "T1102",
+        "count": 1
+      },
+      {
+        "technique": "T1133",
+        "count": 1
+      },
+      {
+        "technique": "T1539",
+        "count": 1
+      },
+      {
+        "technique": "T1556.006",
+        "count": 1
+      },
+      {
+        "technique": "T1563",
+        "count": 1
+      },
+      {
+        "technique": "T1567.002",
+        "count": 1
+      }
+    ],
+    "alert_sources": [
+      {
+        "source": "windows_defender_sim",
+        "count": 50
+      }
+    ],
+    "event_types": [
+      {
+        "event_type": "ransomware_detection",
+        "count": 43
+      },
+      {
+        "event_type": "data_exfiltration",
+        "count": 3
+      },
+      {
+        "event_type": "trojan_detection",
+        "count": 2
+      },
+      {
+        "event_type": "infostealer_detection",
+        "count": 1
+      },
+      {
+        "event_type": "rat_detection",
+        "count": 1
+      }
+    ],
+    "confidence_distribution": [],
+    "hostname_distribution": [
+      {
+        "hostname": "WORKSTATION-001",
+        "count": 6
+      },
+      {
+        "hostname": "COMPROMISED-SRV-002",
+        "count": 5
+      },
+      {
+        "hostname": "SERVER-002",
+        "count": 5
+      },
+      {
+        "hostname": "ws-legal-09",
+        "count": 5
+      },
+      {
+        "hostname": "INFECTED-WIN-001",
+        "count": 4
+      },
+      {
+        "hostname": "endpoint-hr-02",
+        "count": 3
+      },
+      {
+        "hostname": "ws-accounting-04",
+        "count": 3
+      },
+      {
+        "hostname": "WIN-FORENSIC-002",
+        "count": 2
+      },
+      {
+        "hostname": "endpoint-marketing-08",
+        "count": 2
+      },
+      {
+        "hostname": "endpoint-sales-06",
+        "count": 2
+      }
+    ],
+    "alerts_timeline": [
+      {
+        "hour": "2026-08-24T08:00:00.000Z",
+        "count": 50
+      }
+    ],
+    "timeline_peak": 50,
+    "timeline_avg_per_hour": 50.0,
+    "mttd_count": 50,
+    "mttd_mean": 229.26,
+    "mttd_median": 149.0,
+    "mttd_min": 20.0,
+    "mttd_max": 598.0,
+    "thehive_tags": [],
+    "cortex_by_datatype": []
+  },
+  "docker_resources": {
+    "containers": [
+      {
+        "name": "grafana",
+        "cpu_percent": "0.08",
+        "mem_used": "95.08MiB",
+        "mem_limit": "1GiB",
+        "net_io": "6.45MB / 467MB",
+        "block_io": "40.3MB / 500kB"
+      },
+      {
+        "name": "nginx",
+        "cpu_percent": "0.00",
+        "mem_used": "3.855MiB",
+        "mem_limit": "512MiB",
+        "net_io": "67.1kB / 252B",
+        "block_io": "1.66MB / 12.3kB"
+      },
+      {
+        "name": "cortex",
+        "cpu_percent": "0.52",
+        "mem_used": "505.9MiB",
+        "mem_limit": "4GiB",
+        "net_io": "3.63MB / 6.48MB",
+        "block_io": "119MB / 92.4MB"
+      },
+      {
+        "name": "thehive",
+        "cpu_percent": "0.83",
+        "mem_used": "928.2MiB",
+        "mem_limit": "4GiB",
+        "net_io": "2.92MB / 2.64MB",
+        "block_io": "113MB / 123MB"
+      },
+      {
+        "name": "misp",
+        "cpu_percent": "0.02",
+        "mem_used": "456.8MiB",
+        "mem_limit": "4GiB",
+        "net_io": "44.2MB / 337MB",
+        "block_io": "75.8MB / 43.8MB"
+      },
+      {
+        "name": "api",
+        "cpu_percent": "0.70",
+        "mem_used": "171.3MiB",
+        "mem_limit": "2GiB",
+        "net_io": "35.5MB / 828kB",
+        "block_io": "75.9MB / 11MB"
+      },
+      {
+        "name": "promtail",
+        "cpu_percent": "0.73",
+        "mem_used": "70.27MiB",
+        "mem_limit": "512MiB",
+        "net_io": "363kB / 5.28MB",
+        "block_io": "70.4MB / 3.19MB"
+      },
+      {
+        "name": "shuffle_frontend",
+        "cpu_percent": "0.00",
+        "mem_used": "23.32MiB",
+        "mem_limit": "2GiB",
+        "net_io": "68.8kB / 252B",
+        "block_io": "19.7MB / 8.19kB"
+      },
+      {
+        "name": "orborus",
+        "cpu_percent": "0.04",
+        "mem_used": "32.64MiB",
+        "mem_limit": "2GiB",
+        "net_io": "2.59MB / 2.31MB",
+        "block_io": "46.1MB / 815kB"
+      },
+      {
+        "name": "misp_db",
+        "cpu_percent": "0.02",
+        "mem_used": "295.1MiB",
+        "mem_limit": "2GiB",
+        "net_io": "335MB / 38.4MB",
+        "block_io": "44.8MB / 23.4MB"
+      },
+      {
+        "name": "grafana_db",
+        "cpu_percent": "3.06",
+        "mem_used": "42.23MiB",
+        "mem_limit": "512MiB",
+        "net_io": "2.2MB / 4.18MB",
+        "block_io": "32.4MB / 1.43MB"
+      },
+      {
+        "name": "shuffle_backend",
+        "cpu_percent": "0.00",
+        "mem_used": "64.21MiB",
+        "mem_limit": "4GiB",
+        "net_io": "102MB / 93.6MB",
+        "block_io": "54.1MB / 1.38MB"
+      },
+      {
+        "name": "loki",
+        "cpu_percent": "0.68",
+        "mem_used": "142MiB",
+        "mem_limit": "1GiB",
+        "net_io": "5.36MB / 660kB",
+        "block_io": "49.1MB / 67.5MB"
+      },
+      {
+        "name": "elasticsearch",
+        "cpu_percent": "0.27",
+        "mem_used": "2.282GiB",
+        "mem_limit": "4GiB",
+        "net_io": "7MB / 4.88MB",
+        "block_io": "113MB / 177MB"
+      },
+      {
+        "name": "redis",
+        "cpu_percent": "0.33",
+        "mem_used": "6.801MiB",
+        "mem_limit": "1GiB",
+        "net_io": "1.09MB / 711kB",
+        "block_io": "6.24MB / 0B"
+      },
+      {
+        "name": "docs_site",
+        "cpu_percent": "0.01",
+        "mem_used": "315.3MiB",
+        "mem_limit": "512MiB",
+        "net_io": "1.42MB / 29.3kB",
+        "block_io": "291MB / 441MB"
+      },
+      {
+        "name": "grafana_renderer",
+        "cpu_percent": "0.00",
+        "mem_used": "219.5MiB",
+        "mem_limit": "1GiB",
+        "net_io": "464MB / 2.54MB",
+        "block_io": "205MB / 63.4MB"
+      },
+      {
+        "name": "web_management",
+        "cpu_percent": "0.00",
+        "mem_used": "13.14MiB",
+        "mem_limit": "256MiB",
+        "net_io": "68.8kB / 18.6kB",
+        "block_io": "1.95MB / 8.19kB"
+      },
+      {
+        "name": "network_watcher",
+        "cpu_percent": "0.01",
+        "mem_used": "46.84MiB",
+        "mem_limit": "512MiB",
+        "net_io": "101kB / 32.5kB",
+        "block_io": "20MB / 2.29MB"
+      },
+      {
+        "name": "opensearch_dashboards",
+        "cpu_percent": "0.00",
+        "mem_used": "145.5MiB",
+        "mem_limit": "2GiB",
+        "net_io": "903kB / 1.08MB",
+        "block_io": "69.9MB / 7.95MB"
+      },
+      {
+        "name": "misp_modules",
+        "cpu_percent": "0.00",
+        "mem_used": "265.4MiB",
+        "mem_limit": "1GiB",
+        "net_io": "88.6kB / 4.77MB",
+        "block_io": "128MB / 21.2MB"
+      },
+      {
+        "name": "tenzir_node",
+        "cpu_percent": "4.61",
+        "mem_used": "552.2MiB",
+        "mem_limit": "1GiB",
+        "net_io": "1.17MB / 956kB",
+        "block_io": "174MB / 71.4MB"
+      },
+      {
+        "name": "opensearch",
+        "cpu_percent": "0.36",
+        "mem_used": "2.584GiB",
+        "mem_limit": "4GiB",
+        "net_io": "62.2MB / 16.8MB",
+        "block_io": "123MB / 231MB"
+      },
+      {
+        "name": "tenzir-node",
+        "cpu_percent": "15.54",
+        "mem_used": "1011MiB",
+        "mem_limit": "15.55GiB",
+        "net_io": "1.7kB / 126B",
+        "block_io": "208GB / 9.71GB"
+      }
+    ]
+  },
+  "cortex_analyzers": {
+    "total_available": 34,
+    "by_datatype": [
+      {
+        "data_type": "domain",
+        "count": 20
+      },
+      {
+        "data_type": "file",
+        "count": 2
+      },
+      {
+        "data_type": "filename",
+        "count": 2
+      },
+      {
+        "data_type": "fqdn",
+        "count": 12
+      },
+      {
+        "data_type": "hash",
+        "count": 9
+      },
+      {
+        "data_type": "ip",
+        "count": 17
+      },
+      {
+        "data_type": "mail",
+        "count": 5
+      },
+      {
+        "data_type": "other",
+        "count": 1
+      },
+      {
+        "data_type": "uri_path",
+        "count": 1
+      },
+      {
+        "data_type": "url",
+        "count": 12
+      },
+      {
+        "data_type": "user-agent",
+        "count": 2
+      }
+    ],
+    "analyzer_names": [
+      "Robtex_IP_Query",
+      "UnshortenLink",
+      "Lookyloo_Screenshot",
+      "EmailRep",
+      "ZscalerZIA_URLLookup",
+      "Crt_sh_Transparency_Logs",
+      "TeamCymruMHR",
+      "Robtex_Reverse_PDNS_Query",
+      "CyberCrime-Tracker",
+      "Abuse_Finder",
+      "DNS_Lookingglass",
+      "StopForumSpam",
+      "Inoitsu",
+      "MaxMind_GeoIP",
+      "ThreatMiner",
+      "SpamhausDBL",
+      "Hashdd_Status_2_0",
+      "Mnemonic_pDNS_Public_3_0",
+      "ValidateObservable_1_0",
+      "DomainMailSPFDMARC_1_2",
+      "MISPWarningLists",
+      "MSDefenderOffice365_SafeLinksDecoder",
+      "Virusshare",
+      "DNSdumpster_report",
+      "CIRCLHashlookup",
+      "NSRL",
+      "Robtex_Forward_PDNS_Query",
+      "Maltiverse_Report",
+      "Cyberprotect_ThreatScore",
+      "GoogleSafebrowsing",
+      "AIL_OnionLookup",
+      "DShield_lookup_1_0",
+      "IP-API_1_1",
+      "GoogleDNS_resolve_1_0_0"
+    ]
+  },
+  "quality_metrics": {
+    "error": "quality-summary.json not found"
+  }
+}
