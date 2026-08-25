@@ -70,7 +70,7 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos funcionales y 
 |--------|-------------------------------|-----------|--------------------------|--------------------|
 | **F**  | Gestión de alertas ransomware | Alta      | 100% alertas procesadas  | Implementado     |
 | **F**  | Análisis automático IoCs      | Alta      | <30s por IoC             | Implementado     |
-| **F**  | Orquestación playbooks        | Alta      | 3+ playbooks funcionales | Implementado     |
+| **F**  | Orquestación playbook         | Alta      | 1 playbook E2E, 2 escenarios | Implementado     |
 | **F**  | Gestión de casos              | Alta      | Integración TheHive      | Implementado     |
 | **NF** | MTTR <120s                    | Alta      | Medición continua        | Parcial (p50=193.19s, mean=277.15s) |
 | **NF** | Disponibilidad 99.5%          | Media     | Uptime monitoring        | Cumplido (99.7%) |
