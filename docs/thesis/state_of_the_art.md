@@ -41,13 +41,13 @@ ofrecen capacidades competitivas sin costos de licencia.
 
 | Característica        | TheHive                  | Cortex                   | Shuffle                  | Palo Alto XSOAR            | IBM Resilient             |
 |-----------------------|--------------------------|--------------------------|--------------------------|----------------------------|---------------------------|
-| **Licencia**          | Open Source (Apache 2.0) | Open Source (Apache 2.0) | Open Source (Apache 2.0) | Comercial ($50K-$500K/año) | Comercial ($100K-$1M/año) |
+| **Licencia**          | Open Source (AGPL-3.0)   | Open Source (AGPL-3.0)   | Open Source (AGPL-3.0)   | Comercial ($106K-$250K/año) | Comercial ($15K-$200K+/año) |
 | **Gestión de Casos**  | Excelente              | No aplica              | Básica                 | Avanzada                 | Avanzada                |
 | **Análisis IoCs**     | No aplica              | Excelente              | Básico                 | Avanzado                 | Avanzado                |
 | **Orquestación**      | Limitada               | No aplica              | Excelente              | Excelente                | Excelente               |
 | **Curva Aprendizaje** | Media                    | Media                    | Baja                     | Alta                       | Alta                      |
 | **Comunidad**         | Activa                   | Activa                   | Creciente                | Empresarial                | Empresarial               |
-| **Integraciones**     | 50+                      | 30+ analyzers            | 100+ apps                | 300+                       | 250+                      |
+| **Integraciones**     | 300+                     | 146+ analyzers           | 2500+ apps               | 850+                       | 300+                      |
 | **Escalabilidad**     | Media                    | Media                    | Alta                     | Alta                       | Alta                      |
 | **Soporte**           | Comunidad                | Comunidad                | Comunidad                | 24/7 Enterprise            | 24/7 Enterprise           |
 
