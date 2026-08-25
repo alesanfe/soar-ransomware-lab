@@ -20,8 +20,8 @@
 
 | Figura  | Título                                            | Archivo |
 |---------|---------------------------------------------------|---------|
-| Figura 3 | Arquitectura General del Laboratorio SOAR        | Anexo J (J.2) |
-| Figura 4 | Diagrama de Despliegue Docker Compose            | Anexo J (J.3) |
+| Figura 3 | Arquitectura General del Laboratorio SOAR        | Anexo H (H.2) |
+| Figura 4 | Diagrama de Despliegue Docker Compose            | Anexo H (H.3) |
 | Figura 5 | Estado de Jobs de Cortex                         | `figures/cortex_job_status.png` |
 | Figura 6 | Resultados de MTTR (manual vs automatizado)      | `figures/Fig5_1_mttr_results.png` |
 | Figura 7 | Tiempos por Componente del Workflow              | `figures/GE1_component_timings.png` |
@@ -35,7 +35,7 @@
 |---------|---------------------------------------------------|---------|
 | Figura 11 | Análisis Coste-Beneficio SOAR Open Source vs Comercial | `figures/Fig5_5_cost_benefit.png` |
 
-## Figuras del Anexo E: Métricas y Visualizaciones Complementarias
+## Figuras del Anexo D: Métricas y Visualizaciones Complementarias
 
 | Figura  | Título                                            | Archivo |
 |---------|---------------------------------------------------|---------|
@@ -66,7 +66,7 @@
 | Figura 36 | Análisis Coste-Beneficio (versión extendida)     | `figures/GE6_cost_benefit.png` |
 | Figura 37 | Estadísticas Diarias Organizativas               | `figures/org_daily_stats.png` |
 
-## Figuras del Anexo J (Diagramas Mermaid)
+## Figuras del Anexo H (Diagramas Mermaid)
 
 | Figura  | Título                                            |
 |---------|---------------------------------------------------|
@@ -103,4 +103,4 @@
 4. **Actualización**: Las figuras han sido actualizadas con los datos experimentales obtenidos durante la validación
    del sistema en agosto de 2026.
 
-5. **Total**: 50 figuras (11 en capítulos + 26 en Anexo E + 13 en Anexo J).
+5. **Total**: 50 figuras (11 en capítulos + 26 en Anexo D + 13 en Anexo H).

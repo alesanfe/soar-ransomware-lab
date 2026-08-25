@@ -86,13 +86,13 @@ SOAR responde a la fragmentación de herramientas, pero la efectividad depende d
 **Brecha identificada.** La literatura revisada aporta modelos conceptuales (CACAO, ATT&CK), guías prácticas (NIST,
 CISA), una taxonomía de orquestación (Islam et al., 2019), el primer estudio empírico de SOAR en uso (Gutzwiller et al., 2023), frameworks de respuesta a ransomware (Kok et al., 2023; Brown et al., 2023), una revisión de 45 soluciones automáticas (Karlzén & Sommestad, 2023) y validaciones cualitativas de plataformas SIRP (Núñez Fernández). Sin embargo, falta evidencia cuantitativa rigurosa sobre el efecto de un playbook SOAR específico para ransomware en condiciones controladas y reproducibles: la mayoría de los estudios reportan mejoras observadas sin medir MTTR con percentiles, desviación estándar o consistencia entre ejecuciones. Gutzwiller et al. confirman que las herramientas SOAR aumentan la eficiencia, pero no reportan MTTR cuantitativo; Karlzén y Sommestad detectan vaguedad en la descripción de entradas y salidas; y los frameworks de ransomware (Kok, Brown) se centran en el diseño, no en la medición. Esta tesis aborda esa brecha diseñando un laboratorio reproducible, ejecutando un playbook E2E sobre 50 alertas y reportando métricas estadísticas descriptivas que permiten contrastar la hipótesis de que la automatización reduce el MTTR y mejora la consistencia frente a la respuesta manual.
 
-Estas tres conclusiones sustentan el diseño del TFM. El **Anexo J** (`appendix_j.md`) recopila 13 diagramas Mermaid canónicos que ilustran la arquitectura y los flujos de respuesta referenciados en esta revisión.
+Estas tres conclusiones sustentan el diseño del TFM. El **Anexo H** (`appendix_h.md`) recopila 13 diagramas Mermaid canónicos que ilustran la arquitectura y los flujos de respuesta referenciados en esta revisión.
 
 ---
 
 ## Índice de Figuras del Capítulo 2
 
-Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados se encuentran en el Anexo J.
+Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados se encuentran en el Anexo H.
 
 ## Índice de Tablas del Capítulo 2
 
