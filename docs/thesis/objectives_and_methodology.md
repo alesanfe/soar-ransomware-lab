@@ -83,7 +83,7 @@ escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
 
 ## 3.3. Metodología del trabajo
 
-La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre el 27 de abril y el 31 de agosto de 2026 (18 semanas) y se estructura en cinco fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
+La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre el 27 de abril y el 31 de agosto de 2026 (18 semanas) y se estructura en cuatro fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
 
 La planificación temporal evolucionó a lo largo del proyecto. La estimación inicial fue de 12 semanas, suficiente según el alcance previsto. Tras la fase de diseño se aumentó a 15 semanas para acomodar la integración de Cortex con analyzers externos y el stack de monitoreo, no contemplados inicialmente. Finalmente, la duración real fue de 18 semanas debido a la ampliación de la suite de pruebas (hasta 2041 tests) y la ejecución del experimento con n=50 ejecuciones.
 
@@ -115,7 +115,7 @@ gantt
     Cierre del proyecto :milestone, m3, after a6, 0d
 ```
 
-**Figura 2**: Cronograma de ejecución del proyecto con cinco fases distribuidas entre abril y agosto de 2026.
+**Figura 2**: Cronograma de ejecución del proyecto con cuatro fases distribuidas entre abril y agosto de 2026.
 
 **Fase 1 — Investigación (abril-mayo 2026, 3 semanas).** Revisión de la literatura sobre respuesta a
 incidentes, ransomware y plataformas SOAR. Identificación de la brecha cuantitativa en la literatura. Definición de requisitos funcionales, no funcionales y de integración. Selección del stack tecnológico open source.
@@ -131,19 +131,7 @@ Desarrollo del simulador SIEM y de la lógica de contención simulada. Implement
 completa (2041 tests). Pruebas E2E, experimentos con n=50 ejecuciones en dos escenarios (malicioso y benigno),
 análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut.
 
-El desarrollo empieza por definir el alcance y los requisitos. Se prioriza que el entorno sea reproducible y seguro, además de posibilitar repetir ejecuciones bajo condiciones comparables. La validación es medible: se evalúa la ejecución del flujo en dos escenarios, las métricas dentro de umbral y la generación de evidencias verificables.
-
-En cuanto al diseño arquitectónico, este usa una topología de despliegue en un host con Docker Compose. Los contratos de integración especifican los puntos de conexión de cada componente, el mecanismo de autenticación y el formato de la alerta. La lógica de decisión del playbook se puede ajustar mediante variables de configuración, como por ejemplo el umbral de score de riesgo.
-
-Una vez definido el diseño, se despliega el laboratorio y se verifica la conectividad entre componentes, el almacenamiento de datos y la estabilidad. La integración sigue un orden incremental: primero TheHive, luego Cortex y finalmente Shuffle como orquestador.
-
-Tras las validaciones de integración, se construye el playbook E2E. El flujo incluye ingesta por webhook, validación de datos, creación del caso, adjunto de indicadores, enriquecimiento con analyzers, lógica de decisión y cierre con notificación. Para el manejo de errores se incluyen reintentos y rutas alternativas, lo que facilita el diagnóstico.
-
-Con el fin de evitar dependencias externas se usan elementos simulados. Un script Python genera alertas hacia el webhook, mientras que las acciones de contención se ejecutan mediante puntos simulados que registran la intención sin aplicar cambios reales.
-
-La evaluación opera sobre dos escenarios. En el benigno, el análisis no supera el umbral y el caso se cierra sin contención. En el malicioso se activa la contención simulada. En cada ejecución se registran marcas temporales para calcular los percentiles p50 y p90.
-
-**Stack tecnológico.** En cuanto a la infraestructura, esta se basa en Docker y Docker Compose (Docker Inc., 2024)
+**Stack tecnológico.** La infraestructura se basa en Docker y Docker Compose (Docker Inc., 2024)
 junto con Python. Para los datos y servicios se utiliza Elasticsearch (Elastic, 2024), Redis (Redis Ltd., 2024), MariaDB y Nginx (Nginx, 2024). Las plataformas SOAR principales son TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024) y Shuffle (Shuffle Tools, 2024). Además, como componente opcional se incluye MISP (MISP Project, 2024), junto con una API REST. El sistema de logging integra Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c) y Grafana (Grafana Labs, 2024) para monitoreo centralizado. Para el desarrollo se emplean herramientas como Git, Make y pytest (pytest, 2024).
 
 **Diseño experimental.** La variable independiente es el tipo de respuesta, comparando manual con SOAR. Las variables
@@ -155,8 +143,6 @@ datos reales. La segmentación de red contiene la actividad simulada y los secre
 **Gestión de riesgos.** Los riesgos técnicos principales son el fallo de integración entre componentes, mitigado con
 pruebas de conexión tempranas, y la aparición de vulnerabilidades, abordada con escaneos periódicos. En la planificación se incorpora una holgura del 20 % sobre la estimación de duración de cada fase y se realizan copias de seguridad diarias.
 El sesgo experimental se controla mediante aleatorización del orden de ejecuciones y condiciones constantes, mientras que las limitaciones de generalización se discuten en el capítulo de conclusiones.
-
-La documentación técnica agrupa configuración, arquitectura, procedimientos de despliegue y organización de evidencias, de modo que cualquier investigador pueda reproducir el experimento e interpretar los resultados.
 
 ### Pasos operativos para reproducir el experimento
 
