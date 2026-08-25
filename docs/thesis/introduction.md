@@ -60,20 +60,41 @@ Los resultados obtenidos confirman la hipótesis: el playbook SOAR reduce el MTT
 
 ## 1.3. Estructura del trabajo
 
-El documento está compuesto por cinco capítulos.
+El documento se organiza en páginas preliminares, cinco capítulos, referencias y anexos.
 
-- Capítulo 2 revisa la literatura sobre respuesta a incidentes, ransomware y plataformas SOAR y identifica las lagunas
-  que esta investigación aborda.
-- Capítulo 3 presenta los objetivos y método de la investigación.
-- Capítulo 4 detalla los elementos técnicos del ensayo, incluyendo requisitos, arquitectura, implementación del playbook
-  y resultados.
-- Capítulo 5 presenta los hallazgos y debate las limitaciones del estudio. Además, formula sugerencias para entornos
-  que deseen aplicar capacidades SOAR similares.
-- Anexo A contiene la documentación técnica requerida para reproducir el ensayo.
-- Anexo B detalla el workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python).
-- Anexo F2 consolida la validación experimental (Quality Score 92.2/100, HPR 96.0/100).
-- Anexo I describe la estrategia de testing (2041 tests, pirámide, quality gates).
-- Anexo J recopila los diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid).
+**Páginas preliminares.** Portada, resumen ejecutivo y abstract, agradecimientos, lista de abreviaturas, índice de
+figuras, índice de tablas e índice general.
+
+**Capítulo 1: Introducción.** Plantea la motivación, el problema de investigación, la pregunta de investigación y la
+estructura del trabajo.
+
+**Capítulo 2: Estado del arte.** Revisa la literatura sobre respuesta a incidentes, ransomware y plataformas SOAR e
+identifica las lagunas que esta investigación aborda.
+
+**Capítulo 3: Objetivos y metodología.** Presenta los objetivos generales y específicos, el diseño experimental y el
+plan de gestión de riesgos.
+
+**Capítulo 4: Desarrollo específico.** Detalla los elementos técnicos del ensayo, incluyendo requisitos, arquitectura,
+implementación del playbook y resultados experimentales.
+
+**Capítulo 5: Conclusiones y trabajo futuro.** Presenta los hallazgos, debate las limitaciones del estudio y formula
+sugerencias para entornos que deseen aplicar capacidades SOAR similares.
+
+**Referencias.** Lista completa de fuentes citadas en el texto, ordenadas alfabéticamente.
+
+**Anexos.**
+
+- Anexo A: documentación técnica requerida para reproducir el ensayo (configuración Docker, scripts, guías de
+  instalación).
+- Anexo B: workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python).
+- Anexo C: gráficos y diagramas complementarios (las tablas comparativas se han reubicado en sus capítulos
+  correspondientes).
+- Anexo E: métricas y visualizaciones complementarias (26 figuras generadas desde resultados experimentales y
+  dashboards de Grafana).
+- Anexo F2: validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100).
+- Anexo G: registro de las 44 mejoras implementadas por categoría.
+- Anexo I: estrategia de testing (2041 tests, pirámide, quality gates).
+- Anexo J: diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid).
 
 ---
 
