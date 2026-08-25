@@ -98,7 +98,9 @@
 - **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, guías de instalación
 - **Anexo B** — `appendix_b.md` — Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
 - **Anexo C** — `appendix_c.md` — Tablas comparativas de plataformas SOAR, generaciones de ransomware, configuración Docker
+- **Anexo D** — Resultados detallados de pruebas experimentales (incluido en §4.1.3 de `specific_development.md`)
 - **Anexo E** — `appendix_e.md` — Métricas y visualizaciones complementarias
+- **Anexo F** — Guía de instalación y configuración (incluido en §A.5 de `appendix_a.md`)
 - **Anexo F2** — `appendix_f2.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
 - **Anexo G** — `appendix_g.md` — Documentación de mejoras implementadas (44 mejoras)
 - **Anexo I** — `appendix_i.md` — Estrategia de testing (2041 tests, pirámide, quality gates)
@@ -255,6 +257,25 @@
 **Anexo B** — `appendix_b.md`
 
 - Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
+
+**Anexo C** — `appendix_c.md`
+
+- Tablas comparativas de plataformas SOAR
+- Generaciones de ransomware
+- Objetivos del proyecto y cronograma
+- Configuración Docker y analyzers Cortex
+- Métricas de monitoreo y resultados experimentales
+
+**Anexo E** — `appendix_e.md`
+
+- Visualizaciones ASCII de métricas (MTTR, percentiles, tasas de éxito)
+- Gráficos de evolución temporal y coste-beneficio
+- 15 figuras generadas desde resultados experimentales y dashboards Grafana
+
+**Anexo G** — `appendix_g.md`
+
+- Registro de 44 mejoras implementadas por categoría
+- Cambios técnicos y editoriales aplicados durante la remediación documental
 
 **Anexo F2** — `appendix_f2.md`
 
