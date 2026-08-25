@@ -43,7 +43,7 @@
 | Tabla 13 | Variables de Entorno Docker Compose      | 84     |
 | Tabla 14 | Comandos Make Disponibles                | 88     |
 
-## Tablas del Anexo E: Métricas y Visualizaciones
+## Tablas del Anexo D: Métricas y Visualizaciones
 
 | Tabla  | Título                                          | Página |
 |--------|-------------------------------------------------|--------|
@@ -64,4 +64,4 @@
 3. **Actualización**: Las tablas han sido actualizadas con los datos experimentales obtenidos durante la validación
    del sistema en agosto de 2026.
 
-4. **Total**: 18 tablas (2 en cap.2 + 1 en cap.3 + 7 en cap.4 + 2 en cap.5 + 2 en Anexo A + 4 en Anexo E).
+4. **Total**: 18 tablas (2 en cap.2 + 1 en cap.3 + 7 en cap.4 + 2 en cap.5 + 2 en Anexo A + 4 en Anexo D).

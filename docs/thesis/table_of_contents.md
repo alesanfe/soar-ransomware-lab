@@ -91,7 +91,7 @@
 8. **Referencias bibliográficas** — `bibliographic_references.md`
 9. **Declaración de originalidad** — `originality_declaration.md`
 10. **Tablas comparativas de plataformas SOAR** — `appendix_c.md`
-11. **Visualizaciones de datos y gráficos complementarios** — `appendix_e.md`
+11. **Visualizaciones de datos y gráficos complementarios** — `appendix_d.md`
 12. **Glosario** — `abbreviations_list.md`
 
 ### Anexos
@@ -99,13 +99,11 @@
 - **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, guías de instalación
 - **Anexo B** — `appendix_b.md` — Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
 - **Anexo C** — `appendix_c.md` — Gráficos y diagramas complementarios (las tablas se han reubicado en sus capítulos correspondientes)
-- **Anexo D** — Resultados detallados de pruebas experimentales (incluido en §4.1.3 de `specific_development.md`)
-- **Anexo E** — `appendix_e.md` — Métricas y visualizaciones complementarias
-- **Anexo F** — Guía de instalación y configuración (incluido en §A.5 de `appendix_a.md`)
-- **Anexo F2** — `appendix_f2.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
-- **Anexo G** — `appendix_g.md` — Documentación de mejoras implementadas (44 mejoras)
-- **Anexo I** — `appendix_i.md` — Estrategia de testing (2041 tests, pirámide, quality gates)
-- **Anexo J** — `appendix_j.md` — Diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid)
+- **Anexo D** — `appendix_d.md` — Métricas y visualizaciones complementarias
+- **Anexo E** — `appendix_e.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
+- **Anexo F** — `appendix_f.md` — Documentación de mejoras implementadas (44 mejoras)
+- **Anexo G** — `appendix_g.md` — Estrategia de testing (2041 tests, pirámide, quality gates)
+- **Anexo H** — `appendix_h.md` — Diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid)
 
 
 ## Detalle de Contenido por Capítulo
@@ -266,18 +264,13 @@
 - Esquemas de flujo de procesos
 - Las tablas comparativas se han reubicado en sus capítulos correspondientes con numeración APA
 
-**Anexo E** — `appendix_e.md`
+**Anexo D** — `appendix_d.md`
 
 - Visualizaciones ASCII de métricas (MTTR, percentiles, tasas de éxito)
 - Gráficos de evolución temporal y coste-beneficio
 - 15 figuras generadas desde resultados experimentales y dashboards Grafana
 
-**Anexo G** — `appendix_g.md`
-
-- Registro de 44 mejoras implementadas por categoría
-- Cambios técnicos y editoriales aplicados durante la remediación documental
-
-**Anexo F2** — `appendix_f2.md`
+**Anexo E** — `appendix_e.md`
 
 - Resultados E2E (n=50): MTTR, contención, score, servicios
 - Quality Score: 92.2/100 (complexity, coverage, security, linting)
@@ -286,7 +279,12 @@
 - Infraestructura: 18 servicios, 18 contenedores, 131 env vars
 - API: 38 endpoints (OpenAPI 3.1.0)
 
-**Anexo I** — `appendix_i.md`
+**Anexo F** — `appendix_f.md`
+
+- Registro de 44 mejoras implementadas por categoría
+- Cambios técnicos y editoriales aplicados durante la remediación documental
+
+**Anexo G** — `appendix_g.md`
 
 - 2041 tests en 184 archivos (unit, integration, e2e, atomic, security, performance)
 - Pirámide: 65.9 % unit, 16.5 % integration, 13.8 % e2e (score 94.3/100)
@@ -296,7 +294,7 @@
 - Quality gates: ruff 0 issues, mypy 0 errors, bandit 0 issues, pip-audit 0 vulns
 - Mutation testing: 51.8 % (13969 mutantes, 5603 killed)
 
-**Anexo J** — `appendix_j.md`
+**Anexo H** — `appendix_h.md`
 
 - 13 diagramas Mermaid canónicos
 - Arquitectura: alto nivel, despliegue Docker, hexagonal, contexto C4

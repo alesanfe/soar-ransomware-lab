@@ -1,4 +1,4 @@
-# Anexo J: Diagramas de Arquitectura y Flujos (Mermaid)
+# Anexo H: Diagramas de Arquitectura y Flujos (Mermaid)
 
 > **Referencia TFM**: complementa el Capítulo 3 (Arquitectura), Capítulo 4 (Desarrollo)
 > y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
@@ -8,7 +8,7 @@
 
 ---
 
-## J.1. Arquitectura de Alto Nivel
+## H.1. Arquitectura de Alto Nivel
 
 Diagrama de componentes principales y flujo de datos del sistema SOAR.
 
@@ -34,7 +34,7 @@ flowchart LR
 
 ---
 
-## J.2. Arquitectura de Despliegue Docker
+## H.2. Arquitectura de Despliegue Docker
 
 Diagrama completo de la topología Docker: Nginx proxy, redes (soar_net, logging_net),
 y conexiones entre los 18 servicios.
@@ -94,7 +94,7 @@ graph TD
 
 ---
 
-## J.3. Arquitectura Hexagonal (Ports & Adapters)
+## H.3. Arquitectura Hexagonal (Ports & Adapters)
 
 Diagrama de la arquitectura hexagonal del código Python: capas de dominio, aplicación,
 infraestructura e interfaces, con sus puertos y adaptadores.
@@ -143,7 +143,7 @@ flowchart TD
 
 ---
 
-## J.4. Diagrama de Contexto C4
+## H.4. Diagrama de Contexto C4
 
 Modelo C4 de contexto mostrando los límites del sistema y las integraciones externas.
 
@@ -174,7 +174,7 @@ C4Context
 
 ---
 
-## J.5. Flujo End-to-End de Alertas (Sequence Diagram)
+## H.5. Flujo End-to-End de Alertas (Sequence Diagram)
 
 Diagrama de secuencia completo del flujo de una alerta desde el simulador SIEM hasta
 la indexación de métricas en Elasticsearch, pasando por Shuffle, TheHive, Cortex y MISP.
@@ -215,7 +215,7 @@ sequenceDiagram
 
 ---
 
-## J.6. Árbol de Decisión del Playbook
+## H.6. Árbol de Decisión del Playbook
 
 Flowchart del playbook SOAR mostrando la lógica de decisión: validación, creación de caso,
 análisis con Cortex, y branching entre contención (malicioso) y falso positivo (benigno).
@@ -248,7 +248,7 @@ flowchart TD
 
 ---
 
-## J.7. Flujo de Integración API (Sequence Diagram)
+## H.7. Flujo de Integración API (Sequence Diagram)
 
 Diagrama de secuencia de todas las interacciones API entre el simulador, Shuffle,
 TheHive, Cortex, MISP y Lab API.
@@ -285,7 +285,7 @@ sequenceDiagram
 
 ---
 
-## J.8. Respuesta Automatizada (Sequence Diagram)
+## H.8. Respuesta Automatizada (Sequence Diagram)
 
 Diagrama de secuencia de la respuesta automatizada con lógica de contención basada en
 score y verdict de Cortex.
@@ -316,7 +316,7 @@ sequenceDiagram
 
 ---
 
-## J.9. Cronograma de Objetivos SMART (Gantt)
+## H.9. Cronograma de Objetivos SMART (Gantt)
 
 Diagrama Gantt del cronograma de los 20 objetivos SMART distribuidos en 4 fases
 (15 semanas totales).
@@ -354,7 +354,7 @@ gantt
 
 ---
 
-## J.10. Roadmap por Semanas (Gantt)
+## H.10. Roadmap por Semanas (Gantt)
 
 Diagrama Gantt simplificado del roadmap semanal con ruta crítica marcada.
 
@@ -374,7 +374,7 @@ Fase 4: Cierre :crit, f4, after f3, 2w
 
 ---
 
-## J.11. Matriz de Priorización de Riesgos
+## H.11. Matriz de Priorización de Riesgos
 
 Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e impacto.
 
@@ -394,7 +394,7 @@ graph TD
 
 ---
 
-## J.12. Caso de Estudio: GMinst4ll (Flujo de Infección)
+## H.12. Caso de Estudio: GMinst4ll (Flujo de Infección)
 
 Diagrama del flujo completo de infección del malware GMinst4ll, desde la distribución
 hasta el despliegue del RAT, usado como caso de estudio real para validar el laboratorio.
@@ -425,7 +425,7 @@ graph TD
 
 ---
 
-## J.13. Pipeline SOAR para IoCs de GMinst4ll
+## H.13. Pipeline SOAR para IoCs de GMinst4ll
 
 Diagrama del pipeline SOAR procesando IoCs reales del caso GMinst4ll a través de
 Cortex, MISP, TheHive y Elasticsearch.
@@ -449,22 +449,22 @@ graph LR
 
 ---
 
-## J.14. Resumen de Diagramas
+## H.14. Resumen de Diagramas
 
 | # | Diagrama | Tipo | Sección TFM | Fuente |
 |---|----------|------|-------------|--------|
-| J.1 | Arquitectura de alto nivel | flowchart LR | Cap. 3 | README.md:51 |
-| J.2 | Arquitectura de despliegue Docker | graph TD | Cap. 3 | 02-architecture.md:169 |
-| J.3 | Arquitectura hexagonal | flowchart TD | Cap. 3 | 02-architecture.md:1390 |
-| J.4 | Contexto C4 | C4Context | Cap. 3 | 04-operations.md:1296 |
-| J.5 | Flujo E2E de alertas | sequenceDiagram | Cap. 4 | 04-operations.md:1380 |
-| J.6 | Árbol de decisión playbook | flowchart TD | Cap. 4 | 04-operations.md:4302 |
-| J.7 | Flujo de integración API | sequenceDiagram | Cap. 4 | 03-api-and-integrations.md:741 |
-| J.8 | Respuesta automatizada | sequenceDiagram | Cap. 4 | 02-architecture.md:519 |
-| J.9 | Cronograma objetivos SMART | gantt | Cap. 2 | 06-project-management.md:171 |
-| J.10 | Roadmap por semanas | gantt | Cap. 2 | 06-project-management.md:861 |
-| J.11 | Matriz de riesgos | graph TD | Cap. 2 | 06-project-management.md:1390 |
-| J.12 | GMinst4ll flujo infección | graph TD | Cap. 5 | 04-operations.md:4720 |
-| J.13 | Pipeline SOAR GMinst4ll | graph LR | Cap. 5 | 04-operations.md:4807 |
+| H.1 | Arquitectura de alto nivel | flowchart LR | Cap. 3 | README.md:51 |
+| H.2 | Arquitectura de despliegue Docker | graph TD | Cap. 3 | 02-architecture.md:169 |
+| H.3 | Arquitectura hexagonal | flowchart TD | Cap. 3 | 02-architecture.md:1390 |
+| H.4 | Contexto C4 | C4Context | Cap. 3 | 04-operations.md:1296 |
+| H.5 | Flujo E2E de alertas | sequenceDiagram | Cap. 4 | 04-operations.md:1380 |
+| H.6 | Árbol de decisión playbook | flowchart TD | Cap. 4 | 04-operations.md:4302 |
+| H.7 | Flujo de integración API | sequenceDiagram | Cap. 4 | 03-api-and-integrations.md:741 |
+| H.8 | Respuesta automatizada | sequenceDiagram | Cap. 4 | 02-architecture.md:519 |
+| H.9 | Cronograma objetivos SMART | gantt | Cap. 2 | 06-project-management.md:171 |
+| H.10 | Roadmap por semanas | gantt | Cap. 2 | 06-project-management.md:861 |
+| H.11 | Matriz de riesgos | graph TD | Cap. 2 | 06-project-management.md:1390 |
+| H.12 | GMinst4ll flujo infección | graph TD | Cap. 5 | 04-operations.md:4720 |
+| H.13 | Pipeline SOAR GMinst4ll | graph LR | Cap. 5 | 04-operations.md:4807 |
 
 **Total**: 13 diagramas Mermaid canónicos extraídos de la documentación técnica.

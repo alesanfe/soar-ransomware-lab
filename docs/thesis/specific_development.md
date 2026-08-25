@@ -93,7 +93,7 @@ Arquitectura General del Sistema
 
 El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal —también llamada ports and adapters— que coloca el dominio en el centro y lo aísla de los detalles técnicos. En la práctica, esto significa que `domain/` no importa nada de `infrastructure/`: los puertos definen qué operaciones necesita el dominio, y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites, de modo que el dominio recibe tipos ya verificados. El beneficio tangible es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
 
-Para la infraestructura Docker se emplea una arquitectura en capas. Esta separación entre dominio e infraestructura mantiene la lógica de negocio desacoplada de las implementaciones concretas, lo que facilita las pruebas y el mantenimiento del sistema. La **Figura 3** muestra la arquitectura general del laboratorio y la **Figura 4** el despliegue Docker Compose. Ambos diagramas están disponibles en formato Mermaid canónico en el **Anexo J** (`appendix_j.md`).
+Para la infraestructura Docker se emplea una arquitectura en capas. Esta separación entre dominio e infraestructura mantiene la lógica de negocio desacoplada de las implementaciones concretas, lo que facilita las pruebas y el mantenimiento del sistema. La **Figura 3** muestra la arquitectura general del laboratorio y la **Figura 4** el despliegue Docker Compose. Ambos diagramas están disponibles en formato Mermaid canónico en el **Anexo H** (`appendix_h.md`).
 
 Flujo General del Sistema
 
@@ -115,8 +115,8 @@ graph TD     A[Generación de Alertas] --> B[Recepción en Shuffle]
 
 El código en `src/soar_lab/` se organiza en capas según el patrón hexagonal:
 
-> **Anexo J**: los diagramas canónicos completos de arquitectura (hexagonal, despliegue Docker,
-> contexto C4) están en `appendix_j.md` (secciones J.2, J.3, J.4).
+> **Anexo H**: los diagramas canónicos completos de arquitectura (hexagonal, despliegue Docker,
+> contexto C4) están en `appendix_h.md` (secciones H.2, H.3, H.4).
 
 ```mermaid
 graph TD     subgraph Dominio         D1[Entidades y lógica de negocio]
@@ -365,7 +365,7 @@ El playbook se valida mediante pruebas E2E para escenarios maliciosos, falsos po
 
 > **Anexo B**: el detalle completo del workflow (46 nodos, 60 ramas, 25 scripts Python embebidos,
 > modelo de scoring 0-100) se encuentra en `appendix_b.md`. Los diagramas canónicos del flujo
-> E2E y del árbol de decisión están en el **Anexo J** (`appendix_j.md`, secciones J.5 y J.6).
+> E2E y del árbol de decisión están en el **Anexo H** (`appendix_h.md`, secciones H.5 y H.6).
 
 #### Infraestructura Docker Compose
 
@@ -640,17 +640,17 @@ verdict esperado era *contain*). Este valor mejora el promedio reportado por SAN
 **Uso de recursos.** El consumo medido mediante `docker stats` durante las 50 ejecuciones se mantuvo dentro
 de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %) por procesamiento de eventos de red. Ningún contenedor superó su límite de memoria, confirmando que el despliegue es viable en un host con 16 GiB RAM.
 
-> **Anexo F2**: la validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100,
-> 13 servicios, 38 endpoints API) se detalla en `appendix_f2.md`.
+> **Anexo E**: la validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100,
+> 13 servicios, 38 endpoints API) se detalla en `appendix_e.md`.
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
 El laboratorio cumple los requisitos funcionales y de calidad definidos, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron, como se detalla en la §4.1.3.3. La cobertura de tests se puede verificar en `artifacts/coverage/` mediante el comando `make test-coverage`.
 
-> **Anexo I**: la estrategia completa de testing (2041 tests, pirámide, 9 marcadores pytest,
-> coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en `appendix_i.md`. La validación
-> experimental consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo F2**
-> (`appendix_f2.md`).
+> **Anexo G**: la estrategia completa de testing (2041 tests, pirámide, 9 marcadores pytest,
+> coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en `appendix_g.md`. La validación
+> experimental consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo E**
+> (`appendix_e.md`).
 
 Comandos de prueba disponibles:
 
@@ -771,8 +771,8 @@ Los resultados muestran que el laboratorio cumple los requisitos funcionales y n
 
 | Figura    | Título                                          | Archivo                                    |
 |-----------|-------------------------------------------------|--------------------------------------------|
-| Figura 3 | Arquitectura General del Laboratorio SOAR      | Anexo J (J.2)                              |
-| Figura 4 | Diagrama de Despliegue Docker Compose          | Anexo J (J.3)                              |
+| Figura 3 | Arquitectura General del Laboratorio SOAR      | Anexo H (H.2)                              |
+| Figura 4 | Diagrama de Despliegue Docker Compose          | Anexo H (H.3)                              |
 | Figura 5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
 | Figura 6 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
 | Figura 7 | Tiempos por componente del workflow            | `figures/GE1_component_timings.png`        |
