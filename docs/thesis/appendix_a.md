@@ -358,6 +358,29 @@ DOCKER_API_VERSION=1.44
 OUTER_HOSTNAME=localhost
 ```
 
+La **Tabla 13** resume las variables de entorno Docker más relevantes para la personalización del despliegue.
+
+## Tabla 13: Variables de Entorno Docker
+
+| Variable               | Valor por Defecto | Descripción              | Requerido |
+|------------------------|-------------------|--------------------------|-----------|
+| `COMPOSE_PROJECT_NAME` | soar              | Nombre del proyecto      | No        |
+| `ELASTIC_PASSWORD`     | Ver `.env.full`   | Contraseña Elasticsearch | Sí      |
+| `THEHIVE_HTTP_PORT`    | 19000             | Puerto TheHive           | No        |
+| `CORTEX_HTTP_PORT`     | 19001             | Puerto Cortex            | No        |
+| `SHUFFLE_UI_PORT`      | 8081              | Puerto Shuffle UI        | No        |
+| `SHUFFLE_API_PORT`     | 15001             | Puerto Shuffle API       | No        |
+| `HTTP_PORT`            | 80                | Puerto HTTP público      | No        |
+| `HTTPS_PORT`           | 443               | Puerto HTTPS público     | No        |
+
+Las variables de entorno Docker especificadas en esta tabla permiten la personalización del despliegue del laboratorio
+SOAR según las necesidades específicas de cada entorno. La única variable obligatoria es `ELASTIC_PASSWORD`, que debe
+configurarse con un valor seguro antes del despliegue para proteger elasticsearch. Las variables de puerto permiten
+ajustar el despliegue a puertos disponibles en el sistema host, evitando conflictos con otros servicios. La variable
+`COMPOSE_PROJECT_NAME` facilita el despliegue de múltiples instancias del laboratorio en el mismo host mediante prefijos
+de contenedor distintos. Esta configuración modular posibilita la adopción del laboratorio en
+diferentes contextos organizacionales y técnicos.
+
 ## A.2. Scripts de Automatización
 
 Los scripts de automatización desarrollados para el laboratorio SOAR ofrecen las capacidades operativas necesarias para
@@ -1310,6 +1333,32 @@ curl -f http://localhost:19001/api/health  # Cortex
 curl -f http://localhost:15001/api/v1/health      # Shuffle
 curl -f http://localhost:19200/_cluster/health  # Elasticsearch
 ```
+
+La **Tabla 14** recopila los comandos Make disponibles para la operación del laboratorio SOAR.
+
+## Tabla 14: Comandos Make Disponibles
+
+| Comando               | Descripción                 | Uso Típico         |
+|-----------------------|-----------------------------|--------------------|
+| `make up`             | Iniciar todos los servicios | Despliegue inicial |
+| `make down`           | Detener todos los servicios | Mantenimiento      |
+| `make health`         | Verificar salud servicios   | Diagnóstico        |
+| `make test`           | Ejecutar prueba funcional   | Validación         |
+| `make test-malicious` | Prueba alerta maliciosa     | Testing            |
+| `make test-benign`    | Prueba alerta benigna       | Testing            |
+| `make metrics`        | Calcular KPIs               | Análisis           |
+| `make backup`         | Crear backup                | Mantenimiento      |
+| `make clean`          | Limpiar volúmenes           | Reset              |
+| `make logs`           | Ver logs                    | Depuración         |
+
+Los comandos Make disponibles en esta tabla proporcionan una interfaz simplificada para todas las operaciones comunes
+del laboratorio SOAR, reduciendo la complejidad operativa y facilitando la adopción por usuarios con diferentes niveles
+de experiencia técnica. Los comandos de despliegue (`make up`, `make down`) simplifican la orquestación de múltiples
+servicios Docker. Los comandos de prueba (`make test`, `make test-malicious`, `make test-benign`) facilitan la
+validación del sistema sin requerir conocimiento detallado de la configuración de pruebas. Los comandos de
+mantenimiento (`make health`, `make backup`, `make clean`, `make logs`) proporcionan las herramientas necesarias para
+operación continua. Esta automatización mediante Makefile es un factor determinante en la reproducibilidad y facilidad de uso
+del laboratorio.
 
 ## A.6. Troubleshooting Común
 

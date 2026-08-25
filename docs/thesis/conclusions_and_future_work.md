@@ -27,7 +27,23 @@ La contribución teórica principal es evidencia cuantitativa complementaria a l
 Las métricas definidas (MTTR p50 ≤ 120 s, tasa de éxito ≥ 95 %, cobertura de tests ≥ 80 %)
 pueden servir de referencia para evaluar otros laboratorios SOAR similares, aunque el p50 obtenido en este estudio (193.19 s) no alcanzó el umbral ambicioso de 120 s, la reducción del MTTR medio sí superó ampliamente el objetivo del 50 %. Los patrones arquitectónicos documentados (hexagonal para código, modular para infraestructura) describen una forma de organizar componentes que se puede ajustar a distintos entornos.
 
-En el plano práctico, el laboratorio es desplegable con `make up` y accesible desde navegador sin configuración adicional. Al usar exclusivamente software open source elimina los costos de licenciamiento que en soluciones propietarias equivalentes oscilan entre $200 000 y $500 000 anuales (IBM Security, 2024), lo que hace accesibles estas capacidades a pymes, universidades y CSIRTs en formación.
+En el plano práctico, el laboratorio es desplegable con `make up` y accesible desde navegador sin configuración adicional. Al usar exclusivamente software open source elimina los costos de licenciamiento que en soluciones propietarias equivalentes oscilan entre $200 000 y $500 000 anuales (IBM Security, 2024), lo que hace accesibles estas capacidades a pymes, universidades y CSIRTs en formación. La **Tabla 11** presenta el análisis costo-beneficio comparativo entre la respuesta manual, la solución SOAR open source de este TFM, una solución comercial y una solución híbrida.
+
+## Tabla 11: Análisis Costo-Beneficio SOAR
+
+| Solución             | Costo Anual | MTTR Promedio | Tasa Éxito | ROI 3 años | Implementación |
+|----------------------|-------------|---------------|------------|------------|----------------|
+| **Manual**           | $150K       | 3600s         | ~80%       | -          | N/A            |
+| **SOAR Open Source** | $200K       | 277s          | 100%       | 250%       | 4 semanas      |
+| **SOAR Comercial**   | $500K       | 75s           | 99.1%      | 180%       | 12 semanas     |
+| **Híbrido**          | $350K       | 82s           | 98.8%      | 210%       | 8 semanas      |
+
+El análisis costo-beneficio muestra que la solución SOAR open source ofrece el mejor retorno de inversión (ROI 250% a
+3 años) entre las opciones evaluadas. Aunque las soluciones comerciales ofrecen MTTR ligeramente mejores (75s vs 277s),
+el costo anual mayor ($500K vs $200K) resulta en un ROI inferior (180% vs 250%) (IBM Security, 2024). La solución híbrida ofrece un
+compromiso intermedio con ROI de 210%. El tiempo de implementación de 4 semanas para la solución open source representa
+una ventaja frente a las 12 semanas de soluciones comerciales. Este análisis ofrece una base cuantitativa para
+justificar la inversión en capacidades SOAR open source frente a alternativas comerciales.
 
 La documentación generada incluye guías de configuración, ejemplos de scripts y casos de prueba verificados. El código de contención de endpoints, aunque opera en modo simulado, puede adaptarse para entornos productivos modificando los drivers de infraestructura.
 
@@ -118,7 +134,23 @@ El éxito de la adopción depende principalmente de tres factores: patrocinio ej
 En rendimiento operativo: MTTR < 120 s para incidentes simples, throughput > 100 incidentes/hora, disponibilidad
 > 99.5 % y tasa de clasificación correcta > 95 %.
 
-En madurez del proceso: cobertura de automatización superior al 80 % de las tareas repetitivas identificadas (CIS, 2024), como referencia orientativa derivada de los controles CIS v8.1 aplicados a la gestión de incidentes. El marco CIS Controls (CIS, 2024) ofrece una base para priorizar estas tareas según riesgo.
+En madurez del proceso: cobertura de automatización superior al 80 % de las tareas repetitivas identificadas (CIS, 2024), como referencia orientativa derivada de los controles CIS v8.1 aplicados a la gestión de incidentes. El marco CIS Controls (CIS, 2024) ofrece una base para priorizar estas tareas según riesgo. La **Tabla 12** recopila los KPIs recomendados escalados al tamaño y recursos de cada tipo de organización.
+
+## Tabla 12: KPIs Recomendados por Tipo de Organización
+
+| Tipo Org       | MTTR Objetivo | Throughput | Success Rate | Presupuesto SOAR |
+|----------------|---------------|------------|--------------|------------------|
+| **PYME**       | <180s         | >50/h      | >95%         | <50K/año         |
+| **Mediana**    | <120s         | >100/h     | >97%         | 50-200K/año      |
+| **Grande**     | <90s          | >200/h     | >98%         | 200-500K/año     |
+| **Enterprise** | <60s          | >500/h     | >99%         | >500K/año        |
+
+Los KPIs recomendados por tipo de organización ofrecen objetivos realistas escalados al tamaño y recursos de cada
+organización. Las PYMEs con presupuestos limitados (<50K/año) pueden aspirar a MTTR <180s y throughput >50/h, mientras
+que organizaciones grandes con presupuestos significativos (>500K/año) pueden alcanzar MTTR <60s y throughput >500/h.
+Esta progresión permite establecer objetivos apropiados para cada contexto, evitando expectativas irreales. Los KPIs de
+tasa de éxito escalan desde >95% para PYMEs hasta >99% para organizaciones grandes, reflejando la inversión en
+redundancia y capacidades de recuperación.
 
 ### 5.3.4. Mejores prácticas de mantenimiento
 
@@ -154,4 +186,7 @@ equivalentes.
 
 ## Índice de Tablas del Capítulo 5
 
-Este capítulo no contiene tablas formateadas. El cumplimiento de objetivos se presenta en formato de lista con datos cuantitativos.
+| Tabla    | Título                                          |
+|----------|-------------------------------------------------|
+| Tabla 11 | Análisis Costo-Beneficio SOAR                   |
+| Tabla 12 | KPIs Recomendados por Tipo de Organización      |

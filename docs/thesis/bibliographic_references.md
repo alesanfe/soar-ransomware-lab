@@ -1,4 +1,4 @@
-# Referencias bibliográficas
+# Referencias
 
 AbuseIPDB. (2024). *AbuseIPDB: IP address database for abuse reports*. https://www.abuseipdb.com
 
@@ -6,9 +6,9 @@ Agrawal, S., & Boneh, D. (2024). Encrypted intelligence: A comparative analysis 
 
 Akbari Gurabi, M., Nitz, L., Bregar, A., Popanda, J., Siemers, C., Matzutt, R., & Mandal, A. (2024). Requirements for playbook-assisted cyber incident response, reporting and automation. *ACM Digital Threats: Research and Practice*, 5(3), Article 34. https://doi.org/10.1145/3688810
 
-Al-Momani, A., et al. (2024). The evolution of ransomware: A comprehensive analysis of four generations. *Journal of Cybersecurity*, 10(2), 145-167. https://doi.org/10.1093/cybsec/tyad045
-
 alesanfe. (n.d.). *SOAR Ransomware Lab repository* [GitHub]. https://github.com/alesanfe/soar-ransomware-lab
+
+Al-Momani, A., et al. (2024). The evolution of ransomware: A comprehensive analysis of four generations. *Journal of Cybersecurity*, 10(2), 145-167. https://doi.org/10.1093/cybsec/tyad045
 
 Astral. (2024). *Ruff: An extremely fast Python linter and code formatter*. Astral. https://docs.astral.sh/ruff/
 

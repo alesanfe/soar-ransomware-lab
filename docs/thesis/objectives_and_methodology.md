@@ -36,6 +36,23 @@ Documentar exhaustivamente el proceso para permitir la reproducción por tercero
 
 Identificar e implementar mejoras en código, infraestructura y documentación. Se verifica con un análisis sistemático de mejoras, implementación de mejoras críticas de seguridad, validación sin regresiones y métricas comparativas pre/post. Artefactos en un documento de análisis, `tests/`, `tests/performance/` y `tests/security/`.
 
+Los objetivos estratégicos descritos se resumen en la **Tabla 3**, que asocia cada objetivo con sus métricas de éxito, valor objetivo y evidencia requerida.
+
+## Tabla 3: Objetivos Específicos con Métricas de Éxito
+
+| ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
+|----------|----------------------------|------------------------|----------------|-----------------------------|
+| **TE-1** | Diseño arquitectónico SOAR | Componentes integrados | 5+ componentes | Diagramas, especificaciones |
+| **TE-2** | Implementación funcional   | Playbooks operativos   | 3+ playbooks   | Scripts funcionales, logs   |
+| **TE-3** | Validación experimental    | Reducción MTTR         | ≥50%           | Resultados estadísticos     |
+| **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
+| **TE-5** | Optimización iterativa     | Mejoras implementadas  | 44 mejoras     | Análisis pre/post           |
+
+Los objetivos de esta tabla se evalúan mediante métricas cuantificables y evidencias verificables. Todos los objetivos
+se cumplieron: el diseño integra más de 5 componentes, la implementación entregó 3+ playbooks, la validación mostró
+reducción del 92.3% en MTTR (superando el 50% objetivo), la documentación alcanzó cobertura completa y se implementaron
+las 44 mejoras identificadas.
+
 ### 3.2.2. Objetivos Operativos
 
 Los objetivos operativos detallan los pasos de implementación:
@@ -133,7 +150,7 @@ junto con Python. Para los datos y servicios se utiliza Elasticsearch (Elastic, 
 dependientes son MTTR, tasa de éxito, precisión y uso de recursos. El entorno Docker, el dataset, el hardware y la configuración se mantienen constantes. Además, el orden de ejecuciones se aleatoriza.
 
 **Consideraciones éticas y de seguridad.** El laboratorio opera solo para fines académicos en un entorno aislado sin
-datos reales. La segmentación de red contiene la actividad simulada y los secretos se gestionan mediante variables de entorno. El diseño se alinea con GDPR (GDPR, 2018), CCPA (CCPA, 2020) y HIPAA (HIPAA, 2023) en cuanto a protección de datos, ISO 27001 (ISO/IEC, 2022) e ISO 27002 (ISO/IEC, 2023) en gestión de seguridad, y el NIST Cybersecurity Framework (NIST, 2024a).
+datos reales. La segmentación de red contiene la actividad simulada y los secretos se gestionan mediante variables de entorno. El diseño se alinea con el Reglamento General de Protección de Datos (European Union, 2018), la California Consumer Privacy Act (State of California, 2020) y la Health Insurance Portability and Accountability Act (U.S. Department of Health & Human Services, 2023) en cuanto a protección de datos, ISO 27001 (ISO/IEC, 2022) e ISO 27002 (ISO/IEC, 2023) en gestión de seguridad, y el NIST Cybersecurity Framework (NIST, 2024a).
 
 **Gestión de riesgos.** Los riesgos técnicos principales son el fallo de integración entre componentes, mitigado con
 pruebas de conexión tempranas, y la aparición de vulnerabilidades, abordada con escaneos periódicos. En la planificación se incorpora una holgura del 20 % sobre la estimación de duración de cada fase y se realizan copias de seguridad diarias.
@@ -176,4 +193,6 @@ La documentación técnica agrupa configuración, arquitectura, procedimientos d
 
 ## Índice de Tablas del Capítulo 3
 
-Este capítulo no contiene tablas formateadas. Los objetivos específicos y criterios de éxito se presentan en formato de lista numerada.
+| Tabla   | Título                                          |
+|---------|-------------------------------------------------|
+| Tabla 3 | Objetivos Específicos con Métricas de Éxito     |
