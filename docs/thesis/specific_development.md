@@ -20,6 +20,14 @@ Los requisitos funcionales describen las capacidades que el sistema debe ofrecer
   acciones, preservando las evidencias.
 - RF-05: Monitoreo. MTTR, tasa de éxito y KPIs del playbook, visualizados en Grafana mediante logs agregados por
   Loki y Promtail, con datos indexados en Elasticsearch.
+- RF-06: Simulador de alertas. Un módulo generador debe producir alertas maliciosas y benignas con IoCs realistas
+  hacia el webhook de Shuffle, permitiendo repetir el experimento sin dependencias externas.
+- RF-07: Contención simulada. El sistema debe ejecutar acciones de contención simulada (aislamiento de endpoint,
+  bloqueo de IP) mediante endpoints mock que registran la intención sin aplicar cambios reales.
+- RF-08: API REST de gestión. Una API FastAPI debe exponer endpoints para health, autenticación, backup, métricas
+  analíticas, estado de servicios y operaciones SOAR, con documentación OpenAPI automática.
+- RF-09: Cálculo de métricas estadísticas. El sistema debe calcular MTTR (media, mediana, percentiles p50 y p90),
+  desviación estándar y coeficiente de variación a partir de las ejecuciones del playbook.
 
 Requisitos No Funcionales
 
@@ -28,11 +36,16 @@ Los requisitos no funcionales fijan los criterios de calidad del sistema:
 - RNF-01: Rendimiento. Reducción del MTTR ≥ 50 % respecto al baseline manual, con medición de percentiles p50 y p90
   sobre 50 ejecuciones por escenario.
 - RNF-02: Reproducibilidad. Despliegue reproducible mediante Docker Compose y Makefile, con `make up` como único punto
-  de entrada.
-- RNF-03: Seguridad. Aislamiento de red entre componentes, secretos gestionados mediante variables de entorno y
-  certificados TLS autofirmados para el tráfico externo.
+  de entrada y `make generate-secrets` para la generación de credenciales.
+- RNF-03: Seguridad. Aislamiento de red entre componentes, secretos gestionados mediante variables de entorno,
+  autenticación JWT para la API, sanitización de payloads de entrada y certificados TLS autofirmados para el tráfico
+  externo.
 - RNF-04: Calidad del software. Suite de tests automatizada con pytest (2041 tests) y despliegue verificable con
   `make test-e2e`.
+- RNF-05: Resiliencia. Circuit breaker y reintentos con backoff exponencial en las integraciones entre componentes
+  para manejar fallos transitorios sin perder la alerta.
+- RNF-06: Observabilidad. Health checks por servicio, logs estructurados agregados en Loki y dashboards de Grafana
+  con métricas en tiempo real.
 
 Requisitos de Integración
 
@@ -44,6 +57,8 @@ Los requisitos de integración especifican las conexiones entre componentes del 
   sin intervención manual, con reintentos ante fallos temporales.
 - RI-03: Fuentes externas de threat intelligence. Analyzers libres de Cortex para reputación de IPs (DShield),
   resolución DNS (GoogleDNS) y passive DNS (Mnemonic pDNS) para infraestructura de comando y control.
+- RI-04: Integración opcional con MISP. Intercambio de indicadores de amenazas con MISP para enriquecimiento
+  adicional, sin ser requisito para la ejecución del playbook E2E.
 
 Matriz de Trazabilidad de Requisitos
 
@@ -56,13 +71,20 @@ La matriz de trazabilidad conecta cada requisito con su componente implementador
 | RF-03  | Orquestación       | Shuffle    | Alta      | Prueba funcional del playbook                    |
 | RF-04  | Gestión de Casos   | TheHive    | Alta      | Prueba E2E de creación y cierre de casos         |
 | RF-05  | Monitoreo          | Loki/Grafana | Media   | Verificación de métricas en dashboard            |
+| RF-06  | Simulador          | Python/simulator | Alta | Prueba unit del generador de alertas        |
+| RF-07  | Contención simulada | FastAPI   | Alta      | Prueba E2E de endpoint `/api/v1/contain`        |
+| RF-08  | API REST           | FastAPI    | Media     | Prueba de contratos de API                       |
+| RF-09  | Métricas estadísticas | Python/domain | Alta | Prueba unit de `statistical_calculator`     |
 | RNF-01 | Rendimiento        | Sistema    | Alta      | Benchmark de MTTR (n=50 por escenario)           |
 | RNF-02 | Reproducibilidad   | Docker     | Alta      | `make up` + `pytest tests/e2e/`                  |
-| RNF-03 | Seguridad          | Docker/Nginx | Media   | Revisión de configuración y aislamiento de red   |
+| RNF-03 | Seguridad          | Docker/Nginx/FastAPI | Media | Revisión de config, JWT, sanitización    |
 | RNF-04 | Calidad            | pytest     | Media     | Suite de tests (2041 tests)                      |
+| RNF-05 | Resiliencia        | Python/resilience | Media | Prueba unit de circuit breaker             |
+| RNF-06 | Observabilidad     | Loki/Grafana | Media   | Health checks y dashboards                       |
 | RI-01  | TheHive ↔ Cortex   | TheHive/Cortex | Alta  | Prueba de integración de observables             |
 | RI-02  | Shuffle ↔ TheHive  | Shuffle/TheHive | Alta | Prueba E2E de webhook y creación de casos        |
 | RI-03  | Threat intelligence | Cortex    | Media     | Verificación de analyzers libres                 |
+| RI-04  | MISP (opcional)    | MISP       | Baja      | Prueba de integración con MISP                   |
 
 La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 
@@ -75,15 +97,22 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 | **F**  | Orquestación playbook         | 1 playbook E2E, 2 escenarios | Cumplido      |
 | **F**  | Gestión de casos              | Integración TheHive      | Cumplido           |
 | **F**  | Monitoreo                     | Dashboard Grafana + Loki | Cumplido           |
+| **F**  | Simulador de alertas          | `src/soar_lab/simulator/` | Cumplido          |
+| **F**  | Contención simulada           | Endpoint `/api/v1/contain` | Cumplido         |
+| **F**  | API REST de gestión           | FastAPI + OpenAPI        | Cumplido           |
+| **F**  | Métricas estadísticas         | `statistical_calculator.py` | Cumplido        |
 | **NF** | Reducción MTTR ≥ 50%          | n=50 por escenario       | Cumplido (92.3%)   |
 | **NF** | Reproducibilidad              | `make up` + tests E2E    | Cumplido           |
-| **NF** | Seguridad                     | Aislamiento de red, secretos | Cumplido       |
+| **NF** | Seguridad                     | Aislamiento, JWT, sanitización | Cumplido     |
 | **NF** | Calidad                       | 2041 tests automatizados | Cumplido           |
+| **NF** | Resiliencia                   | Circuit breaker + retry  | Cumplido           |
+| **NF** | Observabilidad                | Health checks + Loki     | Cumplido           |
 | **I**  | TheHive ↔ Cortex              | Observables enriquecidos | Cumplido           |
 | **I**  | Shuffle ↔ TheHive             | Webhook + API            | Cumplido           |
 | **I**  | Threat intelligence           | DShield, GoogleDNS, Mnemonic pDNS | Cumplido  |
+| **I**  | MISP (opcional)               | Intercambio de IoCs      | Cumplido           |
 
-Los cinco requisitos funcionales, los cuatro no funcionales y los tres de integración se han implementado y verificado. La reducción del MTTR del 92.3 % respecto al baseline manual supera el objetivo del 50 %. La reproducibilidad se verifica con `make up` y `pytest tests/e2e/`. La seguridad se basa en aislamiento de red Docker, secretos mediante variables de entorno y certificados autofirmados para tráfico externo, adecuado para un entorno de laboratorio. La suite de tests cubre unit (1245), integration (336), e2e (281), atomic (101), security (27), performance (30) y architecture (1), totalizando 2041 tests. MISP se incluye como componente opcional para intercambio de indicadores, sin ser requisito para la ejecución del playbook E2E.
+Los nueve requisitos funcionales, los seis no funcionales y los cuatro de integración se han implementado y verificado. La reducción del MTTR del 92.3 % respecto al baseline manual supera el objetivo del 50 %. La reproducibilidad se verifica con `make up` y `pytest tests/e2e/`. La seguridad combina aislamiento de red Docker, autenticación JWT en la API, sanitización de payloads y secretos mediante variables de entorno. La resiliencia se garantiza con circuit breaker y reintentos en las integraciones. La suite de tests cubre unit (1245), integration (336), e2e (281), atomic (101), security (27), performance (30) y architecture (1), totalizando 2041 tests. MISP se incluye como componente opcional para intercambio de indicadores, sin ser requisito para la ejecución del playbook E2E.
 
 ### 4.1.2. Descripción de la herramienta software desarrollada
 
