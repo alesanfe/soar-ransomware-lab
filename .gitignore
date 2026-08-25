@@ -9,6 +9,9 @@ __pycache__/
 build/
 dist/
 
+# Docusaurus build cache
+apps/docs-site/.docusaurus/
+
 # Virtual environments
 .venv/
 env/
