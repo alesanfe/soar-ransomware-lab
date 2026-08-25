@@ -36,21 +36,6 @@ Documentar exhaustivamente el proceso para permitir la reproducción por tercero
 
 Identificar e implementar mejoras en código, infraestructura y documentación. Se verifica con un análisis sistemático de mejoras, implementación de mejoras críticas de seguridad, validación sin regresiones y métricas comparativas pre/post. Artefactos en un documento de análisis, `tests/`, `tests/performance/` y `tests/security/`.
 
-Los objetivos estratégicos descritos se resumen en la **Tabla 3**, que asocia cada objetivo con sus métricas de éxito, valor objetivo y evidencia requerida.
-
-## Tabla 3: Objetivos Específicos con Métricas de Éxito
-
-| ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
-|----------|----------------------------|------------------------|----------------|-----------------------------|
-| **TE-1** | Diseño arquitectónico SOAR | Componentes integrados | 5+ componentes | Diagramas, especificaciones |
-| **TE-2** | Implementación funcional   | Playbook E2E operativo | 2 escenarios (malicioso y benigno) | Scripts funcionales, logs   |
-| **TE-3** | Validación experimental    | Reducción MTTR         | ≥50%           | Resultados estadísticos     |
-| **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
-| **TE-5** | Optimización iterativa     | Mejoras implementadas  | 44 mejoras     | Análisis pre/post           |
-
-Los objetivos de esta tabla se evalúan mediante métricas cuantificables y evidencias verificables. El cumplimiento de
-cada objetivo se reporta en el Capítulo 4 (Resultados) y se discute en el Capítulo 6 (Conclusiones).
-
 ### 3.2.2. Objetivos Operativos
 
 Los objetivos operativos detallan los pasos de implementación:
@@ -88,6 +73,19 @@ Los objetivos operativos detallan los pasos de implementación:
 
 **Criterios de cumplimiento**: el objetivo general se alcanza cuando el laboratorio ejecuta el flujo completo en dos
 escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
+
+## Tabla 3: Resumen de Objetivos Específicos y Métricas de Éxito
+
+| ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
+|----------|----------------------------|------------------------|----------------|-----------------------------|
+| **TE-1** | Diseño arquitectónico SOAR | Componentes integrados | 5+ componentes | Diagramas, especificaciones |
+| **TE-2** | Implementación funcional   | Playbook E2E operativo | 2 escenarios (malicioso y benigno) | Scripts funcionales, logs   |
+| **TE-3** | Validación experimental    | Reducción MTTR         | ≥50%           | Resultados estadísticos     |
+| **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
+| **TE-5** | Optimización iterativa     | Mejoras implementadas  | 44 mejoras     | Análisis pre/post           |
+
+Los objetivos de esta tabla se evalúan mediante métricas cuantificables y evidencias verificables. El cumplimiento de
+cada objetivo se reporta en el Capítulo 4 (Resultados) y se discute en el Capítulo 6 (Conclusiones).
 
 ## 3.3. Metodología del trabajo
 
