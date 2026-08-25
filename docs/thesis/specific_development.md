@@ -13,12 +13,13 @@ Los requisitos funcionales describen las capacidades que el sistema debe ofrecer
 - RF-01: Gestión de alertas. El sistema debe recibir notificaciones de fuentes externas (SIEM, EDR), clasificarlas
   según patrones de ransomware y dirigirlas al playbook correspondiente.
 - RF-02: Análisis de indicadores de compromiso (IoCs). Hashes, dominios, IPs y archivos se enriquecen mediante analyzers
-  de Cortex y se almacenan para detectar patrones recurrentes.
+  libres de Cortex (sin API key requerida) y se almacenan en Elasticsearch para detectar patrones recurrentes.
 - RF-03: Orquestación del flujo completo. Desde el análisis hasta la contención simulada y el escalado según la
   severidad del incidente.
 - RF-04: Gestión de casos. Cada incidente debe generar un caso en TheHive con IoCs, etiquetas y registro de
   acciones, preservando las evidencias.
-- RF-05: Monitoreo. MTTR, tasa de éxito y KPIs del playbook, visualizados en Grafana y exportados desde Elasticsearch.
+- RF-05: Monitoreo. MTTR, tasa de éxito y KPIs del playbook, visualizados en Grafana mediante logs agregados por
+  Loki y Promtail, con datos indexados en Elasticsearch.
 
 Requisitos No Funcionales
 
@@ -30,7 +31,8 @@ Los requisitos no funcionales fijan los criterios de calidad del sistema:
   de entrada.
 - RNF-03: Seguridad. Aislamiento de red entre componentes, secretos gestionados mediante variables de entorno y
   certificados TLS autofirmados para el tráfico externo.
-- RNF-04: Calidad del software. Suite de tests automatizada con pytest y despliegue verificable con `make test-e2e`.
+- RNF-04: Calidad del software. Suite de tests automatizada con pytest (2041 tests) y despliegue verificable con
+  `make test-e2e`.
 
 Requisitos de Integración
 
@@ -40,8 +42,8 @@ Los requisitos de integración especifican las conexiones entre componentes del 
   mediante analyzers configurados, y los resultados se devuelven automáticamente.
 - RI-02: Integración entre Shuffle y TheHive. Shuffle recibe alertas por webhook y crea o actualiza casos mediante API
   sin intervención manual, con reintentos ante fallos temporales.
-- RI-03: Fuentes externas de threat intelligence. Analyzers de Cortex para reputación de IPs, resolución DNS y
-  passive DNS para infraestructura de comando y control.
+- RI-03: Fuentes externas de threat intelligence. Analyzers libres de Cortex para reputación de IPs (DShield),
+  resolución DNS (GoogleDNS) y passive DNS (Mnemonic pDNS) para infraestructura de comando y control.
 
 Matriz de Trazabilidad de Requisitos
 
@@ -53,11 +55,14 @@ La matriz de trazabilidad conecta cada requisito con su componente implementador
 | RF-02  | Análisis de IoCs   | Cortex     | Alta      | Prueba de integración de analyzers               |
 | RF-03  | Orquestación       | Shuffle    | Alta      | Prueba funcional del playbook                    |
 | RF-04  | Gestión de Casos   | TheHive    | Alta      | Prueba E2E de creación y cierre de casos         |
-| RF-05  | Monitoreo          | Grafana/Loki | Media   | Verificación de métricas en dashboard            |
+| RF-05  | Monitoreo          | Loki/Grafana | Media   | Verificación de métricas en dashboard            |
 | RNF-01 | Rendimiento        | Sistema    | Alta      | Benchmark de MTTR (n=50 por escenario)           |
 | RNF-02 | Reproducibilidad   | Docker     | Alta      | `make up` + `pytest tests/e2e/`                  |
 | RNF-03 | Seguridad          | Docker/Nginx | Media   | Revisión de configuración y aislamiento de red   |
 | RNF-04 | Calidad            | pytest     | Media     | Suite de tests (2041 tests)                      |
+| RI-01  | TheHive ↔ Cortex   | TheHive/Cortex | Alta  | Prueba de integración de observables             |
+| RI-02  | Shuffle ↔ TheHive  | Shuffle/TheHive | Alta | Prueba E2E de webhook y creación de casos        |
+| RI-03  | Threat intelligence | Cortex    | Media     | Verificación de analyzers libres                 |
 
 La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 
@@ -66,16 +71,19 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 | Tipo   | Requisito                     | Métrica de Verificación  | Estado             |
 |--------|-------------------------------|--------------------------|--------------------|
 | **F**  | Gestión de alertas ransomware | 100% alertas procesadas  | Cumplido           |
-| **F**  | Análisis automático IoCs      | Analyzers de Cortex      | Cumplido           |
+| **F**  | Análisis automático IoCs      | Analyzers libres Cortex  | Cumplido           |
 | **F**  | Orquestación playbook         | 1 playbook E2E, 2 escenarios | Cumplido      |
 | **F**  | Gestión de casos              | Integración TheHive      | Cumplido           |
-| **F**  | Monitoreo                     | Dashboard Grafana        | Cumplido           |
+| **F**  | Monitoreo                     | Dashboard Grafana + Loki | Cumplido           |
 | **NF** | Reducción MTTR ≥ 50%          | n=50 por escenario       | Cumplido (92.3%)   |
 | **NF** | Reproducibilidad              | `make up` + tests E2E    | Cumplido           |
 | **NF** | Seguridad                     | Aislamiento de red, secretos | Cumplido       |
 | **NF** | Calidad                       | 2041 tests automatizados | Cumplido           |
+| **I**  | TheHive ↔ Cortex              | Observables enriquecidos | Cumplido           |
+| **I**  | Shuffle ↔ TheHive             | Webhook + API            | Cumplido           |
+| **I**  | Threat intelligence           | DShield, GoogleDNS, Mnemonic pDNS | Cumplido  |
 
-Los cinco requisitos funcionales se han implementado y verificado. Entre los no funcionales, la reducción del MTTR del 92.3 % respecto al baseline manual supera el objetivo del 50 %. La reproducibilidad se verifica con `make up` y `pytest tests/e2e/`. La seguridad se basa en aislamiento de red Docker, secretos mediante variables de entorno y certificados autofirmados para tráfico externo, adecuado para un entorno de laboratorio. La suite de tests automatizada cubre unit, integration, atomic y E2E.
+Los cinco requisitos funcionales, los cuatro no funcionales y los tres de integración se han implementado y verificado. La reducción del MTTR del 92.3 % respecto al baseline manual supera el objetivo del 50 %. La reproducibilidad se verifica con `make up` y `pytest tests/e2e/`. La seguridad se basa en aislamiento de red Docker, secretos mediante variables de entorno y certificados autofirmados para tráfico externo, adecuado para un entorno de laboratorio. La suite de tests cubre unit (1245), integration (336), e2e (281), atomic (101), security (27), performance (30) y architecture (1), totalizando 2041 tests. MISP se incluye como componente opcional para intercambio de indicadores, sin ser requisito para la ejecución del playbook E2E.
 
 ### 4.1.2. Descripción de la herramienta software desarrollada
 
