@@ -68,7 +68,7 @@ Arquitectura General del Sistema
 
 El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal —también llamada ports and adapters— que coloca el dominio en el centro y lo aísla de los detalles técnicos. En la práctica, esto significa que `domain/` no importa nada de `infrastructure/`: los puertos definen qué operaciones necesita el dominio, y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites, de modo que el dominio recibe tipos ya verificados. El beneficio tangible es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
 
-Para la infraestructura Docker se emplea una arquitectura en capas. Esta separación entre dominio e infraestructura mantiene la lógica de negocio desacoplada de las implementaciones concretas, lo que facilita las pruebas y el mantenimiento del sistema. La **Figura 4.1** muestra la arquitectura general del laboratorio y la **Figura 4.2** el despliegue Docker Compose. Ambos diagramas están disponibles en formato Mermaid canónico en el **Anexo J** (`appendix_j.md`).
+Para la infraestructura Docker se emplea una arquitectura en capas. Esta separación entre dominio e infraestructura mantiene la lógica de negocio desacoplada de las implementaciones concretas, lo que facilita las pruebas y el mantenimiento del sistema. La **Figura 3** muestra la arquitectura general del laboratorio y la **Figura 4** el despliegue Docker Compose. Ambos diagramas están disponibles en formato Mermaid canónico en el **Anexo J** (`appendix_j.md`).
 
 Flujo General del Sistema
 
@@ -459,7 +459,7 @@ El Makefile automatiza el despliegue, las pruebas y la generación de métricas.
 
 #### 4.1.3.3. Resultados Experimentales
 
-Los resultados se obtienen mediante las pruebas E2E y el análisis de logs mediante `AnalyticsService` (que incorpora la lógica de cálculo de KPIs consolidada). El experimento ejecutó 50 runs del playbook en dos escenarios (malicioso y benigno) sobre el entorno Docker aislado. La **Figura 4.6** muestra la comparación visual del MTTR entre la condición manual y la automatizada.
+Los resultados se obtienen mediante las pruebas E2E y el análisis de logs mediante `AnalyticsService` (que incorpora la lógica de cálculo de KPIs consolidada). El experimento ejecutó 50 runs del playbook en dos escenarios (malicioso y benigno) sobre el entorno Docker aislado. La **Figura 6** muestra la comparación visual del MTTR entre la condición manual y la automatizada.
 
 **Cumplimiento de objetivos.** La tabla resume los umbrales definidos frente a los valores medidos:
 
@@ -475,33 +475,33 @@ Los resultados se obtienen mediante las pruebas E2E y el análisis de logs media
 
 **Cumplimiento global: 5 de 7 objetivos.**
 
-![Figura 4.6: Resultados de MTTR](figures/Fig5_1_mttr_results.png)
+![Figura 6: Resultados de MTTR](figures/Fig5_1_mttr_results.png)
 
-**Figura 4.6**: Resultados de MTTR comparando respuesta manual (3600 s) y automatizada (277.15 s medio), con
+**Figura 6**: Resultados de MTTR comparando respuesta manual (3600 s) y automatizada (277.15 s medio), con
 distribución de percentiles P50, P90 y P95.
 
 **MTTR detallado.** El MTTR medio fue de 277.15 s frente a los 3600 s de la condición manual, lo que supone una
-reducción del 92.3 %. La mediana (P50) se situó en 193.19 s y el percentil 90 en 621.83 s, con desviación estándar de 187.61 s. El tiempo mínimo registrado fue 65.38 s. La **Figura 4.7** muestra la distribución de tiempos por fase del workflow.
+reducción del 92.3 %. La mediana (P50) se situó en 193.19 s y el percentil 90 en 621.83 s, con desviación estándar de 187.61 s. El tiempo mínimo registrado fue 65.38 s. La **Figura 7** muestra la distribución de tiempos por fase del workflow.
 
-![Figura 4.7: Tiempos por componente del workflow](figures/GE1_component_timings.png)
+![Figura 7: Tiempos por componente del workflow](figures/GE1_component_timings.png)
 
-**Figura 4.7**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso,
+**Figura 7**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso,
 contención y cierre).
 
-![Figura 4.8: Análisis de percentiles MTTR](figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
+![Figura 8: Análisis de percentiles MTTR](figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
 
-**Figura 4.8**: Distribución de percentiles MTTR capturada desde el dashboard de Grafana.
+**Figura 8**: Distribución de percentiles MTTR capturada desde el dashboard de Grafana.
 
 **Decisiones automatizadas.** El 92 % de las alertas (46/50) obtuvieron un score ≥ 80 que activó la contención
-simulada; el 8 % restante (4/50) se cerró como benigno. El score promedio fue 96.2/100 (mínimo 55, máximo 100). El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 4.9** muestra la distribución de decisiones y la **Figura 4.5** el estado de los jobs de Cortex.
+simulada; el 8 % restante (4/50) se cerró como benigno. El score promedio fue 96.2/100 (mínimo 55, máximo 100). El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 9** muestra la distribución de decisiones y la **Figura 5** el estado de los jobs de Cortex.
 
-![Figura 4.9: Distribución de decisiones del playbook](figures/decision_distribution.png)
+![Figura 9: Distribución de decisiones del playbook](figures/decision_distribution.png)
 
-**Figura 4.9**: Distribución de decisiones automatizadas (malicious, suspicious, benign) sobre las 50 ejecuciones.
+**Figura 9**: Distribución de decisiones automatizadas (malicious, suspicious, benign) sobre las 50 ejecuciones.
 
-![Figura 4.5: Estado de jobs de Cortex](figures/cortex_job_status.png)
+![Figura 5: Estado de jobs de Cortex](figures/cortex_job_status.png)
 
-**Figura 4.5**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito).
+**Figura 5**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito).
 
 **Servicios e integraciones.** Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones. Se
 completaron 50/50 workflows, se crearon 50/50 casos en TheHive y se ejecutaron 255/257 jobs en Cortex (99.2 %). El workflow incluye 25 nodos y la tasa de automatización fue del 100 %, sin intervención humana durante la ejecución.
@@ -583,11 +583,11 @@ Este stack se inicia automáticamente con el comando `make up`. La interfaz de G
 
 #### 4.1.3.6. Análisis de Mejoras Implementadas
 
-El proceso iterativo resultó en mejoras distribuidas en categorías de seguridad, calidad de código, operativas y de monitoreo. La **Figura 4.10** muestra la distribución de las 44 mejoras aplicadas por categoría.
+El proceso iterativo resultó en mejoras distribuidas en categorías de seguridad, calidad de código, operativas y de monitoreo. La **Figura 10** muestra la distribución de las 44 mejoras aplicadas por categoría.
 
-![Figura 4.10: Distribución de mejoras por categoría](figures/Fig5_2_improvements_category.png)
+![Figura 10: Distribución de mejoras por categoría](figures/Fig5_2_improvements_category.png)
 
-**Figura 4.10**: Distribución de las 44 mejoras implementadas por categoría (seguridad, calidad de código, operativas,
+**Figura 10**: Distribución de las 44 mejoras implementadas por categoría (seguridad, calidad de código, operativas,
 monitoreo).
 
 #### 4.1.3.7. Discusión
@@ -624,27 +624,27 @@ Los resultados muestran que el laboratorio cumple los requisitos funcionales y n
 
 | Figura    | Título                                          | Archivo                                    |
 |-----------|-------------------------------------------------|--------------------------------------------|
-| Figura 4.1 | Arquitectura General del Laboratorio SOAR      | Anexo J (J.2)                              |
-| Figura 4.2 | Diagrama de Despliegue Docker Compose          | Anexo J (J.3)                              |
-| Figura 4.5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
-| Figura 4.6 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
-| Figura 4.7 | Tiempos por componente del workflow            | `figures/GE1_component_timings.png`        |
-| Figura 4.8 | Análisis de percentiles MTTR (Grafana)         | `figures/grafana_panel_5_..._Percentiles_MTTR.png` |
-| Figura 4.9 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
-| Figura 4.10 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
+| Figura 3 | Arquitectura General del Laboratorio SOAR      | Anexo J (J.2)                              |
+| Figura 4 | Diagrama de Despliegue Docker Compose          | Anexo J (J.3)                              |
+| Figura 5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
+| Figura 6 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
+| Figura 7 | Tiempos por componente del workflow            | `figures/GE1_component_timings.png`        |
+| Figura 8 | Análisis de percentiles MTTR (Grafana)         | `figures/grafana_panel_5_..._Percentiles_MTTR.png` |
+| Figura 9 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
+| Figura 10 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
 
 ## Índice de Tablas del Capítulo 4
 
 | Tabla     | Título                                          |
 |-----------|-------------------------------------------------|
-| Tabla 4.1 | Requisitos funcionales del sistema              |
-| Tabla 4.2 | Requisitos no funcionales y métricas            |
-| Tabla 4.3 | Matriz de trazabilidad de requisitos            |
-| Tabla 4.4 | Cumplimiento de objetivos (umbrales vs medido)  |
-| Tabla 4.5 | MTTR detallado por percentiles                  |
-| Tabla 4.6 | Decisiones automatizadas por score              |
-| Tabla 4.7 | Servicios e integraciones (health)              |
-| Tabla 4.8 | Precisión (tasa de falsos positivos)            |
-| Tabla 4.9 | Uso de recursos (docker stats)                  |
-| Tabla 4.10 | Consistencia (coeficiente de variación)        |
-| Tabla 4.11 | Análisis por subconjuntos cronológicos         |
+| Tabla 14 | Requisitos funcionales del sistema              |
+| Tabla 15 | Requisitos no funcionales y métricas            |
+| Tabla 16 | Matriz de trazabilidad de requisitos            |
+| Tabla 17 | Cumplimiento de objetivos (umbrales vs medido)  |
+| Tabla 18 | MTTR detallado por percentiles                  |
+| Tabla 19 | Decisiones automatizadas por score              |
+| Tabla 20 | Servicios e integraciones (health)              |
+| Tabla 21 | Precisión (tasa de falsos positivos)            |
+| Tabla 22 | Uso de recursos (docker stats)                  |
+| Tabla 23 | Consistencia (coeficiente de variación)         |
+| Tabla 24 | Análisis por subconjuntos cronológicos          |
