@@ -131,43 +131,29 @@ Desarrollo del simulador SIEM y de la lógica de contención simulada. Implement
 completa (2041 tests). Pruebas E2E, experimentos con n=50 ejecuciones en dos escenarios (malicioso y benigno),
 análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut.
 
-**Stack tecnológico.** La infraestructura se basa en Docker y Docker Compose (Docker Inc., 2024)
-junto con Python. Para los datos y servicios se utiliza Elasticsearch (Elastic, 2024), Redis (Redis Ltd., 2024), MariaDB y Nginx (Nginx, 2024). Las plataformas SOAR principales son TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024) y Shuffle (Shuffle Tools, 2024). Además, como componente opcional se incluye MISP (MISP Project, 2024), junto con una API REST. El sistema de logging integra Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c) y Grafana (Grafana Labs, 2024) para monitoreo centralizado. Para el desarrollo se emplean herramientas como Git, Make y pytest (pytest, 2024).
+### Stack tecnológico
 
-**Diseño experimental.** La variable independiente es el tipo de respuesta, comparando manual con SOAR. Las variables
-dependientes son MTTR, tasa de éxito, precisión y uso de recursos. El entorno Docker, el dataset, el hardware y la configuración se mantienen constantes. Además, el orden de ejecuciones se aleatoriza.
+La infraestructura se basa en Docker y Docker Compose (Docker Inc., 2024), que permite desplegar todos los servicios como contenedores aislados en un único host, junto con Python como lenguaje de implementación. Para el almacenamiento y los servicios de apoyo se utilizan Elasticsearch (Elastic, 2024) como motor de búsqueda e indexación de alertas y métricas, Redis (Redis Ltd., 2024) como broker de mensajes y caché, MariaDB como base de datos relacional y Nginx (Nginx, 2024) como proxy inverso. Las plataformas SOAR principales son TheHive (TheHive Project, 2024) para gestión de casos, Cortex (Cortex Project, 2024) para el análisis de observables y Shuffle (Shuffle Tools, 2024) como orquestador del playbook. Como componente opcional se incluye MISP (MISP Project, 2024) para el intercambio de indicadores de amenazas, junto con una API REST propia desarrollada en FastAPI. El sistema de monitoreo integra Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c) y Grafana (Grafana Labs, 2024) para la agregación y visualización centralizada de logs y métricas. Para el desarrollo y la verificación se emplean Git para el control de versiones, Make como interfaz de automatización y pytest (pytest, 2024) como framework de pruebas.
 
-**Consideraciones éticas y de seguridad.** El laboratorio opera solo para fines académicos en un entorno aislado sin
-datos reales. La segmentación de red contiene la actividad simulada y los secretos se gestionan mediante variables de entorno. El diseño se alinea con el Reglamento General de Protección de Datos (European Union, 2018), la California Consumer Privacy Act (State of California, 2020) y la Health Insurance Portability and Accountability Act (U.S. Department of Health & Human Services, 2023) en cuanto a protección de datos, ISO 27001 (ISO/IEC, 2022) e ISO 27002 (ISO/IEC, 2023) en gestión de seguridad, y el NIST Cybersecurity Framework (NIST, 2024a).
+### Diseño experimental
 
-**Gestión de riesgos.** Los riesgos técnicos principales son el fallo de integración entre componentes, mitigado con
-pruebas de conexión tempranas, y la aparición de vulnerabilidades, abordada con escaneos periódicos. En la planificación se incorpora una holgura del 20 % sobre la estimación de duración de cada fase y se realizan copias de seguridad diarias.
-El sesgo experimental se controla mediante aleatorización del orden de ejecuciones y condiciones constantes, mientras que las limitaciones de generalización se discuten en el capítulo de conclusiones.
+El experimento sigue un diseño cuasi-experimental con un factor entre sujetos: la variable independiente es el tipo de respuesta (manual frente a SOAR), y las variables dependientes son el MTTR, la tasa de éxito, la precisión de la decisión y el uso de recursos. Para controlar variables extrañas, el entorno Docker, el dataset de alertas, el hardware y la configuración del playbook se mantienen constantes entre ejecuciones. Además, el orden de las ejecuciones se aleatoriza para mitigar el efecto de factores secuenciales como el calentamiento de cachés o la degradación de servicios. Cada escenario (malicioso y benigno) se ejecuta 50 veces, produciendo un total de 100 ejecuciones sobre las que se calculan los percentiles p50 y p90 del MTTR.
 
-### Pasos operativos para reproducir el experimento
+### Consideraciones éticas y de seguridad
 
-1. **Definir la línea base manual.** Simular la recepción de una alerta de ransomware y contabilizar el tiempo
-   empleado en validación, apertura de caso, enriquecimiento, decisión y cierre.
-2. **Implementar el laboratorio.** Clonar el repositorio, ejecutar `make generate-secrets` y `make up` siguiendo
-   `docs/01-getting-started.md`.
-3. **Ejecutar el playbook E2E.** Lanzar `pytest tests/e2e/` para las dos líneas de alerta: maliciosa y benigna.
-4. **Medir MTTR.** Extraer `mttr_seconds` del índice `soar-metrics` o del cálculo del workflow.
-5. **Comparar manual vs automatizado.** Evaluar si el MTTR y la consistencia mejoran respecto a la línea base manual.
+El laboratorio opera exclusivamente con fines académicos en un entorno aislado, sin datos reales ni conectividad a sistemas productivos. La segmentación de red en Docker contiene la actividad simulada, y los secretos se gestionan mediante variables de entorno generadas por `make generate-secrets`, sin almacenar credenciales en el repositorio. El diseño se alinea con el Reglamento General de Protección de Datos (European Union, 2018), la California Consumer Privacy Act (State of California, 2020) y la Health Insurance Portability and Accountability Act (U.S. Department of Health & Human Services, 2023) en cuanto a protección de datos, con ISO 27001 (ISO/IEC, 2022) e ISO 27002 (ISO/IEC, 2023) en gestión de seguridad, y con el NIST Cybersecurity Framework (NIST, 2024a) como referencia para las funciones de identificación, protección, detección, respuesta y recuperación.
 
-### Casos de error esperados
+### Gestión de riesgos
 
-- Falta de recursos (`vm.max_map_count`, memoria) impide el arranque de Elasticsearch.
-- Errores de DNS entre contenedores hacen que los workers de Shuffle no resuelvan `shuffle-backend`.
-- La API key de Shuffle cambia tras `make reset` y queda desactualizada en `.env.full`.
-- Credenciales con `@` o `!` provocan errores de escaping en MariaDB u otros servicios.
+Los riesgos técnicos principales son el fallo de integración entre componentes, mitigado con pruebas de conexión tempranas durante la Fase 3, y la aparición de vulnerabilidades, abordada con escaneos periódicos de dependencias y configuración. En la planificación se incorpora una holgura del 20 % sobre la estimación de duración de cada fase y se realizan copias de seguridad diarias del estado de los volúmenes Docker. El sesgo experimental se controla mediante la aleatorización del orden de ejecuciones y el mantenimiento de condiciones constantes, mientras que las limitaciones de generalización —derivadas del uso de un único host, un dataset sintético y contención simulada— se discuten en el capítulo de conclusiones.
 
-### Criterios de verificación
+### Reproducción del experimento
 
-- `make up` finaliza con todos los contenedores `healthy` según `docker compose ps`.
-- `pytest tests/e2e/` devuelve el 100 % de tests PASSED.
-- El dashboard de Grafana muestra métricas (`mttr_seconds`, `p50`, `p90`) y confirma la reducción del MTTR respecto
-  al baseline manual.
-- Los logs del playbook y las entradas en TheHive/Cortex evidencian trazabilidad completa de la alerta.
+La reproducción del experimento por terceros sigue cinco pasos. Primero, se define la línea base manual simulando la recepción de una alerta de ransomware y contabilizando el tiempo empleado en validación, apertura de caso, enriquecimiento, decisión y cierre. Segundo, se implementa el laboratorio clonando el repositorio, ejecutando `make generate-secrets` y `make up` siguiendo `docs/01-getting-started.md`. Tercero, se ejecuta el playbook E2E lanzando `pytest tests/e2e/` para las dos líneas de alerta, maliciosa y benigna. Cuarto, se extrae `mttr_seconds` del índice `soar-metrics` o del cálculo del workflow. Por último, se comparan los resultados del MTTR y la consistencia respecto a la línea base manual.
+
+Durante la reproducción pueden aparecer errores conocidos: la falta de recursos (`vm.max_map_count` o memoria insuficiente) impide el arranque de Elasticsearch; los errores de DNS entre contenedores hacen que los workers de Shuffle no resuelvan `shuffle-backend`; la API key de Shuffle cambia tras `make reset` y queda desactualizada en `.env.full`; y las credenciales con caracteres especiales como `@` o `!` provocan errores de escaping en MariaDB u otros servicios.
+
+Los criterios de verificación establecen que `make up` finaliza con todos los contenedores en estado `healthy` según `docker compose ps`, que `pytest tests/e2e/` devuelve el 100 % de tests superados, que el dashboard de Grafana muestra las métricas `mttr_seconds`, `p50` y `p90` confirmando la reducción del MTTR respecto al baseline manual, y que los logs del playbook junto con las entradas en TheHive y Cortex evidencian trazabilidad completa de la alerta.
 
 ---
 
