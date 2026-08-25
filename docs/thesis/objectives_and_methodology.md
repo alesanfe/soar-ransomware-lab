@@ -83,42 +83,53 @@ escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
 
 ## 3.3. Metodología del trabajo
 
-La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre finales de abril de 2026 y finales de agosto de 2026 (aproximadamente 4 meses, 18 semanas) y se estructura en cinco fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
+La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre el 27 de abril y el 31 de agosto de 2026 (18 semanas) y se estructura en cinco fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
 
 La planificación temporal evolucionó a lo largo del proyecto. La estimación inicial fue de 12 semanas, suficiente según el alcance previsto. Tras la fase de diseño se aumentó a 15 semanas para acomodar la integración de Cortex con analyzers externos y el stack de monitoreo, no contemplados inicialmente. Finalmente, la duración real fue de 18 semanas debido a la ampliación de la suite de pruebas (hasta 2041 tests) y la ejecución del experimento con n=50 ejecuciones.
 
 ```mermaid
-gantt     title Figura 2: Cronograma Gantt del proyecto     dateFormat YYYY-MM-DD     axisFormat %d %b
+gantt
+    title Figura 2: Cronograma de ejecución del proyecto
+    dateFormat YYYY-MM-DD
+    axisFormat %d %b
+    tickInterval 1week
+    todayMarker off
 
-    section Fase 1: Investigación y requisitos     Revisión literatura, análisis de requisitos     :a1, 2026-04-27, 3w
+    section Inicio
+    Inicio del proyecto :milestone, m1, 2026-04-27, 0d
 
-    section Fase 2: Diseño arquitectónico     Diseño hexagonal, topología Docker, contratos   :a2, after a1, 3w
+    section Investigación
+    Literatura y requisitos :a1, 2026-04-27, 3w
 
-    section Fase 3: Desarrollo e implementación     Implementación playbook, integraciones, API     :a3, after a2, 6w
+    section Diseño
+    Arquitectura y contratos :a2, after a1, 3w
 
-    section Fase 4: Pruebas y validación     Tests E2E, experimentos n=50, análisis stats    :a4, after a3, 3w
+    section Desarrollo
+    Playbook, integraciones y API :crit, a3, after a2, 6w
+    Versión funcional :milestone, m2, after a3, 0d
 
-    section Fase 5: Optimización y documentación     Redacción TFM, anexos, validación final               :a5, after a4, 3w
+    section Validación
+    Pruebas E2E :a4, after a3, 2w
+    Experimentos :a5, after a4, 3w
+    Análisis estadístico :a6, after a5, 1w
+    Cierre del proyecto :milestone, m3, after a6, 0d
 ```
 
-**Figura 2**: Cronograma Gantt del proyecto con las cinco fases distribuidas entre abril y agosto de 2026.
+**Figura 2**: Cronograma de ejecución del proyecto con cinco fases distribuidas entre abril y agosto de 2026.
 
-**Fase 1 — Investigación y requisitos (abril-mayo 2026, 3 semanas).** Revisión de la literatura sobre respuesta a
+**Fase 1 — Investigación (abril-mayo 2026, 3 semanas).** Revisión de la literatura sobre respuesta a
 incidentes, ransomware y plataformas SOAR. Identificación de la brecha cuantitativa en la literatura. Definición de requisitos funcionales, no funcionales y de integración. Selección del stack tecnológico open source.
 
-**Fase 2 — Diseño arquitectónico (mayo 2026, 3 semanas).** Diseño de la arquitectura hexagonal del código
+**Fase 2 — Diseño (mayo-junio 2026, 3 semanas).** Diseño de la arquitectura hexagonal del código
 Python. Definición de la topología Docker Compose con segmentación de redes. Especificación de contratos de integración entre TheHive, Cortex y Shuffle. Diseño del modelo de scoring y del flujo del playbook.
 
-**Fase 3 — Desarrollo e implementación (junio-julio 2026, 6 semanas).** Implementación del playbook E2E en
+**Fase 3 — Desarrollo (junio-julio 2026, 6 semanas).** Implementación del playbook E2E en
 Shuffle con 46 nodos y 25 scripts Python. Integración con TheHive (gestión de casos) y Cortex (análisis de IoCs).
 Desarrollo del simulador SIEM y de la lógica de contención simulada. Implementación de la API FastAPI con arquitectura hexagonal. Configuración del stack de monitoreo (Loki, Promtail, Grafana).
 
-**Fase 4 — Pruebas y validación (julio-agosto 2026, 3 semanas).** Ejecución de la suite de pruebas
-completa (2041 tests). Realización del experimento con n=50 ejecuciones en dos escenarios (malicioso y benigno).
-Análisis estadístico descriptivo: media, percentiles, desviación estándar, coeficiente de variación. Mutation testing con mutmut.
-
-**Fase 5 — Optimización y documentación (agosto 2026, 3 semanas).** Redacción de la memoria del TFM y los anexos.
-Validación final de reproducibilidad con `make up` y `pytest tests/e2e/`.
+**Fase 4 — Validación (julio-agosto 2026, 6 semanas).** Ejecución de la suite de pruebas
+completa (2041 tests). Pruebas E2E, experimentos con n=50 ejecuciones en dos escenarios (malicioso y benigno),
+análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut.
 
 El desarrollo empieza por definir el alcance y los requisitos. Se prioriza que el entorno sea reproducible y seguro, además de posibilitar repetir ejecuciones bajo condiciones comparables. La validación es medible: se evalúa la ejecución del flujo en dos escenarios, las métricas dentro de umbral y la generación de evidencias verificables.
 
