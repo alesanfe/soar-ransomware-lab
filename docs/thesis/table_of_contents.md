@@ -8,8 +8,9 @@
 2. **Resumen Ejecutivo / Abstract** — `executive_summary.md`
 3. **Agradecimientos** — `acknowledgments.md`
 4. **Lista de Abreviaturas** — `abbreviations_list.md`
-5. **Lista de Figuras y Tablas** — `figures_tables_list.md`
-6. **Índice General** (este documento)
+5. **Índice de Figuras** — `figures_list.md`
+6. **Índice de Tablas** — `tables_list.md`
+7. **Índice General** (este documento)
 
 ### Cuerpo del Documento
 
@@ -87,11 +88,11 @@
 
 ### Secciones Finales
 
-6. **Referencias bibliográficas** — `bibliographic_references.md`
-7. **Declaración de originalidad** — `originality_declaration.md`
-8. **Tablas comparativas de plataformas SOAR** — `appendix_c.md`
-9. **Visualizaciones de datos y gráficos complementarios** — `appendix_e.md`
-10. **Glosario** — `glossary.md`
+8. **Referencias bibliográficas** — `bibliographic_references.md`
+9. **Declaración de originalidad** — `originality_declaration.md`
+10. **Tablas comparativas de plataformas SOAR** — `appendix_c.md`
+11. **Visualizaciones de datos y gráficos complementarios** — `appendix_e.md`
+12. **Glosario** — `glossary.md`
 
 ### Anexos
 
