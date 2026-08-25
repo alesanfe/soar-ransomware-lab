@@ -18,6 +18,12 @@
 | Figura 4.2 | Diagrama de Despliegue Docker Compose              | Anexo J (J.3) |
 | Figura 4.5 | Estado de Jobs de Cortex                           | `figures/cortex_job_status.png` |
 
+### Figuras del Capítulo 3: Objetivos y Metodología
+
+| Figura     | Título                                             | Archivo |
+|------------|----------------------------------------------------|---------|
+| Figura 3.1 | Cronograma Gantt del Proyecto                      | Mermaid (inline) |
+
 ### Figuras del Capítulo 5: Resultados, Discusión y Conclusiones
 
 | Figura     | Título                                             | Archivo |
@@ -119,11 +125,11 @@
 
 | Tabla     | Título                                      | Página |
 |-----------|---------------------------------------------|--------|
-| Tabla 5.1 | Cumplimiento de Objetivos del Proyecto      | 64     |
-| Tabla 5.2 | Contribuciones Académicas y Prácticas       | 66     |
-| Tabla 5.3 | Análisis Costo-Beneficio de Soluciones SOAR | 68     |
-| Tabla 5.4 | Recomendaciones por Tipo de Organización    | 70     |
-| Tabla 5.5 | KPIs Recomendados para SOAR                 | 72     |
+| Tabla 5.1 | Cumplimiento de Objetivos del Proyecto      | 72     |
+| Tabla 5.2 | Contribuciones Académicas y Prácticas       | 74     |
+| Tabla 5.3 | Análisis Costo-Beneficio de Soluciones SOAR | 76     |
+| Tabla 5.4 | Recomendaciones por Tipo de Organización    | 78     |
+| Tabla 5.5 | KPIs Recomendados para SOAR                 | 80     |
 
 ### Tablas del Anexo A
 
@@ -199,5 +205,5 @@
     - Naranja: Componentes de integración
     - Rojo: Componentes de seguridad
 
-5. **Actualización**: Las figuras y tablas han sido actualizadas con los datos más recientes disponibles hasta mayo de
-    2024.
+5. **Actualización**: Las figuras y tablas han sido actualizadas con los datos experimentales obtenidos durante la
+   validación del sistema en agosto de 2026.

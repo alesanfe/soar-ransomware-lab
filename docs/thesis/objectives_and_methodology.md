@@ -165,3 +165,15 @@ La documentación técnica agrupa configuración, arquitectura, procedimientos d
 - El dashboard de Grafana muestra métricas (`mttr_seconds`, `p50`, `p90`) y confirma la reducción del MTTR respecto
   al baseline manual.
 - Los logs del playbook y las entradas en TheHive/Cortex evidencian trazabilidad completa de la alerta.
+
+---
+
+## Índice de Figuras del Capítulo 3
+
+| Figura    | Título                          | Archivo          |
+|-----------|---------------------------------|------------------|
+| Figura 3.1 | Cronograma Gantt del proyecto | Mermaid (inline) |
+
+## Índice de Tablas del Capítulo 3
+
+Este capítulo no contiene tablas formateadas. Los objetivos específicos y criterios de éxito se presentan en formato de lista numerada.

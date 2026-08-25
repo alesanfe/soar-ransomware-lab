@@ -143,3 +143,15 @@ El uso exclusivo de software open source elimina los costos de licenciamiento as
 
 **Figura 5.6**: Análisis coste-beneficio comparativo entre SOAR open source (este laboratorio) y soluciones comerciales
 equivalentes.
+
+---
+
+## Índice de Figuras del Capítulo 5
+
+| Figura    | Título                                          | Archivo                              |
+|-----------|-------------------------------------------------|--------------------------------------|
+| Figura 5.6 | Análisis coste-beneficio SOAR open source vs comercial | `figures/Fig5_5_cost_benefit.png` |
+
+## Índice de Tablas del Capítulo 5
+
+Este capítulo no contiene tablas formateadas. El cumplimiento de objetivos se presenta en formato de lista con datos cuantitativos.
