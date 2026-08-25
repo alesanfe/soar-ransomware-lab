@@ -10,18 +10,18 @@ En ransomware, el impacto principal es la pérdida de disponibilidad por cifrado
 
 Para modelar el comportamiento del adversario y conectar detecciones con acciones, MITRE ATT&CK (MITRE Corporation, 2024; MITRE ATT&CK, n.d.) es una referencia habitual en el sector. La técnica T1486 (Data Encrypted for Impact) describe el cifrado de datos para interrumpir la disponibilidad y extorsionar, e incluye detalles sobre propagación y entornos afectados que orientan la definición de observables e IoCs relevantes (MITRE, 2025).
 
-La progresión del ransomware a través de generaciones muestra una tendencia clara hacia sofisticación creciente y demandas de rescate exponencialmente mayores. Como se observa en la **Tabla 2**, los rescates promedio han aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, representando un incremento de más de tres órdenes de magnitud que justifica la inversión en capacidades SOAR para mitigar el coste financiero de estos incidentes (CrowdStrike, 2024; Sophos, 2024).
+La progresión del ransomware a través de generaciones muestra una tendencia clara hacia sofisticación creciente y demandas de rescate exponencialmente mayores (Razaulla et al., 2023). Como se observa en la **Tabla 2**, los rescates promedio han aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, representando un incremento de más de tres órdenes de magnitud que justifica la inversión en capacidades SOAR para mitigar el coste financiero de estos incidentes (CrowdStrike, 2024; Sophos, 2024).
 
 ## Tabla 2: Progresión de Ransomware por Generación
 
 | Generación | Período       | Características Principales            | Técnicas de Distribución         | Rescate Promedio | Ejemplos Notables            |
 |------------|---------------|----------------------------------------|----------------------------------|------------------|------------------------------|
 | **1ª Gen** | 2013-2016     | Encriptación básica, sin propagación   | Email phishing, exploits simples | $300-$700        | CryptoLocker, CryptoWall     |
-| **2ª Gen** | 2016-2019     | Propagación lateral, exploits 0-day    | EternalBlue, exploits red        | $10K-$50K        | WannaCry, NotPetya, Ryuk     |
-| **3ª Gen** | 2019-2022     | Modelo RaaS, doble extorsión           | Afiliados, kits de ataque        | $100K-$10M       | Maze, REvil, Conti           |
-| **4ª Gen** | 2022-Presente | Triple extorsión, ML/AI, anti-forenses | Acceso inicial, supply chain     | $500K-$20M       | LockBit 3.0, BlackCat, Royal |
+| **2ª Gen** | 2017-2018     | Propagación lateral, gusanos de red    | EternalBlue, exploits SMB        | $300-$50K        | WannaCry, NotPetya           |
+| **3ª Gen** | 2018-2021     | Modelo RaaS, doble extorsión           | Afiliados, access brokers        | $100K-$10M       | Ryuk, Maze, REvil, Conti     |
+| **4ª Gen** | 2021-Presente | Triple extorsión, DDoS, access brokers | Acceso inicial, supply chain     | $500K-$20M       | LockBit 3.0, BlackCat, Royal |
 
-La primera generación se caracterizaba por encriptación básica y demandas de rescate modestas, mientras que la cuarta generación actual incorpora técnicas avanzadas de Machine Learning, triple extorsión y capacidades anti-forenses (Sophos, 2024). Esta progresión indica la necesidad de capacidades de respuesta automatizadas, ya que la respuesta manual resulta insuficiente ante amenazas de esta complejidad. Los informes anuales de CrowdStrike (CrowdStrike, 2024) y Sophos (Sophos, 2024) corroboran esta tendencia con datos de telemetría global de sus respectivos clientes.
+La primera generación se caracterizaba por encriptación básica y demandas de rescate modestas, mientras que la cuarta generación actual incorpora triple extorsión (cifrado + exfiltración + DDoS) y depende de access brokers que venden acceso inicial a redes corporativas (Sophos, 2024). Esta progresión indica la necesidad de capacidades de respuesta automatizadas, ya que la respuesta manual resulta insuficiente ante amenazas de esta complejidad. Los informes anuales de CrowdStrike (CrowdStrike, 2024) y Sophos (Sophos, 2024) corroboran esta tendencia con datos de telemetría global de sus respectivos clientes.
 
 ## 2.2. Automatización, SOAR y playbooks en operaciones de seguridad
 

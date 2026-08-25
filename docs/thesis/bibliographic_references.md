@@ -8,7 +8,7 @@ Akbari Gurabi, M., Nitz, L., Bregar, A., Popanda, J., Siemers, C., Matzutt, R., 
 
 alesanfe. (n.d.). *SOAR Ransomware Lab repository* [GitHub]. https://github.com/alesanfe/soar-ransomware-lab
 
-Al-Momani, A., et al. (2024). The evolution of ransomware: A comprehensive analysis of four generations. *Journal of Cybersecurity*, 10(2), 145-167. https://doi.org/10.1093/cybsec/tyad045
+Razaulla, S., Fachkha, C., Markarian, C., Gawanmeh, A., Mansoor, W., Fung, B. C. M., & Assi, C. (2023). The age of ransomware: A survey on the evolution, taxonomy, and research directions. *IEEE Access*, 11, 40698-40723. https://doi.org/10.1109/access.2023.3268535
 
 Astral. (2024). *Ruff: An extremely fast Python linter and code formatter*. Astral. https://docs.astral.sh/ruff/
 
