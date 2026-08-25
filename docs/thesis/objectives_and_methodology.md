@@ -14,7 +14,7 @@ Para alcanzar el objetivo general, el trabajo se divide en objetivos específico
 
 ### 3.2.1. Objetivos Estratégicos
 
-Los objetivos estratégicos se agrupan en cinco áreas: diseño arquitectónico, implementación funcional, validación empírica, documentación reproducible y optimización iterativa.
+Los objetivos estratégicos se agrupan en cuatro áreas: diseño arquitectónico, implementación funcional, validación empírica y documentación reproducible.
 
 - **Diseño Arquitectónico**
 
@@ -32,11 +32,7 @@ Aquí se busca validar la eficacia mediante métricas cuantitativas como MTTR y 
 
 Documentar exhaustivamente el proceso para permitir la reproducción por terceros. La validación consiste en una guía de instalación y configuración completa, documentación de playbooks con contexto, validación de reproducción mediante Makefile y documentación técnica completa. Material en `docs/`, `docs/04-operations.md`, el Makefile, `docs/03-api-and-integrations.md` y `apps/docs-site/`.
 
-- **Optimización Iterativa**
-
-Identificar e implementar mejoras en código, infraestructura y documentación. Se verifica con un análisis sistemático de mejoras, implementación de mejoras críticas de seguridad, validación sin regresiones y métricas comparativas pre/post. Artefactos en un documento de análisis, `tests/`, `tests/performance/` y `tests/security/`.
-
-La **Tabla 3** resume los cinco objetivos estratégicos con sus métricas de éxito, valor objetivo y evidencia requerida.
+La **Tabla 3** resume los cuatro objetivos estratégicos con sus métricas de éxito, valor objetivo y evidencia requerida.
 
 ## Tabla 3: Resumen de Objetivos Estratégicos y Métricas de Éxito
 
@@ -46,7 +42,6 @@ La **Tabla 3** resume los cinco objetivos estratégicos con sus métricas de éx
 | **TE-2** | Implementación funcional   | Playbook E2E operativo | 2 escenarios (malicioso y benigno) | Scripts funcionales, logs   |
 | **TE-3** | Validación experimental    | Reducción MTTR         | ≥50%           | Resultados estadísticos     |
 | **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
-| **TE-5** | Optimización iterativa     | Mejoras implementadas  | 44 mejoras     | Análisis pre/post           |
 
 El cumplimiento de cada objetivo se reporta en el Capítulo 4 (Resultados) y se discute en el Capítulo 6 (Conclusiones).
 
@@ -83,8 +78,6 @@ Los objetivos operativos detallan los pasos de implementación:
 - **Generar** evidencias verificables: logs, capturas, trazas y métricas. Documentar el procedimiento para asegurar
   reproducibilidad.
 
-- **Identificar** e implementar mejoras en código, infraestructura y documentación, priorizando las de seguridad.
-
 **Criterios de cumplimiento**: el objetivo general se alcanza cuando el laboratorio ejecuta el flujo completo en dos
 escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
 
@@ -92,7 +85,7 @@ escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
 
 La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre finales de abril de 2026 y finales de agosto de 2026 (aproximadamente 4 meses, 18 semanas) y se estructura en cinco fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
 
-La planificación temporal evolucionó a lo largo del proyecto. La estimación inicial fue de 12 semanas, suficiente según el alcance previsto. Tras la fase de diseño se aumentó a 15 semanas para acomodar la integración de Cortex con analyzers externos y el stack de monitoreo, no contemplados inicialmente. Finalmente, la duración real fue de 18 semanas debido a la ampliación de la suite de pruebas (hasta 2041 tests), la ejecución del experimento con n=50 ejecuciones y la incorporación de las 44 mejoras de seguridad y calidad identificadas durante la validación.
+La planificación temporal evolucionó a lo largo del proyecto. La estimación inicial fue de 12 semanas, suficiente según el alcance previsto. Tras la fase de diseño se aumentó a 15 semanas para acomodar la integración de Cortex con analyzers externos y el stack de monitoreo, no contemplados inicialmente. Finalmente, la duración real fue de 18 semanas debido a la ampliación de la suite de pruebas (hasta 2041 tests) y la ejecución del experimento con n=50 ejecuciones.
 
 ```mermaid
 gantt     title Figura 2: Cronograma Gantt del proyecto     dateFormat YYYY-MM-DD     axisFormat %d %b
@@ -105,7 +98,7 @@ gantt     title Figura 2: Cronograma Gantt del proyecto     dateFormat YYYY-MM-D
 
     section Fase 4: Pruebas y validación     Tests E2E, experimentos n=50, análisis stats    :a4, after a3, 3w
 
-    section Fase 5: Optimización y documentación     44 mejoras, redacción TFM, anexos               :a5, after a4, 3w
+    section Fase 5: Optimización y documentación     Redacción TFM, anexos, validación final               :a5, after a4, 3w
 ```
 
 **Figura 2**: Cronograma Gantt del proyecto con las cinco fases distribuidas entre abril y agosto de 2026.
@@ -124,8 +117,7 @@ Desarrollo del simulador SIEM y de la lógica de contención simulada. Implement
 completa (2041 tests). Realización del experimento con n=50 ejecuciones en dos escenarios (malicioso y benigno).
 Análisis estadístico descriptivo: media, percentiles, desviación estándar, coeficiente de variación. Mutation testing con mutmut.
 
-**Fase 5 — Optimización y documentación (agosto 2026, 3 semanas).** Implementación de las 44 mejoras
-identificadas en seguridad, calidad de código y automatización. Redacción de la memoria del TFM y los anexos.
+**Fase 5 — Optimización y documentación (agosto 2026, 3 semanas).** Redacción de la memoria del TFM y los anexos.
 Validación final de reproducibilidad con `make up` y `pytest tests/e2e/`.
 
 El desarrollo empieza por definir el alcance y los requisitos. Se prioriza que el entorno sea reproducible y seguro, además de posibilitar repetir ejecuciones bajo condiciones comparables. La validación es medible: se evalúa la ejecución del flujo en dos escenarios, las métricas dentro de umbral y la generación de evidencias verificables.

@@ -101,7 +101,7 @@
 - **Anexo C** — `appendix_c.md` — Gráficos y diagramas complementarios (las tablas se han reubicado en sus capítulos correspondientes)
 - **Anexo D** — `appendix_d.md` — Métricas y visualizaciones complementarias
 - **Anexo E** — `appendix_e.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
-- **Anexo F** — `appendix_f.md` — Documentación de mejoras implementadas (44 mejoras)
+- **Anexo F** — `appendix_f.md` — Registro de cambios técnicos y editoriales
 - **Anexo G** — `appendix_g.md` — Estrategia de testing (2041 tests, pirámide, quality gates)
 - **Anexo H** — `appendix_h.md` — Diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid)
 
@@ -208,7 +208,6 @@
 - Uso de recursos: docker stats dentro de límites
 - 5/7 objetivos cumplidos
 - Quality Score 92.2/100, HPR 96.0/100
-- 44 mejoras implementadas
 - Discusión: interpretación, comparación con literatura, consistencia (CV 67.7 %), análisis por subconjuntos
 - Limitaciones
 
@@ -281,8 +280,7 @@
 
 **Anexo F** — `appendix_f.md`
 
-- Registro de 44 mejoras implementadas por categoría
-- Cambios técnicos y editoriales aplicados durante la remediación documental
+- Registro de cambios técnicos y editoriales aplicados durante el desarrollo
 
 **Anexo G** — `appendix_g.md`
 

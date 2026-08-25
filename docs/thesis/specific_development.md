@@ -709,35 +709,7 @@ Este stack se inicia automáticamente con el comando `make up`. La interfaz de G
 - Alertas y notificaciones basadas en patrones de logs
 - Integración con el conjunto de herramientas de observabilidad
 
-#### 4.1.3.6. Análisis de Mejoras Implementadas
-
-El proceso iterativo resultó en mejoras distribuidas en categorías de seguridad, calidad de código, operativas y de monitoreo. La **Figura 10** muestra la distribución de las 44 mejoras aplicadas por categoría.
-
-![Figura 10: Distribución de mejoras por categoría](figures/Fig5_2_improvements_category.png)
-
-**Figura 10**: Distribución de las 44 mejoras implementadas por categoría (seguridad, calidad de código, operativas,
-monitoreo).
-
-La **Tabla 10** desglosa las mejoras implementadas por categoría, mostrando el número de mejoras identificadas, implementadas y el porcentaje de implementación.
-
-## Tabla 10: Mejoras Implementadas por Categoría
-
-| Categoría          | Mejoras Identificadas | Implementadas | % Implementación | Impacto Principal |
-|--------------------|-----------------------|---------------|------------------|-------------------|
-| **Seguridad**      | 12                    | 12            | 100%             | Crítico        |
-| **Calidad Código** | 8                     | 8             | 100%             | Medio          |
-| **Automatización** | 15                    | 15            | 100%             | Alto           |
-| **Monitoreo**      | 9                     | 9             | 100%             | Medio          |
-| **Total**          | 44                    | 44            | 100%             | -                 |
-
-Las mejoras implementadas por categoría reflejan el compromiso con la calidad y seguridad del sistema. Las 12 mejoras de
-seguridad, todas de severidad crítica, abordan vulnerabilidades y refuerzan la postura de seguridad del laboratorio. Las
-15 mejoras de automatización, con severidad alta, contribuyen más a la reducción del MTTR y la eficiencia operativa. Las
-mejoras de calidad de código y monitoreo, con severidad media, aseguran la mantenibilidad y observabilidad del sistema. El
-100% de implementación de las mejoras identificadas (44/44) refleja un proceso sistemático de optimización iterativa,
-elevando el prototipo inicial hasta una solución apta para producción.
-
-#### 4.1.3.7. Discusión
+#### 4.1.3.6. Discusión
 
 La reducción observada en MTTR medio (3600 s a 277.15 s) respalda la hipótesis principal de que la automatización SOAR acorta los tiempos de respuesta frente a los procesos manuales. Este resultado es coherente con la literatura revisada:
 Kinyua y Awuah identifican MTTR como métrica habitual para evaluar el valor operativo de SOAR (Kinyua & Awuah, 2021), y Obuse et al.
@@ -790,4 +762,3 @@ Los resultados muestran que el laboratorio cumple los requisitos funcionales y n
 | Tabla 7  | Métricas de Monitoreo Implementadas             |
 | Tabla 8  | Resultados Experimentales Detallados            |
 | Tabla 9  | Análisis por Componente de Tiempo               |
-| Tabla 10 | Mejoras Implementadas por Categoría             |

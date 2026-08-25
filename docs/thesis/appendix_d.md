@@ -222,15 +222,6 @@ Monitoreo (20 pts):
     Prometheus  Grafana  Alertas  Logs  Métricas  Dashboard
 ```
 
-El efecto de las mejoras implementadas por categoría, desglosando las 44 mejoras totales en cuatro
-categorías principales: seguridad (12 mejoras, 50 puntos de severidad), automatización (15 mejoras, 35 puntos), calidad de
-código (8 mejoras, 15 puntos) y monitoreo (9 mejoras, 20 puntos). La visualización revela que las mejoras de seguridad
-tienen el mayor efecto debido a su naturaleza crítica, seguidas por las mejoras de automatización que contribuyen
-directamente a la reducción del MTTR. Las mejoras de calidad de código y monitoreo, aunque con severidad media, son
-fundamentales para la mantenibilidad y observabilidad del sistema. Esta distribución de severidad refleja las prioridades
-del proyecto: primero asegurar un sistema seguro, luego mejorar su rendimiento, y finalmente verificar su calidad y
-observabilidad.
-
 ### Gráfico 5.5: Comparación de Costos y Beneficios
 
 > **Nota Importante.** La lógica de cálculo de KPIs existe en el código fuente en:
@@ -714,21 +705,16 @@ Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del play
 **Figura 34**: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
 cinco fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
 
-![Mejoras por categoría (versión extendida)](figures/GE5_improvements.png)
-
-**Figura 35**: Distribución extendida de las 44 mejoras implementadas por categoría (seguridad, calidad de código,
-operativas, monitoreo), complementaria a la Figura 10 del Capítulo 4.
-
 ![Análisis coste-beneficio (versión extendida)](figures/GE6_cost_benefit.png)
 
-**Figura 36**: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
+**Figura 35**: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
 extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
 
 ### Estadísticas Operativas
 
 ![Estadísticas diarias organizativas](figures/org_daily_stats.png)
 
-**Figura 37**: Estadísticas diarias agregadas por organización durante el período de validación, incluyendo volumen
+**Figura 36**: Estadísticas diarias agregadas por organización durante el período de validación, incluyendo volumen
 de alertas procesadas, MTTR medio diario y tasa de éxito.
 
 Los KPIs de negocio escalados por tipo de organización (PYME, mediana, grande, enterprise), con objetivos

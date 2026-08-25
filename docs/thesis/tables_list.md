@@ -27,7 +27,6 @@
 | Tabla 7 | Métricas de Monitoreo Implementadas     | 57     |
 | Tabla 8 | Resultados Experimentales Detallados    | 59     |
 | Tabla 9 | Análisis por Componente de Tiempo       | 62     |
-| Tabla 10 | Mejoras Implementadas por Categoría    | 65     |
 
 ## Tablas del Capítulo 5: Conclusiones
 
