@@ -645,7 +645,7 @@ de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) f
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
-El laboratorio cumple los requisitos funcionales y de calidad definidos, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron, como se detalla en la §4.1.3.3. La cobertura de tests se puede verificar en `artifacts/coverage/` mediante el comando `make test-coverage`.
+El laboratorio cumple los requisitos funcionales y de calidad definidos, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron, como se detalla en la §4.1.3.3. La cobertura de tests se puede verificar en `reports/coverage/` mediante el comando `make test-coverage`.
 
 > **Anexo G**: la estrategia completa de testing (2041 tests, pirámide, 9 marcadores pytest,
 > coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en `appendix_g.md`. La validación
@@ -694,8 +694,8 @@ Los archivos de configuración del stack de logging se encuentran en `infra/dock
 
 El stack de logging usa la red dedicada `logging_net` (172.23.0.0/16) para aislar el tráfico de logging. Los datos persistentes se almacenan en:
 
-- `artifacts/data/loki/`: Logs almacenados en Loki
-- `artifacts/data/grafana/`: Configuración y dashboards de Grafana
+- `runtime/data/loki/`: Logs almacenados en Loki
+- `runtime/data/grafana/`: Configuración y dashboards de Grafana
 
 #### Uso
 

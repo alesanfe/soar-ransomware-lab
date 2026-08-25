@@ -1419,7 +1419,7 @@ sudo systemctl restart docker
 docker exec soar_elasticsearch env | grep ES_JAVA_OPTS
 
 # 2. Verificar permisos del volumen
-ls -la artifacts/data/elasticsearch/
+ls -la runtime/data/elasticsearch/
 
 # 3. Aumentar el límite de map_count en Linux
 sudo sysctl -w vm.max_map_count=262144
@@ -1487,7 +1487,7 @@ docker restart $WORKER_ID
 docker logs -f soar_shuffle_backend
 
 # 2. Comprobar que el workflow existe y su ID
-cat artifacts/webhook_info.json
+cat reports/validation/results/webhook_info.json
 
 # 3. Actualizar SHUFFLE_DEFAULT_APIKEY si es necesario
 docker exec soar_api cat /app/.env.full | grep SHUFFLE_DEFAULT_APIKEY
@@ -1549,7 +1549,7 @@ curl http://localhost:19200/soar-metrics-v2/_mapping -u elastic:$ELASTIC_PASSWOR
 docker volume ls | grep misp_db
 
 # 2. Si existía un bind mount antiguo, eliminarlo manualmente (Windows)
-Remove-Item -Recurse -Force artifacts/data/misp/db   # PowerShell
+Remove-Item -Recurse -Force runtime/data/misp/db   # PowerShell
 
 # 3. Recrear volumen
 make down -v
