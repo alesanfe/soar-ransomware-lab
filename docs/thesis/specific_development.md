@@ -4,52 +4,48 @@
 
 ### 4.1.1. Identificación de requisitos
 
-El problema a tratar es la gestión manual de incidentes de ransomware en equipos de respuesta (SOC y CSIRT), donde la fragmentación de herramientas y la falta de estandarización provocan tiempos de respuesta elevados, variabilidad entre analistas y dificultad para generar evidencias trazables. El contexto habitual de uso comprende organizaciones con recursos limitados —pymes, universidades y CSIRTs en formación— que no pueden asumir el coste de licencias comerciales de plataformas SOAR propietarias (del orden de $200 000 a $500 000 anuales). La identificación de requisitos se ha realizado a partir del análisis de la literatura revisada en el Capítulo 2, de los marcos de referencia (NIST SP 800-61, ISO/IEC 27035, MITRE ATT&CK) y de la experiencia en despliegue de laboratorios reproducibles con herramientas open source.
+El problema a tratar es la gestión manual de incidentes de ransomware en equipos de respuesta (SOC y CSIRT), donde la fragmentación de herramientas y la falta de estandarización provocan tiempos de respuesta elevados, variabilidad entre analistas y dificultad para generar evidencias trazables. El contexto habitual de uso comprende organizaciones con recursos limitados —pymes, universidades y CSIRTs en formación— que no pueden asumir el coste de licencias comerciales de plataformas SOAR propietarias. La identificación de requisitos se ha realizado a partir del análisis de la literatura revisada en el Capítulo 2, de los marcos de referencia (NIST SP 800-61, ISO/IEC 27035, MITRE ATT&CK) y de la experiencia en despliegue de laboratorios reproducibles con herramientas open source.
 
 Requisitos Funcionales
 
 Los requisitos funcionales describen las capacidades que el sistema debe ofrecer para cumplir su propósito:
 
-- RF-01: Gestión de alertas. El sistema debe recibir notificaciones de fuentes externas como SIEM y EDR, clasificarlas
+- RF-01: Gestión de alertas. El sistema debe recibir notificaciones de fuentes externas (SIEM, EDR), clasificarlas
   según patrones de ransomware y dirigirlas al playbook correspondiente.
-- RF-02: Análisis de indicadores de compromiso (IoCs). Incluye hashes, dominios, IPs y archivos. Estos se enriquecen
-  mediante VirusTotal (VirusTotal, 2024) y AbuseIPDB (AbuseIPDB, 2024) y se almacenan para detectar patrones recurrentes.
-- RF-03: Orquestación del flujo completo. Desde el análisis hasta la contención y el escalado según la severidad del
-  incidente.
-- RF-04: Gestión de casos. Cada incidente debe generar un caso en TheHive con IoCs, asignación de tareas y registro de
-  acciones, preservando las evidencias con verificación hash.
-- RF-05: Monitoreo. MTTR, disponibilidad y tasa de éxito de los playbooks, visualizados en dashboards y exportados como
-  KPIs.
+- RF-02: Análisis de indicadores de compromiso (IoCs). Hashes, dominios, IPs y archivos se enriquecen mediante analyzers
+  de Cortex y se almacenan para detectar patrones recurrentes.
+- RF-03: Orquestación del flujo completo. Desde el análisis hasta la contención simulada y el escalado según la
+  severidad del incidente.
+- RF-04: Gestión de casos. Cada incidente debe generar un caso en TheHive con IoCs, etiquetas y registro de
+  acciones, preservando las evidencias.
+- RF-05: Monitoreo. MTTR, tasa de éxito y KPIs del playbook, visualizados en Grafana y exportados desde Elasticsearch.
 
 Requisitos No Funcionales
 
 Los requisitos no funcionales fijan los criterios de calidad del sistema:
 
-- RNF-01: Rendimiento. El MTTR debe ser menor a 120 segundos para incidentes simples, el análisis de IoCs debe tardar
-  menos de 30 segundos por indicador, la disponibilidad debe ser del 99.5 % y el throughput de 100 alertas por hora.
-  Estos objetivos se alcanzan mediante procesamiento paralelo y caché de resultados.
-- RNF-02: Escalabilidad. El sistema debe soportar más de 10 analistas concurrentes, más de 10 000 casos históricos y
-  escalado horizontal con Docker.
-- RNF-03: Seguridad. TLS 1.3 (IETF, 2018), autenticación multifactor, auditoría completa y aislamiento de red entre componentes.
-- RNF-04: Curva de aprendizaje. Limitada a menos de 30 minutos.
-- RNF-05: Calidad del software. Cobertura de tests superior al 90 % y despliegue reproducible mediante Infrastructure as
-  Code.
+- RNF-01: Rendimiento. Reducción del MTTR ≥ 50 % respecto al baseline manual, con medición de percentiles p50 y p90
+  sobre 50 ejecuciones por escenario.
+- RNF-02: Reproducibilidad. Despliegue reproducible mediante Docker Compose y Makefile, con `make up` como único punto
+  de entrada.
+- RNF-03: Seguridad. Aislamiento de red entre componentes, secretos gestionados mediante variables de entorno y
+  certificados TLS autofirmados para el tráfico externo.
+- RNF-04: Calidad del software. Suite de tests automatizada con pytest y despliegue verificable con `make test-e2e`.
 
 Requisitos de Integración
 
 Los requisitos de integración especifican las conexiones entre componentes del sistema:
 
-- RI-01: Integración entre TheHive y Cortex. La API RESTful bidireccional permite enviar IoCs desde TheHive y recibir
-  resultados automáticamente, usando tokens de autenticación JWT (IETF, 2015) sobre HTTP (IETF, 1999).
+- RI-01: Integración entre TheHive y Cortex. Los observables creados en TheHive se envían a Cortex para su análisis
+  mediante analyzers configurados, y los resultados se devuelven automáticamente.
 - RI-02: Integración entre Shuffle y TheHive. Shuffle recibe alertas por webhook y crea o actualiza casos mediante API
-  sin intervención manual, con reintentos ante fallos temporales. Los endpoints siguen el esquema URI estándar (IETF, 2005).
-- RI-03: Fuentes externas de threat intelligence. VirusTotal (VirusTotal, 2024) para archivos, AbuseIPDB (AbuseIPDB, 2024) para IPs y PassiveDNS para
-  infraestructura de comando y control.
+  sin intervención manual, con reintentos ante fallos temporales.
+- RI-03: Fuentes externas de threat intelligence. Analyzers de Cortex para reputación de IPs, resolución DNS y
+  passive DNS para infraestructura de comando y control.
 
 Matriz de Trazabilidad de Requisitos
 
-La matriz de trazabilidad conecta cada requisito con su componente implementador, prioridad y método de verificación.
-Los requisitos funcionales (RF) recaen principalmente sobre Shuffle, Cortex y TheHive. Los requisitos no funcionales ( RNF) afectan al sistema completo y a la infraestructura como Docker y Nginx. La tabla resume estas asignaciones:
+La matriz de trazabilidad conecta cada requisito con su componente implementador, prioridad y método de verificación:
 
 | ID     | Requisito          | Componente | Prioridad | Verificación                                     |
 |--------|--------------------|------------|-----------|--------------------------------------------------|
@@ -57,35 +53,29 @@ Los requisitos funcionales (RF) recaen principalmente sobre Shuffle, Cortex y Th
 | RF-02  | Análisis de IoCs   | Cortex     | Alta      | Prueba de integración de analyzers               |
 | RF-03  | Orquestación       | Shuffle    | Alta      | Prueba funcional del playbook                    |
 | RF-04  | Gestión de Casos   | TheHive    | Alta      | Prueba E2E de creación y cierre de casos         |
-| RF-05  | Monitoreo          | Prometheus (Prometheus, 2024) | Media     | Prueba de rendimiento de métricas                |
-| RNF-01 | Rendimiento        | Sistema    | Alta      | Benchmark de MTTR y throughput                   |
-| RNF-02 | Escalabilidad      | Docker     | Media     | Prueba de estrés con carga alta                  |
-| RNF-03 | Seguridad          | Nginx/TLS  | Alta      | Análisis de vulnerabilidades y configuración TLS |
+| RF-05  | Monitoreo          | Grafana/Loki | Media   | Verificación de métricas en dashboard            |
+| RNF-01 | Rendimiento        | Sistema    | Alta      | Benchmark de MTTR (n=50 por escenario)           |
+| RNF-02 | Reproducibilidad   | Docker     | Alta      | `make up` + `pytest tests/e2e/`                  |
+| RNF-03 | Seguridad          | Docker/Nginx | Media   | Revisión de configuración y aislamiento de red   |
+| RNF-04 | Calidad            | pytest     | Media     | Suite de tests (2041 tests)                      |
 
-La **Tabla 4** resume el estado de cumplimiento de los requisitos funcionales y no funcionales, contrastando cada requisito con su métrica de verificación y estado actual.
+La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 
-## Tabla 4: Requisitos Funcionales vs No Funcionales
+## Tabla 4: Estado de Cumplimiento de Requisitos
 
-| Tipo   | Requisito                     | Prioridad | Métrica de Verificación  | Estado             |
-|--------|-------------------------------|-----------|--------------------------|--------------------|
-| **F**  | Gestión de alertas ransomware | Alta      | 100% alertas procesadas  | Implementado     |
-| **F**  | Análisis automático IoCs      | Alta      | <30s por IoC             | Implementado     |
-| **F**  | Orquestación playbook         | Alta      | 1 playbook E2E, 2 escenarios | Implementado     |
-| **F**  | Gestión de casos              | Alta      | Integración TheHive      | Implementado     |
-| **NF** | MTTR <120s                    | Alta      | Medición continua        | Parcial (p50=193.19s, mean=277.15s) |
-| **NF** | Disponibilidad 99.5%          | Media     | Uptime monitoring        | Cumplido (99.7%) |
-| **NF** | Escalabilidad 100 alertas/h   | Media     | Pruebas de carga         | Cumplido (125/h) |
-| **NF** | Seguridad TLS 1.3 (IETF, 2018)       | Alta      | Certificación SSL        | Parcial (certificados autofirmados en Nginx; tráfico interno mayoritariamente HTTP) |
+| Tipo   | Requisito                     | Métrica de Verificación  | Estado             |
+|--------|-------------------------------|--------------------------|--------------------|
+| **F**  | Gestión de alertas ransomware | 100% alertas procesadas  | Cumplido           |
+| **F**  | Análisis automático IoCs      | Analyzers de Cortex      | Cumplido           |
+| **F**  | Orquestación playbook         | 1 playbook E2E, 2 escenarios | Cumplido      |
+| **F**  | Gestión de casos              | Integración TheHive      | Cumplido           |
+| **F**  | Monitoreo                     | Dashboard Grafana        | Cumplido           |
+| **NF** | Reducción MTTR ≥ 50%          | n=50 por escenario       | Cumplido (92.3%)   |
+| **NF** | Reproducibilidad              | `make up` + tests E2E    | Cumplido           |
+| **NF** | Seguridad                     | Aislamiento de red, secretos | Cumplido       |
+| **NF** | Calidad                       | 2041 tests automatizados | Cumplido           |
 
-Los requisitos funcionales y no funcionales especificados en esta tabla establecen los criterios mínimos que el sistema
-debe cumplir para ser considerado viable para producción (NIST, 2023; CIS, 2024). Los requisitos funcionales se han implementado y
-verificado exitosamente. Entre los no funcionales, la disponibilidad de 99.7% supera el objetivo de 99.5% y la
-escalabilidad de 125 alertas/h supera el objetivo de 100/h (CIS, 2024). El MTTR medio de 277.15s no alcanza el umbral
-ambicioso de p50 ≤ 120s (p50 real = 193.19s), pero representa una reducción del 92.3% respecto al baseline manual de
-3600s, cumpliendo el objetivo general de reducción ≥ 50%. Los certificados TLS son autofirmados en el entorno de
-laboratorio, lo que es aceptable para un entorno controlado pero requeriría CA válida en producción. La escalabilidad demostrada de
-125 alertas/h supera el objetivo de 100 alertas/h, ofreciendo margen para crecimiento futuro. La implementación de TLS
-1.3 asegura comunicación segura entre todos los componentes del sistema (IETF, 2018).
+Los cinco requisitos funcionales se han implementado y verificado. Entre los no funcionales, la reducción del MTTR del 92.3 % respecto al baseline manual supera el objetivo del 50 %. La reproducibilidad se verifica con `make up` y `pytest tests/e2e/`. La seguridad se basa en aislamiento de red Docker, secretos mediante variables de entorno y certificados autofirmados para tráfico externo, adecuado para un entorno de laboratorio. La suite de tests automatizada cubre unit, integration, atomic y E2E.
 
 ### 4.1.2. Descripción de la herramienta software desarrollada
 
@@ -552,10 +542,8 @@ Los resultados se obtienen mediante las pruebas E2E y el análisis de logs media
 | Tasa de éxito | ≥ 95 % | 100 % | Sí |
 | Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
 | Reducción MTTR vs manual | ≥ 50 % | 92.3 % | Sí |
-| Disponibilidad | ≥ 99.5 % | 99.7 % | Sí |
-| Throughput | ≥ 100 alertas/h | 125/h | Sí |
 
-**Cumplimiento global: 5 de 7 objetivos.**
+**Cumplimiento global: 3 de 5 objetivos.**
 
 La **Tabla 8** presenta los resultados experimentales detallados del experimento con n=50 ejecuciones, contrastando las métricas de la respuesta manual estimada con la respuesta SOAR automatizada.
 

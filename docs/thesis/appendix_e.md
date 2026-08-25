@@ -17,10 +17,8 @@
 | Tasa de Éxito | ≥ 95% | 100% | Si Sí |
 | Dataset (n ejecuciones) | ≥ 50 | 50 | Si Sí |
 | Reducción MTTR vs Manual | ≥ 50% | 92.3% | Si Sí |
-| Disponibilidad | ≥ 99.5% | 99.7% | Si Sí |
-| Throughput | ≥ 100 alertas/h | 125/h | Si Sí |
 
-**Cumplimiento: 5/7 objetivos.**
+**Cumplimiento: 3/5 objetivos.**
 
 ### 1.2. MTTR Detallado
 
