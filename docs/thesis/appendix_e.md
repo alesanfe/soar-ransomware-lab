@@ -501,7 +501,7 @@ análisis de carga del sistema, y métricas de calidad del software. Estas métr
 rendimiento, identificando cuellos de botella específicos. Los valores corresponden a los resultados obtenidos durante
 la validación.
 
-### Tabla 4.7: Métricas de Rendimiento por Componente
+### Tabla 52: Métricas de Rendimiento por Componente
 
 | Componente        | Métrica               | Manual         | SOAR           | Mejora   | Unidad       |
 |-------------------|-----------------------|----------------|----------------|----------|--------------|
@@ -532,7 +532,7 @@ throughput, mientras que el componente de contención muestra mejoras menores de
 métricas adicionales como latencia API, precisión, validación de datos y confirmación de lectura proporcionan una visión
 completa del rendimiento del sistema.
 
-### Tabla 4.8: Análisis de Carga del Sistema
+### Tabla 53: Análisis de Carga del Sistema
 
 | Métrica               | Condición Ligera | Condición Media | Condición Pesada | Límite Sistema |
 |-----------------------|------------------|-----------------|------------------|----------------|
@@ -558,7 +558,7 @@ planificar la capacidad del sistema y asegurar que pueda manejar picos de carga 
 rendimiento. Los límites del sistema establecen los umbrales máximos aceptables para cada métrica, proporcionando una
 base para alertas y escalado automático.
 
-### Tabla 4.9: Métricas de Calidad del Software
+### Tabla 54: Métricas de Calidad del Software
 
 | Métrica                     | Valor Objetivo | Valor Logrado | Estado | Herramienta |
 |-----------------------------|----------------|---------------|--------|-------------|
@@ -582,7 +582,7 @@ pytest, radon, sonarqube, PMD, bandit y lighthouse asegura una evaluación objet
 software. Estas métricas sirven para asegurar la mantenibilidad a largo plazo del sistema y posibilitar su
 desarrollo futuro.
 
-### Tabla 5.4: KPIs de Negocio por Organización
+### Tabla 55: KPIs de Negocio por Organización
 
 | KPI                       | PYME   | Mediana | Grande  | Enterprise |
 |---------------------------|--------|---------|---------|------------|
@@ -605,69 +605,69 @@ Las siguientes figuras se generan automáticamente desde los resultados experime
 
 ![Distribución de alertas por severidad](figures/severity_distribution.png)
 
-**Figura E.1**: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
+**Figura 12**: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
 
 ![Distribución de alertas por tipo](figures/alert_distribution.png)
 
-**Figura E.2**: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
+**Figura 13**: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
 
 ![MTTR por fase del workflow](figures/mttr_by_phase.png)
 
-**Figura E.3**: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
+**Figura 14**: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
 
 ![MTTR por severidad (boxplot)](figures/mttr_severity_boxplot.png)
 
-**Figura E.4**: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
+**Figura 15**: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
 
 ![Percentiles MTTR](figures/GE2_percentiles.png)
 
-**Figura E.5**: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
+**Figura 16**: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
 
 ![Tasas de éxito](figures/GE3_success_rates.png)
 
-**Figura E.6**: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
+**Figura 17**: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
 
 ### Dashboards de Grafana
 
 ![Progresión de MTTR (tendencia diaria)](figures/grafana_panel_10_Grafico_5_3___Evolucion_MTTR__tendencia_diaria_.png)
 
-**Figura E.7**: Progresión de MTTR (tendencia diaria) capturada desde el dashboard de Grafana.
+**Figura 18**: Progresión de MTTR (tendencia diaria) capturada desde el dashboard de Grafana.
 
 ![Alertas procesadas por hora (throughput)](figures/grafana_panel_12_Grafico_5_4___Alertas_procesadas_por_hora__through.png)
 
-**Figura E.8**: Alertas procesadas por hora (throughput) desde el dashboard de Grafana.
+**Figura 19**: Alertas procesadas por hora (throughput) desde el dashboard de Grafana.
 
 ![MTTR por tipo de alerta](figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
 
-**Figura E.9**: MTTR por tipo de alerta desde el dashboard de Grafana.
+**Figura 20**: MTTR por tipo de alerta desde el dashboard de Grafana.
 
 ![Tasa de éxito por severidad](figures/grafana_panel_14_Tasa_de__xito_por_Severidad.png)
 
-**Figura E.10**: Tasa de éxito por severidad desde el dashboard de Grafana.
+**Figura 21**: Tasa de éxito por severidad desde el dashboard de Grafana.
 
 ### Estado de Servicios
 
 ![Salud de servicios](figures/service_health.png)
 
-**Figura E.11**: Estado de salud de los 10 servicios críticos del laboratorio (100 % healthy).
+**Figura 22**: Estado de salud de los 10 servicios críticos del laboratorio (100 % healthy).
 
 ![Estado de casos en TheHive](figures/thehive_case_status.png)
 
-**Figura E.12**: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
+**Figura 23**: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
 
 ![Duración de workflows](figures/workflow_durations.png)
 
-**Figura E.13**: Distribución de duraciones de los 50 workflows ejecutados.
+**Figura 24**: Distribución de duraciones de los 50 workflows ejecutados.
 
 ### Monitoreo de Logs
 
 ![Volumen de logs en Loki](figures/loki_log_volume.png)
 
-**Figura E.14**: Volumen de logs agregados en Loki durante las ejecuciones E2E.
+**Figura 25**: Volumen de logs agregados en Loki durante las ejecuciones E2E.
 
 ![Mapa de calor de logs](figures/loki_log_heatmap.png)
 
-**Figura E.15**: Mapa de calor de actividad de logs por servicio y tiempo.
+**Figura 26**: Mapa de calor de actividad de logs por servicio y tiempo.
 
 Los KPIs de negocio escalados por tipo de organización (PYME, mediana, grande, enterprise), con objetivos
 realistas adaptados al tamaño y recursos de cada una. Los KPIs incluyen MTTR objetivo, costo por incidente, ROI de SOAR,

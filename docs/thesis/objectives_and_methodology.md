@@ -76,12 +76,12 @@ escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
 
 ## 3.3. Metodología del trabajo
 
-La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre finales de abril de 2026 y finales de agosto de 2026 (aproximadamente 4 meses, 18 semanas) y se estructura en cinco fases. La **Figura 3.1** muestra el cronograma Gantt con la distribución temporal de cada fase.
+La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre finales de abril de 2026 y finales de agosto de 2026 (aproximadamente 4 meses, 18 semanas) y se estructura en cinco fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
 
 La planificación temporal evolucionó a lo largo del proyecto. La estimación inicial fue de 12 semanas, suficiente según el alcance previsto. Tras la fase de diseño se aumentó a 15 semanas para acomodar la integración de Cortex con analyzers externos y el stack de monitoreo, no contemplados inicialmente. Finalmente, la duración real fue de 18 semanas debido a la ampliación de la suite de pruebas (hasta 2041 tests), la ejecución del experimento con n=50 ejecuciones y la incorporación de las 44 mejoras de seguridad y calidad identificadas durante la validación.
 
 ```mermaid
-gantt     title Figura 3.1: Cronograma Gantt del proyecto     dateFormat YYYY-MM-DD     axisFormat %d %b
+gantt     title Figura 2: Cronograma Gantt del proyecto     dateFormat YYYY-MM-DD     axisFormat %d %b
 
     section Fase 1: Investigación y requisitos     Revisión literatura, análisis de requisitos     :a1, 2026-04-27, 3w
 
@@ -94,7 +94,7 @@ gantt     title Figura 3.1: Cronograma Gantt del proyecto     dateFormat YYYY-MM
     section Fase 5: Optimización y documentación     44 mejoras, redacción TFM, anexos               :a5, after a4, 3w
 ```
 
-**Figura 3.1**: Cronograma Gantt del proyecto con las cinco fases distribuidas entre abril y agosto de 2026.
+**Figura 2**: Cronograma Gantt del proyecto con las cinco fases distribuidas entre abril y agosto de 2026.
 
 **Fase 1 — Investigación y requisitos (abril-mayo 2026, 3 semanas).** Revisión de la literatura sobre respuesta a
 incidentes, ransomware y plataformas SOAR. Identificación de la brecha cuantitativa en la literatura. Definición de requisitos funcionales, no funcionales y de integración. Selección del stack tecnológico open source.
@@ -172,7 +172,7 @@ La documentación técnica agrupa configuración, arquitectura, procedimientos d
 
 | Figura    | Título                          | Archivo          |
 |-----------|---------------------------------|------------------|
-| Figura 3.1 | Cronograma Gantt del proyecto | Mermaid (inline) |
+| Figura 2 | Cronograma Gantt del proyecto | Mermaid (inline) |
 
 ## Índice de Tablas del Capítulo 3
 

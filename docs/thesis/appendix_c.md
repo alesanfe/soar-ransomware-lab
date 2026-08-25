@@ -3,7 +3,7 @@
 Este anexo contiene tablas comparativas de plataformas SOAR, generaciones de ransomware, objetivos del proyecto,
 configuración Docker, analyzers Cortex, métricas de monitoreo y resultados experimentales.
 
-## Tabla 2.1: Comparativa Detallada de Plataformas SOAR
+## Tabla 38: Comparativa Detallada de Plataformas SOAR
 
 Comparación de plataformas SOAR open source (TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024), Shuffle (Shuffle Tools, 2024)) versus comerciales (Palo Alto XSOAR, IBM
 Resilient) según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad. Las herramientas open source
@@ -26,7 +26,7 @@ analiza IoCs y Shuffle orquesta flujos. Esta combinación permite construir una 
 soluciones comerciales requieren inversiones anuales de seis cifras (IBM Security, 2024), fuera del alcance de muchas organizaciones. La
 comunidad activa de las herramientas open source asegura soporte continuo y desarrollo.
 
-## Tabla 2.2: Progresión de Ransomware por Generación
+## Tabla 39: Progresión de Ransomware por Generación
 
 | Generación | Período       | Características Principales            | Técnicas de Distribución         | Rescate Promedio | Ejemplos Notables            |
 |------------|---------------|----------------------------------------|----------------------------------|------------------|------------------------------|
@@ -45,7 +45,7 @@ aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, repr
 incidentes (CrowdStrike, 2024; Sophos, 2024). Los informes anuales de CrowdStrike (CrowdStrike, 2024) y Sophos (Sophos, 2024) corroboran esta tendencia con datos de
 telemetría global de sus respectivos clientes.
 
-## Tabla 3.1: Objetivos Específicos con Métricas de Éxito
+## Tabla 40: Objetivos Específicos con Métricas de Éxito
 
 | ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
 |----------|----------------------------|------------------------|----------------|-----------------------------|
@@ -60,7 +60,7 @@ se cumplieron: el diseño integra más de 5 componentes, la implementación entr
 reducción del 92.3% en MTTR (superando el 50% objetivo), la documentación alcanzó cobertura completa y se implementaron
 las 44 mejoras identificadas.
 
-## Tabla 4.1: Requisitos Funcionales vs No Funcionales
+## Tabla 41: Requisitos Funcionales vs No Funcionales
 
 | Tipo   | Requisito                     | Prioridad | Métrica de Verificación  | Estado             |
 |--------|-------------------------------|-----------|--------------------------|--------------------|
@@ -83,7 +83,7 @@ laboratorio, lo que es aceptable para un entorno controlado pero requeriría CA 
 125 alertas/h supera el objetivo de 100 alertas/h, ofreciendo margen para crecimiento futuro. La implementación de TLS
 1.3 asegura comunicación segura entre todos los componentes del sistema (IETF, 2018).
 
-## Tabla 4.2: Configuración de Recursos Docker
+## Tabla 42: Configuración de Recursos Docker
 
 | Servicio             | CPU Límite | Memoria Límite | CPU Reserva | Memoria Reserva | Health Check |
 |----------------------|------------|----------------|-------------|-----------------|--------------|
@@ -102,7 +102,7 @@ modestas. Los health checks implementados cada 15-30 segundos aseguran la detecc
 automática. Esta configuración permite el despliegue en sistemas con 16GB+ RAM, haciendo el laboratorio accesible para
 organizaciones con recursos moderados.
 
-## Tabla 4.3: Analyzers Cortex Configurados
+## Tabla 43: Analyzers Cortex Configurados
 
 | Analyzer            | Tipo     | Tiempo Respuesta | Precisión | Costo | Uso en Playbook   |
 |---------------------|----------|------------------|-----------|-------|-------------------|
@@ -122,7 +122,7 @@ hasta 30-60s para análisis profundos. La precisión varía del 85% al 100%, sie
 precisos. Todos los analyzers principales están integrados en el playbook de respuesta, enriqueciendo automáticamente
 cada IoC detectado.
 
-## Tabla 4.4: Métricas de Monitoreo Implementadas
+## Tabla 44: Métricas de Monitoreo Implementadas
 
 | Categoría          | Métrica      | Umbral Alerta | Frecuencia | Dashboard    |
 |--------------------|--------------|---------------|------------|--------------|
@@ -140,7 +140,7 @@ inmediatamente, mientras que métricas de disponibilidad y recursos se monitorea
 se configuran para activarse antes de que los problemas afecten la operación crítica. Todas las métricas están
 disponibles en dashboards de Grafana, ofreciendo visualización en tiempo real para operadores.
 
-## Tabla 4.5: Resultados Experimentales Detallados
+## Tabla 45: Resultados Experimentales Detallados
 
 | Métrica                 | Manual (estimado) | SOAR (n=50)  | Reducción |
 |-------------------------|-------------------|--------------|-----------|
@@ -163,7 +163,7 @@ y la tasa de contención del 92.0% (46/50 alertas con score >= 80) indican que l
 no sacrifica calidad por velocidad. El score promedio de 96.2/100 indica que el motor de scoring
 basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025) funciona correctamente.
 
-## Tabla 4.6: Análisis por Componente de Tiempo
+## Tabla 46: Análisis por Componente de Tiempo
 
 | Componente             | Manual | SOAR  | Reducción Absoluta | Reducción Porcentual |
 |------------------------|--------|-------|--------------------|----------------------|
@@ -182,7 +182,7 @@ e incluyen solapamiento entre nodos paralelos, por lo que su suma excede el MTTR
 identifica oportunidades de mejora futuras, sobre todo en la aceleración de procesos de análisis mediante
 caché de resultados y ejecución concurrente de analyzers en Cortex.
 
-## Tabla 5.1: Mejoras Implementadas por Categoría
+## Tabla 47: Mejoras Implementadas por Categoría
 
 | Categoría          | Mejoras Identificadas | Implementadas | % Implementación | Impacto Principal |
 |--------------------|-----------------------|---------------|------------------|-------------------|
@@ -199,7 +199,7 @@ mejoras de calidad de código y monitoreo, con severidad media, aseguran la mant
 100% de implementación de las mejoras identificadas (44/44) refleja un proceso sistemático de optimización iterativa,
 elevando el prototipo inicial hasta una solución apta para producción.
 
-## Tabla 5.2: Análisis Costo-Beneficio SOAR
+## Tabla 48: Análisis Costo-Beneficio SOAR
 
 | Solución             | Costo Anual | MTTR Promedio | Tasa Éxito | ROI 3 años | Implementación |
 |----------------------|-------------|---------------|------------|------------|----------------|
@@ -215,7 +215,7 @@ compromiso intermedio con ROI de 210%. El tiempo de implementación de 4 semanas
 una ventaja frente a las 12 semanas de soluciones comerciales. Este análisis ofrece una base cuantitativa para
 justificar la inversión en capacidades SOAR open source frente a alternativas comerciales.
 
-## Tabla 5.3: KPIs Recomendados por Tipo de Organización
+## Tabla 49: KPIs Recomendados por Tipo de Organización
 
 | Tipo Org       | MTTR Objetivo | Throughput | Success Rate | Presupuesto SOAR |
 |----------------|---------------|------------|--------------|------------------|
@@ -231,7 +231,7 @@ Esta progresión permite establecer objetivos apropiados para cada contexto, evi
 tasa de éxito escalan desde >95% para PYMEs hasta >99% para organizaciones grandes, reflejando la inversión en
 redundancia y capacidades de recuperación.
 
-## Tabla A.1: Variables de Entorno Docker
+## Tabla 50: Variables de Entorno Docker
 
 | Variable               | Valor por Defecto | Descripción              | Requerido |
 |------------------------|-------------------|--------------------------|-----------|
@@ -252,7 +252,7 @@ ajustar el despliegue a puertos disponibles en el sistema host, evitando conflic
 de contenedor distintos. Esta configuración modular posibilita la adopción del laboratorio en
 diferentes contextos organizacionales y técnicos.
 
-## Tabla A.2: Comandos Make Disponibles
+## Tabla 51: Comandos Make Disponibles
 
 | Comando               | Descripción                 | Uso Típico         |
 |-----------------------|-----------------------------|--------------------|

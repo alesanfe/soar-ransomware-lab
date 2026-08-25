@@ -118,7 +118,7 @@
 - Crecimiento del ransomware (67 % en incidentes, 23 % del total (CrowdStrike, 2024))
 - Volumen de alertas y limitaciones humanas
 - Necesidad crítica de automatización
-- Figura 1.1: Comparación MTTR manual vs automatizado
+- Figura 1: Comparación MTTR manual vs automatizado
 
 **1.2. Planteamiento del problema**
 
@@ -244,7 +244,7 @@
 - Reducción 92.3 % MTTR con 50 ejecuciones
 - Arquitectura hexagonal y modular transferible
 - Software open source: accesible a pymes y CSIRTs
-- Figura 5.1: Análisis coste-beneficio
+- Figura 11: Análisis coste-beneficio
 
 ### Anexos
 

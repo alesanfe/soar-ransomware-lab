@@ -17,11 +17,11 @@ This work designs a minimum viable SOAR laboratory to evaluate whether automatio
 Los incidentes de ransomware han aumentado en los últimos años. El Global Threat Intelligence Report 2024 indica un incremento del 67 % en incidentes de seguridad. Según el informe, el ransomware representa el 23 % del total (CrowdStrike, 2024). El Verizon DBIR confirma esta tendencia, situando el ransomware entre las amenazas más frecuentes en brechas verificadas (Verizon, 2024). Aun así, en muchos entornos la gestión de estos incidentes sigue basándose en tareas manuales. Esto genera retrasos, aumenta la carga del analista y dificulta conservar una traza del proceso.
 
 En la práctica, una alerta de ransomware exige varias tareas. Primero se valida la información. Luego se abre un caso, se añaden los observables y se consulta información contextual. Solo entonces se toma una decisión sobre la contención.
-Cuando estas actividades se ejecutan manualmente, el tiempo de respuesta aumenta. También aparecen diferencias entre analistas, lo que dificulta la mejora continua. La **Figura 1.1** anticipa la magnitud de esta mejora: el MTTR pasa de 3600 s en la respuesta manual a 277.15 s con la respuesta automatizada SOAR, una reducción del 92.3 %. El baseline manual de 3600 s (1 hora) es conservador frente a los datos de la industria: CrowdStrike fija como benchmark ideal 60 minutos para contener (regla 1-10-60), pero la media real observada en su survey es de 16 horas (CrowdStrike, 2021). ReliaQuest reporta un MTTR tradicional de 2.3 días sin automatización (ReliaQuest, 2024), y la SANS SOC Survey 2025 sitúa el tiempo mediano de triaje y escalado de alertas en 260 minutos (SANS Institute, 2025).
+Cuando estas actividades se ejecutan manualmente, el tiempo de respuesta aumenta. También aparecen diferencias entre analistas, lo que dificulta la mejora continua. La **Figura 1** anticipa la magnitud de esta mejora: el MTTR pasa de 3600 s en la respuesta manual a 277.15 s con la respuesta automatizada SOAR, una reducción del 92.3 %. El baseline manual de 3600 s (1 hora) es conservador frente a los datos de la industria: CrowdStrike fija como benchmark ideal 60 minutos para contener (regla 1-10-60), pero la media real observada en su survey es de 16 horas (CrowdStrike, 2021). ReliaQuest reporta un MTTR tradicional de 2.3 días sin automatización (ReliaQuest, 2024), y la SANS SOC Survey 2025 sitúa el tiempo mediano de triaje y escalado de alertas en 260 minutos (SANS Institute, 2025).
 
-![Figura 1.1: Comparación MTTR manual vs automatizado](figures/Fig1_3_mttr_comparison.png)
+![Figura 1: Comparación MTTR manual vs automatizado](figures/Fig1_3_mttr_comparison.png)
 
-**Figura 1.1**: Comparación del MTTR entre la respuesta manual (3600 s) y la respuesta automatizada SOAR (277.15 s),
+**Figura 1**: Comparación del MTTR entre la respuesta manual (3600 s) y la respuesta automatizada SOAR (277.15 s),
 que muestra una reducción del 92.3 %.
 
 La fragmentación de herramientas obliga al analista a usar varios sistemas a la vez. Algunas tareas se repiten en casi todos los casos, como triage, enriquecimiento o actualización de tickets. Si se hacen a mano, consumen tiempo y aumentan los errores (Kinyua & Awuah, 2021). Sin un flujo estandarizado, es difícil medir la respuesta y comparar ejecuciones (Stevens et al., 2022).
@@ -81,7 +81,7 @@ El documento está compuesto por cinco capítulos.
 
 | Figura    | Título                                    | Archivo                              |
 |-----------|-------------------------------------------|--------------------------------------|
-| Figura 1.1 | Comparación MTTR manual vs automatizado | `figures/Fig1_3_mttr_comparison.png` |
+| Figura 1 | Comparación MTTR manual vs automatizado | `figures/Fig1_3_mttr_comparison.png` |
 
 ## Índice de Tablas del Capítulo 1
 

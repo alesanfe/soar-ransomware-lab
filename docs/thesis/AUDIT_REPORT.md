@@ -187,7 +187,7 @@ Las conclusiones (capítulo 5) mezclan resultados, interpretación y trabajo fut
 
 ### Hallazgo 9.1 — CRÍTICO: Figuras no referenciadas en el texto
 
-`figures_list.md` enumera 39 figuras (Figura 1.1 a J.13) con números de página asignados, pero:
+`figures_list.md` enumera 39 figuras (Figura 1 a 39) con números de página asignados, pero:
 
 - **0 figuras** se referencian en el cuerpo de la tesis (`introduction.md`, `state_of_the_art.md`, etc.)
 - **0 imágenes** están embebidas en los archivos markdown del cuerpo
@@ -197,9 +197,9 @@ Las conclusiones (capítulo 5) mezclan resultados, interpretación y trabajo fut
 La lista de comprobación exige: "Todas las figuras y tablas se mencionan en el texto."
 
 **Recomendación**: Insertar referencias a figuras en el cuerpo donde sea relevante, por ejemplo:
-- §1.1: "La arquitectura general se muestra en la Figura 1.1."
-- §4.1.2: "El despliegue Docker se ilustra en la Figura 4.2."
-- §4.1.3.3: "La comparación MTTR se muestra en la Figura 4.6."
+- §1.1: "La arquitectura general se muestra en la Figura 1."
+- §4.1.2: "El despliegue Docker se ilustra en la Figura 4."
+- §4.1.3.3: "La comparación MTTR se muestra en la Figura 6."
 
 ---
 
