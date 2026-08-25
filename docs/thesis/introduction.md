@@ -74,3 +74,15 @@ El documento está compuesto por cinco capítulos.
 - Anexo F2 consolida la validación experimental (Quality Score 92.2/100, HPR 96.0/100).
 - Anexo I describe la estrategia de testing (2041 tests, pirámide, quality gates).
 - Anexo J recopila los diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid).
+
+---
+
+## Índice de Figuras del Capítulo 1
+
+| Figura    | Título                                    | Archivo                              |
+|-----------|-------------------------------------------|--------------------------------------|
+| Figura 1.1 | Comparación MTTR manual vs automatizado | `figures/Fig1_3_mttr_comparison.png` |
+
+## Índice de Tablas del Capítulo 1
+
+Este capítulo no contiene tablas.

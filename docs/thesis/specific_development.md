@@ -617,3 +617,34 @@ El playbook E2E de este TFM, diseñado para el entorno del laboratorio, confirma
 Las limitaciones principales son la validación en laboratorio (no en producción real) y el alcance restringido a ransomware. La dependencia de APIs externas como VirusTotal y AbuseIPDB requiere estrategias de caché para entornos productivos.
 
 Los resultados muestran que el laboratorio cumple los requisitos funcionales y no funcionales definidos y puede emplearse como base reproducible para respuesta automatizada a ransomware.
+
+---
+
+## Índice de Figuras del Capítulo 4
+
+| Figura    | Título                                          | Archivo                                    |
+|-----------|-------------------------------------------------|--------------------------------------------|
+| Figura 4.1 | Arquitectura General del Laboratorio SOAR      | Anexo J (J.2)                              |
+| Figura 4.2 | Diagrama de Despliegue Docker Compose          | Anexo J (J.3)                              |
+| Figura 4.5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
+| Figura 5.1 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
+| Figura 5.2 | Tiempos por componente del workflow            | `figures/GE1_component_timings.png`        |
+| Figura 5.3 | Análisis de percentiles MTTR (Grafana)         | `figures/grafana_panel_5_..._Percentiles_MTTR.png` |
+| Figura 5.4 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
+| Figura 5.5 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
+
+## Índice de Tablas del Capítulo 4
+
+| Tabla     | Título                                          |
+|-----------|-------------------------------------------------|
+| Tabla 4.1 | Requisitos funcionales del sistema              |
+| Tabla 4.2 | Requisitos no funcionales y métricas            |
+| Tabla 4.3 | Matriz de trazabilidad de requisitos            |
+| Tabla 4.4 | Cumplimiento de objetivos (umbrales vs medido)  |
+| Tabla 4.5 | MTTR detallado por percentiles                  |
+| Tabla 4.6 | Decisiones automatizadas por score              |
+| Tabla 4.7 | Servicios e integraciones (health)              |
+| Tabla 4.8 | Precisión (tasa de falsos positivos)            |
+| Tabla 4.9 | Uso de recursos (docker stats)                  |
+| Tabla 4.10 | Consistencia (coeficiente de variación)        |
+| Tabla 4.11 | Análisis por subconjuntos cronológicos         |
