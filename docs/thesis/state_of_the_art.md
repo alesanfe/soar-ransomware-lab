@@ -10,11 +10,49 @@ En ransomware, el impacto principal es la pérdida de disponibilidad por cifrado
 
 Para modelar el comportamiento del adversario y conectar detecciones con acciones, MITRE ATT&CK (MITRE Corporation, 2024; MITRE ATT&CK, n.d.) es una referencia habitual en el sector. La técnica T1486 (Data Encrypted for Impact) describe el cifrado de datos para interrumpir la disponibilidad y extorsionar, e incluye detalles sobre propagación y entornos afectados que orientan la definición de observables e IoCs relevantes (MITRE, 2025).
 
+La progresión del ransomware a través de generaciones muestra una tendencia clara hacia sofisticación creciente y demandas de rescate exponencialmente mayores. Como se observa en la **Tabla 2**, los rescates promedio han aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, representando un incremento de más de tres órdenes de magnitud que justifica la inversión en capacidades SOAR para mitigar el coste financiero de estos incidentes (CrowdStrike, 2024; Sophos, 2024).
+
+## Tabla 2: Progresión de Ransomware por Generación
+
+| Generación | Período       | Características Principales            | Técnicas de Distribución         | Rescate Promedio | Ejemplos Notables            |
+|------------|---------------|----------------------------------------|----------------------------------|------------------|------------------------------|
+| **1ª Gen** | 2013-2016     | Encriptación básica, sin propagación   | Email phishing, exploits simples | $300-$700        | CryptoLocker, CryptoWall     |
+| **2ª Gen** | 2016-2019     | Propagación lateral, exploits 0-day    | EternalBlue, exploits red        | $10K-$50K        | WannaCry, NotPetya, Ryuk     |
+| **3ª Gen** | 2019-2022     | Modelo RaaS, doble extorsión           | Afiliados, kits de ataque        | $100K-$10M       | Maze, REvil, Conti           |
+| **4ª Gen** | 2022-Presente | Triple extorsión, ML/AI, anti-forenses | Acceso inicial, supply chain     | $500K-$20M       | LockBit 3.0, BlackCat, Royal |
+
+La primera generación se caracterizaba por encriptación básica y demandas de rescate modestas, mientras que la cuarta generación actual incorpora técnicas avanzadas de Machine Learning, triple extorsión y capacidades anti-forenses (Sophos, 2024). Esta progresión indica la necesidad de capacidades de respuesta automatizadas, ya que la respuesta manual resulta insuficiente ante amenazas de esta complejidad. Los informes anuales de CrowdStrike (CrowdStrike, 2024) y Sophos (Sophos, 2024) corroboran esta tendencia con datos de telemetría global de sus respectivos clientes.
+
 ## 2.2. Automatización, SOAR y playbooks en operaciones de seguridad
 
 La proliferación de herramientas con representaciones de datos dispares obliga al analista a saltar entre sistemas durante una misma investigación, lo que eleva el tiempo de respuesta y dificulta cualquier intento de estandarización.
 SIEM y SOAR son complementarios. El SIEM centraliza eventos y genera alertas, y SOAR orquesta las integraciones y ejecuta respuestas automatizadas en las fases de contención y recuperación (Kinyua & Awuah, 2021).
 Islam et al. ofrecen la revisión sistemática más completa del área: su multi-vocal literature review clasifica las funcionalidades de las plataformas de orquestación en unificación, orquestación y automatización, e identifica los componentes core, los drivers técnicos y socio-técnicos, y una taxonomía basada en entorno de ejecución, estrategia de automatización y tipo de despliegue (Islam et al., 2019). Esta taxonomía respalda la elección de un despliegue on-premise con orquestación basada en playbooks, como el que se evalúa en este TFM.
+
+Para contextualizar esta elección, la **Tabla 1** compara las plataformas SOAR open source seleccionadas en este TFM con soluciones comerciales representativas según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad.
+
+## Tabla 1: Comparativa Detallada de Plataformas SOAR
+
+Comparación de plataformas SOAR open source (TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024), Shuffle (Shuffle Tools, 2024)) versus comerciales (Palo Alto XSOAR, IBM
+Resilient) según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad. Las herramientas open source
+ofrecen capacidades competitivas sin costos de licencia.
+
+| Característica        | TheHive                  | Cortex                   | Shuffle                  | Palo Alto XSOAR            | IBM Resilient             |
+|-----------------------|--------------------------|--------------------------|--------------------------|----------------------------|---------------------------|
+| **Licencia**          | Open Source (Apache 2.0) | Open Source (Apache 2.0) | Open Source (Apache 2.0) | Comercial ($50K-$500K/año) | Comercial ($100K-$1M/año) |
+| **Gestión de Casos**  | Excelente              | No aplica              | Básica                 | Avanzada                 | Avanzada                |
+| **Análisis IoCs**     | No aplica              | Excelente              | Básico                 | Avanzado                 | Avanzado                |
+| **Orquestación**      | Limitada               | No aplica              | Excelente              | Excelente                | Excelente               |
+| **Curva Aprendizaje** | Media                    | Media                    | Baja                     | Alta                       | Alta                      |
+| **Comunidad**         | Activa                   | Activa                   | Creciente                | Empresarial                | Empresarial               |
+| **Integraciones**     | 50+                      | 30+ analyzers            | 100+ apps                | 300+                       | 250+                      |
+| **Escalabilidad**     | Media                    | Media                    | Alta                     | Alta                       | Alta                      |
+| **Soporte**           | Comunidad                | Comunidad                | Comunidad                | 24/7 Enterprise            | 24/7 Enterprise           |
+
+Las plataformas open source seleccionadas ofrecen una combinación funcional adecuada: TheHive gestiona casos, Cortex
+analiza IoCs y Shuffle orquesta flujos. Esta combinación permite construir una solución SOAR sin costos de licencia. Las
+soluciones comerciales requieren inversiones anuales de seis cifras (IBM Security, 2024), fuera del alcance de muchas organizaciones. La
+comunidad activa de las herramientas open source asegura soporte continuo y desarrollo.
 
 Los playbooks son el mecanismo para convertir decisiones tácticas en procedimientos repetibles. Kinyua y Awuah distinguen entre playbook —checklist lineal— y runbook —workflow con control de flujo, condiciones y puntos donde el analista interviene. Esta distinción encaja con diseños que combinan automatización con decisión humana en acciones de mayor consecuencia. En cuanto a la medición del valor operativo, los mismos autores proponen MTTD, MTTR y tiempo de investigación como indicadores, lo que conecta directamente con las evaluaciones basadas en percentiles de este TFM (Kinyua & Awuah, 2021).
 Otros trabajos han explorado la aplicación de IA/ML en respuesta a incidentes, con mejoras observadas en detección y clasificación de amenazas en infraestructuras críticas (Obuse et al., 2023), y en la automatización de tareas de seguridad TI para reducir la carga operativa (Mohammad & Lakshmisri, 2018).
@@ -58,4 +96,7 @@ Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados 
 
 ## Índice de Tablas del Capítulo 2
 
-Este capítulo no contiene tablas formateadas. Las comparativas entre plataformas se desarrollan en el Anexo C (`appendix_c.md`).
+| Tabla   | Título                                      |
+|---------|---------------------------------------------|
+| Tabla 1 | Comparativa Detallada de Plataformas SOAR   |
+| Tabla 2 | Progresión de Ransomware por Generación     |

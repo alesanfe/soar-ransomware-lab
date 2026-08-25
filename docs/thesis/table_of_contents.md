@@ -4,7 +4,7 @@
 
 ### Páginas Preliminares
 
-1. **Portada**
+1. **Portada** — `cover_page.md`
 2. **Resumen Ejecutivo / Abstract** — `executive_summary.md`
 3. **Agradecimientos** — `acknowledgments.md`
 4. **Lista de Abreviaturas** — `abbreviations_list.md`
@@ -98,7 +98,7 @@
 
 - **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, guías de instalación
 - **Anexo B** — `appendix_b.md` — Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
-- **Anexo C** — `appendix_c.md` — Tablas comparativas de plataformas SOAR, generaciones de ransomware, configuración Docker
+- **Anexo C** — `appendix_c.md` — Gráficos y diagramas complementarios (las tablas se han reubicado en sus capítulos correspondientes)
 - **Anexo D** — Resultados detallados de pruebas experimentales (incluido en §4.1.3 de `specific_development.md`)
 - **Anexo E** — `appendix_e.md` — Métricas y visualizaciones complementarias
 - **Anexo F** — Guía de instalación y configuración (incluido en §A.5 de `appendix_a.md`)
@@ -261,11 +261,10 @@
 
 **Anexo C** — `appendix_c.md`
 
-- Tablas comparativas de plataformas SOAR
-- Generaciones de ransomware
-- Objetivos del proyecto y cronograma
-- Configuración Docker y analyzers Cortex
-- Métricas de monitoreo y resultados experimentales
+- Gráficos ASCII de métricas (MTTR, percentiles, tasas de éxito)
+- Diagramas de arquitectura complementarios
+- Esquemas de flujo de procesos
+- Las tablas comparativas se han reubicado en sus capítulos correspondientes con numeración APA
 
 **Anexo E** — `appendix_e.md`
 
