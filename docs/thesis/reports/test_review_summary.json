@@ -1,0 +1,105 @@
+{
+  "generated": "2026-08-24T10:14:07.543863+00:00",
+  "pyramid": {
+    "categories": {
+      "architecture": {
+        "files": 1,
+        "tests": 1
+      },
+      "atomic": {
+        "files": 4,
+        "tests": 101
+      },
+      "baseline": {
+        "files": 0,
+        "tests": 0
+      },
+      "contracts": {
+        "files": 0,
+        "tests": 0
+      },
+      "e2e": {
+        "files": 49,
+        "tests": 281
+      },
+      "general": {
+        "files": 2,
+        "tests": 20
+      },
+      "integration": {
+        "files": 30,
+        "tests": 336
+      },
+      "performance": {
+        "files": 4,
+        "tests": 30
+      },
+      "quality": {
+        "files": 0,
+        "tests": 0
+      },
+      "reports": {
+        "files": 0,
+        "tests": 0
+      },
+      "runners": {
+        "files": 0,
+        "tests": 0
+      },
+      "runtime": {
+        "files": 0,
+        "tests": 0
+      },
+      "security": {
+        "files": 1,
+        "tests": 27
+      },
+      "unit": {
+        "files": 79,
+        "tests": 1245
+      }
+    },
+    "total": 2041,
+    "pyramid": {
+      "unit": 1346,
+      "integration": 336,
+      "e2e": 281,
+      "other": 78
+    },
+    "percentages": {
+      "unit": 65.9,
+      "integration": 16.5,
+      "e2e": 13.8,
+      "other": 3.8
+    },
+    "ideal": {
+      "unit": 70,
+      "integration": 20,
+      "e2e": 10
+    },
+    "deviation": 5.7,
+    "score": 94.3
+  },
+  "health": {
+    "skipped_total": 2,
+    "xfail_total": 0,
+    "skip_reasons": {
+      "Tenzir REST API not available (404 on /api/v0/status)": 1,
+      "docker compose not available inside container \u2014 test requires host execution": 1
+    }
+  },
+  "isolation": {
+    "requires_docker": 35,
+    "requires_external": 83
+  },
+  "complexity": {
+    "long_tests_count": 169,
+    "weak_tests_count": 60
+  },
+  "duplication": {
+    "total_unique_names": 1947,
+    "duplicated_names": 88
+  },
+  "coverage": null,
+  "mutation": null
+}

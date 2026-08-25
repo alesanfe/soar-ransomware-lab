@@ -1,0 +1,48 @@
+{
+  "total_files": 115,
+  "average_mi": 75.78,
+  "min_mi": 34.19,
+  "max_mi": 100.0,
+  "worst_files": [
+    {
+      "filepath": "src\\soar_lab\\config\\schemas.py",
+      "mi": 34.19
+    },
+    {
+      "filepath": "src\\soar_lab\\resilience\\retry.py",
+      "mi": 36.92
+    },
+    {
+      "filepath": "src\\soar_lab\\db\\transaction.py",
+      "mi": 37.29
+    },
+    {
+      "filepath": "src\\soar_lab\\interfaces\\api\\main.py",
+      "mi": 37.98
+    },
+    {
+      "filepath": "src\\soar_lab\\interfaces\\api\\models.py",
+      "mi": 39.32
+    },
+    {
+      "filepath": "src\\soar_lab\\infrastructure\\validate_credentials.py",
+      "mi": 40.71
+    },
+    {
+      "filepath": "src\\soar_lab\\resilience\\timeout.py",
+      "mi": 41.31
+    },
+    {
+      "filepath": "src\\soar_lab\\infrastructure\\network_watcher\\network_watcher.py",
+      "mi": 41.91
+    },
+    {
+      "filepath": "src\\soar_lab\\validation\\validators.py",
+      "mi": 44.23
+    },
+    {
+      "filepath": "src\\soar_lab\\domain\\services\\ioc_generator.py",
+      "mi": 45.02
+    }
+  ]
+}

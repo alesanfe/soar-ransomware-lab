@@ -1,0 +1,12 @@
+{
+  "total_vulnerabilities": 1,
+  "vulnerabilities": [
+    {
+      "package": "ecdsa",
+      "version": "0.19.2",
+      "id": "PYSEC-2026-1325",
+      "description": "python-ecdsa has been found to be subject to a Minerva timing attack on the P-256 curve. Using the `ecdsa.SigningKey.sign_digest()` API function and timing signatures an attacker can leak the internal",
+      "fix_versions": []
+    }
+  ]
+}
