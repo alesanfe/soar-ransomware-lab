@@ -168,8 +168,6 @@ Verizon. (2024). *2024 data breach investigations report*. Verizon Enterprise So
 
 VirusTotal. (2024). *VirusTotal: Analyze suspicious files, URLs, domains, and IPs to detect malware and other breaches*. Google LLC. https://www.virustotal.com
 
-Wazuh. (2024). *Wazuh: Open source XDR & SIEM protection platform documentation*. Wazuh Inc. https://documentation.wazuh.com
-
 ---
 
 **Nota**: Todas las referencias han sido consultadas y utilizadas en el desarrollo del presente trabajo. Las URLs fueron verificadas en agosto de 2026. Los DOIs proporcionados permiten acceso directo a los documentos académicos cuando están disponibles mediante suscripción o acceso abierto.

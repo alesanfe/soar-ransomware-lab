@@ -87,9 +87,7 @@
 | **Cortex**          | Motor de análisis de amenazas e IoCs                    |
 | **Shuffle**         | Plataforma de orquestación SOAR                         |
 | **MISP**            | Malware Information Sharing Platform                    |
-| **Wazuh**           | Plataforma SIEM/XDR                                     |
 | **Elasticsearch**   | Motor de búsqueda y análisis                            |
-| **Wazuh Dashboard** | Plataforma de visualización de datos (basada en OpenSearch Dashboards) |
 | **Redis**           | Sistema de caché y broker de mensajes                   |
 | **Grafana**         | Plataforma de visualización de métricas                 |
 | **Loki**            | Sistema de agregación de logs                           |
