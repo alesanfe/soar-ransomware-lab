@@ -34,7 +34,7 @@
   - Manual `docs/operations/cli_manual.md` sincronizado para reflejar la generación automática de JWT.
 
 - **Tesis.**
-  - `docs/thesis/appendix_a.md`, `specific_development.md`, `appendix_c.md`, `conclusions_and_future_work.md` y `tfm.md` actualizados para advertir que el anexo es una instantánea estática y señalar los compose canónicos.
+  - `docs/thesis/appendix_a.md`, `specific_development.md`, `appendix_c.md`, `conclusions_and_future_work.md` actualizados para advertir que el anexo es una instantánea estática y señalar los compose canónicos.
   - `appendix_c.md`: TLS marcado como parcial/autofirmado.
 
 ## 2026-07-15 — Logging y métricas funcionales

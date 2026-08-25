@@ -28,7 +28,7 @@
 
 ### Elementos preliminares — Si Conforme
 
-- Si Portada (implícita en `tfm.md`)
+- Si Portada (implícita en `executive_summary.md`)
 - Si Declaración de originalidad (`originality_declaration.md`)
 - Si Agradecimientos (`acknowledgments.md`)
 - Si Resumen + Abstract (`executive_summary.md`, también en `introduction.md`)
@@ -64,7 +64,7 @@
 |---------|--------|-----------|
 | Problema | Si | `introduction.md` §1.2: procesos manuales, variabilidad, falta de trazabilidad |
 | **Pregunta de investigación** | **No Ausente** | No se formula ningún interrogante explícito en todo el corpus |
-| Hipótesis | Si | `tfm.md` §1.5: "SOAR reduce significativamente el MTTR mediante automatización" |
+| Hipótesis | Si | `introduction.md` §1.2: "SOAR reduce significativamente el MTTR mediante automatización" |
 | Objetivo general | Si | `objectives_and_methodology.md` §3.1: "Demostrar que un playbook SOAR automatizado reduce el MTTR..." |
 | Objetivos específicos | Si | 5 áreas estratégicas + 12 objetivos operativos con criterios de éxito |
 | Método | Si | `objectives_and_methodology.md` §3.3: investigación aplicada + DevSecOps, 5 fases |
