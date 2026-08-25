@@ -43,15 +43,15 @@ Los objetivos estratégicos descritos se resumen en la **Tabla 3**, que asocia c
 | ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
 |----------|----------------------------|------------------------|----------------|-----------------------------|
 | **TE-1** | Diseño arquitectónico SOAR | Componentes integrados | 5+ componentes | Diagramas, especificaciones |
-| **TE-2** | Implementación funcional   | Playbooks operativos   | 3+ playbooks   | Scripts funcionales, logs   |
+| **TE-2** | Implementación funcional   | Playbook E2E operativo | 2 escenarios (malicioso y benigno) | Scripts funcionales, logs   |
 | **TE-3** | Validación experimental    | Reducción MTTR         | ≥50%           | Resultados estadísticos     |
 | **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
 | **TE-5** | Optimización iterativa     | Mejoras implementadas  | 44 mejoras     | Análisis pre/post           |
 
 Los objetivos de esta tabla se evalúan mediante métricas cuantificables y evidencias verificables. Todos los objetivos
-se cumplieron: el diseño integra más de 5 componentes, la implementación entregó 3+ playbooks, la validación mostró
-reducción del 92.3% en MTTR (superando el 50% objetivo), la documentación alcanzó cobertura completa y se implementaron
-las 44 mejoras identificadas.
+se cumplieron: el diseño integra más de 5 componentes, la implementación entregó un playbook E2E con dos escenarios
+(malicioso y benigno), la validación mostró reducción del 92.3% en MTTR (superando el 50% objetivo), la documentación
+alcanzó cobertura completa y se implementaron las 44 mejoras identificadas.
 
 ### 3.2.2. Objetivos Operativos
 
