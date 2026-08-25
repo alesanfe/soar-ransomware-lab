@@ -1,0 +1,55 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Environment files with secrets
+.env
+.env.full
+
+# Grafana datasource provisioning (generated from .template, contains ELASTIC_PASSWORD)
+infra/docker/compose/logging/grafana-datasources.yml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Generated reports (quality, e2e, mutmut, test-review, holistic, validation, coverage, logs)
+reports/
+
+# Runtime data (Docker volumes, logs, backups, results) — not commited
+runtime/
+artifacts/
+schemas/
+*.db
+*.tar.gz
+
+# Temporary audit / lint reports
+tmp_*.json
+*.bak
+
+# Docusaurus content — read directly from ../../docs via path config
+apps/docs-site/docs/
+# Docusaurus build output (generated, contains .py artifacts from API docs)
+apps/docs-site/build/
+
+# Stale duplicate of tests/ (artifacts from backup restore or pytest cache)
+tests/tests/

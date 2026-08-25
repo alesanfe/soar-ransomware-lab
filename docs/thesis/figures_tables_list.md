@@ -1,70 +1,71 @@
-﻿# Lista de Figuras y Tablas
+# Lista de Figuras y Tablas
+
+> Las páginas indicadas son orientativas y se confirmarán en el PDF final.
 
 ## Lista de Figuras
 
 ### Figuras del Capítulo 1: Introducción
 
-| Figura     | Título                                            | Página |
-|------------|---------------------------------------------------|--------|
-| Figura 1.1 | Arquitectura General del Laboratorio SOAR         | 7      |
-| Figura 1.2 | Flujo de Respuesta a Incidentes de Ransomware     | 8      |
-| Figura 1.3 | Comparación MTTR Manual vs Automatizado           | 9      |
-| Figura 1.4 | Evolución de Incidentes de Ransomware (2019-2024) | 10     |
-
-### Figuras del Capítulo 2: Estado del Arte
-
-| Figura     | Título                                                     | Página |
-|------------|------------------------------------------------------------|--------|
-| Figura 2.1 | Evolución de Generaciones de Ransomware                    | 15     |
-| Figura 2.2 | Ciclo de Vida de Respuesta a Incidentes SOAR               | 18     |
-| Figura 2.3 | Arquitectura Típica de Plataforma SOAR                     | 20     |
-| Figura 2.4 | Comparativa de Plataformas SOAR Comerciales vs Open Source | 22     |
-| Figura 2.5 | Modelo de Madurez en Respuesta a Incidentes                | 25     |
-| Figura 2.6 | Distribución de Tipos de Automatización SOAR               | 27     |
-
-### Figuras del Capítulo 3: Objetivos y Metodología
-
-| Figura     | Título                                                  | Página |
-|------------|---------------------------------------------------------|--------|
-| Figura 3.1 | Metodología de Desarrollo Ágil con Principios DevSecOps | 32     |
-| Figura 3.2 | Fases del Proyecto y Cronograma                         | 34     |
-| Figura 3.3 | Diseño Experimental del Estudio                         | 36     |
-| Figura 3.4 | Diagrama de Flujo de Validación Experimental            | 38     |
-| Figura 3.5 | Arquitectura de Infraestructura Docker                  | 40     |
+| Figura     | Título                                            | Archivo |
+|------------|---------------------------------------------------|---------|
+| Figura 1.1 | Comparación MTTR Manual vs Automatizado           | `figures/Fig1_3_mttr_comparison.png` |
 
 ### Figuras del Capítulo 4: Desarrollo Específico
 
-| Figura     | Título                                             | Página |
-|------------|----------------------------------------------------|--------|
-| Figura 4.1 | Arquitectura Detallada del Laboratorio SOAR        | 45     |
-| Figura 4.2 | Diagrama de Despliegue Docker Compose              | 47     |
-| Figura 4.3 | Integración de Componentes SOAR                    | 49     |
-| Figura 4.4 | Playbook Principal de Respuesta a Ransomware       | 52     |
-| Figura 4.5 | Flujo de Datos entre TheHive, Cortex y Shuffle     | 54     |
-| Figura 4.6 | Arquitectura de Monitoreo con Prometheus y Grafana | 56     |
-| Figura 4.7 | Sistema de Gestión de Logs y Métricas              | 58     |
-| Figura 4.8 | Flujo de Datos Completo SOAR                       | 60     |
-| Figura 4.9 | Flujo de Decisión de Playbook                      | 62     |
+| Figura     | Título                                             | Archivo |
+|------------|----------------------------------------------------|---------|
+| Figura 4.1 | Arquitectura General del Laboratorio SOAR          | Anexo J (J.2) |
+| Figura 4.2 | Diagrama de Despliegue Docker Compose              | Anexo J (J.3) |
+| Figura 4.5 | Estado de Jobs de Cortex                           | `figures/cortex_job_status.png` |
 
-### Figuras del Capítulo 5: Conclusiones
+### Figuras del Capítulo 5: Resultados, Discusión y Conclusiones
 
-| Figura     | Título                                          | Página |
-|------------|-------------------------------------------------|--------|
-| Figura 5.1 | Gráficos Comparativos de Resultados MTTR        | 65     |
-| Figura 5.2 | Análisis de Mejoras Implementadas por Categoría | 67     |
-| Figura 5.3 | Roadmap de Trabajo Futuro                       | 69     |
-| Figura 5.4 | Modelo de Adopción Organizacional SOAR          | 71     |
-| Figura 5.5 | Comparación de Costos y Beneficios              | 73     |
+| Figura     | Título                                             | Archivo |
+|------------|----------------------------------------------------|---------|
+| Figura 5.1 | Resultados de MTTR (manual vs automatizado)        | `figures/Fig5_1_mttr_results.png` |
+| Figura 5.2 | Tiempos por Componente del Workflow                | `figures/GE1_component_timings.png` |
+| Figura 5.3 | Análisis de Percentiles MTTR (Grafana)             | `figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png` |
+| Figura 5.4 | Distribución de Decisiones del Playbook            | `figures/decision_distribution.png` |
+| Figura 5.5 | Distribución de Mejoras por Categoría              | `figures/Fig5_2_improvements_category.png` |
+| Figura 5.6 | Análisis Coste-Beneficio SOAR Open Source vs Comercial | `figures/Fig5_5_cost_benefit.png` |
 
-### Figuras del Anexo A
+### Figuras del Anexo: Visualizaciones Complementarias
 
-| Figura     | Título                                       | Página |
-|------------|----------------------------------------------|--------|
-| Figura A.1 | Diagrama de Red Docker Completo              | 85     |
-| Figura A.2 | Flujo de Ejecución del SIEM Simulator        | 87     |
-| Figura A.3 | Interfaz de TheHive con Plantilla Ransomware | 89     |
-| Figura A.4 | Dashboard Grafana de Monitoreo SOAR          | 91     |
-| Figura A.5 | Arquitectura de Backup y Recuperación        | 93     |
+| Figura     | Título                                             | Archivo |
+|------------|----------------------------------------------------|---------|
+| Figura A.1 | Distribución de Alertas por Severidad              | `figures/severity_distribution.png` |
+| Figura A.2 | Distribución de Alertas por Tipo                   | `figures/alert_distribution.png` |
+| Figura A.3 | MTTR por Fase del Workflow                         | `figures/mttr_by_phase.png` |
+| Figura A.4 | MTTR por Severidad (boxplot)                       | `figures/mttr_severity_boxplot.png` |
+| Figura A.5 | Percentiles MTTR                                   | `figures/GE2_percentiles.png` |
+| Figura A.6 | Tasas de Éxito por Tipo de Alerta                  | `figures/GE3_success_rates.png` |
+| Figura A.7 | Evolución de MTTR (tendencia diaria, Grafana)      | `figures/grafana_panel_10_Grafico_5_3___Evolucion_MTTR__tendencia_diaria_.png` |
+| Figura A.8 | Alertas Procesadas por Hora (Grafana)              | `figures/grafana_panel_12_Grafico_5_4___Alertas_procesadas_por_hora__through.png` |
+| Figura A.9 | MTTR por Tipo de Alerta (Grafana)                  | `figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png` |
+| Figura A.10 | Tasa de Éxito por Severidad (Grafana)             | `figures/grafana_panel_14_Tasa_de__xito_por_Severidad.png` |
+| Figura A.11 | Salud de Servicios                                | `figures/service_health.png` |
+| Figura A.12 | Estado de Casos en TheHive                         | `figures/thehive_case_status.png` |
+| Figura A.13 | Duración de Workflows                              | `figures/workflow_durations.png` |
+| Figura A.14 | Volumen de Logs en Loki                            | `figures/loki_log_volume.png` |
+| Figura A.15 | Mapa de Calor de Logs                              | `figures/loki_log_heatmap.png` |
+
+### Figuras del Anexo J (Diagramas Mermaid)
+
+| Figura     | Título                                        |
+|------------|-----------------------------------------------|
+| Figura J.1 | Arquitectura de Alto Nivel (flowchart LR)     |
+| Figura J.2 | Arquitectura de Despliegue Docker (graph TD)  |
+| Figura J.3 | Arquitectura Hexagonal (flowchart TD)         |
+| Figura J.4 | Diagrama de Contexto C4 (C4Context)           |
+| Figura J.5 | Flujo E2E de Alertas (sequenceDiagram)        |
+| Figura J.6 | Árbol de Decisión del Playbook (flowchart)    |
+| Figura J.7 | Flujo de Integración API (sequenceDiagram)    |
+| Figura J.8 | Respuesta Automatizada (sequenceDiagram)      |
+| Figura J.9 | Cronograma Objetivos SMART (gantt)            |
+| Figura J.10| Roadmap por Semanas (gantt)                   |
+| Figura J.11| Matriz de Priorización de Riesgos (graph)     |
+| Figura J.12| GMinst4ll: Flujo de Infección (graph TD)      |
+| Figura J.13| Pipeline SOAR para IoCs GMinst4ll (graph LR)  |
 
 ## Lista de Tablas
 

@@ -1,0 +1,29 @@
+{
+  "infra\\docker\\compose\\docker-compose.api.yml": {
+    "ports": [
+      "\"8085:80\"",
+      "\"443:443\"",
+      "\"80:80\""
+    ]
+  },
+  "infra\\docker\\compose\\docker-compose.core.yml": {
+    "ports": [
+      "\"15140:1514\"",
+      "\"15160:5160\""
+    ]
+  },
+  "infra\\docker\\compose\\docker-compose.misp.yml": {
+    "ports": []
+  },
+  "infra\\docker\\compose\\docker-compose.opensearch.yml": {
+    "ports": []
+  },
+    "ports": []
+  },
+  "infra\\docker\\compose\\docker-compose.yml": {
+    "ports": []
+  },
+  "infra\\docker\\compose\\logging\\docker-compose.logging.yml": {
+    "ports": []
+  }
+}

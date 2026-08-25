@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""
-Unit tests for health_service.py
-"""
+"""Unit tests for health_service.py."""
+
+from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from soar_lab.infrastructure.monitoring.health_service import HealthService
-from unittest.mock import Mock, AsyncMock
 
 
 class TestHealthService:
-    """Test HealthService with mocked dependencies"""
+    """Test HealthService with mocked dependencies."""
 
     def test_initialization_success(self):
-        """Test successful initialization"""
+        """Test successful initialization."""
         mock_health_checker = Mock()
         mock_metrics = Mock()
 
@@ -22,23 +22,23 @@ class TestHealthService:
         assert service.system_metrics == mock_metrics
 
     def test_get_system_metrics(self):
-        """Test get_system_metrics delegates to system_metrics"""
+        """Test get_system_metrics delegates to system_metrics."""
         mock_health_checker = Mock()
         mock_metrics = Mock()
         mock_metrics.get_hardware_metrics.return_value = {
-            'cpu': {'percent': 50},
-            'memory': {'percent': 75}
+            "cpu": {"percent": 50},
+            "memory": {"percent": 75},
         }
 
         service = HealthService(health_checker=mock_health_checker, system_metrics=mock_metrics)
         result = service.get_system_metrics()
 
         mock_metrics.get_hardware_metrics.assert_called_once()
-        assert result['cpu']['percent'] == 50
+        assert result["cpu"]["percent"] == 50
 
     @pytest.mark.asyncio
     async def test_check_service_no_url(self):
-        """Test service check with no URL configured"""
+        """Test service check with no URL configured."""
         mock_health_checker = Mock()
         mock_health_checker.check_service = AsyncMock(return_value=False)
         mock_metrics = Mock()
@@ -51,7 +51,7 @@ class TestHealthService:
 
     @pytest.mark.asyncio
     async def test_check_service_with_url(self):
-        """Test service check with URL"""
+        """Test service check with URL."""
         mock_health_checker = Mock()
         mock_health_checker.check_service = AsyncMock(return_value=True)
         mock_metrics = Mock()
@@ -60,11 +60,13 @@ class TestHealthService:
         result = await service.check_service("test_service", {"url": "http://localhost:8080"})
 
         assert result is True
-        mock_health_checker.check_service.assert_called_once_with("test_service", "http://localhost:8080")
+        mock_health_checker.check_service.assert_called_once_with(
+            "test_service", "http://localhost:8080"
+        )
 
     @pytest.mark.asyncio
     async def test_get_all_services_status(self):
-        """Test getting all services status"""
+        """Test getting all services status."""
         mock_health_checker = Mock()
         mock_health_checker.check_service = AsyncMock(side_effect=[True, False])
         mock_metrics = Mock()
@@ -72,7 +74,7 @@ class TestHealthService:
 
         services_config = {
             "service1": {"url": "http://localhost:8080"},
-            "service2": {"url": "http://localhost:8081"}
+            "service2": {"url": "http://localhost:8081"},
         }
 
         result = await service.get_all_services_status(services_config)
@@ -82,19 +84,21 @@ class TestHealthService:
 
     @pytest.mark.asyncio
     async def test_get_all_services_status_exception(self):
-        """Test getting all services status with exception"""
+        """Test getting all services status with exception."""
         mock_health_checker = Mock()
         mock_health_checker.check_service = AsyncMock(side_effect=Exception("Check failed"))
         mock_metrics = Mock()
         service = HealthService(health_checker=mock_health_checker, system_metrics=mock_metrics)
 
-        result = await service.get_all_services_status({"service1": {"url": "http://localhost:8080"}})
+        result = await service.get_all_services_status(
+            {"service1": {"url": "http://localhost:8080"}}
+        )
 
         assert result["service1"] is False
 
     @pytest.mark.asyncio
     async def test_get_all_services_status_with_soar_clients(self):
-        """Test getting all services status with SOAR clients"""
+        """Test getting all services status with SOAR clients."""
         mock_health_checker = Mock()
         mock_health_checker.check_service = AsyncMock(return_value=True)
         mock_metrics = Mock()
@@ -105,7 +109,7 @@ class TestHealthService:
         service = HealthService(
             health_checker=mock_health_checker,
             system_metrics=mock_metrics,
-            soar_clients={"thehive": mock_client}
+            soar_clients={"thehive": mock_client},
         )
 
         result = await service.get_all_services_status({})
@@ -115,7 +119,8 @@ class TestHealthService:
 
     @pytest.mark.asyncio
     async def test_get_all_services_status_with_soar_clients_exception(self):
-        """Test getting all services status with SOAR clients that raise exception"""
+        """Test getting all services status with SOAR clients that raise
+        exception."""
         mock_health_checker = Mock()
         mock_health_checker.check_service = AsyncMock(return_value=True)
         mock_metrics = Mock()
@@ -126,7 +131,7 @@ class TestHealthService:
         service = HealthService(
             health_checker=mock_health_checker,
             system_metrics=mock_metrics,
-            soar_clients={"thehive": mock_client}
+            soar_clients={"thehive": mock_client},
         )
 
         result = await service.get_all_services_status({})
@@ -134,7 +139,7 @@ class TestHealthService:
         assert result["thehive"] is False
 
     def test_get_system_metrics_exception(self):
-        """Test get_system_metrics raises exception on error"""
+        """Test get_system_metrics raises exception on error."""
         mock_health_checker = Mock()
         mock_metrics = Mock()
         mock_metrics.get_hardware_metrics.side_effect = Exception("Metrics error")

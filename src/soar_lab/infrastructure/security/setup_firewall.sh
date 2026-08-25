@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Configuration
-ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
+ARTIFACTS_DIR="${ARTIFACTS_DIR:-./runtime}"
 LOG_FILE="${LOG_FILE:-${ARTIFACTS_DIR}/logs/firewall.log}"
 BACKUP_RULES_FILE="/etc/ufw/before.rules.backup"
 

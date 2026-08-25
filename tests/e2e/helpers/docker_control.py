@@ -1,15 +1,21 @@
-"""
-Shared Docker control helpers for E2E tests.
-"""
+"""Shared Docker control helpers for E2E tests."""
 
 import subprocess
 import time
-from typing import List, Optional
+
+__all__ = [
+    "get_container_status",
+    "stop_container",
+    "start_container",
+    "restart_container",
+    "get_container_logs",
+    "list_containers",
+    "wait_for_container",
+]
 
 
 def get_container_status(container_name: str) -> str:
-    """
-    Get the status of a Docker container.
+    """Get the status of a Docker container.
 
     Args:
         container_name: Name of the container
@@ -22,7 +28,7 @@ def get_container_status(container_name: str) -> str:
             ["docker", "inspect", "-f", "{{.State.Status}}", container_name],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
         )
         return result.stdout.strip()
     except subprocess.TimeoutExpired:
@@ -32,8 +38,7 @@ def get_container_status(container_name: str) -> str:
 
 
 def stop_container(container_name: str, timeout: int = 30) -> bool:
-    """
-    Stop a Docker container.
+    """Stop a Docker container.
 
     Args:
         container_name: Name of the container
@@ -43,19 +48,14 @@ def stop_container(container_name: str, timeout: int = 30) -> bool:
         True if container was stopped, False otherwise
     """
     try:
-        subprocess.run(
-            ["docker", "stop", container_name],
-            capture_output=True,
-            timeout=timeout
-        )
+        subprocess.run(["docker", "stop", container_name], capture_output=True, timeout=timeout)
         return True
     except Exception:
         return False
 
 
 def start_container(container_name: str, timeout: int = 30) -> bool:
-    """
-    Start a Docker container.
+    """Start a Docker container.
 
     Args:
         container_name: Name of the container
@@ -65,19 +65,14 @@ def start_container(container_name: str, timeout: int = 30) -> bool:
         True if container was started, False otherwise
     """
     try:
-        subprocess.run(
-            ["docker", "start", container_name],
-            capture_output=True,
-            timeout=timeout
-        )
+        subprocess.run(["docker", "start", container_name], capture_output=True, timeout=timeout)
         return True
     except Exception:
         return False
 
 
 def restart_container(container_name: str, timeout: int = 60) -> bool:
-    """
-    Restart a Docker container.
+    """Restart a Docker container.
 
     Args:
         container_name: Name of the container
@@ -87,19 +82,14 @@ def restart_container(container_name: str, timeout: int = 60) -> bool:
         True if container was restarted, False otherwise
     """
     try:
-        subprocess.run(
-            ["docker", "restart", container_name],
-            capture_output=True,
-            timeout=timeout
-        )
+        subprocess.run(["docker", "restart", container_name], capture_output=True, timeout=timeout)
         return True
     except Exception:
         return False
 
 
 def get_container_logs(container_name: str, tail: int = 100) -> str:
-    """
-    Get logs from a Docker container.
+    """Get logs from a Docker container.
 
     Args:
         container_name: Name of the container
@@ -113,16 +103,15 @@ def get_container_logs(container_name: str, tail: int = 100) -> str:
             ["docker", "logs", "--tail", str(tail), container_name],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
         )
         return result.stdout
     except Exception:
         return ""
 
 
-def list_containers(filter_label: Optional[str] = None) -> List[str]:
-    """
-    List Docker containers, optionally filtered by label.
+def list_containers(filter_label: str | None = None) -> list[str]:
+    """List Docker containers, optionally filtered by label.
 
     Args:
         filter_label: Optional label filter (e.g., "com.docker.compose.project=soar")
@@ -142,8 +131,7 @@ def list_containers(filter_label: Optional[str] = None) -> List[str]:
 
 
 def wait_for_container(container_name: str, timeout: int = 60) -> bool:
-    """
-    Wait for a container to be running.
+    """Wait for a container to be running.
 
     Args:
         container_name: Name of the container

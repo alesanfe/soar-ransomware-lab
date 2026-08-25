@@ -7,10 +7,13 @@ const config = {
     title: 'SOAR Ransomware Lab',
     tagline: 'Security Orchestration, Automation and Response Laboratory',
     favicon: 'img/favicon.ico',
-    url: 'http://localhost:8086',
-    baseUrl: '/',
-    organizationName: 'soar-lab',
+
+    // GitHub Pages deployment
+    url: 'https://alesanfe.github.io',
+    baseUrl: '/soar-ransomware-lab/',
+    organizationName: 'alesanfe',
     projectName: 'soar-ransomware-lab',
+    trailingSlash: false,
 
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
@@ -28,7 +31,7 @@ const config = {
                 docs: {
                     sidebarPath: require.resolve('./sidebars.js'),
                     sidebarCollapsed: false,
-                    editUrl: 'https://github.com/soar-lab/soar-ransomware-lab/tree/main/docs/',
+                    editUrl: 'https://github.com/alesanfe/soar-ransomware-lab/tree/main/docs/',
                 },
                 blog: false,
                 theme: {
@@ -42,7 +45,7 @@ const config = {
     },
 
     themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+        /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
         ({
             navbar: {
                 title: 'SOAR Lab',
@@ -58,17 +61,13 @@ const config = {
                         label: 'Documentation',
                     },
                     {
-                        href: 'http://localhost:8000/docs',
-                        label: 'API',
+                        type: 'docSidebar',
+                        sidebarId: 'reportsSidebar',
                         position: 'left',
+                        label: 'Reports',
                     },
                     {
-                        href: 'http://localhost:8085',
-                        label: 'Management UI',
-                        position: 'right'
-                    },
-                    {
-                        href: 'https://github.com/soar-lab/soar-ransomware-lab',
+                        href: 'https://github.com/alesanfe/soar-ransomware-lab',
                         label: 'GitHub',
                         position: 'right',
                     },
@@ -86,11 +85,24 @@ const config = {
                             },
                             {
                                 label: 'Architecture',
-                                to: '/docs/architecture',
+                                to: '/docs/architecture/overview',
+                            },
+                        ],
+                    },
+                    {
+                        title: 'Reports',
+                        items: [
+                            {
+                                label: 'Quality',
+                                to: '/docs/reports/quality/quality-summary',
                             },
                             {
-                                label: 'API Reference',
-                                href: 'http://localhost:8000/docs',
+                                label: 'Test Review',
+                                to: '/docs/reports/test-review/test_review_report',
+                            },
+                            {
+                                label: 'Holistic Review',
+                                to: '/docs/reports/holistic/holistic_review_report',
                             },
                         ],
                     },
@@ -99,16 +111,7 @@ const config = {
                         items: [
                             {
                                 label: 'GitHub',
-                                href: 'https://github.com/soar-lab/soar-ransomware-lab',
-                            },
-                        ],
-                    },
-                    {
-                        title: 'More',
-                        items: [
-                            {
-                                label: 'Management UI',
-                                href: 'http://localhost:8085',
+                                href: 'https://github.com/alesanfe/soar-ransomware-lab',
                             },
                         ],
                     },

@@ -1,25 +1,31 @@
-"""
-Shared assertions for trace validation in E2E tests.
-"""
+"""Shared assertions for trace validation in E2E tests."""
 
-from datetime import datetime, timezone
-from typing import Dict, List, Any, Union
+from datetime import UTC, datetime
+from typing import Any
+
+__all__ = [
+    "assert_trace_id_present",
+    "assert_trace_id_consistent",
+    "assert_trace_id_in_logs",
+    "assert_trace_timestamps_sequential",
+]
 
 
-def _parse_timestamp(ts: Union[str, int, float]) -> datetime:
-    """Parse an ISO string or Unix timestamp (seconds or milliseconds) into an aware datetime."""
+def _parse_timestamp(ts: str | float) -> datetime:
+    """Parse an ISO string or Unix timestamp (seconds or milliseconds) into an
+    aware datetime."""
     if isinstance(ts, (int, float)):
         value = float(ts)
         if value > 1e12:
             value = value / 1000.0
-        return datetime.fromtimestamp(value, tz=timezone.utc)
+        return datetime.fromtimestamp(value, tz=UTC)
     if isinstance(ts, str):
         s = ts.strip()
         try:
             value = float(s)
             if value > 1e12:
                 value = value / 1000.0
-            return datetime.fromtimestamp(value, tz=timezone.utc)
+            return datetime.fromtimestamp(value, tz=UTC)
         except ValueError:
             pass
         if s.endswith("Z"):
@@ -28,26 +34,29 @@ def _parse_timestamp(ts: Union[str, int, float]) -> datetime:
     raise ValueError(f"Unsupported timestamp type: {type(ts)}")
 
 
-def assert_trace_id_present(data: Dict[str, Any], trace_id: str):
+def assert_trace_id_present(data: dict[str, Any], trace_id: str):
     """Assert that a trace_id is present in the data."""
-    assert data.get("trace_id") == trace_id, f"Expected trace_id {trace_id}, got {data.get('trace_id')}"
+    assert (
+        data.get("trace_id") == trace_id
+    ), f"Expected trace_id {trace_id}, got {data.get('trace_id')}"
 
 
-def assert_trace_id_consistent(systems: List[Dict[str, Any]], trace_id: str):
+def assert_trace_id_consistent(systems: list[dict[str, Any]], trace_id: str):
     """Assert that all systems have the same trace_id."""
     for system in systems:
         system_name = system.get("name", "unknown")
-        assert system.get(
-            "trace_id") == trace_id, f"System {system_name} has trace_id {system.get('trace_id')}, expected {trace_id}"
+        assert (
+            system.get("trace_id") == trace_id
+        ), f"System {system_name} has trace_id {system.get('trace_id')}, expected {trace_id}"
 
 
-def assert_trace_id_in_logs(logs: List[str], trace_id: str):
+def assert_trace_id_in_logs(logs: list[str], trace_id: str):
     """Assert that trace_id appears in logs."""
     trace_logs = [log for log in logs if trace_id in log]
     assert len(trace_logs) > 0, f"Trace ID {trace_id} not found in logs"
 
 
-def assert_trace_timestamps_sequential(systems: List[Dict[str, Any]]):
+def assert_trace_timestamps_sequential(systems: list[dict[str, Any]]):
     """Assert that trace timestamps are sequential across systems."""
     timestamps = []
     for system in systems:
@@ -60,4 +69,6 @@ def assert_trace_timestamps_sequential(systems: List[Dict[str, Any]]):
     for i in range(1, len(timestamps)):
         prev_name, prev_ts = timestamps[i - 1]
         curr_name, curr_ts = timestamps[i]
-        assert curr_ts >= prev_ts, f"Timestamp out of order: {prev_name} ({prev_ts}) -> {curr_name} ({curr_ts})"
+        assert (
+            curr_ts >= prev_ts
+        ), f"Timestamp out of order: {prev_name} ({prev_ts}) -> {curr_name} ({curr_ts})"

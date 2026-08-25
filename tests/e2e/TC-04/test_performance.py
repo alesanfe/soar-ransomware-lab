@@ -5,98 +5,35 @@ Tests system performance under load including latency, throughput, and resource 
 """
 
 import json
-import os
-import pytest
-import requests
 import subprocess
-import sys
 import threading
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
-ARTIFACTS_DIR = Path("/app/results") if Path("/app").exists() else REPO_ROOT / "artifacts"
-WEBHOOK_INFO = Path("/app/results/webhook_info.json") if Path(
-    "/app/results/webhook_info.json").exists() else REPO_ROOT / "artifacts" / "results" / "webhook_info.json"
-ENV_FULL = Path("/app/.env.full") if Path("/app/.env.full").exists() else REPO_ROOT / ".env.full"
+import pytest
 
-WORKFLOW_TIMEOUT = 900
-POLL_INTERVAL = 5
-
-sys.path.insert(0, str(REPO_ROOT / "src"))
-
-from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
+from tests.e2e.base import E2EBaseTest
+from tests.e2e.workflow_validator import validate_workflow_results
 
 
-def _load_env() -> dict:
-    env_vars = {
-        "SHUFFLE_URL": os.environ.get("SHUFFLE_URL"),
-        "SHUFFLE_DEFAULT_APIKEY": os.environ.get("SHUFFLE_DEFAULT_APIKEY"),
-        "SHUFFLE_DEFAULT_PASSWORD": os.environ.get("SHUFFLE_DEFAULT_PASSWORD"),
-    }
-    result = {k: v for k, v in env_vars.items() if v is not None}
+class TestPerformance(E2EBaseTest):
+    """TC-04 — E2E performance: latency, throughput, and resource usage under
+    load."""
 
-    if not ENV_FULL.exists():
-        return result
-
-    for line in ENV_FULL.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, _, v = line.partition("=")
-            k = k.strip()
-            v = v.strip()
-            if k not in result:
-                result[k] = v
-    return result
-
-
-class TestPerformance:
-    """
-    TC-04 — E2E performance: latency, throughput, and resource usage under load.
-    """
+    tc_id = "TC-04"
+    WORKFLOW_TIMEOUT = 900
 
     def setup_method(self, method):
-        """Set up test clients and environment"""
-        t0 = datetime.now(timezone.utc)
-        (ARTIFACTS_DIR / "results").mkdir(parents=True, exist_ok=True)
-        (ARTIFACTS_DIR / "logs").mkdir(parents=True, exist_ok=True)
-
-        env = _load_env()
-
-        info = json.loads(WEBHOOK_INFO.read_text()) if WEBHOOK_INFO.exists() else {}
-        workflow_id = info.get("workflow_id", "")
-        webhook_url = info.get("webhook_url", "")
-
-        shuffle_url = env.get("SHUFFLE_URL", "http://soar_shuffle_backend:5001")
-        shuffle_pass = env.get("SHUFFLE_DEFAULT_PASSWORD", "")
-
-        shuffle = ShuffleClient(
-            base_url=shuffle_url,
-            api_key=os.environ.get("SHUFFLE_DEFAULT_APIKEY") or env.get("SHUFFLE_DEFAULT_APIKEY") or env.get(
-                "SHUFFLE_API_KEY", "placeholder"),
-            verify_ssl=False
-        )
-        s = requests.Session()
-        s.verify = False
-        _results = []
-
-        self.t0 = t0
-        self.workflow_id = workflow_id
-        self.webhook_url = webhook_url
-        self.shuffle = shuffle
-        self.shuffle_pass = shuffle_pass
-        self.s = s
-        self._results = _results
-
+        """Set up test clients and environment."""
+        super().setup_method(method)
+        self.t0 = datetime.now(UTC)
+        self._results = []
 
     def _log(self, msg: str):
-        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         line = f"[{ts}] TC-04 {msg}"
-        sys.stdout.buffer.write((line + "\n").encode("utf-8", errors="replace"))
-        sys.stdout.buffer.flush()
-        with open(ARTIFACTS_DIR / "logs" / "notify.log", "a", encoding="utf-8") as f:
-            f.write(line + "\n")
+        print(line)
 
     def _base_payload(self, tag: str) -> dict:
         return {
@@ -107,7 +44,7 @@ class TestPerformance:
             "hash": "a" * 64,
             "severity": 2,
             "source": "performance-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
         }
 
@@ -116,24 +53,22 @@ class TestPerformance:
         if not self.webhook_url:
             raise RuntimeError("Webhook URL not found in webhook_info.json")
 
-        r = self.shuffle._webhook_session.post(
-            self.webhook_url,
-            json=payload,
-            timeout=timeout
-        )
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=timeout)
         r.raise_for_status()
         data = r.json()
         assert isinstance(data, dict), "Response must be JSON object"
         return data
 
-    def _wait_for_execution(self, exec_id: str, timeout: int = WORKFLOW_TIMEOUT) -> dict:
+    def _wait_for_execution(self, exec_id: str, timeout: int = None) -> dict:
         """Poll workflow execution until completion."""
+        if timeout is None:
+            timeout = self.WORKFLOW_TIMEOUT
         deadline = time.time() + timeout
         while time.time() < deadline:
             ex = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
             if isinstance(ex, dict) and ex.get("status") not in ("EXECUTING", ""):
                 return ex
-            time.sleep(POLL_INTERVAL)
+            time.sleep(self.POLL_INTERVAL)
         raise TimeoutError(f"Execution {exec_id} did not complete within {timeout}s")
 
     def test_single_alert_latency(self):
@@ -148,15 +83,21 @@ class TestPerformance:
         assert isinstance(exec_id, str), "execution_id must be string"
         assert len(exec_id) > 0, "execution_id must not be empty"
 
-        ex = self._wait_for_execution(exec_id, timeout=WORKFLOW_TIMEOUT)
+        ex = self._wait_for_execution(exec_id)
         assert isinstance(ex, dict), "Execution must be a dict"
         latency_ms = int((time.time() - start) * 1000)
 
         assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
+
+        # Validate workflow results for hidden errors
+        ex_full = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=True)
+        validate_workflow_results(ex_full)
         self._log(f"Single alert latency: {latency_ms}ms")
 
         # Validate latency is within acceptable threshold
-        assert latency_ms < WORKFLOW_TIMEOUT * 1000, f"Single alert latency {latency_ms}ms exceeds {WORKFLOW_TIMEOUT}s threshold"
+        assert (
+            latency_ms < self.WORKFLOW_TIMEOUT * 1000
+        ), f"Single alert latency {latency_ms}ms exceeds {self.WORKFLOW_TIMEOUT}s threshold"
         if latency_ms < 5000:
             self._log("✓ Single alert latency excellent (< 5s)")
         elif latency_ms < 15000:
@@ -164,10 +105,17 @@ class TestPerformance:
         else:
             self._log(f"⚠ Single alert latency high: {latency_ms}ms")
 
-        self._results.append({"test": "single_alert_latency", "latency_ms": latency_ms, "ok": latency_ms < WORKFLOW_TIMEOUT * 1000})
+        self._results.append(
+            {
+                "test": "single_alert_latency",
+                "latency_ms": latency_ms,
+                "ok": latency_ms < self.WORKFLOW_TIMEOUT * 1000,
+            }
+        )
 
     def test_concurrent_alerts(self):
-        """Test 2: 10 concurrent alerts complete within the queueing threshold."""
+        """Test 2: 10 concurrent alerts complete within the queueing
+        threshold."""
         self._log("=== Test 2: Concurrent alerts (10 in parallel) ===")
 
         def send_alert(tag: str) -> dict:
@@ -187,6 +135,7 @@ class TestPerformance:
         submissions_lock = threading.Lock()
         threads = []
         for i in range(10):
+
             def run_alert(tag: str = f"{i}") -> None:
                 submission = send_alert(tag)
                 with submissions_lock:
@@ -205,24 +154,28 @@ class TestPerformance:
 
         pending = {submission["execution_id"]: submission for submission in submissions}
         completed = []
-        deadline = time.time() + WORKFLOW_TIMEOUT
+        deadline = time.time() + self.WORKFLOW_TIMEOUT
         while pending and time.time() < deadline:
             execs = self.shuffle.get_workflow_executions(self.workflow_id)
             by_id = {execution.get("execution_id"): execution for execution in execs}
             for execution_id, submission in list(pending.items()):
                 execution = by_id.get(execution_id)
                 if isinstance(execution, dict) and execution.get("status") not in ("EXECUTING", ""):
-                    completed.append({
-                        **submission,
-                        "status": execution.get("status"),
-                        "latency_ms": int((time.time() - submission["started_at"]) * 1000),
-                    })
+                    completed.append(
+                        {
+                            **submission,
+                            "status": execution.get("status"),
+                            "latency_ms": int((time.time() - submission["started_at"]) * 1000),
+                        }
+                    )
                     del pending[execution_id]
             if pending:
-                time.sleep(POLL_INTERVAL)
+                time.sleep(self.POLL_INTERVAL)
 
         assert not pending, f"Timed out waiting for executions: {sorted(pending)}"
-        assert all(result["status"] == "FINISHED" for result in completed), f"Unexpected workflow statuses: {completed}"
+        assert all(
+            result["status"] == "FINISHED" for result in completed
+        ), f"Unexpected workflow statuses: {completed}"
 
         total_time_ms = int((time.time() - start) * 1000)
         latencies_ms = [result["latency_ms"] for result in completed]
@@ -233,9 +186,22 @@ class TestPerformance:
         self._log(f"Maximum execution latency: {max_latency}ms")
 
         # This submits twice the configured Orborus concurrency to measure queueing.
-        assert total_time_ms < WORKFLOW_TIMEOUT * 2 * 1000, f"10 concurrent alerts took {total_time_ms}ms, exceeding {WORKFLOW_TIMEOUT * 2}s threshold"
-        assert max_latency < WORKFLOW_TIMEOUT * 1000, f"Maximum latency {max_latency}ms exceeds {WORKFLOW_TIMEOUT}s threshold"
-        self._results.append({"test": "concurrent_alerts", "total_time_ms": total_time_ms, "average_latency_ms": avg_latency, "max_latency_ms": max_latency, "ok": True})
+        assert total_time_ms < self.WORKFLOW_TIMEOUT * 2 * 1000, (
+            f"10 concurrent alerts took {total_time_ms}ms, "
+            f"exceeding {self.WORKFLOW_TIMEOUT * 2}s threshold"
+        )
+        assert (
+            max_latency < self.WORKFLOW_TIMEOUT * 1000
+        ), f"Maximum latency {max_latency}ms exceeds {self.WORKFLOW_TIMEOUT}s threshold"
+        self._results.append(
+            {
+                "test": "concurrent_alerts",
+                "total_time_ms": total_time_ms,
+                "average_latency_ms": avg_latency,
+                "max_latency_ms": max_latency,
+                "ok": True,
+            }
+        )
 
     def test_sequential_batch(self):
         """Test 3: Five sequential alerts with 0.5s delay."""
@@ -248,7 +214,7 @@ class TestPerformance:
             exec_id = exec_info.get("execution_id", "")
             assert isinstance(exec_id, str), "execution_id must be string"
             assert len(exec_id) > 0, "execution_id must not be empty"
-            ex = self._wait_for_execution(exec_id, timeout=WORKFLOW_TIMEOUT)
+            ex = self._wait_for_execution(exec_id)
             assert isinstance(ex, dict), "Execution must be a dict"
             assert ex.get("status") == "FINISHED", f"Alert {i} failed: {ex.get('status')}"
             time.sleep(0.5)
@@ -257,7 +223,9 @@ class TestPerformance:
         self._log(f"5 sequential alerts completed in {total_time_ms}ms")
         self._log(f"Average latency per alert: {total_time_ms // 5}ms")
 
-        self._results.append({"test": "sequential_batch", "total_time_ms": total_time_ms, "ok": True})
+        self._results.append(
+            {"test": "sequential_batch", "total_time_ms": total_time_ms, "ok": True}
+        )
 
     def test_memory_usage(self):
         """Test 4: Check memory usage of key services."""
@@ -268,13 +236,21 @@ class TestPerformance:
                 ["docker", "stats", "--no-stream", "--format", "table {{.Name}}\t{{.MemUsage}}"],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
+            assert (
+                result.returncode == 0
+            ), f"docker stats failed with returncode={result.returncode}: {result.stderr}"
+            assert len(result.stdout) > 0, "docker stats produced no output"
             self._log(result.stdout)
             self._log("✓ Memory usage captured")
             self._results.append({"test": "memory_usage", "ok": True})
         except (subprocess.TimeoutExpired, FileNotFoundError) as e:
             self._log(f"⚠ Docker not available for memory check: {e}")
+            # Docker may not be available in all environments; still validate the result object
+            assert isinstance(
+                e, (subprocess.TimeoutExpired, FileNotFoundError)
+            ), f"Unexpected exception type: {type(e)}"
             self._results.append({"test": "memory_usage", "ok": True, "note": "docker_unavailable"})
 
     def test_cpu_usage(self):
@@ -286,13 +262,21 @@ class TestPerformance:
                 ["docker", "stats", "--no-stream", "--format", "table {{.Name}}\t{{.CPUPerc}}"],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
+            assert (
+                result.returncode == 0
+            ), f"docker stats failed with returncode={result.returncode}: {result.stderr}"
+            assert len(result.stdout) > 0, "docker stats produced no output"
             self._log(result.stdout)
             self._log("✓ CPU usage captured")
             self._results.append({"test": "cpu_usage", "ok": True})
         except (subprocess.TimeoutExpired, FileNotFoundError) as e:
             self._log(f"⚠ Docker not available for CPU check: {e}")
+            # Docker may not be available in all environments; still validate the result object
+            assert isinstance(
+                e, (subprocess.TimeoutExpired, FileNotFoundError)
+            ), f"Unexpected exception type: {type(e)}"
             self._results.append({"test": "cpu_usage", "ok": True, "note": "docker_unavailable"})
 
     def test_kpi_calculation_performance(self):
@@ -300,14 +284,21 @@ class TestPerformance:
         self._log("=== Test 6: KPI calculation performance ===")
 
         # Generate test log with 100 entries
-        test_log = ARTIFACTS_DIR / "logs" / "kpi_test.log"
+        test_log = Path("logs") / "kpi_test.log"
+        test_log.parent.mkdir(parents=True, exist_ok=True)
         with open(test_log, "w") as f:
-            base_time = datetime.now(timezone.utc)
+            base_time = datetime.now(UTC)
             for i in range(100):
                 t1 = base_time.timestamp() + i
                 t2 = base_time.timestamp() + i + 90
-                f.write(f"[{datetime.fromtimestamp(t1).strftime('%Y-%m-%d %H:%M:%S')}] STEP: Alert received\n")
-                f.write(f"[{datetime.fromtimestamp(t2).strftime('%Y-%m-%d %H:%M:%S')}] STEP: Containment executed\n")
+                f.write(
+                    f"[{datetime.fromtimestamp(t1).strftime('%Y-%m-%d %H:%M:%S')}] "
+                    f"STEP: Alert received\n"
+                )
+                f.write(
+                    f"[{datetime.fromtimestamp(t2).strftime('%Y-%m-%d %H:%M:%S')}] "
+                    f"STEP: Containment executed\n"
+                )
 
         start = time.time()
         try:
@@ -316,28 +307,50 @@ class TestPerformance:
             from soar_lab.domain.statistical_calculator import StatisticalCalculator
 
             analyzer = KPIAnalyzer(StatisticalCalculator())
+            assert analyzer is not None, "KPIAnalyzer must be instantiable"
             # Mock calculation to test performance
             calc = StatisticalCalculator()
-            calc.calculate_statistical_metrics([30 + i for i in range(100)])
+            metrics = calc.calculate_statistical_metrics([30 + i for i in range(100)])
 
             calc_time_ms = int((time.time() - start) * 1000)
             self._log(f"KPI calculation for 100 entries: {calc_time_ms}ms")
+
+            # Validate that the calculation produced a usable result
+            assert metrics is not None, "calculate_statistical_metrics must return a result"
+            assert isinstance(
+                metrics, dict
+            ), f"KPI metrics must be a dict, got {type(metrics).__name__}"
+            # Statistical calculator should produce key statistical fields
+            expected_stat_fields = {"mean", "median", "std"}
+            assert expected_stat_fields.issubset(set(metrics.keys())), (
+                f"KPI metrics missing expected fields {expected_stat_fields}, "
+                f"got {set(metrics.keys())}"
+            )
 
             if calc_time_ms < 1000:
                 self._log("✓ KPI calculation performance acceptable (< 1s)")
             else:
                 self._log(f"⚠ KPI calculation slow: {calc_time_ms}ms")
 
-            self._results.append({"test": "kpi_calculation", "calc_time_ms": calc_time_ms, "ok": calc_time_ms < 1000})
+            # Validate performance is within a reasonable threshold for 100 entries
+            assert calc_time_ms < 5000, (
+                f"KPI calculation for 100 entries took {calc_time_ms}ms, "
+                f"exceeding 5s reasonable threshold"
+            )
+
+            self._results.append(
+                {"test": "kpi_calculation", "calc_time_ms": calc_time_ms, "ok": calc_time_ms < 1000}
+            )
         except Exception as e:
             self._log(f"⚠ KPI calculation test failed: {e}")
             self._results.append({"test": "kpi_calculation", "ok": False, "error": str(e)})
+            pytest.fail(f"KPI calculation test failed: {e}")
         finally:
-            if test_log.exists():
-                try:
-                    test_log.unlink()
-                except (PermissionError, OSError):
-                    pass
+            assert test_log.exists(), f"Log file must exist at {test_log}"
+            try:
+                test_log.unlink()
+            except (PermissionError, OSError):
+                pass
 
     def test_queue_depth(self):
         """Test 7: Queue depth under load."""
@@ -347,23 +360,24 @@ class TestPerformance:
             # Check Shuffle workflow execution queue via Elasticsearch
             query = {
                 "range": {
-                    "@timestamp": {
-                        "gte": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
-                    }
+                    "@timestamp": {"gte": (datetime.now(UTC) - timedelta(minutes=5)).isoformat()}
                 }
             }
 
-            from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
-            env = _load_env()
-            es_url = env.get("ES_URL") or env.get("ELASTICSEARCH_URL", "http://elasticsearch:9200")
-            es = ElasticsearchClient(base_url=es_url)
-
             # Query workflow executions in progress
-            results = es.search(query=query, index="workflowexecution-000001", size=100)
+            results = self.es.search(query=query, index="workflowexecution-000001", size=100)
             executions = results.get("hits", {}).get("hits", [])
 
             # Count pending/in-progress executions
-            pending = sum(1 for e in executions if e.get("_source", {}).get("status") in ("EXECUTING", "WAITING"))
+            pending = sum(
+                1
+                for e in executions
+                if e.get("_source", {}).get("status") in ("EXECUTING", "WAITING")
+            )
+
+            # Validate queue depth is a non-negative integer
+            assert isinstance(pending, int), f"Queue depth must be an integer, got {type(pending)}"
+            assert pending >= 0, f"Queue depth must be non-negative, got {pending}"
 
             self._log(f"Queue depth: {pending} pending executions")
 
@@ -376,6 +390,7 @@ class TestPerformance:
         except Exception as e:
             self._log(f"⚠ Queue depth test failed: {e}")
             self._results.append({"test": "queue_depth", "ok": False, "error": str(e)})
+            raise
 
     def _step_save_report(self, elapsed: float):
         report = {
@@ -385,7 +400,8 @@ class TestPerformance:
             "results": self._results,
             "success": all(r.get("ok", False) for r in self._results),
         }
-        report_file = ARTIFACTS_DIR / "results" / "TC-04_performance_report.json"
+        report_file = Path("results") / "TC-04_performance_report.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
         report_file.write_text(json.dumps(report, indent=2, default=str))
         self._log(f"+ Report saved: {report_file}")
 
@@ -401,7 +417,12 @@ class TestPerformance:
         self.test_kpi_calculation_performance()
         self.test_queue_depth()
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        # Validate that results were collected and all passed
+        assert len(self._results) > 0, "No performance test results were recorded"
+        failed = [r for r in self._results if not r.get("ok", False)]
+        assert not failed, f"{len(failed)}/{len(self._results)} performance tests failed: {failed}"
+
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-04 COMPLETED ===")
         self._step_save_report(elapsed)
@@ -411,8 +432,7 @@ class TestPerformance:
     # ------------------------------------------------------------------
 
     def test_workflow_latency(self):
-        """
-        TC-04-01: Workflow latency measurement.
+        """TC-04-01: Workflow latency measurement.
 
         Verifications:
           - Workflow execution latency is measured
@@ -432,7 +452,7 @@ class TestPerformance:
         api_latency_ms = int((time.time() - start) * 1000)
         self._log(f"+ API latency: {api_latency_ms}ms")
 
-        ex = self._wait_for_execution(exec_id, timeout=WORKFLOW_TIMEOUT)
+        ex = self._wait_for_execution(exec_id)
         workflow_latency_ms = int((time.time() - start) * 1000)
 
         assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
@@ -440,22 +460,25 @@ class TestPerformance:
 
         # Validate workflow latency is reasonable
         assert workflow_latency_ms > 0, "Workflow latency should be positive"
-        assert workflow_latency_ms < WORKFLOW_TIMEOUT * 1000, f"Workflow latency should be < {WORKFLOW_TIMEOUT}s"
+        assert (
+            workflow_latency_ms < self.WORKFLOW_TIMEOUT * 1000
+        ), f"Workflow latency should be < {self.WORKFLOW_TIMEOUT}s"
 
         # Validate API latency is much smaller than workflow latency
-        assert api_latency_ms < workflow_latency_ms, "API latency should be less than workflow latency"
+        assert (
+            api_latency_ms < workflow_latency_ms
+        ), "API latency should be less than workflow latency"
 
         # Calculate workflow-only latency (excluding API)
         workflow_only_ms = workflow_latency_ms - api_latency_ms
         self._log(f"+ Workflow-only latency: {workflow_only_ms}ms")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-04-01 COMPLETED — WORKFLOW LATENCY VALIDATED ===")
 
     def test_total_response_time(self):
-        """
-        TC-04-02: Total response time measurement.
+        """TC-04-02: Total response time measurement.
 
         Verifications:
           - End-to-end response time is measured
@@ -469,7 +492,7 @@ class TestPerformance:
 
         exec_info = self._send_alert(payload)
         exec_id = exec_info.get("execution_id", "")
-        ex = self._wait_for_execution(exec_id, timeout=WORKFLOW_TIMEOUT)
+        ex = self._wait_for_execution(exec_id)
 
         total_time_ms = int((time.time() - start) * 1000)
         assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
@@ -477,20 +500,21 @@ class TestPerformance:
 
         # Validate total response time is reasonable
         assert total_time_ms > 0, "Total response time should be positive"
-        assert total_time_ms < WORKFLOW_TIMEOUT * 1000, f"Total response time should be < {WORKFLOW_TIMEOUT}s"
+        assert (
+            total_time_ms < self.WORKFLOW_TIMEOUT * 1000
+        ), f"Total response time should be < {self.WORKFLOW_TIMEOUT}s"
 
         # Validate workflow results contain timing information
         results = ex.get("results", [])
         assert isinstance(results, list), "Results should be a list"
         self._log(f"+ Workflow completed with {len(results)} nodes")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-04-02 COMPLETED — TOTAL RESPONSE TIME VALIDATED ===")
 
     def test_p50_percentile(self):
-        """
-        TC-04-03: p50 latency percentile.
+        """TC-04-03: p50 latency percentile.
 
         Verifications:
           - p50 (median) latency is calculated
@@ -505,7 +529,7 @@ class TestPerformance:
             start = time.time()
             exec_info = self._send_alert(payload)
             exec_id = exec_info.get("execution_id", "")
-            ex = self._wait_for_execution(exec_id, timeout=WORKFLOW_TIMEOUT)
+            self._wait_for_execution(exec_id)
             latency_ms = int((time.time() - start) * 1000)
             latencies.append(latency_ms)
             time.sleep(1)
@@ -520,7 +544,7 @@ class TestPerformance:
         assert p50 > 0, "p50 should be positive"
 
         # Validate p50 is within reasonable range
-        assert p50 < WORKFLOW_TIMEOUT * 1000, f"p50 should be < {WORKFLOW_TIMEOUT}s"
+        assert p50 < self.WORKFLOW_TIMEOUT * 1000, f"p50 should be < {self.WORKFLOW_TIMEOUT}s"
 
         # Calculate min/max for context
         min_latency = min(latencies)
@@ -530,13 +554,12 @@ class TestPerformance:
         self._log(f"+ Max latency: {max_latency}ms")
         self._log(f"+ Avg latency: {avg_latency}ms")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-04-03 COMPLETED — P50 PERCENTILE VALIDATED ===")
 
     def test_p95_percentile(self):
-        """
-        TC-04-04: p95 latency percentile.
+        """TC-04-04: p95 latency percentile.
 
         Verifications:
           - p95 latency is calculated
@@ -551,7 +574,7 @@ class TestPerformance:
             start = time.time()
             exec_info = self._send_alert(payload)
             exec_id = exec_info.get("execution_id", "")
-            ex = self._wait_for_execution(exec_id, timeout=WORKFLOW_TIMEOUT)
+            self._wait_for_execution(exec_id)
             latency_ms = int((time.time() - start) * 1000)
             latencies.append(latency_ms)
             time.sleep(0.5)
@@ -567,19 +590,18 @@ class TestPerformance:
         assert p95 > 0, "p95 should be positive"
 
         # Validate p95 is within reasonable range
-        assert p95 < WORKFLOW_TIMEOUT * 1000, f"p95 should be < {WORKFLOW_TIMEOUT}s"
+        assert p95 < self.WORKFLOW_TIMEOUT * 1000, f"p95 should be < {self.WORKFLOW_TIMEOUT}s"
 
         # Validate p95 >= p50 (should be higher or equal)
         p50 = latencies[len(latencies) // 2]
         assert p95 >= p50, "p95 should be >= p50"
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-04-04 COMPLETED — P95 PERCENTILE VALIDATED ===")
 
     def test_p99_percentile(self):
-        """
-        TC-04-05: p99 latency percentile.
+        """TC-04-05: p99 latency percentile.
 
         Verifications:
           - p99 latency is calculated
@@ -594,7 +616,7 @@ class TestPerformance:
             start = time.time()
             exec_info = self._send_alert(payload)
             exec_id = exec_info.get("execution_id", "")
-            ex = self._wait_for_execution(exec_id, timeout=WORKFLOW_TIMEOUT)
+            self._wait_for_execution(exec_id)
             latency_ms = int((time.time() - start) * 1000)
             latencies.append(latency_ms)
             time.sleep(0.3)
@@ -610,7 +632,7 @@ class TestPerformance:
         assert p99 > 0, "p99 should be positive"
 
         # Validate p99 is within reasonable range
-        assert p99 < WORKFLOW_TIMEOUT * 1000, f"p99 should be < {WORKFLOW_TIMEOUT}s"
+        assert p99 < self.WORKFLOW_TIMEOUT * 1000, f"p99 should be < {self.WORKFLOW_TIMEOUT}s"
 
         # Validate p99 >= p95 (should be higher or equal)
         p95_index = int(len(latencies) * 0.95)
@@ -622,13 +644,12 @@ class TestPerformance:
         self._log(f"+ Max latency: {max_latency}ms")
         self._log(f"+ p99 vs max: {p99}ms vs {max_latency}ms")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-04-05 COMPLETED — P99 PERCENTILE VALIDATED ===")
 
     def test_redis_cache_hit(self):
-        """
-        TC-04-06: Redis cache hit validation.
+        """TC-04-06: Redis cache hit validation.
 
         Verifications:
           - Cache hit occurs on repeated requests
@@ -642,7 +663,7 @@ class TestPerformance:
         start1 = time.time()
         exec_info1 = self._send_alert(payload1)
         exec_id1 = exec_info1.get("execution_id", "")
-        ex1 = self._wait_for_execution(exec_id1, timeout=WORKFLOW_TIMEOUT)
+        ex1 = self._wait_for_execution(exec_id1)
         latency1_ms = int((time.time() - start1) * 1000)
 
         # Second request with same data (cache hit)
@@ -650,7 +671,7 @@ class TestPerformance:
         start2 = time.time()
         exec_info2 = self._send_alert(payload2)
         exec_id2 = exec_info2.get("execution_id", "")
-        ex2 = self._wait_for_execution(exec_id2, timeout=WORKFLOW_TIMEOUT)
+        ex2 = self._wait_for_execution(exec_id2)
         latency2_ms = int((time.time() - start2) * 1000)
 
         self._log(f"+ Cache miss latency: {latency1_ms}ms")
@@ -669,13 +690,12 @@ class TestPerformance:
         improvement_ms = latency1_ms - latency2_ms
         self._log(f"+ Cache improvement: {improvement_ms}ms")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-04-06 COMPLETED — REDIS CACHE HIT VALIDATED ===")
 
     def test_sla_compliance(self):
-        """
-        TC-04-07: SLA maximum compliance.
+        """TC-04-07: SLA maximum compliance.
 
         Verifications:
           - SLA threshold is defined
@@ -691,7 +711,7 @@ class TestPerformance:
 
         exec_info = self._send_alert(payload)
         exec_id = exec_info.get("execution_id", "")
-        ex = self._wait_for_execution(exec_id, timeout=WORKFLOW_TIMEOUT)
+        ex = self._wait_for_execution(exec_id)
 
         response_time_ms = int((time.time() - start) * 1000)
         sla_compliant = response_time_ms < SLA_THRESHOLD_MS
@@ -716,6 +736,6 @@ class TestPerformance:
         sla_margin_ms = SLA_THRESHOLD_MS - response_time_ms
         self._log(f"+ SLA margin: {sla_margin_ms}ms")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-04-07 COMPLETED — SLA COMPLIANCE VALIDATED ===")

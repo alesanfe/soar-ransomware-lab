@@ -1,4 +1,4 @@
-﻿# Declaración de Originalidad
+# Declaración de Originalidad
 
 ## Declaración Jurada
 
@@ -11,10 +11,10 @@ bajo la dirección de **[Título Académico del Director/a] [Nombre Completo del
 
 Declaro que:
 
-1. **Originalidad**: El trabajo es fruto de mi propia investigación y desarrollo, no habiendo sido presentado
+1. **Originalidad.** El trabajo es fruto de mi propia investigación y desarrollo, no habiendo sido presentado
    previamente para obtener ningún otro título académico o grado.
 
-2. **Autoría Personal**: He realizado personalmente la totalidad del trabajo, incluyendo:
+2. **Autoría Personal.** He realizado personalmente la totalidad del trabajo, incluyendo:
     - La investigación bibliográfica y análisis del estado del arte
     - El diseño arquitectónico del laboratorio SOAR
     - La implementación técnica de todos los componentes
@@ -22,40 +22,40 @@ Declaro que:
     - El análisis de resultados y conclusiones
     - La redacción completa del documento
 
-3. **Fuentes Consultadas**: Todas las fuentes, referencias bibliográficas, recursos electrónicos y materiales utilizados
+3. **Fuentes Consultadas.** Todas las fuentes, referencias bibliográficas, recursos electrónicos y materiales utilizados
    han sido debidamente citados y referenciados según las normas académicas establecidas.
 
-4. **Propiedad Intelectual**: Cedo los derechos de reproducción y comunicación pública del presente trabajo a la *
+4. **Propiedad Intelectual.** Cedo los derechos de reproducción y comunicación pública del presente trabajo a la *
    *[Nombre de la Universidad]** para fines académicos y de investigación, sin perjuicio de mi autoría y derechos
    morales.
 
-5. **Uso de Recursos**: Los recursos de software, hardware y documentación utilizados han sido empleados cumpliendo con
+5. **Uso de Recursos.** Los recursos de software, hardware y documentación utilizados han sido empleados cumpliendo con
    las licencias correspondientes y la normativa legal vigente.
 
 ## Ausencia de Plagio
 
 Declaro que no he cometido plagio en ninguna de las formas siguientes:
 
-- **Plagio Directo**: Copia literal de textos de otras fuentes sin citar adecuadamente
-- **Plagio Mosaico**: Combinación de fragmentos de diferentes fuentes sin citación
-- **Plagio Paráfrasis**: Reescritura de textos ajenos sin reconocer la autoría
-- **Plagio de Ideas**: Utilización de conceptos o metodologías ajenas sin atribución
-- **Autoplagio**: Reutilización de trabajos propios previos sin declaración explícita
+- **Plagio Directo.** Copia literal de textos de otras fuentes sin citar adecuadamente
+- **Plagio Mosaico.** Combinación de fragmentos de diferentes fuentes sin citación
+- **Plagio Paráfrasis.** Reescritura de textos ajenos sin reconocer la autoría
+- **Plagio de Ideas.** Utilización de conceptos o metodologías ajenas sin atribución
+- **Autoplagio.** Reutilización de trabajos propios previos sin declaración explícita
 
 ## Confidencialidad y Ética
 
 Declaro que:
 
-1. **Datos Utilizados**: Todos los datos presentados en este trabajo son reales y verificables, o claramente
+1. **Datos Utilizados.** Todos los datos presentados en este trabajo son reales y verificables, o claramente
    identificados como simulados cuando corresponde.
 
-2. **Consideraciones Éticas**: La investigación ha sido realizada siguiendo los principios éticos establecidos por la *
+2. **Consideraciones Éticas.** La investigación ha sido realizada siguiendo los principios éticos establecidos por la *
    *[Nombre de la Universidad]** y las normativas vigentes en investigación.
 
-3. **Privacidad**: Se han protegido todos los datos personales y sensibles, cumpliendo con el Reglamento General de
+3. **Privacidad.** Se han protegido todos los datos personales y sensibles, cumpliendo con el Reglamento General de
    Protección de Datos (RGPD) y normativa aplicable.
 
-4. **Seguridad**: El laboratorio SOAR desarrollado utiliza exclusivamente para fines académicos y de investigación, sin
+4. **Seguridad.** El laboratorio SOAR desarrollado utiliza exclusivamente para fines académicos y de investigación, sin
    datos reales de usuarios o información sensible.
 
 ## Aceptación de Responsabilidad
@@ -71,47 +71,47 @@ la legislación vigente.
 
 Autorizo a la **[Nombre de la Universidad]** a:
 
-1. **Incluir en Repositorios**: Depositar una copia electrónica de este trabajo en los repositorios institucionales de
+1. **Incluir en Repositorios.** Depositar una copia electrónica de este trabajo en los repositorios institucionales de
    acceso abierto.
-2. **Difusión Académica**: Permitir la consulta y descarga del trabajo para fines académicos y de investigación.
-3. **Indexación**: Incluir el trabajo en bases de datos académicas y científicas.
-4. **Citas y Referencias**: Permitir la citación y referencia de este trabajo en investigaciones posteriores.
+2. **Difusión Académica.** Permitir la consulta y descarga del trabajo para fines académicos y de investigación.
+3. **Indexación.** Incluir el trabajo en bases de datos académicas y científicas.
+4. **Citas y Referencias.** Permitir la citación y referencia de este trabajo en investigaciones posteriores.
 
 ## Limitaciones de Uso
 
 El presente trabajo podrá ser utilizado para:
 
-- ✅ Consulta académica y científica
-- ✅ Citas en otros trabajos de investigación
-- ✅ Referencia bibliográfica en publicaciones académicas
-- ✅ Formación y docencia universitaria
+- Si Consulta académica y científica
+- Si Citas en otros trabajos de investigación
+- Si Referencia bibliográfica en publicaciones académicas
+- Si Formación y docencia universitaria
 
 No podrá ser utilizado para:
 
-- ❌ Explotación comercial sin autorización explícita
-- ❌ Modificación del contenido sin permiso del autor
-- ❌ Atribución incorrecta de autoría
-- ❌ Uso que vulnere derechos de propiedad intelectual
+- No Explotación comercial sin autorización explícita
+- No Modificación del contenido sin permiso del autor
+- No Atribución incorrecta de autoría
+- No Uso que vulnere derechos de propiedad intelectual
 
 ## Firmas
 
 ### Autor/a del Trabajo
 
-**Nombre Completo**: _________________________________________
+**Nombre Completo.** _________________________________________
 
-**Firma**: _________________________________________________
+**Firma.** _________________________________________________
 
-**Fecha**: ___ de _______________ de 2025
+**Fecha.** ___ de _______________ de 2025
 
 ### Director/a del Trabajo
 
-**Nombre Completo**: _________________________________________
+**Nombre Completo.** _________________________________________
 
-**Cargo**: _________________________________________________
+**Cargo.** _________________________________________________
 
-**Firma**: _________________________________________________
+**Firma.** _________________________________________________
 
-**Fecha**: ___ de _______________ de 2025
+**Fecha.** ___ de _______________ de 2025
 
 ### Sello de la Institución
 
@@ -119,9 +119,9 @@ No podrá ser utilizado para:
 **[Facultad/Escuela]**
 **[Departamento]**
 
-**Sello**: _________________________________________________
+**Sello.** _________________________________________________
 
-**Fecha**: ___ de _______________ de 2025
+**Fecha.** ___ de _______________ de 2025
 
 ---
 
@@ -131,13 +131,13 @@ El/la abajo firmante, en su calidad de **[Cargo del Firmante]** de la **[Nombre 
 verificado la originalidad del presente Trabajo Fin de Máster y que cumple con todos los requisitos académicos y
 formales establecidos por la institución.
 
-**Nombre Completo del Certificador**: _________________________
+**Nombre Completo del Certificador.** _________________________
 
-**Firma**: _________________________________________________
+**Firma.** _________________________________________________
 
-**Cargo**: _________________________________________________
+**Cargo.** _________________________________________________
 
-**Fecha**: ___ de _______________ de 2025
+**Fecha.** ___ de _______________ de 2025
 
 ---
 
@@ -147,22 +147,22 @@ formales establecidos por la institución.
 
 | Item                                  | Verificación | Observaciones                                     |
 |---------------------------------------|--------------|---------------------------------------------------|
-| 1. Originalidad del contenido         | ✅            | Trabajo completamente original                    |
-| 2. Citas y referencias adecuadas      | ✅            | Todas las fuentes debidamente citadas             |
-| 3. Cumplimiento normativa RGPD        | ✅            | Sin datos personales identificables               |
-| 4. Licencias de software respetadas   | ✅            | Todo software open source correctamente citado    |
-| 5. Ética en investigación             | ✅            | Principios éticos cumplidos                       |
-| 6. Ausencia de conflicto de intereses | ✅            | Sin conflictos declarados                         |
-| 7. Veracidad de datos                 | ✅            | Todos los datos son reales o simulados declarados |
-| 8. Formato académico correcto         | ✅            | Formato según normas universitarias               |
+| 1. Originalidad del contenido         | Si            | Trabajo completamente original                    |
+| 2. Citas y referencias adecuadas      | Si            | Todas las fuentes debidamente citadas             |
+| 3. Cumplimiento normativa RGPD        | Si            | Sin datos personales identificables               |
+| 4. Licencias de software respetadas   | Si            | Todo software open source correctamente citado    |
+| 5. Ética en investigación             | Si            | Principios éticos cumplidos                       |
+| 6. Ausencia de conflicto de intereses | Si            | Sin conflictos declarados                         |
+| 7. Veracidad de datos                 | Si            | Todos los datos son reales o simulados declarados |
+| 8. Formato académico correcto         | Si            | Formato según normas universitarias               |
 
 ---
 
-**Lugar y Fecha**: [Localidad], [Fecha]
+**Lugar y Fecha.** [Localidad], [Fecha]
 
-**Declaración realizada en presencia de**: [Testigos si aplica]
+**Declaración realizada en presencia de.** [Testigos si aplica]
 
-**Documentación adjunta**:
+**Documentación adjunta.**
 
 - [ ] DNI/NIE del autor/a
 - [ ] Documentación de depósito

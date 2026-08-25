@@ -2,123 +2,61 @@
 
 ## Resumen en Español
 
-Este trabajo diseña un laboratorio SOAR mínimo viable para evaluar si la automatización acelera la respuesta a
-incidentes de ransomware y mejora la consistencia en el manejo de alertas. La metodología consiste en implementar un
-playbook automatizado que integra TheHive, Cortex y Shuffle mediante Docker Compose, ejecutando pruebas con alertas
-maliciosas y benignas para medir tiempos de respuesta. Los resultados demuestran que el laboratorio es reproducible y
-permite medir métricas como MTTR, proporcionando evidencias de que la automatización reduce tiempos y estandariza
-procesos. Se concluye que el enfoque es viable para entornos de SOC y CSIRT, permitiendo comparaciones y extensiones
-futuras.
+Este trabajo diseña un laboratorio SOAR mínimo viable para evaluar si la automatización acelera la respuesta a incidentes de ransomware y mejora la consistencia en el manejo de alertas. La metodología consiste en implementar un playbook automatizado que integra TheHive, Cortex y Shuffle mediante Docker Compose, ejecutando pruebas con alertas maliciosas y benignas para medir tiempos de respuesta. Los resultados muestran una reducción del 92.3 % en MTTR (de 3600 s a 277.15 s, n=50), con 100 % de ejecuciones completadas. Se concluye que el sistema es viable para entornos de SOC y CSIRT, permitiendo comparaciones y extensiones futuras.
+
+**Palabras clave**: SOAR, ransomware, automatización de respuesta, MTTR, laboratorio reproducible.
 
 ## English Summary
 
-This work designs a minimum viable SOAR laboratory to evaluate whether automation accelerates ransomware incident
-response and improves consistency in alert handling. The methodology involves implementing an automated playbook
-integrating TheHive, Cortex, and Shuffle via Docker Compose, executing tests with malicious and benign alerts to measure
-response times. Results demonstrate that the laboratory is reproducible and allows measuring metrics such as MTTR,
-providing evidence that automation reduces times and standardizes processes. It is concluded that the approach is viable
-for SOC and CSIRT environments, enabling comparisons and future extensions.
+This work designs a minimum viable SOAR laboratory to evaluate whether automation accelerates ransomware incident response and improves consistency in alert handling. The methodology involves implementing an automated playbook integrating TheHive, Cortex, and Shuffle via Docker Compose, executing tests with malicious and benign alerts to measure response times. Results show a 92.3 % reduction in MTTR (from 3600 s to 277.15 s, n=50), with 100 % of workflows completed. It is concluded that the approach is viable for SOC and CSIRT environments, enabling comparisons and future extensions.
 
-Este trabajo diseña un laboratorio para responder a incidentes de ransomware. El objetivo es ver si la automatización
-acelera la respuesta. También examina si mejoraría la consistencia en el manejo de alertas. El trabajo se encuentra en
-los centros de operaciones de seguridad, SOC. En estas ubicaciones, la utilización simultánea de múltiples herramientas
-conlleva problemas y dificulta el seguimiento de acciones.
-
-El problema esencial está relacionado con el proceso de respuesta a alertas de ransomware. Generalmente, el manejo
-depende de tareas realizadas manualmente e intervención humana. Además, los criterios varían y existen problemas para
-lograr la trazabilidad. Estos inconvenientes reducen la calidad de la respuesta y limitan la capacidad de auditar la
-acción. Un plan de procedimientos documentado no es suficiente. Debe aplicarse en un contexto práctico para dar lugar a
-evidencias adecuadas.
-
-Se presenta una contribución central que constituye un manual automatizado dedicado al manejo de una alerta. El
-procedimiento comienza cuando el evento llega por medio de un webhook. Se verifican los datos, se crea un caso en
-TheHive e incluyen también los marcadores de compromiso. Para el enriquecimiento de la información se emplean
-herramientas como AbuseIPDB, VirusTotal y MISP, proporcionando contexto respecto a IPs, dominios o hashes. Así, con estos
-datos, el procedimiento decide activar la simulación de una contención o cerrar el caso como inofensivo. En ese momento,
-se registra el resultado en TheHive y se comunica.
-
-El laboratorio está diseñado para un proyecto independiente. Evita dependencias complicadas y utiliza Docker Compose
-para replicar el ambiente. La arquitectura combina TheHive, Cortex y Shuffle como servicios clave. El código está
-organizado en bloques separando la lógica de negocio de la infraestructura. Esta separación facilita las pruebas y
-reduce la adhesión.
-
-El despliegue se gestiona con varios archivos Docker Compose. Esta estrategia simplifica la creación de componentes aislados durante cada prueba. Las redes se segmentan para limitar la exposición entre servicios.
-
-La validación ejecuta el playbook E2E en dos escenarios (malicioso y benigno), midiendo el tiempo desde la alerta hasta la contención simulada o el cierre benigno. El componente de análisis de KPIs procesa los logs de ejecución, calcula estadísticas y percentiles, y genera las métricas que alimentan el dashboard de Grafana.
+**Keywords**: SOAR, ransomware, incident response automation, MTTR, reproducible laboratory.
 
 ## 1.1. Motivación
 
-Los incidentes de ransomware han aumentado en los últimos años. El Global Threat Intelligence Report 2024 indica un
-incremento del 67% en incidentes de seguridad. Según el informe, el ransomware representa el 23% del total [18]. Aun
-así, en muchos entornos la gestión de estos incidentes sigue basándose en tareas manuales. Esto genera retrasos, aumenta
-la carga del analista y dificulta conservar una traza del proceso.
+Los incidentes de ransomware han aumentado en los últimos años. El Global Threat Intelligence Report 2024 indica un incremento del 67 % en incidentes de seguridad. Según el informe, el ransomware representa el 23 % del total (CrowdStrike, 2024). El Verizon DBIR confirma esta tendencia, situando el ransomware entre las amenazas más frecuentes en brechas verificadas (Verizon, 2024). Aun así, en muchos entornos la gestión de estos incidentes sigue basándose en tareas manuales. Esto genera retrasos, aumenta la carga del analista y dificulta conservar una traza del proceso.
 
-En la práctica, una alerta de ransomware exige varias tareas. Primero se valida la información. Luego se abre un caso,
-se añaden los observables y se consulta información contextual. Solo entonces se toma una decisión sobre la contención.
-Cuando estas actividades se ejecutan manualmente, el tiempo de respuesta aumenta. También aparecen diferencias entre
-analistas, lo que dificulta la mejora continua.
+En la práctica, una alerta de ransomware exige varias tareas. Primero se valida la información. Luego se abre un caso, se añaden los observables y se consulta información contextual. Solo entonces se toma una decisión sobre la contención.
+Cuando estas actividades se ejecutan manualmente, el tiempo de respuesta aumenta. También aparecen diferencias entre analistas, lo que dificulta la mejora continua. La **Figura 1.1** anticipa la magnitud de esta mejora: el MTTR pasa de 3600 s en la respuesta manual a 277.15 s con la respuesta automatizada SOAR, una reducción del 92.3 %. El baseline manual de 3600 s (1 hora) es conservador frente a los datos de la industria: CrowdStrike fija como benchmark ideal 60 minutos para contener (regla 1-10-60), pero la media real observada en su survey es de 16 horas (CrowdStrike, 2021). ReliaQuest reporta un MTTR tradicional de 2.3 días sin automatización (ReliaQuest, 2024), y la SANS SOC Survey 2025 sitúa el tiempo mediano de triaje y escalado de alertas en 260 minutos (SANS Institute, 2025).
 
-La fragmentación de herramientas obliga al analista a usar varios sistemas a la vez [2]. Algunas tareas se repiten en
-casi todos los casos, como triage, enriquecimiento o actualización de tickets. Si se hacen a mano, consumen tiempo y
-aumentan los errores [11]. Sin un flujo estandarizado, es difícil medir la respuesta y comparar ejecuciones [85].
+![Figura 1.1: Comparación MTTR manual vs automatizado](figures/Fig1_3_mttr_comparison.png)
 
-La literatura sobre respuesta a incidentes apunta en esa dirección. NIST SP 800-61 y los estudios sobre plataformas SOAR
-destacan el valor de centralizar datos, análisis y respuesta en un mismo flujo. Esta integración puede reducir tiempos y
-limitar errores de la intervención manual [11, 12].
+**Figura 1.1**: Comparación del MTTR entre la respuesta manual (3600 s) y la respuesta automatizada SOAR (277.15 s),
+que muestra una reducción del 92.3 %.
 
-En ransomware, el tiempo entre detección y contención condiciona el daño. El cifrado de archivos puede propagarse rápido
-a través de unidades compartidas [25]. Por ello, un entorno controlado y reproducible sirve para probar configuraciones
-del flujo y comparar ejecuciones bajo las mismas condiciones.
+La fragmentación de herramientas obliga al analista a usar varios sistemas a la vez. Algunas tareas se repiten en casi todos los casos, como triage, enriquecimiento o actualización de tickets. Si se hacen a mano, consumen tiempo y aumentan los errores (Kinyua & Awuah, 2021). Sin un flujo estandarizado, es difícil medir la respuesta y comparar ejecuciones (Stevens et al., 2022).
 
-Un laboratorio mínimo viable permite estudiar cómo un playbook integra herramientas y automatiza tareas sin los riesgos
-de un entorno productivo. En este trabajo, Cortex actúa como motor de análisis centralizando la consulta de observables
-mediante APIs. Es un patrón usado en contextos de SOC y CSIRT que aquí se evalúa en un entorno acotado.
+La literatura sobre respuesta a incidentes apunta en esa dirección. NIST SP 800-61 (NIST, 2023) y los estudios sobre plataformas SOAR destacan el valor de centralizar datos, análisis y respuesta en un mismo flujo. Esta integración puede reducir tiempos y limitar errores de la intervención manual (Kinyua & Awuah, 2021; Mohammad & Lakshmisri, 2018).
+
+En ransomware, el tiempo entre detección y contención condiciona el daño. El cifrado de archivos puede propagarse rápido a través de unidades compartidas (CISA, 2023). Por ello, un entorno controlado y reproducible sirve para probar configuraciones del flujo y comparar ejecuciones bajo las mismas condiciones.
+
+Un laboratorio mínimo viable permite estudiar cómo un playbook integra herramientas y automatiza tareas sin los riesgos de un entorno productivo. En este trabajo, Cortex actúa como motor de análisis centralizando la consulta de observables mediante APIs. Es un patrón usado en contextos de SOC y CSIRT que aquí se evalúa en un entorno acotado.
 
 ## 1.2. Planteamiento del problema
 
 ### Descripción del problema
 
-En muchos SOC, la gestión de incidentes de ransomware se basa en procesos manuales, integraciones parciales y criterios
-no estandarizados [2, 11]. Esta situación incrementa los tiempos de respuesta, introduce variabilidad y dificulta
-generar evidencias completas. Como la demora en la contención amplifica el impacto del cifrado, esa variabilidad puede
-afectar a la severidad del incidente [25].
+En muchos SOC, la gestión de incidentes de ransomware se basa en procesos manuales, integraciones parciales y criterios no estandarizados (Kinyua & Awuah, 2021). Esta situación incrementa los tiempos de respuesta, introduce variabilidad y dificulta generar evidencias completas. Como la demora en la contención amplifica el impacto del cifrado, esa variabilidad puede afectar a la severidad del incidente (CISA, 2023).
 
-La automatización mediante plataformas SOAR y playbooks aparece en la literatura como una alternativa para reducir carga
-manual y ordenar los procesos de decisión [11, 12]. Esto no implica eliminar la supervisión humana, especialmente en
-acciones de mayor impacto. Pero su adopción plantea dificultades como la complejidad de los entornos productivos, las
-licencias comerciales y la dificultad de medir su impacto en condiciones controladas.
+La automatización mediante plataformas SOAR y playbooks aparece en la literatura como una alternativa para reducir carga manual y ordenar los procesos de decisión (Kinyua & Awuah, 2021; Mohammad & Lakshmisri, 2018). Esto no implica eliminar la supervisión humana, especialmente en acciones de mayor consecuencia. Pero su adopción plantea dificultades como la complejidad de los entornos productivos, las licencias comerciales y la dificultad de medir su efecto en condiciones controladas.
+
+### Pregunta de investigación
+
+La pregunta que guía este trabajo es:
+
+> **¿En qué medida un playbook SOAR automatizado, desplegado en un laboratorio reproducible basado en herramientas
+> open source, reduce el MTTR y mejora la consistencia de la respuesta a alertas de ransomware respecto a la respuesta
+> manual?**
+
+Esta pregunta se desagrega en tres aspectos verificables: (1) la reducción cuantitativa del tiempo de respuesta (MTTR), (2) la mejora de la consistencia mediante un flujo estandarizado y trazable, y (3) la viabilidad técnica de un entorno reproducible con herramientas open source. La hipótesis de trabajo, detallada en el Capítulo 3, sostiene que la automatización SOAR reduce el MTTR en al menos un 50 % y mejora la consistencia frente a los procesos manuales.
 
 ### Propuesta de solución
 
-Este trabajo propone el diseño e implementación de un laboratorio SOAR mínimo viable, reproducible y autocontenido que
-materialice un playbook orientado a ransomware. No se pretende desplegar una solución de producción completa. El
-objetivo es mostrar cómo un flujo automatizado puede integrar la recepción de alertas, la normalización de datos, la
-gestión de casos, el enriquecimiento de observables y la contención simulada de manera coherente y trazable.
+Este trabajo propone el diseño e implementación de un laboratorio SOAR mínimo viable, reproducible y autocontenido que materialice un playbook orientado a ransomware. No se pretende desplegar una solución de producción completa. El objetivo es mostrar cómo un flujo automatizado puede combinar la recepción de alertas, la normalización de datos, la gestión de casos, el enriquecimiento de observables y la contención simulada de manera coherente y trazable.
 
-Al ser reproducible, el laboratorio permite evaluar cambios del playbook sobre una misma línea base. Esto facilita
-comparaciones y deja margen para extensiones futuras.
+Al ser reproducible, el laboratorio permite evaluar cambios del playbook sobre una misma línea base. Esto facilita comparaciones y deja margen para extensiones futuras. Los pasos operativos para reproducir el experimento, los casos de error esperados y los criterios de verificación se detallan en el Capítulo 3 (Metodología).
 
-### Pasos operativos para reproducir el problema y controlar la hipótesis
-
-1. **Definir la línea base manual.** Simular la recepción de una alerta de ransomware y contabilizar el tiempo empleado en validación, apertura de caso, enriquecimiento, decisión y cierre.
-2. **Implementar el laboratorio.** Clonar el repositorio, ejecutar `make generate-secrets` y `make up` siguiendo `docs/getting_started/installation_guide.md`.
-3. **Ejecutar el playbook E2E.** Lanzar `pytest tests/e2e/` para las dos líneas de alerta: maliciosa y benigna.
-4. **Medir MTTR.** Extraer `mttr_seconds` del índice `soar-metrics` o del cálculo del workflow.
-5. **Comparar manual vs automatizado.** Evaluar si el MTTR y la consistencia mejoran respecto a la línea base manual.
-
-### Casos de error esperados
-
-- Falta de recursos (`vm.max_map_count`, memoria) impide el arranque de Elasticsearch.
-- Errores de DNS entre contenedores hacen que los workers de Shuffle no resuelvan `shuffle-backend`.
-- La API key de Shuffle cambia tras `make reset` y queda desactualizada en `.env.full`.
-- Credenciales con `@` o `!` provocan errores de escaping en MariaDB u otros servicios.
-
-### Criterios de verificación
-
-- `make up` finaliza con todos los contenedores `healthy` según `docker compose ps`.
-- `pytest tests/e2e/` devuelve el 100 % de tests PASSED.
-- El dashboard de Grafana muestra métricas (`mttr_seconds`, `p50`, `p90`) y confirma p50 < 120 s.
-- Los logs del playbook y las entradas en TheHive/Cortex demuestran trazabilidad completa de la alerta.
+Los resultados obtenidos confirman la hipótesis: el playbook SOAR reduce el MTTR medio en un 92.3 % (de 3600 s estimados a 277.15 s medidos sobre 50 ejecuciones), superando el objetivo del 50 %. La consistencia mejora estructuralmente, pues todas las ejecuciones siguen el mismo flujo trazable. El entorno reproducible con herramientas open source resulta viable técnicamente (10/10 servicios healthy, 50/50 workflows completados). Dos umbrales ambiciosos de percentiles (P50 ≤ 120 s, P90 ≤ 180 s) no se alcanzaron en el conjunto completo, lo que se discute junto a las limitaciones del estudio en el Capítulo 5.
 
 ## 1.3. Estructura del trabajo
 
@@ -129,6 +67,10 @@ El documento está compuesto por cinco capítulos.
 - Capítulo 3 presenta los objetivos y método de la investigación.
 - Capítulo 4 detalla los elementos técnicos del ensayo, incluyendo requisitos, arquitectura, implementación del playbook
   y resultados.
-- Capítulo 5 presenta los hallazgos y debatir las limitaciones del estudio. Además, formulará sugerencias para entornos
+- Capítulo 5 presenta los hallazgos y debate las limitaciones del estudio. Además, formula sugerencias para entornos
   que deseen aplicar capacidades SOAR similares.
 - Anexo A contiene la documentación técnica requerida para reproducir el ensayo.
+- Anexo B detalla el workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python).
+- Anexo F2 consolida la validación experimental (Quality Score 92.2/100, HPR 96.0/100).
+- Anexo I describe la estrategia de testing (2041 tests, pirámide, quality gates).
+- Anexo J recopila los diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid).

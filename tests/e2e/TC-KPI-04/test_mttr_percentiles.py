@@ -5,94 +5,65 @@ Validates that MTTR percentiles meet SLA objectives: p50 <= 120s, p90 <= 180s.
 """
 
 import json
-import os
-import pytest
 import sys
-from datetime import datetime, timezone, timedelta
+import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
-ARTIFACTS_DIR = Path("/app/results") if Path("/app").exists() else REPO_ROOT / "artifacts"
-ENV_FULL = Path("/app/.env.full") if Path("/app/.env.full").exists() else REPO_ROOT / ".env.full"
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
-sys.path.insert(0, str(REPO_ROOT / "src"))
-
-from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
 from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
 from soar_lab.domain.statistical_calculator import StatisticalCalculator
+from tests.e2e.base import E2EBaseTest
 
 
-def _load_env() -> dict:
-    env_vars = {
-        "ES_URL": os.environ.get("ES_URL"),
-        "ELASTICSEARCH_URL": os.environ.get("ELASTICSEARCH_URL"),
-    }
-    result = {k: v for k, v in env_vars.items() if v is not None}
+class TestMTTRPercentiles(E2EBaseTest):
+    """TC-KPI-04 — Validate MTTR percentiles meet SLA objectives.
 
-    if not ENV_FULL.exists():
-        return result
-
-    for line in ENV_FULL.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, _, v = line.partition("=")
-            k = k.strip()
-            v = v.strip()
-            if k not in result:
-                result[k] = v
-    return result
-
-
-class TestMTTRPercentiles:
-    """
-    TC-KPI-04 — Validate MTTR percentiles meet SLA objectives.
     Objectives: p50 <= 120s, p90 <= 180s.
     """
 
+    tc_id = "TC-KPI-04"
+
     def setup_method(self, method):
-        """Set up test clients and environment"""
-        t0 = datetime.now(timezone.utc)
-        (ARTIFACTS_DIR / "results").mkdir(parents=True, exist_ok=True)
-        (ARTIFACTS_DIR / "logs").mkdir(parents=True, exist_ok=True)
-
-        env = _load_env()
-        es_url = env.get("ES_URL") or env.get("ELASTICSEARCH_URL", "http://elasticsearch:9200")
-        es = ElasticsearchClient(base_url=es_url)
-        analyzer = KPIAnalyzer(StatisticalCalculator())
-
-        self.t0 = t0
-        self.es = es
-        self.analyzer = analyzer
+        super().setup_method(method)
+        self.t0 = datetime.now(UTC)
+        self.analyzer = KPIAnalyzer(StatisticalCalculator())
         self._results = []
 
-
     def _log(self, msg: str):
-        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         line = f"[{ts}] TC-KPI-04 {msg}"
-        sys.stdout.buffer.write((line + "\n").encode("utf-8", errors="replace"))
-        sys.stdout.buffer.flush()
-        with open(ARTIFACTS_DIR / "logs" / "notify.log", "a", encoding="utf-8") as f:
-            f.write(line + "\n")
+        print(line)
 
     def test_mttr_percentiles(self):
         """Validate MTTR percentiles meet SLA objectives."""
         self._log("=== Test: MTTR Percentiles ===")
 
+        # Generate metrics data by sending an alert first
+        self._log("STEP 0: Sending alert to generate MTTR metrics")
+        payload = self.build_alert_payload()
+        alert_id = payload.get("alert_id", "")
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        self.validate_workflow_execution(execution, alert_id=alert_id)
+        # Allow metrics to be indexed
+        time.sleep(5)
+
         # Query MTTR metrics from Elasticsearch
         query = {
-            "range": {
-                "@timestamp": {
-                    "gte": (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
-                }
-            }
+            "range": {"@timestamp": {"gte": (datetime.now(UTC) - timedelta(hours=24)).isoformat()}}
         }
 
         results = self.es.search(query=query, index="soar-metrics", size=10000)
         assert isinstance(results, dict), "ES search results must be a dict"
         metrics_data = [hit.get("_source", {}) for hit in results.get("hits", {}).get("hits", [])]
 
-        if not metrics_data:
-            pytest.skip("No MTTR data available in soar-metrics index")
+        assert len(metrics_data) > 0, (
+            "No MTTR data available in soar-metrics index — "
+            "metrics should be generated after workflow execution"
+        )
 
         # Extract MTTR values
         mttr_values = []
@@ -104,8 +75,10 @@ class TestMTTRPercentiles:
                 except (ValueError, TypeError):
                     pass
 
-        if not mttr_values:
-            pytest.skip("No valid MTTR values found in metrics")
+        assert len(mttr_values) > 0, (
+            "No valid MTTR values found in metrics — "
+            "mttr_seconds field missing from metrics documents"
+        )
 
         self._log(f"Found {len(mttr_values)} MTTR values")
 
@@ -129,7 +102,7 @@ class TestMTTRPercentiles:
         assert isinstance(p99, (int, float)), "P99 must be numeric"
         assert isinstance(mean, (int, float)), "Mean must be numeric"
 
-        self._log(f"MTTR Statistics:")
+        self._log("MTTR Statistics:")
         self._log(f"  Min: {min_val:.2f}s")
         self._log(f"  Mean: {mean:.2f}s")
         self._log(f"  P50: {p50:.2f}s")
@@ -149,18 +122,20 @@ class TestMTTRPercentiles:
         assert p99 > p95, "P99 should be greater than P95"
         self._log("✓ MTTR percentiles calculation validated - logic correct and SLA met")
 
-        self._results.append({
-            "test": "mttr_percentiles",
-            "p50": p50,
-            "p90": p90,
-            "p95": p95,
-            "p99": p99,
-            "mean": mean,
-            "min": min_val,
-            "max": max_val,
-            "p50_ok": p50 <= 120,
-            "p90_ok": p90 <= 180
-        })
+        self._results.append(
+            {
+                "test": "mttr_percentiles",
+                "p50": p50,
+                "p90": p90,
+                "p95": p95,
+                "p99": p99,
+                "mean": mean,
+                "min": min_val,
+                "max": max_val,
+                "p50_ok": p50 <= 120,
+                "p90_ok": p90 <= 180,
+            }
+        )
 
     def _step_save_report(self, elapsed: float):
         report = {
@@ -168,9 +143,12 @@ class TestMTTRPercentiles:
             "scenario": "mttr_percentiles",
             "elapsed_seconds": elapsed,
             "results": self._results,
-            "success": all(r.get("p50_ok", False) and r.get("p90_ok", False) for r in self._results),
+            "success": all(
+                r.get("p50_ok", False) and r.get("p90_ok", False) for r in self._results
+            ),
         }
-        report_file = ARTIFACTS_DIR / "results" / "TC-KPI-04_percentiles_report.json"
+        report_file = Path("results") / "TC-KPI-04_percentiles_report.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
         report_file.write_text(json.dumps(report, indent=2, default=str))
         self._log(f"+ Report saved: {report_file}")
 
@@ -180,8 +158,14 @@ class TestMTTRPercentiles:
 
         self.test_mttr_percentiles()
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        # Validate that results were collected and all have p50_ok: True
+        assert len(self._results) > 0, "No MTTR percentile results were recorded"
+        failed = [r for r in self._results if not r.get("p50_ok", False)]
+        assert (
+            not failed
+        ), f"{len(failed)}/{len(self._results)} MTTR percentile checks failed p50 SLA: {failed}"
+
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-KPI-04 COMPLETED ===")
         self._step_save_report(elapsed)

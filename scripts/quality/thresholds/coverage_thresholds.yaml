@@ -1,0 +1,10 @@
+# Test coverage thresholds (coverage.py / pytest-cov)
+min_global_coverage: 85  # fail if global line coverage below this %
+min_file_coverage: 75  # fail if any file below this %
+min_critical_module_coverage: 90  # fail if critical module below this %
+min_global_branch_coverage: 70  # fail if global branch coverage below this %
+min_critical_branch_coverage: 80  # fail if critical module branch coverage below this %
+critical_modules:
+  - src/soar_lab/domain/
+  - src/soar_lab/application/
+  - src/soar_lab/security/

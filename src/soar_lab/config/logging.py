@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - Centralized Logging Configuration
+"""SOAR Ransomware Lab - Centralized Logging Configuration.
+
 Single place to configure logging for all modules.
 """
 
+import logging
 import logging.config
 import logging.handlers
 import os
 import sys
 from pathlib import Path
-from typing import Optional
-
-import logging
 
 _TEXT_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 _JSON_FORMAT = (
@@ -25,6 +23,14 @@ _LOGGING_YAML = Path(__file__).parents[3] / "infra" / "logging" / "logging.yaml"
 
 
 def _make_formatter(log_format: str) -> logging.Formatter:
+    """Create a logging formatter for the given format name.
+
+    Args:
+        log_format: ``"json"`` for JSON output, any other value for text.
+
+    Returns:
+        A configured ``logging.Formatter`` instance.
+    """
     fmt = _JSON_FORMAT if log_format.lower() == "json" else _TEXT_FORMAT
     return logging.Formatter(fmt=fmt, datefmt=_DATEFMT)
 
@@ -32,7 +38,7 @@ def _make_formatter(log_format: str) -> logging.Formatter:
 def setup_logging(
     log_level: str = "INFO",
     log_format: str = "text",
-    log_dir: Optional[Path] = None,
+    log_dir: Path | None = None,
     log_filename: str = "soar_lab.log",
 ) -> None:
     """Configure logging for the entire application.

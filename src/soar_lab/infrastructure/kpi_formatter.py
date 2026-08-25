@@ -6,7 +6,7 @@ allowing the application layer to remain format-agnostic.
 
 import csv
 import io
-from typing import Dict, Any
+from typing import Any
 
 from soar_lab.config.logging import get_logger
 
@@ -14,11 +14,13 @@ logger = get_logger(__name__)
 
 
 class CSVKPIFormatter:
-    """Infrastructure implementation of KPIFormatter port for CSV formatting."""
+    """Infrastructure implementation of KPIFormatter port for CSV.
 
-    def format_csv(self, metrics: Dict[str, Any]) -> str:
-        """
-        Format KPI metrics as CSV string.
+    formatting.
+    """
+
+    def format_csv(self, metrics: dict[str, Any]) -> str:
+        """Format KPI metrics as CSV string.
 
         Args:
             metrics: KPI metrics dictionary

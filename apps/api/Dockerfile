@@ -16,9 +16,14 @@ RUN apt-get update && apt-get install -y \
 # Copy package definition and source first for dependency resolution
 COPY pyproject.toml .
 COPY src ./src
+COPY scripts ./scripts
 
-# Install the package plus test dependencies (container is used for running tests)
-RUN pip install --no-cache-dir .[test]
+# Install the package plus test, quality and reports dependencies (container is used for tests and reports)
+# --timeout: increase per-request timeout for slow networks
+# --retries: retry on transient failures
+# quality: ruff, bandit, mutmut, etc. for `make quality` and `make mutation`
+# reports: matplotlib + numpy for chart generation in e2e_report
+RUN pip install --no-cache-dir --timeout 300 --retries 5 .[test,quality,reports]
 
 # Copy test suite (after install so test-only changes don't invalidate the package layer)
 COPY tests ./tests
@@ -26,9 +31,10 @@ COPY tests ./tests
 # Copy static API docs used by main.py root/static-docs handlers
 COPY apps/api/api-docs.html ./api-docs.html
 COPY apps/api/docs ./docs
+COPY .env.example ./.env.example
 
 # Create directories
-RUN mkdir -p /app/results /app/backups
+RUN mkdir -p /app/results /app/backups /app/reports/validation/results
 
 # Setup user
 RUN useradd --create-home --shell /bin/bash app \

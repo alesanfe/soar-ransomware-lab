@@ -1,11 +1,16 @@
-"""
-KPI-based Alerting System
-Monitors KPIs and sends alerts when thresholds are exceeded.
+"""KPI-based Alerting System Monitors KPIs and sends alerts when thresholds are.
+
+exceeded.
 """
 
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
+from soar_lab.common.constants import (
+    DEFAULT_KPI_FETCH_TIMEOUT,
+    DEFAULT_KPI_SEARCH_SIZE,
+    METRICS_INDEX,
+)
 from soar_lab.config.logging import get_logger
 
 logger = get_logger(__name__)
@@ -14,9 +19,8 @@ logger = get_logger(__name__)
 class KPIAlertManager:
     """Manages KPI-based alerts."""
 
-    def __init__(self, elasticsearch_client, webhook_url: Optional[str] = None):
-        """
-        Initialize with Elasticsearch client and optional webhook URL.
+    def __init__(self, elasticsearch_client: object, webhook_url: str | None = None) -> None:
+        """Initialize with Elasticsearch client and optional webhook URL.
 
         Args:
             elasticsearch_client: Elasticsearch client instance
@@ -30,12 +34,11 @@ class KPIAlertManager:
             "mttr_seconds": 120,  # Alert if MTTR > 2 minutes
             "success_rate_percent": 90,  # Alert if success rate < 90%
             "health_score": 70,  # Alert if health score < 70
-            "service_success_rate": 85  # Alert if service success rate < 85%
+            "service_success_rate": 85,  # Alert if service success rate < 85%
         }
 
-    def check_mttr_threshold(self, hours: int = 1) -> Dict[str, Any]:
-        """
-        Check if MTTR exceeds threshold.
+    def check_mttr_threshold(self, hours: int = 1) -> dict[str, Any]:
+        """Check if MTTR exceeds threshold.
 
         Args:
             hours: Time period in hours
@@ -46,13 +49,11 @@ class KPIAlertManager:
         try:
             query = {
                 "range": {
-                    "@timestamp": {
-                        "gte": (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
-                    }
+                    "@timestamp": {"gte": (datetime.now(UTC) - timedelta(hours=hours)).isoformat()}
                 }
             }
 
-            results = self.es.search(query=query, index="soar-metrics", size=10000)
+            results = self.es.search(query=query, index=METRICS_INDEX, size=DEFAULT_KPI_SEARCH_SIZE)
             metrics = results.get("hits", {}).get("hits", [])
 
             mttr_values = []
@@ -74,7 +75,7 @@ class KPIAlertManager:
                     "value": avg_mttr,
                     "threshold": threshold,
                     "message": f"MTTR exceeded threshold: {avg_mttr:.2f}s > {threshold}s",
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
                 self._send_alert(alert)
                 return alert
@@ -83,16 +84,15 @@ class KPIAlertManager:
                 "status": "ok",
                 "metric": "mttr_seconds",
                 "value": avg_mttr,
-                "threshold": threshold
+                "threshold": threshold,
             }
 
         except Exception as e:
             logger.error(f"Error checking MTTR threshold: {e}")
             return {"status": "error", "message": str(e)}
 
-    def check_service_health(self, hours: int = 1) -> Dict[str, Any]:
-        """
-        Check if service success rates exceed threshold.
+    def check_service_health(self, hours: int = 1) -> dict[str, Any]:
+        """Check if service success rates exceed threshold.
 
         Args:
             hours: Time period in hours
@@ -107,13 +107,13 @@ class KPIAlertManager:
             # Get metrics data from ES
             query = {
                 "range": {
-                    "@timestamp": {
-                        "gte": (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
-                    }
+                    "@timestamp": {"gte": (datetime.now(UTC) - timedelta(hours=hours)).isoformat()}
                 }
             }
-            results = self.es.search(query=query, index="soar-metrics", size=10000)
-            metrics_data = [hit.get("_source", {}) for hit in results.get("hits", {}).get("hits", [])]
+            results = self.es.search(query=query, index=METRICS_INDEX, size=DEFAULT_KPI_SEARCH_SIZE)
+            metrics_data = [
+                hit.get("_source", {}) for hit in results.get("hits", {}).get("hits", [])
+            ]
 
             if not metrics_data:
                 return {"status": "no_data", "message": "No metrics data available"}
@@ -132,8 +132,11 @@ class KPIAlertManager:
                         "metric": f"service_success_rate_{service}",
                         "value": success_rate,
                         "threshold": threshold,
-                        "message": f"{service} success rate below threshold: {success_rate}% < {threshold}%",
-                        "timestamp": datetime.now(timezone.utc).isoformat()
+                        "message": (
+                            f"{service} success rate below threshold: "
+                            f"{success_rate}% < {threshold}%"
+                        ),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                     alerts.append(alert)
                     self._send_alert(alert)
@@ -146,21 +149,19 @@ class KPIAlertManager:
             logger.error(f"Error checking service health: {e}")
             return {"status": "error", "message": str(e)}
 
-    def check_health_score(self) -> Dict[str, Any]:
-        """
-        Check if system health score exceeds threshold.
+    def check_health_score(self) -> dict[str, Any]:
+        """Check if system health score exceeds threshold.
 
         Returns:
             Dict with alert status
         """
         try:
             # Get latest health score from metrics
-            query = {
-                "match": {"metric_type": "health_score"}
-            }
+            query = {"match": {"metric_type": "health_score"}}
 
-            results = self.es.search(query=query, index="soar-metrics", size=1,
-                                     sort=[{"@timestamp": {"order": "desc"}}])
+            results = self.es.search(
+                query=query, index=METRICS_INDEX, size=1, sort=[{"@timestamp": {"order": "desc"}}]
+            )
             hits = results.get("hits", {}).get("hits", [])
 
             if not hits:
@@ -176,7 +177,7 @@ class KPIAlertManager:
                     "value": health_score,
                     "threshold": threshold,
                     "message": f"Health score below threshold: {health_score} < {threshold}",
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
                 self._send_alert(alert)
                 return alert
@@ -185,16 +186,15 @@ class KPIAlertManager:
                 "status": "ok",
                 "metric": "health_score",
                 "value": health_score,
-                "threshold": threshold
+                "threshold": threshold,
             }
 
         except Exception as e:
             logger.error(f"Error checking health score: {e}")
             return {"status": "error", "message": str(e)}
 
-    def check_all_thresholds(self, hours: int = 1) -> Dict[str, Any]:
-        """
-        Check all KPI thresholds.
+    def check_all_thresholds(self, hours: int = 1) -> dict[str, Any]:
+        """Check all KPI thresholds.
 
         Args:
             hours: Time period in hours
@@ -203,26 +203,24 @@ class KPIAlertManager:
             Dict with all check results
         """
         results = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {
                 "mttr": self.check_mttr_threshold(hours),
                 "service_health": self.check_service_health(hours),
-                "health_score": self.check_health_score()
-            }
+                "health_score": self.check_health_score(),
+            },
         }
 
         # Overall status
         all_ok = all(
-            check.get("status") in ("ok", "no_data")
-            for check in results["checks"].values()
+            check.get("status") in ("ok", "no_data") for check in results["checks"].values()
         )
         results["overall_status"] = "ok" if all_ok else "alert"
 
         return results
 
-    def _send_alert(self, alert: Dict[str, Any]) -> None:
-        """
-        Send alert via webhook if configured.
+    def _send_alert(self, alert: dict[str, Any]) -> None:
+        """Send alert via webhook if configured.
 
         Args:
             alert: Alert data
@@ -233,7 +231,8 @@ class KPIAlertManager:
 
         try:
             import requests
-            requests.post(self.webhook_url, json=alert, timeout=10)
+
+            requests.post(self.webhook_url, json=alert, timeout=DEFAULT_KPI_FETCH_TIMEOUT)
             logger.info(f"Alert sent: {alert.get('message')}")
         except Exception as e:
             logger.error(f"Failed to send alert: {e}")

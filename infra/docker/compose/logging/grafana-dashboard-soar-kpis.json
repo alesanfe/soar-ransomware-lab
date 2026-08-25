@@ -114,10 +114,6 @@
           {
             "expr": "rate(service_success_total{service=\"elasticsearch\"}[5m]) / rate(service_total{service=\"elasticsearch\"}[5m]) * 100",
             "legendFormat": "Elasticsearch"
-          },
-          {
-            "expr": "rate(service_success_total{service=\"wazuh\"}[5m]) / rate(service_total{service=\"wazuh\"}[5m]) * 100",
-            "legendFormat": "Wazuh"
           }
         ],
         "gridPos": {

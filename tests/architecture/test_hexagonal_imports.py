@@ -1,13 +1,13 @@
-"""Architecture test: domain layer must not import infrastructure or interfaces.
+"""Architecture test: domain layer must not import infrastructure or
+interfaces.
 
-FASE 56 — N013: Añadir pruebas arquitectónicas automáticas que impidan imports
-desde domain hacia infrastructure o interfaces.
+FASE 56 — N013: Añadir pruebas arquitectónicas automáticas que impidan
+imports desde domain hacia infrastructure o interfaces.
 """
 
 from __future__ import annotations
 
 import ast
-import sys
 from pathlib import Path
 
 import pytest
@@ -31,19 +31,18 @@ def _get_imports(source: str) -> tuple[set[str], set[str]]:
 @pytest.mark.unit
 @pytest.mark.architecture
 def test_domain_does_not_import_infrastructure_or_interfaces():
-    """Domain packages must not depend on infrastructure, interfaces or other outer layers."""
+    """Domain packages must not depend on infrastructure, interfaces or other
+    outer layers."""
     project_root = Path(__file__).resolve().parents[2]
     domain_dir = project_root / "src" / "soar_lab" / "domain"
     assert domain_dir.exists(), f"Domain directory not found: {domain_dir}"
 
-    forbidden_top_level = {
-        "soar_lab",
-    }
     forbidden_full_prefixes = {
         "soar_lab.infrastructure",
         "soar_lab.interfaces",
         "soar_lab.application",
         "soar_lab.scripts",
+        "scripts",
         "soar_lab.api",
         "soar_lab.auth",
         "soar_lab.config",

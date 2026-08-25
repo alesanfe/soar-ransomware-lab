@@ -5,19 +5,18 @@ It follows the Composition Root pattern from hexagonal architecture.
 """
 
 from fastapi import FastAPI
-from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
-from soar_lab.infrastructure.external.integrations.wazuh_client import WazuhClient
-from soar_lab.infrastructure.monitoring.health_check_adapter import HTTPHealthCheckAdapter
-from soar_lab.infrastructure.monitoring.system_metrics_driver import SystemMetricsDriver
-from soar_lab.infrastructure.external.integrations.cortex_client import CortexClient
-from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
-from soar_lab.infrastructure.external.integrations.misp_client import MISPClient
-from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
-from typing import Optional
 
+from scripts.test_service import TestService  # pylint: disable=import-error,no-name-in-module
 from soar_lab.application.use_cases.analytics_service import AnalyticsService
-from soar_lab.application.use_cases.auth_service import AuthService
+from soar_lab.application.use_cases.auth_service import AuthService, set_default_factories
 from soar_lab.application.use_cases.backup_service import BackupService
+from soar_lab.common.constants import (
+    SERVICE_CORTEX,
+    SERVICE_ELASTICSEARCH,
+    SERVICE_MISP,
+    SERVICE_SHUFFLE,
+    SERVICE_THEHIVE,
+)
 from soar_lab.config.logging import setup_logging
 from soar_lab.config.settings import create_settings
 from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
@@ -27,37 +26,50 @@ from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
 from soar_lab.infrastructure.file_log_reader import FileLogReader
 from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
 from soar_lab.infrastructure.http_client import AioHTTPClient
+from soar_lab.infrastructure.integrations.cortex.client import CortexClient
+from soar_lab.infrastructure.integrations.elasticsearch.client import (
+    ElasticsearchClient,
+)
+from soar_lab.infrastructure.integrations.misp.client import MISPClient
+from soar_lab.infrastructure.integrations.shuffle.client import ShuffleClient
+from soar_lab.infrastructure.integrations.thehive.client import TheHiveClient
 from soar_lab.infrastructure.jwt_token_provider import JWTTokenProvider
 from soar_lab.infrastructure.kpi_formatter import CSVKPIFormatter
 from soar_lab.infrastructure.log_parser import ExecutionLogParser
+from soar_lab.infrastructure.monitoring.health_check_adapter import (
+    HTTPHealthCheckAdapter,
+)
 from soar_lab.infrastructure.monitoring.health_service import HealthService
+from soar_lab.infrastructure.monitoring.system_metrics_driver import SystemMetricsDriver
 from soar_lab.infrastructure.path_service import PathService
-from soar_lab.infrastructure.persistence.sqlite_alert_repository import SqliteAlertRepository
+from soar_lab.infrastructure.persistence.sqlite_alert_repository import (
+    SqliteAlertRepository,
+)
 from soar_lab.infrastructure.pytest_output_parser import PytestOutputParser
 from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner
 from soar_lab.infrastructure.subprocess_runner import SubprocessRunner
 from soar_lab.infrastructure.tar_backup_driver import TarBackupDriver
 from soar_lab.infrastructure.websocket_manager import ConnectionManager
-from soar_lab.scripts.test_service import TestService
 
 
 class CompositionRoot:
     """Composition root for dependency injection."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the composition root with all dependencies."""
         settings = create_settings()
         self.config_provider = InfrastructureConfigProvider(settings)
 
         from pathlib import Path
-        _log_dir_str = self.config_provider.get('log_dir', '')
+
+        _log_dir_str = self.config_provider.get("log_dir", "")
         setup_logging(
-            log_level=self.config_provider.get('log_level', 'INFO'),
-            log_format=self.config_provider.get('log_format', 'text'),
+            log_level=self.config_provider.get("log_level", "INFO"),
+            log_format=self.config_provider.get("log_format", "text"),
             log_dir=Path(_log_dir_str) if _log_dir_str else None,
         )
 
-        base_dir_str = self.config_provider.get('base_dir')
+        base_dir_str = self.config_provider.get("base_dir")
         if not base_dir_str:
             raise ValueError("base_dir must be provided in config_provider")
         base_dir = Path(base_dir_str)
@@ -67,13 +79,16 @@ class CompositionRoot:
         self.path_service.ensure_directories()
 
         self.storage = FilesystemStorage(config_provider=self.config_provider)
-        self.alert_repository = SqliteAlertRepository(config_provider=self.config_provider,
-                                                      path_service=self.path_service)
+        self.alert_repository = SqliteAlertRepository(
+            config_provider=self.config_provider, path_service=self.path_service
+        )
         self.system_metrics = SystemMetricsDriver()
         self.http_client = AioHTTPClient()
         self.health_checker = HTTPHealthCheckAdapter(
             http_client=self.http_client,
-            verify_ssl_config=self.config_provider.get('health_check_ssl_config', {"misp": False, "grafana": False})
+            verify_ssl_config=self.config_provider.get(
+                "health_check_ssl_config", {"misp": False, "grafana": False}
+            ),
         )
         self.log_parser = ExecutionLogParser()
         self.kpi_formatter = CSVKPIFormatter()
@@ -86,6 +101,17 @@ class CompositionRoot:
         self.statistical_calculator = StatisticalCalculator()
         self.kpi_analyzer = KPIAnalyzer(self.statistical_calculator)
         self.token_provider = JWTTokenProvider()
+        # Register default factories so AuthService() can be called without
+        # explicit providers (used by tests and the eager-init path).
+        from soar_lab.infrastructure.auth_defaults import (
+            create_default_config_provider_wrapper,
+            create_default_token_provider_wrapper,
+        )
+
+        set_default_factories(
+            config_factory=create_default_config_provider_wrapper,
+            token_factory=create_default_token_provider_wrapper,
+        )
         self.auth_service = AuthService(self.config_provider, self.token_provider)
 
         # Create Docker and Redis clients
@@ -94,34 +120,28 @@ class CompositionRoot:
 
         # Create integration clients
         self.cortex_client = CortexClient(
-            base_url=self.config_provider.get('cortex_url'),
-            api_key=self.config_provider.get('cortex_api_key'),
-            config_provider=self.config_provider
+            base_url=self.config_provider.get("cortex_url"),
+            api_key=self.config_provider.get("cortex_api_key"),
+            config_provider=self.config_provider,
         )
         self.shuffle_client = ShuffleClient(
-            base_url=self.config_provider.get('shuffle_url'),
-            api_key=self.config_provider.get('shuffle_api_key'),
-            config_provider=self.config_provider
+            base_url=self.config_provider.get("shuffle_url"),
+            api_key=self.config_provider.get("shuffle_api_key"),
+            config_provider=self.config_provider,
         )
         self.thehive_client = TheHiveClient(
-            base_url=self.config_provider.get('thehive_url'),
-            api_key=self.config_provider.get('thehive_api_key'),
-            config_provider=self.config_provider
+            base_url=self.config_provider.get("thehive_url"),
+            api_key=self.config_provider.get("thehive_api_key"),
+            config_provider=self.config_provider,
         )
         self.misp_client = MISPClient(
-            base_url=self.config_provider.get('misp_url'),
-            api_key=self.config_provider.get('misp_api_key'),
-            config_provider=self.config_provider
+            base_url=self.config_provider.get("misp_url"),
+            api_key=self.config_provider.get("misp_api_key"),
+            config_provider=self.config_provider,
         )
         self.elasticsearch_client = ElasticsearchClient(
-            base_url=self.config_provider.get('elasticsearch_url'),
-            config_provider=self.config_provider
-        )
-        self.wazuh_client = WazuhClient(
-            base_url=self.config_provider.get('wazuh_url'),
-            username=self.config_provider.get('wazuh_user', 'wazuh-wui'),
-            password=self.config_provider.get('wazuh_password', ''),
-            config_provider=self.config_provider
+            base_url=self.config_provider.get("elasticsearch_url"),
+            config_provider=self.config_provider,
         )
 
         # Create services
@@ -133,12 +153,9 @@ class CompositionRoot:
             log_parser=self.log_parser,
             kpi_formatter=self.kpi_formatter,
             statistical_calculator=self.statistical_calculator,
-            kpi_analyzer=self.kpi_analyzer
+            kpi_analyzer=self.kpi_analyzer,
         )
-        self.backup_service = BackupService(
-            driver=self.backup_driver,
-            storage=self.storage
-        )
+        self.backup_service = BackupService(driver=self.backup_driver, storage=self.storage)
         self.test_service = TestService(
             runner=self.test_runner,
             parser=self.pytest_parser,
@@ -147,18 +164,18 @@ class CompositionRoot:
             health_checker=self.health_checker,
             system_metrics=self.system_metrics,
             soar_clients={
-                "thehive": self.thehive_client,
-                "cortex": self.cortex_client,
-                "misp": self.misp_client,
-                "shuffle": self.shuffle_client,
-                "elasticsearch": self.elasticsearch_client,
-                "wazuh": self.wazuh_client,
-            }
+                SERVICE_THEHIVE: self.thehive_client,
+                SERVICE_CORTEX: self.cortex_client,
+                SERVICE_MISP: self.misp_client,
+                SERVICE_SHUFFLE: self.shuffle_client,
+                SERVICE_ELASTICSEARCH: self.elasticsearch_client,
+            },
         )
 
     def create_fastapi_app(self) -> FastAPI:
         """Create and configure the FastAPI application."""
         from soar_lab.interfaces.api.main import create_app
+
         return create_app(
             config_provider=self.config_provider,
             path_service=self.path_service,
@@ -181,9 +198,8 @@ class CompositionRoot:
             shuffle_client=self.shuffle_client,
             thehive_client=self.thehive_client,
             elasticsearch_client=self.elasticsearch_client,
-            wazuh_client=self.wazuh_client,
             websocket_manager=self.websocket_manager,
-            auth_service=self.auth_service
+            auth_service=self.auth_service,
         )
 
 

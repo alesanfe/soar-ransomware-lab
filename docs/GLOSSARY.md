@@ -1,4 +1,4 @@
-# Glosario de Acrónimos del SOAR Ransomware Lab
+﻿# Glosario de Acrónimos del SOAR Ransomware Lab
 
 Este documento define los acrónimos y términos técnicos que se usan en toda la documentación del proyecto. Se recomienda mantenerlo como referencia central y consultarlo antes de introducir nuevos términos en guías, manuales o memoria académica.
 
@@ -10,7 +10,7 @@ Este documento define los acrónimos y términos técnicos que se usan en toda l
 |
 | **E2E** | End-to-End | Extremo a extremo | Tests que ejecutan workflows completos y validan integraciones reales (`tests/e2e/`).
 |
-| **IaC** | Infrastructure as Code | Infraestructura como código | Orquestación del laboratorio mediante Docker Compose, Makefiles y Vagrant.
+| **IaC** | Infrastructure as Code | Infraestructura como código | Orquestación del laboratorio mediante Docker Compose, Makefiles y scripts.
 |
 | **JWT** | JSON Web Token | Token web JSON | Mecanismo de autenticación de la Lab API; firmado con `HS256` y gestionado por `AuthService` y `JWTTokenProvider`.
 |
@@ -24,7 +24,7 @@ Este documento define los acrónimos y términos técnicos que se usan en toda l
 |
 | **P90** | 90th percentile | Percentil 90 | Valor observado por debajo del cual se sitúa el 90 % de las mediciones.
 |
-| **SIEM** | Security Information and Event Management | Gestión de eventos e información de seguridad | Capa de ingestión y correlación de alertas (Elasticsearch/OpenSearch, Wazuh).
+| **SIEM** | Security Information and Event Management | Gestión de eventos e información de seguridad | Capa de ingestión y correlación de alertas 
 |
 | **SOAR** | Security Orchestration, Automation and Response | Orquestación, automatización y respuesta de seguridad | Plataforma central del proyecto (Shuffle, Cortex, TheHive, Lab API).
 |

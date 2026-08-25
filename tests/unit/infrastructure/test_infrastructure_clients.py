@@ -2,6 +2,16 @@
 
 import pytest
 
+__all__ = [
+    "mock_docker_unavailable",
+    "TestGatewayIPStrategy",
+    "TestUnixSocketStrategy",
+    "TestDefaultFromEnvStrategy",
+    "TestCreateRedisClient",
+    "TestCreateDockerClient",
+    "MockConfigProvider",
+]
+
 
 def _raise_docker_exception(*args, **kwargs):
     """Simulate Docker being unavailable in the test environment."""
@@ -10,17 +20,18 @@ def _raise_docker_exception(*args, **kwargs):
 
 @pytest.fixture(autouse=True)
 def mock_docker_unavailable(monkeypatch):
-    """Patch docker client constructors so tests do not depend on the host Docker socket."""
+    """Patch docker client constructors so tests do not depend on the host
+    Docker socket."""
     monkeypatch.setattr("docker.DockerClient", _raise_docker_exception)
     monkeypatch.setattr("docker.from_env", _raise_docker_exception)
 
 
 from soar_lab.infrastructure.clients import (
+    DefaultFromEnvStrategy,
     GatewayIPStrategy,
     UnixSocketStrategy,
-    DefaultFromEnvStrategy,
-    create_redis_client,
     create_docker_client,
+    create_redis_client,
 )
 
 
@@ -63,7 +74,8 @@ class TestCreateRedisClient:
     """Tests for create_redis_client function."""
 
     def test_create_redis_client_no_config_provider(self):
-        """Test create_redis_client returns None when config_provider is None."""
+        """Test create_redis_client returns None when config_provider is
+        None."""
         result = create_redis_client(None)
         assert result is None
 
@@ -74,7 +86,8 @@ class TestCreateRedisClient:
         assert result is None
 
     def test_create_redis_client_connection_failure(self):
-        """Test create_redis_client returns None when Redis connection fails."""
+        """Test create_redis_client returns None when Redis connection
+        fails."""
         mock_config = MockConfigProvider({"REDIS_URL": "redis://localhost:6379"})
         result = create_redis_client(mock_config)
         assert result is None
@@ -84,25 +97,24 @@ class TestCreateDockerClient:
     """Tests for create_docker_client function."""
 
     def test_create_docker_client_no_config_provider(self):
-        """Test create_docker_client returns None when config_provider is None."""
+        """Test create_docker_client returns None when config_provider is
+        None."""
         result = create_docker_client(None)
         assert result is None
 
     def test_create_docker_client_all_strategies_fail(self):
         """Test create_docker_client returns None when all strategies fail."""
-        mock_config = MockConfigProvider({
-            "docker_socket_path": "/var/run/docker.sock",
-            "docker_gateway_ip": None
-        })
+        mock_config = MockConfigProvider(
+            {"docker_socket_path": "/var/run/docker.sock", "docker_gateway_ip": None}
+        )
         result = create_docker_client(mock_config)
         assert result is None
 
     def test_create_docker_client_with_gateway_ip(self):
         """Test create_docker_client with gateway_ip configured."""
-        mock_config = MockConfigProvider({
-            "docker_socket_path": "/var/run/docker.sock",
-            "docker_gateway_ip": "192.168.1.1"
-        })
+        mock_config = MockConfigProvider(
+            {"docker_socket_path": "/var/run/docker.sock", "docker_gateway_ip": "192.168.1.1"}
+        )
         result = create_docker_client(mock_config)
         assert result is None
 

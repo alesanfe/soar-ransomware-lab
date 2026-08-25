@@ -1,57 +1,106 @@
-﻿# Índice General del Trabajo Fin de Máster
+# Índice General del Trabajo Fin de Máster
 
 ## Estructura Completa del Documento
 
 ### Páginas Preliminares
 
 1. **Portada**
-2. **Resumen Ejecutivo / Abstract** → `00_resumen_ejecutivo.md`
-3. **Agradecimientos** → `08_agradecimientos.md`
-4. **Lista de Abreviaturas** → `09_lista_abreviaturas.md`
-5. **Lista de Figuras y Tablas** → `10_lista_figuras_tablas.md`
+2. **Resumen Ejecutivo / Abstract** — `executive_summary.md`
+3. **Agradecimientos** — `acknowledgments.md`
+4. **Lista de Abreviaturas** — `abbreviations_list.md`
+5. **Lista de Figuras y Tablas** — `figures_tables_list.md`
 6. **Índice General** (este documento)
 
 ### Cuerpo del Documento
 
-#### **Capítulo 1: Introducción** → `01_introduccion.md`
+#### **Capítulo 1: Introducción** — `introduction.md`
 
+- Resumen en Español
+- English Summary
 - 1.1. Motivación
 - 1.2. Planteamiento del problema
+  - Descripción del problema
+  - Pregunta de investigación
+  - Propuesta de solución
 - 1.3. Estructura del trabajo
 
-#### **Capítulo 2: Estado del arte** → `02_estado_del_arte.md`
+#### **Capítulo 2: Estado del arte** — `state_of_the_art.md`
 
-- 2.1. Evolución del ransomware
-- 2.2. Plataformas SOAR: Conceptos y fundamentos
-- 2.3. Análisis comparativo de plataformas SOAR
-- 2.4. Marco teórico de automatización en respuesta a incidentes
+- 2.1. Respuesta a incidentes y ransomware como dominio de aplicación
+- 2.2. Automatización, SOAR y playbooks en operaciones de seguridad
+- 2.3. Laboratorios reproducibles, herramientas open source y evaluación
+- 2.4. Síntesis y relación con el TFM
 
-#### **Capítulo 3: Objetivos concretos y metodología de trabajo** → `03_objetivos_y_metodologia.md`
+#### **Capítulo 3: Objetivos concretos y metodología de trabajo** — `objectives_and_methodology.md`
 
 - 3.1. Objetivo general
 - 3.2. Objetivos específicos
+  - 3.2.1. Objetivos Estratégicos
+  - 3.2.2. Objetivos Operativos
 - 3.3. Metodología del trabajo
+  - Pasos operativos para reproducir el experimento
+  - Casos de error esperados
+  - Criterios de verificación
 
-#### **Capítulo 4: Desarrollo específico de la contribución** → `04_desarrollo_especifico.md`
+#### **Capítulo 4: Desarrollo específico de la contribución** — `specific_development.md`
 
-- 4.2.1. Identificación de requisitos
-- 4.2.2. Descripción de la herramienta software desarrollada
-- 4.2.3. Evaluación
+- 4.1. Desarrollo de software
+  - 4.1.1. Identificación de requisitos
+  - 4.1.2. Descripción de la herramienta software desarrollada
+    - Arquitectura de Código Python
+    - Arquitectura de Despliegue
+    - Componentes Principales
+    - Scripts de Automatización Desarrollados
+    - Playbooks de Respuesta a Ransomware
+    - Infraestructura Docker Compose
+    - Sistema de Monitoreo
+  - 4.1.3. Evaluación
+    - 4.1.3.1. Diseño Experimental
+    - 4.1.3.2. Procedimiento de Evaluación
+    - 4.1.3.3. Resultados Experimentales
+    - 4.1.3.4. Evaluación de Calidad del Sistema
+    - 4.1.3.5. Sistema de Monitoreo
+    - 4.1.3.6. Análisis de Mejoras Implementadas
+    - 4.1.3.7. Discusión
+    - 4.1.3.8. Limitaciones
 
-#### **Capítulo 5: Conclusiones y trabajo futuro** → `05_conclusiones_y_trabajo_futuro.md`
+#### **Capítulo 5: Conclusiones y trabajo futuro** — `conclusions_and_future_work.md`
 
 - 5.1. Resumen de conclusiones principales
+  - 5.1.1. Respuesta a la pregunta de investigación
+  - 5.1.2. Cumplimiento de objetivos planteados
+  - 5.1.3. Contribuciones teóricas y prácticas
+  - 5.1.4. Implicaciones para la práctica profesional
+  - 5.1.5. Limitaciones del estudio realizado
 - 5.2. Trabajo futuro y líneas de investigación
+  - 5.2.1. Mejoras técnicas inmediatas
+  - 5.2.2. Investigaciones longitudinales propuestas
+  - 5.2.3. Desarrollo de capacidades de Machine Learning
+  - 5.2.4. Expansión a otros tipos de incidentes
+  - 5.2.5. Investigaciones en Interfaz Humano-Máquina
+- 5.3. Recomendaciones para organizaciones
+  - 5.3.1. Guía de implementación práctica
+  - 5.3.2. Consideraciones de adopción organizacional
+  - 5.3.3. Métricas de éxito y KPIs recomendados
+  - 5.3.4. Mejores prácticas de mantenimiento y desarrollo
+- 5.4. Alcance del trabajo
 
 ### Secciones Finales
 
-6. **Referencias bibliográficas** → `06_referencias_bibliograficas.md`
-7. **Anexo A** → `07_anexo_a.md`
-8. **Declaración de originalidad** → `11_declaracion_originalidad.md`
-9. **Tablas comparativas de plataformas SOAR** → `12_tablas_comparativas.md`
-10. **Visualizaciones de datos y gráficos complementarios** → `13_visualizaciones_datos.md`
+6. **Referencias bibliográficas** — `bibliographic_references.md`
+7. **Declaración de originalidad** — `originality_declaration.md`
+8. **Tablas comparativas de plataformas SOAR** — `comparative_tables.md`
+9. **Visualizaciones de datos y gráficos complementarios** — `data_visualizations.md`
+10. **Glosario** — `glossary.md`
 
----
+### Anexos
+
+- **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, guías de instalación
+- **Anexo B** — `appendix_b.md` — Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
+- **Anexo F2** — `experimental_validation.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
+- **Anexo I** — `appendix_i.md` — Estrategia de testing (2041 tests, pirámide, quality gates)
+- **Anexo J** — `appendix_j.md` — Diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid)
+
 
 ## Detalle de Contenido por Capítulo
 
@@ -60,121 +109,172 @@
 **1.1. Motivación**
 
 - Contexto actual de ciberseguridad
-- Crecimiento del ransomware (150% en 2 años)
+- Crecimiento del ransomware (67 % en incidentes, 23 % del total (CrowdStrike, 2024))
 - Volumen de alertas y limitaciones humanas
 - Necesidad crítica de automatización
+- Figura 1.1: Comparación MTTR manual vs automatizado
 
 **1.2. Planteamiento del problema**
 
 - Limitaciones de respuesta manual
-- Impacto económico ($5.13M por incidente)
-- Problemas de consistencia y escalabilidad
+- Pregunta de investigación explícita
 - Hipótesis de trabajo
+- Propuesta de solución: laboratorio SOAR mínimo viable
 
 **1.3. Estructura del trabajo**
 
 - Descripción de los 5 capítulos principales
 - Referencias y anexos
-- Metodología seguida
 
 ### Capítulo 2: Estado del arte
 
-**2.1. Evolución del ransomware**
+**2.1. Respuesta a incidentes y ransomware como dominio de aplicación**
 
-- Cuatro generaciones (2013-2024)
-- Características técnicas por generación
-- Modelos de negocio (RaaS)
-- Tendencias actuales
+- NIST SP 800-61, ISO/IEC 27035
+- CISA, ENISA, Mandiant, CrowdStrike
+- MITRE ATT&CK T1486
 
-**2.2. Plataformas SOAR**
+**2.2. Automatización, SOAR y playbooks en operaciones de seguridad**
 
-- Definición y componentes
-- Tipos de automatización
-- Ciclo de vida de respuesta
-- Principios de diseño
+- SIEM vs SOAR
+- Playbooks vs runbooks (Kinyua y Awuah)
+- IA/ML en respuesta a incidentes
+- Stevens et al.: frameworks de diseño de playbooks
+- Schlette et al.: 1217 playbooks analizados
+- OASIS CACAO 2.0, Sigma, Shuffle
 
-**2.3. Análisis comparativo**
+**2.3. Laboratorios reproducibles, herramientas open source y evaluación**
 
-- TheHive vs Cortex vs Shuffle
-- Soluciones comerciales vs open source
-- Ventajas y limitaciones
-- Selección de tecnologías
+- Núñez Fernández: plataforma SIRP reproducible
+- NIST SP 800-150: compartición de amenazas
+- Quintero Tamayo et al.: playbooks para CSIRT
+- Métricas temporales: p50, p90
 
-**2.4. Marco teórico**
+**2.4. Síntesis y relación con el TFM**
 
-- Métricas de eficacia (MTTR, MTTD)
-- Modelos de madurez
-- Principios de diseño de playbooks
+- Tres ideas articuladoras
+- Brecha identificada: falta de evidencia cuantitativa rigurosa
+- Conexión con el método del TFM
 
 ### Capítulo 3: Objetivos y metodología
 
 **3.1. Objetivo general**
 
-- Diseñar, implementar y evaluar laboratorio SOAR
-- Validar reducción de MTTR
-- Contribución académica y práctica
+- Demostrar que un playbook SOAR reduce MTTR y mejora consistencia
+- Umbrales: reducción ≥ 50 %, P50 ≤ 120 s, P90 ≤ 180 s
 
 **3.2. Objetivos específicos**
 
-- 5 objetivos con criterios de éxito
-- Evidencias requeridas
-- Métricas de validación
+- 5 objetivos estratégicos (diseño, implementación, evaluación, documentación, optimización)
+- 12 objetivos operativos
+- Criterios de éxito medibles
 
 **3.3. Metodología**
 
-- Investigación aplicada + desarrollo tecnológico
-- Metodología ágil + DevSecOps
-- 5 fases del proyecto
-- Tecnologías utilizadas
+- Investigación aplicada + DevSecOps
+- 5 fases (semanas 1-12)
+- Stack tecnológico: Docker, Python, TheHive, Cortex, Shuffle
+- Diseño experimental: variable independiente (manual vs SOAR), dependientes (MTTR, tasa de éxito,
+  precisión, uso de recursos)
+- Consideraciones éticas y de seguridad
+- Pasos operativos, casos de error, criterios de verificación
 
 ### Capítulo 4: Desarrollo específico
 
-**4.2.1. Identificación de requisitos**
+**4.1.1. Identificación de requisitos**
 
 - Funcionales, no funcionales, de integración
 - Matriz de trazabilidad
-- Priorización y validación
 
-**4.2.2. Herramienta desarrollada**
+**4.1.2. Herramienta desarrollada**
 
-- Arquitectura general
-- Componentes principales
+- Arquitectura hexagonal Python (domain/, application/, infrastructure/, interfaces/)
+- Arquitectura de despliegue Docker Compose (18 servicios)
+- Componentes: TheHive, Cortex, Shuffle, Elasticsearch, Grafana, Loki
 - Scripts de automatización
-- Playbooks implementados
+- Playbooks de respuesta a ransomware
+- Infraestructura Docker Compose
+- Sistema de monitoreo
 
-**4.2.3. Evaluación**
+**4.1.3. Evaluación**
 
-- Diseño experimental
-- Resultados (60.2% reducción MTTR)
-- Análisis estadístico
-- Mejoras implementadas
+- Diseño experimental (50 runs, 2 escenarios)
+- Resultados: MTTR 277.15 s, P50 193.19 s, P90 621.83 s, 92.3 % reducción
+- Precisión: 8.0 % falsos positivos, 92.0 % clasificación correcta
+- Uso de recursos: docker stats dentro de límites
+- 5/7 objetivos cumplidos
+- Quality Score 92.2/100, HPR 96.0/100
+- 44 mejoras implementadas
+- Discusión: interpretación, comparación con literatura, consistencia (CV 67.7 %), análisis por subconjuntos
+- Limitaciones
 
 ### Capítulo 5: Conclusiones
 
 **5.1. Conclusiones principales**
 
-- Cumplimiento de objetivos
-- Contribuciones teóricas y prácticas
-- Implicaciones profesionales
-- Limitaciones del estudio
+- 5.1.1. Respuesta a la pregunta de investigación
+- 5.1.2. Cumplimiento de objetivos (5/7)
+- 5.1.3. Contribuciones teóricas y prácticas
+- 5.1.4. Implicaciones para la práctica profesional
+- 5.1.5. Limitaciones del estudio
 
 **5.2. Trabajo futuro**
 
-- Mejoras técnicas inmediatas
-- Investigaciones longitudinales
-- Capacidades de Machine Learning
-- Expansión a otros incidentes
+- Mejoras técnicas (analyzers concurrentes, Kubernetes, Zero Trust)
+- Investigaciones longitudinales (12-24 meses)
+- Machine Learning (detección predictiva, NLP, RL)
+- Expansión a APT, insider threat, supply chain
+- Interfaz humano-máquina (explicabilidad, carga cognitiva)
 
-### Referencias bibliográficas
+**5.3. Recomendaciones para organizaciones**
 
-- 100 referencias académicas y técnicas
-- Artículos, informes, documentación
-- Formato académico estándar
-- DOIs y URLs verificadas
+- Guía de implementación (4 fases)
+- Adopción organizacional
+- KPIs recomendados
+- Mantenimiento y desarrollo
 
-### Anexo A
+**5.4. Alcance del trabajo**
+
+- Reducción 92.3 % MTTR con 50 ejecuciones
+- Arquitectura hexagonal y modular transferible
+- Software open source: accesible a pymes y CSIRTs
+- Figura 5.6: Análisis coste-beneficio
+
+### Anexos
+
+**Anexo A** — `appendix_a.md`
 
 - Configuración Docker completa
 - Scripts de automatización
 - Plantillas y configuraciones
 - Guías de instalación
+
+**Anexo B** — `appendix_b.md`
+
+- Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
+
+**Anexo F2** — `experimental_validation.md`
+
+- Resultados E2E (n=50): MTTR, contención, score, servicios
+- Quality Score: 92.2/100 (complexity, coverage, security, linting)
+- Holistic Project Radar: 96.0/100 (5 capas, 15 dimensiones)
+- Test Review: 92.2/100 (7 dimensiones, 2041 tests)
+- Infraestructura: 18 servicios, 18 contenedores, 131 env vars
+- API: 38 endpoints (OpenAPI 3.1.0)
+
+**Anexo I** — `appendix_i.md`
+
+- 2041 tests en 184 archivos (unit, integration, e2e, atomic, security, performance)
+- Pirámide: 65.9 % unit, 16.5 % integration, 13.8 % e2e (score 94.3/100)
+- Coverage: 84.6 % líneas, 73.2 % ramas
+- 49 test cases E2E (TC-00 a TC-33, TC-KPI-01 a 06)
+- 9 marcadores pytest
+- Quality gates: ruff 0 issues, mypy 0 errors, bandit 0 issues, pip-audit 0 vulns
+- Mutation testing: 51.8 % (13969 mutantes, 5603 killed)
+
+**Anexo J** — `appendix_j.md`
+
+- 13 diagramas Mermaid canónicos
+- Arquitectura: alto nivel, despliegue Docker, hexagonal, contexto C4
+- Flujos: E2E alertas, árbol decisión playbook, integración API
+- Gestión: Gantt objetivos SMART, roadmap semanal, matriz riesgos

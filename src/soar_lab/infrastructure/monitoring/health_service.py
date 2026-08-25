@@ -1,5 +1,6 @@
 """Health service for SOAR Lab API."""
-from typing import Any, Dict, Optional
+
+from typing import Any
 
 from soar_lab.config.logging import get_logger
 from soar_lab.domain.ports import HealthCheckInterface, SystemMetricsInterface
@@ -8,16 +9,18 @@ logger = get_logger(__name__)
 
 
 class HealthService:
-    """Service for health checks and system metrics with injected dependencies."""
+    """Service for health checks and system metrics with injected.
+
+    dependencies.
+    """
 
     def __init__(
         self,
         health_checker: HealthCheckInterface,
         system_metrics: SystemMetricsInterface,
-        soar_clients: Optional[Dict[str, Any]] = None,
-    ):
-        """
-        Initialize health service with injected dependencies.
+        soar_clients: dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize health service with injected dependencies.
 
         Args:
             health_checker: HealthCheckInterface instance (injected dependency)
@@ -27,11 +30,10 @@ class HealthService:
         """
         self.health_checker = health_checker
         self.system_metrics = system_metrics
-        self._soar_clients: Dict[str, Any] = soar_clients or {}
+        self._soar_clients: dict[str, Any] = soar_clients or {}
 
-    async def check_service(self, service_name: str, service_config: Dict[str, str]) -> bool:
-        """
-        Check if a service is running by checking HTTP endpoint.
+    async def check_service(self, service_name: str, service_config: dict[str, str]) -> bool:
+        """Check if a service is running by checking HTTP endpoint.
 
         Args:
             service_name: Name of the service
@@ -43,9 +45,12 @@ class HealthService:
         url = service_config.get("url")
         return await self.health_checker.check_service(service_name, url)
 
-    async def get_all_services_status(self, services_config: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
-        """
-        Get status of all configured services, including SOAR integration clients.
+    async def get_all_services_status(
+        self, services_config: dict[str, dict[str, str]]
+    ) -> dict[str, Any]:
+        """Get status of all configured services, including SOAR integration.
+
+        clients.
 
         Args:
             services_config: Dict mapping service names to their configuration
@@ -53,7 +58,7 @@ class HealthService:
         Returns:
             Dict mapping service names to their status
         """
-        status: Dict[str, Any] = {}
+        status: dict[str, Any] = {}
 
         for service_name, service_config in services_config.items():
             try:
@@ -73,9 +78,8 @@ class HealthService:
 
         return status
 
-    def get_system_metrics(self) -> Dict[str, Any]:
-        """
-        Get system metrics (CPU, memory, disk usage).
+    def get_system_metrics(self) -> dict[str, Any]:
+        """Get system metrics (CPU, memory, disk usage).
 
         Returns:
             Dict with cpu, memory, disk percentages and timestamp

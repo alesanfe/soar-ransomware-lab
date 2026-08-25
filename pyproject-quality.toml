@@ -1,0 +1,53 @@
+# Quality tool configuration for SOAR Ransomware Lab
+# This file complements pyproject.toml with quality-specific settings.
+
+# ── Radon ──────────────────────────────────────────────────────────────
+# Radon is configured via CLI flags in scripts/quality/parse_radon.py.
+# Thresholds are in scripts/quality/thresholds/complexity_thresholds.yaml
+# and scripts/quality/thresholds/maintainability_thresholds.yaml.
+
+# ── Ruff ───────────────────────────────────────────────────────────────
+# Ruff config is in the main pyproject.toml [tool.ruff] section.
+# Quality checks use: ruff check --select E,W,F,I
+
+# ── Pylint ─────────────────────────────────────────────────────────────
+# Pylint uses pyproject.toml configuration.
+# Minimum score: 8.5/10 (see scripts/quality/thresholds/)
+
+# ── Mypy ───────────────────────────────────────────────────────────────
+# Mypy config is in pyproject.toml [tool.mypy] section.
+# Target: 0 errors in src/
+
+# ── Coverage ───────────────────────────────────────────────────────────
+# Coverage is configured in pytest.ini addopts (--cov=src/soar_lab).
+# Thresholds: 85% global, 75% per file, 90% critical modules.
+# Reports: reports/coverage/coverage.xml
+
+# ── Bandit ─────────────────────────────────────────────────────────────
+# Bandit config is in .bandit (skips B404, B603 — documented false positives).
+# Thresholds: fail on HIGH, warn on MEDIUM.
+
+# ── Vulture ────────────────────────────────────────────────────────────
+# Vulture whitelist: vulture_whitelist.py
+# Threshold: fail on confidence >= 90%.
+
+# ── Interrogate ────────────────────────────────────────────────────────
+# Threshold: 80% global docstring coverage.
+# Run: python -m interrogate -v src/
+
+# ── Mutmut ─────────────────────────────────────────────────────────────
+# Threshold: 70% global mutation score.
+# Run: mutmut run --paths-to-mutate=src/soar_lab/
+# Results: mutmut results
+
+# ── Import Linter ──────────────────────────────────────────────────────
+# Configuration for import-linter contracts.
+# Define contracts in pyproject.toml [tool.importlinter] section.
+
+# ── pip-audit ──────────────────────────────────────────────────────────
+# Threshold: fail on critical/high vulnerabilities.
+# Run: pip-audit --format json
+
+# ── detect-secrets ─────────────────────────────────────────────────────
+# Baseline: .secrets.baseline (if exists)
+# Run: detect-secrets scan src/

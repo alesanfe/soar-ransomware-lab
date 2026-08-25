@@ -1,14 +1,17 @@
-"""
-Shared cleanup helpers for E2E tests.
-"""
+"""Shared cleanup helpers for E2E tests."""
 
 import subprocess
-from typing import List, Optional
+
+__all__ = [
+    "remove_docker_volumes",
+    "remove_docker_networks",
+    "remove_test_artifacts",
+    "cleanup_test_resources",
+]
 
 
 def remove_docker_volumes(volume_prefix: str) -> bool:
-    """
-    Remove Docker volumes with a given prefix.
+    """Remove Docker volumes with a given prefix.
 
     Args:
         volume_prefix: Prefix of volumes to remove (e.g., "soar")
@@ -18,17 +21,16 @@ def remove_docker_volumes(volume_prefix: str) -> bool:
     """
     try:
         result = subprocess.run(
-            ["docker", "volume", "ls", "-q"],
-            capture_output=True,
-            text=True,
-            timeout=10
+            ["docker", "volume", "ls", "-q"], capture_output=True, text=True, timeout=10
         )
         volumes = result.stdout.strip().split("\n") if result.stdout.strip() else []
 
         matching_volumes = [v for v in volumes if v.startswith(volume_prefix)]
 
         for volume in matching_volumes:
-            subprocess.run(["docker", "volume", "rm", "-f", volume], capture_output=True, timeout=10)
+            subprocess.run(
+                ["docker", "volume", "rm", "-f", volume], capture_output=True, timeout=10
+            )
 
         return True
     except Exception:
@@ -36,8 +38,7 @@ def remove_docker_volumes(volume_prefix: str) -> bool:
 
 
 def remove_docker_networks(network_prefix: str) -> bool:
-    """
-    Remove Docker networks with a given prefix.
+    """Remove Docker networks with a given prefix.
 
     Args:
         network_prefix: Prefix of networks to remove (e.g., "soar")
@@ -50,7 +51,7 @@ def remove_docker_networks(network_prefix: str) -> bool:
             ["docker", "network", "ls", "--format", "{{.Name}}"],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
         )
         networks = result.stdout.strip().split("\n") if result.stdout.strip() else []
 
@@ -64,9 +65,8 @@ def remove_docker_networks(network_prefix: str) -> bool:
         return False
 
 
-def remove_test_artifacts(artifact_dirs: List[str]) -> bool:
-    """
-    Remove test artifact directories.
+def remove_test_artifacts(artifact_dirs: list[str]) -> bool:
+    """Remove test artifact directories.
 
     Args:
         artifact_dirs: List of directory paths to remove
@@ -76,6 +76,7 @@ def remove_test_artifacts(artifact_dirs: List[str]) -> bool:
     """
     try:
         import shutil
+
         for dir_path in artifact_dirs:
             if dir_path.exists():
                 shutil.rmtree(dir_path, ignore_errors=True)
@@ -87,10 +88,9 @@ def remove_test_artifacts(artifact_dirs: List[str]) -> bool:
 def cleanup_test_resources(
     volume_prefix: str = "soar",
     network_prefix: str = "soar",
-    artifact_dirs: Optional[List[str]] = None
+    artifact_dirs: list[str] | None = None,
 ) -> bool:
-    """
-    Comprehensive cleanup of test resources.
+    """Comprehensive cleanup of test resources.
 
     Args:
         volume_prefix: Prefix of volumes to remove

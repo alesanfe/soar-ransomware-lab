@@ -2,23 +2,23 @@
 TC-12: Validación de nuevas funcionalidades SOAR - Redis
 Este test valida la integración de Redis para cache de IoCs
 """
-import pytest
-import json
+
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
-from tests.e2e.conftest import (
-    REDIS_HOST, REDIS_PORT, REDIS_PASSWORD,
-    SHUFFLE_BASE_URL, SHUFFLE_WEBHOOK_URL, SHUFFLE_API_KEY, SHUFFLE_WORKFLOW_ID,
-)
+import pytest
+
+from tests.e2e.base import E2EBaseTest
 
 
-class TestRedisIntegration:
-    """Test suite para validar la integración de Redis en el workflow SOAR"""
+class TestRedisIntegration(E2EBaseTest):
+    """Test suite para validar la integración de Redis en el workflow SOAR."""
+
+    tc_id = "TC-12"
 
     @pytest.fixture(scope="class")
     def alert_data(self):
-        """Datos de alerta para pruebas de Redis"""
+        """Datos de alerta para pruebas de Redis."""
         return {
             "alert_id": "TC12-REDIS-1783607000-3000",
             "hostname": "tc12-host",
@@ -27,35 +27,58 @@ class TestRedisIntegration:
             "severity": "2",
             "type": "ransomware",
             "description": "Test alert for Redis IoC caching",
-            "detection_time": datetime.utcnow().isoformat() + "Z"
+            "detection_time": datetime.now(UTC).isoformat() + "Z",
         }
 
     def test_redis_service_availability(self):
-        """Verificar que el servicio Redis está disponible"""
-        import requests
-
-        try:
-            response = requests.get(
-                "http://localhost:6379/",
-                timeout=5,
-                verify=False
-            )
-            # Redis HTTP interface puede no estar disponible, usar prueba alternativa
-        except requests.exceptions.RequestException:
-            # Probar conexión directa si HTTP no funciona
-            try:
-                import redis
-                r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD or None, decode_responses=True)
-                r.ping()
-                return
-            except Exception:
-                pytest.skip("Redis service not available")
-
-    def test_redis_direct_connection(self):
-        """Validar conexión directa a Redis"""
+        """Verificar que el servicio Redis está disponible."""
         try:
             import redis
-            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD or None, decode_responses=True)
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
+            result = r.ping()
+            assert result is True, "Redis ping should return True"
+
+            # Validate Redis server info is accessible and has expected fields
+            info = r.info()
+            assert isinstance(
+                info, dict
+            ), f"Redis info() must return a dict, got {type(info).__name__}"
+            assert (
+                "redis_version" in info
+            ), f"Redis info must contain 'redis_version', got keys: {list(info.keys())[:10]}"
+            self._log(f"+ Redis version: {info['redis_version']}")
+
+            # Validate that Redis has active connections
+            connected_clients = info.get("connected_clients", 0)
+            assert isinstance(
+                connected_clients, int
+            ), f"connected_clients must be an integer, got {type(connected_clients).__name__}"
+            assert (
+                connected_clients > 0
+            ), f"Redis should have at least 1 connected client, got {connected_clients}"
+            self._log(f"+ Redis connected clients: {connected_clients}")
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
+        except Exception as e:
+            pytest.fail(f"Redis not available: {e}")
+
+    def test_redis_direct_connection(self):
+        """Validar conexión directa a Redis."""
+        try:
+            import redis
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
 
             # Probar ping
             result = r.ping()
@@ -73,61 +96,61 @@ class TestRedisIntegration:
             # Limpiar
             r.delete(test_key)
 
-        except ImportError:
-            pytest.skip("Redis library not available")
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
         except Exception as e:
-            pytest.skip(f"Redis direct connection failed: {e}")
+            pytest.fail(f"Redis direct connection failed: {e}")
 
     def test_redis_ioc_caching_in_workflow(self, alert_data):
-        """Validar que el workflow incluye cache de IoCs en Redis"""
-        import requests
+        """Validar que el workflow incluye cache de IoCs en Redis."""
+        # Enviar alerta al workflow usando submit_alert_and_wait
+        exec_id, execution = self.submit_alert_and_wait(alert_data)
 
-        # Enviar alerta al workflow
-        webhook_url = SHUFFLE_WEBHOOK_URL
+        # Assert workflow FINISHED
+        status = execution.get("status", "")
+        assert status == "FINISHED", f"Workflow should be FINISHED, got {status}"
 
-        try:
-            response = requests.post(
-                webhook_url,
-                json=alert_data,
-                timeout=30,
-                verify=False
-            )
-            assert response.status_code == 200, f"Webhook failed: {response.status_code}"
-
-            execution_id = response.json().get("execution_id")
-            assert execution_id, "No execution_id returned"
-
-            # Esperar a que complete el workflow
-            time.sleep(10)
-
-            # Verificar que se ejecutó la acción de Redis
-            auth_response = requests.get(
-                f"{SHUFFLE_BASE_URL}/api/v1/workflows/{SHUFFLE_WORKFLOW_ID}",
-                headers={"Authorization": f"Bearer {SHUFFLE_API_KEY}"},
-                verify=False
-            )
-
-            if auth_response.status_code == 200:
-                workflow_data = auth_response.json()
-                actions = workflow_data.get("actions", [])
-
-                # Buscar acción de Redis
-                redis_action = None
-                for action in actions:
-                    if "Redis" in action.get("label", ""):
-                        redis_action = action
-                        break
-
-                assert redis_action is not None, "Redis action not found in workflow"
-
-        except requests.exceptions.RequestException as e:
-            pytest.skip(f"Workflow execution failed: {e}")
-
-    def test_redis_ioc_storage(self, alert_data):
-        """Validar almacenamiento de IoCs en Redis"""
+        # Check Redis for cached IoC keys
         try:
             import redis
-            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD or None, decode_responses=True)
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
+
+            # Search for IoC keys related to this alert
+            ioc_keys = r.keys("ioc:*")
+            assert isinstance(ioc_keys, list), "IoC keys should be a list"
+
+            # Assert at least one IoC is cached
+            assert (
+                len(ioc_keys) > 0
+            ), "At least one IoC should be cached in Redis after workflow execution"
+
+            # Validate that cached IoCs have proper structure
+            for key in ioc_keys[:5]:
+                value = r.get(key)
+                assert value is not None, f"Cached IoC key {key} should have a value"
+
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
+        except Exception as e:
+            pytest.fail(f"Redis IoC caching verification failed: {e}")
+
+    def test_redis_ioc_storage(self, alert_data):
+        """Validar almacenamiento de IoCs en Redis."""
+        try:
+            import redis
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
 
             # Simular almacenamiento de IoC como lo hace el workflow
             ioc_key = f"ioc:{alert_data['hash']}"
@@ -148,16 +171,22 @@ class TestRedisIntegration:
             # Limpiar
             r.delete(ioc_key)
 
-        except ImportError:
-            pytest.skip("Redis library not available")
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
         except Exception as e:
-            pytest.skip(f"Redis IoC storage test failed: {e}")
+            pytest.fail(f"Redis IoC storage test failed: {e}")
 
     def test_redis_ioc_retrieval(self, alert_data):
-        """Validar recuperación de IoCs desde Redis"""
+        """Validar recuperación de IoCs desde Redis."""
         try:
             import redis
-            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD or None, decode_responses=True)
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
 
             # Preparar datos de prueba
             ioc_key = f"ioc:{alert_data['hash']}"
@@ -177,22 +206,28 @@ class TestRedisIntegration:
             retrieved_alert_id = parts[0]
             retrieved_timestamp = ":".join(parts[1:])  # Por si el timestamp tiene :
 
-            assert retrieved_alert_id == alert_data['alert_id'], "Alert ID mismatch"
-            assert retrieved_timestamp == alert_data['detection_time'], "Timestamp mismatch"
+            assert retrieved_alert_id == alert_data["alert_id"], "Alert ID mismatch"
+            assert retrieved_timestamp == alert_data["detection_time"], "Timestamp mismatch"
 
             # Limpiar
             r.delete(ioc_key)
 
-        except ImportError:
-            pytest.skip("Redis library not available")
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
         except Exception as e:
-            pytest.skip(f"Redis IoC retrieval test failed: {e}")
+            pytest.fail(f"Redis IoC retrieval test failed: {e}")
 
     def test_redis_cache_expiration(self):
-        """Validar expiración de cache en Redis"""
+        """Validar expiración de cache en Redis."""
         try:
             import redis
-            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD or None, decode_responses=True)
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
 
             # Almacenar con TTL corto
             test_key = "test_expiration"
@@ -209,16 +244,22 @@ class TestRedisIntegration:
             # Verificar que expiró
             assert r.get(test_key) is None, "Key should have expired"
 
-        except ImportError:
-            pytest.skip("Redis library not available")
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
         except Exception as e:
-            pytest.skip(f"Redis expiration test failed: {e}")
+            pytest.fail(f"Redis expiration test failed: {e}")
 
     def test_redis_pattern_matching(self):
-        """Validar búsqueda por patrones en Redis"""
+        """Validar búsqueda por patrones en Redis."""
         try:
             import redis
-            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD or None, decode_responses=True)
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
 
             # Preparar múltiples IoCs
             test_iocs = [
@@ -232,9 +273,9 @@ class TestRedisIntegration:
             for key, value in test_iocs:
                 r.set(key, value, ex=3600)
 
-            # Buscar IoCs por patrón
-            ioc_keys = r.keys("ioc:*")
-            assert len(ioc_keys) == 3, f"Expected 3 IoC keys, got {len(ioc_keys)}"
+            # Buscar IoCs por patrón (filter to only our test keys)
+            ioc_keys = r.keys("ioc:hash*")
+            assert len(ioc_keys) >= 3, f"Expected at least 3 IoC keys, got {len(ioc_keys)}"
 
             # Verificar que todos los keys encontrados son IoCs
             for key in ioc_keys:
@@ -244,16 +285,22 @@ class TestRedisIntegration:
             for key, _ in test_iocs:
                 r.delete(key)
 
-        except ImportError:
-            pytest.skip("Redis library not available")
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
         except Exception as e:
-            pytest.skip(f"Redis pattern matching test failed: {e}")
+            pytest.fail(f"Redis pattern matching test failed: {e}")
 
     def test_redis_performance_requirements(self):
-        """Validar requisitos de rendimiento de Redis"""
+        """Validar requisitos de rendimiento de Redis."""
         try:
             import redis
-            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD or None, decode_responses=True)
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
 
             # Probar rendimiento de operaciones básicas
             start_time = time.time()
@@ -276,16 +323,22 @@ class TestRedisIntegration:
             for i in range(100):
                 r.delete(f"perf_test_{i}")
 
-        except ImportError:
-            pytest.skip("Redis library not available")
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
         except Exception as e:
-            pytest.skip(f"Redis performance test failed: {e}")
+            pytest.fail(f"Redis performance test failed: {e}")
 
     def test_redis_error_handling(self):
-        """Validar manejo de errores en Redis"""
+        """Validar manejo de errores en Redis."""
         try:
             import redis
-            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD or None, decode_responses=True)
+
+            r = redis.Redis(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
 
             # Probar operación con key que no existe
             result = r.get("non_existent_key")
@@ -299,39 +352,46 @@ class TestRedisIntegration:
             result = r.delete("non_existent_key")
             assert result == 0, "Should return 0 for non-existent key"
 
-        except ImportError:
-            pytest.skip("Redis library not available")
+        except ImportError as e:
+            pytest.fail(f"Redis library not available: {e}")
         except Exception as e:
-            pytest.skip(f"Redis error handling test failed: {e}")
+            pytest.fail(f"Redis error handling test failed: {e}")
 
     def test_redis_integration_completeness(self):
-        """Validar que la integración de Redis está completa en el workflow"""
+        """Validar que la integración de Redis está completa en el workflow."""
         import requests
 
         try:
             # Obtener detalles del workflow
             response = requests.get(
-                f"{SHUFFLE_BASE_URL}/api/v1/workflows/{SHUFFLE_WORKFLOW_ID}",
-                headers={"Authorization": f"Bearer {SHUFFLE_API_KEY}"},
-                verify=False
+                f"{self.get_service_url('shuffle')}/api/v1/workflows/{self.workflow_id}",
+                headers={"Authorization": f"Bearer {self.env.get('SHUFFLE_DEFAULT_APIKEY', '')}"},
+                verify=False,
             )
 
-            if response.status_code == 200:
-                workflow_data = response.json()
-                actions = workflow_data.get("actions", [])
+            assert response.status_code in (
+                200,
+                401,
+            ), f"Workflow API failed: {response.status_code}"
+            assert response.status_code == 200, "Shuffle API key must be valid (got 401)"
 
-                # Validar acciones relacionadas con Redis
-                redis_actions = [a for a in actions if "Redis" in a.get("label", "")]
-                assert len(redis_actions) > 0, "No Redis actions found in workflow"
+            workflow_data = response.json()
+            actions = workflow_data.get("actions", [])
 
-                # Validar que exista acción de cache
-                cache_actions = [a for a in redis_actions if "Cache" in a.get("label", "")]
-                assert len(cache_actions) > 0, "No Redis cache action found"
+            # Validar acciones relacionadas con Redis (case-insensitive)
+            redis_actions = [a for a in actions if "redis" in a.get("label", "").lower()]
+            assert len(redis_actions) > 0, "No Redis actions found in workflow"
 
-                # Validar que exista acción de verificación
-                verify_actions = [a for a in redis_actions if "verify" in a.get("label", "").lower()]
-                if not verify_actions:
-                    pytest.skip("No Redis verification action found in workflow")
+            # Validar que exista acción de cache (case-insensitive)
+            cache_actions = [a for a in redis_actions if "cache" in a.get("label", "").lower()]
+            assert len(cache_actions) > 0, "No Redis cache action found"
+
+            # Validar que exista acción de verificación
+            verify_actions = [
+                a for a in actions
+                if "verify" in a.get("label", "").lower() and "redis" in a.get("label", "").lower()
+            ]
+            assert len(verify_actions) > 0, "No Redis verification action found in workflow"
 
         except requests.exceptions.RequestException as e:
-            pytest.skip(f"Workflow validation failed: {e}")
+            pytest.fail(f"Workflow validation failed: {e}")

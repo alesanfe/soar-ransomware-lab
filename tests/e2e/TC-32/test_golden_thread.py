@@ -5,137 +5,49 @@ Tests end-to-end data integrity across all SOAR components.
 """
 
 import json
-import os
-import pytest
-import requests
 import sys
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
-ARTIFACTS_DIR = Path("/app/results") if Path("/app").exists() else REPO_ROOT / "artifacts"
-WEBHOOK_INFO = Path("/app/webhook_info.json") if Path(
-    "/app/webhook_info.json").exists() else REPO_ROOT / "src" / "soar_lab" / "infrastructure" / "artifacts" / "webhook_info.json"
-ENV_FULL = Path("/app/.env.full") if Path("/app/.env.full").exists() else REPO_ROOT / ".env.full"
 
-WORKFLOW_TIMEOUT = 300
-POLL_INTERVAL = 5
-
-sys.path.insert(0, str(REPO_ROOT / "src"))
-
-from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
-from soar_lab.infrastructure.external.integrations.cortex_client import CortexClient
-from soar_lab.infrastructure.external.integrations.misp_client import MISPClient
-from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
-from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
-
-# Import shared assertions
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from assertions.trace_assertions import (
-    assert_trace_id_present,
-    assert_trace_id_consistent,
-    assert_trace_timestamps_sequential
+
+from assertions.incident_assertions import (
+    assert_incident_has_observables,
+    assert_incident_state,
 )
 from assertions.persistence_assertions import (
     assert_data_integrity,
     assert_data_persisted,
-    assert_no_data_loss
+    assert_no_data_loss,
 )
-from assertions.incident_assertions import (
-    assert_incident_state,
-    assert_incident_has_observables
+from assertions.trace_assertions import (
+    assert_trace_id_consistent,
+    assert_trace_timestamps_sequential,
 )
 
-
-def _load_env() -> dict:
-    env_vars = {
-        "SHUFFLE_URL": os.environ.get("SHUFFLE_URL"),
-        "ES_URL": os.environ.get("ES_URL"),
-        "THEHIVE_URL": os.environ.get("THEHIVE_URL"),
-        "CORTEX_URL": os.environ.get("CORTEX_URL"),
-        "MISP_URL": os.environ.get("MISP_URL"),
-        "THEHIVE_API_KEY": os.environ.get("THEHIVE_API_KEY"),
-        "CORTEX_API_KEY": os.environ.get("CORTEX_API_KEY"),
-        "MISP_API_KEY": os.environ.get("MISP_API_KEY"),
-        "SHUFFLE_DEFAULT_APIKEY": os.environ.get("SHUFFLE_DEFAULT_APIKEY"),
-        "SHUFFLE_DEFAULT_PASSWORD": os.environ.get("SHUFFLE_DEFAULT_PASSWORD"),
-    }
-
-    result = {k: v for k, v in env_vars.items() if v is not None}
-
-    if not ENV_FULL.exists():
-        return result
-
-    for line in ENV_FULL.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, _, v = line.partition("=")
-            k = k.strip()
-            v = v.strip()
-            if k not in result:
-                result[k] = v
-    return result
+from tests.e2e.base import E2EBaseTest
 
 
-class TestGoldenThread:
+class TestGoldenThread(E2EBaseTest):
     """TC-32 — Golden Thread: Cross-System Data Integrity."""
 
+    tc_id = "TC-32"
+
     def setup_method(self, method):
-        """Set up test clients and environment"""
-        t0 = datetime.now(timezone.utc)
-        (ARTIFACTS_DIR / "results").mkdir(parents=True, exist_ok=True)
-        (ARTIFACTS_DIR / "logs").mkdir(parents=True, exist_ok=True)
-
-        env = _load_env()
-
-        if not env.get("THEHIVE_API_KEY"):
-            pytest.skip("THEHIVE_API_KEY not configured in .env.full")
-
-        info = json.loads(WEBHOOK_INFO.read_text()) if WEBHOOK_INFO.exists() else {}
-        webhook_url = info.get("webhook_url", info.get("webhook_url_host", ""))
-        workflow_id = info.get("workflow_id", "")
-
-        shuffle_url = env.get("SHUFFLE_URL", "http://soar_shuffle_backend:5001")
-        thehive_url = env.get("THEHIVE_URL", "http://thehive:9000")
-        cortex_url = env.get("CORTEX_URL", "http://cortex:9001")
-        misp_url = env.get("MISP_URL", "http://misp:80")
-        es_url = env.get("ES_URL", "http://elasticsearch:9200")
-
-        shuffle_api_key = os.environ.get("SHUFFLE_DEFAULT_APIKEY") or env.get("SHUFFLE_DEFAULT_APIKEY") or env.get(
-            "SHUFFLE_API_KEY", "placeholder")
-        shuffle = ShuffleClient(base_url=shuffle_url, api_key=shuffle_api_key, verify_ssl=False)
-        thehive = TheHiveClient(base_url=thehive_url, api_key=env.get("THEHIVE_API_KEY", ""), verify_ssl=False)
-        cortex = CortexClient(base_url=cortex_url, api_key=env.get("CORTEX_API_KEY", ""), verify_ssl=False)
-        misp = MISPClient(base_url=misp_url, api_key=env.get("MISP_API_KEY", ""), verify_ssl=False)
-        es = ElasticsearchClient(base_url=es_url)
-
-        cases_before = len(thehive.search_cases())
-
-        self.t0 = t0
-        self.webhook_url = webhook_url
-        self.workflow_id = workflow_id
-        self.shuffle = shuffle
-        self.thehive = thehive
-        self.cortex = cortex
-        self.misp = misp
-        self.es = es
-        self._cases_before = cases_before
-
+        super().setup_method(method)
+        self.t0 = datetime.now(UTC)
 
     def _log(self, msg: str):
-        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         line = f"[{ts}] TC-32 {msg}"
-        sys.stdout.buffer.write((line + "\n").encode("utf-8", errors="replace"))
-        sys.stdout.buffer.flush()
-        with open(ARTIFACTS_DIR / "logs" / "notify.log", "a", encoding="utf-8") as f:
-            f.write(line + "\n")
+        print(line)
 
     def test_golden_thread_integrity(self):
-        """
-        TC-32: Validate Golden Thread data integrity across all systems.
+        """TC-32: Validate Golden Thread data integrity across all systems.
 
         Verifications:
           1. trace_id is generated and propagated across all systems
@@ -150,51 +62,27 @@ class TestGoldenThread:
         self._log(f"Generated trace_id: {trace_id}")
 
         # Send alert with trace_id
+        alert_id = f"TC32-GOLDEN-{int(time.time())}"
         payload = {
-            "alert_id": f"TC32-GOLDEN-{int(time.time())}",
+            "alert_id": alert_id,
             "alert_type": "ransomware",
             "hostname": "WIN-TC32-001",
             "src_ip": "192.168.1.220",
             "hash": "a" * 64,
             "severity": 3,
             "source": "golden-thread-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
             "mitre_techniques": ["T1486"],
-            "trace_id": trace_id
+            "trace_id": trace_id,
         }
 
         self._log("STEP 1: Sending alert with trace_id")
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
-
-        r = self.shuffle._webhook_session.post(
-            self.webhook_url,
-            json=payload,
-            timeout=20
-        )
-        assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
-        data = r.json()
-        assert isinstance(data, dict), "Response must be JSON object"
-        exec_id = data.get("execution_id", "")
-        assert isinstance(exec_id, str), "execution_id must be string"
-        assert len(exec_id) > 0, "execution_id must not be empty"
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log(f"+ Alert accepted — execution_id={exec_id}")
-
-        # Wait for workflow
-        self._log("STEP 2: Waiting for workflow completion")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            assert isinstance(execs, list), "Workflow executions must be a list"
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex:
-                assert isinstance(ex, dict), "Execution must be a dict"
-                if ex.get("status") not in ("EXECUTING", ""):
-                    break
-            time.sleep(POLL_INTERVAL)
-        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
         self._log("+ Workflow completed")
 
         # Collect data from all systems
@@ -203,37 +91,40 @@ class TestGoldenThread:
         # TheHive
         cases = self.thehive.search_cases()
         assert isinstance(cases, list), "TheHive cases must be a list"
-        new_cases = len(cases) - self._cases_before
-        thehive_data = None
-        if new_cases > 0:
-            last = max(cases, key=lambda c: c.get("caseId", 0))
-            assert isinstance(last, dict), "Case must be a dict"
-            thehive_data = {
-                "name": "thehive",
-                "alert_id": payload["alert_id"],
-                "hostname": last.get("customFields", {}).get("hostname", {}).get("string", ""),
-                "severity": last.get("severity"),
-                "timestamp": last.get("createdAt"),
-                "trace_id": trace_id if trace_id in last.get("description", "") else None
-            }
-            self._log(f"+ TheHive: case #{last.get('caseId')}")
+        new_cases = len(cases) - self.cases_before
+        assert new_cases > 0, (
+            f"Expected at least 1 new TheHive case for golden thread, "
+            f"got 0 new (before={self.cases_before}, after={len(cases)})"
+        )
+        last = max(cases, key=lambda c: c.get("caseId", 0))
+        assert isinstance(last, dict), "Case must be a dict"
+        thehive_data = {
+            "name": "thehive",
+            "alert_id": payload["alert_id"],
+            "hostname": last.get("customFields", {}).get("hostname", {}).get("string", ""),
+            "severity": last.get("severity"),
+            "timestamp": last.get("createdAt"),
+            "trace_id": trace_id if trace_id in last.get("description", "") else None,
+        }
+        self._log(f"+ TheHive: case #{last.get('caseId')}")
 
         # Elasticsearch
         doc = self.es.search_by_alert_id(payload["alert_id"])
-        es_data = None
-        if doc:
-            es_data = {
-                "name": "elasticsearch",
-                "alert_id": doc.get("alert_id"),
-                "hostname": doc.get("hostname"),
-                "severity": doc.get("severity"),
-                "timestamp": doc.get("@timestamp"),
-                "trace_id": doc.get("trace_id")
-            }
-            self._log(f"+ Elasticsearch: document found")
+        assert doc is not None, (
+            f"Elasticsearch document must be indexed for golden thread, "
+            f"alert_id={payload['alert_id']} not found"
+        )
+        es_data = {
+            "name": "elasticsearch",
+            "alert_id": doc.get("alert_id"),
+            "hostname": doc.get("hostname"),
+            "severity": doc.get("severity"),
+            "timestamp": doc.get("@timestamp"),
+            "trace_id": doc.get("trace_id"),
+        }
+        self._log("+ Elasticsearch: document found")
 
         # Cortex (if available)
-        cortex_data = None
         try:
             analyzers = self.cortex.list_analyzers()
             self._log(f"+ Cortex: {len(analyzers)} analyzer(s)")
@@ -241,7 +132,6 @@ class TestGoldenThread:
             self._log(f"+ Cortex check skipped: {e}")
 
         # MISP (if available)
-        misp_data = None
         try:
             events = self.misp.list_events()
             self._log(f"+ MISP: {len(events)} event(s)")
@@ -264,20 +154,20 @@ class TestGoldenThread:
 
         # Validate data integrity
         self._log("STEP 5: Validating data integrity")
-        if es_data:
-            assert_data_persisted("elasticsearch", es_data)
-            critical_fields = ["alert_id", "alert_type", "hostname", "src_ip"]
-            try:
-                assert_data_integrity(payload, es_data, critical_fields)
-                self._log("+ Data integrity verified")
-            except AssertionError as e:
-                self._log(f"+ Data integrity warning: {e}")
+        assert es_data is not None, "ES data must be present for data integrity validation"
+        assert_data_persisted("elasticsearch", es_data)
+        critical_fields = ["alert_id", "alert_type", "hostname", "src_ip"]
+        try:
+            assert_data_integrity(payload, es_data, critical_fields)
+            self._log("+ Data integrity verified")
+        except AssertionError as e:
+            self._log(f"+ Data integrity warning: {e}")
 
         # Validate no data loss
         self._log("STEP 6: Validating no data loss")
-        if thehive_data:
-            assert_no_data_loss(self._cases_before, len(cases))
-            self._log("+ No data loss in TheHive")
+        assert thehive_data is not None, "TheHive data must be present for no-data-loss validation"
+        assert_no_data_loss(self.cases_before, len(cases))
+        self._log("+ No data loss in TheHive")
 
         # Validate timestamp sequence
         self._log("STEP 7: Validating timestamp sequence")
@@ -289,8 +179,7 @@ class TestGoldenThread:
             except AssertionError as e:
                 self._log(f"+ Timestamp sequence warning: {e}")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-32 COMPLETED — GOLDEN THREAD INTEGRITY VALIDATED ===")
 
@@ -303,15 +192,15 @@ class TestGoldenThread:
             "systems": [s.get("name") for s in systems],
             "elapsed_seconds": elapsed,
             "success": True,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
-        report_path = ARTIFACTS_DIR / "results" / "TC-32_golden_thread_report.json"
+        report_path = Path("results") / "TC-32_golden_thread_report.json"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
         self._log(f"+ Report saved: {report_path}")
 
     def test_end_to_end_data_flow(self):
-        """
-        TC-32: Validate end-to-end data flow.
+        """TC-32: Validate end-to-end data flow.
 
         Verifications:
           1. Data flows correctly through all pipeline stages
@@ -321,54 +210,37 @@ class TestGoldenThread:
         self._log("=== TC-32: END-TO-END DATA FLOW TEST STARTED ===")
 
         # Send alert
+        alert_id = f"TC32-FLOW-{int(time.time())}"
         payload = {
-            "alert_id": f"TC32-FLOW-{int(time.time())}",
+            "alert_id": alert_id,
             "alert_type": "ransomware",
             "hostname": "WIN-TC32-002",
             "src_ip": "192.168.1.221",
             "hash": "b" * 64,
             "severity": 2,
             "source": "data-flow-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
-            "mitre_techniques": ["T1059"]
+            "mitre_techniques": ["T1059"],
         }
 
         self._log("STEP 1: Sending alert for data flow test")
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
-
-        r = self.shuffle._webhook_session.post(
-            self.webhook_url,
-            json=payload,
-            timeout=20
-        )
-        assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
-        exec_id = r.json().get("execution_id", "")
-
-        # Wait for workflow
-        self._log("STEP 2: Waiting for workflow completion")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex and ex.get("status") not in ("EXECUTING", ""):
-                break
-            time.sleep(POLL_INTERVAL)
-        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        self.validate_workflow_execution(execution, alert_id=alert_id)
 
         # Validate data at each stage
         self._log("STEP 3: Validating data at each stage")
 
         # Stage 1: Shuffle execution
         self._log("+ Stage 1: Shuffle execution")
-        assert ex is not None, "Shuffle execution data missing"
+        assert execution is not None, "Shuffle execution data missing"
 
         # Stage 2: TheHive case
         self._log("+ Stage 2: TheHive case")
         cases = self.thehive.search_cases()
-        new_cases = len(cases) - self._cases_before
+        new_cases = len(cases) - self.cases_before
         assert new_cases > 0, "TheHive case not created"
         last = max(cases, key=lambda c: c.get("caseId", 0))
         assert_incident_state(last, "Open")
@@ -380,54 +252,74 @@ class TestGoldenThread:
         assert doc is not None, "Elasticsearch document not found"
         assert_data_persisted("elasticsearch", doc)
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-32 COMPLETED — END-TO-END DATA FLOW VALIDATED ===")
 
     def test_health_matrix(self):
-        """
-        TC-32-01: Health Matrix validation.
+        """TC-32-01: Health Matrix validation.
 
         Verifications:
-          - All services report health status
-          - Health matrix is complete
-          - Service dependencies are tracked
+          - All services (TheHive, Cortex, MISP, ES, Loki, Shuffle) queried
+          - EACH service is healthy (HTTP 200 or ping OK)
+          - Response time < 5s for each service
+          - No degraded services
         """
         self._log("=== TC-32-01: HEALTH MATRIX TEST STARTED ===")
 
-        # Check Shuffle health
-        self._log("STEP 1: Checking Shuffle health")
-        try:
-            workflows = self.shuffle.list_workflows()
-            self._log(f"+ Shuffle: {len(workflows)} workflows accessible")
-        except Exception as e:
-            self._log(f"+ Shuffle health check failed: {e}")
+        services: list[tuple[str, callable]] = [
+            ("Shuffle", self.verify_shuffle_backend),
+            ("TheHive", self.verify_thehive),
+            ("Cortex", self.verify_cortex),
+            ("MISP", self.verify_misp),
+            ("Elasticsearch", self.verify_elasticsearch),
+            ("Loki", self.verify_loki),
+        ]
 
-        # Check TheHive health
-        self._log("STEP 2: Checking TheHive health")
-        try:
-            cases = self.thehive.search_cases()
-            self._log(f"+ TheHive: {len(cases)} cases accessible")
-        except Exception as e:
-            self._log(f"+ TheHive health check failed: {e}")
+        max_response_time = 5.0  # seconds
+        degraded: list[str] = []
+        health_results: dict[str, dict] = {}
 
-        # Check Elasticsearch health
-        self._log("STEP 3: Checking Elasticsearch health")
-        try:
-            health = self.es.cluster_health()
-            self._log(f"+ Elasticsearch: {health.get('status')} cluster health")
-        except Exception as e:
-            self._log(f"+ Elasticsearch health check failed: {e}")
+        for name, check_fn in services:
+            self._log(f"STEP: Checking {name} health")
+            t_start = time.time()
+            try:
+                ok, msg = check_fn()
+            except Exception as e:
+                ok, msg = False, str(e)
+            response_time = time.time() - t_start
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+            health_results[name] = {
+                "healthy": ok,
+                "message": msg,
+                "response_time": response_time,
+            }
+
+            # Assert EACH service is healthy
+            assert ok, f"{name} must be healthy (HTTP 200 or ping OK), got: {msg}"
+            self._log(f"+ {name}: healthy ({msg}), response={response_time:.2f}s")
+
+            # Assert response time < 5s
+            assert (
+                response_time < max_response_time
+            ), f"{name} response time {response_time:.2f}s exceeds {max_response_time}s limit"
+
+            if not ok or response_time >= max_response_time:
+                degraded.append(name)
+
+        # Assert no degraded services
+        assert len(degraded) == 0, (
+            f"Degraded services detected: {degraded}. "
+            f"All services must be healthy with response time < {max_response_time}s"
+        )
+        self._log(f"+ All {len(services)} services healthy, no degraded services")
+
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-32-01 COMPLETED — HEALTH MATRIX VALIDATED ===")
 
     def test_full_remediation_cycle(self):
-        """
-        TC-32-03: Full Remediation Cycle validation.
+        """TC-32-03: Full Remediation Cycle validation.
 
         Verifications:
           - Remediation cycle completes successfully
@@ -437,96 +329,70 @@ class TestGoldenThread:
         self._log("=== TC-32-03: FULL REMEDIATION CYCLE TEST STARTED ===")
 
         trace_id = str(int(time.time()))
+        alert_id = f"TC32-REM-{int(time.time())}"
         payload = {
-            "alert_id": f"TC32-REM-{int(time.time())}",
+            "alert_id": alert_id,
             "alert_type": "ransomware",
             "hostname": "WIN-TC32-001",
             "src_ip": "192.168.1.100",
             "hash": "93e670becf64454b97b2efb7537fc1b7e09866f0dec001d8321467f74abc8dba",
             "severity": 3,
             "source": "remediation-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
             "mitre_techniques": ["T1486"],
-            "trace_id": trace_id
+            "trace_id": trace_id,
         }
 
         self._log("STEP 1: Sending alert for remediation cycle")
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        self.validate_workflow_execution(execution, alert_id=alert_id)
 
-        r = self.shuffle._webhook_session.post(
-            self.webhook_url,
-            json=payload,
-            timeout=20
-        )
-        assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
-        exec_id = r.json().get("execution_id", "")
+        assert execution is not None, "Workflow execution data must not be None"
+        assert (
+            execution.get("status") == "FINISHED"
+        ), f"Workflow must FINISH for remediation cycle, got: {execution.get('status')}"
+        self._log(f"+ Remediation workflow completed: {execution.get('status')}")
 
-        self._log("STEP 2: Waiting for remediation workflow")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex and ex.get("status") not in ("EXECUTING", ""):
-                break
-            time.sleep(POLL_INTERVAL)
-
-        if ex:
-            assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
-            self._log(f"+ Remediation workflow completed: {ex.get('status')}")
-
-        # Verify remediation steps
+        # Verify remediation steps — detection, analysis, containment, notification
         self._log("STEP 3: Verifying remediation steps")
-        cases = self.thehive.search_cases()
-        if len(cases) > self._cases_before:
-            last = max(cases, key=lambda c: c.get("caseId", 0))
-            case_id = last.get("id", last.get("_id", ""))
-            tasks = self.thehive.list_case_tasks(case_id)
-            self._log(f"+ {len(tasks)} remediation task(s) found")
-            for t in tasks:
-                self._log(f"  - [{t.get('status')}] {t.get('title')}")
+        cases = self.thehive.search_cases(range_="0-100", sort=["-caseId"])
+        assert isinstance(cases, list), "TheHive cases must be a list"
+        # Check if a new case was created for this alert (by description)
+        new_case = None
+        for c in cases:
+            desc = str(c.get("description", ""))
+            if alert_id in desc:
+                new_case = c
+                break
+        assert new_case is not None, (
+            f"No new TheHive case created for remediation cycle (alert_id={alert_id})"
+        )
+        last = max(cases, key=lambda c: c.get("caseId", 0))
+        assert isinstance(last, dict), "Case must be a dict"
+        case_id = last.get("id", last.get("_id", ""))
+        tasks = self.thehive.list_case_tasks(case_id)
+        assert isinstance(tasks, list), "Tasks must be a list"
+        assert len(tasks) > 0, "Remediation case must have tasks"
+        self._log(f"+ {len(tasks)} remediation task(s) found")
+        for t in tasks:
+            self._log(f"  - [{t.get('status')}] {t.get('title')}")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        # Assert case has severity (detection)
+        assert last.get("severity") is not None, "Case must have severity (detection stage)"
+        # Assert case has observables (analysis)
+        observables = self.thehive.get_case_observables(case_id)
+        assert isinstance(observables, list), "Case observables must be a list"
+        assert len(observables) > 0, "Case must have observables (analysis stage)"
+        self._log(f"+ Case has {len(observables)} observables (analysis stage)")
+
+        # Assert ES document exists (evidence persistence)
+        doc = self.es.search_by_alert_id(alert_id)
+        assert doc is not None, f"ES document must exist for alert_id={alert_id}"
+        self._log("+ ES document exists (evidence persistence)")
+
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-32-03 COMPLETED — FULL REMEDIATION CYCLE VALIDATED ===")
-
-    def test_global_state_coherence(self):
-        """
-        TC-32-04: Global State Coherence validation.
-
-        Verifications:
-          - All systems have coherent state
-          - No orphaned data
-          - State is consistent across restarts
-        """
-        self._log("=== TC-32-04: GLOBAL STATE COHERENCE TEST STARTED ===")
-
-        self._log("STEP 1: Checking global state coherence")
-
-        # Check Elasticsearch for data consistency
-        self._log("STEP 2: Checking Elasticsearch data consistency")
-        try:
-            count = self.es.count()
-            self._log(f"+ Elasticsearch: {count} documents indexed")
-        except Exception as e:
-            self._log(f"+ Elasticsearch check failed: {e}")
-
-        # Check TheHive for case consistency
-        self._log("STEP 3: Checking TheHive case consistency")
-        try:
-            cases = self.thehive.search_cases()
-            self._log(f"+ TheHive: {len(cases)} cases")
-        except Exception as e:
-            self._log(f"+ TheHive check failed: {e}")
-
-        # Check for orphaned data
-        self._log("STEP 4: Checking for orphaned data")
-        self._log("+ Orphaned data check complete")
-
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
-        self._log(f"Elapsed: {elapsed:.1f}s")
-        self._log("=== TC-32-04 COMPLETED — GLOBAL STATE COHERENCE VALIDATED ===")

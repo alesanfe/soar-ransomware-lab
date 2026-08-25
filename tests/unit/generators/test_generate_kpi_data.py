@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
-"""
-Unit tests for generate_kpi_data module
-"""
+"""Unit tests for generate_kpi_data module."""
 
-import pytest
 import sys
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Add src to path
 REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from soar_lab.scripts.generate_kpi_data import (
-    generate_simulated_alerts,
-    calculate_kpis,
-    main
-)
+from scripts.generate_kpi_data import calculate_kpis, generate_simulated_alerts, main
 
 
 class TestGenerateSimulatedAlerts:
@@ -58,7 +53,6 @@ class TestGenerateSimulatedAlerts:
             assert alert["cortex_analyzed"] == alert["success"]
             assert alert["misp_searched"] == alert["success"]
             assert alert["es_indexed"] == alert["success"]
-            assert alert["wazuh_queried"] == alert["success"]
 
     def test_generate_simulated_alerts_severity_distribution(self):
         """Test that severity distribution follows expected weights."""
@@ -100,7 +94,6 @@ class TestCalculateKPIs:
                 "cortex_analyzed": True,
                 "misp_searched": True,
                 "es_indexed": True,
-                "wazuh_queried": True
             },
             {
                 "alert_id": "alert_0002",
@@ -111,8 +104,7 @@ class TestCalculateKPIs:
                 "cortex_analyzed": True,
                 "misp_searched": True,
                 "es_indexed": True,
-                "wazuh_queried": True
-            }
+            },
         ]
 
         kpis = calculate_kpis(alerts)
@@ -126,7 +118,6 @@ class TestCalculateKPIs:
         assert kpis["service_success_rates"]["cortex"] == 1.0
         assert kpis["service_success_rates"]["misp"] == 1.0
         assert kpis["service_success_rates"]["elasticsearch"] == 1.0
-        assert kpis["service_success_rates"]["wazuh"] == 1.0
 
     def test_calculate_kpis_mixed_success(self):
         """Test calculating KPIs with mixed success alerts."""
@@ -140,7 +131,6 @@ class TestCalculateKPIs:
                 "cortex_analyzed": True,
                 "misp_searched": True,
                 "es_indexed": True,
-                "wazuh_queried": True
             },
             {
                 "alert_id": "alert_0002",
@@ -151,8 +141,7 @@ class TestCalculateKPIs:
                 "cortex_analyzed": False,
                 "misp_searched": False,
                 "es_indexed": False,
-                "wazuh_queried": False
-            }
+            },
         ]
 
         kpis = calculate_kpis(alerts)
@@ -166,7 +155,6 @@ class TestCalculateKPIs:
         assert kpis["service_success_rates"]["cortex"] == 0.5
         assert kpis["service_success_rates"]["misp"] == 0.5
         assert kpis["service_success_rates"]["elasticsearch"] == 0.5
-        assert kpis["service_success_rates"]["wazuh"] == 0.5
 
     def test_calculate_kpis_no_mttr_values(self):
         """Test calculating KPIs when no alerts have MTTR values."""
@@ -180,7 +168,6 @@ class TestCalculateKPIs:
                 "cortex_analyzed": False,
                 "misp_searched": False,
                 "es_indexed": False,
-                "wazuh_queried": False
             }
         ]
 
@@ -208,7 +195,6 @@ class TestCalculateKPIs:
                 "cortex_analyzed": i > 0,
                 "misp_searched": i > 0,
                 "es_indexed": i > 0,
-                "wazuh_queried": i > 0
             }
             for i in range(1, 101)
         ]
@@ -228,34 +214,42 @@ class TestCalculateKPIs:
 class TestMain:
     """Tests for main function."""
 
-    @patch('builtins.open', new_callable=Mock)
-    @patch('json.dump')
-    @patch('builtins.print')
-    def test_main_generates_and_saves_kpis(self, mock_print, mock_json_dump, mock_open):
-        """Test main function generates alerts, calculates KPIs, and saves to file."""
+    @patch("builtins.open", new_callable=Mock)
+    @patch("json.dump")
+    @patch("builtins.print")
+    def test_main_generates_and_saves_kpis(self, mock_print, mock_json_dump, mock_open, caplog):
+        """Test main function generates alerts, calculates KPIs, and saves to
+        file."""
+        import logging
+
         mock_open.return_value.__enter__ = Mock()
         mock_open.return_value.__exit__ = Mock()
         mock_open.return_value.write = Mock()
 
-        main()
+        with caplog.at_level(logging.INFO, logger="scripts.generate_kpi_data"):
+            main()
 
-        # Verify generate_simulated_alerts was called
-        mock_print.assert_any_call("Generando datos simulados de alertas...")
-        mock_print.assert_any_call("Calculando KPIs...")
+        # Verify logger.info was called for diagnostic messages
+        assert any("Generando datos simulados" in r.message for r in caplog.records)
+        assert any("Calculando KPIs" in r.message for r in caplog.records)
+
+        # Verify CLI print output
         mock_print.assert_any_call("\n=== KPIs Calculados ===")
-        mock_print.assert_any_call("\nResultados guardados en: src/soar_lab/infrastructure/artifacts/kpi_results.json")
+        mock_print.assert_any_call("\nResultados guardados en: reports/kpi/kpi_results.json")
 
         # Verify json.dump was called to save results
         assert mock_json_dump.called
 
-    @patch('builtins.open', new_callable=Mock)
-    @patch('json.dump')
-    @patch('builtins.print')
-    @patch('soar_lab.services.generate_kpi_data.generate_simulated_alerts')
-    @patch('soar_lab.services.generate_kpi_data.calculate_kpis')
-    def test_main_uses_correct_functions(self, mock_calculate_kpis, mock_generate_alerts, mock_print, mock_json_dump,
-                                         mock_open):
-        """Test main function uses generate_simulated_alerts and calculate_kpis."""
+    @patch("builtins.open", new_callable=Mock)
+    @patch("json.dump")
+    @patch("builtins.print")
+    @patch("scripts.generate_kpi_data.generate_simulated_alerts")
+    @patch("scripts.generate_kpi_data.calculate_kpis")
+    def test_main_uses_correct_functions(
+        self, mock_calculate_kpis, mock_generate_alerts, mock_print, mock_json_dump, mock_open
+    ):
+        """Test main function uses generate_simulated_alerts and
+        calculate_kpis."""
         mock_open.return_value.__enter__ = Mock()
         mock_open.return_value.__exit__ = Mock()
         mock_open.return_value.write = Mock()

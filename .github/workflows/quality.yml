@@ -1,0 +1,115 @@
+name: Quality Suite
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'scripts/quality/**'
+      - 'scripts/reports/**'
+      - 'pyproject.toml'
+      - '.github/workflows/quality.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'scripts/quality/**'
+      - 'scripts/reports/**'
+      - 'pyproject.toml'
+      - '.github/workflows/quality.yml'
+  schedule:
+    - cron: '0 3 * * 1'  # Weekly on Monday at 3 AM UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  quality-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,test,quality]"
+      - name: Run quality checks
+        run: |
+          mkdir -p reports/quality
+          python scripts/quality/run_quality_checks.py --report-only --output-dir reports/quality
+      - name: Run test review
+        run: |
+          mkdir -p reports/test-review
+          python scripts/reports/test_review.py --output-dir reports/test-review
+      - name: Run holistic review
+        run: |
+          mkdir -p reports/holistic
+          python scripts/reports/holistic_review.py --output-dir reports/holistic
+      - name: Upload quality reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports
+          path: |
+            reports/quality/
+            reports/test-review/
+            reports/holistic/
+          retention-days: 30
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/unit/ --cov=src.soar_lab --cov-report=html:reports/coverage --cov-report=xml
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            reports/coverage/
+            coverage.xml
+          retention-days: 30
+
+  mutation-testing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test,quality]"
+          pip install mutmut
+      - name: Run mutation testing
+        run: |
+          mkdir -p reports/mutmut
+          mutmut run --paths-to-mutate src/soar_lab || true
+          mutmut results --html reports/mutmut/mutation_report.html || true
+          mutmut junitxml > reports/mutmut/mutation_report.xml || true
+      - name: Upload mutation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutmut/
+          retention-days: 30
+        if: always()

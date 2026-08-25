@@ -1,25 +1,31 @@
-"""Unit tests for api.models module."""
+"""Unit tests for api.models module.
+
+Consolidated from tests/integration/test_api_models.py (which was misplaced —
+Pydantic model validation is unit testing, not integration testing).
+"""
+
+import json
+from datetime import datetime
 
 import pytest
-from datetime import datetime
 from fastapi import Response
 
-from soar_lab.api.models import (
-    LoginRequest,
-    LoginResponse,
-    VerifyAuthResponse,
-    RunRequest,
-    BackupRequest,
-    ServiceStatus,
-    Metrics,
-    RunResults,
-    CoverageData,
+from soar_lab.interfaces.api.models import (
     BackupInfo,
     BackupListResponse,
+    BackupRequest,
+    CoverageData,
     CreateBackupResponse,
-    RestoreBackupResponse,
     ErrorResponse,
     HealthResponse,
+    LoginRequest,
+    LoginResponse,
+    Metrics,
+    RestoreBackupResponse,
+    RunRequest,
+    RunResults,
+    ServiceStatus,
+    VerifyAuthResponse,
 )
 
 
@@ -31,6 +37,13 @@ class TestLoginRequest:
         request = LoginRequest(username="testuser", password="testpass")
         assert request.username == "testuser"
         assert request.password == "testpass"
+
+    def test_login_request_required_fields(self):
+        """Test that username and password are required."""
+        with pytest.raises(Exception):
+            LoginRequest(username="admin")
+        with pytest.raises(Exception):
+            LoginRequest(password="password")
 
 
 class TestLoginResponse:
@@ -45,7 +58,9 @@ class TestLoginResponse:
 
     def test_login_response_custom_token_type(self):
         """Test LoginResponse with custom token type."""
-        response = LoginResponse(token="test_token", message="Login successful", token_type="Custom")
+        response = LoginResponse(
+            token="test_token", message="Login successful", token_type="Custom"
+        )
         assert response.token_type == "Custom"
 
 
@@ -64,7 +79,16 @@ class TestRunRequest:
 
     def test_run_request_valid_category(self):
         """Test RunRequest with valid category."""
-        for category in ['unit', 'integration', 'e2e', 'atomic', 'performance', 'security', 'smoke', 'all']:
+        for category in [
+            "unit",
+            "integration",
+            "e2e",
+            "atomic",
+            "performance",
+            "security",
+            "smoke",
+            "all",
+        ]:
             request = RunRequest(category=category)
             assert request.category == category
 
@@ -86,11 +110,17 @@ class TestBackupRequest:
         """Test BackupRequest with path traversal raises ValueError."""
         with pytest.raises(ValueError, match="path traversal not allowed"):
             BackupRequest(backup_name="../backup.tar.gz")
+        with pytest.raises(ValueError, match="path traversal not allowed"):
+            BackupRequest(backup_name="sub/backup.tar.gz")
+        with pytest.raises(ValueError, match="path traversal not allowed"):
+            BackupRequest(backup_name="sub\\backup.tar.gz")
 
     def test_backup_request_invalid_extension(self):
         """Test BackupRequest with invalid extension raises ValueError."""
         with pytest.raises(ValueError, match="must end with .tar.gz"):
             BackupRequest(backup_name="backup.zip")
+        with pytest.raises(ValueError, match="must end with .tar.gz"):
+            BackupRequest(backup_name="backup.tar")
 
 
 class TestServiceStatus:
@@ -109,15 +139,12 @@ class TestMetrics:
 
     def test_metrics_valid(self):
         """Test valid Metrics creation."""
-        metrics = Metrics(
-            cpu=50.5,
-            memory=60.3,
-            disk=70.2,
-            timestamp=datetime.now()
-        )
+        ts = datetime(2024, 1, 1, 12, 0, 0)
+        metrics = Metrics(cpu=50.5, memory=60.3, disk=70.2, timestamp=ts)
         assert metrics.cpu == 50.5
         assert metrics.memory == 60.3
         assert metrics.disk == 70.2
+        assert metrics.timestamp == ts
 
 
 class TestRunResults:
@@ -132,13 +159,15 @@ class TestRunResults:
             skipped=5,
             coverage=85.5,
             output="All tests passed",
-            duration=10.5
+            duration=10.5,
         )
         assert results.category == "unit"
         assert results.passed == 100
         assert results.failed == 0
         assert results.skipped == 5
         assert results.coverage == 85.5
+        assert results.output == "All tests passed"
+        assert results.duration == 10.5
 
 
 class TestCoverageData:
@@ -177,10 +206,11 @@ class TestBackupListResponse:
         """Test valid BackupListResponse creation."""
         backups = [
             BackupInfo(name="backup1.tar.gz", size="10MB", date="2026-06-29"),
-            BackupInfo(name="backup2.tar.gz", size="15MB", date="2026-06-30")
+            BackupInfo(name="backup2.tar.gz", size="15MB", date="2026-06-30"),
         ]
         response = BackupListResponse(backups=backups)
         assert len(response.backups) == 2
+        assert response.backups[0].name == "backup1.tar.gz"
 
     def test_backup_list_response_defaults(self):
         """Test BackupListResponse with default empty list."""
@@ -194,9 +224,7 @@ class TestCreateBackupResponse:
     def test_create_backup_response_valid(self):
         """Test valid CreateBackupResponse creation."""
         response = CreateBackupResponse(
-            backup_name="backup.tar.gz",
-            status="success",
-            message="Backup created successfully"
+            backup_name="backup.tar.gz", status="success", message="Backup created successfully"
         )
         assert response.backup_name == "backup.tar.gz"
         assert response.status == "success"
@@ -209,9 +237,7 @@ class TestRestoreBackupResponse:
     def test_restore_backup_response_valid(self):
         """Test valid RestoreBackupResponse creation."""
         response = RestoreBackupResponse(
-            backup_name="backup.tar.gz",
-            status="success",
-            message="Backup restored successfully"
+            backup_name="backup.tar.gz", status="success", message="Backup restored successfully"
         )
         assert response.backup_name == "backup.tar.gz"
         assert response.status == "success"
@@ -221,15 +247,26 @@ class TestRestoreBackupResponse:
 class TestErrorResponse:
     """Tests for ErrorResponse model."""
 
+    def test_error_response_valid(self):
+        """Test valid ErrorResponse creation."""
+        response = ErrorResponse(error={"code": "ERR001", "message": "Error occurred"})
+        assert response.error == {"code": "ERR001", "message": "Error occurred"}
+
     def test_error_response_create(self):
         """Test ErrorResponse.create class method."""
         response = ErrorResponse.create(
-            code="test_error",
-            message="Test error message",
-            status_code=400
+            code="test_error", message="Test error message", status_code=400
         )
         assert isinstance(response, Response)
         assert response.status_code == 400
+        content = json.loads(response.body.decode())
+        assert content["error"]["code"] == "test_error"
+        assert content["error"]["message"] == "Test error message"
+
+    def test_error_response_create_default_status(self):
+        """Test ErrorResponse.create with default status code."""
+        response = ErrorResponse.create(code="ERR001", message="Error occurred")
+        assert response.status_code == 500
 
 
 class TestHealthResponse:
@@ -238,9 +275,7 @@ class TestHealthResponse:
     def test_health_response_valid(self):
         """Test valid HealthResponse creation."""
         response = HealthResponse(
-            status="healthy",
-            timestamp="2026-06-29T10:00:00Z",
-            version="1.0.0"
+            status="healthy", timestamp="2026-06-29T10:00:00Z", version="1.0.0"
         )
         assert response.status == "healthy"
         assert response.timestamp == "2026-06-29T10:00:00Z"

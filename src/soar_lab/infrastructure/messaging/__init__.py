@@ -1,1 +1,1 @@
-from .http_alert_sender import *
+"""Messaging infrastructure package for event-driven communication."""

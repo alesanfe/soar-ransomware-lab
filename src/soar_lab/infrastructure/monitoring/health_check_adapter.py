@@ -4,8 +4,6 @@ This adapter encapsulates the HTTP client logic for health checks,
 allowing the application layer to remain infrastructure-agnostic.
 """
 
-from typing import Dict, Any, Optional
-
 from soar_lab.config.logging import get_logger
 from soar_lab.domain.ports import HTTPClient
 
@@ -15,9 +13,12 @@ logger = get_logger(__name__)
 class HTTPHealthCheckAdapter:
     """Adapter for HTTP-based health checks using HTTPClient port."""
 
-    def __init__(self, http_client: HTTPClient, verify_ssl_config: Optional[Dict[str, bool]] = None):
-        """
-        Initialize the HTTP health check adapter.
+    def __init__(
+        self,
+        http_client: HTTPClient,
+        verify_ssl_config: dict[str, bool] | None = None,
+    ) -> None:
+        """Initialize the HTTP health check adapter.
 
         Args:
             http_client: HTTPClient instance (injected dependency)
@@ -29,8 +30,7 @@ class HTTPHealthCheckAdapter:
         self.verify_ssl_config = verify_ssl_config or {}
 
     async def check_service(self, service_name: str, url: str) -> bool:
-        """
-        Check if a service is running by checking HTTP endpoint.
+        """Check if a service is running by checking HTTP endpoint.
 
         Args:
             service_name: Name of the service

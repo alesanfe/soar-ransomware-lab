@@ -1,32 +1,24 @@
 #!/usr/bin/env python3
-"""
-FastAPI endpoint tests using TestClient.
-Covers all routes registered in soar_lab.api.main:
-  GET  /health
-  GET  /
-  POST /auth/login
-  POST /auth/verify
-  GET  /analytics/metrics
-  GET  /analytics/kpis
-  GET  /services/status
-  POST /backup/create
-  GET  /backup/list
-  POST /backup/restore
-  POST /tests/run
-  WS   /ws/logs
+"""FastAPI endpoint tests using TestClient.
+
+Covers all routes registered in soar_lab.api.main:   GET  /health   GET
+/   POST /auth/login   POST /auth/verify   GET  /analytics/metrics   GET
+/analytics/kpis   GET  /services/status   POST /backup/create   GET
+/backup/list   POST /backup/restore   POST /tests/run   WS   /ws/logs
 """
 
-import json
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from datetime import datetime, timezone
 from fastapi.testclient import TestClient
-from soar_lab.api.main import create_app
-from unittest.mock import AsyncMock, MagicMock, patch
 
+from soar_lab.interfaces.api.main import create_app
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Fixtures
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def mock_config():
@@ -58,7 +50,7 @@ def mock_analytics_service():
         "total_alerts": 42,
         "malicious": 10,
         "benign": 32,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
     }
     return svc
 
@@ -70,10 +62,12 @@ def mock_backup_service():
         "filename": "backup-20250101.tar.gz",
         "message": "Backup created successfully",
     }
-    svc.list_backups.return_value = {"backups": [
-        {"name": "backup-20250101.tar.gz", "size": "10.0 MB", "date": "2025-01-01 00:00"},
-        {"name": "backup-20250102.tar.gz", "size": "11.0 MB", "date": "2025-01-02 00:00"},
-    ]}
+    svc.list_backups.return_value = {
+        "backups": [
+            {"name": "backup-20250101.tar.gz", "size": "10.0 MB", "date": "2025-01-01 00:00"},
+            {"name": "backup-20250102.tar.gz", "size": "11.0 MB", "date": "2025-01-02 00:00"},
+        ]
+    }
     svc.restore.return_value = {
         "backup_name": "backup-20250101",
         "status": "success",
@@ -85,26 +79,30 @@ def mock_backup_service():
 @pytest.fixture
 def mock_test_service():
     svc = MagicMock()
-    svc.run_tests = AsyncMock(return_value={
-        "category": "unit",
-        "passed": 50,
-        "failed": 0,
-        "skipped": 2,
-        "coverage": 85.0,
-        "output": "50 passed, 2 skipped",
-        "duration": 3.14,
-    })
+    svc.run_tests = AsyncMock(
+        return_value={
+            "category": "unit",
+            "passed": 50,
+            "failed": 0,
+            "skipped": 2,
+            "coverage": 85.0,
+            "output": "50 passed, 2 skipped",
+            "duration": 3.14,
+        }
+    )
     return svc
 
 
 @pytest.fixture
 def mock_health_service():
     svc = MagicMock()
-    svc.get_all_services_status = AsyncMock(return_value={
-        "elasticsearch": "healthy",
-        "thehive": "healthy",
-        "cortex": "healthy",
-    })
+    svc.get_all_services_status = AsyncMock(
+        return_value={
+            "elasticsearch": "healthy",
+            "thehive": "healthy",
+            "cortex": "healthy",
+        }
+    )
     return svc
 
 
@@ -155,6 +153,7 @@ def client(
 # GET /health
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestHealthEndpoint:
     def test_health_returns_200(self, client):
         r = client.get("/health")
@@ -178,6 +177,7 @@ class TestHealthEndpoint:
 # GET /  (HTML docs)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestRootEndpoint:
     def test_root_returns_html(self, client):
         r = client.get("/")
@@ -188,6 +188,7 @@ class TestRootEndpoint:
 # ─────────────────────────────────────────────────────────────────────────────
 # POST /auth/login
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestAuthLogin:
     def test_login_valid_credentials(self, client):
@@ -216,6 +217,7 @@ class TestAuthLogin:
 
     def test_login_auth_error_returns_401(self, client, mock_auth_service):
         from soar_lab.common.exceptions import AuthError
+
         mock_auth_service.verify_credentials.side_effect = AuthError("locked", status_code=401)
         r = client.post("/auth/login", json={"username": "admin", "password": "x"})
         assert r.status_code == 401
@@ -224,6 +226,7 @@ class TestAuthLogin:
 # ─────────────────────────────────────────────────────────────────────────────
 # POST /auth/verify
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestAuthVerify:
     def test_verify_valid_token(self, client, mock_auth_service):
@@ -252,13 +255,14 @@ class TestAuthVerify:
 # GET /analytics/metrics
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestAnalyticsMetrics:
     def test_metrics_returns_200(self, client):
         r = client.get("/analytics/metrics")
         assert r.status_code == 200
 
     def test_metrics_schema(self, client):
-        data = r = client.get("/analytics/metrics").json()
+        data = client.get("/analytics/metrics").json()
         for key in ("cpu", "memory", "disk", "timestamp"):
             assert key in data
 
@@ -284,6 +288,7 @@ class TestAnalyticsMetrics:
 # ─────────────────────────────────────────────────────────────────────────────
 # GET /analytics/kpis
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestAnalyticsKPIs:
     def test_kpis_returns_200(self, client):
@@ -313,6 +318,7 @@ class TestAnalyticsKPIs:
 # ─────────────────────────────────────────────────────────────────────────────
 # GET /services/status
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestServicesStatus:
     def test_services_status_returns_200(self, client):
@@ -344,6 +350,7 @@ class TestServicesStatus:
 # ─────────────────────────────────────────────────────────────────────────────
 # POST /backup/create
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestBackupCreate:
     def test_create_backup_returns_200(self, client, mock_backup_service):
@@ -384,26 +391,33 @@ class TestBackupCreate:
 # GET /backup/list
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestBackupList:
     def test_list_backups_returns_200(self, client, mock_backup_service):
-        mock_backup_service.list_backups.return_value = {"backups": [
-            {"name": "backup-20250101.tar.gz", "size": "10.0 MB", "date": "2025-01-01 00:00"},
-        ]}
+        mock_backup_service.list_backups.return_value = {
+            "backups": [
+                {"name": "backup-20250101.tar.gz", "size": "10.0 MB", "date": "2025-01-01 00:00"},
+            ]
+        }
         r = client.get("/backup/list")
         assert r.status_code == 200
 
     def test_list_backups_returns_list(self, client, mock_backup_service):
-        mock_backup_service.list_backups.return_value = {"backups": [
-            {"name": "backup-20250101.tar.gz", "size": "10.0 MB", "date": "2025-01-01 00:00"},
-        ]}
+        mock_backup_service.list_backups.return_value = {
+            "backups": [
+                {"name": "backup-20250101.tar.gz", "size": "10.0 MB", "date": "2025-01-01 00:00"},
+            ]
+        }
         data = client.get("/backup/list").json()
         assert "backups" in data
         assert isinstance(data["backups"], list)
 
     def test_list_backups_contains_expected_names(self, client, mock_backup_service):
-        mock_backup_service.list_backups.return_value = {"backups": [
-            {"name": "backup-20250101.tar.gz", "size": "10.0 MB", "date": "2025-01-01 00:00"},
-        ]}
+        mock_backup_service.list_backups.return_value = {
+            "backups": [
+                {"name": "backup-20250101.tar.gz", "size": "10.0 MB", "date": "2025-01-01 00:00"},
+            ]
+        }
         data = client.get("/backup/list").json()
         names = [b["name"] for b in data["backups"]]
         assert "backup-20250101.tar.gz" in names
@@ -422,6 +436,7 @@ class TestBackupList:
 # ─────────────────────────────────────────────────────────────────────────────
 # POST /backup/restore
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestBackupRestore:
     def test_restore_returns_200(self, client, mock_backup_service):
@@ -465,6 +480,7 @@ class TestBackupRestore:
 # POST /tests/run
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestTestsRun:
     def test_run_unit_tests_returns_200(self, client):
         r = client.post("/tests/run", json={"category": "unit"})
@@ -476,7 +492,16 @@ class TestTestsRun:
             assert key in data
 
     def test_run_tests_all_categories(self, client):
-        for cat in ("unit", "integration", "e2e", "atomic", "performance", "security", "smoke", "all"):
+        for cat in (
+            "unit",
+            "integration",
+            "e2e",
+            "atomic",
+            "performance",
+            "security",
+            "smoke",
+            "all",
+        ):
             r = client.post("/tests/run", json={"category": cat})
             assert r.status_code == 200, f"Failed for category {cat}"
 
@@ -505,22 +530,19 @@ class TestTestsRun:
 # WS /ws/logs
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestWebSocketLogs:
     def test_websocket_endpoint_registered(self, client):
         """Verify /ws/logs is registered as a WebSocket route."""
-        from fastapi.routing import APIRoute
         from starlette.routing import WebSocketRoute
+
         routes = client.app.routes
-        ws_paths = [
-            r.path for r in routes
-            if isinstance(r, WebSocketRoute)
-        ]
-        assert "/ws/logs" in ws_paths, (
-            f"/ws/logs not found in WebSocket routes: {ws_paths}"
-        )
+        ws_paths = [r.path for r in routes if isinstance(r, WebSocketRoute)]
+        assert "/ws/logs" in ws_paths, f"/ws/logs not found in WebSocket routes: {ws_paths}"
 
     def test_websocket_unavailable_when_no_manager(self, mock_config, mock_auth_service):
         from starlette.websockets import WebSocketDisconnect
+
         app = create_app(
             config_provider=mock_config,
             auth_service=mock_auth_service,
@@ -537,6 +559,7 @@ class TestWebSocketLogs:
 # ─────────────────────────────────────────────────────────────────────────────
 # Error handling
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestErrorHandling:
     def test_unknown_endpoint_returns_404(self, client):

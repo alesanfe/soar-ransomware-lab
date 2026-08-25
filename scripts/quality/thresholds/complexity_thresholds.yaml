@@ -1,0 +1,8 @@
+# Cyclomatic complexity thresholds (radon cc)
+# Grades: A(1-5) B(6-10) C(11-20) D(21-30) E(31-40) F(41+)
+max_complexity_per_function: 20  # fail if any function exceeds this
+warn_complexity_per_function: 10  # warn if any function exceeds this
+max_avg_complexity: 5.0  # fail if project average exceeds this
+fail_grades: ["D", "E", "F"]  # fail if any function has these grades
+warn_grades: ["C"]  # warn if any function has these grades
+top_n_hotspots: 10  # number of hotspots to report

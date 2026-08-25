@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""
-Unit tests for auth_service.py
-Tests authentication service with mocked dependencies
-"""
+"""Unit tests for auth_service.py Tests authentication service with mocked
+dependencies."""
+
+from unittest.mock import Mock
 
 import pytest
-from soar_lab.common.exceptions import AuthError
+
 from soar_lab.application.use_cases.auth_service import AuthService
-from unittest.mock import Mock
+from soar_lab.common.exceptions import AuthError
 
 
 class TestAuthService:
-    """Test AuthService"""
+    """Test AuthService."""
 
     def test_initialization_success(self):
-        """Test successful initialization"""
+        """Test successful initialization."""
         mock_config = Mock()
         mock_token_provider = Mock()
 
@@ -24,23 +24,23 @@ class TestAuthService:
         assert service.token_provider == mock_token_provider
 
     def test_requires_config_provider(self):
-        """Test that config_provider is required"""
+        """Test that config_provider is required."""
         mock_token_provider = Mock()
         with pytest.raises(ValueError, match="config_provider is required"):
             AuthService(None, mock_token_provider)
 
     def test_requires_token_provider(self):
-        """Test that token_provider is required"""
+        """Test that token_provider is required."""
         mock_config = Mock()
         with pytest.raises(ValueError, match="token_provider is required"):
             AuthService(mock_config, None)
 
     def test_verify_credentials_success(self):
-        """Test successful credential verification"""
+        """Test successful credential verification."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'web_ui_user': 'admin',
-            'web_ui_password': 'password'
+            "web_ui_user": "admin",
+            "web_ui_password": "password",
         }.get(key, default)
         mock_token_provider = Mock()
 
@@ -50,11 +50,11 @@ class TestAuthService:
         assert result is True
 
     def test_verify_credentials_failure(self):
-        """Test failed credential verification"""
+        """Test failed credential verification."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'web_ui_user': 'admin',
-            'web_ui_password': 'password'
+            "web_ui_user": "admin",
+            "web_ui_password": "password",
         }.get(key, default)
         mock_token_provider = Mock()
 
@@ -64,7 +64,7 @@ class TestAuthService:
         assert result is False
 
     def test_verify_credentials_not_configured(self):
-        """Test credential verification when not configured"""
+        """Test credential verification when not configured."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: None
         mock_token_provider = Mock()
@@ -75,13 +75,13 @@ class TestAuthService:
         assert result is False
 
     def test_create_jwt_token_success(self):
-        """Test successful JWT token creation"""
+        """Test successful JWT token creation."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'jwt_secret_key': 'test-secret-key-min-32-chars-long',
-            'api_auth_secret': '',
-            'JWT_EXPIRATION_MINUTES': 60,
-            'JWT_ALGORITHM': 'HS256'
+            "jwt_secret_key": "test-secret-key-min-32-chars-long",
+            "api_auth_secret": "",
+            "JWT_EXPIRATION_MINUTES": 60,
+            "JWT_ALGORITHM": "HS256",
         }.get(key, default)
         mock_token_provider = Mock()
         mock_token_provider.create_token.return_value = "test-token"
@@ -95,7 +95,7 @@ class TestAuthService:
         )
 
     def test_create_jwt_token_no_secret(self):
-        """Test JWT token creation when secret is not configured"""
+        """Test JWT token creation when secret is not configured."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: None
         mock_token_provider = Mock()
@@ -109,10 +109,10 @@ class TestAuthService:
         """Test JWT token creation with short secret (non-legacy)"""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'jwt_secret_key': 'short',
-            'api_auth_secret': '',
-            'JWT_EXPIRATION_MINUTES': 60,
-            'JWT_ALGORITHM': 'HS256'
+            "jwt_secret_key": "short",
+            "api_auth_secret": "",
+            "JWT_EXPIRATION_MINUTES": 60,
+            "JWT_ALGORITHM": "HS256",
         }.get(key, default)
         mock_token_provider = Mock()
 
@@ -122,13 +122,14 @@ class TestAuthService:
             service.create_jwt_token("testuser")
 
     def test_create_jwt_token_short_secret_legacy(self):
-        """Test JWT token creation with short secret but legacy API_AUTH_SECRET"""
+        """Test JWT token creation with short secret but legacy
+        API_AUTH_SECRET."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'jwt_secret_key': 'short',
-            'api_auth_secret': 'legacy-secret',
-            'JWT_EXPIRATION_MINUTES': 60,
-            'JWT_ALGORITHM': 'HS256'
+            "jwt_secret_key": "short",
+            "api_auth_secret": "legacy-secret",
+            "JWT_EXPIRATION_MINUTES": 60,
+            "JWT_ALGORITHM": "HS256",
         }.get(key, default)
         mock_token_provider = Mock()
         mock_token_provider.create_token.return_value = "test-token"
@@ -140,12 +141,12 @@ class TestAuthService:
         assert token == "test-token"
 
     def test_verify_jwt_token_success(self):
-        """Test successful JWT token verification"""
+        """Test successful JWT token verification."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'jwt_secret_key': 'test-secret-key-min-32-chars-long',
-            'api_auth_secret': '',
-            'JWT_ALGORITHM': 'HS256'
+            "jwt_secret_key": "test-secret-key-min-32-chars-long",
+            "api_auth_secret": "",
+            "JWT_ALGORITHM": "HS256",
         }.get(key, default)
         mock_token_provider = Mock()
         mock_token_provider.verify_token.return_value = {"user": "testuser", "method": "jwt"}
@@ -159,7 +160,7 @@ class TestAuthService:
         )
 
     def test_verify_jwt_token_no_secret(self):
-        """Test JWT token verification when secret is not configured"""
+        """Test JWT token verification when secret is not configured."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: None
         mock_token_provider = Mock()
@@ -173,9 +174,9 @@ class TestAuthService:
         """Test JWT token verification with short secret (non-legacy)"""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'jwt_secret_key': 'short',
-            'api_auth_secret': '',
-            'JWT_ALGORITHM': 'HS256'
+            "jwt_secret_key": "short",
+            "api_auth_secret": "",
+            "JWT_ALGORITHM": "HS256",
         }.get(key, default)
         mock_token_provider = Mock()
 
@@ -185,35 +186,35 @@ class TestAuthService:
             service.verify_jwt_token("test-token")
 
     def test_get_auth_secret_uses_jwt_secret(self):
-        """Test _get_auth_secret uses jwt_secret_key"""
+        """Test _get_auth_secret uses jwt_secret_key."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'jwt_secret_key': 'jwt-secret',
-            'api_auth_secret': 'api-secret'
+            "jwt_secret_key": "jwt-secret",
+            "api_auth_secret": "api-secret",
         }.get(key, default)
         mock_token_provider = Mock()
 
         service = AuthService(mock_config, mock_token_provider)
         secret = service._get_auth_secret()
 
-        assert secret == 'jwt-secret'
+        assert secret == "jwt-secret"
 
     def test_get_auth_secret_fallback_to_api_auth(self):
-        """Test _get_auth_secret falls back to api_auth_secret"""
+        """Test _get_auth_secret falls back to api_auth_secret."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
-            'jwt_secret_key': None,
-            'api_auth_secret': 'api-secret'
+            "jwt_secret_key": None,
+            "api_auth_secret": "api-secret",
         }.get(key, default)
         mock_token_provider = Mock()
 
         service = AuthService(mock_config, mock_token_provider)
         secret = service._get_auth_secret()
 
-        assert secret == 'api-secret'
+        assert secret == "api-secret"
 
     def test_get_auth_secret_empty_when_none(self):
-        """Test _get_auth_secret returns empty string when neither is set"""
+        """Test _get_auth_secret returns empty string when neither is set."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: None
         mock_token_provider = Mock()

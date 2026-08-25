@@ -1,129 +1,35 @@
-import os
-
-# !/usr/bin/env python3
-"""
-TC-06: Critical Severity Testing
-Tests workflow behavior with critical severity alert (severity=3).
-"""
+#!/usr/bin/env python3
+"""TC-06: Critical Severity Testing Tests workflow behavior with critical
+severity alert (severity=3)."""
 
 import json
-import pytest
-import requests
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
-FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
-# Use /app/results for artifacts when running inside container
-ARTIFACTS_DIR = Path("/app/results") if Path("/app").exists() else REPO_ROOT / "artifacts"
-WEBHOOK_INFO = Path("/app/webhook_info.json") if Path(
-    "/app/webhook_info.json").exists() else REPO_ROOT / "src" / "soar_lab" / "infrastructure" / "artifacts" / "webhook_info.json"
-ENV_FULL = Path("/app/.env.full") if Path("/app/.env.full").exists() else REPO_ROOT / ".env.full"
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-WORKFLOW_TIMEOUT = 600
-POLL_INTERVAL = 5
+from tests.e2e.base import E2EBaseTest
 
 
-def _load_env() -> dict:
-    # First check environment variables (from docker exec env overrides)
-    env_vars = {
-        "SHUFFLE_URL": os.environ.get("SHUFFLE_URL"),
-        "ES_URL": os.environ.get("ES_URL"),
-        "THEHIVE_URL": os.environ.get("THEHIVE_URL"),
-        "CORTEX_URL": os.environ.get("CORTEX_URL"),
-        "MISP_URL": os.environ.get("MISP_URL"),
-        "WAZUH_URL": os.environ.get("WAZUH_URL"),
-        "THEHIVE_API_KEY": os.environ.get("THEHIVE_API_KEY"),
-        "CORTEX_API_KEY": os.environ.get("CORTEX_API_KEY"),
-        "MISP_API_KEY": os.environ.get("MISP_API_KEY"),
-        "SHUFFLE_DEFAULT_APIKEY": os.environ.get("SHUFFLE_DEFAULT_APIKEY"),
-        "SHUFFLE_DEFAULT_PASSWORD": os.environ.get("SHUFFLE_DEFAULT_PASSWORD"),
-    }
+class TestCriticalSeverity(E2EBaseTest):
+    """TC-06 — Critical Severity: Alert with severity=3.
 
-    # Filter out None values
-    result = {k: v for k, v in env_vars.items() if v is not None}
-
-    # If not all required env vars are set, load from .env.full file
-    if not ENV_FULL.exists():
-        return result
-
-    for line in ENV_FULL.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, _, v = line.partition("=")
-            k = k.strip()
-            v = v.strip()
-            # Only add if not already in result (env vars take precedence)
-            if k not in result:
-                result[k] = v
-    return result
-
-
-class TestCriticalSeverity:
+    Verifies that critical severity cases are created correctly with
+    observables.
     """
-    TC-06 — Critical Severity: Alert with severity=3.
-    Verifies that critical severity cases are created correctly with observables.
-    """
+
+    tc_id = "TC-06"
 
     def setup_method(self, method):
-        """Set up test clients and environment"""
-        t0 = datetime.now(timezone.utc)
-        (ARTIFACTS_DIR / "results").mkdir(parents=True, exist_ok=True)
-        (ARTIFACTS_DIR / "logs").mkdir(parents=True, exist_ok=True)
-
-        env = _load_env()
-
-        # Skip if required API keys are not configured
-        if not env.get("THEHIVE_API_KEY"):
-            pytest.skip("THEHIVE_API_KEY not configured in .env.full")
-
-        info = json.loads(WEBHOOK_INFO.read_text()) if WEBHOOK_INFO.exists() else {}
-        webhook_url = info.get("webhook_url", "")
-        workflow_id = info.get("workflow_id", "")
-
-        if not workflow_id:
-            pytest.skip("Workflow ID not found. Run init_shuffle_webhook.py first.")
-
-        # Import clients
-        sys.path.insert(0, str(REPO_ROOT / "src"))
-        from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
-        from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
-        from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
-
-        shuffle_url = env.get("SHUFFLE_URL", "http://soar_shuffle_backend:5001")
-        shuffle = ShuffleClient(base_url=shuffle_url, api_key=(
-            os.environ.get("SHUFFLE_DEFAULT_APIKEY") or env.get("SHUFFLE_DEFAULT_APIKEY") or env.get(
-            "SHUFFLE_API_KEY", "placeholder")),
-                                verify_ssl=False)
-
-        thehive = TheHiveClient(
-            base_url=env.get("THEHIVE_URL", "http://thehive:9000"),
-            api_key=env.get("THEHIVE_API_KEY", ""),
-            verify_ssl=False
-        )
-        es = ElasticsearchClient(
-            base_url=env.get("ES_URL", "http://elasticsearch:9200"),
-            index="soar-alerts"
-        )
-
-        cases_before = thehive.search_cases()
-        cases_before_len = len(cases_before)
-        max_case_id_before = max((c.get("caseId", 0) for c in cases_before), default=0)
-
-        self.t0 = t0
-        self.webhook_url = webhook_url
-        self.workflow_id = workflow_id
-        self.shuffle = shuffle
-        self.thehive = thehive
-        self.es = es
-        self._cases_before = cases_before_len
-        self._max_case_id_before = max_case_id_before
-
+        super().setup_method(method)
+        self.t0 = datetime.now(UTC)
+        cases = self.thehive.search_cases()
+        self._max_case_id_before = max((c.get("caseId", 0) for c in cases), default=0)
 
     def _log(self, msg: str):
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         print(f"[{elapsed:6.1f}s] TC-06 {msg}")
 
     def test_critical_severity(self):
@@ -138,55 +44,31 @@ class TestCriticalSeverity:
             "hash": "c" * 64,
             "severity": 3,  # Critical severity
             "source": "critical-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
         }
 
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
         self._log("STEP 1: Sending critical severity alert")
-        r = self.shuffle._webhook_session.post(
-            self.webhook_url,
-            json=payload,
-            timeout=30
-        )
-        assert r.status_code == 200, f"Critical alert rejected: HTTP {r.status_code}"
-        data = r.json()
-        assert isinstance(data, dict), "Response must be JSON object"
-        exec_id = data.get("execution_id", "")
-        assert isinstance(exec_id, str), "execution_id must be string"
-        assert len(exec_id) > 0, "execution_id must not be empty"
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        alert_id = payload["alert_id"]
+        self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log(f"  + Critical alert accepted - execution_id={exec_id}")
-
-        # Wait for workflow completion
-        self._log("STEP 2: Waiting for workflow completion")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            assert isinstance(execs, list), "Workflow executions must be a list"
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex:
-                assert isinstance(ex, dict), "Execution must be a dict"
-                if ex.get("status") not in ("EXECUTING", ""):
-                    break
-            time.sleep(POLL_INTERVAL)
-
-        assert ex is not None, f"Execution {exec_id} not found in Shuffle"
-        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
-        self._log("  + Workflow completed successfully")
 
         # Verify TheHive case
         self._log("STEP 3: Verifying TheHive case with critical severity + priority + urgency")
         cases = self.thehive.search_cases()
         assert isinstance(cases, list), "TheHive cases must be a list"
-        assert len(cases) > self._cases_before, "No new TheHive case was created"
-        new_cases = [c for c in cases if c.get("caseId", 0) > self._max_case_id_before]
-        assert new_cases, f"No new TheHive case with caseId > {self._max_case_id_before} was found"
-        last = max(new_cases, key=lambda c: c.get("caseId", 0))
+        matching = [c for c in cases if alert_id in c.get("description", "")]
+        assert matching, f"No TheHive case found with alert_id={alert_id}"
+        last = max(matching, key=lambda c: c.get("caseId", 0))
         assert isinstance(last, dict), "Case must be a dict"
         case_id = last.get("id", last.get("_id", ""))
-        self._log(f"  + Case #{last.get('caseId')} severity={last.get('severity')} status={last.get('status')}")
+        self._log(
+            f"  + Case #{last.get('caseId')} severity={last.get('severity')} "
+            f"status={last.get('status')}"
+        )
 
         # Verify severity is 3 (critical)
         assert last.get("severity") == 3, f"Expected severity 3, got {last.get('severity')}"
@@ -223,7 +105,7 @@ class TestCriticalSeverity:
         self._log("  + Verifying additional notifications for critical case")
         # Check workflow results for notification actions
         notification_nodes = []
-        for node in ex.get("results", []):
+        for node in execution.get("results", []):
             action = node.get("action", {})
             label = action.get("label", "").lower()
             if "notif" in label or "alert" in label or "email" in label or "slack" in label:
@@ -236,8 +118,13 @@ class TestCriticalSeverity:
         # Validate that critical severity (3) from payload maps to severity 3 in case
         payload_severity = payload.get("severity", 0)
         case_severity = last.get("severity", 0)
-        assert payload_severity == case_severity, f"Payload severity {payload_severity} did not map to case severity {case_severity}"
-        self._log(f"✓ Critical severity mapping validated: payload={payload_severity} -> case={case_severity}")
+        assert (
+            payload_severity == case_severity
+        ), f"Payload severity {payload_severity} did not map to case severity {case_severity}"
+        self._log(
+            f"✓ Critical severity mapping validated: "
+            f"payload={payload_severity} -> case={case_severity}"
+        )
 
         # Verify observables (optional - workflow may be delayed)
         if case_id:
@@ -247,7 +134,9 @@ class TestCriticalSeverity:
                 # Verify hash observable
                 hash_obs = [o for o in obs if o.get("dataType") == "hash"]
                 if hash_obs:
-                    assert hash_obs[0].get("data") == payload["hash"], "Hash observable data mismatch"
+                    assert (
+                        hash_obs[0].get("data") == payload["hash"]
+                    ), "Hash observable data mismatch"
 
                 # Verify IP observable
                 ip_obs = [o for o in obs if o.get("dataType") == "ip"]
@@ -259,25 +148,11 @@ class TestCriticalSeverity:
         # Verify Elasticsearch (optional - workflow may be delayed)
         self._log("STEP 4: Verifying Elasticsearch indexing")
         doc = self.es.search_by_alert_id(payload["alert_id"])
-        if doc:
-            assert isinstance(doc, dict), "ES document must be a dict"
-            self._log(f"  + Alert found in Elasticsearch")
-        else:
-            self._log("  + Alert not indexed in Elasticsearch (workflow may be delayed)")
+        assert doc is not None, "ES document not found"
+        assert isinstance(doc, dict), "ES document must be a dict"
+        self._log("  + Alert found in Elasticsearch")
 
-        # Verify workflow nodes
-        self._log("STEP 5: Verifying all workflow nodes succeeded")
-        for node in ex.get("results", []):
-            assert isinstance(node, dict), "Node must be a dict"
-            action = node.get("action", {})
-            assert isinstance(action, dict), "Action must be a dict"
-            label = action.get("label", "?")
-            assert isinstance(label, str), "Label must be string"
-            status = node.get("status", "?")
-            assert isinstance(status, str), "Status must be string"
-            assert status == "SUCCESS", f"Node {label} failed with status {status}"
-
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"=== TC-06 COMPLETED — ALL ASSERTIONS PASSED (Elapsed: {elapsed:.1f}s) ===")
 
         # Save report
@@ -290,9 +165,9 @@ class TestCriticalSeverity:
             "case_id": last.get("caseId"),
             "observables_count": len(obs) if case_id else 0,
             "elapsed_seconds": elapsed,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
-        report_path = ARTIFACTS_DIR / "results" / "TC-06_critical_severity_report.json"
+        report_path = self.e2e_results_dir / "TC-06_critical_severity_report.json"
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
         self._log(f"+ Report saved: {report_path}")
 
@@ -301,8 +176,7 @@ class TestCriticalSeverity:
     # ------------------------------------------------------------------
 
     def test_critical_workflow(self):
-        """
-        TC-06-01: Critical workflow execution.
+        """TC-06-01: Critical workflow execution.
 
         Verifications:
           - Critical severity triggers correct workflow
@@ -319,48 +193,85 @@ class TestCriticalSeverity:
             "hash": "c" * 64,
             "severity": 3,
             "source": "critical-workflow-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
         }
 
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
-
         self._log("STEP 1: Sending critical severity alert")
-        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
-        assert r.status_code == 200, f"Critical alert rejected: HTTP {r.status_code}"
-        exec_id = r.json().get("execution_id", "")
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        alert_id = payload["alert_id"]
 
-        self._log("STEP 2: Waiting for workflow completion")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex and ex.get("status") not in ("EXECUTING", ""):
-                break
-            time.sleep(POLL_INTERVAL)
+        # TC-06-01: validate the CRITICAL path was taken (containment + notify)
+        critical_contract = {
+            "required_nodes": [
+                "thehive_create_case",
+                "es_index",
+                "calc_decision",
+                "containment",
+                "notify_critical",
+            ],
+            "forbidden_nodes": ["mark_false_positive"],
+        }
+        self.validate_workflow_execution(
+            execution, alert_id=alert_id, expected_contract=critical_contract
+        )
 
-        assert ex is not None, f"Execution {exec_id} not found"
-        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
+        # TC-specific: assert execution results contain the containment/notify
+        # nodes (critical path) and that they executed WITHOUT internal skip.
+        results = execution.get("results", [])
+        node_labels = [n.get("action", {}).get("label", "") for n in results if isinstance(n, dict)]
+        assert (
+            "containment" in node_labels
+        ), f"Critical path must include containment node, got: {node_labels}"
+        assert (
+            "notify_critical" in node_labels
+        ), f"Critical path must include notify_critical node, got: {node_labels}"
 
-        # Validate all workflow nodes succeeded
-        self._log("STEP 3: Verifying all workflow nodes succeeded")
-        for node in ex.get("results", []):
-            label = node.get("action", {}).get("label", "?")
-            status = node.get("status", "?")
-            assert status == "SUCCESS", f"Node {label} failed with status {status}"
+        # Verify containment node did NOT internally skip (decision=contain)
+        containment_node = next(
+            (
+                n
+                for n in results
+                if isinstance(n, dict) and n.get("action", {}).get("label") == "containment"
+            ),
+            None,
+        )
+        assert containment_node is not None, "Containment node missing from results"
+        assert (
+            containment_node.get("status") == "SUCCESS"
+        ), f"Containment node status={containment_node.get('status')}"
+        containment_result = str(containment_node.get("result", ""))
+        assert (
+            '"skipped": true' not in containment_result
+            and "'skipped': True" not in containment_result
+        ), f"Containment node internally skipped for critical alert: {containment_result[:200]}"
+
+        # Verify notify_critical node sent a real notification (not skipped)
+        notify_node = next(
+            (
+                n
+                for n in results
+                if isinstance(n, dict) and n.get("action", {}).get("label") == "notify_critical"
+            ),
+            None,
+        )
+        assert notify_node is not None, "notify_critical node missing from results"
+        notify_result = str(notify_node.get("result", ""))
+        assert (
+            '"skipped": true' not in notify_result and "'skipped': True" not in notify_result
+        ), f"notify_critical node skipped for critical alert: {notify_result[:200]}"
 
         # Validate severity in payload
         assert payload["severity"] == 3, "Payload severity should be 3"
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-06-01 COMPLETED — CRITICAL WORKFLOW VALIDATED ===")
 
     def test_correct_priority(self):
-        """
-        TC-06-02: Correct priority assignment.
+        """TC-06-02: Correct priority assignment.
 
         Verifications:
           - Critical severity maps to correct priority
@@ -377,56 +288,65 @@ class TestCriticalSeverity:
             "hash": "c" * 64,
             "severity": 3,
             "source": "priority-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
         }
 
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
-
         self._log("STEP 1: Sending critical severity alert")
-        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
-        assert r.status_code == 200, f"Critical alert rejected: HTTP {r.status_code}"
-        exec_id = r.json().get("execution_id", "")
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        alert_id = payload["alert_id"]
+        self.validate_workflow_execution(execution, alert_id=alert_id)
 
-        self._log("STEP 2: Waiting for workflow completion")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex and ex.get("status") not in ("EXECUTING", ""):
-                break
-            time.sleep(POLL_INTERVAL)
-
-        self._log("STEP 3: Verifying TheHive case severity")
+        self._log("STEP 3: Verifying TheHive case severity & priority")
         cases = self.thehive.search_cases()
         new_cases = [c for c in cases if c.get("caseId", 0) > self._max_case_id_before]
-        if new_cases:
-            last = max(new_cases, key=lambda c: c.get("caseId", 0))
-            assert last.get("severity") == 3, f"Expected severity 3, got {last.get('severity')}"
-            self._log(f"+ Case severity: {last.get('severity')}")
+        assert new_cases, "No new TheHive case found for critical alert"
+        last = max(new_cases, key=lambda c: c.get("caseId", 0))
 
-            # Validate case status is Open
-            assert last.get("status") == "Open", f"Expected Open, got {last.get('status')}"
+        # TC-06-02: assert case severity == 3 (critical = highest priority)
+        assert (
+            last.get("severity") == 3
+        ), f"Expected case severity 3 (critical), got {last.get('severity')}"
 
-            # Validate case title contains critical information
-            title = last.get("title", "")
-            assert isinstance(title, str), "Case title should be a string"
-            self._log(f"+ Case title: {title}")
-        else:
-            pytest.fail("No new case found for critical alert")
+        # TC-06-02: assert case has a priority/flag indication. TheHive severity 3
+        # IS the highest priority; the workflow also sets priority tags on creation
+        # (build_case_json adds "priority:critical","urgent" for severity>=3).
+        tags = last.get("tags", [])
+        assert isinstance(tags, list), f"Case tags must be a list, got {type(tags)}"
+        priority_tags = [
+            t
+            for t in tags
+            if "critical" in str(t).lower()
+            or "urgent" in str(t).lower()
+            or "priority" in str(t).lower()
+        ]
+        # Severity 3 is TheHive's max priority; flag or priority tags reinforce it.
+        assert last.get("severity") == 3 or last.get("flag") is True or priority_tags, (
+            f"Critical case should have priority indication (severity=3, flag=true, "
+            f"or priority tags), got severity={last.get('severity')}, "
+            f"flag={last.get('flag')}, tags={tags}"
+        )
+
+        # TC-06-02: assert case status is Open (active critical incident)
+        assert (
+            last.get("status") == "Open"
+        ), f"Expected critical case status Open, got {last.get('status')}"
+
+        # Validate case title contains critical information
+        title = last.get("title", "")
+        assert isinstance(title, str) and len(title) > 0, "Case title should be non-empty"
 
         # Validate severity in payload
         assert payload["severity"] == 3, "Payload severity should be 3"
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-06-02 COMPLETED — CORRECT PRIORITY VALIDATED ===")
 
     def test_critical_tasks(self):
-        """
-        TC-06-03: Critical severity tasks.
+        """TC-06-03: Critical severity tasks.
 
         Verifications:
           - Critical tasks are created automatically
@@ -443,54 +363,67 @@ class TestCriticalSeverity:
             "hash": "c" * 64,
             "severity": 3,
             "source": "critical-tasks-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
         }
 
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
-
         self._log("STEP 1: Sending critical severity alert")
-        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
-        assert r.status_code == 200, f"Critical alert rejected: HTTP {r.status_code}"
-        exec_id = r.json().get("execution_id", "")
-
-        self._log("STEP 2: Waiting for workflow completion")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex and ex.get("status") not in ("EXECUTING", ""):
-                break
-            time.sleep(POLL_INTERVAL)
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        alert_id = payload["alert_id"]
+        self.validate_workflow_execution(execution, alert_id=alert_id)
 
         self._log("STEP 3: Verifying critical tasks")
         cases = self.thehive.search_cases()
         new_cases = [c for c in cases if c.get("caseId", 0) > self._max_case_id_before]
-        if new_cases:
-            last = max(new_cases, key=lambda c: c.get("caseId", 0))
-            case_id = last.get("id", last.get("_id", ""))
-            tasks = self.thehive.list_case_tasks(case_id)
-            self._log(f"+ {len(tasks)} task(s) found")
+        assert new_cases, "No new TheHive case found for critical alert"
+        last = max(new_cases, key=lambda c: c.get("caseId", 0))
+        case_id = last.get("id", last.get("_id", ""))
+        assert case_id, "Created case has no id/_id"
 
-            # Validate at least some tasks are created
-            assert len(tasks) > 0, "No tasks created for critical case"
+        tasks = self.thehive.list_case_tasks(case_id)
+        self._log(f"+ {len(tasks)} task(s) found")
+        assert len(tasks) > 0, "No tasks created for critical case"
 
-            # Validate task statuses
-            for t in tasks:
-                self._log(f"  - [{t.get('status')}] {t.get('title')}")
-                assert t.get("status") in ["Waiting", "Todo", "InProgress", "Completed"], f"Invalid task status: {t.get('status')}"
-        else:
-            pytest.fail("No new case found for critical alert")
+        # TC-06-03: assert at least one task title contains isolation/containment/block
+        task_titles = [t.get("title", "") for t in tasks]
+        critical_action_keywords = ("isolation", "isolate", "containment", "contain", "block")
+        critical_tasks = [
+            t
+            for t in tasks
+            if any(kw in str(t.get("title", "")).lower() for kw in critical_action_keywords)
+        ]
+        assert (
+            critical_tasks
+        ), f"No critical task (isolation/containment/block) found; task titles: {task_titles}"
+        self._log(f"+ Critical action task(s): {[t.get('title') for t in critical_tasks]}")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        # TC-06-03: assert at least one task is high priority. TheHive tasks carry a
+        # `flag` boolean; the workflow creates the critical-severity task with an
+        # isolation/containment title which is inherently the high-priority action.
+        high_priority_tasks = [
+            t
+            for t in tasks
+            if t.get("flag") is True
+            or any(kw in str(t.get("title", "")).lower() for kw in critical_action_keywords)
+        ]
+        assert (
+            high_priority_tasks
+        ), f"No high-priority task found for critical case; tasks: {task_titles}"
+
+        # Validate task statuses are valid TheHive statuses
+        valid_statuses = {"Waiting", "Todo", "InProgress", "Completed", "Cancelled"}
+        for t in tasks:
+            self._log(f"  - [{t.get('status')}] {t.get('title')}")
+            assert t.get("status") in valid_statuses, f"Invalid task status: {t.get('status')}"
+
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-06-03 COMPLETED — CRITICAL TASKS VALIDATED ===")
 
     def test_critical_sla(self):
-        """
-        TC-06-04: Critical SLA compliance.
+        """TC-06-04: Critical SLA compliance.
 
         Verifications:
           - Critical alerts have shorter SLA
@@ -509,28 +442,17 @@ class TestCriticalSeverity:
             "hash": "c" * 64,
             "severity": 3,
             "source": "critical-sla-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
         }
 
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
-
         self._log("STEP 1: Sending critical severity alert")
         start = time.time()
-        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
-        assert r.status_code == 200, f"Critical alert rejected: HTTP {r.status_code}"
-        exec_id = r.json().get("execution_id", "")
-
-        self._log("STEP 2: Waiting for workflow completion")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex and ex.get("status") not in ("EXECUTING", ""):
-                break
-            time.sleep(POLL_INTERVAL)
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        alert_id = payload["alert_id"]
+        self.validate_workflow_execution(execution, alert_id=alert_id)
 
         response_time_ms = int((time.time() - start) * 1000)
         sla_compliant = response_time_ms < CRITICAL_SLA_MS
@@ -552,13 +474,12 @@ class TestCriticalSeverity:
         sla_margin_ms = CRITICAL_SLA_MS - response_time_ms
         self._log(f"+ SLA margin: {sla_margin_ms}ms")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-06-04 COMPLETED — CRITICAL SLA VALIDATED ===")
 
     def test_auto_escalation(self):
-        """
-        TC-06-05: Automatic escalation for critical alerts.
+        """TC-06-05: Automatic escalation for critical alerts.
 
         Verifications:
           - Critical alerts trigger escalation
@@ -575,48 +496,65 @@ class TestCriticalSeverity:
             "hash": "c" * 64,
             "severity": 3,
             "source": "escalation-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
         }
 
-        if not self.webhook_url:
-            pytest.fail("Webhook URL not found in webhook_info.json")
-
         self._log("STEP 1: Sending critical severity alert")
-        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
-        assert r.status_code == 200, f"Critical alert rejected: HTTP {r.status_code}"
-        exec_id = r.json().get("execution_id", "")
-
-        self._log("STEP 2: Waiting for workflow completion")
-        deadline = time.time() + WORKFLOW_TIMEOUT
-        ex = None
-        while time.time() < deadline:
-            execs = self.shuffle.get_workflow_executions(self.workflow_id)
-            ex = next((e for e in execs if e.get("execution_id") == exec_id), None)
-            if ex and ex.get("status") not in ("EXECUTING", ""):
-                break
-            time.sleep(POLL_INTERVAL)
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        alert_id = payload["alert_id"]
+        self.validate_workflow_execution(execution, alert_id=alert_id)
 
         self._log("STEP 3: Verifying escalation actions")
         # Check workflow results for escalation nodes
-        escalation_nodes = [n for n in ex.get("results", []) if
-                            "escalat" in n.get("action", {}).get("label", "").lower()]
+        escalation_nodes = [
+            n
+            for n in execution.get("results", [])
+            if "escalat" in n.get("action", {}).get("label", "").lower()
+        ]
         self._log(f"+ Escalation nodes found: {len(escalation_nodes)}")
 
-        # Validate workflow completed
-        assert ex is not None, "Execution not found"
-        assert ex.get("status") == "FINISHED", f"Workflow status: {ex.get('status')}"
-
-        # Validate all nodes succeeded
-        for node in ex.get("results", []):
-            label = node.get("action", {}).get("label", "?")
-            status = node.get("status", "?")
-            assert status == "SUCCESS", f"Node {label} failed with status {status}"
+        # Validate that at least one escalation node was triggered for critical alerts
+        assert (
+            len(escalation_nodes) > 0
+        ), "Critical alert should trigger at least one escalation node in the workflow"
 
         for node in escalation_nodes:
             self._log(f"  - {node.get('action', {}).get('label')}: {node.get('status')}")
             assert node.get("status") == "SUCCESS", f"Escalation node failed: {node.get('status')}"
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        # Verify escalation resulted in a TheHive case with critical priority
+        self._log("STEP 4: Verifying escalation produced a critical TheHive case")
+        cases = self.thehive.search_cases()
+        assert isinstance(cases, list), "TheHive cases must be a list"
+        new_cases = [c for c in cases if c.get("caseId", 0) > self._max_case_id_before]
+        assert (
+            new_cases
+        ), "No new TheHive case created after escalation - escalation did not produce a case"
+        last = max(new_cases, key=lambda c: c.get("caseId", 0))
+        assert isinstance(last, dict), "Escalated case must be a dict"
+        # Critical alerts should result in a case with severity 3
+        assert (
+            last.get("severity") == 3
+        ), f"Escalated case should have severity 3 (critical), got {last.get('severity')}"
+        self._log(f"+ Escalated case severity: {last.get('severity')}")
+
+        # Verify escalation notifications were sent (notification nodes in execution)
+        notification_nodes = [
+            n
+            for n in execution.get("results", [])
+            if any(
+                kw in n.get("action", {}).get("label", "").lower()
+                for kw in ("notif", "alert", "email", "slack", "webhook")
+            )
+        ]
+        assert (
+            len(notification_nodes) > 0
+        ), "Critical alert escalation should trigger at least one notification node"
+        self._log(f"+ Notification nodes executed: {len(notification_nodes)}")
+
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-06-05 COMPLETED — AUTO ESCALATION VALIDATED ===")

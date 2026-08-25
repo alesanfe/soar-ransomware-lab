@@ -5,14 +5,21 @@ import json
 import re
 import unicodedata
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+from soar_lab.common.constants import DEFAULT_SANITIZATION_MAX_LENGTH
+
+__all__ = ["PayloadSanitizer"]
 
 
 class PayloadSanitizer:
-    """Sanitize alert/webhook payloads before sending them to external systems."""
+    """Sanitize alert/webhook payloads before sending them to external.
+
+    systems.
+    """
 
     # Default expected types for validate_types
-    EXPECTED_TYPES: Dict[str, Any] = {
+    EXPECTED_TYPES: dict[str, Any] = {
         "alert_id": str,
         "severity": int,
         "timestamp": str,
@@ -20,9 +27,7 @@ class PayloadSanitizer:
 
     # Substrings/patterns removed by sanitize_string
     _SCRIPT_TAG_RE = re.compile(r"<script[^>]*>.*?</script>", re.IGNORECASE | re.DOTALL)
-    _ON_EVENT_RE = re.compile(
-        r"\son\w+\s*=\s*['\"]?[^'\"\s>]+", re.IGNORECASE
-    )
+    _ON_EVENT_RE = re.compile(r"\son\w+\s*=\s*['\"]?[^'\"\s>]+", re.IGNORECASE)
     _DROP_TABLE_RE = re.compile(r"\bDROP\s+TABLE\b", re.IGNORECASE)
     _JS_PROTOCOL_RE = re.compile(r"javascript:", re.IGNORECASE)
     _NULL_BYTE_RE = re.compile(r"\x00")
@@ -31,13 +36,13 @@ class PayloadSanitizer:
     def sanitize(
         self,
         payload: Any,
-        whitelist: Optional[List[str]] = None,
-        blacklist: Optional[List[str]] = None,
-        max_length: int = 1000,
+        whitelist: list[str] | None = None,
+        blacklist: list[str] | None = None,
+        max_length: int = DEFAULT_SANITIZATION_MAX_LENGTH,
     ) -> Any:
         """Recursively sanitize a payload."""
         if isinstance(payload, dict):
-            result: Dict[str, Any] = {}
+            result: dict[str, Any] = {}
             for key, value in payload.items():
                 if whitelist is not None and key not in whitelist:
                     continue
@@ -51,7 +56,9 @@ class PayloadSanitizer:
             return self._sanitize_string(payload, max_length)
         return payload
 
-    def _sanitize_string(self, value: str, max_length: int = 1000) -> str:
+    def _sanitize_string(
+        self, value: str, max_length: int = DEFAULT_SANITIZATION_MAX_LENGTH
+    ) -> str:
         value = self._NULL_BYTE_RE.sub("", value)
         value = self._CONTROL_RE.sub("", value)
         value = unicodedata.normalize("NFKC", value)
@@ -63,8 +70,11 @@ class PayloadSanitizer:
             value = value[:max_length]
         return value
 
-    def sanitize_html(self, html: str, max_length: int = 1000) -> str:
-        """Remove script tags and dangerous handlers while keeping safe HTML."""
+    def sanitize_html(self, html: str, max_length: int = DEFAULT_SANITIZATION_MAX_LENGTH) -> str:
+        """Remove script tags and dangerous handlers while keeping safe.
+
+        HTML.
+        """
         html = self._SCRIPT_TAG_RE.sub("", html)
         html = self._ON_EVENT_RE.sub("", html)
         html = unicodedata.normalize("NFKC", html)
@@ -72,7 +82,7 @@ class PayloadSanitizer:
             html = html[:max_length]
         return html
 
-    def sanitize_js(self, value: str, max_length: int = 1000) -> str:
+    def sanitize_js(self, value: str, max_length: int = DEFAULT_SANITIZATION_MAX_LENGTH) -> str:
         """Remove javascript: protocol and event handlers."""
         value = self._JS_PROTOCOL_RE.sub("", value)
         value = self._ON_EVENT_RE.sub("", value)
@@ -88,7 +98,7 @@ class PayloadSanitizer:
         """Decode a base64 JSON string."""
         return json.loads(base64.b64decode(encoded.encode("utf-8")).decode("utf-8"))
 
-    def validate_types(self, payload: Dict[str, Any]) -> bool:
+    def validate_types(self, payload: dict[str, Any]) -> bool:
         """Validate that payload fields match expected types."""
         if not isinstance(payload, dict):
             return False

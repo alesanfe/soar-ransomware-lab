@@ -1,5 +1,7 @@
 [run]
-omit = 
+branch = True
+source = src/soar_lab
+omit =
     */domain/ports.py
     tests/*
     */__pycache__/*
@@ -9,6 +11,7 @@ omit =
     */interfaces/api/main.py
 
 [report]
+fail_under = 80
 exclude_lines =
     pragma: no cover
     def __repr__

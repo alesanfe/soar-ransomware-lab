@@ -41,6 +41,26 @@
 | **VM**      | Virtual Machine                                 |
 | **XDR**     | Extended Detection and Response                 |
 | **JWT**     | JSON Web Token (Token Web JSON) — autenticación HS256 en la API |
+| **SOC**     | Security Operations Center (Centro de Operaciones de Seguridad) |
+| **CSIRT**   | Computer Security Incident Response Team (Equipo de Respuesta a Incidentes) |
+| **CERT**    | Computer Emergency Response Team                 |
+| **MTTD**    | Mean Time to Detect (Tiempo Medio de Detección)  |
+| **NIST**    | National Institute of Standards and Technology   |
+| **ISO**     | International Organization for Standardization   |
+| **GDPR**    | General Data Protection Regulation (Reglamento General de Protección de Datos) |
+| **MITRE**   | MITRE Corporation — organización que mantiene ATT&CK |
+| **ATT&CK**  | Adversarial Tactics, Techniques, and Common Knowledge (framework de MITRE) |
+| **C4**      | Context, Containers, Components, Code — modelo de arquitectura de software |
+| **HPR**     | Holistic Project Radar (radar de 5 capas y 15 dimensiones para evaluación de proyectos) |
+| **TC**      | Test Case (Caso de Prueba) — identificador de tests E2E (TC-01 a TC-33) |
+| **PDCA**    | Plan-Do-Check-Act (ciclo de mejora continua)      |
+| **TCO**     | Total Cost of Ownership (Costo Total de Propiedad) |
+| **NLP**     | Natural Language Processing (Procesamiento de Lenguaje Natural) |
+| **ML**      | Machine Learning (Aprendizaje Automático)        |
+| **AI**      | Artificial Intelligence (Inteligencia Artificial) |
+| **APT**     | Advanced Persistent Threat (Amenaza Persistente Avanzada) |
+| **Tenzir**  | Plataforma de análisis de datos de red (pipeline de eventos) |
+| **OpenSearch** | Motor de búsqueda y análisis open source (fork de Elasticsearch) |
 | **MFA**     | Multi-Factor Authentication                     |
 | **SSO**     | Single Sign-On                                  |
 | **OIDC**    | OpenID Connect                                  |
@@ -85,7 +105,6 @@
 | **Python**          | Lenguaje de programación                                |
 | **Pytest**          | Framework de testing para Python                        |
 | **FastAPI**         | Framework web para Python                               |
-| **JWT**             | JSON Web Token                                          |
 
 ## Abreviaturas de Seguridad y Threat Intelligence
 

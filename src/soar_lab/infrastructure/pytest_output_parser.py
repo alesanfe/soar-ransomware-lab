@@ -10,11 +10,13 @@ logger = get_logger(__name__)
 
 
 class PytestOutputParser:
-    """Infrastructure implementation of TestResultParserInterface for pytest output."""
+    """Infrastructure implementation of TestResultParserInterface for pytest.
+
+    output.
+    """
 
     def parse(self, output: str) -> dict:
-        """
-        Parse test results from pytest output.
+        """Parse test results from pytest output.
 
         Args:
             output: Pytest output string
@@ -25,28 +27,23 @@ class PytestOutputParser:
         passed = failed = skipped = 0
         coverage = 0.0
 
-        for line in output.split('\n'):
+        for line in output.split("\n"):
             # Parse test summary line
-            if 'passed' in line or 'failed' in line or 'skipped' in line:
+            if "passed" in line or "failed" in line or "skipped" in line:
                 parts = line.split()
                 for i, part in enumerate(parts):
                     if part.isdigit() and i < len(parts) - 1:
-                        next_word = parts[i + 1].replace(',', '').replace(':', '')
-                        if next_word == 'passed':
+                        next_word = parts[i + 1].replace(",", "").replace(":", "")
+                        if next_word == "passed":
                             passed = int(part)
-                        elif next_word == 'failed':
+                        elif next_word == "failed":
                             failed = int(part)
-                        elif next_word == 'skipped':
+                        elif next_word == "skipped":
                             skipped = int(part)
             # Parse coverage from TOTAL line
-            elif line.startswith('TOTAL') and '%' in line:
+            elif line.startswith("TOTAL") and "%" in line:
                 parts = line.split()
                 if len(parts) >= 4:
-                    coverage = float(parts[-1].replace('%', ''))
+                    coverage = float(parts[-1].replace("%", ""))
 
-        return {
-            "passed": passed,
-            "failed": failed,
-            "skipped": skipped,
-            "coverage": coverage
-        }
+        return {"passed": passed, "failed": failed, "skipped": skipped, "coverage": coverage}

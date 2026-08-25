@@ -1,0 +1,78 @@
+{
+  "name": "thehive",
+  "service_name": "thehive",
+  "version": "1.0.0",
+  "supported_versions": [
+    "1.0.0",
+    "0.9.0"
+  ],
+  "deprecated_versions": [
+    "0.9.0"
+  ],
+  "deprecated_endpoints": {
+    "/api/legacy/case": "Use /api/case instead"
+  },
+  "required_headers": [
+    "Content-Type",
+    "X-API-Version"
+  ],
+  "rate_limit": {
+    "requests_per_minute": 100,
+    "requests_per_hour": 5000,
+    "requests_per_day": 50000
+  },
+  "error_schema": {
+    "type": "object",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "code": {
+        "type": [
+          "integer",
+          "string"
+        ]
+      },
+      "message": {
+        "type": "string"
+      }
+    }
+  },
+  "migration_guides": {
+    "0.9.0->1.0.0": "Severity field now accepts both integer and string values."
+  },
+  "endpoints": {
+    "/api/case": {
+      "GET": {
+        "response_schema": {
+          "type": "array"
+        }
+      },
+      "POST": {
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "severity": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "tags": {
+              "type": "array"
+            }
+          }
+        }
+      }
+    },
+    "/api/case/_search": {},
+    "/api/observable": {},
+    "/api/case/_bulk": {}
+  }
+}

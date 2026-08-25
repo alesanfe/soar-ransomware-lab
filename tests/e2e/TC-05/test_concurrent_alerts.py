@@ -1,127 +1,36 @@
-import os
-
 # !/usr/bin/env python3
-"""
-TC-05: Concurrent Alerts Testing
-Tests workflow behavior when multiple alerts are sent simultaneously.
-"""
+"""TC-05: Concurrent Alerts Testing Tests workflow behavior when multiple
+alerts are sent simultaneously."""
 
 import json
-import pytest
-import requests
-import sys
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
-FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
-# Use /app/results for artifacts when running inside container
-ARTIFACTS_DIR = Path("/app/results") if Path("/app").exists() else REPO_ROOT / "artifacts"
-WEBHOOK_INFO = Path("/app/webhook_info.json") if Path(
-    "/app/webhook_info.json").exists() else REPO_ROOT / "src" / "soar_lab" / "infrastructure" / "artifacts" / "webhook_info.json"
-ENV_FULL = Path("/app/.env.full") if Path("/app/.env.full").exists() else REPO_ROOT / ".env.full"
+import pytest
+
+from tests.e2e.base import E2EBaseTest
+from tests.e2e.workflow_validator import validate_workflow_results
 
 
-WORKFLOW_TIMEOUT = 1200
-POLL_INTERVAL = 5
-# NEW: Configurable ThreadPoolExecutor max workers
-MAX_WORKERS = os.environ.get("TC05_MAX_WORKERS", "10")
+class TestConcurrentAlerts(E2EBaseTest):
+    """TC-05 — Concurrent Alerts: Multiple alerts sent simultaneously.
 
-
-def _load_env() -> dict:
-    # First check environment variables (from docker exec env overrides)
-    env_vars = {
-        "SHUFFLE_URL": os.environ.get("SHUFFLE_URL"),
-        "ES_URL": os.environ.get("ES_URL"),
-        "THEHIVE_URL": os.environ.get("THEHIVE_URL"),
-        "CORTEX_URL": os.environ.get("CORTEX_URL"),
-        "MISP_URL": os.environ.get("MISP_URL"),
-        "WAZUH_URL": os.environ.get("WAZUH_URL"),
-        "THEHIVE_API_KEY": os.environ.get("THEHIVE_API_KEY"),
-        "CORTEX_API_KEY": os.environ.get("CORTEX_API_KEY"),
-        "MISP_API_KEY": os.environ.get("MISP_API_KEY"),
-        "SHUFFLE_DEFAULT_APIKEY": os.environ.get("SHUFFLE_DEFAULT_APIKEY"),
-        "SHUFFLE_DEFAULT_PASSWORD": os.environ.get("SHUFFLE_DEFAULT_PASSWORD"),
-    }
-
-    # Filter out None values
-    result = {k: v for k, v in env_vars.items() if v is not None}
-
-    # If not all required env vars are set, load from .env.full file
-    if not ENV_FULL.exists():
-        return result
-
-    for line in ENV_FULL.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, _, v = line.partition("=")
-            k = k.strip()
-            v = v.strip()
-            # Only add if not already in result (env vars take precedence)
-            if k not in result:
-                result[k] = v
-    return result
-
-
-class TestConcurrentAlerts:
+    Verifies that Shuffle handles concurrency correctly and TheHive
+    creates separate cases.
     """
-    TC-05 — Concurrent Alerts: Multiple alerts sent simultaneously.
-    Verifies that Shuffle handles concurrency correctly and TheHive creates separate cases.
-    """
+
+    tc_id = "TC-05"
+    WORKFLOW_TIMEOUT = 1200
+    # Configurable ThreadPoolExecutor max workers
+    MAX_WORKERS = os.environ.get("TC05_MAX_WORKERS", "10")
 
     def setup_method(self, method):
-        """Set up test clients and environment"""
-        t0 = datetime.now(timezone.utc)
-        (ARTIFACTS_DIR / "results").mkdir(parents=True, exist_ok=True)
-        (ARTIFACTS_DIR / "logs").mkdir(parents=True, exist_ok=True)
-
-        env = _load_env()
-
-        # Skip if required API keys are not configured
-        if not env.get("THEHIVE_API_KEY"):
-            pytest.skip("THEHIVE_API_KEY not configured in .env.full")
-
-        info = json.loads(WEBHOOK_INFO.read_text()) if WEBHOOK_INFO.exists() else {}
-        webhook_url = info.get("webhook_url", "")
-        workflow_id = info.get("workflow_id", "")
-
-        if not workflow_id:
-            pytest.skip("Workflow ID not found. Run init_shuffle_webhook.py first.")
-
-        # Import clients
-        sys.path.insert(0, str(REPO_ROOT / "src"))
-        from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
-        from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
-        from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
-
-        shuffle_url = env.get("SHUFFLE_URL", "http://soar_shuffle_backend:5001")
-        shuffle = ShuffleClient(base_url=shuffle_url, api_key=(
-            os.environ.get("SHUFFLE_DEFAULT_APIKEY") or env.get("SHUFFLE_DEFAULT_APIKEY") or env.get(
-            "SHUFFLE_API_KEY", "placeholder")),
-                                verify_ssl=False)
-
-        thehive = TheHiveClient(
-            base_url=env.get("THEHIVE_URL", "http://thehive:9000"),
-            api_key=env.get("THEHIVE_API_KEY", ""),
-            verify_ssl=False
-        )
-        es = ElasticsearchClient(
-            base_url=env.get("ES_URL", "http://elasticsearch:9200"),
-            index="soar-alerts"
-        )
-
-        # Avoid an expensive full case listing in setup; each test computes its own baseline.
-        cases_before = 0
-
-        self.t0 = t0
-        self.webhook_url = webhook_url
-        self.workflow_id = workflow_id
-        self.shuffle = shuffle
-        self.thehive = thehive
-        self.es = es
-        self._cases_before = cases_before
+        """Set up test clients and environment."""
+        super().setup_method(method)
+        self.t0 = datetime.now(UTC)
 
         # Avoid cross-test interference from executions queued by prior tests.
         # A short drain is enough: any pending execution older than a few minutes
@@ -129,10 +38,12 @@ class TestConcurrentAlerts:
         self._wait_for_queue_drain(timeout=120)
 
     def teardown_method(self, method):
-        """Drain any lingering workflow executions before the next test starts."""
+        """Drain any lingering workflow executions before the next test
+        starts."""
         # After a test has waited for its own executions, only stale leftovers
         # should remain.  Drain them briefly so the next test starts clean.
         self._wait_for_queue_drain(timeout=60)
+        super().teardown_method(method)
 
     def _execution_is_stale(self, execution: dict, max_age: int = 600) -> bool:
         """Return True if a pending execution is older than max_age seconds."""
@@ -181,7 +92,10 @@ class TestConcurrentAlerts:
                     if status not in pending_statuses:
                         continue
                     if self._execution_is_stale(e):
-                        self._log(f"  + Ignoring stale {status} execution {e.get('execution_id', '')[:8]}...")
+                        self._log(
+                            f"  + Ignoring stale {status} execution "
+                            f"{e.get('execution_id', '')[:8]}..."
+                        )
                         continue
                     pending.append(e)
                 if not pending:
@@ -190,12 +104,11 @@ class TestConcurrentAlerts:
                 self._log(f"  + {len(pending)} executions still pending, waiting...")
             except Exception as e:
                 self._log(f"  + Could not check execution status: {e}")
-            time.sleep(POLL_INTERVAL)
+            time.sleep(self.POLL_INTERVAL)
         self._log(f"WARNING: timed out after {timeout}s waiting for queue drain")
 
-
     def _log(self, msg: str):
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         print(f"[{elapsed:6.1f}s] TC-05 {msg}")
 
     def _base_payload(self, idx: int) -> dict:
@@ -207,7 +120,7 @@ class TestConcurrentAlerts:
             "hash": "a" * 64,
             "severity": 2,
             "source": "concurrent-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
         }
 
@@ -219,18 +132,23 @@ class TestConcurrentAlerts:
                 r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
                 if r.status_code == 200:
                     return r
-                self._log(f"  + Alert {idx} attempt {attempt + 1}/5: HTTP {r.status_code}, retrying...")
+                self._log(
+                    f"  + Alert {idx} attempt {attempt + 1}/5: HTTP {r.status_code}, retrying..."
+                )
             except Exception as e:
                 last_exc = e
                 self._log(f"  + Alert {idx} attempt {attempt + 1}/5: {e}, retrying...")
-            time.sleep(POLL_INTERVAL)
+            time.sleep(self.POLL_INTERVAL)
         if last_exc:
             raise last_exc
         raise RuntimeError(f"Alert {idx} failed after 5 attempts")
 
-    def _wait_for_executions(self, execution_ids: list, num_expected: int, min_completed: int = None):
-        """Poll Shuffle until all (or at least min_completed) supplied executions finish."""
-        deadline = time.time() + WORKFLOW_TIMEOUT
+    def _wait_for_executions(
+        self, execution_ids: list, num_expected: int, min_completed: int = None
+    ):
+        """Poll Shuffle until all (or at least min_completed) supplied
+        executions finish."""
+        deadline = time.time() + self.WORKFLOW_TIMEOUT
         completed_ids = set()
         pending_ids = list(execution_ids)
         target = min_completed if min_completed is not None else num_expected
@@ -245,25 +163,33 @@ class TestConcurrentAlerts:
                     if ex and ex.get("status") == "FINISHED":
                         completed_ids.add(exec_id)
                         pending_ids.remove(exec_id)
-                        self._log(f"  + Execution {exec_id[:8]}... completed ({len(completed_ids)}/{num_expected})")
+                        self._log(
+                            f"  + Execution {exec_id[:8]}... completed "
+                            f"({len(completed_ids)}/{num_expected})"
+                        )
             except Exception as e:
                 self._log(f"  + Could not check execution status: {e}")
-            time.sleep(POLL_INTERVAL)
+            time.sleep(self.POLL_INTERVAL)
         if min_completed is not None:
-            assert len(completed_ids) >= min_completed, f"Only {len(completed_ids)}/{min_completed} workflows completed"
+            assert (
+                len(completed_ids) >= min_completed
+            ), f"Only {len(completed_ids)}/{min_completed} workflows completed"
         else:
-            assert len(completed_ids) == num_expected, f"Only {len(completed_ids)}/{num_expected} workflows completed"
+            assert (
+                len(completed_ids) == num_expected
+            ), f"Only {len(completed_ids)}/{num_expected} workflows completed"
         return completed_ids
 
     def _wait_for_es_doc(self, alert_id: str, timeout: int = 60):
-        """Poll Elasticsearch until the alert document is available and indexed."""
+        """Poll Elasticsearch until the alert document is available and
+        indexed."""
         deadline = time.time() + timeout
         while time.time() < deadline:
             doc = self.es.search_by_alert_id(alert_id)
             if doc:
                 return doc
             self._log(f"  + Waiting for ES doc {alert_id[:30]}...")
-            time.sleep(POLL_INTERVAL)
+            time.sleep(self.POLL_INTERVAL)
         return None
 
     def test_concurrent_alerts(self):
@@ -278,14 +204,20 @@ class TestConcurrentAlerts:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
         def _send_with_retry(idx: int, payload: dict):
-            """Send a single alert with up to 5 retries on HTTP 500 or timeout."""
+            """Send a single alert with up to 5 retries on HTTP 500 or
+            timeout."""
             last_exc = None
             for attempt in range(5):
                 try:
-                    r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
+                    r = self.shuffle._webhook_session.post(
+                        self.webhook_url, json=payload, timeout=30
+                    )
                     if r.status_code == 200:
                         return r
-                    self._log(f"  + Alert {idx} attempt {attempt + 1}/5: HTTP {r.status_code}, retrying...")
+                    self._log(
+                        f"  + Alert {idx} attempt {attempt + 1}/5: "
+                        f"HTTP {r.status_code}, retrying..."
+                    )
                 except Exception as e:
                     last_exc = e
                     self._log(f"  + Alert {idx} attempt {attempt + 1}/5: {e}, retrying...")
@@ -295,8 +227,12 @@ class TestConcurrentAlerts:
             raise RuntimeError(f"Alert {idx} failed after 5 attempts")
 
         # Send alerts concurrently
-        self._log(f"STEP 1: Sending {num_alerts} alerts concurrently (max_workers={MAX_WORKERS})")
-        max_workers = min(int(MAX_WORKERS), num_alerts)  # Use configured limit or num_alerts, whichever is smaller
+        self._log(
+            f"STEP 1: Sending {num_alerts} alerts concurrently (max_workers={self.MAX_WORKERS})"
+        )
+        max_workers = min(
+            int(self.MAX_WORKERS), num_alerts
+        )  # Use configured limit or num_alerts, whichever is smaller
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {}
             for i in range(num_alerts):
@@ -323,16 +259,36 @@ class TestConcurrentAlerts:
         self._log(f"STEP 2: Waiting for {num_alerts} workflows to complete")
         self._wait_for_executions(execution_ids, num_alerts)
 
+        # Validate at least one workflow execution for hidden errors
+        if execution_ids:
+            ex_full = self.shuffle.get_execution(
+                self.workflow_id, execution_ids[0], include_results=True
+            )
+            if isinstance(ex_full, dict) and ex_full.get("results"):
+                validate_workflow_results(ex_full)
+
         # Verify TheHive created separate cases
         self._log("STEP 3: Verifying TheHive created separate cases + no race conditions")
         cases = self.thehive.search_cases(range_="0-100", sort=["-caseId"])
         assert isinstance(cases, list), "TheHive cases must be a list"
-        new_cases = len(cases) - self._cases_before
-        assert new_cases >= num_alerts, f"Expected at least {num_alerts} new cases, got {new_cases}"
+        # Count cases matching our alert_ids (more robust than delta)
+        matching = []
+        for c in cases:
+            desc = c.get("description", "")
+            for aid in alert_ids:
+                if aid in desc:
+                    matching.append(c)
+                    break
+        new_cases = len(matching)
+        assert (
+            new_cases >= num_alerts
+        ), f"Expected at least {num_alerts} new cases matching our alert_ids, got {new_cases}"
 
         # NEW: Verify no duplicate caseIds (race condition check)
         case_ids = [c.get("caseId") for c in cases]
-        assert len(case_ids) == len(set(case_ids)), "Duplicate caseIds found - race condition detected in case creation"
+        assert len(case_ids) == len(
+            set(case_ids)
+        ), "Duplicate caseIds found - race condition detected in case creation"
         self._log(f"  + No duplicate caseIds found ({len(case_ids)} unique cases)")
 
         # NEW: Verify no duplicate titles (another race condition indicator)
@@ -344,7 +300,7 @@ class TestConcurrentAlerts:
         if duplicate_titles:
             self._log(f"  + Warning: Found duplicate case titles: {duplicate_titles}")
         else:
-            self._log(f"  + No duplicate case titles found")
+            self._log("  + No duplicate case titles found")
 
         # Validate that each alert_id appears in a different case description
         matched_alerts = 0
@@ -355,34 +311,43 @@ class TestConcurrentAlerts:
                     matched_alerts += 1
                     alert_to_case_map[alert_id] = case.get("caseId")
                     break
-        assert matched_alerts == num_alerts, f"Only {matched_alerts}/{num_alerts} alert_ids found in case descriptions"
+        assert (
+            matched_alerts == num_alerts
+        ), f"Only {matched_alerts}/{num_alerts} alert_ids found in case descriptions"
 
-        # NEW: Verify each alert_id maps to a unique case (no race condition causing multiple alerts to map to same case)
+        # NEW: Verify each alert_id maps to a unique case
+        # (no race condition causing multiple alerts to map to same case)
         unique_case_ids_for_alerts = set(alert_to_case_map.values())
-        assert len(
-            unique_case_ids_for_alerts) == num_alerts, f"Race condition detected: {num_alerts} alerts mapped to only {len(unique_case_ids_for_alerts)} unique cases"
-        self._log(f"  + Each alert_id maps to a unique case (no race conditions)")
+        assert len(unique_case_ids_for_alerts) == num_alerts, (
+            f"Race condition detected: {num_alerts} alerts mapped to "
+            f"only {len(unique_case_ids_for_alerts)} unique cases"
+        )
+        self._log("  + Each alert_id maps to a unique case (no race conditions)")
         self._log(f"✓ All {num_alerts} concurrent alerts created separate cases")
 
-        self._log(f"STEP 4: Verifying Elasticsearch indexed all alerts")
+        self._log("STEP 4: Verifying Elasticsearch indexed all alerts")
         for alert_id in alert_ids:
             doc = self.es.search_by_alert_id(alert_id)
             assert doc is not None, f"Alert {alert_id} not found in Elasticsearch"
             assert isinstance(doc, dict), "ES document must be a dict"
             assert doc.get("status") == "processed", f"Alert {alert_id} status not processed"
 
-        self._log(f"STEP 5: Verifying all workflows executed successfully")
+        self._log("STEP 5: Verifying all workflows executed successfully")
         for exec_id in execution_ids:
             ex = self.shuffle.get_execution(self.workflow_id, exec_id)
             assert ex is not None, f"Execution {exec_id} not found"
             # Accept both FINISHED and EXECUTING as valid states (Shuffle may re-trigger workflows)
             # The key validation is that cases were created and alerts were indexed
             valid_statuses = ["FINISHED", "EXECUTING", "SUCCESS"]
-            assert ex.get("status") in valid_statuses, f"Execution {exec_id} status: {ex.get('status')}"
+            assert (
+                ex.get("status") in valid_statuses
+            ), f"Execution {exec_id} status: {ex.get('status')}"
             for node in ex.get("results", []):
-                assert node.get("status") == "SUCCESS", f"Node {node.get('action', {}).get('label')} failed"
+                assert (
+                    node.get("status") == "SUCCESS"
+                ), f"Node {node.get('action', {}).get('label')} failed"
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"=== TC-05 COMPLETED — ALL ASSERTIONS PASSED (Elapsed: {elapsed:.1f}s) ===")
 
         # Save report
@@ -393,9 +358,10 @@ class TestConcurrentAlerts:
             "num_alerts": num_alerts,
             "cases_created": new_cases,
             "elapsed_seconds": elapsed,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
-        report_path = ARTIFACTS_DIR / "results" / "TC-05_concurrent_alerts_report.json"
+        report_path = Path("results") / "TC-05_concurrent_alerts_report.json"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
         self._log(f"+ Report saved: {report_path}")
 
@@ -404,8 +370,7 @@ class TestConcurrentAlerts:
     # ------------------------------------------------------------------
 
     def test_10_concurrent_alerts(self):
-        """
-        TC-05-01: 10 concurrent alerts.
+        """TC-05-01: 10 concurrent alerts.
 
         Verifications:
           - 10 alerts sent simultaneously
@@ -424,10 +389,15 @@ class TestConcurrentAlerts:
         def _send_with_retry(idx: int, payload: dict):
             for attempt in range(5):
                 try:
-                    r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
+                    r = self.shuffle._webhook_session.post(
+                        self.webhook_url, json=payload, timeout=30
+                    )
                     if r.status_code == 200:
                         return r
-                    self._log(f"  + Alert {idx} attempt {attempt + 1}/5: HTTP {r.status_code}, retrying...")
+                    self._log(
+                        f"  + Alert {idx} attempt {attempt + 1}/5: "
+                        f"HTTP {r.status_code}, retrying..."
+                    )
                 except Exception as e:
                     self._log(f"  + Alert {idx} attempt {attempt + 1}/5: {e}, retrying...")
                 time.sleep(10)
@@ -468,17 +438,16 @@ class TestConcurrentAlerts:
         indexed_count = 0
         for alert_id in alert_ids:
             doc = self.es.search_by_alert_id(alert_id)
-            if doc:
-                indexed_count += 1
+            assert doc is not None, "ES document not found"
+            indexed_count += 1
         self._log(f"+ Indexed {indexed_count}/{num_alerts} alerts in Elasticsearch")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-05-01 COMPLETED — 10 CONCURRENT ALERTS VALIDATED ===")
 
     def test_mass_concurrent_alerts(self):
-        """
-        TC-05-02: Mass concurrent alerts.
+        """TC-05-02: Mass concurrent alerts.
 
         Verifications:
           - A larger batch of alerts sent simultaneously
@@ -497,10 +466,15 @@ class TestConcurrentAlerts:
         def _send_with_retry(idx: int, payload: dict):
             for attempt in range(5):
                 try:
-                    r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
+                    r = self.shuffle._webhook_session.post(
+                        self.webhook_url, json=payload, timeout=30
+                    )
                     if r.status_code == 200:
                         return r
-                    self._log(f"  + Alert {idx} attempt {attempt + 1}/5: HTTP {r.status_code}, retrying...")
+                    self._log(
+                        f"  + Alert {idx} attempt {attempt + 1}/5: "
+                        f"HTTP {r.status_code}, retrying..."
+                    )
                 except Exception as e:
                     self._log(f"  + Alert {idx} attempt {attempt + 1}/5: {e}, retrying...")
                 time.sleep(10)
@@ -539,13 +513,12 @@ class TestConcurrentAlerts:
         # Validate execution IDs are unique
         assert len(execution_ids) == len(set(execution_ids)), "Duplicate execution IDs found"
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-05-02 COMPLETED — MASS CONCURRENT ALERTS VALIDATED ===")
 
     def test_data_consistency(self):
-        """
-        TC-05-03: Data consistency under load.
+        """TC-05-03: Data consistency under load.
 
         Verifications:
           - All data is consistent across systems
@@ -598,13 +571,12 @@ class TestConcurrentAlerts:
             hits = docs.get("hits", {}).get("hits", [])
             assert len(hits) <= 1, f"Duplicate documents found for alert_id {alert_id}"
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-05-03 COMPLETED — DATA CONSISTENCY VALIDATED ===")
 
     def test_no_duplicates(self):
-        """
-        TC-05-04: Absence of duplicates.
+        """TC-05-04: Absence of duplicates.
 
         Verifications:
           - No duplicate cases created
@@ -655,13 +627,12 @@ class TestConcurrentAlerts:
         # Validate alert IDs are unique
         assert len(alert_ids) == len(set(alert_ids)), "Duplicate alert IDs found"
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-05-04 COMPLETED — NO DUPLICATES VALIDATED ===")
 
     def test_recovery_after_load(self):
-        """
-        TC-05-05: Recovery after load.
+        """TC-05-05: Recovery after load.
 
         Verifications:
           - System recovers after load
@@ -720,8 +691,8 @@ class TestConcurrentAlerts:
         recovery_alert_id = recovery_payload["alert_id"]
         doc = self._wait_for_es_doc(recovery_alert_id, timeout=60)
         assert doc is not None, f"Recovery alert {recovery_alert_id} not found in Elasticsearch"
-        self._log(f"+ Recovery alert indexed in Elasticsearch")
+        self._log("+ Recovery alert indexed in Elasticsearch")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-05-05 COMPLETED — RECOVERY AFTER LOAD VALIDATED ===")

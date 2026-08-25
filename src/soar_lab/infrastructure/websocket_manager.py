@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - WebSocket Connection Manager (Infrastructure)
+"""SOAR Ransomware Lab - WebSocket Connection Manager (Infrastructure).
+
 Manages WebSocket connections for real-time log streaming.
 This is infrastructure - handles WebSocket protocol details.
 """
 
+from typing import Any
+
 from fastapi import WebSocket, WebSocketDisconnect
-from typing import Any, Dict
 
 from soar_lab.config.logging import get_logger
+
+__all__ = ["ConnectionManager"]
 
 logger = get_logger(__name__)
 
@@ -16,7 +19,7 @@ logger = get_logger(__name__)
 class ConnectionManager:
     """Manages active WebSocket connections - implements WebSocketManager port."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
 
     async def connect(self, websocket: Any) -> None:
@@ -29,15 +32,16 @@ class ConnectionManager:
         try:
             self.active_connections.remove(websocket)
         except ValueError:
-            logger.warning(f"WebSocket connection not found in active connections")
+            logger.warning("WebSocket connection not found in active connections")
 
-    async def send_personal_message(self, message: str, websocket: WebSocket):
+    async def send_personal_message(self, message: str, websocket: WebSocket) -> None:
         """Send a message to a specific WebSocket connection."""
         await websocket.send_text(message)
 
-    async def broadcast(self, message: Dict[str, Any]) -> None:
+    async def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a message to all active connections."""
         import json
+
         message_str = json.dumps(message)
         for connection in self.active_connections:
             try:

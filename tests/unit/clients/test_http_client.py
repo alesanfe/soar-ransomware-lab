@@ -1,36 +1,35 @@
 #!/usr/bin/env python3
-"""
-Unit tests for http_client.py
-"""
+"""Unit tests for http_client.py."""
+
+import ssl
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-import ssl
-from unittest.mock import AsyncMock, patch, Mock, MagicMock
 
 from soar_lab.infrastructure.http_client import AioHTTPClient
 
 
 class TestAioHTTPClient:
-    """Test AioHTTPClient infrastructure adapter"""
+    """Test AioHTTPClient infrastructure adapter."""
 
     def test_initialization(self):
-        """Test successful initialization"""
+        """Test successful initialization."""
         client = AioHTTPClient(default_timeout=10, default_verify_ssl=False)
 
         assert client.default_timeout == 10
         assert client.default_verify_ssl == False
 
     def test_initialization_defaults(self):
-        """Test initialization with default values"""
+        """Test initialization with default values."""
         client = AioHTTPClient()
 
         assert client.default_timeout == 5
         assert client.default_verify_ssl == True
 
     @pytest.mark.asyncio
-    @patch('soar_lab.infrastructure.http_client.aiohttp')
+    @patch("soar_lab.infrastructure.http_client.aiohttp")
     async def test_get_success(self, mock_aiohttp):
-        """Test successful GET request"""
+        """Test successful GET request."""
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
@@ -51,9 +50,9 @@ class TestAioHTTPClient:
         assert status == 200
 
     @pytest.mark.asyncio
-    @patch('soar_lab.infrastructure.http_client.aiohttp')
+    @patch("soar_lab.infrastructure.http_client.aiohttp")
     async def test_get_with_custom_timeout(self, mock_aiohttp):
-        """Test GET request with custom timeout"""
+        """Test GET request with custom timeout."""
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
@@ -74,10 +73,10 @@ class TestAioHTTPClient:
         assert status == 200
 
     @pytest.mark.asyncio
-    @patch('soar_lab.infrastructure.http_client.aiohttp')
-    @patch('soar_lab.infrastructure.http_client.ssl')
+    @patch("soar_lab.infrastructure.http_client.aiohttp")
+    @patch("soar_lab.infrastructure.http_client.ssl")
     async def test_get_without_ssl_verification(self, mock_ssl, mock_aiohttp):
-        """Test GET request without SSL verification"""
+        """Test GET request without SSL verification."""
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
@@ -104,9 +103,9 @@ class TestAioHTTPClient:
         mock_ssl.create_default_context.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('soar_lab.infrastructure.http_client.aiohttp')
+    @patch("soar_lab.infrastructure.http_client.aiohttp")
     async def test_get_json_success(self, mock_aiohttp):
-        """Test successful GET JSON request"""
+        """Test successful GET JSON request."""
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value={"key": "value"})
@@ -129,9 +128,9 @@ class TestAioHTTPClient:
         assert data == {"key": "value"}
 
     @pytest.mark.asyncio
-    @patch('soar_lab.infrastructure.http_client.aiohttp')
+    @patch("soar_lab.infrastructure.http_client.aiohttp")
     async def test_get_json_with_custom_timeout(self, mock_aiohttp):
-        """Test GET JSON request with custom timeout"""
+        """Test GET JSON request with custom timeout."""
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value={"key": "value"})
@@ -154,10 +153,10 @@ class TestAioHTTPClient:
         assert data == {"key": "value"}
 
     @pytest.mark.asyncio
-    @patch('soar_lab.infrastructure.http_client.aiohttp')
-    @patch('soar_lab.infrastructure.http_client.ssl')
+    @patch("soar_lab.infrastructure.http_client.aiohttp")
+    @patch("soar_lab.infrastructure.http_client.ssl")
     async def test_get_json_without_ssl_verification(self, mock_ssl, mock_aiohttp):
-        """Test GET JSON request without SSL verification"""
+        """Test GET JSON request without SSL verification."""
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value={"key": "value"})
@@ -186,9 +185,9 @@ class TestAioHTTPClient:
         mock_ssl.create_default_context.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('soar_lab.infrastructure.http_client.aiohttp')
+    @patch("soar_lab.infrastructure.http_client.aiohttp")
     async def test_get_raises_exception_on_error(self, mock_aiohttp):
-        """Test GET request raises exception on error"""
+        """Test GET request raises exception on error."""
         mock_session = AsyncMock()
         mock_session.get = Mock(side_effect=Exception("Connection error"))
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
@@ -204,9 +203,9 @@ class TestAioHTTPClient:
             await client.get("http://example.com")
 
     @pytest.mark.asyncio
-    @patch('soar_lab.infrastructure.http_client.aiohttp')
+    @patch("soar_lab.infrastructure.http_client.aiohttp")
     async def test_get_json_raises_exception_on_error(self, mock_aiohttp):
-        """Test GET JSON request raises exception on error"""
+        """Test GET JSON request raises exception on error."""
         mock_session = AsyncMock()
         mock_session.get = Mock(side_effect=Exception("Connection error"))
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)

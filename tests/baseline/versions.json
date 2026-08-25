@@ -1,0 +1,157 @@
+{
+  "pyproject": {
+    "name": "soar-lab",
+    "version": "1.4.0",
+    "requires_python": ">=3.11",
+    "dependencies": [
+      "fastapi>=0.100.0",
+      "uvicorn>=0.23.0",
+      "pydantic>=2.0.0",
+      "redis>=4.0.0",
+      "docker>=6.0.0",
+      "psutil>=5.9.0",
+      "PyJWT>=2.8.0",
+      "passlib[bcrypt]>=1.7.4",
+      "aiohttp>=3.9.0",
+      "python-dotenv>=1.0.0"
+    ],
+    "optional_dependencies": {
+      "dev": [
+        "pytest>=7.0.0",
+        "pytest-cov>=4.0.0",
+        "pytest-asyncio>=0.21.0",
+        "black>=23.0.0",
+        "isort>=5.12.0",
+        "flake8>=6.0.0",
+        "mypy>=1.0.0",
+        "pre-commit>=3.0.0"
+      ],
+      "test": [
+        "pytest>=7.0.0",
+        "pytest-cov>=4.0.0",
+        "pytest-asyncio>=0.21.0",
+        "pytest-mock>=3.10.0",
+        "pytest-timeout>=2.1.0",
+        "jsonschema>=4.19.0",
+        "requests-mock>=1.11.0",
+        "redis>=4.6.0",
+        "selenium>=4.15.0",
+        "webdriver-manager>=3.8.0"
+      ]
+    }
+  },
+  "pyproject_tools": {
+    "black": {
+      "line-length": 100,
+      "target-version": [
+        "py311"
+      ],
+      "include": "\\.pyi?$",
+      "extend-exclude": "/(\n  # directories\n  \\.eggs\n  | \\.git\n  | \\.hg\n  | \\.mypy_cache\n  | \\.tox\n  | \\.venv\n  | build\n  | dist\n)/\n"
+    },
+    "isort": {
+      "profile": "black",
+      "multi_line_output": 3,
+      "include_trailing_comma": true,
+      "force_grid_wrap": 0,
+      "use_parentheses": true,
+      "ensure_newline_before_comments": true,
+      "line_length": 100
+    },
+    "pytest": {
+      "ini_options": {
+        "asyncio_mode": "auto",
+        "markers": [
+          "slow: marks tests as slow (deselect with '-m not slow')",
+          "requires_docker: marks tests that require Docker to be running",
+          "requires_external: marks tests that depend on external services (TheHive, Cortex, Shuffle, etc.)",
+          "e2e: marks end-to-end tests that may take longer to run",
+          "unit: marks unit tests that don't require external dependencies",
+          "integration: marks integration tests that require multiple components",
+          "atomic: marks atomic red-team simulation tests",
+          "performance: marks performance and load tests",
+          "security: marks security hardening and vulnerability tests",
+          "kpi: marks KPI-related tests",
+          "smoke: fast post-deployment smoke tests",
+          "smoke_critical: P0 \u2014 rollback immediately if these fail",
+          "smoke_high: P1 \u2014 investigate immediately, consider rollback",
+          "smoke_medium: P2 \u2014 degraded platform, investigate within 24h"
+        ]
+      }
+    },
+    "mypy": {
+      "python_version": "3.11",
+      "warn_return_any": true,
+      "warn_unused_configs": true,
+      "disallow_untyped_defs": true,
+      "disallow_incomplete_defs": true,
+      "check_untyped_defs": true,
+      "disallow_untyped_decorators": true,
+      "no_implicit_optional": true,
+      "warn_redundant_casts": true,
+      "warn_unused_ignores": true,
+      "warn_no_return": true,
+      "warn_unreachable": true,
+      "strict_equality": true
+    }
+  },
+  "dockerfiles": {
+    "apps\\api\\Dockerfile": [
+      "python:3.11-slim"
+    ],
+    "apps\\docs-site\\Dockerfile": [
+      "node:lts-alpine",
+      "base",
+      "dependencies"
+    ],
+    "apps\\web-management\\Dockerfile": [
+      "nginx:1.25-alpine"
+    ],
+    "infra\\docker\\images\\cortex\\Dockerfile": [
+      "thehiveproject/cortex:3.2.0-1"
+    ],
+    "src\\soar_lab\\infrastructure\\network_watcher\\Dockerfile": [
+      "python:3.11-alpine"
+    ]
+  },
+  "compose": {
+    "infra\\docker\\compose\\docker-compose.api.yml": [
+      "nginx:1.25-alpine"
+    ],
+    "infra\\docker\\compose\\docker-compose.core.yml": [
+      "redis:7-alpine",
+      "thehiveproject/thehive:3.5.2-1",
+      "ghcr.io/shuffle/shuffle-frontend:2.2.1",
+      "ghcr.io/shuffle/shuffle-backend:2.2.1",
+      "tenzir/tenzir:main",
+      "ghcr.io/shuffle/shuffle-orborus:2.2.1"
+    ],
+    "infra\\docker\\compose\\docker-compose.misp.yml": [
+      "mariadb:10.11",
+      "ghcr.io/misp/misp-docker/misp-modules:latest",
+      "ghcr.io/misp/misp-docker/misp-core:latest"
+    ],
+    "infra\\docker\\compose\\docker-compose.opensearch.yml": [
+      "opensearchproject/opensearch:2.10.0",
+      "opensearchproject/opensearch-dashboards:2.10.0"
+    ],
+    "infra\\docker\\compose\\docker-compose.yml": [
+      "docker.elastic.co/elasticsearch/elasticsearch:7.10.2"
+    ],
+    "infra\\docker\\compose\\logging\\docker-compose.logging.yml": [
+      "postgres:14-alpine",
+      "grafana/grafana:10.3.4",
+      "grafana/loki:2.9.10",
+      "grafana/promtail:2.9.10"
+    ]
+  },
+  "ci": {
+    ".github\\workflows\\ci.yml": {
+      "python_version": [
+        "'3.11'",
+        "'3.11'",
+        "'3.11'"
+      ]
+    }
+  }
+}

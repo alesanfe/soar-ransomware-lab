@@ -1,0 +1,54 @@
+{
+  "generated": "2026-07-18T20:52:00",
+  "command": "python -m pytest --collect-only -q",
+  "pytest_summary": {
+    "collected": 1754,
+    "deselected": 33,
+    "selected": 1721,
+    "errors": 0
+  },
+  "per_directory": {
+    "__pycache__": {
+      "files": 0,
+      "functions": 0
+    },
+    "atomic": {
+      "files": 4,
+      "functions": 110
+    },
+    "e2e": {
+      "files": 40,
+      "functions": 285
+    },
+    "fixtures": {
+      "files": 0,
+      "functions": 0
+    },
+    "general": {
+      "files": 2,
+      "functions": 20
+    },
+    "integration": {
+      "files": 36,
+      "functions": 420
+    },
+    "performance": {
+      "files": 4,
+      "functions": 30
+    },
+    "runners": {
+      "files": 0,
+      "functions": 0
+    },
+    "security": {
+      "files": 1,
+      "functions": 26
+    },
+    "unit": {
+      "files": 64,
+      "functions": 993
+    }
+  },
+  "total_files": 150,
+  "total_functions": 1884
+}

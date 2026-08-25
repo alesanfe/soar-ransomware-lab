@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unit tests for in_memory_storage.py
-"""
+"""Unit tests for in_memory_storage.py."""
 
 import pytest
 
@@ -9,10 +7,10 @@ from soar_lab.infrastructure.in_memory_storage import InMemoryStorage
 
 
 class TestInMemoryStorage:
-    """Test InMemoryStorage infrastructure adapter"""
+    """Test InMemoryStorage infrastructure adapter."""
 
     def test_initialization(self):
-        """Test initialization creates empty storage"""
+        """Test initialization creates empty storage."""
         storage = InMemoryStorage()
 
         assert storage._store == {}
@@ -20,7 +18,7 @@ class TestInMemoryStorage:
         assert storage._directories == set()
 
     def test_write(self):
-        """Test write stores data and metadata"""
+        """Test write stores data and metadata."""
         storage = InMemoryStorage()
         data = b"test data"
 
@@ -32,7 +30,7 @@ class TestInMemoryStorage:
         assert "created_time" in storage._file_info["test.txt"]
 
     def test_read(self):
-        """Test read retrieves stored data"""
+        """Test read retrieves stored data."""
         storage = InMemoryStorage()
         data = b"test data"
         storage.write("test.txt", data)
@@ -42,14 +40,14 @@ class TestInMemoryStorage:
         assert result == data
 
     def test_read_not_found(self):
-        """Test read raises FileNotFoundError for missing key"""
+        """Test read raises FileNotFoundError for missing key."""
         storage = InMemoryStorage()
 
         with pytest.raises(FileNotFoundError, match="Key not found"):
             storage.read("nonexistent.txt")
 
     def test_exists(self):
-        """Test exists checks if key exists"""
+        """Test exists checks if key exists."""
         storage = InMemoryStorage()
         storage.write("test.txt", b"data")
 
@@ -57,7 +55,7 @@ class TestInMemoryStorage:
         assert storage.exists("nonexistent.txt") is False
 
     def test_list_keys(self):
-        """Test list_keys returns keys with prefix"""
+        """Test list_keys returns keys with prefix."""
         storage = InMemoryStorage()
         storage.write("dir1/file1.txt", b"data1")
         storage.write("dir1/file2.txt", b"data2")
@@ -70,7 +68,7 @@ class TestInMemoryStorage:
         assert "dir1/file2.txt" in keys
 
     def test_list_keys_empty_prefix(self):
-        """Test list_keys with empty prefix returns all keys"""
+        """Test list_keys with empty prefix returns all keys."""
         storage = InMemoryStorage()
         storage.write("file1.txt", b"data1")
         storage.write("file2.txt", b"data2")
@@ -80,7 +78,7 @@ class TestInMemoryStorage:
         assert len(keys) == 2
 
     def test_delete(self):
-        """Test delete removes key and metadata"""
+        """Test delete removes key and metadata."""
         storage = InMemoryStorage()
         storage.write("test.txt", b"data")
 
@@ -90,13 +88,13 @@ class TestInMemoryStorage:
         assert "test.txt" not in storage._file_info
 
     def test_delete_nonexistent(self):
-        """Test delete nonexistent key does not raise error"""
+        """Test delete nonexistent key does not raise error."""
         storage = InMemoryStorage()
 
         storage.delete("nonexistent.txt")  # Should not raise
 
     def test_clear(self):
-        """Test clear removes all data"""
+        """Test clear removes all data."""
         storage = InMemoryStorage()
         storage.write("file1.txt", b"data1")
         storage.write("file2.txt", b"data2")
@@ -109,7 +107,7 @@ class TestInMemoryStorage:
         assert storage._directories == set()
 
     def test_ensure_directory_exists(self):
-        """Test ensure_directory_exists adds directory"""
+        """Test ensure_directory_exists adds directory."""
         storage = InMemoryStorage()
 
         storage.ensure_directory_exists("/test/dir")
@@ -117,7 +115,7 @@ class TestInMemoryStorage:
         assert "/test/dir" in storage._directories
 
     def test_get_file_size(self):
-        """Test get_file_size returns file size"""
+        """Test get_file_size returns file size."""
         storage = InMemoryStorage()
         storage.write("test.txt", b"test data")
 
@@ -126,7 +124,7 @@ class TestInMemoryStorage:
         assert size == 9  # len(b"test data")
 
     def test_get_file_size_nonexistent(self):
-        """Test get_file_size returns 0 for nonexistent file"""
+        """Test get_file_size returns 0 for nonexistent file."""
         storage = InMemoryStorage()
 
         size = storage.get_file_size("nonexistent.txt")
@@ -134,7 +132,7 @@ class TestInMemoryStorage:
         assert size == 0
 
     def test_directory_exists(self):
-        """Test directory_exists checks directory"""
+        """Test directory_exists checks directory."""
         storage = InMemoryStorage()
         storage.ensure_directory_exists("/test/dir")
 
@@ -142,7 +140,7 @@ class TestInMemoryStorage:
         assert storage.directory_exists("/nonexistent") is False
 
     def test_file_exists(self):
-        """Test file_exists checks file"""
+        """Test file_exists checks file."""
         storage = InMemoryStorage()
         storage.write("test.txt", b"data")
 
@@ -150,7 +148,7 @@ class TestInMemoryStorage:
         assert storage.file_exists("nonexistent.txt") is False
 
     def test_list_files(self):
-        """Test list_files returns files in directory"""
+        """Test list_files returns files in directory."""
         storage = InMemoryStorage()
         storage.write("/dir/file1.txt", b"data1")
         storage.write("/dir/file2.txt", b"data2")
@@ -163,7 +161,7 @@ class TestInMemoryStorage:
         assert "/dir/file2.txt" in files
 
     def test_list_files_with_pattern(self):
-        """Test list_files with pattern filters files"""
+        """Test list_files with pattern filters files."""
         storage = InMemoryStorage()
         storage.write("/dir/file1.txt", b"data1")
         storage.write("/dir/file2.log", b"data2")
@@ -177,7 +175,7 @@ class TestInMemoryStorage:
         assert "/dir/file2.log" not in files
 
     def test_get_file_info(self):
-        """Test get_file_info returns file metadata"""
+        """Test get_file_info returns file metadata."""
         storage = InMemoryStorage()
         storage.write("test.txt", b"data")
 
@@ -189,7 +187,7 @@ class TestInMemoryStorage:
         assert "created_time" in info
 
     def test_get_file_info_nonexistent(self):
-        """Test get_file_info returns None for nonexistent file"""
+        """Test get_file_info returns None for nonexistent file."""
         storage = InMemoryStorage()
 
         info = storage.get_file_info("nonexistent.txt")
@@ -197,7 +195,7 @@ class TestInMemoryStorage:
         assert info is None
 
     def test_delete_file(self):
-        """Test delete_file removes file and returns True"""
+        """Test delete_file removes file and returns True."""
         storage = InMemoryStorage()
         storage.write("test.txt", b"data")
 
@@ -207,7 +205,8 @@ class TestInMemoryStorage:
         assert "test.txt" not in storage._store
 
     def test_delete_file_nonexistent(self):
-        """Test delete_file returns True even for nonexistent file (delete uses pop with default)"""
+        """Test delete_file returns True even for nonexistent file (delete uses
+        pop with default)"""
         storage = InMemoryStorage()
 
         result = storage.delete_file("nonexistent.txt")
@@ -232,7 +231,7 @@ class TestInMemoryStorage:
         # Should not raise, just a placeholder
 
     def test_get_backup_directory(self):
-        """Test get_backup_directory returns in-memory path"""
+        """Test get_backup_directory returns in-memory path."""
         storage = InMemoryStorage()
 
         result = storage.get_backup_directory()
@@ -240,7 +239,7 @@ class TestInMemoryStorage:
         assert result == "/tmp/backups"
 
     def test_get_base_directory(self):
-        """Test get_base_directory returns in-memory path"""
+        """Test get_base_directory returns in-memory path."""
         storage = InMemoryStorage()
 
         result = storage.get_base_directory()
@@ -248,7 +247,7 @@ class TestInMemoryStorage:
         assert result == "/tmp/base"
 
     def test_join_path(self):
-        """Test join_path joins parts with forward slash"""
+        """Test join_path joins parts with forward slash."""
         storage = InMemoryStorage()
 
         result = storage.join_path("dir1", "dir2", "file.txt")

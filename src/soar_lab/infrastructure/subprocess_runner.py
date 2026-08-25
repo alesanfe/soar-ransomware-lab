@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - Subprocess Runner
+"""SOAR Ransomware Lab - Subprocess Runner.
+
 Safe, consistent wrapper around subprocess.run / asyncio subprocess.
 """
 
 import asyncio
 import subprocess
 import time
-from soar_lab.common.exceptions import SubprocessError
-from typing import Any, Dict, List, Optional
+from typing import Any
 
+from soar_lab.common.constants import DEFAULT_TEST_TIMEOUT
+from soar_lab.common.exceptions import SubprocessError
 from soar_lab.config.logging import get_logger
+
+__all__ = ["SubprocessResult", "SubprocessRunner"]
 
 logger = get_logger(__name__)
 
@@ -18,7 +21,7 @@ logger = get_logger(__name__)
 class SubprocessResult:
     """Structured result from a subprocess execution."""
 
-    __slots__ = ("success", "returncode", "stdout", "stderr", "duration")
+    __slots__ = ("duration", "returncode", "stderr", "stdout", "success")
 
     def __init__(
         self,
@@ -35,7 +38,7 @@ class SubprocessResult:
         self.stderr = stderr
         self.duration = duration
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "success": self.success,
             "returncode": self.returncode,
@@ -46,21 +49,24 @@ class SubprocessResult:
 
 
 class SubprocessRunner:
-    """Safe synchronous/async subprocess execution with consistent error handling."""
+    """Safe synchronous/async subprocess execution with consistent error.
+
+    handling.
+    """
 
     def __init__(
         self,
-        cwd: Optional[str] = None,
-        default_timeout: int = 300,
+        cwd: str | None = None,
+        default_timeout: int = DEFAULT_TEST_TIMEOUT,
     ) -> None:
         self.cwd = cwd
         self.default_timeout = default_timeout
 
     def run(
         self,
-        cmd: List[str],
-        timeout: Optional[int] = None,
-        cwd: Optional[str] = None,
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
         raise_on_error: bool = False,
     ) -> SubprocessResult:
         """Run *cmd* synchronously.
@@ -112,9 +118,9 @@ class SubprocessRunner:
 
     async def run_async(
         self,
-        cmd: List[str],
-        timeout: Optional[int] = None,
-        cwd: Optional[str] = None,
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
         raise_on_error: bool = False,
     ) -> SubprocessResult:
         """Run *cmd* asynchronously.
@@ -151,7 +157,7 @@ class SubprocessRunner:
             if raise_on_error and not result.success:
                 raise SubprocessError(cmd, proc.returncode or -1, stderr)
             return result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f"Async command timed out after {effective_timeout}s: {cmd}")
             return SubprocessResult(
                 success=False,

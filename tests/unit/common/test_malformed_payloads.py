@@ -1,5 +1,4 @@
-"""
-Tests for malformed payload validation.
+"""Tests for malformed payload validation.
 
 Validates rejection of malformed payloads to prevent injection attacks.
 """

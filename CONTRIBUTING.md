@@ -402,7 +402,7 @@ class TestSIEMSimulator:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.webhook_url = "http://localhost:15001/api/v1/hooks/<workflow_id>"
+        self.webhook_url = "http://localhost:5001/api/v1/hooks/<workflow_id>"
         self.api_token = "<test-token>"
         self.simulator = SIEMSimulator(self.webhook_url, self.api_token)
 
@@ -739,7 +739,7 @@ Ver el archivo `.pre-commit-config.yaml` del repositorio para la configuración 
 
 ### Referencias
 
-- `docs/architecture/security.md` — matriz de controles y estado de implementación.
+- `docs/02-architecture.md` — matriz de controles y estado de implementación.
 - `.pre-commit-config.yaml` — hooks activos, incluido `detect-secrets`.
 - `.github/workflows/ci.yml` — validación de secretos y documentación en CI.
 
@@ -787,7 +787,7 @@ pytest tests/unit/test_file.py::TestClass::test_method -vvs
 
 ### Getting Help
 
-1. Check the [troubleshooting guide](docs/operations/troubleshooting.md)
+1. Check the [troubleshooting guide](docs/04-operations.md)
 2. Search existing GitHub issues
 3. Create a new issue with:
     - Clear description of the problem

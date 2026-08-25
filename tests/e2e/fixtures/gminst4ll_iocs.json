@@ -1,0 +1,268 @@
+{
+  "_meta": {
+    "description": "IoCs reales extraídos del análisis forense de GMinst4ll 2.03.rar (InfoStealer + Pulsar RAT v1.6.6.0). Fuente: repositorio gminst4ll-forensics (alesanfe). Fecha de análisis: 2026-06-11/13.",
+    "malware_family": "GMinst4ll / Pulsar RAT",
+    "malware_type": "InfoStealer / Loader / RAT",
+    "analysis_date": "2026-06-13",
+    "source_repo": "https://github.com/alesanfe/gminst4ll-forensics",
+    "passwords": {
+      "rar_outer": "4204",
+      "rar_inner": "zoroz"
+    },
+    "warning": "Muestras reales de malware. No ejecutar fuera de sandbox aislado. Los hashes se usan solo como IoCs para enriquecimiento en Cortex/MISP, no para ejecución.",
+    "download_base_url": "https://github.com/alesanfe/gminst4ll-forensics/raw/main/malware_samples"
+  },
+  "hashes_sha256": [
+    {
+      "name": "GMinst4ll_2.03.rar",
+      "hash": "d70c31b02f88ad239507c47c9fbde3353b5b93b6892e48bf5ba25322aa667e77",
+      "type": "rar_archive",
+      "size_bytes": 884475081,
+      "description": "Loader principal (RAR anidado con contraseña 4204)"
+    },
+    {
+      "name": "TREZ_cor_4.52.3.exe",
+      "hash": "a75def5353a7d9cb08949f144bebcdb894650ff75c941d9713eb40433c9d580a",
+      "type": "pe_executable",
+      "description": "Ejecutable principal dentro del RAR (Rust, ~835 MB)"
+    },
+    {
+      "name": "SystemSP.rar",
+      "hash": "a50e078598a08faa5ec554c36e58cf201f167e5f272b39f5107fffc6c44369f8",
+      "type": "rar_archive",
+      "size_bytes": 4014,
+      "description": "Payload secundario (killer AV + persistencia, contraseña zoroz)"
+    },
+    {
+      "name": "appy.exe_pulsar_rat",
+      "hash": "5b20cb36abbacc69ee5d0c7008f1ad081db2767625659b4bb8eba6ecc511bd2a",
+      "type": "dotnet_pe",
+      "size_bytes": 1992294,
+      "description": "Pulsar RAT v1.6.6.0 (.NET 4.7.2, ConfuserEx) dentro de beket.rar"
+    },
+    {
+      "name": "appy_patched.exe",
+      "hash": "eabe4c16caa0ad6e2228e10664a5add26202d5c68ce9a8ebd30481b7daded699",
+      "type": "dotnet_pe",
+      "description": "Pulsar RAT parcheado (anti-VM bypass intentado)"
+    },
+    {
+      "name": "max.vbs",
+      "hash": "4edbc0f24b9c11875bcbc9dfc628dd47c3f9eea9807750487602d00cdac15707",
+      "type": "vbs_script",
+      "size_bytes": 1472,
+      "description": "Script de persistencia Winlogon UserInit"
+    },
+    {
+      "name": "babuchen.bat",
+      "hash": "e861568c8c88b45ed8f969e31da8fbf0cc6cc4a8466e255ef21c446178463875",
+      "type": "bat_script",
+      "size_bytes": 3689,
+      "description": "Killer AV (detiene 14 servicios, destruye 34 suites)"
+    },
+    {
+      "name": "rodendron.vbs",
+      "hash": "493b1137f016c03f7d0037fa5e190a01aca7dcd05074d36518499b98f706bed4",
+      "type": "vbs_script",
+      "size_bytes": 1873,
+      "description": "Descargador GitHub C2 (boycots563/wlt56)"
+    },
+    {
+      "name": "WinStatChecking.bat",
+      "hash": "ace44b9955e119a36c6f63ecd6f3f4b5f6f052eeed83bf93fb96b508e9e938f8",
+      "type": "bat_script",
+      "size_bytes": 2409,
+      "description": "Bloqueador DNS/hosts (66 dominios AV)"
+    },
+    {
+      "name": "Windows_Compatibility_Agent.exe",
+      "hash": "2a867741dd5193e34df41a1af1f9d85e3f7d26287d4810b03b261e9b012c990a",
+      "type": "python_pe",
+      "size_bytes": 13002342,
+      "description": "Payload Python 3.13 desde GitHub C2"
+    },
+    {
+      "name": "kamzat.exe",
+      "hash": "4c6284337a4065cb397d02a8a67c460d0f1eee56f6a5af79534521606c695840",
+      "type": "python_pe",
+      "size_bytes": 13002342,
+      "description": "Payload Python 3.13 alternativo (PyCryptodome + asyncio)"
+    },
+    {
+      "name": "postevak.exe",
+      "hash": "ea9ca99f7fd90071074649b1de5a004362f4aa3265809a26b48fa3b1017c90e2",
+      "type": "python_pe",
+      "size_bytes": 8283750,
+      "description": "Payload Python 3.13 simple (downloader básico)"
+    },
+    {
+      "name": "appy.exe_rust_launcher",
+      "hash": "e5c606aebddf2f6f52d66c1667cd1790ca89e7d49ce206422a8d2375c3d7d176",
+      "type": "rust_pe",
+      "size_bytes": 736256,
+      "description": "Launcher Rust (repo boycots563/wlt56)"
+    }
+  ],
+  "urls_c2": [
+    "https://pastebin.com/raw/FgUMQ9vE",
+    "https://pastebin.com/raw/E3s5iTTz",
+    "https://www.dropbox.com/scl/fi/5awp2xpk4r65t6dz0bmcu/SystemSP.rar",
+    "https://www.reddit.com/user/Over_Media6257/comments/1s5bjdo/miks/.json",
+    "https://github.com/boycots563/wlt56/raw/main/Windows%20Compatibility%20Agent.exe",
+    "https://github.com/boycots563/wlt56/raw/main/kamzat.exe",
+    "https://www.mediafire.com/file/wl15n7ci935nl4a/GMinstall_4.11.rar/file"
+  ],
+  "domains_c2": [
+    "pastebin.com",
+    "dropbox.com",
+    "reddit.com",
+    "api.telegram.org",
+    "github.com",
+    "mediafire.com"
+  ],
+  "ips_c2": [
+    {"ip": "172.66.171.73", "service": "Pastebin"},
+    {"ip": "104.20.29.150", "service": "Pastebin"},
+    {"ip": "162.125.248.18", "service": "Dropbox"},
+    {"ip": "151.101.129.140", "service": "Reddit"},
+    {"ip": "151.101.65.140", "service": "Reddit"},
+    {"ip": "149.154.166.110", "service": "Telegram API"}
+  ],
+  "telegram": {
+    "bot_id": "7675556882",
+    "bot_username": "buchstys4_bot",
+    "bot_name": "buchar",
+    "chat_id_exfiltration": "6820575341",
+    "operator_username": "@KJL4999S",
+    "note": "Token tratado exclusivamente como IoC. No se realizó interacción activa con el bot."
+  },
+  "registry_persistence": [
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\UserInit",
+      "malicious_value": ",wscript.exe \"C:\\ProgramData\\SystemSP\\SystemSP\\max.vbs\"",
+      "legitimate_value": "C:\\Windows\\system32\\userinit.exe,",
+      "technique": "T1547.001"
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\EnableLUA",
+      "malicious_value": "0",
+      "description": "Desactiva UAC",
+      "technique": "T1548.002"
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnceEx\\0001\\RodendronLoader",
+      "malicious_value": "wscript.exe \"%scriptDir%rodendron.vbs\"",
+      "description": "Carga rodendron tras reinicio",
+      "technique": "T1547.001"
+    }
+  ],
+  "file_paths": [
+    "C:\\ProgramData\\SystemSP\\SystemSP\\max.vbs",
+    "C:\\ProgramData\\SystemSP\\SystemSP\\babuchen.bat",
+    "C:\\ProgramData\\SystemSP\\SystemSP\\rodendron.vbs",
+    "C:\\ProgramData\\SystemSP\\SystemSP\\WinStatChecking.bat",
+    "C:\\ProgramData\\WinDate32\\WinMainTELE.vbs",
+    "%TEMP%\\Windows Compatibility Agent.exe"
+  ],
+  "mutexes": [
+    "Global\\{TOKEN-EX-}"
+  ],
+  "mitre_attack": [
+    {"tactic": "Initial Access", "technique": "T1566.002", "description": "Spearphishing Link (YouTube/Tumblr/MediaFire)"},
+    {"tactic": "Execution", "technique": "T1059.001", "description": "PowerShell con -Verb RunAs"},
+    {"tactic": "Persistence", "technique": "T1547.001", "description": "Winlogon UserInit modification"},
+    {"tactic": "Defense Evasion", "technique": "T1562.001", "description": "Killer AV (14 servicios, 34 suites)"},
+    {"tactic": "Credential Access", "technique": "T1056.001", "description": "Keylogger (MouseKeyHook)"},
+    {"tactic": "Command and Control", "technique": "T1102", "description": "Web Service (Pastebin, Reddit, Telegram, Dropbox, GitHub)"},
+    {"tactic": "Exfiltration", "technique": "T1567.002", "description": "Exfiltration Over Web Service (Telegram Bot API)"}
+  ],
+  "av_services_killed": [
+    "Panda Security Service", "MBAMService", "Avast Antivirus", "AvgSvc",
+    "ekrn", "Norton Security", "McShield", "Sophos", "Trend Micro",
+    "Zonelabs", "F-Secure HIPS", "GData Antivirus", "DrWeb", "ClamWin"
+  ],
+  "pulsar_rat_capabilities": [
+    "HVNC (Hidden Virtual Network Computing) — SharpDX DirectX",
+    "Keylogger — Gma.System.MouseKeyHook",
+    "Webcam access — AForge.Video.DirectShow",
+    "Audio capture — NAudio (Core, Wasapi, WinMM)",
+    "Clipboard hijacker",
+    "Remote desktop",
+    "Wallet clipper (BTC, LTC, ETH, XMR, SOL, DASH, XRP, TRX, BCH)",
+    "Anti-VM (14 checks) + Anti-debug (10 checks)"
+  ],
+  "actor": {
+    "github_user": "boycots563",
+    "github_repo": "boycots563/wlt56",
+    "telegram_operator": "@KJL4999S",
+    "telegram_chat_id": "6820575341",
+    "probable_origin": "Eslovaquia",
+    "distribution_platforms": ["YouTube", "Tumblr", "MediaFire", "Discord"]
+  },
+  "downloadable_samples": [
+    {
+      "name": "GMinst4ll 2.03.rar",
+      "subfolder": "gminst4ll",
+      "sha256": "d70c31b02f88ad239507c47c9fbde3353b5b93b6892e48bf5ba25322aa667e77",
+      "size_bytes": 884475081,
+      "description": "Loader principal (RAR anidado, pw: 4204)",
+      "url_encoded": "GMinst4ll%202.03.rar"
+    },
+    {
+      "name": "SystemSP.rar",
+      "subfolder": "systemsp",
+      "sha256": "a50e078598a08faa5ec554c36e58cf201f167e5f272b39f5107fffc6c44369f8",
+      "size_bytes": 4014,
+      "description": "Payload secundario (killer AV + persistencia, pw: zoroz)",
+      "url_encoded": "SystemSP.rar"
+    },
+    {
+      "name": "beket.rar",
+      "subfolder": "pulsar_rat",
+      "sha256": "90a4e3651ce2fd6f7f3808c2c511d1f0c078932e44bea97ee4a32f2e04aecdd6",
+      "size_bytes": 1677722,
+      "description": "Pulsar RAT v1.6.6.0 empaquetado en RAR",
+      "url_encoded": "beket.rar"
+    },
+    {
+      "name": "appy.exe",
+      "subfolder": "rust_executables",
+      "sha256": "e5c606aebddf2f6f52d66c1667cd1790ca89e7d49ce206422a8d2375c3d7d176",
+      "size_bytes": 736256,
+      "description": "Launcher Rust (repo boycots563/wlt56)",
+      "url_encoded": "appy.exe"
+    },
+    {
+      "name": "Windows_Compatibility_Agent.exe",
+      "subfolder": "github_c2",
+      "sha256": "2a867741dd5193e34df41a1af1f9d85e3f7d26287d4810b03b261e9b012c990a",
+      "size_bytes": 13002342,
+      "description": "Payload Python 3.13 desde GitHub C2 (12.4 MB)",
+      "url_encoded": "Windows_Compatibility_Agent.exe"
+    },
+    {
+      "name": "Windows_Compatibility_Agent_Host.exe",
+      "subfolder": "github_c2",
+      "sha256": "3e686426821ad5f84300717bc3eeaa11810a2e23d9dfef2ea95758a692938bef",
+      "size_bytes": 8912896,
+      "description": "Payload Python 3.14 (8.5 MB)",
+      "url_encoded": "Windows_Compatibility_Agent_Host.exe"
+    },
+    {
+      "name": "kamzat.exe",
+      "subfolder": "github_c2",
+      "sha256": "4c6284337a4065cb397d02a8a67c460d0f1eee56f6a5af79534521606c695840",
+      "size_bytes": 13002342,
+      "description": "Payload Python 3.13 alternativo (PyCryptodome + asyncio)",
+      "url_encoded": "kamzat.exe"
+    },
+    {
+      "name": "postevak.exe",
+      "subfolder": "github_c2",
+      "sha256": "ea9ca99f7fd90071074649b1de5a004362f4aa3265809a26b48fa3b1017c90e2",
+      "size_bytes": 8283750,
+      "description": "Payload Python 3.13 simple (downloader básico)",
+      "url_encoded": "postevak.exe"
+    }
+  ]
+}

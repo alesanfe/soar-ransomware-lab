@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-"""
-Unit tests for soar_lab.validation.validators
-"""
+"""Unit tests for soar_lab.validation.validators."""
 
 import pytest
-from soar_lab.common.exceptions import ValidationError
 
+from soar_lab.common.exceptions import ValidationError
 from soar_lab.validation.validators import (
-    IPValidator,
-    HashValidator,
     AlertValidator,
+    HashValidator,
+    IPValidator,
     PathValidator,
 )
 

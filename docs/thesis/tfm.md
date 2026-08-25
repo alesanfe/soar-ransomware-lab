@@ -10,7 +10,6 @@ TFM*
 **Año Académico**: 2024-2025 - *Ajustar según el año académico correspondiente*  
 **Fecha de Presentación**: [Fecha de defensa] - *Completar con fecha programada para la defensa del TFM*
 
----
 
 ## ÍNDICE GENERAL
 
@@ -43,7 +42,7 @@ TFM*
 
 ### CAPÍTULO 2: ESTADO DEL ARTE Y MARCO TEÓRICO
 
-2.1. Evolución del Ransomware
+2.1. Progresión del Ransomware
 2.1.1. Primera Generación (2013-2016)
 2.1.2. Segunda Generación (2016-2019)
 2.1.3. Tercera Generación (2019-2022)
@@ -127,8 +126,8 @@ TFM*
 5.3.4. Personalización de Workflows en Shuffle
 5.4. Automatización de Despliegue y Operaciones
 5.4.1. Scripts de Orquestación
-5.4.2. Gestión de Configuración con Ansible
-5.4.3. Automatización con Vagrant
+5.4.2. Makefile y Automatización de Tareas
+5.4.3. Gestión de Secretos y Configuración
 5.5. Implementación de Mejoras de Seguridad
 5.5.1. Configuración de HTTPS/TLS
 5.5.2. Implementación de Firewall de Red
@@ -199,7 +198,7 @@ TFM*
 8.3.1. Guía de Implementación Práctica
 8.3.2. Consideraciones de Adopción Organizacional
 8.3.3. Métricas de Éxito y KPIs Recomendados
-8.3.4. Mejores Prácticas de Mantenimiento y Evolución
+8.3.4. Mejores Prácticas de Mantenimiento y Progresión
 
 ### REFERENCIAS BIBLIOGRÁFICAS
 
@@ -211,30 +210,32 @@ Anexo C: Scripts de Orquestación y Automatización
 Anexo D: Resultados Detallados de Pruebas Experimentales
 Anexo E: Métricas y Análisis Estadístico Completo
 Anexo F: Guía de Instalación y Configuración
+Anexo F2: Validación Experimental y Métricas de Calidad
 Anexo G: Documentación de Mejoras Implementadas
 Anexo H: Manual de Usuario del Laboratorio
+Anexo I: Estrategia de Testing y Quality Assurance
+Anexo J: Diagramas de Arquitectura y Flujos (Mermaid)
 
----
 
 ## RESUMEN
 
 Este Trabajo Fin de Máster presenta el diseño, implementación y evaluación de un laboratorio SOAR (Security
 Orchestration, Automation and Response) especializado en respuesta a ransomware. La investigación parte de la necesidad
 de reducir el Tiempo Medio de Respuesta (MTTR) ante amenazas cuya frecuencia ha crecido según reportes de inteligencia
-de amenazas.
+de amenazas (Verizon, 2024; CrowdStrike, 2024).
 
 La metodología combina investigación aplicada con desarrollo tecnológico, aplicando principios de Infraestructura como
-Código (IaC) y metodologías ágiles con enfoque DevSecOps. El proyecto se estructuró en cinco fases: investigación y
+Código (IaC) y metodologías ágiles con práctica DevSecOps. El proyecto se estructuró en cinco fases: investigación y
 análisis de requisitos, diseño arquitectónico, desarrollo e implementación, pruebas y validación, y optimización y
 documentación.
 
-El laboratorio integra tres plataformas SOAR open source: TheHive para gestión de casos, Cortex para análisis de IoCs, y
-Shuffle para orquestación de flujos. La arquitectura usa Docker y Docker Compose. El código Python (`src/soar_lab/`)
-implementa arquitectura hexagonal con interfaces en `domain/ports.py` (432 líneas) e implementaciones desacopladas,
+El laboratorio integra tres plataformas SOAR open source: TheHive (TheHive Project, 2024) para gestión de casos, Cortex (Cortex Project, 2024) para análisis de IoCs, y
+Shuffle (Shuffle Tools, 2024) para orquestación de flujos. La arquitectura usa Docker y Docker Compose (Docker Inc., 2024). El código Python (`src/soar_lab/`)
+implementa arquitectura hexagonal con interfaces en `domain/ports/` (481 líneas en 4 módulos) e implementaciones desacopladas,
 manteniendo la lógica de negocio independiente de la infraestructura técnica.
 
-Los resultados muestran una reducción del MTTR de 225 segundos (procesos manuales) a 89 segundos (automatizados), una
-mejora del 60%. La tasa de éxito alcanzó el 98.2%, con precisión del 94.5% en detección. El análisis de métricas se
+Los resultados muestran una reducción del MTTR de 3600 segundos (procesos manuales) a 277.15 segundos (automatizados), una
+mejora del 92.3%. La tasa de éxito alcanzó el 100%, con una tasa de contención del 92.0% (score promedio 96.2/100). El análisis de métricas se
 realiza con `AnalyticsService` y `KPIAnalyzer`, que usan `StatisticalCalculator` para calcular percentiles (p50, p90,
 p95, p99) desde los logs.
 
@@ -245,30 +246,29 @@ Las conclusiones confirman la hipótesis: la automatización SOAR reduce el MTTR
 a ransomware. El trabajo aporta evidencia empírica cuantitativa sobre el efecto de la automatización en tiempos de
 respuesta.
 
----
 
 ## ABSTRACT
 
 This Master's Thesis presents the design, implementation, and evaluation of a SOAR (Security Orchestration, Automation,
 and Response) laboratory specialized in ransomware incident response. The research addresses the need to reduce Mean
-Time to Respond (MTTR) for threats that have grown 150% in the last two years according to threat intelligence
-reports [21].
+Time to Respond (MTTR) for threats whose frequency has increased 67% according to threat intelligence
+reports (CrowdStrike, 2024), with ransomware representing 23% of total security incidents (CrowdStrike, 2024).
 
 The adopted methodology combines applied research with technological development, following Infrastructure as Code (IaC)
 principles and agile methodologies with DevSecOps approach. The project was structured in five phases: research and
 requirements analysis, architectural design, development and implementation, testing and validation, and optimization
 and documentation.
 
-The implemented laboratory integrates three SOAR open source platforms: TheHive for case management, Cortex for analysis
-of indicators of compromise (IoCs), and Shuffle for visual orchestration of response flows. The deployment architecture
-is containerized with Docker and orchestrated using Docker Compose, enabling reproducible and scalable deployment. The
+The implemented laboratory integrates three SOAR open source platforms: TheHive (TheHive Project, 2024) for case management, Cortex (Cortex Project, 2024) for analysis
+of indicators of compromise (IoCs), and Shuffle (Shuffle Tools, 2024) for visual orchestration of response flows. The deployment architecture
+is containerized with Docker and orchestrated using Docker Compose (Docker Inc., 2024), enabling reproducible and scalable deployment. The
 Python codebase (`src/soar_lab/`) implements a hexagonal architecture (ports and adapters) with interfaces defined in
-`domain/ports.py` (433 lines of protocols) and concrete implementations in the infrastructure layer, allowing business
+`domain/ports/` (481 lines across 4 modules) and concrete implementations in the infrastructure layer, allowing business
 logic to remain independent of technical implementations.
 
-Experimental results demonstrate a significant MTTR reduction, from an average of 225 seconds in manual processes to 89
-seconds with implemented automation, representing a 60% improvement. The automation success rate reached 98.2%, with
-94.5% accuracy in ransomware incident detection. Metrics analysis is performed by `AnalyticsService` and `KPIAnalyzer`
+Experimental results demonstrate a significant MTTR reduction, from an average of 3600 seconds in manual processes to 277.15
+seconds with implemented automation, representing a 92.3% improvement. The automation success rate reached 100%, with
+92.0% threat containment rate (average score 96.2/100). Metrics analysis is performed by `AnalyticsService` and `KPIAnalyzer`
 services, which utilize `StatisticalCalculator` to compute percentiles (p50, p90, p95, p99) and statistical metrics from
 execution logs.
 
@@ -278,7 +278,6 @@ These changes elevated the system from an initial prototype to a solution suitab
 The conclusions confirm the hypothesis: SOAR automation reduces MTTR and improves consistency in ransomware incident
 response. The work provides quantitative empirical evidence on the effect of automation on response times.
 
----
 
 ## LISTA DE ABREVIATURAS
 
@@ -297,13 +296,12 @@ response. The work provides quantitative empirical evidence on the effect of aut
 - **TFM**: Trabajo Fin de Máster
 - **XDR**: Extended Detection and Response
 
----
 
 ## LISTA DE TABLAS
 
 ### Tabla 1.1: Comparativa de Plataformas SOAR
 
-### Tabla 2.1: Evolución de Generaciones de Ransomware
+### Tabla 2.1: Progresión de Generaciones de Ransomware
 
 ### Tabla 3.1: Fases y Duración del Proyecto
 
@@ -319,7 +317,6 @@ response. The work provides quantitative empirical evidence on the effect of aut
 
 ### Tabla 8.1: Comparación de MTTR Manual vs Automatizado
 
----
 
 ## LISTA DE FIGURAS
 
@@ -339,7 +336,6 @@ response. The work provides quantitative empirical evidence on the effect of aut
 
 ### Figura 8.1: Comparación Visual de Mejoras
 
----
 
 ## CAPÍTULO 1: INTRODUCCIÓN
 
@@ -347,32 +343,28 @@ El contenido completo de este capítulo se encuentra en el archivo `introduction
 
 ### 1.1. Contexto Actual de la Ciberseguridad
 
-- Incremento del 67% en incidentes de seguridad [18]
-- Ransomware representa el 23% del total de incidentes [18]
-- 68% de organizaciones reciben más de 1,000 alertas diarias, solo 12% son investigadas [16]
+- Incremento del 67% en incidentes de seguridad (CrowdStrike, 2024)
+- Ransomware representa el 23% del total de incidentes (CrowdStrike, 2024)
+- Las organizaciones reciben un promedio de 22,111 alertas de seguridad por semana, de las cuales solo el 35% son investigadas (IBM Security, 2024)
 
 ### 1.2. Problemática del Ransomware
 
-- Características: encriptación AES-256/RSA-4096 [124], propagación automática, doble extorsión, RaaS [1]
-- Impacto económico: $5.13 millones por incidente [15]
-- Tiempo medio de recuperación: 16 días [15]
+El ransomware actual usa encriptación AES-256/RSA-4096, propagación automática, doble extorsión y RaaS (Al-Momani et al., 2024), con técnicas MITRE ATT&CK T1486 (MITRE, 2025). El coste promedio por brecha de datos en 2024 fue de $4.88 millones (IBM Security, 2024), con un tiempo medio de identificación y contención de 297 días.
 
 ### 1.3. Limitaciones de la Respuesta Manual
 
-- Tiempo de respuesta elevado: 225 segundos promedio [4], alta variabilidad
+- Tiempo de respuesta elevado: 3600 segundos promedio (baseline manual), alta variabilidad
 - Falta de estandarización entre equipos
 - Sobrecarga de personal y burnout
 - Errores humanos en procedimientos complejos
 
 ### 1.4. Justificación del Estudio
 
-- Relevancia académica: validación empírica de SOAR
-- Impacto profesional: solución práctica para organizaciones
-- Viabilidad técnica: herramientas open source maduras, Docker, experiencia previa
+La justificación combina relevancia académica (validación empírica de SOAR), aplicación profesional (solución práctica para organizaciones) y viabilidad técnica (herramientas open source maduras, Docker, experiencia previa).
 
 ### 1.5. Hipótesis de Trabajo
 
-- **Hipótesis Principal**: SOAR reduce significativamente el MTTR mediante automatización
+- **Hipótesis Principal**: SOAR reduce el MTTR en al menos un 50 % mediante automatización
 - **Hipótesis Secundarias**: (1) Mejora consistencia, (2) Integración multi-herramienta superior, (3) KPIs permiten
   optimización iterativa
 
@@ -392,141 +384,69 @@ El contenido completo de este capítulo se encuentra en el archivo `introduction
 
 - Capítulos 1-8: Introducción, Estado del arte, Metodología, Diseño, Implementación, Pruebas, Análisis, Conclusiones
 
----
 
 ## CAPÍTULO 2: ESTADO DEL ARTE Y MARCO TEÓRICO
 
-El contenido completo de este capítulo se encuentra en el archivo `state_of_the_art.md`, que incluye:
+El contenido completo de este capítulo se encuentra en el archivo `state_of_the_art.md`, que incluye la progresión del ransomware a través de sus cuatro generaciones (2013-2024), análisis de plataformas SOAR (definiciones, componentes, ciclo de vida de respuesta), comparativa detallada de TheHive, Cortex y Shuffle vs soluciones comerciales, marco teórico sobre diseño de playbooks y métricas de eficacia (MTTR, MTTD), y modelos de madurez en respuesta a incidentes.
 
-- Evolución del ransomware a través de sus cuatro generaciones (2013-2024)
-- Análisis de plataformas SOAR: definiciones, componentes, ciclo de vida de respuesta
-- Comparativa detallada de TheHive, Cortex y Shuffle vs soluciones comerciales
-- Marco teórico sobre diseño de playbooks y métricas de eficacia (MTTR, MTTD)
-- Modelos de madurez en respuesta a incidentes
-
----
 
 ## CAPÍTULO 3: METODOLOGÍA
 
-El contenido completo de este capítulo se encuentra en el archivo `objectives_and_methodology.md`, que incluye:
+El contenido completo de este capítulo se encuentra en el archivo `objectives_and_methodology.md`, que incluye el método (investigación aplicada con desarrollo tecnológico), metodología ágil con principios DevSecOps, las 5 fases del proyecto (investigación, diseño, desarrollo, pruebas y optimización), tecnologías y herramientas utilizadas (IaC, Docker, scripts y APIs), diseño experimental con definición de variables y métricas, y consideraciones éticas y de seguridad.
 
-- Enfoque metodológico: investigación aplicada con desarrollo tecnológico
-- Metodología ágil con principios DevSecOps
-- Las 5 fases del proyecto: investigación, diseño, desarrollo, pruebas y optimización
-- Tecnologías y herramientas utilizadas (IaC, Docker, scripts y APIs)
-- Diseño experimental con definición de variables y métricas
-- Consideraciones éticas y de seguridad
-
----
 
 ## CAPÍTULO 4: DISEÑO Y ARQUITECTURA DEL LABORATORIO
 
-El contenido completo de este capítulo se encuentra en el archivo `specific_development.md` (secciones 4.1.2.1-4.1.2.6),
-que incluye:
+El contenido completo de este capítulo se encuentra en el archivo `specific_development.md` (secciones 4.1.2.1-4.1.2.6), que incluye la arquitectura general del sistema con vista lógica de componentes, arquitectura hexagonal del código Python (`src/soar_lab/`), diseño de componentes (TheHive, Cortex, Shuffle, bases de datos), flujo de respuesta automatizada desde recepción de alertas hasta cierre, diseño de datos y esquemas (alertas ransomware, IoCs, analizadores), y consideraciones de seguridad (mínimo privilegio, segmentación de red, gestión de secretos).
 
-- Arquitectura general del sistema con vista lógica de componentes
-- Arquitectura hexagonal del código Python (`src/soar_lab/`)
-- Diseño de componentes: TheHive, Cortex, Shuffle, bases de datos
-- Flujo de respuesta automatizada desde recepción de alertas hasta cierre
-- Diseño de datos y esquemas (alertas ransomware, IoCs, analizadores)
-- Consideraciones de seguridad: mínimo privilegio, segmentación de red, gestión de secretos
-
----
 
 ## CAPÍTULO 5: IMPLEMENTACIÓN Y DESARROLLO
 
-El contenido completo de este capítulo se encuentra en los archivos `specific_development.md` y `appendix_a.md`, que
-incluyen:
+El contenido completo de este capítulo se encuentra en los archivos `specific_development.md` y `appendix_a.md`, que incluyen configuración de infraestructura con Docker Compose, desarrollo de playbooks de automatización para ransomware, conexión de componentes SOAR (TheHive-Cortex-Shuffle), scripts de orquestación y automatización (`scripts/setup/`, `src/soar_lab/application/use_cases/`, `src/soar_lab/domain/services/`, `src/soar_lab/infrastructure/monitoring/`), e implementación de mejoras de seguridad (TLS 1.3, firewall, hardening).
 
-- Configuración de infraestructura con Docker Compose
-- Desarrollo de playbooks de automatización para ransomware
-- Integración de componentes SOAR (TheHive-Cortex-Shuffle)
-
-
-
-- Scripts de orquestación y automatización (`src/soar_lab/scripts/setup/`, `src/soar_lab/application/use_cases/`, `src/soar_lab/domain/services/`, `src/soar_lab/infrastructure/monitoring/`)
-- Implementación de mejoras de seguridad (TLS 1.3, firewall, hardening)
-
----
 
 ## CAPÍTULO 6: PRUEBAS Y VALIDACIÓN EXPERIMENTAL
 
-El contenido completo de este capítulo se encuentra en el archivo `specific_development.md` (secciones 4.1.3.1-4.1.3.6),
-que incluye:
+El contenido completo de este capítulo se encuentra en el archivo `specific_development.md` (secciones 4.1.3.1-4.1.3.6), que incluye el diseño experimental con hipótesis H0 y H1, variables (independiente: tipo de respuesta; dependiente: MTTR; controladas: entorno, dataset), escenarios de prueba (alerta maliciosa `tests/e2e/TC-01/test_malicious.py`, falso positivo benigno `tests/e2e/TC-02/test_benign.py`, casos de borde `tests/e2e/TC-03/test_edge_cases.py`, flujo E2E completo `tests/integration/test_app_e2e.py`), métricas recolectadas (MTTR, tasa de éxito, uso de recursos, logs de ejecución), análisis estadístico (reducción del 92.3% en MTTR de 3600s a 277.15s, 50 ejecuciones, score promedio 96.2), y validación de hipótesis mediante análisis descriptivo (percentiles, desviación estándar, CV).
 
-- Diseño experimental con hipótesis H0 y H1
-- Variables: independiente (tipo de respuesta), dependiente (MTTR), controladas (entorno, dataset)
-- Escenarios de prueba: alerta maliciosa (`tests/e2e/TC-01/test_malicious.py`), falso positivo benigno (
-  `tests/e2e/TC-02/test_benign.py`), casos de borde (`tests/e2e/TC-03/test_edge_cases.py`), flujo E2E completo (
-  `tests/integration/test_app_e2e.py`)
-- Métricas recolectadas: MTTR, tasa de éxito, uso de recursos, logs de ejecución
-- Análisis estadístico: test t de Student (p < 0.001), Cohen's d = 3.71, reducción del 60.2% en MTTR
-- Validación de hipótesis y significancia estadística
-
----
 
 ## CAPÍTULO 7: ANÁLISIS DE RESULTADOS Y DISCUSIÓN
 
-El contenido completo de este capítulo se encuentra en los archivos `specific_development.md`, `data_visualizations.md`
-y `comparative_tables.md`, que incluyen:
+El contenido completo de este capítulo se encuentra en los archivos `specific_development.md`, `data_visualizations.md` y `comparative_tables.md`, que incluyen resultados cuantitativos (MTTR de 3600s a 277.15s con 92.3% de reducción, tasa de éxito 100%, tasa de contención 92.0%, falsos negativos 8.0%), métricas de rendimiento (disponibilidad 99.7%, throughput 125 alertas/hora, score promedio 96.2/100), análisis cualitativo (fortalezas, debilidades, factores críticos de éxito, lecciones aprendidas), discusión en contexto del estado del arte (comparación con estudios previos, contribuciones al campo), y análisis de las 44 mejoras implementadas por categoría (seguridad, calidad de código, automatización, monitoreo).
 
-- Resultados cuantitativos: MTTR (225s → 89s), tasa de éxito (98.2%), precisión (94.5%), falsos positivos (5.5%)
-- Métricas de rendimiento: disponibilidad (99.7%), throughput (125 alertas/hora), cobertura de tests (92.3%)
-- Análisis cualitativo: fortalezas, debilidades, factores críticos de éxito, lecciones aprendidas
-- Discusión en contexto del estado del arte: comparación con estudios previos, contribuciones al campo
-- Análisis de las 44 mejoras implementadas por categoría (seguridad, calidad de código, automatización, monitoreo)
-
----
 
 ## CAPÍTULO 8: CONCLUSIONES Y TRABAJO FUTURO
 
-El contenido completo de este capítulo se encuentra en el archivo `conclusions_and_future_work.md`, que incluye:
+El contenido completo de este capítulo se encuentra en el archivo `conclusions_and_future_work.md`, que incluye conclusiones principales (cumplimiento de objetivos, contribuciones teóricas y prácticas), implicaciones para PYMEs, grandes corporaciones y ámbito educativo, limitaciones del estudio (entorno de laboratorio, dataset de 50 ejecuciones, duración de 12 semanas), trabajo futuro (mejores técnicas como Redis cluster, Kubernetes, Zero Trust, e investigaciones longitudinales), desarrollo de ML (detección predictiva, clasificación automática con NLP, optimización con Reinforcement Learning), expansión a APTs, insider threat y supply chain, y recomendaciones para organizaciones (guía de implementación en 4 fases, KPIs recomendados).
 
-- Conclusiones principales: cumplimiento de objetivos, contribuciones teóricas y prácticas
-- Implicaciones para PYMEs, grandes corporaciones y ámbito educativo
-- Limitaciones del estudio: entorno de laboratorio, dataset de 50 ejecuciones, duración de 12 semanas
-- Trabajo futuro: mejoras técnicas (Redis cluster, Kubernetes, Zero Trust), investigaciones longitudinales
-- Desarrollo de ML: detección predictiva, clasificación automática con NLP, optimización con Reinforcement Learning
-- Expansión a APTs, insider threat y supply chain
-- Recomendaciones para organizaciones: guía de implementación en 4 fases, KPIs recomendados
-
----
 
 ## REFERENCIAS BIBLIOGRÁFICAS
 
 Las referencias bibliográficas completas (125 referencias) se encuentran detalladas en el archivo
 `bibliographic_references.md`, organizadas por categorías:
 
-- **Artículos Académicos y Papers** (10 referencias) - Incluye papers sobre evolución del ransomware, plataformas SOAR,
-  MTTR y automatización de respuesta a incidentes
-- **Informes de Industria y Threat Intelligence** (10 referencias) - [15] IBM Security, [16] Ponemon Institute, [17]
-  Verizon DBIR, [18] CrowdStrike, [19] Mandiant, [20] McAfee, [21] Sophos, [22] Cisco, [23] FireEye, [24] Kaspersky
-- **Documentación Técnica y Especificaciones** (10 referencias) - [28] TheHive, [29] Cortex, [30] Shuffle, [31]
-  Elasticsearch, [32] Docker, [33] Nginx, [34] Prometheus, [35] Grafana, [36] MITRE ATT&CK, [37] NIST Framework
-- **Estándares y Normativas** (10 referencias) - [39] ISO/IEC 27001:2022, [40] ISO/IEC 27002:2023, [41] NIST SP
-  800-61, [42] NIST SP 800-150, [43] ENISA, [44] CIS Controls, [46] GDPR, [47] CCPA, [48] HIPAA
-- **Libros y Capítulos de Libros** (10 referencias) - SOAR Platforms, Incident Response, Ransomware Defense, Container
-  Security, Cyber Threat Intelligence
-- **Tesis Doctorales y Trabajos de Investigación** (10 referencias) - Stanford, MIT, Carnegie Mellon, Cambridge, ETH
-  Zurich, Oxford
-- **Conferencias y Proceedings** (10 referencias) - ACM CCS, IEEE S&P, USENIX Security, NDSS, RSA Conference, Black Hat,
-  DEF CON
-- **Recursos Online y Blogs Técnicos** (10 referencias) - Krebs on Security, Schneier on Security, The Hacker News, Dark
-  Reading, Bleeping Computer
+- **Artículos Académicos y Papers** (5 referencias) - (Al-Momani et al., 2024) Al-Momani et al., (Kinyua & Awuah, 2021) Kinyua & Awuah, (Mohammad & Lakshmisri, 2018) Mohammad & Lakshmisri,
+  (Obuse et al., 2023) Obuse et al., (Quintero Tamayo et al., 2023) Quintero Tamayo et al.
+- **Informes de Industria y Threat Intelligence** (8 referencias) - (IBM Security, 2024) IBM Security, (Verizon, 2024) Verizon DBIR, (CrowdStrike, 2024) CrowdStrike,
+  (Mandiant, 2024) Mandiant, (Sophos, 2024) Sophos, (CISA, 2023) CISA, (MITRE, 2025) MITRE ATT&CK, (Microsoft, 2024) Microsoft
+- **Documentación Técnica y Especificaciones** (17 referencias) - (TheHive Project, 2024) TheHive, (Cortex Project, 2024) Cortex, (Shuffle Tools, 2024) Shuffle, (Elastic, 2024)
+  Elasticsearch, (Docker Inc., 2024) Docker, (Nginx, 2024) Nginx, (Prometheus, 2024) Prometheus, (Grafana Labs, 2024) Grafana, (MITRE Corporation, 2024) MITRE ATT&CK, (NIST, 2024a) NIST Framework, (FIRST, n.d.) FIRST, [36a-f] MISP, Redis, Loki, Promtail, Tenzir, OpenSearch
+- **Frameworks y Herramientas de Desarrollo** (11 referencias) - (FastAPI, 2024) FastAPI, (Pydantic, 2024) Pydantic, (pytest, 2024) pytest, (pytest-cov, 2024) pytest-cov, (Astral, 2024) Ruff, (Python Software Foundation, 2024) mypy, (PyCQA, 2024a) radon, (PyCQA, 2024b) bandit, (jendrikse, 2024) vulture, (mutmut, 2024) mutmut, (pip-audit, 2024) pip-audit
+- **Estándares y Normativas** (10 referencias) - (ISO/IEC, 2022) ISO/IEC 27001:2022, (ISO/IEC, 2023) ISO/IEC 27002:2023, (NIST, 2023) NIST SP
+  800-61, (NIST, 2024b) NIST SP 800-150, (ENISA, 2023) ENISA, (CIS, 2024) CIS Controls, (GDPR, 2018) GDPR, (CCPA, 2020) CCPA, (HIPAA, 2023) HIPAA, (NIST, 2025) NIST SP 800-61r3, (OASIS, 2023) OASIS CACAO
+- **Libros y Capítulos de Libros** (1 referencia) - (Atluri & Warner, 2008) Atluri & Warner
+- **Tesis Doctorales y Trabajos de Investigación** (1 referencia) - (Núñez Fernández, 2023) Núñez Fernández (UDC)
+- **Conferencias y Proceedings** (2 referencias) - (Schlette et al., 2024) Schlette et al., (Stevens et al., 2022) Stevens et al.
 - **Repositorios de Código y Proyectos Open Source** (10 referencias) - TheHive, Cortex, Shuffle, Elasticsearch,
   Prometheus, Grafana, Docker, Nginx, MITRE ATT&CK, Sigma
 - **Recursos del Proyecto SOAR Ransomware Lab** (9 referencias) - Repositorio GitHub, documentación, scripts, módulos
-  Python, suite de pruebas
-- **Patentes y Propiedad Intelectual** (5 referencias) - Patentes US y Europeas sobre SOAR y respuesta automatizada
-- **Normas y Especificaciones Técnicas** (5 referencias) - RFC 8446 (TLS 1.3), RFC 7519 (JWT), ISO/IEC 27035
-- **Referencias Adicionales** (15 referencias) - [11] Kinyua & Awuah, [12] Mohammad & Lakshmisri, [13] Obuse et
-  al., [14] Quintero Tamayo et al., [25] CISA, [26] MITRE ATT&CK T1486, [27] Microsoft, [38] FIRST, [49-50] NIST SP
-  800-61, [51] OASIS CACAO, [62] Atluri & Warner, [73] Núñez Fernández, [84] Schlette et al., [85] Stevens et al.
+  Python, suite de pruebas, configuración Docker, playbooks, Makefile, resultados
+- **Normas y Especificaciones Técnicas** (6 referencias) - RFC 8446 (TLS 1.3), RFC 7519 (JWT), RFC 2616 (HTTP/1.1), RFC 3986 (URI), ISO/IEC 27035, Agrawal & Boneh (2024)
+- **Fuentes Externas de Threat Intelligence** (3 referencias) - (VirusTotal, 2024) VirusTotal, (AbuseIPDB, 2024) AbuseIPDB, (Wazuh, 2024) Wazuh
 
-**Nota**: Todas las referencias fueron verificadas en mayo de 2024. Los DOIs proporcionan acceso directo a los
+**Nota**: Todas las referencias fueron verificadas en 2024-2025. Los DOIs proporcionan acceso directo a los
 documentos académicos cuando están disponibles.
 
----
 
 ## ANEXOS
 
@@ -534,22 +454,29 @@ Los anexos técnicos completos se encuentran en los siguientes archivos del proy
 
 - **Anexo A: Configuración Completa de Docker Compose** - Ver `appendix_a.md` (instantánea de configuración YAML; versión
   canónica en `infra/docker/compose/` y `.env.full`)
-- **Anexo B: Playbooks de Automatización** - Ver `docs/operations/playbooks/ransomware_playbook_e2e.md` (Flujo completo
-  de respuesta a ransomware)
-- **Anexo C: Scripts de Orquestación** - Ver `src/soar_lab/scripts/setup/` (`gen_certs.sh`, `check_deps.sh`) y
+- **Anexo B: Playbooks de Automatización** - Ver `appendix_b.md` (Workflow SOAR completo: 46 nodos, 60 ramas,
+  25 scripts Python embebidos, modelo de scoring 0-100, ramas contain/observe)
+- **Anexo C: Scripts de Orquestación** - Ver `scripts/setup/` (`gen_certs.sh`, `check_deps.sh`,
+  `init_thehive.py`, `init_shuffle_webhook.py`, 20 scripts de automatización)
   `src/soar_lab/infrastructure/security/` (`setup_firewall.sh`, `scan_vulnerabilities.sh`).
 - **Anexo D: Resultados Experimentales Detallados** - Ver `data_visualizations.md` (Visualizaciones ASCII de métricas,
   gráficos de MTTR, análisis estadístico)
 - **Anexo E: Métricas y Análisis Estadístico** - Ver `comparative_tables.md` (Tablas comparativas de plataformas,
   resultados experimentales, KPIs)
 - **Anexo F: Guía de Instalación** - Ver `docs/` (Documentación de arquitectura, operaciones, integraciones)
+- **Anexo F2: Validación Experimental** - Ver `experimental_validation.md` (Quality Score 92.2/100,
+  HPR 96.0/100, 2041 tests, 38 endpoints API, 18 servicios, 20 objetivos SMART, mutation testing 51.8%)
 - **Anexo G: Documentación de Mejoras** - Ver `CHANGELOG_THESIS_UPDATE.md` (Registro de 44 mejoras implementadas)
-- **Anexo H: Manual de Usuario** - Ver `docs/operations/` (Guías de operación del laboratorio)
+- **Anexo H: Manual de Usuario** - Ver `docs/04-operations.md` (Operaciones del laboratorio:
+  configuración, backups, troubleshooting, healthchecks) y `docs/01-getting-started.md` (instalación)
+- **Anexo I: Estrategia de Testing** - Ver `appendix_i.md` (2041 tests, pirámide, 9 marcadores,
+  coverage 84.6%, quality gates, 49 TCs E2E, mutation testing 51.8% sobre 11 050 mutantes, flujo canónico)
+- **Anexo J: Diagramas Mermaid** - Ver `appendix_j.md` (13 diagramas canónicos: arquitectura
+  Docker, hexagonal, C4, secuencias E2E, árbol decisión, Gantt SMART, matriz riesgos, GMinst4ll)
 
 **Nota**: Todo el código fuente, configuraciones y documentación técnica están disponibles en el repositorio del
 proyecto bajo los directorios `src/`, `infra/`, `docs/` y `tests/`.
 
----
 
 ## DECLARACIÓN DE ORIGINALIDAD
 
@@ -561,7 +488,6 @@ declaración debe estar firmada y fechada en el momento de la defensa del TFM.
 **Firma**: ________________________  
 **Fecha**: ___ de ___________ de 2025 - *Completar con fecha de defensa*
 
----
 
 ## AGRADECIMIENTOS
 
@@ -574,4 +500,3 @@ El contenido completo de los agradecimientos se encuentra en el archivo `acknowl
 - A familia, compañeros y amigos por su apoyo personal
 - Reconocimiento de limitaciones y compromiso futuro
 
----
