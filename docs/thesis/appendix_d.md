@@ -786,7 +786,6 @@ MEJORAS CLAVE:
 • Reducción MTTR: 92.3% (3600s a 277.15s)
 • Aumento éxito: +20pp (~80% a 100%)
 • Mejora consistencia: Alta (std=187.61s, 50/50 completados)
-• Escalabilidad: 12.5x más capacidad (10 a 125 alertas/hora)
 ```
 
 Estas visualizaciones complementan las tablas y diagramas previos, ofreciendo una visión completa de los aspectos del
