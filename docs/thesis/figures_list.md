@@ -54,24 +54,35 @@
 | Figura 24 | Duración de Workflows                            | `figures/workflow_durations.png` |
 | Figura 25 | Volumen de Logs en Loki                          | `figures/loki_log_volume.png` |
 | Figura 26 | Mapa de Calor de Logs                            | `figures/loki_log_heatmap.png` |
+| Figura 27 | Cumplimiento de Umbrales                         | `figures/threshold_compliance.png` |
+| Figura 28 | Notificaciones del Workflow                      | `figures/workflow_notifications.png` |
+| Figura 29 | Tasa de Éxito por Tipo de Alerta (Grafana panel 4) | `figures/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png` |
+| Figura 30 | Tasa de Éxito Servicios TheHive/Cortex (Grafana panel 6) | `figures/grafana_panel_6_Grafico_4_5___Tasa_de_Exito_Servicios__TheHive___C.png` |
+| Figura 31 | Alertas por Severidad (Grafana panel 7)          | `figures/grafana_panel_7_Grafico_4_3___Alertas_por_Severidad__distribucion_.png` |
+| Figura 32 | Evolución de Alertas por Tipo (Grafana panel 15) | `figures/grafana_panel_15_Evoluci_n_de_Alertas_por_Tipo.png` |
+| Figura 33 | Correlación entre Métricas                       | `figures/correlation_heatmap.png` |
+| Figura 34 | Evolución de Métricas durante el Proyecto        | `figures/GE4_metrics_evolution.png` |
+| Figura 35 | Mejoras por Categoría (versión extendida)        | `figures/GE5_improvements.png` |
+| Figura 36 | Análisis Coste-Beneficio (versión extendida)     | `figures/GE6_cost_benefit.png` |
+| Figura 37 | Estadísticas Diarias Organizativas               | `figures/org_daily_stats.png` |
 
 ## Figuras del Anexo J (Diagramas Mermaid)
 
 | Figura  | Título                                            |
 |---------|---------------------------------------------------|
-| Figura 27 | Arquitectura de Alto Nivel (flowchart LR)       |
-| Figura 28 | Arquitectura de Despliegue Docker (graph TD)    |
-| Figura 29 | Arquitectura Hexagonal (flowchart TD)           |
-| Figura 30 | Diagrama de Contexto C4 (C4Context)             |
-| Figura 31 | Flujo E2E de Alertas (sequenceDiagram)          |
-| Figura 32 | Árbol de Decisión del Playbook (flowchart)      |
-| Figura 33 | Flujo de Integración API (sequenceDiagram)      |
-| Figura 34 | Respuesta Automatizada (sequenceDiagram)        |
-| Figura 35 | Cronograma Objetivos SMART (gantt)              |
-| Figura 36 | Roadmap por Semanas (gantt)                     |
-| Figura 37 | Matriz de Priorización de Riesgos (graph)       |
-| Figura 38 | GMinst4ll: Flujo de Infección (graph TD)        |
-| Figura 39 | Pipeline SOAR para IoCs GMinst4ll (graph LR)    |
+| Figura 38 | Arquitectura de Alto Nivel (flowchart LR)       |
+| Figura 39 | Arquitectura de Despliegue Docker (graph TD)    |
+| Figura 40 | Arquitectura Hexagonal (flowchart TD)           |
+| Figura 41 | Diagrama de Contexto C4 (C4Context)             |
+| Figura 42 | Flujo E2E de Alertas (sequenceDiagram)          |
+| Figura 43 | Árbol de Decisión del Playbook (flowchart)      |
+| Figura 44 | Flujo de Integración API (sequenceDiagram)      |
+| Figura 45 | Respuesta Automatizada (sequenceDiagram)        |
+| Figura 46 | Cronograma Objetivos SMART (gantt)              |
+| Figura 47 | Roadmap por Semanas (gantt)                     |
+| Figura 48 | Matriz de Priorización de Riesgos (graph)       |
+| Figura 49 | GMinst4ll: Flujo de Infección (graph TD)        |
+| Figura 50 | Pipeline SOAR para IoCs GMinst4ll (graph LR)    |
 
 ---
 
@@ -92,4 +103,4 @@
 4. **Actualización**: Las figuras han sido actualizadas con los datos experimentales obtenidos durante la validación
    del sistema en agosto de 2026.
 
-5. **Total**: 39 figuras (11 en capítulos + 15 en Anexo E + 13 en Anexo J).
+5. **Total**: 50 figuras (11 en capítulos + 26 en Anexo E + 13 en Anexo J).
