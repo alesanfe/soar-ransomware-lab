@@ -58,4 +58,4 @@ Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados 
 
 ## Índice de Tablas del Capítulo 2
 
-Este capítulo no contiene tablas formateadas. Las comparativas entre plataformas se desarrollan en el Anexo de Tablas Comparativas (`comparative_tables.md`).
+Este capítulo no contiene tablas formateadas. Las comparativas entre plataformas se desarrollan en el Anexo C (`appendix_c.md`).

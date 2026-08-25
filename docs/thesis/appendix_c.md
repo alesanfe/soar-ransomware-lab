@@ -1,4 +1,4 @@
-# Tablas Comparativas Complementarias
+# Anexo C: Tablas Comparativas Complementarias
 
 Este anexo contiene tablas comparativas de plataformas SOAR, generaciones de ransomware, objetivos del proyecto,
 configuración Docker, analyzers Cortex, métricas de monitoreo y resultados experimentales.

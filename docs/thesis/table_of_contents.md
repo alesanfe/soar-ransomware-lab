@@ -89,15 +89,18 @@
 
 6. **Referencias bibliográficas** — `bibliographic_references.md`
 7. **Declaración de originalidad** — `originality_declaration.md`
-8. **Tablas comparativas de plataformas SOAR** — `comparative_tables.md`
-9. **Visualizaciones de datos y gráficos complementarios** — `data_visualizations.md`
+8. **Tablas comparativas de plataformas SOAR** — `appendix_c.md`
+9. **Visualizaciones de datos y gráficos complementarios** — `appendix_e.md`
 10. **Glosario** — `glossary.md`
 
 ### Anexos
 
 - **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, guías de instalación
 - **Anexo B** — `appendix_b.md` — Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
-- **Anexo F2** — `experimental_validation.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
+- **Anexo C** — `appendix_c.md` — Tablas comparativas de plataformas SOAR, generaciones de ransomware, configuración Docker
+- **Anexo E** — `appendix_e.md` — Métricas y visualizaciones complementarias
+- **Anexo F2** — `appendix_f2.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
+- **Anexo G** — `appendix_g.md` — Documentación de mejoras implementadas (44 mejoras)
 - **Anexo I** — `appendix_i.md` — Estrategia de testing (2041 tests, pirámide, quality gates)
 - **Anexo J** — `appendix_j.md` — Diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid)
 
@@ -238,7 +241,7 @@
 - Reducción 92.3 % MTTR con 50 ejecuciones
 - Arquitectura hexagonal y modular transferible
 - Software open source: accesible a pymes y CSIRTs
-- Figura 5.6: Análisis coste-beneficio
+- Figura 5.1: Análisis coste-beneficio
 
 ### Anexos
 
@@ -253,7 +256,7 @@
 
 - Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
 
-**Anexo F2** — `experimental_validation.md`
+**Anexo F2** — `appendix_f2.md`
 
 - Resultados E2E (n=50): MTTR, contención, score, servicios
 - Quality Score: 92.2/100 (complexity, coverage, security, linting)

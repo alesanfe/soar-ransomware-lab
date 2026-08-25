@@ -459,7 +459,7 @@ El Makefile automatiza el despliegue, las pruebas y la generación de métricas.
 
 #### 4.1.3.3. Resultados Experimentales
 
-Los resultados se obtienen mediante las pruebas E2E y el análisis de logs mediante `AnalyticsService` (que incorpora la lógica de cálculo de KPIs consolidada). El experimento ejecutó 50 runs del playbook en dos escenarios (malicioso y benigno) sobre el entorno Docker aislado. La **Figura 5.1** muestra la comparación visual del MTTR entre la condición manual y la automatizada.
+Los resultados se obtienen mediante las pruebas E2E y el análisis de logs mediante `AnalyticsService` (que incorpora la lógica de cálculo de KPIs consolidada). El experimento ejecutó 50 runs del playbook en dos escenarios (malicioso y benigno) sobre el entorno Docker aislado. La **Figura 4.6** muestra la comparación visual del MTTR entre la condición manual y la automatizada.
 
 **Cumplimiento de objetivos.** La tabla resume los umbrales definidos frente a los valores medidos:
 
@@ -475,29 +475,29 @@ Los resultados se obtienen mediante las pruebas E2E y el análisis de logs media
 
 **Cumplimiento global: 5 de 7 objetivos.**
 
-![Figura 5.1: Resultados de MTTR](figures/Fig5_1_mttr_results.png)
+![Figura 4.6: Resultados de MTTR](figures/Fig5_1_mttr_results.png)
 
-**Figura 5.1**: Resultados de MTTR comparando respuesta manual (3600 s) y automatizada (277.15 s medio), con
+**Figura 4.6**: Resultados de MTTR comparando respuesta manual (3600 s) y automatizada (277.15 s medio), con
 distribución de percentiles P50, P90 y P95.
 
 **MTTR detallado.** El MTTR medio fue de 277.15 s frente a los 3600 s de la condición manual, lo que supone una
-reducción del 92.3 %. La mediana (P50) se situó en 193.19 s y el percentil 90 en 621.83 s, con desviación estándar de 187.61 s. El tiempo mínimo registrado fue 65.38 s. La **Figura 5.2** muestra la distribución de tiempos por fase del workflow.
+reducción del 92.3 %. La mediana (P50) se situó en 193.19 s y el percentil 90 en 621.83 s, con desviación estándar de 187.61 s. El tiempo mínimo registrado fue 65.38 s. La **Figura 4.7** muestra la distribución de tiempos por fase del workflow.
 
-![Figura 5.2: Tiempos por componente del workflow](figures/GE1_component_timings.png)
+![Figura 4.7: Tiempos por componente del workflow](figures/GE1_component_timings.png)
 
-**Figura 5.2**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso,
+**Figura 4.7**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso,
 contención y cierre).
 
-![Figura 5.3: Análisis de percentiles MTTR](figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
+![Figura 4.8: Análisis de percentiles MTTR](figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
 
-**Figura 5.3**: Distribución de percentiles MTTR capturada desde el dashboard de Grafana.
+**Figura 4.8**: Distribución de percentiles MTTR capturada desde el dashboard de Grafana.
 
 **Decisiones automatizadas.** El 92 % de las alertas (46/50) obtuvieron un score ≥ 80 que activó la contención
-simulada; el 8 % restante (4/50) se cerró como benigno. El score promedio fue 96.2/100 (mínimo 55, máximo 100). El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 5.4** muestra la distribución de decisiones y la **Figura 4.5** el estado de los jobs de Cortex.
+simulada; el 8 % restante (4/50) se cerró como benigno. El score promedio fue 96.2/100 (mínimo 55, máximo 100). El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 4.9** muestra la distribución de decisiones y la **Figura 4.5** el estado de los jobs de Cortex.
 
-![Figura 5.4: Distribución de decisiones del playbook](figures/decision_distribution.png)
+![Figura 4.9: Distribución de decisiones del playbook](figures/decision_distribution.png)
 
-**Figura 5.4**: Distribución de decisiones automatizadas (malicious, suspicious, benign) sobre las 50 ejecuciones.
+**Figura 4.9**: Distribución de decisiones automatizadas (malicious, suspicious, benign) sobre las 50 ejecuciones.
 
 ![Figura 4.5: Estado de jobs de Cortex](figures/cortex_job_status.png)
 
@@ -513,7 +513,7 @@ verdict esperado era *contain*). Este valor mejora el promedio reportado por SAN
 de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %) por procesamiento de eventos de red. Ningún contenedor superó su límite de memoria, confirmando que el despliegue es viable en un host con 16 GiB RAM.
 
 > **Anexo F2**: la validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100,
-> 13 servicios, 38 endpoints API) se detalla en `experimental_validation.md`.
+> 13 servicios, 38 endpoints API) se detalla en `appendix_f2.md`.
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
@@ -522,7 +522,7 @@ El laboratorio cumple los requisitos funcionales y de calidad definidos, aunque 
 > **Anexo I**: la estrategia completa de testing (2041 tests, pirámide, 9 marcadores pytest,
 > coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en `appendix_i.md`. La validación
 > experimental consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo F2**
-> (`experimental_validation.md`).
+> (`appendix_f2.md`).
 
 Comandos de prueba disponibles:
 
@@ -583,11 +583,11 @@ Este stack se inicia automáticamente con el comando `make up`. La interfaz de G
 
 #### 4.1.3.6. Análisis de Mejoras Implementadas
 
-El proceso iterativo resultó en mejoras distribuidas en categorías de seguridad, calidad de código, operativas y de monitoreo. La **Figura 5.5** muestra la distribución de las 44 mejoras aplicadas por categoría.
+El proceso iterativo resultó en mejoras distribuidas en categorías de seguridad, calidad de código, operativas y de monitoreo. La **Figura 4.10** muestra la distribución de las 44 mejoras aplicadas por categoría.
 
-![Figura 5.5: Distribución de mejoras por categoría](figures/Fig5_2_improvements_category.png)
+![Figura 4.10: Distribución de mejoras por categoría](figures/Fig5_2_improvements_category.png)
 
-**Figura 5.5**: Distribución de las 44 mejoras implementadas por categoría (seguridad, calidad de código, operativas,
+**Figura 4.10**: Distribución de las 44 mejoras implementadas por categoría (seguridad, calidad de código, operativas,
 monitoreo).
 
 #### 4.1.3.7. Discusión
@@ -627,11 +627,11 @@ Los resultados muestran que el laboratorio cumple los requisitos funcionales y n
 | Figura 4.1 | Arquitectura General del Laboratorio SOAR      | Anexo J (J.2)                              |
 | Figura 4.2 | Diagrama de Despliegue Docker Compose          | Anexo J (J.3)                              |
 | Figura 4.5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
-| Figura 5.1 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
-| Figura 5.2 | Tiempos por componente del workflow            | `figures/GE1_component_timings.png`        |
-| Figura 5.3 | Análisis de percentiles MTTR (Grafana)         | `figures/grafana_panel_5_..._Percentiles_MTTR.png` |
-| Figura 5.4 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
-| Figura 5.5 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
+| Figura 4.6 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
+| Figura 4.7 | Tiempos por componente del workflow            | `figures/GE1_component_timings.png`        |
+| Figura 4.8 | Análisis de percentiles MTTR (Grafana)         | `figures/grafana_panel_5_..._Percentiles_MTTR.png` |
+| Figura 4.9 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
+| Figura 4.10 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
 
 ## Índice de Tablas del Capítulo 4
 
