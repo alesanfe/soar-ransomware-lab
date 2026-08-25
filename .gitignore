@@ -36,12 +36,11 @@ coverage.xml
 htmlcov/
 
 # Generated reports (quality, e2e, mutmut, test-review, holistic, validation, coverage, logs)
-reports/
+/reports/
 
 # Runtime data (Docker volumes, logs, backups, results) — not commited
 runtime/
 artifacts/
-schemas/
 *.db
 *.tar.gz
 
