@@ -412,7 +412,7 @@ El contenido completo de este capítulo se encuentra en el archivo `specific_dev
 
 ## CAPÍTULO 7: ANÁLISIS DE RESULTADOS Y DISCUSIÓN
 
-El contenido completo de este capítulo se encuentra en los archivos `specific_development.md`, `data_visualizations.md` y `comparative_tables.md`, que incluyen resultados cuantitativos (MTTR de 3600s a 277.15s con 92.3% de reducción, tasa de éxito 100%, tasa de contención 92.0%, falsos negativos 8.0%), métricas de rendimiento (disponibilidad 99.7%, throughput 125 alertas/hora, score promedio 96.2/100), análisis cualitativo (fortalezas, debilidades, factores críticos de éxito, lecciones aprendidas), discusión en contexto del estado del arte (comparación con estudios previos, contribuciones al campo), y análisis de las 44 mejoras implementadas por categoría (seguridad, calidad de código, automatización, monitoreo).
+El contenido completo de este capítulo se encuentra en los archivos `specific_development.md`, `appendix_e.md` y `appendix_c.md`, que incluyen resultados cuantitativos (MTTR de 3600s a 277.15s con 92.3% de reducción, tasa de éxito 100%, tasa de contención 92.0%, falsos negativos 8.0%), métricas de rendimiento (disponibilidad 99.7%, throughput 125 alertas/hora, score promedio 96.2/100), análisis cualitativo (fortalezas, debilidades, factores críticos de éxito, lecciones aprendidas), discusión en contexto del estado del arte (comparación con estudios previos, contribuciones al campo), y análisis de las 44 mejoras implementadas por categoría (seguridad, calidad de código, automatización, monitoreo).
 
 
 ## CAPÍTULO 8: CONCLUSIONES Y TRABAJO FUTURO
@@ -459,14 +459,14 @@ Los anexos técnicos completos se encuentran en los siguientes archivos del proy
 - **Anexo C: Scripts de Orquestación** - Ver `scripts/setup/` (`gen_certs.sh`, `check_deps.sh`,
   `init_thehive.py`, `init_shuffle_webhook.py`, 20 scripts de automatización)
   `src/soar_lab/infrastructure/security/` (`setup_firewall.sh`, `scan_vulnerabilities.sh`).
-- **Anexo D: Resultados Experimentales Detallados** - Ver `data_visualizations.md` (Visualizaciones ASCII de métricas,
+- **Anexo D: Resultados Experimentales Detallados** - Ver `appendix_e.md` (Visualizaciones ASCII de métricas,
   gráficos de MTTR, análisis estadístico)
-- **Anexo E: Métricas y Análisis Estadístico** - Ver `comparative_tables.md` (Tablas comparativas de plataformas,
+- **Anexo E: Métricas y Análisis Estadístico** - Ver `appendix_c.md` (Tablas comparativas de plataformas,
   resultados experimentales, KPIs)
 - **Anexo F: Guía de Instalación** - Ver `docs/` (Documentación de arquitectura, operaciones, integraciones)
-- **Anexo F2: Validación Experimental** - Ver `experimental_validation.md` (Quality Score 92.2/100,
+- **Anexo F2: Validación Experimental** - Ver `appendix_f2.md` (Quality Score 92.2/100,
   HPR 96.0/100, 2041 tests, 38 endpoints API, 18 servicios, 20 objetivos SMART, mutation testing 51.8%)
-- **Anexo G: Documentación de Mejoras** - Ver `CHANGELOG_THESIS_UPDATE.md` (Registro de 44 mejoras implementadas)
+- **Anexo G: Documentación de Mejoras** - Ver `appendix_g.md` (Registro de 44 mejoras implementadas)
 - **Anexo H: Manual de Usuario** - Ver `docs/04-operations.md` (Operaciones del laboratorio:
   configuración, backups, troubleshooting, healthchecks) y `docs/01-getting-started.md` (instalación)
 - **Anexo I: Estrategia de Testing** - Ver `appendix_i.md` (2041 tests, pirámide, 9 marcadores,

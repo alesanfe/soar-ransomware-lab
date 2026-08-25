@@ -139,9 +139,9 @@ constituye un método transferible a otros proyectos que evalúen tecnologías d
 
 El uso exclusivo de software open source elimina los costos de licenciamiento asociados a soluciones comerciales equivalentes, cuyo rango de coste anual ha sido estimado en la literatura entre $200 000 y $500 000 (IBM Security, 2024). Ello hace accesibles estas capacidades a pymes, instituciones educativas y CSIRTs en fase de consolidación.
 
-![Figura 5.6: Análisis coste-beneficio SOAR open source vs comercial](figures/Fig5_5_cost_benefit.png)
+![Figura 5.1: Análisis coste-beneficio SOAR open source vs comercial](figures/Fig5_5_cost_benefit.png)
 
-**Figura 5.6**: Análisis coste-beneficio comparativo entre SOAR open source (este laboratorio) y soluciones comerciales
+**Figura 5.1**: Análisis coste-beneficio comparativo entre SOAR open source (este laboratorio) y soluciones comerciales
 equivalentes.
 
 ---
@@ -150,7 +150,7 @@ equivalentes.
 
 | Figura    | Título                                          | Archivo                              |
 |-----------|-------------------------------------------------|--------------------------------------|
-| Figura 5.6 | Análisis coste-beneficio SOAR open source vs comercial | `figures/Fig5_5_cost_benefit.png` |
+| Figura 5.1 | Análisis coste-beneficio SOAR open source vs comercial | `figures/Fig5_5_cost_benefit.png` |
 
 ## Índice de Tablas del Capítulo 5
 

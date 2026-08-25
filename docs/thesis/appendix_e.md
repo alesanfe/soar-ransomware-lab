@@ -1,4 +1,4 @@
-# Visualizaciones de Datos y Gráficos Complementarios
+# Anexo E: Métricas y Visualizaciones Complementarias
 
 Este anexo presenta visualizaciones de datos y gráficos complementarios que ilustran los resultados experimentales y el
 análisis de rendimiento del laboratorio SOAR. Las visualizaciones incluyen representaciones ASCII de distribuciones de
@@ -605,69 +605,69 @@ Las siguientes figuras se generan automáticamente desde los resultados experime
 
 ![Distribución de alertas por severidad](figures/severity_distribution.png)
 
-**Figura A.1**: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
+**Figura E.1**: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
 
 ![Distribución de alertas por tipo](figures/alert_distribution.png)
 
-**Figura A.2**: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
+**Figura E.2**: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
 
 ![MTTR por fase del workflow](figures/mttr_by_phase.png)
 
-**Figura A.3**: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
+**Figura E.3**: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
 
 ![MTTR por severidad (boxplot)](figures/mttr_severity_boxplot.png)
 
-**Figura A.4**: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
+**Figura E.4**: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
 
 ![Percentiles MTTR](figures/GE2_percentiles.png)
 
-**Figura A.5**: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
+**Figura E.5**: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
 
 ![Tasas de éxito](figures/GE3_success_rates.png)
 
-**Figura A.6**: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
+**Figura E.6**: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
 
 ### Dashboards de Grafana
 
 ![Progresión de MTTR (tendencia diaria)](figures/grafana_panel_10_Grafico_5_3___Evolucion_MTTR__tendencia_diaria_.png)
 
-**Figura A.7**: Progresión de MTTR (tendencia diaria) capturada desde el dashboard de Grafana.
+**Figura E.7**: Progresión de MTTR (tendencia diaria) capturada desde el dashboard de Grafana.
 
 ![Alertas procesadas por hora (throughput)](figures/grafana_panel_12_Grafico_5_4___Alertas_procesadas_por_hora__through.png)
 
-**Figura A.8**: Alertas procesadas por hora (throughput) desde el dashboard de Grafana.
+**Figura E.8**: Alertas procesadas por hora (throughput) desde el dashboard de Grafana.
 
 ![MTTR por tipo de alerta](figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
 
-**Figura A.9**: MTTR por tipo de alerta desde el dashboard de Grafana.
+**Figura E.9**: MTTR por tipo de alerta desde el dashboard de Grafana.
 
 ![Tasa de éxito por severidad](figures/grafana_panel_14_Tasa_de__xito_por_Severidad.png)
 
-**Figura A.10**: Tasa de éxito por severidad desde el dashboard de Grafana.
+**Figura E.10**: Tasa de éxito por severidad desde el dashboard de Grafana.
 
 ### Estado de Servicios
 
 ![Salud de servicios](figures/service_health.png)
 
-**Figura A.11**: Estado de salud de los 10 servicios críticos del laboratorio (100 % healthy).
+**Figura E.11**: Estado de salud de los 10 servicios críticos del laboratorio (100 % healthy).
 
 ![Estado de casos en TheHive](figures/thehive_case_status.png)
 
-**Figura A.12**: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
+**Figura E.12**: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
 
 ![Duración de workflows](figures/workflow_durations.png)
 
-**Figura A.13**: Distribución de duraciones de los 50 workflows ejecutados.
+**Figura E.13**: Distribución de duraciones de los 50 workflows ejecutados.
 
 ### Monitoreo de Logs
 
 ![Volumen de logs en Loki](figures/loki_log_volume.png)
 
-**Figura A.14**: Volumen de logs agregados en Loki durante las ejecuciones E2E.
+**Figura E.14**: Volumen de logs agregados en Loki durante las ejecuciones E2E.
 
 ![Mapa de calor de logs](figures/loki_log_heatmap.png)
 
-**Figura A.15**: Mapa de calor de actividad de logs por servicio y tiempo.
+**Figura E.15**: Mapa de calor de actividad de logs por servicio y tiempo.
 
 Los KPIs de negocio escalados por tipo de organización (PYME, mediana, grande, enterprise), con objetivos
 realistas adaptados al tamaño y recursos de cada una. Los KPIs incluyen MTTR objetivo, costo por incidente, ROI de SOAR,

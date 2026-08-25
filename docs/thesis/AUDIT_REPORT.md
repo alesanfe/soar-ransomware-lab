@@ -50,7 +50,7 @@
 
 - Si Anexo A: Configuración técnica (`appendix_a.md`, 1465 líneas)
 - Si Anexo B: Workflow SOAR (`appendix_b.md`, 412 líneas)
-- Si Anexo F2: Validación experimental (`experimental_validation.md`, 260 líneas)
+- Si Anexo F2: Validación experimental (`appendix_f2.md`, 260 líneas)
 - Si Anexo I: Estrategia de testing (`appendix_i.md`, 367 líneas)
 - Si Anexo J: Diagramas Mermaid (`appendix_j.md`, 381 líneas, 13 diagramas)
 
@@ -68,7 +68,7 @@
 | Objetivo general | Si | `objectives_and_methodology.md` §3.1: "Demostrar que un playbook SOAR automatizado reduce el MTTR..." |
 | Objetivos específicos | Si | 5 áreas estratégicas + 12 objetivos operativos con criterios de éxito |
 | Método | Si | `objectives_and_methodology.md` §3.3: investigación aplicada + DevSecOps, 5 fases |
-| Resultados | Parcial | En `experimental_validation.md` (anexo), no en cuerpo principal |
+| Resultados | Parcial | En `appendix_f2.md` (anexo), no en cuerpo principal |
 | Conclusiones | Si | `conclusions_and_future_work.md` §5.1: responde directamente al objetivo general |
 
 ### Hallazgo 2.1 — CRÍTICO: Falta pregunta de investigación explícita
@@ -125,13 +125,13 @@ La sección 4.1.3.3 "Resultados Experimentales" en `specific_development.md` (l�
 
 > "Los resultados se obtienen mediante las pruebas E2E y el análisis de logs mediante `AnalyticsService`..."
 
-Los resultados reales (MTTR 277.15s, reducción 92.3%, tasa de éxito 100%, n=50) están en `experimental_validation.md` (Anexo F2), no en el cuerpo de la tesis.
+Los resultados reales (MTTR 277.15s, reducción 92.3%, tasa de éxito 100%, n=50) están en `appendix_f2.md` (Anexo F2), no en el cuerpo de la tesis.
 
 **Recomendación**: Trasladar la tabla de cumplimiento de objetivos y las métricas clave de MTTR al §4.1.3.3, dejando el detalle completo en el anexo.
 
 ### Hallazgo 5.2 — MEJORA: Resultados negativos visibles
 
-Si Cumple el antipatrón 5.6 (no ocultar resultados negativos): los umbrales P50 (193.19s vs ≤120s) y P90 (621.83s vs ≤180s) no se cumplieron y se documentan explícitamente en `experimental_validation.md` y `conclusions_and_future_work.md`.
+Si Cumple el antipatrón 5.6 (no ocultar resultados negativos): los umbrales P50 (193.19s vs ≤120s) y P90 (621.83s vs ≤180s) no se cumplieron y se documentan explícitamente en `appendix_f2.md` y `conclusions_and_future_work.md`.
 
 ---
 
@@ -199,7 +199,7 @@ La lista de comprobación exige: "Todas las figuras y tablas se mencionan en el 
 **Recomendación**: Insertar referencias a figuras en el cuerpo donde sea relevante, por ejemplo:
 - §1.1: "La arquitectura general se muestra en la Figura 1.1."
 - §4.1.2: "El despliegue Docker se ilustra en la Figura 4.2."
-- §4.1.3.3: "La comparación MTTR se muestra en la Figura 5.1."
+- §4.1.3.3: "La comparación MTTR se muestra en la Figura 4.6."
 
 ---
 
@@ -306,7 +306,7 @@ La lista de comprobación exige: "Todas las figuras y tablas se mencionan en el 
 
 1. **Añadir pregunta de investigación explícita** en `introduction.md` §1.2
 2. **Referenciar figuras en el cuerpo** de la tesis (insertar "véase Figura X.Y" donde corresponda)
-3. **Trasladar resultados clave** de `experimental_validation.md` al §4.1.3.3 de `specific_development.md`
+3. **Trasladar resultados clave** de `appendix_f2.md` al §4.1.3.3 de `specific_development.md`
 
 ### Prioridad MEDIA (mejora calidad)
 

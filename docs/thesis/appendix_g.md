@@ -1,4 +1,7 @@
-# Registro de cambios de la tesis
+# Anexo G: Documentación de Mejoras Implementadas
+
+> La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md). Este anexo registra
+> únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental.
 
 > La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md). Esta sección registra únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental.
 
@@ -13,7 +16,7 @@
   - Referenciado `make generate-secrets` y `soar-lab generate-secrets` como mecanismos oficiales para generar `.env.full` sin secretos por defecto en el repositorio.
 
 - **Tesis / Tablas y secciones operativas.**
-  - `docs/thesis/figures_tables_list.md` y `table_of_contents.md` mantienen la estructura; las tablas operativas se actualizan en `comparative_tables.md` y el resto del corpus de la tesis es una instantánea estática de la remediación.
+  - `docs/thesis/figures_tables_list.md` y `table_of_contents.md` mantienen la estructura; las tablas operativas se actualizan en `appendix_c.md` y el resto del corpus de la tesis es una instantánea estática de la remediación.
 
 ## 2026-07-18 — Remediación documental masiva
 
@@ -31,8 +34,8 @@
   - Manual `docs/operations/cli_manual.md` sincronizado para reflejar la generación automática de JWT.
 
 - **Tesis.**
-  - `docs/thesis/appendix_a.md`, `specific_development.md`, `comparative_tables.md`, `conclusions_and_future_work.md` y `tfm.md` actualizados para advertir que el anexo es una instantánea estática y señalar los compose canónicos.
-  - `comparative_tables.md`: TLS marcado como parcial/autofirmado.
+  - `docs/thesis/appendix_a.md`, `specific_development.md`, `appendix_c.md`, `conclusions_and_future_work.md` y `tfm.md` actualizados para advertir que el anexo es una instantánea estática y señalar los compose canónicos.
+  - `appendix_c.md`: TLS marcado como parcial/autofirmado.
 
 ## 2026-07-15 — Logging y métricas funcionales
 
