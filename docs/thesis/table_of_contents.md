@@ -92,7 +92,7 @@
 9. **Declaración de originalidad** — `originality_declaration.md`
 10. **Tablas comparativas de plataformas SOAR** — `appendix_c.md`
 11. **Visualizaciones de datos y gráficos complementarios** — `appendix_e.md`
-12. **Glosario** — `glossary.md`
+12. **Glosario** — `abbreviations_list.md`
 
 ### Anexos
 
