@@ -4,14 +4,13 @@ name: soar-lab
 # This file defines networks, volumes, and elasticsearch service
 #
 # Usage:
-#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml -f compose/docker-compose.wazuh.yml -f compose/docker-compose.api.yml up -d
-#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml -f compose/docker-compose.wazuh.yml -f compose/docker-compose.api.yml -f compose/logging/docker-compose.logging.yml up -d
+#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml -f compose/docker-compose.api.yml up -d
+#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml -f compose/docker-compose.api.yml -f compose/logging/docker-compose.logging.yml up -d
 #
 # Compose files:
 #   - compose/docker-compose.yml         (networks, volumes, elasticsearch)
 #   - compose/docker-compose.core.yml     (redis, thehive, cortex, shuffle)
 #   - compose/docker-compose.misp.yml     (MISP threat intelligence)
-#   - compose/docker-compose.wazuh.yml    (Wazuh SIEM)
 #   - compose/docker-compose.api.yml      (API, docs, web-management, nginx)
 #   - compose/logging/docker-compose.logging.yml  (Loki, Promtail, Grafana - optional)
 
@@ -19,11 +18,6 @@ networks:
   bridge:
     name: bridge
     external: true
-  soar_edge:
-    name: soar_edge
-    driver: bridge
-    driver_opts:
-      com.docker.network.bridge.name: soar_edge
   soar_net:
     name: soar_net
     driver: bridge
@@ -57,119 +51,69 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/elasticsearch
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/elasticsearch
   thehive_files:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/thehive/files
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/thehive/files
   cortex_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/cortex
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/cortex
   shuffle_apps:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/shuffle/apps
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/shuffle/apps
   shuffle_files:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/shuffle/files
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/shuffle/files
   redis_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/redis
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/redis
   nginx_logs:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/logs/nginx
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/logs/nginx
 
   # MISP volumes
   misp_db:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/misp/db
   misp_files:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/misp/files
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/misp/files
   misp_logs:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/logs/misp
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/logs/misp
   misp_configs:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/misp/configs
-
-  # Wazuh volumes
-  # wazuh_api_config is a named volume (not bind) because SQLite on a Windows
-  # bind mount returns disk I/O errors during the API user creation step.
-  wazuh_api_config:
-    driver: local
-  wazuh_etc:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/wazuh/etc
-  wazuh_logs:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/logs/wazuh
-  wazuh_queue:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/wazuh/queue
-  wazuh_var_multigroups:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/wazuh/var_multigroups
-  wazuh_integration_files:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/wazuh/integration_files
-  wazuh_active_response:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/wazuh/active_response
-  wazuh_wodles:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/wazuh/wodles
-  kibana_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/kibana
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/misp/configs
 
   # Centralized logging volumes
   loki_data:
@@ -177,17 +121,17 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/loki
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/loki
   grafana_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ARTIFACTS_DIR:-../../../artifacts}/data/grafana
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/grafana
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    image: ${ELASTICSEARCH_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:7.10.2}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
     environment:
       - discovery.type=single-node
@@ -195,7 +139,7 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - action.auto_create_index=true
       - cluster.routing.allocation.disk.threshold_enabled=false
-      - "ES_JAVA_OPTS=-Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true -Xlog:gc*=warning"
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true -Xlog:gc*=warning}"
       - logger.deprecation.level=error
     ulimits:
       memlock:
@@ -221,11 +165,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '${ELASTICSEARCH_CPU_LIMIT:-2.0}'
+          memory: ${ELASTICSEARCH_MEMORY_LIMIT:-4G}
         reservations:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '${ELASTICSEARCH_CPU_RESERVATION:-1.0}'
+          memory: ${ELASTICSEARCH_MEMORY_RESERVATION:-2G}
     logging:
       driver: "json-file"
       options:

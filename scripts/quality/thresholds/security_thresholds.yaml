@@ -1,0 +1,12 @@
+# Security analysis thresholds (bandit + pip-audit + detect-secrets)
+# Bandit severity: LOW, MEDIUM, HIGH
+fail_bandit_severity: ["HIGH"]  # fail if any HIGH severity issues
+warn_bandit_severity: ["MEDIUM"]  # warn if any MEDIUM severity issues
+# pip-audit
+fail_vuln_severity: ["critical", "high"]  # fail if any critical/high vulnerabilities
+warn_vuln_severity: ["medium"]  # warn if any medium vulnerabilities
+max_dependency_vulnerabilities: 100  # max total vulnerabilities (incl. transitive)
+# detect-secrets
+fail_on_secrets: true  # fail if any secrets detected
+# Allowed false-positive bandit rules (documented in .bandit)
+allowed_bandit_skips: ["B404", "B603", "B105", "B110", "B112", "B311"]

@@ -1,0 +1,114 @@
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'apps/docs-site/**'
+      - 'reports/**'
+      - '.github/workflows/deploy-docs.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy-docs
+  cancel-in-progress: true
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Sync docs to Docusaurus
+        run: python scripts/ci/sync_docs_to_docusaurus.py
+      - name: Upload synced docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: synced-docs
+          path: apps/docs-site/docs/
+
+  generate-reports:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,test,quality]"
+      - name: Generate quality report
+        run: |
+          mkdir -p reports/quality
+          python scripts/quality/run_quality_checks.py --report-only --output-dir reports/quality
+      - name: Generate test review
+        run: |
+          mkdir -p reports/test-review
+          python scripts/reports/test_review.py --output-dir reports/test-review
+      - name: Generate holistic review
+        run: |
+          mkdir -p reports/holistic
+          python scripts/reports/holistic_review.py --output-dir reports/holistic
+      - name: Sync reports to Docusaurus
+        run: python scripts/ci/sync_reports_to_docusaurus.py
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: docusaurus-reports
+          path: apps/docs-site/docs/reports/
+
+  build:
+    needs: [sync-docs, generate-reports]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download synced docs
+        uses: actions/download-artifact@v4
+        with:
+          name: synced-docs
+          path: apps/docs-site/docs/
+      - name: Download reports
+        uses: actions/download-artifact@v4
+        with:
+          name: docusaurus-reports
+          path: apps/docs-site/docs/reports/
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        working-directory: apps/docs-site
+        run: npm ci
+      - name: Build Docusaurus
+        working-directory: apps/docs-site
+        run: npm run build
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/docs-site/build/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

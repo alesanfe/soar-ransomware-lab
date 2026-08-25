@@ -1,0 +1,7 @@
+# Documentation thresholds (interrogate + pylint docstring checks)
+min_docstring_coverage_global: 80  # fail if global docstring coverage below this %
+min_docstring_coverage_public: 90  # fail if public API docstring coverage below this %
+min_docstring_coverage_classes: 100  # fail if any public class missing docstring
+fail_missing_module_docstring: true  # fail if any module missing docstring
+fail_missing_class_docstring: true  # fail if any public class missing docstring
+fail_missing_function_docstring: false  # warn only (too many private helpers)

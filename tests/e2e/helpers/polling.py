@@ -1,26 +1,30 @@
-"""
-Shared polling helpers for E2E tests.
-"""
+"""Shared polling helpers for E2E tests."""
 
 import time
-from typing import Callable, Any, Optional
+from collections.abc import Callable
+from typing import Any
+
+__all__ = [
+    "poll_until",
+    "poll_for_value",
+    "poll_for_not_none",
+]
 
 
 def poll_until(
     condition: Callable[[], bool],
     timeout: int = 60,
     interval: float = 1.0,
-    error_message: str = "Condition not met within timeout"
+    error_message: str = "Condition not met within timeout",
 ) -> bool:
-    """
-    Poll until a condition is met or timeout is reached.
-    
+    """Poll until a condition is met or timeout is reached.
+
     Args:
         condition: Function that returns True when condition is met
         timeout: Maximum time to wait in seconds
         interval: Time between polls in seconds
         error_message: Error message to raise on timeout
-    
+
     Returns:
         True if condition was met, False otherwise
     """
@@ -37,18 +41,17 @@ def poll_for_value(
     expected_value: Any,
     timeout: int = 60,
     interval: float = 1.0,
-    error_message: str = "Expected value not found within timeout"
+    error_message: str = "Expected value not found within timeout",
 ) -> bool:
-    """
-    Poll until a getter returns the expected value.
-    
+    """Poll until a getter returns the expected value.
+
     Args:
         getter: Function that returns a value
         expected_value: Value to wait for
         timeout: Maximum time to wait in seconds
         interval: Time between polls in seconds
         error_message: Error message to raise on timeout
-    
+
     Returns:
         True if expected value was found, False otherwise
     """
@@ -61,20 +64,19 @@ def poll_for_value(
 
 
 def poll_for_not_none(
-    getter: Callable[[], Optional[Any]],
+    getter: Callable[[], Any | None],
     timeout: int = 60,
     interval: float = 1.0,
-    error_message: str = "Value remained None within timeout"
+    error_message: str = "Value remained None within timeout",
 ) -> Any:
-    """
-    Poll until a getter returns a non-None value.
-    
+    """Poll until a getter returns a non-None value.
+
     Args:
         getter: Function that returns a value or None
         timeout: Maximum time to wait in seconds
         interval: Time between polls in seconds
         error_message: Error message to raise on timeout
-    
+
     Returns:
         The non-None value
     """

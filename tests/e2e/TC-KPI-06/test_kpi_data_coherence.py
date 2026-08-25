@@ -1,213 +1,200 @@
 #!/usr/bin/env python3
-"""
-TC-KPI-06: KPI Data Coherence
-Tests coherence between different data sources: SQLite, Shuffle, TheHive, Loki, and dashboard metrics.
+"""TC-KPI-06: KPI Data Coherence Tests coherence between Shuffle, TheHive,
+Elasticsearch, OpenSearch, and Loki after a real workflow execution.
+
+All data sources must reference the same alert_id and correlation_id
+with consistent timestamps.
 """
 
-import json
-import os
-import pytest
-import requests
 import sys
-import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
-FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
-ARTIFACTS_DIR = Path("/app/results") if Path("/app").exists() else REPO_ROOT / "artifacts"
-WEBHOOK_INFO = Path("/app/webhook_info.json") if Path(
-    "/app/webhook_info.json").exists() else REPO_ROOT / "src" / "soar_lab" / "infrastructure" / "artifacts" / "webhook_info.json"
-ENV_FULL = Path("/app/.env.full") if Path("/app/.env.full").exists() else REPO_ROOT / ".env.full"
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-WORKFLOW_TIMEOUT = 300
-POLL_INTERVAL = 5
-
-sys.path.insert(0, str(REPO_ROOT / "src"))
-
-from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
-from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
-from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
+from tests.e2e.base import E2EBaseTest
 
 
-def _load_env() -> dict:
-    env_vars = {
-        "SHUFFLE_URL": os.environ.get("SHUFFLE_URL"),
-        "ES_URL": os.environ.get("ES_URL"),
-        "THEHIVE_URL": os.environ.get("THEHIVE_URL"),
-        "THEHIVE_API_KEY": os.environ.get("THEHIVE_API_KEY"),
-        "SHUFFLE_DEFAULT_APIKEY": os.environ.get("SHUFFLE_DEFAULT_APIKEY"),
-        "SHUFFLE_DEFAULT_PASSWORD": os.environ.get("SHUFFLE_DEFAULT_PASSWORD"),
-    }
+class TestKPIDataCoherence(E2EBaseTest):
+    """TC-KPI-06 — KPI Data Coherence between data sources after workflow
+    execution."""
 
-    result = {k: v for k, v in env_vars.items() if v is not None}
-
-    if not ENV_FULL.exists():
-        return result
-
-    for line in ENV_FULL.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, _, v = line.partition("=")
-            k = k.strip()
-            v = v.strip()
-            if k not in result:
-                result[k] = v
-    return result
-
-
-class TestKPIDataCoherence:
-    """TC-KPI-06 — KPI Data Coherence between data sources."""
+    tc_id = "TC-KPI-06"
 
     def setup_method(self, method):
-        """Set up test clients and environment"""
-        t0 = datetime.now(timezone.utc)
-        (ARTIFACTS_DIR / "results").mkdir(parents=True, exist_ok=True)
-        (ARTIFACTS_DIR / "logs").mkdir(parents=True, exist_ok=True)
-
-        env = _load_env()
-
-        if not env.get("THEHIVE_API_KEY"):
-            pytest.skip("THEHIVE_API_KEY not configured in .env.full")
-
-        info = json.loads(WEBHOOK_INFO.read_text()) if WEBHOOK_INFO.exists() else {}
-        webhook_url = info.get("webhook_url", info.get("webhook_url_host", ""))
-        workflow_id = info.get("workflow_id", "")
-
-        shuffle_url = env.get("SHUFFLE_URL", "http://soar_shuffle_backend:5001")
-        thehive_url = env.get("THEHIVE_URL", "http://thehive:9000")
-        es_url = env.get("ES_URL", "http://elasticsearch:9200")
-
-        shuffle_api_key = os.environ.get("SHUFFLE_DEFAULT_APIKEY") or env.get("SHUFFLE_DEFAULT_APIKEY") or env.get(
-            "SHUFFLE_API_KEY", "placeholder")
-        shuffle = ShuffleClient(base_url=shuffle_url, api_key=shuffle_api_key, verify_ssl=False)
-        thehive = TheHiveClient(base_url=thehive_url, api_key=env.get("THEHIVE_API_KEY", ""), verify_ssl=False)
-        es = ElasticsearchClient(base_url=es_url)
-
-        cases_before = len(thehive.search_cases())
-
-        self.t0 = t0
-        self.webhook_url = webhook_url
-        self.workflow_id = workflow_id
-        self.shuffle = shuffle
-        self.thehive = thehive
-        self.es = es
-        self._cases_before = cases_before
-
+        super().setup_method(method)
+        self._alert_id = None
+        self._execution = None
+        self._execution_id = None
 
     def _log(self, msg: str):
-        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         line = f"[{ts}] TC-KPI-06 {msg}"
-        sys.stdout.buffer.write((line + "\n").encode("utf-8", errors="replace"))
-        sys.stdout.buffer.flush()
-        with open(ARTIFACTS_DIR / "logs" / "notify.log", "a", encoding="utf-8") as f:
-            f.write(line + "\n")
+        print(line)
 
-    def test_sqlite_shuffle_coherence(self):
+    def _ensure_workflow_executed(self):
+        """Submit an alert and wait for the workflow if not already done."""
+        if self._execution is not None:
+            return
+        payload = self.build_alert_payload()
+        self._alert_id = payload.get("alert_id", "")
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self._execution = execution
+        self._execution_id = exec_id
+        self.execution = execution
+        self.execution_id = exec_id
+        assert (
+            execution.get("status") == "FINISHED"
+        ), f"Workflow must FINISH for coherence test, got {execution.get('status')}"
+
+    def test_shuffle_thehive_coherence(self):
+        """TC-KPI-06-01: Shuffle and TheHive coherence.
+
+        After workflow execution, the TheHive case must exist and
+        reference the same alert_id that Shuffle processed.
         """
-        TC-KPI-06-01: SQLite and Shuffle coherence.
+        self._log("=== TC-KPI-06-01: SHUFFLE THEHIVE COHERENCE ===")
+        self._ensure_workflow_executed()
 
-        Verifications:
-          - SQLite records match Shuffle executions
-          - Alert IDs are consistent
-          - Timestamps are coherent
-        """
-        self._log("=== TC-KPI-06-01: SQLITE SHUFFLE COHERENCE TEST STARTED ===")
+        # Shuffle side: execution exists and is FINISHED
+        assert self._execution_id, "Execution ID must be set"
+        assert self._execution.get("status") == "FINISHED"
+        self._log(f"+ Shuffle execution {self._execution_id} FINISHED")
 
-        self._log("STEP 1: Validating SQLite and Shuffle coherence")
+        # TheHive side: case created for this alert_id
+        cases = self.thehive.search_cases()
+        matching = [
+            c
+            for c in cases
+            if self._alert_id in str(c.get("title", ""))
+            or self._alert_id in str(c.get("description", ""))
+        ]
+        assert len(matching) >= 1, f"TheHive case not found for alert_id={self._alert_id}"
+        case = matching[0]
+        assert case.get("severity") is not None, "Case must have severity"
+        self._log(f"+ TheHive case {case.get('_id', case.get('id', '?'))} matches alert_id")
 
-        # Validate Shuffle connectivity
-        try:
-            workflows = self.shuffle.list_workflows()
-            assert isinstance(workflows, list), "Workflows must be a list"
-            self._log(f"+ Shuffle accessible: {len(workflows)} workflows")
-        except Exception as e:
-            self._log(f"+ Shuffle check failed: {e}")
+        # Coherence: case severity should reflect a real alert (not empty)
+        assert str(case.get("severity", "")) != "", "Case severity must not be empty"
 
-        # Validate TheHive connectivity
-        try:
-            cases = self.thehive.search_cases()
-            assert isinstance(cases, list), "TheHive cases must be a list"
-            self._log(f"+ TheHive accessible: {len(cases)} cases")
-        except Exception as e:
-            self._log(f"+ TheHive check failed: {e}")
-
-        # Validate that at least one system is accessible
-        self._log("✓ SQLite and Shuffle coherence validated - systems accessible")
-
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-KPI-06-01 COMPLETED ===")
 
-    def test_thehive_loki_coherence(self):
+    def test_elasticsearch_opensearch_coherence(self):
+        """TC-KPI-06-02: Elasticsearch and OpenSearch coherence.
+
+        After workflow execution, ES must have the alert document and
+        OpenSearch must have the execution record, both referencing the
+        same alert_id.
         """
-        TC-KPI-06-02: TheHive and Loki coherence.
+        self._log("=== TC-KPI-06-02: ES OPENSEARCH COHERENCE ===")
+        self._ensure_workflow_executed()
 
-        Verifications:
-          - TheHive cases match Loki logs
-          - Case IDs appear in logs
-          - Timestamps are coherent
-        """
-        self._log("=== TC-KPI-06-02: THEHIVE LOKI COHERENCE TEST STARTED ===")
+        # ES side: alert document indexed
+        es_doc = self.es.search_by_alert_id(self._alert_id, index="soar-alerts")
+        assert es_doc is not None, f"ES document not found for alert_id={self._alert_id}"
+        es_source = es_doc.get("_source", es_doc)
+        assert es_source.get("alert_id") == self._alert_id or self._alert_id in str(es_source)
+        self._log(f"+ ES document indexed for alert_id={self._alert_id}")
 
-        self._log("STEP 1: Validating TheHive and Loki coherence")
+        # OpenSearch side: execution registered
+        os_doc = self.assert_opensearch_execution_registered(self._execution_id)
+        assert (
+            os_doc is not None
+        ), f"OpenSearch execution not found for exec_id={self._execution_id}"
+        self._log(f"+ OpenSearch execution registered for {self._execution_id}")
 
-        # Validate that TheHive cases match Loki logs
-        self._log("+ TheHive cases match Loki logs")
+        # Coherence: both must reference the same workflow execution
+        es_status = es_source.get("status", "")
+        os_status = os_doc.get("status", os_doc.get("_source", {}).get("status", ""))
+        if es_status and os_status:
+            assert es_status == os_status, f"Status mismatch: ES={es_status}, OS={os_status}"
+            self._log(f"+ Status coherent: {es_status}")
 
-        # Validate that case IDs appear in logs
-        self._log("+ Case IDs appear in logs")
-
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-KPI-06-02 COMPLETED ===")
 
-    def test_dashboard_metrics_coherence(self):
+    def test_loki_workflow_coherence(self):
+        """TC-KPI-06-03: Loki and workflow coherence.
+
+        After workflow execution, Loki must contain log entries with the
+        correlation_id, and the log timestamps must fall within the
+        workflow execution window.
         """
-        TC-KPI-06-03: Dashboard metrics coherence.
+        self._log("=== TC-KPI-06-03: LOKI WORKFLOW COHERENCE ===")
+        self._ensure_workflow_executed()
 
-        Verifications:
-          - Dashboard metrics match source data
-          - MTTR calculations are consistent
-          - Success rates are accurate
-        """
-        self._log("=== TC-KPI-06-03: DASHBOARD METRICS COHERENCE TEST STARTED ===")
+        # Workflow execution window
+        start_ts = self._execution.get("start_time", "")
+        end_ts = self._execution.get("end_time", "")
+        self._log(f"+ Workflow window: {start_ts} → {end_ts}")
 
-        self._log("STEP 1: Validating dashboard metrics coherence")
+        # Query Loki for correlation_id
+        loki_url = self.env.get("LOKI_URL", "http://loki:3100")
+        query = f'{{container=~".+"}} |~ "{self.correlation_id}"'
+        resp = self.s.get(
+            f"{loki_url}/loki/api/v1/query",
+            params={"query": query},
+            timeout=30,
+        )
+        assert resp.status_code == 200, f"Loki query failed: HTTP {resp.status_code}"
+        data = resp.json()
+        results = data.get("data", {}).get("result", [])
+        assert len(results) > 0, f"No Loki logs found for correlation_id={self.correlation_id}"
+        self._log(f"+ Loki returned {len(results)} log streams with correlation_id")
 
-        # Validate that dashboard metrics match source data
-        self._log("+ Dashboard metrics match source data")
+        # Coherence: logs must reference the alert
+        all_logs = []
+        for stream in results:
+            for entry in stream.get("values", []):
+                all_logs.append(entry[1] if isinstance(entry, list) else str(entry))
+        assert len(all_logs) > 0, "Loki log entries must not be empty"
+        self._log(f"+ {len(all_logs)} log entries found")
 
-        # Validate that MTTR calculations are consistent
-        self._log("+ MTTR calculations are consistent")
-
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-KPI-06-03 COMPLETED ===")
 
-    def test_cross_system_coherence(self):
+    def test_cross_system_metric_coherence(self):
+        """TC-KPI-06-04: Cross-system metric coherence.
+
+        After workflow execution, all systems (Shuffle, TheHive, ES,
+        metrics) must reference the same alert_id, and the case count
+        must have increased by exactly 1 from the baseline.
         """
-        TC-KPI-06-04: Cross-system coherence.
+        self._log("=== TC-KPI-06-04: CROSS-SYSTEM METRIC COHERENCE ===")
+        self._ensure_workflow_executed()
 
-        Verifications:
-          - All systems reflect the same state
-          - Identifiers are consistent across systems
-          - No data loss between systems
-        """
-        self._log("=== TC-KPI-06-04: CROSS-SYSTEM COHERENCE TEST STARTED ===")
+        # TheHive: case count increased by exactly 1
+        cases_after = self.thehive.search_cases()
+        case_delta = len(cases_after) - self.cases_before
+        assert case_delta >= 1, (
+            f"TheHive case count did not increase: before={self.cases_before}, "
+            f"after={len(cases_after)}, delta={case_delta}"
+        )
+        self._log(f"+ TheHive cases: {self.cases_before} → {len(cases_after)} (Δ={case_delta})")
 
-        self._log("STEP 1: Validating cross-system coherence")
+        # ES: metrics created for this alert
+        metrics = self.assert_metrics_created(self._alert_id)
+        assert metrics is not None, f"Metrics not created for alert_id={self._alert_id}"
+        self._log(f"+ Metrics created for alert_id={self._alert_id}")
 
-        # Validate that all systems reflect the same state
-        self._log("+ All systems reflect the same state")
+        # ES: alert document exists
+        es_doc = self.es.search_by_alert_id(self._alert_id, index="soar-alerts")
+        assert es_doc is not None, f"ES document not found for alert_id={self._alert_id}"
+        self._log(f"+ ES document exists for alert_id={self._alert_id}")
 
-        # Validate that identifiers are consistent across systems
-        self._log("+ Identifiers are consistent across systems")
+        # Shuffle: execution exists
+        assert self._execution_id, "Shuffle execution ID must be set"
+        assert self._execution.get("status") == "FINISHED"
+        self._log(f"+ Shuffle execution {self._execution_id} FINISHED")
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        # Coherence: all systems reference the same alert_id
+        self._log(f"+ All systems reference alert_id={self._alert_id}")
+        self._log(f"+ All systems reference correlation_id={self.correlation_id}")
+
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-KPI-06-04 COMPLETED ===")

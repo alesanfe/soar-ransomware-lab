@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
-"""
-End-to-End Integration Tests for SOAR Lab API
-Tests the complete application with real dependencies (no mocks)
-"""
+"""End-to-End Integration Tests for SOAR Lab API Tests the complete application
+with real dependencies (no mocks)"""
 
 import os
-import pytest
-import requests
 import subprocess
 import sys
-import time
 from pathlib import Path
 
+import pytest
 
+
+@pytest.mark.requires_external
 class TestAppE2E:
-    """End-to-end tests for the complete application"""
+    """End-to-end tests for the complete application."""
 
     def test_app_starts_and_responds_to_health_check(self):
-        """Test that the app starts and responds to health check"""
+        """Test that the app starts and responds to health check."""
         test_code = """
 import os
 import sys
@@ -92,7 +90,7 @@ except Exception as e:
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -100,14 +98,14 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"E2E test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_app_has_all_required_routes(self):
-        """Test that the app has all required routes registered"""
+        """Test that the app has all required routes registered."""
         test_code = """
 import os
 import sys
@@ -154,7 +152,7 @@ print(f"SUCCESS: All required routes found. Total routes: {len(routes)}")
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -162,14 +160,14 @@ print(f"SUCCESS: All required routes found. Total routes: {len(routes)}")
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"Routes test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_app_dependencies_are_injected(self):
-        """Test that all required dependencies are injected into the app"""
+        """Test that all required dependencies are injected into the app."""
         test_code = """
 import os
 import sys
@@ -205,7 +203,7 @@ print("SUCCESS: App is a valid FastAPI instance with state")
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -213,14 +211,14 @@ print("SUCCESS: App is a valid FastAPI instance with state")
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"Dependencies test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_auth_login_endpoint(self):
-        """Test authentication login endpoint with real credentials"""
+        """Test authentication login endpoint with real credentials."""
         test_code = """
 import os
 import sys
@@ -287,10 +285,10 @@ except Exception as e:
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
-        env['WEB_UI_USER'] = 'test_user'
-        env['WEB_UI_PASSWORD'] = 'test_password'
-        env['JWT_SECRET_KEY'] = 'test-secret-key-32chars-minimum-length'
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
+        env["WEB_UI_USER"] = "test_user"
+        env["WEB_UI_PASSWORD"] = "test_password"
+        env["JWT_SECRET_KEY"] = "test-secret-key-32chars-minimum-length"
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -298,14 +296,14 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"Auth login test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_analytics_metrics_endpoint(self):
-        """Test analytics metrics endpoint returns system metrics"""
+        """Test analytics metrics endpoint returns system metrics."""
         test_code = """
 import os
 import sys
@@ -368,7 +366,7 @@ except Exception as e:
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -376,14 +374,14 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"Metrics test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_root_endpoint_returns_html(self):
-        """Test root endpoint returns HTML documentation"""
+        """Test root endpoint returns HTML documentation."""
         test_code = """
 import os
 import sys
@@ -443,7 +441,7 @@ except Exception as e:
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -451,14 +449,16 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
-        assert result.returncode == 0, f"Root endpoint test failed: {result.stderr}\n{result.stdout}"
+        assert (
+            result.returncode == 0
+        ), f"Root endpoint test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_auth_verify_endpoint(self):
-        """Test authentication verify endpoint with valid JWT token"""
+        """Test authentication verify endpoint with valid JWT token."""
         test_code = """
 import os
 import sys
@@ -524,24 +524,29 @@ try:
         timeout=5
     )
     # Accept 200 (valid token) or 401 (auth issues in test environment)
-    assert verify_response.status_code in [200, 401], f"Verify failed: {verify_response.status_code}"
+    assert verify_response.status_code in [200, 401], (
+        f"Verify failed: {verify_response.status_code}"
+    )
     if verify_response.status_code == 200:
         data = verify_response.json()
         assert data["valid"] == True, "Token should be valid"
         assert "user" in data, "Response should contain user"
         print(f"SUCCESS: Verify endpoint works, user: {data['user']}")
     else:
-        print(f"SUCCESS: Verify endpoint returns 401 (auth issues in test environment, endpoint exists)")
+        print(
+            f"SUCCESS: Verify endpoint returns 401 "
+            f"(auth issues in test environment, endpoint exists)"
+        )
 except Exception as e:
     print(f"FAILED: {e}")
     sys.exit(1)
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
-        env['WEB_UI_USER'] = 'test_user'
-        env['WEB_UI_PASSWORD'] = 'test_password'
-        env['JWT_SECRET_KEY'] = 'test-secret-key-32chars-minimum-length'
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
+        env["WEB_UI_USER"] = "test_user"
+        env["WEB_UI_PASSWORD"] = "test_password"
+        env["JWT_SECRET_KEY"] = "test-secret-key-32chars-minimum-length"
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -549,14 +554,14 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"Auth verify test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_analytics_kpis_endpoint(self):
-        """Test analytics KPIs endpoint returns KPI metrics"""
+        """Test analytics KPIs endpoint returns KPI metrics."""
         test_code = """
 import os
 import sys
@@ -620,7 +625,7 @@ except Exception as e:
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -628,14 +633,14 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"KPIs test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_backup_list_endpoint(self):
-        """Test backup list endpoint returns backup list"""
+        """Test backup list endpoint returns backup list."""
         test_code = """
 import os
 import sys
@@ -693,14 +698,17 @@ try:
         assert isinstance(data["backups"], list), "Backups should be a list"
         print(f"SUCCESS: Backup list endpoint works, found {len(data['backups'])} backups")
     else:
-        print(f"SUCCESS: Backup list endpoint returns 503 (service not available, which is expected)")
+        print(
+            f"SUCCESS: Backup list endpoint returns 503 "
+            f"(service not available, which is expected)"
+        )
 except Exception as e:
     print(f"FAILED: {e}")
     sys.exit(1)
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -708,14 +716,14 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"Backup list test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_tests_run_endpoint(self):
-        """Test tests run endpoint executes tests"""
+        """Test tests run endpoint executes tests."""
         test_code = """
 import os
 import sys
@@ -776,7 +784,10 @@ try:
         assert "category" in data, "Response should contain category"
         assert "passed" in data, "Response should contain passed count"
         assert "failed" in data, "Response should contain failed count"
-        print(f"SUCCESS: Tests run endpoint works, category: {data['category']}, passed: {data['passed']}, failed: {data['failed']}")
+        print(
+            f"SUCCESS: Tests run endpoint works, category: {data['category']}, "
+            f"passed: {data['passed']}, failed: {data['failed']}"
+        )
     else:
         print(f"SUCCESS: Tests run endpoint returns 503 (service not available, which is expected)")
 except requests.Timeout:
@@ -787,7 +798,7 @@ except Exception as e:
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -795,14 +806,14 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=120,
-            env=env
+            env=env,
         )
 
         assert result.returncode == 0, f"Tests run test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_backup_create_endpoint(self):
-        """Test backup create endpoint creates a backup"""
+        """Test backup create endpoint creates a backup."""
         test_code = """
 import os
 import sys
@@ -863,14 +874,17 @@ try:
         assert "backup_name" in data or "status" in data, "Response should contain backup info"
         print(f"SUCCESS: Backup create endpoint works")
     else:
-        print(f"SUCCESS: Backup create endpoint returns 503 (service not available, which is expected)")
+        print(
+            f"SUCCESS: Backup create endpoint returns 503 "
+            f"(service not available, which is expected)"
+        )
 except Exception as e:
     print(f"FAILED: {e}")
     sys.exit(1)
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -878,14 +892,16 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
-        assert result.returncode == 0, f"Backup create test failed: {result.stderr}\n{result.stdout}"
+        assert (
+            result.returncode == 0
+        ), f"Backup create test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_backup_restore_endpoint(self):
-        """Test backup restore endpoint restores a backup"""
+        """Test backup restore endpoint restores a backup."""
         test_code = """
 import os
 import sys
@@ -946,14 +962,17 @@ try:
         assert "backup_name" in data or "status" in data, "Response should contain backup info"
         print(f"SUCCESS: Backup restore endpoint works")
     else:
-        print(f"SUCCESS: Backup restore endpoint returns 503 (service not available, which is expected)")
+        print(
+            f"SUCCESS: Backup restore endpoint returns 503 "
+            f"(service not available, which is expected)"
+        )
 except Exception as e:
     print(f"FAILED: {e}")
     sys.exit(1)
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -961,14 +980,17 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
-        assert result.returncode == 0, f"Backup restore test failed: {result.stderr}\n{result.stdout}"
+        assert (
+            result.returncode == 0
+        ), f"Backup restore test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_websocket_logs_endpoint(self):
-        """Test WebSocket logs endpoint accepts connections and sends log messages"""
+        """Test WebSocket logs endpoint accepts connections and sends log
+        messages."""
         test_code = """
 import os
 import sys
@@ -1032,11 +1054,14 @@ try:
     asyncio.run(test_websocket())
 except Exception as e:
     # WebSocket may not be available in test environment
-    print(f"SUCCESS: WebSocket endpoint exists (connection failed as expected in test environment: {e})")
+    print(
+        f"SUCCESS: WebSocket endpoint exists "
+        f"(connection failed as expected in test environment: {e})"
+    )
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -1044,8 +1069,10 @@ except Exception as e:
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
-        assert result.returncode == 0, f"WebSocket logs test failed: {result.stderr}\n{result.stdout}"
+        assert (
+            result.returncode == 0
+        ), f"WebSocket logs test failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"

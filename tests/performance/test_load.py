@@ -4,16 +4,17 @@ SOAR Ransomware Lab - Load Testing Tests
 Performance and load testing for SOAR components
 """
 
-import aiohttp
 import asyncio
 import json
-import pytest
 import statistics
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any
+
+import aiohttp
+import pytest
 
 from soar_lab.config.logging import get_logger
 from soar_lab.config.schemas import RansomwareAlert
@@ -21,8 +22,9 @@ from soar_lab.config.settings import Settings as _Settings
 
 
 def get_setting(key, default=None):
-    import os;
-    os.environ.setdefault('BASE_DIR', str(Path(__file__).parents[3]))
+    import os
+
+    os.environ.setdefault("BASE_DIR", str(Path(__file__).parents[3]))
     return _Settings().get(key, default)
 
 
@@ -30,26 +32,24 @@ logger = get_logger(__name__)
 
 
 class LoadTester:
-    """Load testing framework for SOAR components"""
+    """Load testing framework for SOAR components."""
 
     def __init__(self):
-        self.base_url = get_setting('shuffle_url', 'http://localhost:5001')
-        self.webhook_url = f"{self.base_url}/api/v1/webhooks/siem"  # noqa
-        self.api_token = get_setting('siem_webhook_token', 'test-token')
+        self.base_url = get_setting("shuffle_url", "http://localhost:5001")
+        self.webhook_url = f"{self.base_url}/api/v1/webhooks/siem"
+        self.api_token = get_setting("siem_webhook_token", "test-token")
         self.results = []
 
-    def generate_test_alert(self, alert_id: str) -> Dict[str, Any]:
-        """Generate a test alert for load testing"""
+    def generate_test_alert(self, alert_id: str) -> dict[str, Any]:
+        """Generate a test alert for load testing."""
         return {
             "alert_id": alert_id,
             "hostname": f"TEST-HOST-{alert_id.split('-')[-1]}",
             "src_ip": "192.168.1.100",
-            "hash": {
-                "sha256": "a" * 64  # Valid SHA256 format
-            },
+            "hash": {"sha256": "a" * 64},  # Valid SHA256 format
             "severity": "2",
             "source": "load-test",
-            "detection_time": datetime.now(timezone.utc).isoformat(),
+            "detection_time": datetime.now(UTC).isoformat(),
             "event_type": "ransomware_detection",
             "description": f"Load test alert {alert_id}",
             "affected_files": [
@@ -58,15 +58,17 @@ class LoadTester:
                     "name": f"test_file_{alert_id}.txt",
                     "size": 1024,
                     "extension": "txt",
-                    "encrypted": False
+                    "encrypted": False,
                 }
             ],
             "mitre_tactics": ["TA0040"],
-            "mitre_techniques": ["T1486"]
+            "mitre_techniques": ["T1486"],
         }
 
-    async def send_alert_async(self, session: aiohttp.ClientSession, alert_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Send alert asynchronously"""
+    async def send_alert_async(
+        self, session: aiohttp.ClientSession, alert_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Send alert asynchronously."""
         start_time = time.time()
         alert_id = alert_data["alert_id"]
 
@@ -78,20 +80,20 @@ class LoadTester:
             payload = {
                 "alert": validated_alert.model_dump(mode="json"),
                 "metadata": {"test_type": "load_test"},
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "version": "1.0"
+                "timestamp": datetime.now(UTC).isoformat(),
+                "version": "1.0",
             }
 
             headers = {
-                'Authorization': f'Bearer {self.api_token}',
-                'Content-Type': 'application/json'
+                "Authorization": f"Bearer {self.api_token}",
+                "Content-Type": "application/json",
             }
 
             async with session.post(
                 self.webhook_url,
                 json=payload,
                 headers=headers,
-                timeout=aiohttp.ClientTimeout(total=30)
+                timeout=aiohttp.ClientTimeout(total=30),
             ) as response:
                 end_time = time.time()
                 response_time = (end_time - start_time) * 1000  # Convert to ms
@@ -101,7 +103,7 @@ class LoadTester:
                     "status_code": response.status,
                     "response_time_ms": response_time,
                     "success": response.status == 200,
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
         except Exception as e:
@@ -114,12 +116,16 @@ class LoadTester:
                 "response_time_ms": response_time,
                 "success": False,
                 "error": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
-    async def run_concurrent_test(self, num_requests: int, concurrency: int = 10) -> List[Dict[str, Any]]:
-        """Run concurrent load test"""
-        logger.info(f"Starting concurrent load test: {num_requests} requests, concurrency: {concurrency}")
+    async def run_concurrent_test(
+        self, num_requests: int, concurrency: int = 10
+    ) -> list[dict[str, Any]]:
+        """Run concurrent load test."""
+        logger.info(
+            f"Starting concurrent load test: {num_requests} requests, concurrency: {concurrency}"
+        )
 
         # Generate test alerts
         alerts = []
@@ -152,8 +158,8 @@ class LoadTester:
 
             return valid_results
 
-    def run_sequential_test(self, num_requests: int) -> List[Dict[str, Any]]:
-        """Run sequential load test"""
+    def run_sequential_test(self, num_requests: int) -> list[dict[str, Any]]:
+        """Run sequential load test."""
         logger.info(f"Starting sequential load test: {num_requests} requests")
 
         results = []
@@ -175,8 +181,8 @@ class LoadTester:
 
         return results
 
-    def analyze_results(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Analyze load test results"""
+    def analyze_results(self, results: list[dict[str, Any]]) -> dict[str, Any]:
+        """Analyze load test results."""
         if not results:
             return {"error": "No results to analyze"}
 
@@ -190,19 +196,23 @@ class LoadTester:
             "successful_requests": len(successful_requests),
             "failed_requests": len(failed_requests),
             "success_rate": len(successful_requests) / len(results) * 100,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         if response_times:
-            analysis.update({
-                "avg_response_time_ms": statistics.mean(response_times),
-                "median_response_time_ms": statistics.median(response_times),
-                "min_response_time_ms": min(response_times),
-                "max_response_time_ms": max(response_times),
-                "p95_response_time_ms": self._percentile(response_times, 95),
-                "p99_response_time_ms": self._percentile(response_times, 99),
-                "std_deviation_ms": statistics.stdev(response_times) if len(response_times) > 1 else 0
-            })
+            analysis.update(
+                {
+                    "avg_response_time_ms": statistics.mean(response_times),
+                    "median_response_time_ms": statistics.median(response_times),
+                    "min_response_time_ms": min(response_times),
+                    "max_response_time_ms": max(response_times),
+                    "p95_response_time_ms": self._percentile(response_times, 95),
+                    "p99_response_time_ms": self._percentile(response_times, 99),
+                    "std_deviation_ms": (
+                        statistics.stdev(response_times) if len(response_times) > 1 else 0
+                    ),
+                }
+            )
 
         # Error analysis
         if failed_requests:
@@ -220,8 +230,8 @@ class LoadTester:
 
         return analysis
 
-    def _percentile(self, data: List[float], percentile: int) -> float:
-        """Calculate percentile of data"""
+    def _percentile(self, data: list[float], percentile: int) -> float:
+        """Calculate percentile of data."""
         if not data:
             return 0
 
@@ -235,33 +245,37 @@ class LoadTester:
             upper = sorted_data[int(index) + 1]
             return lower + (upper - lower) * (index - int(index))
 
-    def save_results(self, results: List[Dict[str, Any]], analysis: Dict[str, Any], filename: str) -> None:
-        """Save test results to file"""
-        results_dir = Path(__file__).parent.parent.parent / "artifacts" / "results" / "load_tests"
+    def save_results(
+        self, results: list[dict[str, Any]], analysis: dict[str, Any], filename: str
+    ) -> None:
+        """Save test results to file."""
+        results_dir = Path(__file__).parent.parent.parent / "reports" / "performance" / "load_tests"
         results_dir.mkdir(parents=True, exist_ok=True)
 
         report = {
             "test_type": "load_test",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "analysis": analysis,
-            "detailed_results": results
+            "detailed_results": results,
         }
 
         output_file = results_dir / f"{filename}.json"
-        with open(output_file, 'w') as f:
+        with open(output_file, "w") as f:
             json.dump(report, f, indent=2, default=str)
 
         logger.info(f"Results saved to {output_file}")
 
 
 class StressTester:
-    """Stress testing for extreme conditions"""
+    """Stress testing for extreme conditions."""
 
     def __init__(self):
         self.load_tester = LoadTester()
 
-    async def stress_test_burst(self, burst_size: int = 100, duration_seconds: int = 60) -> Dict[str, Any]:
-        """Stress test with burst traffic"""
+    async def stress_test_burst(
+        self, burst_size: int = 100, duration_seconds: int = 60
+    ) -> dict[str, Any]:
+        """Stress test with burst traffic."""
         logger.info(f"Starting burst stress test: {burst_size} requests over {duration_seconds}s")
 
         start_time = time.time()
@@ -293,9 +307,13 @@ class StressTester:
 
         return self.load_tester.analyze_results(results)
 
-    def stress_test_sustained(self, requests_per_second: int, duration_seconds: int = 300) -> Dict[str, Any]:
-        """Stress test with sustained traffic"""
-        logger.info(f"Starting sustained stress test: {requests_per_second} RPS for {duration_seconds}s")
+    def stress_test_sustained(
+        self, requests_per_second: int, duration_seconds: int = 300
+    ) -> dict[str, Any]:
+        """Stress test with sustained traffic."""
+        logger.info(
+            f"Starting sustained stress test: {requests_per_second} RPS for {duration_seconds}s"
+        )
 
         results = []
         start_time = time.time()
@@ -345,7 +363,7 @@ class StressTester:
 
 
 async def main():
-    """Main function to run load tests"""
+    """Main function to run load tests."""
     tester = LoadTester()
     stress_tester = StressTester()
 
@@ -385,15 +403,17 @@ async def main():
     burst_analysis = await stress_tester.stress_test_burst(burst_size=50, duration_seconds=30)
     stress_tester.load_tester.save_results([], burst_analysis, "burst_stress")
 
-    print(f"\nBURST STRESS TEST RESULTS:")
+    print("\nBURST STRESS TEST RESULTS:")
     print(f"  Requests: {burst_analysis['total_requests']}")
     print(f"  Success Rate: {burst_analysis['success_rate']:.2f}%")
 
     # Sustained test
-    sustained_analysis = stress_tester.stress_test_sustained(requests_per_second=10, duration_seconds=60)
+    sustained_analysis = stress_tester.stress_test_sustained(
+        requests_per_second=10, duration_seconds=60
+    )
     stress_tester.load_tester.save_results([], sustained_analysis, "sustained_stress")
 
-    print(f"\nSUSTAINED STRESS TEST RESULTS:")
+    print("\nSUSTAINED STRESS TEST RESULTS:")
     print(f"  Requests: {sustained_analysis['total_requests']}")
     print(f"  Success Rate: {sustained_analysis['success_rate']:.2f}%")
 
@@ -405,15 +425,15 @@ if __name__ == "__main__":
 
 
 class TestLoadPerformance:
-    """Unit tests for load testing functionality"""
+    """Unit tests for load testing functionality."""
 
     @pytest.fixture
     def load_tester(self):
-        """Set up test fixtures"""
+        """Set up test fixtures."""
         return LoadTester()
 
     def test_generate_test_alert(self, load_tester):
-        """Test alert generation for load testing"""
+        """Test alert generation for load testing."""
         alert = load_tester.generate_test_alert("ALERT-TEST-001")
 
         assert "alert_id" in alert
@@ -429,27 +449,27 @@ class TestLoadPerformance:
         assert "description" in alert
 
     def test_analyze_results_empty(self, load_tester):
-        """Test result analysis with empty results"""
+        """Test result analysis with empty results."""
         analysis = load_tester.analyze_results([])
         assert "error" in analysis
 
     def test_analyze_results_successful(self, load_tester):
-        """Test result analysis with successful requests"""
+        """Test result analysis with successful requests."""
         results = [
             {
                 "alert_id": "TEST-001",
                 "status_code": 200,
                 "response_time_ms": 100,
                 "success": True,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat(),
             },
             {
                 "alert_id": "TEST-002",
                 "status_code": 200,
                 "response_time_ms": 150,
                 "success": True,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            }
+                "timestamp": datetime.now(UTC).isoformat(),
+            },
         ]
 
         analysis = load_tester.analyze_results(results)
@@ -464,7 +484,7 @@ class TestLoadPerformance:
         assert "max_response_time_ms" in analysis
 
     def test_percentile_calculation(self, load_tester):
-        """Test percentile calculation"""
+        """Test percentile calculation."""
         data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
         p50 = load_tester._percentile(data, 50)
@@ -474,14 +494,14 @@ class TestLoadPerformance:
         assert abs(p95 - 9.55) < 0.01  # 95th percentile (allow floating point precision)
 
     def test_save_results(self, load_tester):
-        """Test saving results to file"""
+        """Test saving results to file."""
         results = [
             {
                 "alert_id": "TEST-001",
                 "status_code": 200,
                 "response_time_ms": 100,
                 "success": True,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         ]
 
@@ -491,7 +511,13 @@ class TestLoadPerformance:
         load_tester.save_results(results, analysis, "test_save")
 
         # Check if file was created
-        results_file = Path(__file__).parent.parent.parent / "artifacts" / "results" / "load_tests" / "test_save.json"
+        results_file = (
+            Path(__file__).parent.parent.parent
+            / "reports"
+            / "performance"
+            / "load_tests"
+            / "test_save.json"
+        )
         assert results_file.exists()
 
         # Clean up
@@ -499,7 +525,6 @@ class TestLoadPerformance:
             results_file.unlink()
 
     def test_load_test_integration(self):
-        """Integration test for load testing"""
+        """Integration test for load testing."""
         # Test runs regardless of external services availability
         # Skip by default to avoid dependency on external services
-        pass

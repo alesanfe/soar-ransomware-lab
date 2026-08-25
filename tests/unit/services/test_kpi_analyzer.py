@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""
-Unit tests for kpi_analyzer.py
-"""
+"""Unit tests for kpi_analyzer.py."""
+
+from unittest.mock import Mock
 
 import pytest
+
 from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
-from unittest.mock import Mock
 
 
 class TestKPIAnalyzer:
-    """Test KPIAnalyzer"""
+    """Test KPIAnalyzer."""
 
     def test_initialization_success(self):
-        """Test successful initialization with statistical_calculator"""
+        """Test successful initialization with statistical_calculator."""
         mock_stat_calc = Mock()
 
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
@@ -20,19 +20,19 @@ class TestKPIAnalyzer:
         assert analyzer._statistical_calculator == mock_stat_calc
 
     def test_requires_statistical_calculator(self):
-        """Test that statistical_calculator is required"""
+        """Test that statistical_calculator is required."""
         with pytest.raises(ValueError, match="statistical_calculator is required"):
             KPIAnalyzer(statistical_calculator=None)
 
     def test_calculate_performance_kpis(self):
-        """Test calculating performance KPIs"""
+        """Test calculating performance KPIs."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
         test_results = [
             {"status": "passed", "coverage_percent": 80, "duration_seconds": 5},
             {"status": "passed", "coverage_percent": 90, "duration_seconds": 3},
-            {"status": "failed", "coverage_percent": 70, "duration_seconds": 2}
+            {"status": "failed", "coverage_percent": 70, "duration_seconds": 2},
         ]
 
         result = analyzer.calculate_performance_kpis(test_results, hours=24)
@@ -46,7 +46,7 @@ class TestKPIAnalyzer:
         assert "timestamp" in result
 
     def test_calculate_performance_kpis_empty(self):
-        """Test calculating performance KPIs with empty results"""
+        """Test calculating performance KPIs with empty results."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
@@ -59,15 +59,11 @@ class TestKPIAnalyzer:
         assert result["average_duration_seconds"] == 0
 
     def test_calculate_performance_kpis_missing_fields(self):
-        """Test calculating performance KPIs with missing fields"""
+        """Test calculating performance KPIs with missing fields."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
-        test_results = [
-            {"status": "passed"},
-            {"coverage_percent": 80},
-            {"duration_seconds": 5}
-        ]
+        test_results = [{"status": "passed"}, {"coverage_percent": 80}, {"duration_seconds": 5}]
 
         result = analyzer.calculate_performance_kpis(test_results, hours=24)
 
@@ -77,39 +73,30 @@ class TestKPIAnalyzer:
         assert result["average_duration_seconds"] == 1.67
 
     def test_calculate_health_score(self):
-        """Test calculating health score"""
+        """Test calculating health score."""
         mock_stat_calc = Mock()
-        mock_stat_calc.calculate_health_score.return_value = {
-            "overall_score": 85,
-            "status": "good"
-        }
+        mock_stat_calc.calculate_health_score.return_value = {"overall_score": 85, "status": "good"}
 
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
         result = analyzer.calculate_health_score(
-            cpu_percent=50,
-            memory_percent=60,
-            disk_percent=70,
-            test_coverage=85.5
+            cpu_percent=50, memory_percent=60, disk_percent=70, test_coverage=85.5
         )
 
         assert result["overall_score"] == 85
         assert result["status"] == "good"
         assert "timestamp" in result
         mock_stat_calc.calculate_health_score.assert_called_once_with(
-            cpu_percent=50,
-            memory_percent=60,
-            disk_percent=70,
-            test_coverage=85.5
+            cpu_percent=50, memory_percent=60, disk_percent=70, test_coverage=85.5
         )
 
     def test_calculate_mttr_metrics(self):
-        """Test calculating MTTR metrics"""
+        """Test calculating MTTR metrics."""
         mock_stat_calc = Mock()
         mock_stat_calc.calculate_statistical_metrics.return_value = {
             "mean": 120.5,
             "median": 100,
-            "p90": 200
+            "p90": 200,
         }
 
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
@@ -123,12 +110,12 @@ class TestKPIAnalyzer:
         mock_stat_calc.calculate_statistical_metrics.assert_called_once_with(execution_times)
 
     def test_calculate_mttr_metrics_empty(self):
-        """Test calculating MTTR metrics with empty list"""
+        """Test calculating MTTR metrics with empty list."""
         mock_stat_calc = Mock()
         mock_stat_calc.calculate_statistical_metrics.return_value = {
             "mean": 0,
             "median": 0,
-            "p90": 0
+            "p90": 0,
         }
 
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
@@ -139,7 +126,7 @@ class TestKPIAnalyzer:
         mock_stat_calc.calculate_statistical_metrics.assert_called_once_with([])
 
     def test_calculate_comprehensive_kpis(self):
-        """Test calculating comprehensive KPIs"""
+        """Test calculating comprehensive KPIs."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
@@ -148,9 +135,7 @@ class TestKPIAnalyzer:
         health_score = {"overall_score": 85}
 
         result = analyzer.calculate_comprehensive_kpis(
-            mttr_metrics=mttr_metrics,
-            performance_kpis=performance_kpis,
-            health_score=health_score
+            mttr_metrics=mttr_metrics, performance_kpis=performance_kpis, health_score=health_score
         )
 
         assert result["mttr"] == mttr_metrics
@@ -159,7 +144,7 @@ class TestKPIAnalyzer:
         assert "timestamp" in result
 
     def test_calculate_kpis_by_alert_type(self):
-        """Test calculating KPIs by alert type"""
+        """Test calculating KPIs by alert type."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
@@ -167,7 +152,7 @@ class TestKPIAnalyzer:
             {"alert_type": "malware", "mttr_seconds": 120.5, "severity": 3},
             {"alert_type": "malware", "mttr_seconds": 150.0, "severity": 2},
             {"alert_type": "phishing", "mttr_seconds": 90.0, "severity": 1},
-            {"alert_type": "phishing", "mttr_seconds": 110.0, "severity": 2}
+            {"alert_type": "phishing", "mttr_seconds": 110.0, "severity": 2},
         ]
 
         result = analyzer.calculate_kpis_by_alert_type(metrics_data, hours=24)
@@ -184,13 +169,13 @@ class TestKPIAnalyzer:
         assert "timestamp" in result
 
     def test_calculate_kpis_by_alert_type_with_dict_mttr(self):
-        """Test calculating KPIs by alert type with dict MTTR field"""
+        """Test calculating KPIs by alert type with dict MTTR field."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
         metrics_data = [
             {"alert_type": "malware", "mttr_seconds": {"message": "MTTR: 120.5s"}, "severity": 3},
-            {"alert_type": "malware", "mttr_seconds": {"message": "MTTR: 150.0s"}, "severity": 2}
+            {"alert_type": "malware", "mttr_seconds": {"message": "MTTR: 150.0s"}, "severity": 2},
         ]
 
         result = analyzer.calculate_kpis_by_alert_type(metrics_data, hours=24)
@@ -199,13 +184,13 @@ class TestKPIAnalyzer:
         assert result["by_alert_type"]["malware"]["avg_mttr_seconds"] == 135.25
 
     def test_calculate_kpis_by_alert_type_invalid_mttr_format(self):
-        """Test calculating KPIs by alert type with invalid MTTR format"""
+        """Test calculating KPIs by alert type with invalid MTTR format."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
         metrics_data = [
             {"alert_type": "malware", "mttr_seconds": {"message": "Invalid format"}, "severity": 3},
-            {"alert_type": "malware", "mttr_seconds": {"message": "No MTTR here"}, "severity": 2}
+            {"alert_type": "malware", "mttr_seconds": {"message": "No MTTR here"}, "severity": 2},
         ]
 
         result = analyzer.calculate_kpis_by_alert_type(metrics_data, hours=24)
@@ -215,7 +200,7 @@ class TestKPIAnalyzer:
         assert result["by_alert_type"]["malware"]["avg_mttr_seconds"] == 0
 
     def test_calculate_kpis_by_alert_type_empty(self):
-        """Test calculating KPIs by alert type with empty data"""
+        """Test calculating KPIs by alert type with empty data."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
@@ -226,7 +211,7 @@ class TestKPIAnalyzer:
         assert "timestamp" in result
 
     def test_calculate_service_integration_kpis(self):
-        """Test calculating service integration KPIs"""
+        """Test calculating service integration KPIs."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
@@ -235,14 +220,14 @@ class TestKPIAnalyzer:
                 "thehive_case_id": "case-001",
                 "cortex_hash_job": "job-001",
                 "cortex_ip_job": "job-002",
-                "misp_results": "results-001"
+                "misp_results": "results-001",
             },
             {
                 "thehive_case_id": None,
                 "cortex_hash_job": None,
                 "cortex_ip_job": None,
-                "misp_results": None
-            }
+                "misp_results": None,
+            },
         ]
 
         result = analyzer.calculate_service_integration_kpis(metrics_data, hours=24)
@@ -264,7 +249,7 @@ class TestKPIAnalyzer:
         assert "timestamp" in result
 
     def test_calculate_service_integration_kpis_empty(self):
-        """Test calculating service integration KPIs with empty data"""
+        """Test calculating service integration KPIs with empty data."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
@@ -282,16 +267,15 @@ class TestKPIAnalyzer:
         assert "timestamp" in result
 
     def test_calculate_service_integration_kpis_workflow_execution(self):
-        """Test calculating service integration KPIs with workflow_execution metric type"""
+        """Test calculating service integration KPIs with workflow_execution
+        metric type."""
         mock_stat_calc = Mock()
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
-        metrics_data = [
-            {"metric_type": "workflow_execution"}
-        ]
+        metrics_data = [{"metric_type": "workflow_execution"}]
 
         result = analyzer.calculate_service_integration_kpis(metrics_data, hours=24)
 
-        # workflow_execution should increment wazuh success count
-        assert result["services"]["wazuh"]["success_count"] == 1
-        assert result["services"]["wazuh"]["failure_count"] == 0
+        # Only the canonical set of services is tracked
+        expected_services = {"thehive", "cortex", "misp", "elasticsearch"}
+        assert set(result["services"].keys()) == expected_services

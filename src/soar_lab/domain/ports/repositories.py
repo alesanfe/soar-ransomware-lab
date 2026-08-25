@@ -5,25 +5,34 @@ The domain depends only on these abstract interfaces, not on concrete
 implementations like SQLite or filesystem.
 """
 
-from typing import Protocol, List, Dict, Any, Optional
+from typing import Any, Protocol
+
+__all__ = [
+    "AlertRepository",
+    "IocRepository",
+    "MetricRepository",
+    "CaseRepository",
+    "BackupRepository",
+    "TestResultRepository",
+]
 
 
 class AlertRepository(Protocol):
     """Repository for storing and retrieving alerts."""
 
-    def store(self, alert: Dict[str, Any]) -> str:
+    def store(self, alert: dict[str, Any]) -> str:
         """Store an alert and return its ID."""
         ...
 
-    def find_by_id(self, alert_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, alert_id: str) -> dict[str, Any] | None:
         """Find a single alert by ID."""
         ...
 
-    def find_by_type(self, alert_type: str) -> List[Dict[str, Any]]:
+    def find_by_type(self, alert_type: str) -> list[dict[str, Any]]:
         """Find all alerts of a specific type."""
         ...
 
-    def find_by_severity(self, severity: str) -> List[Dict[str, Any]]:
+    def find_by_severity(self, severity: str) -> list[dict[str, Any]]:
         """Find all alerts with a specific severity."""
         ...
 
@@ -33,13 +42,16 @@ class AlertRepository(Protocol):
 
 
 class IocRepository(Protocol):
-    """Repository for storing and retrieving IOCs (Indicators of Compromise)."""
+    """Repository for storing and retrieving IOCs (Indicators of.
 
-    def store(self, ioc: Dict[str, Any]) -> str:
+    Compromise).
+    """
+
+    def store(self, ioc: dict[str, Any]) -> str:
         """Store an IOC and return its value."""
         ...
 
-    def find_by_type(self, ioc_type: str) -> List[Dict[str, Any]]:
+    def find_by_type(self, ioc_type: str) -> list[dict[str, Any]]:
         """Find all IOCs of a specific type."""
         ...
 
@@ -53,12 +65,12 @@ class MetricRepository(Protocol):
         value: float,
         unit: str = None,
         source: str = None,
-        tags: Dict[str, str] = None
+        tags: dict[str, str] = None,
     ) -> None:
         """Store a metric."""
         ...
 
-    def find(self, name: str = None, hours: int = 24) -> List[Dict[str, Any]]:
+    def find(self, name: str = None, hours: int = 24) -> list[dict[str, Any]]:
         """Find metrics by name and time window."""
         ...
 
@@ -66,11 +78,11 @@ class MetricRepository(Protocol):
 class CaseRepository(Protocol):
     """Repository for storing and retrieving cases."""
 
-    def store(self, case: Dict[str, Any]) -> str:
+    def store(self, case: dict[str, Any]) -> str:
         """Store a case and return its ID."""
         ...
 
-    def find_by_id(self, case_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, case_id: str) -> dict[str, Any] | None:
         """Find a single case by ID."""
         ...
 
@@ -78,7 +90,7 @@ class CaseRepository(Protocol):
 class BackupRepository(Protocol):
     """Repository for backup metadata."""
 
-    def store(self, backup: Dict[str, Any]) -> str:
+    def store(self, backup: dict[str, Any]) -> str:
         """Store backup metadata and return its name."""
         ...
 
@@ -88,7 +100,7 @@ class BackupRepository(Protocol):
         status: str,
         file_path: str = None,
         size_bytes: int = None,
-        checksum: str = None
+        checksum: str = None,
     ) -> None:
         """Update backup status and metadata."""
         ...
@@ -99,10 +111,10 @@ class TestResultRepository(Protocol):
 
     __test__ = False
 
-    def store(self, test_result: Dict[str, Any]) -> None:
+    def store(self, test_result: dict[str, Any]) -> None:
         """Store test results."""
         ...
 
-    def find(self, category: str = None, hours: int = 24) -> List[Dict[str, Any]]:
+    def find(self, category: str = None, hours: int = 24) -> list[dict[str, Any]]:
         """Find test results by category and time window."""
         ...

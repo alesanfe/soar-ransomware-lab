@@ -1,0 +1,8 @@
+# Mutation testing thresholds (mutmut)
+min_mutation_score_global: 70  # fail if global mutation score below this %
+min_mutation_score_critical: 80  # fail if critical module score below this %
+critical_modules:
+  - src/soar_lab/domain/
+  - src/soar_lab/application/
+  - src/soar_lab/security/
+timeout_seconds: 300  # mutmut timeout per mutant

@@ -6,8 +6,7 @@ allowing the application layer to remain infrastructure-agnostic.
 
 import re
 from collections import defaultdict
-from datetime import datetime, timezone
-from typing import Dict, List
+from datetime import UTC, datetime
 
 from soar_lab.config.logging import get_logger
 
@@ -17,9 +16,8 @@ logger = get_logger(__name__)
 class ExecutionLogParser:
     """Infrastructure implementation of LogParser port for execution logs."""
 
-    def parse(self, log_content: str) -> Dict[str, List[datetime]]:
-        """
-        Parse execution logs to extract timestamps for MTTR calculation.
+    def parse(self, log_content: str) -> dict[str, list[datetime]]:
+        """Parse execution logs to extract timestamps for MTTR calculation.
 
         Args:
             log_content: Log file content as string
@@ -29,7 +27,7 @@ class ExecutionLogParser:
         """
         alert_steps = defaultdict(list)
 
-        for line_num, line in enumerate(log_content.split('\n'), 1):
+        for line_num, line in enumerate(log_content.split("\n"), 1):
             line = line.strip()
             if not line:
                 continue
@@ -41,13 +39,15 @@ class ExecutionLogParser:
                 m = re.match(r"\[(.*?)\]\s+\S+\s+STEP\s+\d+:\s+(.*)", line)
             # Format 3: [TIMESTAMP] TC-XX === ... STARTED/COMPLETED/PASSED
             if not m:
-                m2 = re.match(r"\[(.*?)\]\s+\S+\s+=+\s+(TC-\d+.*?(?:STARTED|PASSED|FAILED))\s*=+", line)
+                m2 = re.match(
+                    r"\[(.*?)\]\s+\S+\s+=+\s+(TC-\d+.*?(?:STARTED|PASSED|FAILED))\s*=+", line
+                )
                 if m2:
                     m = m2
 
             if m:
                 try:
-                    ts = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                    ts = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
                     step_name = m.group(2).strip()
                     alert_steps[step_name].append(ts)
                 except ValueError as e:

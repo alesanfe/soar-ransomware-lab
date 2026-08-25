@@ -1,6 +1,6 @@
 # Anexo A
 
-> **Aviso de sincronización**: este anexo es una instantánea estática de la configuración Docker Compose y variables de
+> **Aviso de sincronización.** este anexo es una instantánea estática de la configuración Docker Compose y variables de
 > entorno. La versión canónica y actualizada del stack se encuentra en `infra/docker/compose/` (y `.env.example`/`.env.full`).
 > En caso de discrepancia, prevalecen los archivos Compose del repositorio.
 
@@ -22,7 +22,7 @@ name: soar-lab
 services:
   # === Data layer ===
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.29
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
     environment:
       - discovery.type=single-node
@@ -100,7 +100,7 @@ services:
         max-file: "3"
 
   cortex:
-    image: thehiveproject/cortex:3.1.4-1
+    image: thehiveproject/cortex:3.2.0-1
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
     depends_on:
       elasticsearch:
@@ -316,7 +316,7 @@ El archivo de entorno `.env.full` contiene todas las variables de configuración
 SOAR. Este archivo permite la personalización del sistema según las necesidades específicas de cada entorno, facilitando
 la adaptación a diferentes configuraciones de red, recursos disponibles y requisitos de seguridad. Las variables de
 entorno incluyen configuraciones de puertos, credenciales, imágenes Docker y parámetros de red, permitiendo una
-flexibilidad máxima en el despliegue sin necesidad de modificar los archivos de configuración principales.
+configuración modular en el despliegue sin necesidad de modificar los archivos de configuración principales.
 
 ```bash
 # Project Configuration
@@ -369,7 +369,7 @@ de desarrollo software, incluyendo manejo de errores, logging estructurado y doc
 ### A.2.1. SIEM Simulator (send_alert.py)
 
 El script SIEM Simulator simula alertas de ransomware con datos realistas y las envía al webhook de Shuffle para su
-procesamiento. Este componente es fundamental para la validación del sistema, ya que permite generar alertas controladas
+procesamiento. Este componente es necesario para la validación del sistema, ya que permite generar alertas controladas
 que representan escenarios realistas de ransomware sin exponer el sistema a amenazas reales. La implementación incluye
 la generación de alertas con IoCs conocidos, soporte para alertas maliciosas y benignas, distribución temporal
 configurable para pruebas de carga, validación de esquemas JSON y autenticación mediante API token. Este script se
@@ -1280,7 +1280,7 @@ cp .env.example .env.full
 nano .env.full  # Edit with your configuration
 
 # 3. Generate TLS certificates
-bash src/soar_lab/scripts/setup/gen_certs.sh
+bash scripts/setup/gen_certs.sh
 
 # 4. Start services
 make up
@@ -1319,14 +1319,14 @@ A continuación se recogen los problemas más frecuentes detectados durante el d
 
 #### 1. Contenedores no inician
 
-**Causas típicas:**
+**Causas típicas.**
 
 - Docker daemon no está en ejecución.
 - Falta de espacio en disco o memoria insuficiente.
 - Límites de recursos (`deploy.resources`) superan los disponibles en el host.
 - Volúmenes huérfanos de una ejecución anterior en estado inconsistente.
 
-**Pasos operativos:**
+**Pasos operativos.**
 
 ```bash
 # 1. Verificar el daemon de Docker
@@ -1347,7 +1347,7 @@ docker system prune -f
 sudo systemctl restart docker
 ```
 
-**Criterio de verificación:**
+**Criterio de verificación.**
 
 - `docker ps` muestra el contenedor en estado `Up` o `healthy` tras `make up`.
 - `docker compose ps` no reporta `Exit` o `unhealthy` persistentes.
@@ -1356,14 +1356,14 @@ sudo systemctl restart docker
 
 #### 2. Elasticsearch/OpenSearch falla o se reinicia continuamente
 
-**Causas típicas:**
+**Causas típicas.**
 
 - `vm.max_map_count` insuficiente en Linux.
 - Permisos incorrectos en los volúmenes de datos.
 - Configuración de memoria JVM inadecuada para el host.
 - Volcado de heap por falta de RAM.
 
-**Pasos operativos:**
+**Pasos operativos.**
 
 ```bash
 # 1. Verificar opciones JVM
@@ -1379,7 +1379,7 @@ sudo sysctl -w vm.max_map_count=262144
 wsl -d docker-desktop sysctl -w vm.max_map_count=262144
 ```
 
-**Criterio de verificación:**
+**Criterio de verificación.**
 
 - `docker logs soar_elasticsearch` termina con `"Cluster health status changed from [YELLOW] to [GREEN]"`.
 - `curl -f http://localhost:19200/_cluster/health` devuelve `status` `green` o `yellow`.
@@ -1388,13 +1388,13 @@ wsl -d docker-desktop sysctl -w vm.max_map_count=262144
 
 #### 3. Conexión entre servicios (DNS/red)
 
-**Causas típicas:**
+**Causas típicas.**
 
 - Un servicio no se conectó a `soar_net`.
 - El `network-watcher` no inyectó entradas `/etc/hosts` en los workers de Shuffle.
 - Un servicio arrancó antes de que sus dependencias estuvieran realmente listas.
 
-**Pasos operativos:**
+**Pasos operativos.**
 
 ```bash
 # 1. Listar redes
@@ -1416,7 +1416,7 @@ docker network connect soar_net $WORKER_ID
 docker restart $WORKER_ID
 ```
 
-**Criterio de verificación:**
+**Criterio de verificación.**
 
 - Los `healthcheck` de los servicios afectados pasan.
 - `docker exec <contenedor> getent hosts <servicio>` resuelve correctamente.
@@ -1425,13 +1425,13 @@ docker restart $WORKER_ID
 
 #### 4. Errores E2E en `soar_shuffle-backend`
 
-**Causas típicas:**
+**Causas típicas.**
 
 - Workflow no creado o trigger no activado.
 - `SHUFFLE_DEFAULT_APIKEY` desactualizada tras `make reset && make up`.
 - Timeouts por concurrencia insuficiente (`SHUFFLE_ORBORUS_EXECUTION_CONCURRENCY`).
 
-**Pasos operativos:**
+**Pasos operativos.**
 
 ```bash
 # 1. Verificar estado de Shuffle
@@ -1447,23 +1447,23 @@ docker exec soar_api cat /app/.env.full | grep SHUFFLE_DEFAULT_APIKEY
 curl http://localhost:19200/users* -u elastic:$ELASTIC_PASSWORD
 ```
 
-**Criterio de verificación:**
+**Criterio de verificación.**
 
 - La ejecución del workflow finaliza con estado `SUCCESS`.
-- `pytest tests/e2e/` devuelve 16/16 PASSED (o el total actual del proyecto).
+- `pytest tests/e2e/` devuelve 281/281 PASSED (o el total actual del proyecto).
 
 ---
 
 #### 5. Grafana no muestra métricas (`soar-metrics` vacío)
 
-**Causas típicas:**
+**Causas típicas.**
 
 - Plugin Elasticsearch no instalado en Grafana 13.
 - Grafana no puede resolver `elasticsearch`.
 - Mapping incorrecto del índice (`mttr_seconds` como `object` en lugar de `float`).
 - Falta `@timestamp` en los documentos.
 
-**Pasos operativos:**
+**Pasos operativos.**
 
 ```bash
 # 1. Verificar que Grafana tiene el plugin
@@ -1476,10 +1476,10 @@ docker network inspect soar-lab_soar_net
 # 3. Verificar mapping del índice
 curl http://localhost:19200/soar-metrics-v2/_mapping -u elastic:$ELASTIC_PASSWORD
 
-# 4. Reindexar si es necesario (ver docs/operations/logging_and_observability.md)
+# 4. Reindexar si es necesario (ver docs/04-operations.md sección logging)
 ```
 
-**Criterio de verificación:**
+**Criterio de verificación.**
 
 - `curl http://localhost:19200/soar-metrics/_count` devuelve documentos.
 - Grafana muestra datos en el dashboard KPI.
@@ -1488,12 +1488,12 @@ curl http://localhost:19200/soar-metrics-v2/_mapping -u elastic:$ELASTIC_PASSWOR
 
 #### 6. MISP DB: error `Permission denied` en operaciones de MariaDB
 
-**Causas típicas:**
+**Causas típicas.**
 
 - `misp_db` se configura como bind mount en Windows/Docker Desktop.
 - Permisos de `rename` sobre bind mounts NTFS.
 
-**Pasos operativos:**
+**Pasos operativos.**
 
 ```bash
 # 1. Comprobar que misp_db es volumen Docker normal
@@ -1507,7 +1507,7 @@ make down -v
 make up
 ```
 
-**Criterio de verificación:**
+**Criterio de verificación.**
 
 - `docker inspect soar_misp_db` muestra `"Type": "volume"`.
 - `docker compose ps` marca `misp-db` como `healthy`.
@@ -1516,12 +1516,12 @@ make up
 
 #### 7. Autenticación JWT / Lab API (`401 Unauthorized`)
 
-**Causas típicas:**
+**Causas típicas.**
 
 - `API_AUTH_SECRET` / `JWT_SECRET_KEY` no definidos o desfasados.
 - Ejemplos con contraseñas por defecto no actualizadas.
 
-**Pasos operativos:**
+**Pasos operativos.**
 
 ```bash
 # 1. Verificar secretos en .env.full
@@ -1537,7 +1537,7 @@ export TOKEN=<token>
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/auth/verify
 ```
 
-**Criterio de verificación:**
+**Criterio de verificación.**
 
 - `POST /auth/login` devuelve `200` con `token`.
 - `POST /auth/verify` devuelve `{"valid": true, ...}`.
@@ -1546,12 +1546,12 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/auth/verify
 
 #### 8. Certificado SSL de `soar.local` no es confiado
 
-**Causas típicas:**
+**Causas típicas.**
 
 - Certificado autofirmado no instalado en el almacén de confianza del host.
 - Nginx expira el certificado.
 
-**Pasos operativos:**
+**Pasos operativos.**
 
 ```bash
 # 1. Comprobar validez del certificado
@@ -1564,7 +1564,7 @@ docker exec soar_nginx nginx -t
 Import-Certificate -FilePath "infra\docker\config\nginx\ssl\soar.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
 ```
 
-**Criterio de verificación:**
+**Criterio de verificación.**
 
 - `nginx -t` devuelve `syntax is ok` / `test is successful`.
 - `curl -k https://soar.local` devuelve la página correspondiente.
@@ -1600,6 +1600,73 @@ docker logs soar_nginx -f
 
 ---
 
-**Nota**: Esta documentación técnica complementaria incluye detalles específicos de implementación, configuración y
+## A.7. Inventario Completo de Archivos Docker Compose
+
+El laboratorio SOAR usa **5 archivos Docker Compose** principales (más 1 de logging en subdirectorio)
+que se combinan automáticamente con `make up`.
+La sección A.1.1 muestra solo el archivo principal (`docker-compose.yml`); los restantes se documentan aquí
+como referencia. La versión canónica está en `infra/docker/compose/`.
+
+### A.7.1. Mapa de Archivos Compose
+
+| Archivo | Ubicación | Servicios | Propósito |
+|---------|-----------|-----------|-----------|
+| `docker-compose.yml` | `infra/docker/compose/` | elasticsearch, thehive, cortex, shuffle-frontend, shuffle-backend, orborus, nginx | Stack core (ver A.1.1) |
+| `docker-compose.core.yml` | `infra/docker/compose/` | redis, network-watcher, tenzir-node, misp, misp-db, misp-modules | Servicios core adicionales |
+| `docker-compose.misp.yml` | `infra/docker/compose/` | (incluido en core) | Configuración específica MISP |
+| `docker-compose.api.yml` | `infra/docker/compose/` | api, web-management, docs-site, nginx | API FastAPI + UI + docs |
+| `docker-compose.opensearch.yml` | `infra/docker/compose/` | opensearch, opensearch-dashboards | OpenSearch para Shuffle |
+| `docker-compose.logging.yml` | `infra/docker/compose/logging/` | loki, promtail, grafana, grafana-db | Observabilidad (subdirectorio) |
+
+### A.7.2. Servicios Adicionales (no en A.1.1)
+
+Los siguientes servicios se definen en los compose files adicionales y no aparecen en la
+sección A.1.1:
+
+| Servicio | Imagen | Compose File | Función |
+|----------|--------|--------------|---------|
+| `redis` | `redis:7-alpine` | core | Cache/cola con autenticación |
+| `network-watcher` | build (local) | core | Diagnóstico/recuperación de red |
+| `tenzir-node` | `tenzir/tenzir:v6.8.1` | core | Nodo Tenzir (modo dev) |
+| `misp` | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | misp | Threat intelligence |
+| `misp-db` | `mariadb:10.11` | misp | BD MISP |
+| `misp-modules` | `ghcr.io/misp/misp-docker/misp-modules:v3.0.9` | misp | Módulos MISP |
+| `api` | build `apps/api/Dockerfile` | api | API FastAPI (Lab API) |
+| `web-management` | build `apps/web-management/Dockerfile` | api | UI de gestión web |
+| `docs-site` | build `apps/docs-site/Dockerfile` | api | Docusaurus (docs) |
+| `opensearch` | `opensearchproject/opensearch:2.10.0` | opensearch | Motor de búsqueda Shuffle |
+| `opensearch-dashboards` | `opensearchproject/opensearch-dashboards:2.10.0` | opensearch | Dashboard OpenSearch |
+| `loki` | `grafana/loki:2.9.10` | logging | Agregación de logs |
+| `promtail` | `grafana/promtail:2.9.9` | logging | Shipper de logs |
+| `grafana` | `grafana/grafana:10.3.4` | logging | Visualización |
+| `grafana-db` | `postgres:14-alpine` | logging | BD Grafana |
+
+### A.7.3. Redes Docker
+
+| Red | CIDR | Tipo | Propósito |
+|-----|------|------|-----------|
+| `soar_net` | `10.100.0.0/16` | bridge | Red principal del laboratorio |
+| `ti_net` | `172.22.0.0/16` | internal | Threat intelligence (sin acceso externo) |
+| `logging_net` | `172.23.0.0/16` | bridge | Observabilidad (Loki, Grafana) |
+| `bridge` | — | external | Red por defecto Docker (compatibilidad) |
+
+### A.7.4. Resumen del Stack Completo
+
+| Métrica | Valor |
+|---------|-------|
+| Archivos compose | 5 (+1 logging en subdirectorio) |
+| Servicios totales | 18 |
+| Redes | 4 (3 internas + bridge) |
+| Volúmenes persistentes | 12+ |
+| Imágenes Docker | 15 (5 builds locales + 10 pulls) |
+| Versiones pinned | 100% (todas las imágenes tienen tag fijo) |
+
+> **Nota.** Para el contenido completo de cada compose file, ver `infra/docker/compose/`.
+> Esta sección es un inventario de referencia; el archivo A.1.1 muestra el compose
+> principal como ejemplo representativo.
+
+---
+
+**Nota.** Esta documentación técnica complementaria incluye detalles específicos de implementación, configuración y
 operación del laboratorio SOAR. Para información adicional sobre conceptos teóricos y metodología, consulte los
 capítulos principales del documento.

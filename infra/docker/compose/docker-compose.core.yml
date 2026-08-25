@@ -6,7 +6,7 @@ name: soar-lab-core
 
 services:
   redis:
-    image: redis:7-alpine
+    image: ${REDIS_IMAGE:-redis:7-alpine}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_redis
     user: root
     entrypoint: [ "sh", "-c", "chown -R redis:redis /data && rm -f /data/temp-*.rdb /data/appendonly.aof* && exec docker-entrypoint.sh redis-server --requirepass \"${REDIS_PASSWORD}\" --appendonly no --save \"\"" ]
@@ -38,16 +38,16 @@ services:
         max-file: "3"
 
   thehive:
-    image: thehiveproject/thehive:3.5.2-1
+    image: ${THEHIVE_IMAGE:-thehiveproject/thehive:3.5.2-1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_thehive
     depends_on:
       elasticsearch:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${THEHIVE_HTTP_PORT:-9000}:9000"
     volumes:
       - thehive_files:/opt/thp/thehive/files
-      - ../config/thehive.application.conf/thehive.conf:/etc/thehive/application.conf:ro
+      - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/config/thehive.conf:/etc/thehive/application.conf:ro
     networks:
       - soar_net
     healthcheck:
@@ -60,11 +60,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '${THEHIVE_CPU_LIMIT:-2.0}'
+          memory: ${THEHIVE_MEMORY_LIMIT:-4G}
         reservations:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '${THEHIVE_CPU_RESERVATION:-1.0}'
+          memory: ${THEHIVE_MEMORY_RESERVATION:-2G}
     logging:
       driver: "json-file"
       options:
@@ -78,13 +78,14 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
     depends_on:
       elasticsearch:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${CORTEX_HTTP_PORT:-19001}:9001"
     volumes:
       - cortex_data:/var/lib/cortex
-      - ../config/cortex.application.conf/cortex.conf:/etc/cortex/application.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/config/cortex.conf:/etc/cortex/application.conf:ro
+      - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/cortex/jobs:/tmp/cortex-jobs
     networks:
       - soar_net
     healthcheck:
@@ -97,11 +98,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '${CORTEX_CPU_LIMIT:-2.0}'
+          memory: ${CORTEX_MEMORY_LIMIT:-4G}
         reservations:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '${CORTEX_CPU_RESERVATION:-1.0}'
+          memory: ${CORTEX_MEMORY_RESERVATION:-2G}
     logging:
       driver: "json-file"
       options:
@@ -109,7 +110,7 @@ services:
         max-file: "3"
 
   shuffle-frontend:
-    image: ghcr.io/shuffle/shuffle-frontend:2.2.1
+    image: ${SHUFFLE_FRONTEND_IMAGE:-ghcr.io/shuffle/shuffle-frontend:2.2.1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_frontend
     ports:
       - "${SHUFFLE_UI_PORT:-8081}:80"
@@ -144,11 +145,11 @@ services:
         max-file: "3"
 
   shuffle-backend:
-    image: ghcr.io/shuffle/shuffle-backend:2.2.1
+    image: ${SHUFFLE_BACKEND_IMAGE:-ghcr.io/shuffle/shuffle-backend:2.2.1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend
     environment:
       SHUFFLE_ELASTIC: "true"
-      SHUFFLE_OPENSEARCH_URL: http://opensearch:9200
+      SHUFFLE_OPENSEARCH_URL: ${SHUFFLE_OPENSEARCH_URL:-http://opensearch:9200}
       SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "true"
       SHUFFLE_OPENSEARCH_USERNAME: ${OPENSEARCH_USERNAME:-admin}
       SHUFFLE_OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
@@ -176,18 +177,18 @@ services:
       - ti_net
     depends_on:
       opensearch:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       disable: true
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '${SHUFFLE_CPU_LIMIT:-2.0}'
+          memory: ${SHUFFLE_MEMORY_LIMIT:-4G}
         reservations:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '${SHUFFLE_CPU_RESERVATION:-1.0}'
+          memory: ${SHUFFLE_MEMORY_RESERVATION:-2G}
     logging:
       driver: "json-file"
       options:
@@ -212,17 +213,36 @@ services:
       retries: 10
       start_period: 15s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   tenzir-node:
-    image: tenzir/tenzir:main
+    image: ${TENZIR_IMAGE:-tenzir/tenzir:v6.8.1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_tenzir_node
     entrypoint: [ "tenzir-node" ]
     command: [ "--commands=web server --mode=dev --bind=0.0.0.0" ]
     ports:
-      - "15160:5160"
-      - "15140:1514"
+      - "${TENZIR_API_PORT:-15160}:5160"
+      - "${TENZIR_LOG_PORT:-15140}:1514"
     networks:
       - soar_net
+    healthcheck:
+      test: [ "CMD-SHELL", "tenzir --connection-timeout=30s --connection-retry-delay=1s 'api \"/ping\"' || exit 1" ]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
     restart: unless-stopped
     deploy:
       resources:
@@ -242,26 +262,27 @@ services:
     build:
       context: ../../docker/images/orborus
       dockerfile: Dockerfile
-    image: ghcr.io/shuffle/shuffle-orborus:2.2.1-patched
+    image: ${ORBORUS_IMAGE:-ghcr.io/shuffle/shuffle-orborus:2.2.1-patched}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_orborus
     environment:
       SHUFFLE_APP_SDK_TIMEOUT: 300
-      SHUFFLE_ORBORUS_EXECUTION_CONCURRENCY: "10"
+      SHUFFLE_ORBORUS_EXECUTION_CONCURRENCY: "5"
+      SHUFFLE_ORBORUS_EXECUTION_TIMEOUT: "600"
       SHUFFLE_ORBORUS_UUID: "69a3f786-b6ee-4410-9c54-7b8277710cec"
       ENVIRONMENT_NAME: ${SHUFFLE_ENV_NAME:-Shuffle}
       ORG_ID: ${SHUFFLE_ORG_ID:-Shuffle}
-      BASE_URL: http://soar_shuffle_backend:5001
-      SHUFFLE_OPENSEARCH_URL: http://opensearch:9200
+      BASE_URL: ${SHUFFLE_BACKEND_URL:-http://shuffle-backend:5001}
+      SHUFFLE_OPENSEARCH_URL: ${SHUFFLE_OPENSEARCH_URL:-http://opensearch:9200}
       EXECUTION_ENVIRONMENT: docker
-      SHUFFLE_APP_SDK_URL: "https://github.com/shuffle/python-apps"
+      SHUFFLE_APP_SDK_URL: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
       SHUFFLE_STATS_DISABLED: true
       SHUFFLE_LOGS_DISABLED: true
       SHUFFLE_SWARM_CONFIG: docker
       CLEANUP: true
       SHUFFLE_WORKER_IMAGE: ghcr.io/shuffle/shuffle-worker:2.2.1
       SHUFFLE_PIPELINE_AUTH: ${SHUFFLE_DEFAULT_APIKEY}
-      SHUFFLE_PIPELINE_URL: http://tenzir-node:5160
-      SHUFFLE_APP_NETWORK: ${COMPOSE_PROJECT_NAME:-soar}_net
+      SHUFFLE_PIPELINE_URL: ${TENZIR_URL:-http://tenzir-node:5160}
+      SHUFFLE_APP_NETWORK: soar_net
       SHUFFLE_BASE_IMAGE_NAME: ghcr.io/shuffle/shuffle-worker
       ORBORUS_CONTAINER_NAME: ${COMPOSE_PROJECT_NAME:-soar}_orborus
     volumes:
@@ -270,7 +291,7 @@ services:
       - soar_net
     depends_on:
       opensearch:
-        condition: service_started
+        condition: service_healthy
       shuffle-backend:
         condition: service_started
     healthcheck:

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""
-Integration tests for TheHive client.
-Tests TheHive client functionality using mocks when service is not available.
+"""Integration tests for TheHive client.
+
+Tests TheHive client functionality using mocks when service is not
+available.
 """
 
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-import requests
+
 from soar_lab.common.exceptions import IntegrationError
-from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
-from unittest.mock import patch, MagicMock
+from soar_lab.infrastructure.integrations.thehive.client import TheHiveClient
 
 THEHIVE_URL = os.getenv("THEHIVE_URL", "http://localhost:9000")
 THEHIVE_API_KEY = os.getenv("THEHIVE_API_KEY", "")
@@ -23,7 +25,7 @@ def thehive_client():
 @pytest.mark.integration
 class TestTheHiveHealth:
     def test_health_check_returns_bool(self, thehive_client):
-        with patch.object(thehive_client._session, 'get') as mock_get:
+        with patch.object(thehive_client._session, "get") as mock_get:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_get.return_value = mock_response
@@ -34,7 +36,7 @@ class TestTheHiveHealth:
 @pytest.mark.integration
 class TestTheHiveAlerts:
     def test_create_alert_returns_dict(self, thehive_client):
-        with patch.object(thehive_client._session, 'post') as mock_post:
+        with patch.object(thehive_client._session, "post") as mock_post:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"id": "test-alert-id"}
@@ -53,7 +55,7 @@ class TestTheHiveAlerts:
             assert isinstance(response, dict)
 
     def test_list_cases_returns_list(self, thehive_client):
-        with patch.object(thehive_client._session, 'get') as mock_get:
+        with patch.object(thehive_client._session, "get") as mock_get:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = []

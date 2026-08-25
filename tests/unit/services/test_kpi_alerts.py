@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""
-Unit tests for kpi_alerts module
-"""
+"""Unit tests for kpi_alerts module."""
 
-import pytest
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+
+import pytest
 
 # Add src to path
 REPO_ROOT = Path(__file__).parent.parent.parent
@@ -33,7 +32,9 @@ class TestKPIAlertManager:
     def test_initialization_with_webhook(self):
         """Test initialization with webhook URL."""
         mock_es = Mock()
-        manager = KPIAlertManager(elasticsearch_client=mock_es, webhook_url="http://example.com/webhook")
+        manager = KPIAlertManager(
+            elasticsearch_client=mock_es, webhook_url="http://example.com/webhook"
+        )
 
         assert manager.webhook_url == "http://example.com/webhook"
 
@@ -56,7 +57,7 @@ class TestKPIAlertManager:
                 "hits": [
                     {"_source": {"mttr_seconds": 60}},
                     {"_source": {"mttr_seconds": 80}},
-                    {"_source": {"mttr_seconds": 100}}
+                    {"_source": {"mttr_seconds": 100}},
                 ]
             }
         }
@@ -77,7 +78,7 @@ class TestKPIAlertManager:
                 "hits": [
                     {"_source": {"mttr_seconds": 150}},
                     {"_source": {"mttr_seconds": 180}},
-                    {"_source": {"mttr_seconds": 200}}
+                    {"_source": {"mttr_seconds": 200}},
                 ]
             }
         }
@@ -121,7 +122,7 @@ class TestKPIAlertManager:
                 "hits": [
                     {"_source": {"service": "thehive", "success": True}},
                     {"_source": {"service": "thehive", "success": True}},
-                    {"_source": {"service": "cortex", "success": True}}
+                    {"_source": {"service": "cortex", "success": True}},
                 ]
             }
         }
@@ -134,13 +135,14 @@ class TestKPIAlertManager:
         assert "status" in result
 
     def test_check_service_health_alert(self):
-        """Test service health check when service success rate is below threshold."""
+        """Test service health check when service success rate is below
+        threshold."""
         mock_es = Mock()
         mock_es.search.return_value = {
             "hits": {
                 "hits": [
                     {"_source": {"service": "thehive", "success": True}},
-                    {"_source": {"service": "thehive", "success": False}}
+                    {"_source": {"service": "thehive", "success": False}},
                 ]
             }
         }
@@ -178,11 +180,7 @@ class TestKPIAlertManager:
         """Test health score check when health score is above threshold."""
         mock_es = Mock()
         mock_es.search.return_value = {
-            "hits": {
-                "hits": [
-                    {"_source": {"metric_type": "health_score", "score": 80}}
-                ]
-            }
+            "hits": {"hits": [{"_source": {"metric_type": "health_score", "score": 80}}]}
         }
         manager = KPIAlertManager(elasticsearch_client=mock_es)
 
@@ -197,11 +195,7 @@ class TestKPIAlertManager:
         """Test health score check when health score is below threshold."""
         mock_es = Mock()
         mock_es.search.return_value = {
-            "hits": {
-                "hits": [
-                    {"_source": {"metric_type": "health_score", "score": 50}}
-                ]
-            }
+            "hits": {"hits": [{"_source": {"metric_type": "health_score", "score": 50}}]}
         }
         manager = KPIAlertManager(elasticsearch_client=mock_es, webhook_url=None)
 
@@ -231,7 +225,7 @@ class TestKPIAlertManager:
             "hits": {
                 "hits": [
                     {"_source": {"mttr_seconds": 60}},
-                    {"_source": {"service": "thehive", "success": True}}
+                    {"_source": {"service": "thehive", "success": True}},
                 ]
             }
         }
@@ -257,7 +251,9 @@ class TestKPIAlertManager:
     def test_send_alert_with_webhook(self):
         """Test sending alert when webhook is configured."""
         mock_es = Mock()
-        manager = KPIAlertManager(elasticsearch_client=mock_es, webhook_url="http://example.com/webhook")
+        manager = KPIAlertManager(
+            elasticsearch_client=mock_es, webhook_url="http://example.com/webhook"
+        )
 
         # This will try to send the alert via requests
         # We just check it doesn't raise an exception

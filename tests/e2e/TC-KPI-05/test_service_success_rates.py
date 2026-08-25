@@ -5,94 +5,67 @@ Validates service success rates broken down by alert type (malicious vs benign).
 """
 
 import json
-import os
-import pytest
 import sys
-from datetime import datetime, timezone, timedelta
+import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
-ARTIFACTS_DIR = Path("/app/results") if Path("/app").exists() else REPO_ROOT / "artifacts"
-ENV_FULL = Path("/app/.env.full") if Path("/app/.env.full").exists() else REPO_ROOT / ".env.full"
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
-sys.path.insert(0, str(REPO_ROOT / "src"))
-
-from soar_lab.infrastructure.external.integrations.elasticsearch_client import ElasticsearchClient
 from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
 from soar_lab.domain.statistical_calculator import StatisticalCalculator
+from tests.e2e.base import E2EBaseTest
 
 
-def _load_env() -> dict:
-    env_vars = {
-        "ES_URL": os.environ.get("ES_URL"),
-        "ELASTICSEARCH_URL": os.environ.get("ELASTICSEARCH_URL"),
-    }
-    result = {k: v for k, v in env_vars.items() if v is not None}
+class TestServiceSuccessRates(E2EBaseTest):
+    """TC-KPI-05 — Validate service success rates broken down by alert type.
 
-    if not ENV_FULL.exists():
-        return result
-
-    for line in ENV_FULL.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, _, v = line.partition("=")
-            k = k.strip()
-            v = v.strip()
-            if k not in result:
-                result[k] = v
-    return result
-
-
-class TestServiceSuccessRates:
+    Ensures services maintain high success rates for both malicious and
+    benign alerts.
     """
-    TC-KPI-05 — Validate service success rates broken down by alert type.
-    Ensures services maintain high success rates for both malicious and benign alerts.
-    """
+
+    tc_id = "TC-KPI-05"
 
     def setup_method(self, method):
-        """Set up test clients and environment"""
-        t0 = datetime.now(timezone.utc)
-        (ARTIFACTS_DIR / "results").mkdir(parents=True, exist_ok=True)
-        (ARTIFACTS_DIR / "logs").mkdir(parents=True, exist_ok=True)
-
-        env = _load_env()
-        es_url = env.get("ES_URL") or env.get("ELASTICSEARCH_URL", "http://elasticsearch:9200")
-        es = ElasticsearchClient(base_url=es_url)
-        analyzer = KPIAnalyzer(StatisticalCalculator())
-
-        self.t0 = t0
-        self.es = es
-        self.analyzer = analyzer
+        super().setup_method(method)
+        self.t0 = datetime.now(UTC)
+        self.analyzer = KPIAnalyzer(StatisticalCalculator())
         self._results = []
 
-
     def _log(self, msg: str):
-        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         line = f"[{ts}] TC-KPI-05 {msg}"
-        sys.stdout.buffer.write((line + "\n").encode("utf-8", errors="replace"))
-        sys.stdout.buffer.flush()
-        with open(ARTIFACTS_DIR / "logs" / "notify.log", "a", encoding="utf-8") as f:
-            f.write(line + "\n")
+        print(line)
 
     def test_service_success_rates_by_alert_type(self):
-        """Validate service success rates by alert type (malicious vs benign)."""
+        """Validate service success rates by alert type (malicious vs
+        benign)."""
         self._log("=== Test: Service Success Rates by Alert Type ===")
+
+        # Generate metrics data by sending an alert first
+        self._log("STEP 0: Sending alert to generate service metrics")
+        payload = self.build_alert_payload()
+        alert_id = payload.get("alert_id", "")
+        exec_id, execution = self.submit_alert_and_wait(payload)
+        self.execution = execution
+        self.execution_id = exec_id
+        self.validate_workflow_execution(execution, alert_id=alert_id)
+        # Allow metrics to be indexed
+        time.sleep(5)
 
         # Query metrics from Elasticsearch
         query = {
-            "range": {
-                "@timestamp": {
-                    "gte": (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
-                }
-            }
+            "range": {"@timestamp": {"gte": (datetime.now(UTC) - timedelta(hours=24)).isoformat()}}
         }
 
         results = self.es.search(query=query, index="soar-metrics", size=10000)
         assert isinstance(results, dict), "ES search results must be a dict"
         metrics_data = [hit.get("_source", {}) for hit in results.get("hits", {}).get("hits", [])]
 
-        if not metrics_data:
-            pytest.skip("No metrics data available in soar-metrics index")
+        assert len(metrics_data) > 0, (
+            "No metrics data available in soar-metrics index — "
+            "metrics should be generated after workflow execution"
+        )
 
         # Group by alert type and service
         success_rates = {}
@@ -125,22 +98,29 @@ class TestServiceSuccessRates:
 
                 self._log(f"  {service}: {success}/{total} ({rate:.1f}%)")
 
-                assert rate >= min_success_rate, f"{service} success rate ({rate:.1f}%) for {alert_type} alerts below threshold ({min_success_rate}%)"
+                assert rate >= min_success_rate, (
+                    f"{service} success rate ({rate:.1f}%) for {alert_type} alerts "
+                    f"below threshold ({min_success_rate}%)"
+                )
 
-                self._results.append({
-                    "alert_type": alert_type,
-                    "service": service,
-                    "total": total,
-                    "success": success,
-                    "success_rate": rate,
-                    "ok": rate >= min_success_rate
-                })
+                self._results.append(
+                    {
+                        "alert_type": alert_type,
+                        "service": service,
+                        "total": total,
+                        "success": success,
+                        "success_rate": rate,
+                        "ok": rate >= min_success_rate,
+                    }
+                )
 
         self._log(f"✓ All services meet minimum success rate ({min_success_rate}%)")
 
         # Validate that success rate calculation logic is correct
         assert len(success_rates) > 0, "At least one alert type should have metrics"
-        self._log("✓ Service success rates calculation validated - logic correct and thresholds met")
+        self._log(
+            "✓ Service success rates calculation validated - logic correct and thresholds met"
+        )
 
     def _step_save_report(self, elapsed: float):
         report = {
@@ -150,7 +130,8 @@ class TestServiceSuccessRates:
             "results": self._results,
             "success": all(r.get("ok", False) for r in self._results),
         }
-        report_file = ARTIFACTS_DIR / "results" / "TC-KPI-05_success_rates_report.json"
+        report_file = Path("results") / "TC-KPI-05_success_rates_report.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
         report_file.write_text(json.dumps(report, indent=2, default=str))
         self._log(f"+ Report saved: {report_file}")
 
@@ -160,8 +141,14 @@ class TestServiceSuccessRates:
 
         self.test_service_success_rates_by_alert_type()
 
-        elapsed = (datetime.now(timezone.utc) - self.t0).total_seconds()
-        assert elapsed > 0, "Elapsed time should be positive"
+        # Validate that results were collected and all passed
+        assert len(self._results) > 0, "No service success rate results were recorded"
+        failed = [r for r in self._results if not r.get("ok", False)]
+        assert (
+            not failed
+        ), f"{len(failed)}/{len(self._results)} service success rate checks failed: {failed}"
+
+        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-KPI-05 COMPLETED ===")
         self._step_save_report(elapsed)

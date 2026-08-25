@@ -29,14 +29,19 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Vagrant
-.vagrant/
-
 # Project specific
 results/
 backups/
 artifacts/logs/
 artifacts/results/
+runtime/logs/
+runtime/results/
+runtime/backups/
+runtime/data/
+reports/
+# Keep chart images for docs-site Dockerfile
+!reports/e2e/charts/
+!reports/e2e/charts/**
 
 # Ignore data directories at root level, but keep src/soar_lab/data/ for code
 /data/
@@ -62,7 +67,6 @@ verify_*.py
 live_test.py
 test_api_live.py
 test_misp.py
-test_wazuh.py
 
 # Refact
 .refact/

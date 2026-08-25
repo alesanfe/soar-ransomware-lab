@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     - cron: '0 2 * * *'  # Daily at 2 AM UTC
 
@@ -16,7 +16,14 @@ jobs:
       - name: Validate docker-compose
         working-directory: infra/docker/compose
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.core.yml -f docker-compose.misp.yml -f docker-compose.wazuh.yml -f docker-compose.api.yml -f docker-compose.opensearch.yml -f logging/docker-compose.logging.yml config
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.core.yml \
+            -f docker-compose.misp.yml \
+            -f docker-compose.api.yml \
+            -f docker-compose.opensearch.yml \
+            -f logging/docker-compose.logging.yml \
+            config
 
   lint-python:
     runs-on: ubuntu-latest
@@ -68,7 +75,7 @@ jobs:
       - name: Run unit tests
         run: python -m pytest tests/unit/ -v --cov=src.soar_lab --cov-report=xml
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
 
@@ -85,12 +92,21 @@ jobs:
       - name: Start services
         run: |
           cp .env.example .env.full
-          docker compose -f infra/docker/compose/docker-compose.yml -f infra/docker/compose/docker-compose.core.yml -f infra/docker/compose/docker-compose.api.yml up -d
+          docker compose \
+            -f infra/docker/compose/docker-compose.yml \
+            -f infra/docker/compose/docker-compose.core.yml \
+            -f infra/docker/compose/docker-compose.api.yml \
+            up -d
           sleep 60
       - name: Run integration tests
         run: python -m pytest tests/integration/ -v
       - name: Cleanup
-        run: docker compose -f infra/docker/compose/docker-compose.yml -f infra/docker/compose/docker-compose.core.yml -f infra/docker/compose/docker-compose.api.yml down -v
+        run: |
+          docker compose \
+            -f infra/docker/compose/docker-compose.yml \
+            -f infra/docker/compose/docker-compose.core.yml \
+            -f infra/docker/compose/docker-compose.api.yml \
+            down -v
 
   security-scan:
     runs-on: ubuntu-latest
@@ -132,7 +148,7 @@ jobs:
         working-directory: apps/docs-site
         run: npm run build
       - name: Upload docs artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: documentation
           path: apps/docs-site/build/
@@ -163,14 +179,10 @@ jobs:
           path: ./
           base: main
       - name: Check terminology
-        run: |
-          python src/soar_lab/scripts/ci/terminology_check.py docs/
+        run: python scripts/ci/terminology_check.py docs/
       - name: Validate OpenAPI contracts
-        run: |
-          python -m pytest tests/integration/test_openapi_spec_sync.py -v
+        run: python -m pytest tests/integration/test_openapi_spec_sync.py -v
       - name: Documentation quality
-        run: |
-          python src/soar_lab/scripts/ci/docs_quality.py
+        run: python scripts/ci/docs_quality.py
       - name: Pytest collect-only
-        run: |
-          python -m pytest --collect-only -q
+        run: python -m pytest --collect-only -q

@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""
-Unit tests for calc_kpis module
-"""
+"""Unit tests for calc_kpis module."""
 
-import os
-import pytest
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Add src to path
 REPO_ROOT = Path(__file__).parent.parent.parent
@@ -19,7 +17,7 @@ from soar_lab.data.calc_kpis import _fetch_mttr_from_es
 class TestFetchMTTRFromES:
     """Tests for _fetch_mttr_from_es function."""
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_fetch_mttr_from_es_success(self, mock_get):
         """Test successful fetch of MTTR values from Elasticsearch."""
         mock_response = Mock()
@@ -39,7 +37,7 @@ class TestFetchMTTRFromES:
         assert result == [120.5, 90.0, 150.0]
         mock_get.assert_called_once()
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_fetch_mttr_from_es_filters_invalid_values(self, mock_get):
         """Test that invalid MTTR values are filtered out."""
         mock_response = Mock()
@@ -60,7 +58,7 @@ class TestFetchMTTRFromES:
 
         assert result == [120.5, 90.0]
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_fetch_mttr_from_es_empty_response(self, mock_get):
         """Test handling of empty Elasticsearch response."""
         mock_response = Mock()
@@ -71,7 +69,7 @@ class TestFetchMTTRFromES:
 
         assert result == []
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_fetch_mttr_from_es_request_error(self, mock_get):
         """Test handling of request errors."""
         mock_get.side_effect = Exception("Connection error")
@@ -80,7 +78,7 @@ class TestFetchMTTRFromES:
 
         assert result == []
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_fetch_mttr_from_es_no_auth(self, mock_get):
         """Test fetch without authentication."""
         mock_response = Mock()
@@ -98,7 +96,7 @@ class TestFetchMTTRFromES:
         assert result == [120.5]
         # Verify no auth was passed
         call_args = mock_get.call_args
-        assert call_args[1]['auth'] is None
+        assert call_args[1]["auth"] is None
 
 
 if __name__ == "__main__":

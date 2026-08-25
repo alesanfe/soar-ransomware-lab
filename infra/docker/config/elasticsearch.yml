@@ -1,0 +1,12 @@
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+
+# Work around Apache HttpAsyncClient SocketTimeoutException in
+# TheHive/Cortex (elastic4s) on Docker Desktop Windows.
+# The async HTTP client holds connections in keep-alive state and the
+# response is never delivered to the Java callback, causing a 30s
+# timeout even though Elasticsearch processes the request successfully.
+# Disabling TCP keep-alive and HTTP compression forces the client to
+# create fresh connections and avoids chunked-encoding race conditions.
+http.tcp.keep_alive: false
+http.compression: false

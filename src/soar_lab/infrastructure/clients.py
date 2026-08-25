@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - Infrastructure Client Factories
+"""SOAR Ransomware Lab - Infrastructure Client Factories.
+
 Centralised initialisation of Docker and Redis clients.
 Injectable for testing (call set_redis / set_docker to override).
 """
 
-import os
-from typing import Optional, Protocol
+from typing import Protocol
 
 from soar_lab.config.logging import get_logger
+
+__all__ = [
+    "DockerConnectionStrategy",
+    "GatewayIPStrategy",
+    "UnixSocketStrategy",
+    "DefaultFromEnvStrategy",
+    "create_redis_client",
+    "create_docker_client",
+]
 
 logger = get_logger(__name__)
 
@@ -16,7 +24,7 @@ logger = get_logger(__name__)
 class DockerConnectionStrategy(Protocol):
     """Protocol for Docker connection strategies."""
 
-    def connect(self, socket_path: str) -> Optional[object]:
+    def connect(self, socket_path: str) -> object | None:
         """Attempt to connect to Docker and return client or None."""
         ...
 
@@ -24,14 +32,14 @@ class DockerConnectionStrategy(Protocol):
 class GatewayIPStrategy:
     """Connect via gateway IP (configurable)."""
 
-    def __init__(self, gateway_ip: str):
+    def __init__(self, gateway_ip: str) -> None:
         self.gateway_ip = gateway_ip
 
-    def connect(self, socket_path: str) -> Optional[object]:
+    def connect(self, socket_path: str) -> object | None:
         try:
             import docker
 
-            client = docker.DockerClient(base_url=f"tcp://{self.gateway_ip}:2375", version='auto')
+            client = docker.DockerClient(base_url=f"tcp://{self.gateway_ip}:2375", version="auto")
             client.ping()
             logger.info(f"Connected to Docker via gateway IP {self.gateway_ip}:2375")
             return client
@@ -43,11 +51,11 @@ class GatewayIPStrategy:
 class UnixSocketStrategy:
     """Connect via unix socket with explicit version."""
 
-    def connect(self, socket_path: str) -> Optional[object]:
+    def connect(self, socket_path: str) -> object | None:
         try:
             import docker
 
-            client = docker.DockerClient(base_url=f"unix://{socket_path}", version='auto')
+            client = docker.DockerClient(base_url=f"unix://{socket_path}", version="auto")
             client.ping()
             logger.info("Connected to Docker via unix socket with version='auto'")
             return client
@@ -59,13 +67,13 @@ class UnixSocketStrategy:
 class DefaultFromEnvStrategy:
     """Connect using default from_env."""
 
-    def connect(self, socket_path: str) -> Optional[object]:
+    def connect(self, socket_path: str) -> object | None:
         try:
             import docker
 
             # Use docker.from_env without modifying os.environ
             # If DOCKER_HOST is set in environment, docker.from_env will use it
-            client = docker.from_env(version='auto')
+            client = docker.from_env(version="auto")
             client.ping()
             logger.info("Connected to Docker via default from_env with version='auto'")
             return client
@@ -74,7 +82,7 @@ class DefaultFromEnvStrategy:
             return None
 
 
-def create_redis_client(config_provider=None) -> Optional[object]:
+def create_redis_client(config_provider=None) -> object | None:
     """Create and return a Redis client from ConfigProvider."""
     try:
         import redis
@@ -82,7 +90,7 @@ def create_redis_client(config_provider=None) -> Optional[object]:
         if not config_provider:
             raise ValueError("config_provider must be supplied to create_redis_client")
 
-        redis_url = config_provider.get('REDIS_URL')
+        redis_url = config_provider.get("REDIS_URL")
 
         if not redis_url:
             logger.warning("REDIS_URL not set — Redis caching disabled")
@@ -97,14 +105,14 @@ def create_redis_client(config_provider=None) -> Optional[object]:
         return None
 
 
-def create_docker_client(config_provider=None) -> Optional[object]:
+def create_docker_client(config_provider=None) -> object | None:
     """Create and return a Docker client using strategy pattern."""
     try:
         if not config_provider:
             raise ValueError("config_provider must be supplied to create_docker_client")
 
-        socket_path = config_provider.get('docker_socket_path', "/var/run/docker.sock")
-        gateway_ip = config_provider.get('docker_gateway_ip')
+        socket_path = config_provider.get("docker_socket_path", "/var/run/docker.sock")
+        gateway_ip = config_provider.get("docker_gateway_ip")
 
         # Try connection strategies in order
         strategies = [
@@ -115,9 +123,11 @@ def create_docker_client(config_provider=None) -> Optional[object]:
         if gateway_ip:
             strategies.append(GatewayIPStrategy(gateway_ip=gateway_ip))
 
-        strategies.extend([
-            DefaultFromEnvStrategy(),
-        ])
+        strategies.extend(
+            [
+                DefaultFromEnvStrategy(),
+            ]
+        )
 
         for strategy in strategies:
             client = strategy.connect(socket_path)

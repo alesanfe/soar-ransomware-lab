@@ -4,7 +4,7 @@ name: soar-lab-misp
 
 services:
   misp-db:
-    image: mariadb:10.11
+    image: ${MISP_DB_IMAGE:-mariadb:10.11}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_db
     environment:
       MYSQL_ROOT_PASSWORD: ${MISP_DB_ROOT_PASSWORD}
@@ -30,9 +30,14 @@ services:
         reservations:
           cpus: '0.5'
           memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   misp-modules:
-    image: ghcr.io/misp/misp-docker/misp-modules:latest
+    image: ${MISP_MODULES_IMAGE:-ghcr.io/misp/misp-docker/misp-modules:v3.0.9}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_modules
     healthcheck:
       test: [ "CMD-SHELL", "python3 -c \"import socket; s=socket.socket(); s.connect(('localhost',6666)); s.close()\" 2>/dev/null || exit 1" ]
@@ -51,9 +56,14 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   misp:
-    image: ghcr.io/misp/misp-docker/misp-core:latest
+    image: ${MISP_CORE_IMAGE:-ghcr.io/misp/misp-docker/misp-core:v2.5.44}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp
     cap_add:
       - AUDIT_WRITE
@@ -66,13 +76,13 @@ services:
         condition: service_healthy
     environment:
       BASE_URL: https://${MISP_HOSTNAME:-localhost}:${MISP_HTTPS_PORT:-8083}
-      MYSQL_HOST: misp-db
-      MYSQL_PORT: 3306
+      MYSQL_HOST: ${MISP_DB_HOST:-misp-db}
+      MYSQL_PORT: ${MISP_DB_PORT:-3306}
       MYSQL_USER: ${MISP_DB_USER:-misp}
       MYSQL_PASSWORD: ${MISP_DB_PASSWORD}
       MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_HOST: ${MISP_REDIS_HOST:-redis}
+      REDIS_PORT: ${MISP_REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       ADMIN_EMAIL: ${MISP_ADMIN_EMAIL:-admin@soar.local}
       ADMIN_PASSWORD: ${MISP_ADMIN_PASSWORD}
@@ -113,3 +123,8 @@ services:
         reservations:
           cpus: '1.0'
           memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

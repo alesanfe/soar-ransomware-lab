@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""
-Unit tests for infrastructure config_provider module
-"""
+"""Unit tests for infrastructure config_provider module."""
 
-import pytest
 import sys
 from pathlib import Path
 from unittest.mock import Mock
+
+import pytest
 
 # Add src to path
 REPO_ROOT = Path(__file__).parent.parent.parent
@@ -80,9 +79,7 @@ class TestInfrastructureConfigProvider:
 
         result = provider.get_service_urls()
 
-        assert result == {
-            "shuffle": {"url": "http://localhost:8081", "container": "shuffle"}
-        }
+        assert result == {"shuffle": {"url": "http://localhost:8081", "container": "shuffle"}}
 
     def test_get_service_urls_no_method(self):
         """Test getting service URLs when Settings doesn't have method."""

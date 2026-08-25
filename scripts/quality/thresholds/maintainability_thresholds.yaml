@@ -1,0 +1,9 @@
+# Maintainability Index thresholds (radon mi)
+# Grades: A(>=20) B(>=10) C(>=9) D(>=5) E(>=1) F(<1)
+# radon mi uses a 0-100 scale internally
+min_mi_global: 65  # fail if project average MI below this
+min_mi_per_file: 50  # fail if any file MI below this
+warn_mi_per_file: 65  # warn if any file MI below this
+fail_grades: ["E", "F"]  # fail if any file has these grades
+warn_grades: ["C", "D"]  # warn if any file has these grades
+top_n_worst: 10  # number of worst files to report

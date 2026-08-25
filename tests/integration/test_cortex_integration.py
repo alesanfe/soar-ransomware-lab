@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""
-Integration tests for Cortex client.
-Tests Cortex client functionality using mocks when service is not available.
+"""Integration tests for Cortex client.
+
+Tests Cortex client functionality using mocks when service is not
+available.
 """
 
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-import requests
+
 from soar_lab.common.exceptions import IntegrationError
-from soar_lab.infrastructure.external.integrations.cortex_client import CortexClient
-from unittest.mock import patch, MagicMock
+from soar_lab.infrastructure.integrations.cortex.client import CortexClient
 
 CORTEX_URL = os.getenv("CORTEX_URL", "http://localhost:9001")
 CORTEX_API_KEY = os.getenv("CORTEX_API_KEY", "")
@@ -23,7 +25,7 @@ def cortex_client():
 @pytest.mark.integration
 class TestCortexHealth:
     def test_health_check_returns_bool(self, cortex_client):
-        with patch.object(cortex_client._session, 'get') as mock_get:
+        with patch.object(cortex_client._session, "get") as mock_get:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_get.return_value = mock_response
@@ -34,7 +36,7 @@ class TestCortexHealth:
 @pytest.mark.integration
 class TestCortexAnalyzers:
     def test_list_analyzers_returns_list(self, cortex_client):
-        with patch.object(cortex_client._session, 'post') as mock_post:
+        with patch.object(cortex_client._session, "post") as mock_post:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = []

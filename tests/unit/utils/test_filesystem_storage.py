@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
-"""Unit tests for FilesystemStorage"""
+"""Unit tests for FilesystemStorage."""
+
+from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
-from pathlib import Path
-from unittest.mock import patch, Mock
 
 from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
 
 
 class TestFilesystemStorage:
-    """Test FilesystemStorage with temporary directory"""
+    """Test FilesystemStorage with temporary directory."""
 
     def test_init_with_base_dir(self, tmp_path):
-        """Test initialization with base directory"""
+        """Test initialization with base directory."""
         storage = FilesystemStorage(str(tmp_path))
 
         assert storage._base == tmp_path
         assert tmp_path.exists()
 
     def test_write_and_read(self, tmp_path):
-        """Test write and read operations"""
+        """Test write and read operations."""
         storage = FilesystemStorage(str(tmp_path))
 
         storage.write("test/file.txt", b"test data")
@@ -29,7 +30,7 @@ class TestFilesystemStorage:
         assert (tmp_path / "test" / "file.txt").exists()
 
     def test_exists(self, tmp_path):
-        """Test exists operation"""
+        """Test exists operation."""
         storage = FilesystemStorage(str(tmp_path))
 
         assert not storage.exists("nonexistent.txt")
@@ -38,7 +39,7 @@ class TestFilesystemStorage:
         assert storage.exists("existing.txt")
 
     def test_list_keys(self, tmp_path):
-        """Test list_keys operation"""
+        """Test list_keys operation."""
         storage = FilesystemStorage(str(tmp_path))
 
         storage.write("test1.txt", b"data1")
@@ -52,7 +53,7 @@ class TestFilesystemStorage:
         assert "test2.txt" in keys
 
     def test_delete(self, tmp_path):
-        """Test delete operation"""
+        """Test delete operation."""
         storage = FilesystemStorage(str(tmp_path))
 
         storage.write("to_delete.txt", b"data")
@@ -62,14 +63,14 @@ class TestFilesystemStorage:
         assert not storage.exists("to_delete.txt")
 
     def test_delete_nonexistent(self, tmp_path):
-        """Test delete operation on nonexistent file"""
+        """Test delete operation on nonexistent file."""
         storage = FilesystemStorage(str(tmp_path))
 
         # Should not raise error
         storage.delete("nonexistent.txt")
 
     def test_ensure_directory_exists(self, tmp_path):
-        """Test ensure_directory_exists"""
+        """Test ensure_directory_exists."""
         storage = FilesystemStorage(str(tmp_path))
 
         new_dir = str(tmp_path / "new" / "nested" / "dir")
@@ -79,7 +80,7 @@ class TestFilesystemStorage:
         assert Path(new_dir).is_dir()
 
     def test_get_file_size(self, tmp_path):
-        """Test get_file_size"""
+        """Test get_file_size."""
         storage = FilesystemStorage(str(tmp_path))
 
         storage.write("size_test.txt", b"test data")
@@ -90,7 +91,7 @@ class TestFilesystemStorage:
         assert size == 9  # len(b"test data")
 
     def test_directory_exists(self, tmp_path):
-        """Test directory_exists"""
+        """Test directory_exists."""
         storage = FilesystemStorage(str(tmp_path))
 
         assert storage.directory_exists(str(tmp_path))
@@ -100,7 +101,7 @@ class TestFilesystemStorage:
         assert storage.directory_exists(str(tmp_path / "new_dir"))
 
     def test_file_exists(self, tmp_path):
-        """Test file_exists"""
+        """Test file_exists."""
         storage = FilesystemStorage(str(tmp_path))
 
         storage.write("file.txt", b"data")
@@ -109,7 +110,7 @@ class TestFilesystemStorage:
         assert not storage.file_exists(str(tmp_path / "nonexistent.txt"))
 
     def test_list_files(self, tmp_path):
-        """Test list_files"""
+        """Test list_files."""
         storage = FilesystemStorage(str(tmp_path))
 
         (tmp_path / "file1.txt").write_text("data1")
@@ -124,7 +125,7 @@ class TestFilesystemStorage:
         assert "file2.txt" in files
 
     def test_get_file_info(self, tmp_path):
-        """Test get_file_info"""
+        """Test get_file_info."""
         storage = FilesystemStorage(str(tmp_path))
 
         storage.write("info_test.txt", b"data")
@@ -133,13 +134,13 @@ class TestFilesystemStorage:
         info = storage.get_file_info(file_path)
 
         assert info is not None
-        assert 'size' in info
-        assert 'modified_time' in info
-        assert 'created_time' in info
-        assert info['size'] == 4
+        assert "size" in info
+        assert "modified_time" in info
+        assert "created_time" in info
+        assert info["size"] == 4
 
     def test_get_file_info_nonexistent(self, tmp_path):
-        """Test get_file_info for nonexistent file"""
+        """Test get_file_info for nonexistent file."""
         storage = FilesystemStorage(str(tmp_path))
 
         info = storage.get_file_info(str(tmp_path / "nonexistent.txt"))
@@ -147,7 +148,7 @@ class TestFilesystemStorage:
         assert info is None
 
     def test_delete_file(self, tmp_path):
-        """Test delete_file"""
+        """Test delete_file."""
         storage = FilesystemStorage(str(tmp_path))
 
         storage.write("to_delete.txt", b"data")
@@ -159,7 +160,7 @@ class TestFilesystemStorage:
         assert not Path(file_path).exists()
 
     def test_delete_file_nonexistent(self, tmp_path):
-        """Test delete_file for nonexistent file"""
+        """Test delete_file for nonexistent file."""
         storage = FilesystemStorage(str(tmp_path))
 
         result = storage.delete_file(str(tmp_path / "nonexistent.txt"))
@@ -181,28 +182,29 @@ class TestFilesystemStorage:
         storage.log_restore_operation("backup.tar.gz", {"key": "value"})
 
     def test_get_base_directory(self, tmp_path):
-        """Test get_base_directory"""
+        """Test get_base_directory."""
         storage = FilesystemStorage(str(tmp_path))
 
         assert storage.get_base_directory() == str(tmp_path)
 
     def test_init_with_config_provider(self, tmp_path):
-        """Test initialization with config_provider"""
+        """Test initialization with config_provider."""
         mock_config = Mock()
         mock_config.get.return_value = str(tmp_path)
 
         storage = FilesystemStorage(config_provider=mock_config)
 
         assert storage._base == tmp_path
-        mock_config.get.assert_called_once_with('base_dir', '.')
+        mock_config.get.assert_called_once_with("base_dir", ".")
 
     def test_init_without_base_dir_or_config(self):
-        """Test initialization without base_dir or config_provider raises ValueError"""
+        """Test initialization without base_dir or config_provider raises
+        ValueError."""
         with pytest.raises(ValueError, match="base_dir or config_provider must be supplied"):
             FilesystemStorage()
 
     def test_read_file_exception(self, tmp_path):
-        """Test read_file when file cannot be read"""
+        """Test read_file when file cannot be read."""
         storage = FilesystemStorage(str(tmp_path))
 
         result = storage.read_file("nonexistent.txt")
@@ -210,7 +212,7 @@ class TestFilesystemStorage:
         assert result is None
 
     def test_delete_file_exception(self, tmp_path):
-        """Test delete_file when exception occurs"""
+        """Test delete_file when exception occurs."""
         storage = FilesystemStorage(str(tmp_path))
 
         # Create a directory instead of a file to cause error
@@ -221,14 +223,15 @@ class TestFilesystemStorage:
         assert result is False
 
     def test_get_backup_directory_without_config_provider(self, tmp_path):
-        """Test get_backup_directory without config_provider raises ValueError"""
+        """Test get_backup_directory without config_provider raises
+        ValueError."""
         storage = FilesystemStorage(str(tmp_path))
 
         with pytest.raises(ValueError, match="config_provider is required"):
             storage.get_backup_directory()
 
     def test_get_backup_directory_with_config_provider(self, tmp_path):
-        """Test get_backup_directory with config_provider"""
+        """Test get_backup_directory with config_provider."""
         mock_config = Mock()
         mock_config.get.return_value = str(tmp_path / "backups")
 
@@ -237,10 +240,10 @@ class TestFilesystemStorage:
         result = storage.get_backup_directory()
 
         assert result == str(tmp_path / "backups")
-        mock_config.get.assert_called_once_with('BACKUP_DIR', str(tmp_path / "backups"))
+        mock_config.get.assert_called_once_with("BACKUP_DIR", str(tmp_path / "backups"))
 
     def test_join_path(self, tmp_path):
-        """Test join_path"""
+        """Test join_path."""
         storage = FilesystemStorage(str(tmp_path))
 
         result = storage.join_path("dir1", "dir2", "file.txt")

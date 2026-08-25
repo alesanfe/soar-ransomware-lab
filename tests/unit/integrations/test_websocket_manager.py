@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
-"""
-Unit tests for websocket_manager.py
-"""
+"""Unit tests for websocket_manager.py."""
 
 import json
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
 
 from soar_lab.infrastructure.websocket_manager import ConnectionManager
 
 
 class TestConnectionManager:
-    """Test ConnectionManager"""
+    """Test ConnectionManager."""
 
     def test_initialization(self):
-        """Test successful initialization"""
+        """Test successful initialization."""
         manager = ConnectionManager()
 
         assert manager.active_connections == []
 
     @pytest.mark.asyncio
     async def test_connect(self):
-        """Test connecting a WebSocket"""
+        """Test connecting a WebSocket."""
         manager = ConnectionManager()
         mock_websocket = Mock()
         mock_websocket.accept = AsyncMock()
@@ -34,7 +33,7 @@ class TestConnectionManager:
 
     @pytest.mark.asyncio
     async def test_connect_multiple(self):
-        """Test connecting multiple WebSockets"""
+        """Test connecting multiple WebSockets."""
         manager = ConnectionManager()
         mock_ws1 = Mock()
         mock_ws1.accept = AsyncMock()
@@ -49,7 +48,7 @@ class TestConnectionManager:
         assert mock_ws2 in manager.active_connections
 
     def test_disconnect(self):
-        """Test disconnecting a WebSocket"""
+        """Test disconnecting a WebSocket."""
         manager = ConnectionManager()
         mock_websocket = Mock()
         manager.active_connections.append(mock_websocket)
@@ -60,7 +59,7 @@ class TestConnectionManager:
         assert len(manager.active_connections) == 0
 
     def test_disconnect_not_found(self):
-        """Test disconnecting a WebSocket that is not in active connections"""
+        """Test disconnecting a WebSocket that is not in active connections."""
         manager = ConnectionManager()
         mock_websocket = Mock()
 
@@ -71,7 +70,7 @@ class TestConnectionManager:
 
     @pytest.mark.asyncio
     async def test_send_personal_message(self):
-        """Test sending a personal message to a specific WebSocket"""
+        """Test sending a personal message to a specific WebSocket."""
         manager = ConnectionManager()
         mock_websocket = Mock()
         mock_websocket.send_text = AsyncMock()
@@ -82,7 +81,7 @@ class TestConnectionManager:
 
     @pytest.mark.asyncio
     async def test_broadcast(self):
-        """Test broadcasting a message to all active connections"""
+        """Test broadcasting a message to all active connections."""
         manager = ConnectionManager()
         mock_ws1 = Mock()
         mock_ws1.send_text = AsyncMock()
@@ -99,7 +98,7 @@ class TestConnectionManager:
 
     @pytest.mark.asyncio
     async def test_broadcast_with_disconnect(self):
-        """Test broadcasting when a connection disconnects"""
+        """Test broadcasting when a connection disconnects."""
         manager = ConnectionManager()
         mock_ws1 = Mock()
         mock_ws1.send_text = AsyncMock()
@@ -108,6 +107,7 @@ class TestConnectionManager:
         manager.active_connections = [mock_ws1, mock_ws2]
 
         from fastapi import WebSocketDisconnect
+
         mock_ws1.send_text.side_effect = WebSocketDisconnect(code=1000)
 
         message = {"type": "log", "content": "test"}
@@ -120,7 +120,7 @@ class TestConnectionManager:
 
     @pytest.mark.asyncio
     async def test_broadcast_with_generic_exception(self):
-        """Test broadcasting when a connection raises a generic exception"""
+        """Test broadcasting when a connection raises a generic exception."""
         manager = ConnectionManager()
         mock_ws1 = Mock()
         mock_ws1.send_text = AsyncMock()
@@ -140,7 +140,7 @@ class TestConnectionManager:
 
     @pytest.mark.asyncio
     async def test_broadcast_empty_connections(self):
-        """Test broadcasting with no active connections"""
+        """Test broadcasting with no active connections."""
         manager = ConnectionManager()
 
         message = {"type": "log", "content": "test"}
@@ -151,7 +151,7 @@ class TestConnectionManager:
 
     @pytest.mark.asyncio
     async def test_connect_disconnect_cycle(self):
-        """Test connect and disconnect cycle"""
+        """Test connect and disconnect cycle."""
         manager = ConnectionManager()
         mock_websocket = Mock()
         mock_websocket.accept = AsyncMock()

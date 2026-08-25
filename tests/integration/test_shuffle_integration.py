@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""
-Integration tests for Shuffle client.
-Tests Shuffle client functionality using mocks when service is not available.
+"""Integration tests for Shuffle client.
+
+Tests Shuffle client functionality using mocks when service is not
+available.
 """
 
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-import requests
+
 from soar_lab.common.exceptions import IntegrationError
-from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
-from unittest.mock import patch, MagicMock
+from soar_lab.infrastructure.integrations.shuffle.client import ShuffleClient
 
 SHUFFLE_URL = os.getenv("SHUFFLE_URL", "http://localhost:5001")
 SHUFFLE_API_KEY = os.getenv("SHUFFLE_DEFAULT_APIKEY", "")
@@ -24,7 +26,7 @@ def shuffle_client():
 @pytest.mark.integration
 class TestShuffleHealth:
     def test_health_check_returns_bool(self, shuffle_client):
-        with patch.object(shuffle_client._session, 'get') as mock_get:
+        with patch.object(shuffle_client._session, "get") as mock_get:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_get.return_value = mock_response
@@ -35,7 +37,7 @@ class TestShuffleHealth:
 @pytest.mark.integration
 class TestShuffleWorkflows:
     def test_list_workflows_returns_list(self, shuffle_client):
-        with patch.object(shuffle_client._session, 'get') as mock_get:
+        with patch.object(shuffle_client._session, "get") as mock_get:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = []
@@ -47,7 +49,7 @@ class TestShuffleWorkflows:
 @pytest.mark.integration
 class TestShuffleWebhook:
     def test_send_webhook_returns_dict(self, shuffle_client):
-        with patch.object(shuffle_client._session, 'post') as mock_post:
+        with patch.object(shuffle_client._session, "post") as mock_post:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"success": True}

@@ -1,16 +1,31 @@
-"""
-Shared assertions for observable validation in E2E tests.
-"""
+"""Shared assertions for observable validation in E2E tests."""
 
-from typing import Dict, List, Any
+from typing import Any
 
+__all__ = [
+    "assert_observable_type",
+    "assert_observable_value",
+    "assert_observable_tlp",
+    "assert_observable_pap",
+    "assert_observable_has_tags",
+    "assert_observable_has_tag",
+    "assert_observables_match_payload",
+]
 
 # TheHive 3.x stores TLP/PAP as integers (0=white, 1=green, 2=amber, 3=red).
 _TLP_MAP = {
-    0: 0, "0": 0, "white": 0,
-    1: 1, "1": 1, "green": 1,
-    2: 2, "2": 2, "amber": 2,
-    3: 3, "3": 3, "red": 3,
+    0: 0,
+    "0": 0,
+    "white": 0,
+    1: 1,
+    "1": 1,
+    "green": 1,
+    2: 2,
+    "2": 2,
+    "amber": 2,
+    3: 3,
+    "3": 3,
+    "red": 3,
 }
 
 
@@ -27,42 +42,51 @@ def _normalize_tlp(value: Any) -> Any:
         return value
 
 
-def assert_observable_type(observable: Dict[str, Any], expected_type: str):
+def assert_observable_type(observable: dict[str, Any], expected_type: str):
     """Assert that an observable has the expected type."""
-    assert observable.get(
-        "dataType") == expected_type, f"Expected type {expected_type}, got {observable.get('dataType')}"
+    assert (
+        observable.get("dataType") == expected_type
+    ), f"Expected type {expected_type}, got {observable.get('dataType')}"
 
 
-def assert_observable_value(observable: Dict[str, Any], expected_value: str):
+def assert_observable_value(observable: dict[str, Any], expected_value: str):
     """Assert that an observable has the expected value."""
-    assert observable.get("data") == expected_value, f"Expected value {expected_value}, got {observable.get('data')}"
+    assert (
+        observable.get("data") == expected_value
+    ), f"Expected value {expected_value}, got {observable.get('data')}"
 
 
-def assert_observable_tlp(observable: Dict[str, Any], expected_tlp: Any):
+def assert_observable_tlp(observable: dict[str, Any], expected_tlp: Any):
     """Assert that an observable has the expected TLP level."""
     actual = observable.get("tlp")
-    assert _normalize_tlp(actual) == _normalize_tlp(expected_tlp), f"Expected TLP {expected_tlp}, got {actual}"
+    assert _normalize_tlp(actual) == _normalize_tlp(
+        expected_tlp
+    ), f"Expected TLP {expected_tlp}, got {actual}"
 
 
-def assert_observable_pap(observable: Dict[str, Any], expected_pap: Any):
+def assert_observable_pap(observable: dict[str, Any], expected_pap: Any):
     """Assert that an observable has the expected PAP level."""
     actual = observable.get("pap")
-    assert _normalize_tlp(actual) == _normalize_tlp(expected_pap), f"Expected PAP {expected_pap}, got {actual}"
+    assert _normalize_tlp(actual) == _normalize_tlp(
+        expected_pap
+    ), f"Expected PAP {expected_pap}, got {actual}"
 
 
-def assert_observable_has_tags(observable: Dict[str, Any], min_tags: int = 1):
+def assert_observable_has_tags(observable: dict[str, Any], min_tags: int = 1):
     """Assert that an observable has at least the minimum number of tags."""
     tags = observable.get("tags", [])
     assert len(tags) >= min_tags, f"Expected at least {min_tags} tags, got {len(tags)}"
 
 
-def assert_observable_has_tag(observable: Dict[str, Any], tag: str):
+def assert_observable_has_tag(observable: dict[str, Any], tag: str):
     """Assert that an observable has a specific tag."""
     tags = observable.get("tags", [])
     assert tag in tags, f"Expected tag {tag}, not found in {tags}"
 
 
-def assert_observables_match_payload(observables: List[Dict[str, Any]], payload_iocs: List[Dict[str, Any]]):
+def assert_observables_match_payload(
+    observables: list[dict[str, Any]], payload_iocs: list[dict[str, Any]]
+):
     """Assert that observables match the IoCs from the payload."""
     obs_values = {obs.get("value") for obs in observables}
     payload_values = {ioc.get("value") for ioc in payload_iocs}

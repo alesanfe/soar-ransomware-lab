@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""
-Unit tests for soar_lab.domain.alert_generator
-"""
+"""Unit tests for soar_lab.domain.alert_generator."""
+
+import re
 
 import pytest
-import re
 
 from soar_lab.domain.alert_generator import AlertGenerator
 

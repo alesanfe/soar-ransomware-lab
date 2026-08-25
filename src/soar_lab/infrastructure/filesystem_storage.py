@@ -5,18 +5,21 @@ for production use. Tests should use InMemoryStorage instead.
 """
 
 import os
+from datetime import UTC
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
+
+__all__ = ["FilesystemStorage"]
 
 
 class FilesystemStorage:
     """Filesystem implementation of StorageProvider for production."""
 
-    def __init__(self, base_dir: str = None, config_provider: Optional[object] = None):
+    def __init__(self, base_dir: str | None = None, config_provider: object | None = None) -> None:
         if base_dir:
             self._base = Path(base_dir)
         elif config_provider:
-            self._base = Path(config_provider.get('base_dir', '.'))
+            self._base = Path(config_provider.get("base_dir", "."))
         else:
             # Require explicit config or base_dir - no fallback to global settings
             raise ValueError("base_dir or config_provider must be supplied")
@@ -35,7 +38,7 @@ class FilesystemStorage:
     def read_file(self, key: str) -> str:
         """Read file content as string."""
         try:
-            return (self._base / key).read_text(encoding='utf-8')
+            return (self._base / key).read_text(encoding="utf-8")
         except Exception:
             return None
 
@@ -43,7 +46,7 @@ class FilesystemStorage:
         """Check if a file exists."""
         return (self._base / key).exists()
 
-    def list_keys(self, prefix: str = "") -> List[str]:
+    def list_keys(self, prefix: str = "") -> list[str]:
         """List all files with a prefix."""
         return [f.name for f in self._base.glob(f"{prefix}*")]
 
@@ -68,20 +71,16 @@ class FilesystemStorage:
         """Check if file exists."""
         return Path(path).exists() and Path(path).is_file()
 
-    def list_files(self, directory: str, pattern: str = "*") -> List[str]:
+    def list_files(self, directory: str, pattern: str = "*") -> list[str]:
         """List files in directory with pattern."""
         return [f.name for f in Path(directory).glob(pattern) if f.is_file()]
 
-    def get_file_info(self, path: str) -> Dict[str, Any]:
+    def get_file_info(self, path: str) -> dict[str, Any]:
         """Get file information."""
         if not Path(path).exists():
             return None
         stat = Path(path).stat()
-        return {
-            'size': stat.st_size,
-            'modified_time': stat.st_mtime,
-            'created_time': stat.st_ctime
-        }
+        return {"size": stat.st_size, "modified_time": stat.st_mtime, "created_time": stat.st_ctime}
 
     def delete_file(self, path: str) -> bool:
         """Delete a file."""
@@ -91,31 +90,33 @@ class FilesystemStorage:
         except Exception:
             return False
 
-    def store_backup_metadata(self, filename: str, metadata: Dict[str, Any]) -> None:
+    def store_backup_metadata(self, filename: str, metadata: dict[str, Any]) -> None:
         """Store backup metadata to a JSON file."""
         metadata_file = self._base / f"{filename}.metadata.json"
         import json
-        with open(metadata_file, 'w') as f:
+
+        with open(metadata_file, "w") as f:
             json.dump(metadata, f, indent=2)
 
-    def log_restore_operation(self, backup_name: str, metadata: Dict[str, Any]) -> None:
+    def log_restore_operation(self, backup_name: str, metadata: dict[str, Any]) -> None:
         """Log restore operation to a log file."""
         log_file = self._base / "restore_operations.log"
-        from datetime import datetime, timezone
         import json
+        from datetime import datetime
+
         log_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "backup_name": backup_name,
-            "metadata": metadata
+            "metadata": metadata,
         }
-        with open(log_file, 'a') as f:
+        with open(log_file, "a") as f:
             f.write(json.dumps(log_entry) + "\n")
 
     def get_backup_directory(self) -> str:
         """Get backup directory from config_provider."""
         if not self._config_provider:
             raise ValueError("config_provider is required for get_backup_directory")
-        return self._config_provider.get('BACKUP_DIR', str(self._base / "backups"))
+        return self._config_provider.get("BACKUP_DIR", str(self._base / "backups"))
 
     def get_base_directory(self) -> str:
         """Get base directory from settings."""

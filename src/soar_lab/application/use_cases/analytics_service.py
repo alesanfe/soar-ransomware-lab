@@ -1,26 +1,37 @@
-"""Analytics Service for SOAR Lab - Centralized KPI and Metrics Management"""
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List
+"""Analytics Service for SOAR Lab - Centralized KPI and Metrics Management."""
+
+from datetime import UTC, datetime
+from typing import Any
 
 from soar_lab.config.logging import get_logger
 from soar_lab.domain.ports import (
-    AlertRepository, SystemMetricsInterface, FileSystemInterface,
-    LogReader, LogParser, KPIFormatter, StatisticalCalculatorInterface
+    AlertRepository,
+    FileSystemInterface,
+    KPIFormatter,
+    LogParser,
+    LogReader,
+    StatisticalCalculatorInterface,
+    SystemMetricsInterface,
 )
 
 logger = get_logger(__name__)
 
 
 class AnalyticsService:
-    """Service for analytics, KPIs, and system metrics"""
+    """Service for analytics, KPIs, and system metrics."""
 
-    def __init__(self, data_repository: AlertRepository, system_metrics: SystemMetricsInterface,
-                 file_system: FileSystemInterface, log_reader: Optional[LogReader] = None,
-                 log_parser: LogParser = None, kpi_formatter: KPIFormatter = None,
-                 statistical_calculator: StatisticalCalculatorInterface = None,
-                 kpi_analyzer=None):
-        """
-        Initialize analytics service with injected dependencies.
+    def __init__(
+        self,
+        data_repository: AlertRepository,
+        system_metrics: SystemMetricsInterface,
+        file_system: FileSystemInterface,
+        log_reader: LogReader | None = None,
+        log_parser: LogParser = None,
+        kpi_formatter: KPIFormatter = None,
+        statistical_calculator: StatisticalCalculatorInterface = None,
+        kpi_analyzer: object | None = None,
+    ) -> None:
+        """Initialize analytics service with injected dependencies.
 
         Args:
             data_repository: Repository for accessing application data
@@ -28,7 +39,8 @@ class AnalyticsService:
             file_system: File system provider (injected dependency)
             log_reader: Log reader provider (injected dependency for reading log files)
             log_parser: Log parser provider (injected dependency for parsing logs) - REQUIRED
-            kpi_formatter: KPI formatter provider (injected dependency for formatting metrics) - REQUIRED
+            kpi_formatter: KPI formatter provider (injected dependency for
+                formatting metrics) - REQUIRED
             statistical_calculator: Statistical calculator provider (injected dependency) - REQUIRED
             kpi_analyzer: KPI analyzer provider (injected dependency) - REQUIRED
         """
@@ -49,12 +61,14 @@ class AnalyticsService:
             raise ValueError("kpi_analyzer is required for AnalyticsService")
         self.kpi_analyzer = kpi_analyzer
 
-    def get_comprehensive_system_stats(self) -> Dict[str, Any]:
-        """
-        Get comprehensive system statistics combining application and hardware metrics.
-        
+    def get_comprehensive_system_stats(self) -> dict[str, Any]:
+        """Get comprehensive system statistics combining application and.
+
+        hardware metrics.
+
         Returns:
-            Dict with complete system statistics
+        Dict with complete system statistics
+
         """
         try:
             # Get application data stats
@@ -70,16 +84,15 @@ class AnalyticsService:
                 "application": app_stats,
                 "hardware": hw_stats,
                 "process": proc_stats,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Error getting comprehensive system stats: {e}")
             raise
 
-    def _get_application_stats(self) -> Dict[str, Any]:
-        """
-        Get application-specific statistics from data repository.
-        
+    def _get_application_stats(self) -> dict[str, Any]:
+        """Get application-specific statistics from data repository.
+
         Returns:
             Dict with application statistics
         """
@@ -99,28 +112,17 @@ class AnalyticsService:
             avg_coverage = self.data_repository.get_average_test_coverage(hours=24)
 
             return {
-                "alerts": {
-                    "total": total_alerts,
-                    "new": new_alerts
-                },
-                "cases": {
-                    "total": total_cases,
-                    "open": open_cases
-                },
-                "backups": {
-                    "completed": completed_backups
-                },
-                "tests": {
-                    "avg_coverage_24h": round(avg_coverage, 2) if avg_coverage else 0
-                }
+                "alerts": {"total": total_alerts, "new": new_alerts},
+                "cases": {"total": total_cases, "open": open_cases},
+                "backups": {"completed": completed_backups},
+                "tests": {"avg_coverage_24h": round(avg_coverage, 2) if avg_coverage else 0},
             }
         except Exception as e:
             logger.error(f"Error getting application stats: {e}")
             raise
 
-    def get_performance_kpis(self, hours: int = 24) -> Dict[str, Any]:
-        """
-        Get performance KPIs for the specified time period.
+    def get_performance_kpis(self, hours: int = 24) -> dict[str, Any]:
+        """Get performance KPIs for the specified time period.
 
         Args:
             hours: Time period in hours for KPI calculation
@@ -138,9 +140,8 @@ class AnalyticsService:
             logger.error(f"Error calculating performance KPIs: {e}")
             raise
 
-    def get_health_score(self) -> Dict[str, Any]:
-        """
-        Calculate overall system health score based on various metrics.
+    def get_health_score(self) -> dict[str, Any]:
+        """Calculate overall system health score based on various metrics.
 
         Returns:
             Dict with health score and components
@@ -153,24 +154,23 @@ class AnalyticsService:
             app_stats = self._get_application_stats()
 
             # Extract percent values — hw_metrics may return dicts or floats
-            def _pct(val):
-                return val.get('percent', 0.0) if isinstance(val, dict) else float(val or 0)
+            def _pct(val: dict | float | None) -> float:
+                return val.get("percent", 0.0) if isinstance(val, dict) else float(val or 0)
 
             # Delegate calculation to KPIAnalyzer (pure calculation)
             return self.kpi_analyzer.calculate_health_score(
                 cpu_percent=_pct(hw_metrics.get("cpu", 0)),
                 memory_percent=_pct(hw_metrics.get("memory", 0)),
                 disk_percent=_pct(hw_metrics.get("disk", 0)),
-                test_coverage=app_stats["tests"]["avg_coverage_24h"]
+                test_coverage=app_stats["tests"]["avg_coverage_24h"],
             )
         except Exception as e:
             logger.error(f"Error calculating health score: {e}")
             return {"score": 0.0, "status": "unknown"}
 
     # MTTR and KPI Calculation Methods (Consolidated from calc_kpis.py)
-    def parse_execution_logs(self, log_file_path: str) -> Dict[str, List[datetime]]:
-        """
-        Parse execution logs to extract timestamps for MTTR calculation.
+    def parse_execution_logs(self, log_file_path: str) -> dict[str, list[datetime]]:
+        """Parse execution logs to extract timestamps for MTTR calculation.
 
         Args:
             log_file_path: Path to execution log file
@@ -187,9 +187,8 @@ class AnalyticsService:
             logger.error(f"Error parsing execution logs: {e}")
             raise
 
-    def calculate_mttr_metrics(self, log_file_path: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Calculate MTTR (Mean Time To Respond) metrics from execution logs.
+    def calculate_mttr_metrics(self, log_file_path: str | None = None) -> dict[str, Any]:
+        """Calculate MTTR (Mean Time To Respond) metrics from execution logs.
 
         Args:
             log_file_path: Path to execution log file (optional, uses default if not provided)
@@ -200,10 +199,12 @@ class AnalyticsService:
         try:
             # Use default log path from log_reader if not provided (orchestration)
             if not log_file_path:
-                if self.log_reader and hasattr(self.log_reader, 'get_default_log_path'):
+                if self.log_reader and hasattr(self.log_reader, "get_default_log_path"):
                     log_file_path = self.log_reader.get_default_log_path()
                 else:
-                    raise ValueError("log_file_path is required when log_reader does not provide default path")
+                    raise ValueError(
+                        "log_file_path is required when log_reader does not provide default path"
+                    )
 
             # Parse log file (orchestration)
             alert_steps = self.parse_execution_logs(log_file_path)
@@ -218,9 +219,8 @@ class AnalyticsService:
             logger.error(f"Error calculating MTTR metrics: {e}")
             return {"p50": 0.0, "p90": 0.0, "mean": 0.0, "count": 0}
 
-    def save_kpis_to_csv(self, metrics: Dict[str, Any], output_path: Optional[str] = None) -> None:
-        """
-        Save KPI metrics to CSV file.
+    def save_kpis_to_csv(self, metrics: dict[str, Any], output_path: str | None = None) -> None:
+        """Save KPI metrics to CSV file.
 
         Args:
             metrics: KPI metrics dictionary
@@ -246,9 +246,10 @@ class AnalyticsService:
             logger.error(f"Error saving KPIs to CSV: {e}")
             raise
 
-    def get_comprehensive_kpis(self, log_file_path: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Get comprehensive KPIs including MTTR, performance, and health metrics.
+    def get_comprehensive_kpis(self, log_file_path: str | None = None) -> dict[str, Any]:
+        """Get comprehensive KPIs including MTTR, performance, and health.
+
+        metrics.
 
         Args:
             log_file_path: Path to execution log file (optional)
@@ -270,16 +271,15 @@ class AnalyticsService:
             return self.kpi_analyzer.calculate_comprehensive_kpis(
                 mttr_metrics=mttr_metrics,
                 performance_kpis=performance_kpis,
-                health_score=health_score
+                health_score=health_score,
             )
 
         except Exception as e:
             logger.error(f"Error getting comprehensive KPIs: {e}")
             raise
 
-    def get_kpis_by_alert_type(self, hours: int = 24) -> Dict[str, Any]:
-        """
-        Get KPIs separated by alert type from Elasticsearch metrics.
+    def get_kpis_by_alert_type(self, hours: int = 24) -> dict[str, Any]:
+        """Get KPIs separated by alert type from Elasticsearch metrics.
 
         Args:
             hours: Time period in hours
@@ -289,34 +289,21 @@ class AnalyticsService:
         """
         try:
             # Query metrics from Elasticsearch (orchestration)
-            from datetime import timedelta
-            query = {
-                "query": {
-                    "range": {
-                        "timestamp": {
-                            "gte": (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
-                        }
-                    }
-                },
-                "size": 10000,
-                "sort": [{"timestamp": {"order": "desc"}}]
-            }
 
             # This would require Elasticsearch client - for now, return empty
             # In a real implementation, this would use the ES client
             logger.warning("get_kpis_by_alert_type requires Elasticsearch client integration")
             return {
                 "period_hours": hours,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "by_alert_type": {}
+                "timestamp": datetime.now(UTC).isoformat(),
+                "by_alert_type": {},
             }
         except Exception as e:
             logger.error(f"Error calculating KPIs by alert type: {e}")
             return {"error": str(e)}
 
-    def get_service_integration_kpis(self, hours: int = 24) -> Dict[str, Any]:
-        """
-        Get KPIs for service integrations from Elasticsearch metrics.
+    def get_service_integration_kpis(self, hours: int = 24) -> dict[str, Any]:
+        """Get KPIs for service integrations from Elasticsearch metrics.
 
         Args:
             hours: Time period in hours
@@ -326,25 +313,14 @@ class AnalyticsService:
         """
         try:
             # Query metrics from Elasticsearch (orchestration)
-            from datetime import timedelta
-            query = {
-                "query": {
-                    "range": {
-                        "timestamp": {
-                            "gte": (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
-                        }
-                    }
-                },
-                "size": 10000
-            }
 
             # This would require Elasticsearch client - for now, return empty
             # In a real implementation, this would use the ES client
             logger.warning("get_service_integration_kpis requires Elasticsearch client integration")
             return {
                 "period_hours": hours,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "services": {}
+                "timestamp": datetime.now(UTC).isoformat(),
+                "services": {},
             }
         except Exception as e:
             logger.error(f"Error calculating service integration KPIs: {e}")

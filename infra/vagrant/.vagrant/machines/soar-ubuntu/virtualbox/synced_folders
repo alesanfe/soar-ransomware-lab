@@ -1,1 +1,0 @@
-{"virtualbox":{"/opt/soar-ransomware-lab":{"owner":"vagrant","group":"vagrant","guestpath":"/opt/soar-ransomware-lab","hostpath":"C:/Users/alex0/PycharmProjects/soar-ransomware-lab","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/vagrant","disabled":false,"__vagrantfile":true}}}

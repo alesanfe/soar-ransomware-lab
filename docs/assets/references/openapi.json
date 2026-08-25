@@ -1,0 +1,1845 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SOAR Lab Management API",
+    "description": "REST API for SOAR Ransomware Lab Management",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint - serves the OpenAPI schema as JSON.\n\nReturns:\n    dict: OpenAPI schema dict, or error dict on failure.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Root  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Health check endpoint.\n\nArgs:\n    cp: The config provider dependency injected by FastAPI.\n\nReturns:\n    dict: A mapping with ``status``, ``timestamp`` and ``version``\n    keys describing service health.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login",
+        "description": "Login endpoint - returns JWT token.\n\nArgs:\n    request: The LoginRequest containing username and password.\n    auth: The authentication service dependency.\n\nReturns:\n    LoginResponse: The JWT token and success message on valid login.\n\nRaises:\n    HTTPException: 401 when credentials are invalid or an AuthError\n    occurs.",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify": {
+      "post": {
+        "summary": "Verify Auth",
+        "description": "Verify JWT token endpoint.\n\nArgs:\n    credentials: The HTTPAuthorizationCredentials carrying the bearer\n    token from the Authorization header.\n\nReturns:\n    VerifyAuthResponse: Whether the token is valid plus the associated\n    user information.\n\nRaises:\n    HTTPException: 401 when the token is invalid or verification\n    fails.",
+        "operationId": "verify_auth_auth_verify_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyAuthResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/analytics/metrics": {
+      "get": {
+        "summary": "Get Metrics",
+        "description": "Get system metrics.\n\nReturns:\n    Metrics: System metrics model with alerts, cases, backups counts.",
+        "operationId": "get_metrics_analytics_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Metrics"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/kpis": {
+      "get": {
+        "summary": "Get Kpis",
+        "description": "Get KPI metrics.\n\nArgs:\n    log_file_path: Optional path to a log file used for KPI\n    computation; when omitted the analytics service default is used.\n    analytics: The analytics service dependency.\n\nReturns:\n    dict: The comprehensive KPI metrics computed by the analytics\n    service.\n\nRaises:\n    HTTPException: 500 when KPI retrieval fails.",
+        "operationId": "get_kpis_analytics_kpis_get",
+        "parameters": [
+          {
+            "name": "log_file_path",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Log File Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Kpis Analytics Kpis Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/kpis/aggregated": {
+      "get": {
+        "summary": "Get Aggregated Kpis",
+        "description": "Get aggregated KPI metrics from Elasticsearch soar-metrics index.\n\nArgs:\n    hours: The lookback window in hours for aggregating metrics.\n\nReturns:\n    dict: Aggregated KPI metrics including ``period_hours``,\n    ``timestamp``, ``total_alerts``, ``mttr_statistics``,\n    ``by_alert_type`` and ``services``.\n\nRaises:\n    HTTPException: 500 when retrieving or computing aggregated KPIs\n    fails.",
+        "operationId": "get_aggregated_kpis_analytics_kpis_aggregated_get",
+        "parameters": [
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 24,
+              "title": "Hours"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Aggregated Kpis Analytics Kpis Aggregated Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/node-timings": {
+      "get": {
+        "summary": "Get Node Timings",
+        "description": "Get per-node timing breakdown for workflow executions.\n\nIf execution_id is provided, fetches timings for that specific execution.\nOtherwise, returns aggregated node timings from the last `hours` hours.\n\nArgs:\n    execution_id: Optional workflow execution identifier to fetch\n    timings for a single execution.\n    alert_id: Optional alert identifier used alongside execution_id.\n    hours: The lookback window in hours for aggregated timings.\n\nReturns:\n    dict: The per-node timing data for the requested execution or the\n    aggregated timings over the lookback window.\n\nRaises:\n    HTTPException: 404 when the requested execution is not found, or\n    500 when retrieving node timings fails.",
+        "operationId": "get_node_timings_analytics_node_timings_get",
+        "parameters": [
+          {
+            "name": "execution_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Execution Id"
+            }
+          },
+          {
+            "name": "alert_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Alert Id"
+            }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Hours"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Node Timings Analytics Node Timings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backup/create": {
+      "post": {
+        "summary": "Create Backup",
+        "description": "Create a backup.\n\nArgs:\n    request: The BackupRequest specifying the backup name.\n    backup: The backup service dependency.\n\nReturns:\n    CreateBackupResponse: The created backup name, status and message.\n\nRaises:\n    HTTPException: 500 when backup creation fails.",
+        "operationId": "create_backup_backup_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBackupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backup/list": {
+      "get": {
+        "summary": "List Backups",
+        "description": "List all backups.\n\nArgs:\n    backup: The backup service dependency.\n\nReturns:\n    BackupListResponse: The list of available backups.\n\nRaises:\n    HTTPException: 500 when listing backups fails.",
+        "operationId": "list_backups_backup_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/backup/restore": {
+      "post": {
+        "summary": "Restore Backup",
+        "description": "Restore a backup.\n\nArgs:\n    request: The BackupRequest specifying the backup name to restore.\n    backup: The backup service dependency.\n\nReturns:\n    RestoreBackupResponse: The restored backup name, status and\n    message.\n\nRaises:\n    HTTPException: 500 when backup restoration fails.",
+        "operationId": "restore_backup_backup_restore_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreBackupResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tests/run": {
+      "post": {
+        "summary": "Run Tests",
+        "description": "Run tests.\n\nArgs:\n    request: The RunRequest specifying the test category to run.\n\nReturns:\n    RunResults: The test execution results including pass/fail counts,\n    coverage, output and duration.\n\nRaises:\n    HTTPException: 500 when running tests fails.",
+        "operationId": "run_tests_tests_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResults"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/status": {
+      "get": {
+        "summary": "Get Services Status",
+        "description": "Get status of all services.\n\nReturns:\n    dict: Service name -> status info mapping.",
+        "operationId": "get_services_status_services_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Services Status Services Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contain": {
+      "post": {
+        "summary": "Contain Endpoint",
+        "description": "Simulated containment endpoint for the SOAR workflow.\n\nRecords a containment action without executing real firewall or endpoint\ncommands. Used by the Shuffle workflow when the decision node classifies\nthe alert as malicious.\n\nArgs:\n    request: The ContainmentRequest describing the alert, case, host\n    and containment mode.\n\nReturns:\n    ContainmentResponse: The simulated containment result including\n    the actions that would have been performed and a timestamp.\n\nRaises:\n    HTTPException: 500 when an unexpected error occurs during\n    containment handling.",
+        "operationId": "contain_endpoint_api_v1_contain_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContainmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContainmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cache/ioc": {
+      "post": {
+        "summary": "Cache Ioc Endpoint",
+        "description": "Cache an IoC key/value in Redis on behalf of the Shuffle workflow.\n\nRedis speaks the RESP protocol, not HTTP, so Shuffle's generic \"http\"\napp node cannot POST JSON directly to port 6379 (it gets a\nconnection reset). This endpoint proxies the SET through the real\nredis-py client configured on the API service.\n\nArgs:\n    request: The IocCacheRequest carrying the key, value and optional\n    TTL to cache.\n\nReturns:\n    IocCacheResponse: Whether the cache operation succeeded along with\n    the key and a status message.",
+        "operationId": "cache_ioc_endpoint_api_v1_cache_ioc_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IocCacheRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IocCacheResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/cases": {
+      "get": {
+        "summary": "Thehive List Cases",
+        "description": "List all TheHive cases (no 10-item limit).\n\nArgs:\n    thehive: The TheHive client dependency.\n\nReturns:\n    dict: A mapping with ``cases`` (the list of cases) and ``count``\n    keys.\n\nRaises:\n    HTTPException: 502 when the TheHive client reports an error.",
+        "operationId": "thehive_list_cases_soar_thehive_cases_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Thehive List Cases Soar Thehive Cases Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/cases/{case_id}": {
+      "get": {
+        "summary": "Thehive Get Case",
+        "description": "Get a single TheHive case by ID.\n\nArgs:\n    case_id: The unique identifier of the TheHive case.\n    thehive: The TheHive client dependency.\n\nReturns:\n    dict: The TheHive case document.\n\nRaises:\n    HTTPException: 502 when the TheHive client reports an error.",
+        "operationId": "thehive_get_case_soar_thehive_cases__case_id__get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Thehive Get Case Soar Thehive Cases  Case Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/cases/{case_id}/observables": {
+      "get": {
+        "summary": "Thehive Get Observables",
+        "description": "List observables attached to a TheHive case.\n\nArgs:\n    case_id: The unique identifier of the TheHive case.\n    thehive: The TheHive client dependency.\n\nReturns:\n    dict: A mapping with ``case_id``, ``observables`` and ``count``\n    keys.\n\nRaises:\n    HTTPException: 502 when the TheHive client reports an error.",
+        "operationId": "thehive_get_observables_soar_thehive_cases__case_id__observables_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Thehive Get Observables Soar Thehive Cases  Case Id  Observables Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/cases/{case_id}/tasks": {
+      "get": {
+        "summary": "Thehive Get Tasks",
+        "description": "List tasks for a TheHive case.\n\nArgs:\n    case_id: The unique identifier of the TheHive case.\n    thehive: The TheHive client dependency.\n\nReturns:\n    dict: A mapping with ``case_id``, ``tasks`` and ``count`` keys.\n\nRaises:\n    HTTPException: 502 when the TheHive client reports an error.",
+        "operationId": "thehive_get_tasks_soar_thehive_cases__case_id__tasks_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Thehive Get Tasks Soar Thehive Cases  Case Id  Tasks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/thehive/health": {
+      "get": {
+        "summary": "Thehive Health",
+        "description": "TheHive reachability check.\n\nArgs:\n    thehive: The TheHive client dependency.\n\nReturns:\n    dict: A mapping with ``service`` and ``reachable`` keys.",
+        "operationId": "thehive_health_soar_thehive_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Thehive Health Soar Thehive Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/analyzers": {
+      "get": {
+        "summary": "Cortex List Analyzers",
+        "description": "List Cortex analyzers, optionally filtered by data_type.\n\nArgs:\n    data_type: Optional data type used to filter the returned\n    analyzers.\n    cortex: The Cortex client dependency.\n\nReturns:\n    dict: A mapping with ``analyzers`` and ``count`` keys.\n\nRaises:\n    HTTPException: 502 when the Cortex client reports an error.",
+        "operationId": "cortex_list_analyzers_soar_cortex_analyzers_get",
+        "parameters": [
+          {
+            "name": "data_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Cortex List Analyzers Soar Cortex Analyzers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/jobs": {
+      "get": {
+        "summary": "Cortex List Jobs",
+        "description": "List recent Cortex analyzer jobs.\n\nArgs:\n    start: The offset of the first job to return.\n    count: The maximum number of jobs to return.\n    cortex: The Cortex client dependency.\n\nReturns:\n    dict: A mapping with ``jobs`` and ``count`` keys.\n\nRaises:\n    HTTPException: 502 when the Cortex client reports an error.",
+        "operationId": "cortex_list_jobs_soar_cortex_jobs_get",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Start"
+            }
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "title": "Count"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Cortex List Jobs Soar Cortex Jobs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/jobs/{job_id}": {
+      "get": {
+        "summary": "Cortex Get Job",
+        "description": "Get status and result of a Cortex job.\n\nArgs:\n    job_id: The unique identifier of the Cortex job.\n    cortex: The Cortex client dependency.\n\nReturns:\n    dict: The Cortex job status and result document.\n\nRaises:\n    HTTPException: 502 when the Cortex client reports an error.",
+        "operationId": "cortex_get_job_soar_cortex_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Cortex Get Job Soar Cortex Jobs  Job Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/jobs/{job_id}/report": {
+      "get": {
+        "summary": "Cortex Get Job Report",
+        "description": "Get full report of a completed Cortex job.\n\nArgs:\n    job_id: The unique identifier of the Cortex job.\n    cortex: The Cortex client dependency.\n\nReturns:\n    dict: The full Cortex job report.\n\nRaises:\n    HTTPException: 502 when the Cortex client reports an error.",
+        "operationId": "cortex_get_job_report_soar_cortex_jobs__job_id__report_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Cortex Get Job Report Soar Cortex Jobs  Job Id  Report Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/cortex/health": {
+      "get": {
+        "summary": "Cortex Health",
+        "description": "Cortex reachability check.\n\nArgs:\n    cortex: The Cortex client dependency.\n\nReturns:\n    dict: A mapping with ``service`` and ``reachable`` keys.",
+        "operationId": "cortex_health_soar_cortex_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Cortex Health Soar Cortex Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/misp/attributes": {
+      "get": {
+        "summary": "Misp Search Attributes",
+        "description": "Search MISP attributes by value and/or type.\n\nArgs:\n    value: Optional attribute value to search for.\n    attr_type: Optional attribute type to filter by.\n    limit: The maximum number of attributes to return.\n    misp: The MISP client dependency.\n\nReturns:\n    dict: A mapping with ``attributes`` and ``count`` keys.\n\nRaises:\n    HTTPException: 502 when the MISP client reports an error.",
+        "operationId": "misp_search_attributes_soar_misp_attributes_get",
+        "parameters": [
+          {
+            "name": "value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Value"
+            }
+          },
+          {
+            "name": "attr_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Attr Type"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Misp Search Attributes Soar Misp Attributes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/misp/events": {
+      "get": {
+        "summary": "Misp List Events",
+        "description": "List recent MISP events.\n\nArgs:\n    limit: The maximum number of events to return.\n    misp: The MISP client dependency.\n\nReturns:\n    dict: A mapping with ``events`` and ``count`` keys.\n\nRaises:\n    HTTPException: 502 when the MISP client reports an error.",
+        "operationId": "misp_list_events_soar_misp_events_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Misp List Events Soar Misp Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/misp/events/{event_id}": {
+      "get": {
+        "summary": "Misp Get Event",
+        "description": "Get a specific MISP event by ID.\n\nArgs:\n    event_id: The unique identifier of the MISP event.\n    misp: The MISP client dependency.\n\nReturns:\n    dict: The MISP event document.\n\nRaises:\n    HTTPException: 502 when the MISP client reports an error.",
+        "operationId": "misp_get_event_soar_misp_events__event_id__get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Misp Get Event Soar Misp Events  Event Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/misp/health": {
+      "get": {
+        "summary": "Misp Health",
+        "description": "MISP reachability check.\n\nArgs:\n    misp: The MISP client dependency.\n\nReturns:\n    dict: A mapping with ``service`` and ``reachable`` keys.",
+        "operationId": "misp_health_soar_misp_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Misp Health Soar Misp Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/workflows": {
+      "get": {
+        "summary": "Shuffle List Workflows",
+        "description": "List all Shuffle workflows.\n\nArgs:\n    shuffle: The Shuffle client dependency.\n\nReturns:\n    dict: A mapping with ``workflows`` and ``count`` keys.\n\nRaises:\n    HTTPException: 502 when the Shuffle client reports an error.",
+        "operationId": "shuffle_list_workflows_soar_shuffle_workflows_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Shuffle List Workflows Soar Shuffle Workflows Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/workflows/{workflow_id}": {
+      "get": {
+        "summary": "Shuffle Get Workflow",
+        "description": "Get a specific Shuffle workflow.\n\nArgs:\n    workflow_id: The unique identifier of the Shuffle workflow.\n    shuffle: The Shuffle client dependency.\n\nReturns:\n    dict: The Shuffle workflow document.\n\nRaises:\n    HTTPException: 502 when the Shuffle client reports an error.",
+        "operationId": "shuffle_get_workflow_soar_shuffle_workflows__workflow_id__get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Shuffle Get Workflow Soar Shuffle Workflows  Workflow Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/workflows/{workflow_id}/executions": {
+      "get": {
+        "summary": "Shuffle Get Executions",
+        "description": "List executions for a Shuffle workflow.\n\nArgs:\n    workflow_id: The unique identifier of the Shuffle workflow.\n    shuffle: The Shuffle client dependency.\n\nReturns:\n    dict: A mapping with ``workflow_id``, ``executions`` and ``count``\n    keys.\n\nRaises:\n    HTTPException: 502 when the Shuffle client reports an error.",
+        "operationId": "shuffle_get_executions_soar_shuffle_workflows__workflow_id__executions_get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Shuffle Get Executions Soar Shuffle Workflows  Workflow Id  Executions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/workflows/{workflow_id}/executions/{execution_id}": {
+      "get": {
+        "summary": "Shuffle Get Execution",
+        "description": "Get a specific Shuffle workflow execution.\n\nArgs:\n    workflow_id: The unique identifier of the Shuffle workflow.\n    execution_id: The unique identifier of the workflow execution.\n    shuffle: The Shuffle client dependency.\n\nReturns:\n    dict: The Shuffle workflow execution document.\n\nRaises:\n    HTTPException: 404 when the execution is not found, or 502 when\n    the Shuffle client reports an error.",
+        "operationId": "shuffle_get_execution_soar_shuffle_workflows__workflow_id__executions__execution_id__get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workflow Id"
+            }
+          },
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Execution Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Shuffle Get Execution Soar Shuffle Workflows  Workflow Id  Executions  Execution Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/shuffle/health": {
+      "get": {
+        "summary": "Shuffle Health",
+        "description": "Shuffle reachability check.\n\nArgs:\n    shuffle: The Shuffle client dependency.\n\nReturns:\n    dict: A mapping with ``service`` and ``reachable`` keys.",
+        "operationId": "shuffle_health_soar_shuffle_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Shuffle Health Soar Shuffle Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/elasticsearch/count": {
+      "get": {
+        "summary": "Es Count",
+        "description": "Return total document count for the soar-alerts index (or custom index).\n\nArgs:\n    index: Optional index name; defaults to the client's configured\n    index when omitted.\n    es: The Elasticsearch client dependency.\n\nReturns:\n    dict: A mapping with ``index`` and ``count`` keys.\n\nRaises:\n    HTTPException: 502 when the Elasticsearch client reports an error.",
+        "operationId": "es_count_soar_elasticsearch_count_get",
+        "parameters": [
+          {
+            "name": "index",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Index"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Es Count Soar Elasticsearch Count Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/elasticsearch/latest": {
+      "get": {
+        "summary": "Es Latest",
+        "description": "Return the most recent documents from soar-alerts.\n\nArgs:\n    size: The maximum number of documents to return.\n    index: Optional index name; defaults to the client's configured\n    index when omitted.\n    es: The Elasticsearch client dependency.\n\nReturns:\n    dict: A mapping with ``documents`` and ``count`` keys.\n\nRaises:\n    HTTPException: 502 when the Elasticsearch client reports an error.",
+        "operationId": "es_latest_soar_elasticsearch_latest_get",
+        "parameters": [
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "title": "Size"
+            }
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Index"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Es Latest Soar Elasticsearch Latest Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/elasticsearch/health": {
+      "get": {
+        "summary": "Es Health",
+        "description": "Elasticsearch cluster health.\n\nArgs:\n    es: The Elasticsearch client dependency.\n\nReturns:\n    dict: A mapping with ``service``, ``reachable`` and ``status``\n    keys on success, or ``service``, ``reachable`` and ``error`` keys\n    when the cluster is unreachable.",
+        "operationId": "es_health_soar_elasticsearch_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Es Health Soar Elasticsearch Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/soar/status": {
+      "get": {
+        "summary": "Soar Status",
+        "description": "Aggregated health check across all SOAR integration clients.\n\nReturns:\n    dict: Aggregated status with timestamp and per-service reachability.",
+        "operationId": "soar_status_soar_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Soar Status Soar Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BackupInfo": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Backup file name"
+          },
+          "size": {
+            "type": "string",
+            "title": "Size",
+            "description": "Backup file size"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "Backup creation date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "size",
+          "date"
+        ],
+        "title": "BackupInfo",
+        "description": "Backup information model."
+      },
+      "BackupListResponse": {
+        "properties": {
+          "backups": {
+            "items": {
+              "$ref": "#/components/schemas/BackupInfo"
+            },
+            "type": "array",
+            "title": "Backups",
+            "description": "List of available backups"
+          }
+        },
+        "type": "object",
+        "title": "BackupListResponse",
+        "description": "Backup list response model."
+      },
+      "BackupRequest": {
+        "properties": {
+          "backup_name": {
+            "type": "string",
+            "title": "Backup Name",
+            "description": "Name of the backup file to restore"
+          }
+        },
+        "type": "object",
+        "required": [
+          "backup_name"
+        ],
+        "title": "BackupRequest",
+        "description": "Backup request model."
+      },
+      "ContainmentRequest": {
+        "properties": {
+          "alert_id": {
+            "type": "string",
+            "title": "Alert Id",
+            "description": "Related alert ID"
+          },
+          "case_id": {
+            "type": "string",
+            "title": "Case Id",
+            "description": "TheHive case ID"
+          },
+          "hostname": {
+            "type": "string",
+            "title": "Hostname",
+            "description": "Target hostname"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "description": "Containment mode",
+            "default": "simulation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "alert_id",
+          "case_id",
+          "hostname"
+        ],
+        "title": "ContainmentRequest",
+        "description": "Simulated containment request."
+      },
+      "ContainmentResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Containment status"
+          },
+          "alert_id": {
+            "type": "string",
+            "title": "Alert Id",
+            "description": "Related alert ID"
+          },
+          "case_id": {
+            "type": "string",
+            "title": "Case Id",
+            "description": "TheHive case ID"
+          },
+          "hostname": {
+            "type": "string",
+            "title": "Hostname",
+            "description": "Target hostname"
+          },
+          "actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Actions",
+            "description": "Simulated actions"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "ISO format timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "alert_id",
+          "case_id",
+          "hostname",
+          "timestamp"
+        ],
+        "title": "ContainmentResponse",
+        "description": "Simulated containment response."
+      },
+      "CreateBackupResponse": {
+        "properties": {
+          "backup_name": {
+            "type": "string",
+            "title": "Backup Name",
+            "description": "Created backup name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "Operation status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "backup_name",
+          "message"
+        ],
+        "title": "CreateBackupResponse",
+        "description": "Create backup response model."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IocCacheRequest": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Cache key, e.g. 'ioc:<hash>'"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Cache value"
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "title": "Ttl Seconds",
+            "description": "Expiration in seconds",
+            "default": 3600
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "IocCacheRequest",
+        "description": "Request to cache an IoC in Redis."
+      },
+      "IocCacheResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Whether the value was cached"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Cache key"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Additional detail",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "key"
+        ],
+        "title": "IocCacheResponse",
+        "description": "Response for an IoC cache request."
+      },
+      "LoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "description": "Login request model."
+      },
+      "LoginResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "Authentication token"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "description": "Token type",
+            "default": "Bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "message"
+        ],
+        "title": "LoginResponse",
+        "description": "Login response model."
+      },
+      "Metrics": {
+        "properties": {
+          "cpu": {
+            "type": "number",
+            "title": "Cpu",
+            "description": "CPU usage percentage"
+          },
+          "memory": {
+            "type": "number",
+            "title": "Memory",
+            "description": "Memory usage percentage"
+          },
+          "disk": {
+            "type": "number",
+            "title": "Disk",
+            "description": "Disk usage percentage"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Timestamp of metrics collection"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cpu",
+          "memory",
+          "disk",
+          "timestamp"
+        ],
+        "title": "Metrics",
+        "description": "System metrics model."
+      },
+      "RestoreBackupResponse": {
+        "properties": {
+          "backup_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backup Name",
+            "description": "Restored backup name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "Operation status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "RestoreBackupResponse",
+        "description": "Restore backup response model."
+      },
+      "RunRequest": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Test category (e.g., 'unit', 'integration', 'all')"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category"
+        ],
+        "title": "RunRequest",
+        "description": "Test execution request model."
+      },
+      "RunResults": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Test category"
+          },
+          "passed": {
+            "type": "integer",
+            "title": "Passed",
+            "description": "Number of passed tests"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "description": "Number of failed tests"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "description": "Number of skipped tests"
+          },
+          "coverage": {
+            "type": "number",
+            "title": "Coverage",
+            "description": "Test coverage percentage"
+          },
+          "output": {
+            "type": "string",
+            "title": "Output",
+            "description": "Test output"
+          },
+          "duration": {
+            "type": "number",
+            "title": "Duration",
+            "description": "Test execution duration in seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "passed",
+          "failed",
+          "skipped",
+          "coverage",
+          "output",
+          "duration"
+        ],
+        "title": "RunResults",
+        "description": "Test results model."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VerifyAuthResponse": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid",
+            "description": "Whether the token is valid"
+          },
+          "user": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User",
+            "description": "User information"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid",
+          "user"
+        ],
+        "title": "VerifyAuthResponse",
+        "description": "Verify authentication response model."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

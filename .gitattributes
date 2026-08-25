@@ -1,6 +1,5 @@
 # Force LF line endings for shell scripts (prevents Windows CRLF breaking bash)
 *.sh        text eol=lf
-Vagrantfile text eol=lf
 Makefile    text eol=lf
 *.py        text eol=lf
 *.yml       text eol=lf

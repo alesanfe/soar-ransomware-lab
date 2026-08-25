@@ -2,13 +2,18 @@
 
 import hashlib
 import random
-from typing import List, Dict, Any
+from typing import Any
+
+from soar_lab.domain.services._ioc_helpers import _CHARS, _TLDS, _URL_PATHS, gen_ip
+
+__all__ = ["SimulatedIOCGenerator"]
 
 
 class SimulatedIOCGenerator:
     """Domain implementation of IOCGenerator for simulated IOCs."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the SimulatedIOCGenerator with zeroed counters."""
         self._malicious_counter = 0
         self._benign_counter = 0
 
@@ -16,85 +21,60 @@ class SimulatedIOCGenerator:
         """Generate a simulated malicious SHA256 hash."""
         if seed is not None:
             return hashlib.sha256(str(seed).encode()).hexdigest()
-
-        hash_input = f"malicious_{self._malicious_counter}"
+        h = hashlib.sha256(f"malicious_{self._malicious_counter}".encode()).hexdigest()
         self._malicious_counter += 1
-        return hashlib.sha256(hash_input.encode()).hexdigest()
+        return h
 
     def generate_benign_hash(self, seed: Any = None) -> str:
         """Generate a simulated benign SHA256 hash."""
         if seed is not None:
             return hashlib.sha256(str(seed).encode()).hexdigest()
-
-        hash_input = f"benign_{self._benign_counter}"
+        h = hashlib.sha256(f"benign_{self._benign_counter}".encode()).hexdigest()
         self._benign_counter += 1
-        return hashlib.sha256(hash_input.encode()).hexdigest()
+        return h
 
-    def generate_ip_addresses(self, count: int = 5) -> List[str]:
+    def generate_ip_addresses(self, count: int = 5) -> list[str]:
         """Generate random private IP addresses."""
-        ips = []
-        for _ in range(count):
-            prefix = random.choice(['10', '172', '192'])
-            if prefix == '10':
-                ip = f"10.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
-            elif prefix == '172':
-                ip = f"172.{random.randint(16, 31)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
-            else:
-                ip = f"192.168.{random.randint(0, 255)}.{random.randint(1, 254)}"
-            ips.append(ip)
-        return ips
+        return [gen_ip() for _ in range(count)]
 
-    def generate_domains(self, count: int = 5) -> List[str]:
+    def generate_domains(self, count: int = 5) -> list[str]:
         """Generate random domains."""
-        tlds = ['com', 'net', 'org', 'io', 'biz', 'info', 'ru', 'cn', 'xyz']
-        domains = []
-        for _ in range(count):
-            name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=random.randint(5, 12)))
-            tld = random.choice(tlds)
-            domains.append(f"{name}.{tld}")
-        return domains
+        return [
+            f"{''.join(random.choices(_CHARS, k=random.randint(5, 12)))}.{random.choice(_TLDS)}"
+            for _ in range(count)
+        ]
 
-    def generate_urls(self, count: int = 5) -> List[str]:
+    def generate_urls(self, count: int = 5) -> list[str]:
         """Generate random URLs."""
-        urls = []
         domains = self.generate_domains(count)
-        paths = ['download', 'api/v1', 'update', 'config', 'index.php', 'login', 'payload.exe', 'script.js']
-        for i in range(count):
-            protocol = random.choice(['http', 'https'])
-            domain = domains[i]
-            path = random.choice(paths)
-            urls.append(f"{protocol}://{domain}/{path}")
-        return urls
+        return [
+            f"{random.choice(['http', 'https'])}://{domains[i]}/{random.choice(_URL_PATHS)}"
+            for i in range(count)
+        ]
 
-    def generate_ioc(self, alert_id: str = "", is_malicious: bool = True) -> Dict[str, Any]:
+    def generate_ioc(self, alert_id: str = "", is_malicious: bool = True) -> dict[str, Any]:
         """Generate a single IOC dict for an alert."""
-        if is_malicious:
-            return {
-                'hash': self.generate_malicious_hash(),
-                'ip': self.generate_ip_addresses(1)[0],
-                'domain': self.generate_domains(1)[0],
-                'url': self.generate_urls(1)[0],
-            }
+        h = self.generate_malicious_hash() if is_malicious else self.generate_benign_hash()
         return {
-            'hash': self.generate_benign_hash(),
-            'ip': self.generate_ip_addresses(1)[0],
-            'domain': self.generate_domains(1)[0],
-            'url': self.generate_urls(1)[0],
+            "hash": h,
+            "ip": gen_ip(),
+            "domain": self.generate_domains(1)[0],
+            "url": self.generate_urls(1)[0],
         }
 
-    def create_ioc_package(self, count: int = 5) -> Dict[str, Any]:
+    def create_ioc_package(self, count: int = 5) -> dict[str, Any]:
         """Create a JSON package of simulated IOCs."""
         return {
-            'malicious': {
-                'hash': self.generate_malicious_hash(),
-                'ips': self.generate_ip_addresses(count),
-                'domains': self.generate_domains(count),
-                'urls': self.generate_urls(count)
+            "malicious": {
+                "hash": self.generate_malicious_hash(),
+                "ips": self.generate_ip_addresses(count),
+                "domains": self.generate_domains(count),
+                "urls": self.generate_urls(count),
             },
-            'benign': {
-                'hash': self.generate_benign_hash(),
-                'ips': self.generate_ip_addresses(count),
-                'domains': self.generate_domains(count),
-                'urls': self.generate_urls(count)
-            }
+            "benign": {
+                "hash": self.generate_benign_hash(),
+                "ips": self.generate_ip_addresses(count),
+                "domains": self.generate_domains(count),
+                "urls": self.generate_urls(count),
+            },
         }

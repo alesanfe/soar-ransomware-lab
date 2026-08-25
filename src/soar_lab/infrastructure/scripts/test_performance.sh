@@ -62,7 +62,7 @@ log "Average latency per alert: ${AVG_LATENCY}ms"
 # Test 4: Memory usage check
 log "=== Test 4: Memory usage check ==="
 if command -v docker &> /dev/null; then
-    docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}" soar_thehive soar_cortex soar_shuffle-backend
+    docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}" soar_thehive soar_cortex soar_shuffle_backend
     log "✓ Memory usage captured"
 else
     warn "Docker not available for memory check"
@@ -71,7 +71,7 @@ fi
 # Test 5: CPU usage check
 log "=== Test 5: CPU usage check ==="
 if command -v docker &> /dev/null; then
-    docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}" soar_thehive soar_cortex soar_shuffle-backend
+    docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}" soar_thehive soar_cortex soar_shuffle_backend
     log "✓ CPU usage captured"
 else
     warn "Docker not available for CPU check"

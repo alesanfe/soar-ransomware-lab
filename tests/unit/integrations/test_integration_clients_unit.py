@@ -1,20 +1,43 @@
 #!/usr/bin/env python3
+"""Unit tests for integrations: CortexClient, TheHiveClient, ShuffleClient.
+
+All HTTP calls are mocked via requests_mock / patch so no external
+services needed.
 """
-Unit tests for integrations: CortexClient, TheHiveClient, ShuffleClient.
-All HTTP calls are mocked via requests_mock / patch so no external services needed.
-"""
+
+from unittest.mock import MagicMock
 
 import pytest
-from soar_lab.common.exceptions import IntegrationError
-from soar_lab.infrastructure.external.integrations.cortex_client import CortexClient
-from soar_lab.infrastructure.external.integrations.shuffle_client import ShuffleClient
-from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
-from unittest.mock import MagicMock, patch
 
+from soar_lab.common.exceptions import IntegrationError
+from soar_lab.infrastructure.integrations.cortex.client import CortexClient
+from soar_lab.infrastructure.integrations.shuffle.client import ShuffleClient
+from soar_lab.infrastructure.integrations.thehive.client import TheHiveClient
+
+__all__ = [
+    "TestCortexClientInit",
+    "TestCortexClientListAnalyzers",
+    "TestCortexClientRunAnalyzer",
+    "TestCortexClientGetJob",
+    "TestCortexClientHealthCheck",
+    "TestTheHiveClientInit",
+    "TestTheHiveClientCreateAlert",
+    "TestTheHiveClientCreateCase",
+    "TestTheHiveClientGetCase",
+    "TestTheHiveClientAddObservable",
+    "TestTheHiveClientListCases",
+    "TestTheHiveClientHealthCheck",
+    "TestShuffleClientInit",
+    "TestShuffleClientSendWebhook",
+    "TestShuffleClientListWorkflows",
+    "TestShuffleClientGetWorkflow",
+    "TestShuffleClientHealthCheck",
+]
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _mock_response(json_data=None, status_code=200, content=b"{}"):
     resp = MagicMock()
@@ -27,6 +50,7 @@ def _mock_response(json_data=None, status_code=200, content=b"{}"):
 
 def _http_error_response(status_code=404):
     import requests
+
     resp = MagicMock()
     resp.status_code = status_code
     http_err = requests.HTTPError(response=resp)
@@ -37,6 +61,7 @@ def _http_error_response(status_code=404):
 # ===========================================================================
 # CortexClient
 # ===========================================================================
+
 
 class TestCortexClientInit:
     def test_init_defaults(self):
@@ -76,22 +101,21 @@ class TestCortexClientListAnalyzers:
 class TestCortexClientRunAnalyzer:
     def test_run_analyzer_success(self, requests_mock):
         job = {"id": "job-1", "status": "Waiting"}
-        requests_mock.post("http://cortex:9001/api/analyzer/run", json=job)
+        requests_mock.post("http://cortex:9001/api/analyzer/Abuse_Finder_3_0/run", json=job)
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         result = client.run_analyzer("Abuse_Finder_3_0", "ip", "1.2.3.4")
         assert result == job
 
     def test_run_analyzer_sends_correct_payload(self, requests_mock):
-        requests_mock.post("http://cortex:9001/api/analyzer/run", json={})
+        requests_mock.post("http://cortex:9001/api/analyzer/Abuse_Finder_3_0/run", json={})
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         client.run_analyzer("Abuse_Finder_3_0", "domain", "evil.com")
         sent = requests_mock.last_request.json()
-        assert sent["analyzerId"] == "Abuse_Finder_3_0"
         assert sent["dataType"] == "domain"
         assert sent["data"] == "evil.com"
 
     def test_run_analyzer_http_error(self, requests_mock):
-        requests_mock.post("http://cortex:9001/api/analyzer/run", status_code=400)
+        requests_mock.post("http://cortex:9001/api/analyzer/X/run", status_code=400)
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         with pytest.raises(IntegrationError):
             client.run_analyzer("X", "ip", "1.2.3.4")
@@ -126,6 +150,7 @@ class TestCortexClientHealthCheck:
 # ===========================================================================
 # TheHiveClient
 # ===========================================================================
+
 
 class TestTheHiveClientInit:
     def test_init_defaults(self):
@@ -192,13 +217,13 @@ class TestTheHiveClientGetCase:
 class TestTheHiveClientAddObservable:
     def test_add_observable_success(self, requests_mock):
         obs_resp = {"id": "obs-1"}
-        requests_mock.post("http://hive:9000/api/case_observable", json=obs_resp)
+        requests_mock.post("http://hive:9000/api/case/case-1/artifact", json=obs_resp)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         result = client.add_observable("case-1", {"dataType": "ip", "data": "1.2.3.4"})
         assert result == obs_resp
 
     def test_add_observable_http_error(self, requests_mock):
-        requests_mock.post("http://hive:9000/api/case_observable", status_code=422)
+        requests_mock.post("http://hive:9000/api/case/case-1/artifact", status_code=422)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         with pytest.raises(IntegrationError):
             client.add_observable("case-1", {"dataType": "ip", "data": "1.2.3.4"})
@@ -233,6 +258,7 @@ class TestTheHiveClientHealthCheck:
 # ===========================================================================
 # ShuffleClient
 # ===========================================================================
+
 
 class TestShuffleClientInit:
     def test_init_defaults(self):

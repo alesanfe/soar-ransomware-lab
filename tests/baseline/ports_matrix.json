@@ -1,0 +1,223 @@
+[
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.api.yml",
+    "service": "api",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_api",
+    "image": "(build)",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${API_PORT:-8000}",
+    "container_port": "8000",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.api.yml",
+    "service": "docs-site",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_docs_site",
+    "image": "(build)",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${DOCS_PORT:-8086}",
+    "container_port": "8080",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.api.yml",
+    "service": "web-management",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_web_management",
+    "image": "(build)",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "8085",
+    "container_port": "80",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.api.yml",
+    "service": "nginx",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_nginx",
+    "image": "nginx:1.25-alpine",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "80",
+    "container_port": "80",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.api.yml",
+    "service": "nginx",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_nginx",
+    "image": "nginx:1.25-alpine",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "443",
+    "container_port": "443",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.core.yml",
+    "service": "thehive",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_thehive",
+    "image": "thehiveproject/thehive:3.5.2-1",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${THEHIVE_HTTP_PORT:-8100}",
+    "container_port": "9000",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.core.yml",
+    "service": "cortex",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_cortex",
+    "image": "(build)",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${CORTEX_HTTP_PORT:-8101}",
+    "container_port": "9001",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.core.yml",
+    "service": "shuffle-frontend",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_shuffle_frontend",
+    "image": "ghcr.io/shuffle/shuffle-frontend:2.2.1",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${SHUFFLE_UI_PORT:-8081}",
+    "container_port": "80",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.core.yml",
+    "service": "shuffle-backend",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend",
+    "image": "ghcr.io/shuffle/shuffle-backend:2.2.1",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${SHUFFLE_API_PORT:-5001}",
+    "container_port": "5001",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.core.yml",
+    "service": "network-watcher",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_network_watcher",
+    "image": "(build)",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${NETWORK_WATCHER_PORT:-15130}",
+    "container_port": "8080",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.core.yml",
+    "service": "tenzir-node",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_tenzir_node",
+    "image": "tenzir/tenzir:main",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "15160",
+    "container_port": "5160",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.core.yml",
+    "service": "tenzir-node",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_tenzir_node",
+    "image": "tenzir/tenzir:main",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "15140",
+    "container_port": "1514",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.misp.yml",
+    "service": "misp",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_misp",
+    "image": "ghcr.io/misp/misp-docker/misp-core:latest",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${MISP_PORT:-8083}",
+    "container_port": "80",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.opensearch.yml",
+    "service": "opensearch",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_opensearch",
+    "image": "opensearchproject/opensearch:2.10.0",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${OPENSEARCH_PORT:-8201}",
+    "container_port": "9200",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.opensearch.yml",
+    "service": "opensearch-dashboards",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_opensearch_dashboards",
+    "image": "opensearchproject/opensearch-dashboards:2.10.0",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${OPENSEARCH_DASHBOARDS_PORT:-8202}",
+    "container_port": "5601",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\docker-compose.yml",
+    "service": "elasticsearch",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_elasticsearch",
+    "image": "docker.elastic.co/elasticsearch/elasticsearch:7.10.2",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${ELASTICSEARCH_PORT:-8200}",
+    "container_port": "9200",
+    "protocol": "tcp"
+  },
+  {
+    "compose_file": "infra\\docker\\compose\\logging\\docker-compose.logging.yml",
+    "service": "grafana",
+    "container_name": "${COMPOSE_PROJECT_NAME:-soar}_grafana",
+    "image": "grafana/grafana:10.3.4",
+    "profiles": [
+      "default"
+    ],
+    "host_ip": "*",
+    "host_port": "${GRAFANA_PORT:-8084}",
+    "container_port": "3000",
+    "protocol": "tcp"
+  }
+]

@@ -1,12 +1,13 @@
 # !/usr/bin/env python3
-"""
-SOAR Ransomware Lab - Alert Sender CLI
+"""SOAR Ransomware Lab - Alert Sender CLI.
+
 Generates and sends alert payloads to the SOAR webhook.
 
 Usage:
-    python src/soar_lab/infrastructure/messaging/send_alert.py
-    python src/soar_lab/infrastructure/messaging/send_alert.py --type malicious --single
-    python src/soar_lab/infrastructure/messaging/send_alert.py --type benign --num-alerts 10 --delay 5
+python src/soar_lab/infrastructure/messaging/send_alert.py
+python src/soar_lab/infrastructure/messaging/send_alert.py --type malicious --single
+python src/soar_lab/infrastructure/messaging/send_alert.py --type benign \
+--num-alerts 10 --delay 5
 """
 
 import argparse
@@ -16,6 +17,11 @@ import sys
 import time
 from pathlib import Path
 
+from soar_lab.common.constants import (
+    SHUFFLE_WEBHOOK_DEFAULT,
+    WEBHOOK_INFO_PATHS,
+)
+
 
 def _default_webhook_url(base_dir: Path) -> str:
     """Return the host webhook URL from webhook_info.json if available."""
@@ -23,10 +29,9 @@ def _default_webhook_url(base_dir: Path) -> str:
     if env_url:
         return env_url
     info_paths = [
-        base_dir / "artifacts" / "results" / "webhook_info.json",
-        Path("/app/results/webhook_info.json"),
-        Path("/app/webhook_info.json"),
-    ]
+        base_dir / "runtime" / "results" / "webhook_info.json",
+        base_dir / "artifacts" / "results" / "webhook_info.json",  # legacy fallback
+    ] + [Path(p) for p in WEBHOOK_INFO_PATHS]
     for p in info_paths:
         if p.exists():
             try:
@@ -34,7 +39,7 @@ def _default_webhook_url(base_dir: Path) -> str:
                 return info.get("webhook_url_host", "") or info.get("webhook_url", "")
             except Exception:
                 pass
-    return "http://soar_shuffle_frontend/api/v1/hooks/webhook"
+    return SHUFFLE_WEBHOOK_DEFAULT
 
 
 def main() -> None:
@@ -93,9 +98,9 @@ def main() -> None:
     os.environ.setdefault("BASE_DIR", str(base_dir))
     os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
 
-    from soar_lab.infrastructure.http_alert_sender import HTTPAlertSender
-    from soar_lab.domain.alert_generator import AlertGenerator
     from soar_lab.config.logging import get_logger
+    from soar_lab.domain.alert_generator import AlertGenerator
+    from soar_lab.infrastructure.http_alert_sender import HTTPAlertSender
 
     logger = get_logger(__name__)
 
@@ -124,7 +129,10 @@ def main() -> None:
         if result.get("success"):
             print(f"[{i + 1}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
         else:
-            print(f"[{i + 1}/{num_alerts}] Failed to send alert: {result.get('error', 'Unknown error')}")
+            print(
+                f"[{i + 1}/{num_alerts}] Failed to send alert: "
+                f"{result.get('error', 'Unknown error')}"
+            )
             sys.exit(1)
 
         if i < num_alerts - 1 and args.delay > 0:

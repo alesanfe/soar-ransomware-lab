@@ -1,6 +1,7 @@
 """Backup service for SOAR Lab API."""
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Protocol
+
+from datetime import UTC, datetime
+from typing import Any
 
 from soar_lab.config.logging import get_logger
 from soar_lab.domain.ports import BackupDriver, BackupStorageProvider
@@ -11,16 +12,16 @@ logger = get_logger(__name__)
 class BackupService:
     """Service class for backup operations with injected dependencies."""
 
-    def __init__(self, driver: BackupDriver, storage: BackupStorageProvider):
+    def __init__(self, driver: BackupDriver, storage: BackupStorageProvider) -> None:
         if not storage:
             raise ValueError("storage (BackupStorageProvider) is required for BackupService")
         self.driver = driver
         self.storage = storage
 
-    def create(self, user: Optional[str] = None) -> Dict[str, str]:
+    def create(self, user: str | None = None) -> dict[str, str]:
         """Create a backup using injected dependencies."""
         try:
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
             backup_filename = f"soar_backup_{timestamp}.tar.gz"
 
             # Use storage provider to get backup directory and ensure it exists
@@ -33,14 +34,19 @@ class BackupService:
             self.driver.create(source_dir=base_dir, dest_path=backup_path)
 
             # Store backup metadata using BackupStorageProvider
-            self.storage.store_backup_metadata(backup_filename, {
-                'created_by': user or 'unknown',
-                'created_at': timestamp,
-                'size': self.storage.get_file_size(backup_path)
-            })
+            self.storage.store_backup_metadata(
+                backup_filename,
+                {
+                    "created_by": user or "unknown",
+                    "created_at": timestamp,
+                    "size": self.storage.get_file_size(backup_path),
+                },
+            )
 
             # Audit logging
-            audit_info = f"backup_name={backup_filename}, user={user or 'unknown'}, timestamp={timestamp}"
+            audit_info = (
+                f"backup_name={backup_filename}, user={user or 'unknown'}, timestamp={timestamp}"
+            )
             logger.info(f"Backup created successfully: {audit_info}")
 
             return {"filename": backup_filename, "message": "Backup created successfully"}
@@ -49,7 +55,7 @@ class BackupService:
             logger.error(f"Error creating backup: {e}")
             raise
 
-    def list_backups(self) -> Dict[str, Any]:
+    def list_backups(self) -> dict[str, Any]:
         """List available backups using injected storage."""
         try:
             # Use storage provider to get backup directory and check if it exists
@@ -63,19 +69,16 @@ class BackupService:
             backups = []
             for backup_file in backup_files:
                 # Get file metadata from storage provider
-                file_info = self.storage.get_file_info(self.storage.join_path(backup_dir, backup_file))
+                file_info = self.storage.get_file_info(
+                    self.storage.join_path(backup_dir, backup_file)
+                )
                 if file_info:
-                    size_mb = round(file_info.get('size', 0) / (1024 * 1024), 2)
+                    size_mb = round(file_info.get("size", 0) / (1024 * 1024), 2)
                     date_str = datetime.fromtimestamp(
-                        file_info.get('modified_time', 0),
-                        tz=timezone.utc
+                        file_info.get("modified_time", 0), tz=UTC
                     ).strftime("%Y-%m-%d %H:%M")
 
-                    backups.append({
-                        "name": backup_file,
-                        "size": f"{size_mb} MB",
-                        "date": date_str
-                    })
+                    backups.append({"name": backup_file, "size": f"{size_mb} MB", "date": date_str})
 
             # Sort by date (newest first)
             backups.sort(key=lambda x: x["date"], reverse=True)
@@ -86,7 +89,7 @@ class BackupService:
             logger.error(f"Error listing backups: {e}")
             raise
 
-    def restore(self, backup_name: str, user: Optional[str] = None) -> Dict[str, str]:
+    def restore(self, backup_name: str, user: str | None = None) -> dict[str, str]:
         """Restore from backup using injected dependencies."""
         try:
             # Use storage provider to get backup directory and construct path
@@ -102,14 +105,19 @@ class BackupService:
             self.driver.extract(archive_path=backup_path, dest_dir=base_dir)
 
             # Log restore operation using BackupStorageProvider
-            self.storage.log_restore_operation(backup_name, {
-                'restored_by': user or 'unknown',
-                'restored_at': datetime.now(timezone.utc).isoformat()
-            })
+            self.storage.log_restore_operation(
+                backup_name,
+                {
+                    "restored_by": user or "unknown",
+                    "restored_at": datetime.now(UTC).isoformat(),
+                },
+            )
 
             # Audit logging
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-            audit_info = f"backup_name={backup_name}, user={user or 'unknown'}, timestamp={timestamp}"
+            timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+            audit_info = (
+                f"backup_name={backup_name}, user={user or 'unknown'}, timestamp={timestamp}"
+            )
             logger.info(f"Backup restored successfully: {audit_info}")
 
             return {"message": f"Backup {backup_name} restored successfully"}

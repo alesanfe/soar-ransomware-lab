@@ -3,24 +3,28 @@ PROJECT  := soar
 COMPOSE_FILES := -f infra/docker/compose/docker-compose.yml \
                  -f infra/docker/compose/docker-compose.core.yml \
                  -f infra/docker/compose/docker-compose.misp.yml \
-                 -f infra/docker/compose/docker-compose.wazuh.yml \
                  -f infra/docker/compose/docker-compose.opensearch.yml \
                  -f infra/docker/compose/docker-compose.api.yml \
                  -f infra/docker/compose/logging/docker-compose.logging.yml
-export ARTIFACTS_DIR := $(CURDIR)/artifacts
+export RUNTIME_DIR := $(CURDIR)/runtime
+export REPORTS_DIR := $(CURDIR)/reports
 DC := docker compose -p $(PROJECT) $(COMPOSE_FILES) --env-file .env
 
 .PHONY: help install install-dev
 .PHONY: up down restart logs ps health
-.PHONY: test-unit test-integration test-e2e test-atomic test-security test-performance test-all test-coverage
-.PHONY: test-e2e-tc01 test-e2e-tc02 test-e2e-tc10 test-e2e-tc11 test-e2e-tc12 test-e2e-tc13 test-e2e-tc14
+.PHONY: test-unit test-integration test-e2e test-atomic test-smoke test-security test-performance test-all test-coverage test-docker-runtime
+.PHONY: test-e2e-report
+.PHONY: test-e2e-tc01 test-e2e-tc01-01 test-e2e-tc01-02 test-e2e-tc01-03 test-e2e-tc01-04 test-e2e-tc01-05 test-e2e-tc01-06 test-e2e-tc01-07 test-e2e-tc01-08 test-e2e-tc01-09 test-e2e-tc01-10 test-e2e-tc01-11 test-e2e-tc02 test-e2e-tc02-01 test-e2e-tc02-02 test-e2e-tc02-03 test-e2e-tc02-04 test-e2e-tc02-05 test-e2e-tc03 test-e2e-tc03-01 test-e2e-tc04 test-e2e-tc04-01 test-e2e-tc04-02 test-e2e-tc04-03 test-e2e-tc04-04 test-e2e-tc04-05 test-e2e-tc04-06 test-e2e-tc04-07 test-e2e-tc04-08 test-e2e-tc05 test-e2e-tc05-01 test-e2e-tc05-02 test-e2e-tc05-03 test-e2e-tc05-04 test-e2e-tc06 test-e2e-tc06-01 test-e2e-tc06-02 test-e2e-tc07 test-e2e-tc07-01 test-e2e-tc07-02 test-e2e-tc07-03 test-e2e-tc07-04 test-e2e-tc07-05 test-e2e-tc08 test-e2e-tc08-01 test-e2e-tc08-02 test-e2e-tc08-03 test-e2e-tc08-04 test-e2e-tc09 test-e2e-tc09-01 test-e2e-tc09-02 test-e2e-tc09-03 test-e2e-tc09-04 test-e2e-tc09-05 test-e2e-tc09-06 test-e2e-tc09-07 test-e2e-tc10 test-e2e-tc10-01 test-e2e-tc10-02 test-e2e-tc10-03 test-e2e-tc10-04 test-e2e-tc10-05 test-e2e-tc10-06 test-e2e-tc10-07 test-e2e-tc11 test-e2e-tc11-01 test-e2e-tc11-02 test-e2e-tc11-03 test-e2e-tc11-04 test-e2e-tc11-05 test-e2e-tc11-06 test-e2e-tc11-07 test-e2e-tc11-08 test-e2e-tc11-09 test-e2e-tc11-10 test-e2e-tc11-11 test-e2e-tc11-12 test-e2e-tc11-13 test-e2e-tc12 test-e2e-tc12-01 test-e2e-tc12-02 test-e2e-tc12-03 test-e2e-tc12-04 test-e2e-tc12-05 test-e2e-tc12-06 test-e2e-tc12-07 test-e2e-tc12-08 test-e2e-tc12-09 test-e2e-tc12-10 test-e2e-tc13 test-e2e-tc13-01 test-e2e-tc13-02 test-e2e-tc13-03 test-e2e-tc13-04 test-e2e-tc13-05 test-e2e-tc13-06 test-e2e-tc13-07 test-e2e-tc13-08 test-e2e-tc13-09 test-e2e-tc13-10 test-e2e-tc13-11 test-e2e-tc13-12 test-e2e-tc13-13 test-e2e-tc14 test-e2e-tc14-01 test-e2e-tc14-02 test-e2e-tc14-03 test-e2e-tc14-04 test-e2e-tc14-05 test-e2e-tc14-06 test-e2e-tc14-07 test-e2e-tc15 test-e2e-tc15-01 test-e2e-tc15-02 test-e2e-tc15-03 test-e2e-tc15-04 test-e2e-tc15-05 test-e2e-tc15-06 test-e2e-tc16 test-e2e-tc16-01 test-e2e-tc16-02 test-e2e-tc16-03 test-e2e-tc17 test-e2e-tc17-01 test-e2e-tc17-02 test-e2e-tc17-03 test-e2e-tc17-04 test-e2e-tc17-05 test-e2e-tc17-06 test-e2e-tc17-07 test-e2e-tc18 test-e2e-tc18-01 test-e2e-tc18-02 test-e2e-tc18-03 test-e2e-tc19 test-e2e-tc19-01 test-e2e-tc20 test-e2e-tc20-01 test-e2e-tc21 test-e2e-tc21-01 test-e2e-tc21-02 test-e2e-tc22 test-e2e-tc22-01 test-e2e-tc22-02 test-e2e-tc23 test-e2e-tc23-01 test-e2e-tc24 test-e2e-tc24-01 test-e2e-tc24-02 test-e2e-tc24-03 test-e2e-tc24-04 test-e2e-tc25 test-e2e-tc25-01 test-e2e-tc25-02 test-e2e-tc25-03 test-e2e-tc26 test-e2e-tc26-01 test-e2e-tc26-02 test-e2e-tc27 test-e2e-tc27-01 test-e2e-tc27-02 test-e2e-tc28 test-e2e-tc28-01 test-e2e-tc28-02 test-e2e-tc28-03 test-e2e-tc28-04 test-e2e-tc28-05 test-e2e-tc28-06 test-e2e-tc28-07 test-e2e-tc28-08 test-e2e-tc28-09 test-e2e-tc29 test-e2e-tc29-01 test-e2e-tc30 test-e2e-tc30-01 test-e2e-tc30-02 test-e2e-tc31 test-e2e-tc31-01 test-e2e-tc31-02 test-e2e-tc31-03 test-e2e-tc32 test-e2e-tc32-01 test-e2e-kpi-01 test-e2e-kpi-01-01 test-e2e-kpi-02 test-e2e-kpi-02-01 test-e2e-kpi-02-02 test-e2e-kpi-03 test-e2e-kpi-03-01 test-e2e-kpi-04 test-e2e-kpi-04-01 test-e2e-kpi-05 test-e2e-kpi-05-01 test-e2e-tc33 test-e2e-tc33-01 test-e2e-tc33-02 test-e2e-tc33-03 test-e2e-tc33-04 test-e2e-tc33-05 test-e2e-tc33-06 test-e2e-tc33-07 test-e2e-tc33-08 test-e2e-tc33-09 test-e2e-tc33-10
 .PHONY: test-e2e-new-features
+.PHONY: sync-src sync-tests
 .PHONY: metrics backup restore
-.PHONY: clean clean-full clean-all clean-docker reset
-.PHONY: certs deps deps-test generate-secrets check-deps validate-credentials
+.PHONY: clean reset
+.PHONY: certs deps deps-test deps-lint generate-secrets generate-iocs validate-credentials
+.PHONY: lint lint-fix docs-lint
+.PHONY: quality mutation test-review holistic-review
+.PHONY: logs-service dev-reload dev-shell dev-debug docs-build docs-serve
 .PHONY: simulate simulate-malicious simulate-benign simulate-batch
-.PHONY: vagrant-up vagrant-down vagrant-provision vagrant-reload vagrant-ssh vagrant-status vagrant-logs vagrant-ubuntu vagrant-windows vagrant-simulate
-.PHONY: init-webhook
+.PHONY: init-webhook clean-shuffle clean-thehive
 
 help:
 	@echo "=========================================="
@@ -35,18 +39,22 @@ help:
 	@echo "  make ps            - Show running containers status"
 	@echo "  make health        - Check health of core services"
 	@echo "  make init-webhook  - Initialize Shuffle webhook for alerts"
+	@echo "  make clean-shuffle - Clean stale Shuffle executions (OpenSearch + workers)"
+	@echo "  make clean-thehive - Delete old TheHive cases (prevents ES timeout)"
 	@echo ""
 	@echo "[Testing]"
-	@echo "  make test-unit        - Run unit tests only"
-	@echo "  make test-integration - Run integration tests"
-	@echo "  make test-e2e         - Run all E2E tests"
-	@echo "  make test-e2e-tc01    - Run TC-01: Malicious IOC detection"
-	@echo "  make test-e2e-tc02    - Run TC-02: Benign IOC verification"
-	@echo "  make test-atomic     - Run atomic operation tests"
-	@echo "  make test-security   - Run security tests"
-	@echo "  make test-performance- Run performance tests"
-	@echo "  make test-all        - Run ALL tests (unit + integration + e2e)"
-	@echo "  make test-coverage   - Run tests with coverage report"
+	@echo "  make test-unit        - Run unit tests only (in Docker)"
+	@echo "  make test-integration - Run integration tests (in Docker)"
+	@echo "  make test-e2e         - Run all E2E tests (in Docker)"
+	@echo "  make test-e2e-report  - Generate E2E report (MD+JSON+charts) from lab data"
+	@echo "  make test-e2e-tcXX    - Run individual TC-XX (00-34, KPI)"
+	@echo "  make test-atomic     - Run atomic operation tests (in Docker)"
+	@echo "  make test-smoke      - Run smoke tests (in Docker)"
+	@echo "  make test-security   - Run security tests (in Docker)"
+	@echo "  make test-performance- Run performance tests (in Docker)"
+	@echo "  make test-all        - Run ALL tests (unit + integration + e2e) (in Docker)"
+	@echo "  make test-coverage   - Run tests with coverage report (in Docker)"
+	@echo "  make test-docker-runtime - Run Docker runtime status tests"
 	@echo ""
 	@echo "[SIEM Simulation]"
 	@echo "  make simulate            - Simulate ransomware attack (5 alerts)"
@@ -54,28 +62,41 @@ help:
 	@echo "  make simulate-benign     - Send 1 benign alert"
 	@echo "  make simulate-batch N=10 - Send N alerts (default: 10)"
 	@echo ""
-	@echo "[Vagrant (Multi-VM Environment)]"
-	@echo "  make vagrant-up       - Start / create Ubuntu SOAR VM"
-	@echo "  make vagrant-provision- Re-provision running Ubuntu SOAR VM"
-	@echo "  make vagrant-reload   - Reload and re-provision Ubuntu SOAR VM"
-	@echo "  make vagrant-ssh      - SSH into Ubuntu SOAR VM"
-	@echo "  make vagrant-status   - Show Vagrant VM status"
-	@echo "  make vagrant-logs     - Tail relevant logs inside the Ubuntu VM"
-	@echo "  make vagrant-ubuntu   - Start Ubuntu SOAR VM only"
-	@echo "  make vagrant-windows  - Start Windows victim VM (disabled - incompatible)"
-	@echo "  make vagrant-down     - Destroy all VMs"
-	@echo "  make vagrant-simulate - Simulate attack from Ubuntu VM (Python simulator)"
-	@echo ""
 	@echo "[Maintenance]"
 	@echo "  make deps               - Install Python dependencies"
 	@echo "  make deps-test          - Install test dependencies"
+	@echo "  make deps-lint          - Install linter dependencies (ruff, black, isort, flake8, mypy)"
 	@echo "  make generate-secrets   - Generate secure passwords/tokens"
+	@echo "  make generate-iocs      - Generate simulated IOCs"
 	@echo "  make certs              - Generate TLS certificates for Nginx"
 	@echo "  make metrics            - Calculate KPIs from logs"
-	@echo "  make backup             - Create backup of artifacts"
+	@echo "  make backup             - Create backup of runtime data"
 	@echo "  make restore            - Restore from backup (BACKUP=<name>)"
-	@echo "  make check-deps         - Verify all dependencies are installed"
-	@echo "  make reset              - Full reset: destroy all containers, volumes, networks"
+	@echo "  make validate-credentials - Validate credential synchronization"
+	@echo "  make clean              - Clean temporary files (reports, runtime logs)"
+	@echo "  make reset              - Full reset: destroy containers, volumes, networks + clean"
+	@echo ""
+	@echo "[Code Quality]"
+	@echo "  make lint               - Run ALL linters: ruff + black + isort + flake8 + mypy + docs-lint"
+	@echo "  make docs-lint          - Run doc linters (markdownlint, lychee, docs_quality) + generate docs"
+	@echo "  make lint-fix           - Auto-fix code with ruff, black and isort"
+	@echo "  make quality            - Run quality checks -> reports/quality/quality-summary.md"
+	@echo "  make mutation           - Run mutation testing (mutmut) in Docker -> reports/mutmut/"
+	@echo "  make test-review        - Test review report (7-dimension methodology) -> reports/test-review/"
+	@echo "  make holistic-review    - Holistic Project Radar (5 layers, 15 dims) -> reports/holistic/"
+	@echo ""
+	@echo "[Development]"
+	@echo "  make sync-src           - Sync src/ and pytest.ini into soar_api container"
+	@echo "  make sync-tests         - Sync tests/ into soar_api container"
+	@echo "  make dev-reload         - Reload code in API container without rebuild"
+	@echo "  make dev-shell          - Open shell in API container"
+	@echo "  make dev-debug          - Start API in debug mode"
+	@echo "  make logs-service       - View logs for a specific service (SERVICE=<name>)"
+	@echo ""
+	@echo "[Documentation]"
+	@echo "  make docs-build         - Build documentation"
+	@echo "  make docs-serve         - Serve documentation at http://localhost:8001"
+	@echo "  make docs-lint          - Run documentation linters (markdownlint, lychee, docs_quality)"
 	@echo ""
 	@echo "[Quick Start]"
 	@echo "  1. make up                    # Start SOAR stack"
@@ -83,9 +104,6 @@ help:
 	@echo "  3. make simulate              # Test with sample alert"
 	@echo "  4. make test-e2e-tc01         # Run malicious IOC tests"
 	@echo ""
-	@echo "[For Vagrant environment]"
-	@echo "  1. make vagrant-up            # Start Ubuntu SOAR VM"
-	@echo "  2. make vagrant-simulate      # Simulate attack from Ubuntu VM"
 
 install:
 	pip install -e .
@@ -99,67 +117,107 @@ validate-credentials:
 	@if not exist .env.full (echo ERROR: .env.full not found. Please create it from .env.example && exit 1)
 	@python src/soar_lab/infrastructure/validate_credentials.py
 
+verify-digests:
+	@echo "Verifying Docker image digests..."
+	@python scripts/maintenance/verify_image_digests.py
+
+verify-digests-write:
+	@echo "Generating requirements-docker.lock with image digests..."
+	@python scripts/maintenance/verify_image_digests.py --write
+
 up:
-	@echo "Checking .env.full exists..."
-	@powershell -Command "if (!(Test-Path .env.full)) { if (Test-Path .env.full.reset.bak) { Move-Item -Force .env.full.reset.bak .env.full } elseif (Test-Path .env.example) { Copy-Item -Force .env.example .env.full } else { Write-Host 'ERROR: .env.full and .env.example are missing'; exit 1 } }"
-	@echo "Generating local .env for Docker Desktop with project-local ARTIFACTS_DIR..."
-	@python -c "import pathlib; s=pathlib.Path('.env.full').read_text(encoding='utf-8'); a=str(pathlib.Path('artifacts').resolve()).replace('\\','/'); pathlib.Path('.env').write_text('\n'.join([f'ARTIFACTS_DIR={a}' if l.startswith('ARTIFACTS_DIR=') else l for l in s.splitlines()]), encoding='utf-8')"
-	@echo "Creating Docker networks with compose labels (if not exist)..."
+	@echo "==> [1/19] Checking .env.full exists..."
+	@powershell -NoProfile -Command "if (!(Test-Path .env.full)) { if (Test-Path .env.full.reset.bak) { Move-Item -Force .env.full.reset.bak .env.full } elseif (Test-Path .env.example) { Copy-Item -Force .env.example .env.full } else { Write-Host 'ERROR: .env.full and .env.example are missing'; exit 1 } }"
+	@echo "==> [2/19] Generating .env.full and Grafana datasources from templates..."
+	@python scripts/setup/generate_secrets.py
+	@echo "==> [3/19] Generating local .env for Docker Desktop with project-local runtime and reports dirs..."
+	@python -c "import pathlib; s=pathlib.Path('.env.full').read_text(encoding='utf-8'); r=str(pathlib.Path('runtime').resolve()).replace('\\','/'); p=str(pathlib.Path('reports').resolve()).replace('\\','/'); lines=[l for l in s.splitlines() if not l.startswith('RUNTIME_DIR=') and not l.startswith('REPORTS_DIR=') and not l.startswith('ARTIFACTS_DIR=')]; lines.append(f'ARTIFACTS_DIR={r}'); lines.append(f'RUNTIME_DIR={r}'); lines.append(f'REPORTS_DIR={p}'); pathlib.Path('.env').write_text('\n'.join(lines), encoding='utf-8')"
+	@echo "==> [4/19] Verifying Docker image digests (non-blocking)..."
+	-@python scripts/maintenance/verify_image_digests.py --env-file .env 2>nul || echo [INFO] Digest verification skipped (Docker not running or registry unreachable)
+	@echo "==> [5/19] Creating Docker networks with compose labels (if not exist)..."
 	@docker network inspect soar_net >nul 2>&1 || docker network create --label "com.docker.compose.network=soar_net" --label "com.docker.compose.project=soar" soar_net
 	@docker network inspect logging_net >nul 2>&1 || docker network create --label "com.docker.compose.network=logging_net" --label "com.docker.compose.project=soar" logging_net
 	@docker network inspect ti_net >nul 2>&1 || docker network create --label "com.docker.compose.network=ti_net" --label "com.docker.compose.project=soar" ti_net
-	@echo "Creating required directories..."
-	@powershell -Command "if (!(Test-Path 'artifacts\data\elasticsearch')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\elasticsearch' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\thehive\files')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\thehive\files' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\cortex')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\cortex' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\shuffle\apps')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\shuffle\apps' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\shuffle\files')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\shuffle\files' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\redis')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\redis' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\misp\db')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\misp\db' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\misp\files')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\misp\files' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\misp\configs')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\misp\configs' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\misp\logs')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\misp\logs' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\config')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\config' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\api_config')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\api_config' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\etc')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\etc' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\queue')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\queue' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\var_multigroups')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\var_multigroups' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\integration_files')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\integration_files' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\active_response')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\active_response' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\wodles')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\wodles' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\wazuh\logs')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\wazuh\logs' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\kibana')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\kibana' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\loki')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\loki' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\data\grafana')) { New-Item -ItemType Directory -Force -Path 'artifacts\data\grafana' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\backups')) { New-Item -ItemType Directory -Force -Path 'artifacts\backups' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\logs')) { New-Item -ItemType Directory -Force -Path 'artifacts\logs' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\results')) { New-Item -ItemType Directory -Force -Path 'artifacts\results' }"
-	@powershell -Command "if (!(Test-Path 'artifacts\coverage')) { New-Item -ItemType Directory -Force -Path 'artifacts\coverage' }"
-	@echo "Updating Wazuh password hashes before containers start..."
-	@python src/soar_lab/scripts/setup/update_wazuh_hashes.py
-	@echo "Seeding Wazuh default configuration..."
-	@python src/soar_lab/scripts/setup/seed_wazuh.py
+	@echo "==> [6/19] Creating required directories..."
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\elasticsearch')) { New-Item -ItemType Directory -Force -Path 'runtime\data\elasticsearch' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\thehive\files')) { New-Item -ItemType Directory -Force -Path 'runtime\data\thehive\files' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\cortex')) { New-Item -ItemType Directory -Force -Path 'runtime\data\cortex' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\shuffle\apps')) { New-Item -ItemType Directory -Force -Path 'runtime\data\shuffle\apps' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\shuffle\files')) { New-Item -ItemType Directory -Force -Path 'runtime\data\shuffle\files' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\redis')) { New-Item -ItemType Directory -Force -Path 'runtime\data\redis' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\misp\db')) { New-Item -ItemType Directory -Force -Path 'runtime\data\misp\db' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\misp\files')) { New-Item -ItemType Directory -Force -Path 'runtime\data\misp\files' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\misp\configs')) { New-Item -ItemType Directory -Force -Path 'runtime\data\misp\configs' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\misp\logs')) { New-Item -ItemType Directory -Force -Path 'runtime\data\misp\logs' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\loki')) { New-Item -ItemType Directory -Force -Path 'runtime\data\loki' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\grafana')) { New-Item -ItemType Directory -Force -Path 'runtime\data\grafana' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\backups')) { New-Item -ItemType Directory -Force -Path 'runtime\backups' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\logs')) { New-Item -ItemType Directory -Force -Path 'runtime\logs' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\results')) { New-Item -ItemType Directory -Force -Path 'runtime\results' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\logs\nginx')) { New-Item -ItemType Directory -Force -Path 'runtime\logs\nginx' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\logs\misp')) { New-Item -ItemType Directory -Force -Path 'runtime\logs\misp' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\grafana_db')) { New-Item -ItemType Directory -Force -Path 'runtime\data\grafana_db' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\data\opensearch')) { New-Item -ItemType Directory -Force -Path 'runtime\data\opensearch' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'reports\validation\results')) { New-Item -ItemType Directory -Force -Path 'reports\validation\results' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'reports\coverage')) { New-Item -ItemType Directory -Force -Path 'reports\coverage' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\config')) { New-Item -ItemType Directory -Force -Path 'runtime\config' }"
+	@powershell -NoProfile -Command "if (!(Test-Path 'runtime\logs\notify.log')) { Set-Content -Path 'runtime\logs\notify.log' -Value \"[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] STEP: SOAR Lab initialized and ready`n\" -Encoding UTF8 }"
+	@echo "==> [7/19] Rendering Docker config files from templates..."
+	@python scripts/setup/render_configs.py --env-file .env
+	@echo "==> [8/19] Building and starting Docker containers..."
+	@echo "  [8a] Starting OpenSearch first (for index template setup)..."
+	-@$(DC) up -d --build opensearch 2>nul || true
+	@powershell -NoProfile -Command "for ($$i=0; $$i -lt 30; $$i++) { $$r=docker exec soar_opensearch curl -sf http://localhost:9200/_cluster/health 2>&1; if ($$LASTEXITCODE -eq 0) { break } Start-Sleep -Seconds 5 }"
+	@echo "  [8b] Pre-creating OpenSearch index templates (before backend starts)..."
+	-@docker exec soar_opensearch python3 -c "import urllib.request,json; tpl={'index_patterns':['environments*'],'settings':{'number_of_replicas':0,'refresh_interval':'1s'},'mappings':{'dynamic_templates':[{'strings_as_keywords':{'match_mapping_type':'string','mapping':{'type':'keyword'}}}],'properties':{'Name':{'type':'keyword'},'Registered':{'type':'boolean'},'Type':{'type':'keyword'},'archived':{'type':'boolean'},'created':{'type':'long'},'edited':{'type':'long'},'default':{'type':'boolean'},'id':{'type':'keyword'},'org_id':{'type':'keyword'},'orborus_uuid':{'type':'keyword'},'running_ip':{'type':'keyword'},'run_type':{'type':'keyword'},'sensor_group':{'type':'keyword'}}}}; data=json.dumps(tpl).encode(); req=urllib.request.Request('http://localhost:9200/_template/soar_environments',data=data,method='PUT',headers={'Content-Type':'application/json'}); urllib.request.urlopen(req,timeout=15); print('environments template created')" 2>nul || echo [INFO] environments template skipped
+	-@docker exec soar_opensearch python3 -c "import urllib.request,json; tpl={'index_patterns':['workflowqueue*'],'settings':{'number_of_replicas':0,'refresh_interval':'1s'},'mappings':{'dynamic_templates':[{'strings_as_keywords':{'match_mapping_type':'string','mapping':{'type':'keyword'}}}],'properties':{'authgroup':{'type':'keyword'},'authorization':{'type':'keyword'},'created_at':{'type':'long'},'environments':{'type':'keyword'},'execution_argument':{'type':'text'},'execution_id':{'type':'keyword'},'execution_source':{'type':'keyword'},'priority':{'type':'long'},'start':{'type':'long'},'status':{'type':'keyword'},'type':{'type':'keyword'},'workflow_id':{'type':'keyword'}}}}; data=json.dumps(tpl).encode(); req=urllib.request.Request('http://localhost:9200/_template/soar_workflowqueue',data=data,method='PUT',headers={'Content-Type':'application/json'}); urllib.request.urlopen(req,timeout=15); print('workflowqueue template created')" 2>nul || echo [INFO] workflowqueue template skipped
+	-@docker exec soar_opensearch python3 -c "import urllib.request,json; tpl={'index_patterns':['notifications*'],'settings':{'number_of_replicas':0,'refresh_interval':'1s'},'mappings':{'dynamic_templates':[{'strings_as_keywords':{'match_mapping_type':'string','mapping':{'type':'keyword'}}}],'properties':{'action_name':{'type':'keyword'},'created_at':{'type':'long'},'updated_at':{'type':'long'},'execution_id':{'type':'keyword'},'node_id':{'type':'keyword'},'node_status':{'type':'keyword'},'org_id':{'type':'keyword'},'severity':{'type':'keyword'},'title':{'type':'text'},'workflow_id':{'type':'keyword'},'read':{'type':'boolean'},'ignored':{'type':'boolean'},'dismissable':{'type':'boolean'},'personal':{'type':'boolean'}}}}; data=json.dumps(tpl).encode(); req=urllib.request.Request('http://localhost:9200/_template/soar_notifications',data=data,method='PUT',headers={'Content-Type':'application/json'}); urllib.request.urlopen(req,timeout=15); print('notifications template created')" 2>nul || echo [INFO] notifications template skipped
+	@echo "  [8c] Starting remaining services..."
 	$(DC) up -d --build
-	@echo "Services started — configuring Elasticsearch index templates (replicas=0 for single-node)..."
-	@powershell -Command "docker exec soar_api python /app/src/soar_lab/scripts/setup/configure_es.py; if ($$LASTEXITCODE -ne 0) { exit 1 }"
-	@echo "Waiting for Cortex and TheHive to initialize..."
-	@powershell -Command "docker exec soar_api python /app/src/soar_lab/scripts/setup/reset_cortex.py; if ($$LASTEXITCODE -ne 0) { exit 1 }"
-	@powershell -Command "docker exec soar_api python /app/src/soar_lab/scripts/setup/init_thehive.py; if ($$LASTEXITCODE -ne 0) { exit 1 }"
-	@echo "Restoring service credentials from backup (if available)..."
-	-@docker exec soar_api python /app/src/soar_lab/scripts/setup/restore_credentials.py || echo [INFO] No credentials backup found or restoration failed
-	@echo "Running init_shuffle_webhook.py (installs apps + creates workflow)..."
-	@powershell -Command "$$ok=0; for ($$i=1; $$i -le 3; $$i++) { Write-Host \"Attempt $$i/3...\"; docker exec soar_api python /app/src/soar_lab/scripts/setup/init_shuffle_webhook.py; if ($$LASTEXITCODE -eq 0) { $$ok=1; break } Write-Host \"init_shuffle_webhook failed, retrying in 30s...\"; Start-Sleep -Seconds 30 }; if ($$ok -eq 0) { exit 1 }"
-	@echo "Copying webhook_info.json out of container..."
-	-@docker cp soar_api:/app/webhook_info.json artifacts/results/webhook_info.json 2>nul
-	@echo "Rewriting host-facing URLs in webhook_info.json..."
-	@python src/soar_lab/scripts/setup/rewrite_webhook_info.py
-	-@docker cp artifacts/results/webhook_info.json soar_api:/app/webhook_info.json 2>nul
-	@echo "Setting up Cortex analyzers and MISP IOCs..."
-	-@docker exec soar_api python /app/src/soar_lab/scripts/setup/setup_analyzers_and_iocs.py || echo [INFO] Analyzer/IOC setup completed with warnings
-	@echo "Setting up Grafana KPI dashboard..."
-	-@python src/soar_lab/scripts/setup/setup_grafana_kpis.py || echo [INFO] Grafana KPI setup completed with warnings
-	@echo "Fixing Shuffle organization users..."
-	-@docker exec soar_api python /app/src/soar_lab/scripts/setup/fix_org_users.py || echo [INFO] Org-user fix completed with warnings
+	@echo "==> [9/19] Configuring Elasticsearch index templates (replicas=0 for single-node)..."
+	@powershell -NoProfile -Command "docker exec soar_api python /app/scripts/setup/configure_es.py; if ($$LASTEXITCODE -ne 0) { exit 1 }"
+	@echo "==> [10/19] Waiting for Cortex and TheHive to initialize..."
+	@powershell -NoProfile -Command "docker exec soar_api python /app/scripts/setup/reset_cortex.py; if ($$LASTEXITCODE -ne 0) { exit 1 }"
+	@powershell -NoProfile -Command "docker exec soar_api python /app/scripts/setup/init_thehive.py; if ($$LASTEXITCODE -ne 0) { exit 1 }"
+	@echo "==> [10b/19] Patching Cortex analyzer images (stdin fix)..."
+	-@python infra/docker/images/cortex/patch_analyzers.py || echo [INFO] Analyzer patching skipped (non-fatal)
+	@echo "==> [11/19] Restoring service credentials from backup (if available)..."
+	-@docker exec soar_api python /app/scripts/setup/restore_credentials.py || echo [INFO] No credentials backup found or restoration failed
+	@echo "==> [12/19] Running init_shuffle_webhook.py (installs apps + creates workflow)..."
+	-@docker cp scripts/setup/shuffle_workflow/scripts/build_metrics_json.py soar_api:/app/scripts/setup/shuffle_workflow/scripts/build_metrics_json.py 2>nul || true
+	-@docker cp scripts/setup/shuffle_workflow/scripts/normalize_inputs.py soar_api:/app/scripts/setup/shuffle_workflow/scripts/normalize_inputs.py 2>nul || true
+	-@docker cp scripts/setup/shuffle_workflow/scripts/build_case_json.py soar_api:/app/scripts/setup/shuffle_workflow/scripts/build_case_json.py 2>nul || true
+	-@docker cp scripts/setup/shuffle_workflow/scripts/calc_decision.py soar_api:/app/scripts/setup/shuffle_workflow/scripts/calc_decision.py 2>nul || true
+	-@docker cp scripts/setup/shuffle_workflow/scripts/build_hive_summary.py soar_api:/app/scripts/setup/shuffle_workflow/scripts/build_hive_summary.py 2>nul || true
+	-@docker cp scripts/setup/shuffle_workflow/scripts/build_es_json.py soar_api:/app/scripts/setup/shuffle_workflow/scripts/build_es_json.py 2>nul || true
+	-@docker cp scripts/setup/shuffle_workflow/scripts/calc_mttr.py soar_api:/app/scripts/setup/shuffle_workflow/scripts/calc_mttr.py 2>nul || true
+	-@docker cp scripts/maintenance/clean_shuffle_executions.py soar_api:/app/scripts/maintenance/clean_shuffle_executions.py 2>nul || true
+	-@docker cp scripts/maintenance/wait_for_workflows.py soar_api:/app/scripts/maintenance/wait_for_workflows.py 2>nul || true
+	-@docker cp src/soar_lab/simulator/simulate_alerts.py soar_api:/app/src/soar_lab/simulator/simulate_alerts.py 2>nul || true
+	@powershell -NoProfile -Command "$$ok=0; for ($$i=1; $$i -le 3; $$i++) { Write-Host \"Attempt $$i/3...\"; docker exec soar_api python /app/scripts/setup/init_shuffle_webhook.py; if ($$LASTEXITCODE -eq 0) { $$ok=1; break } Write-Host \"init_shuffle_webhook failed, retrying in 30s...\"; Start-Sleep -Seconds 30 }; if ($$ok -eq 0) { exit 1 }"
+	@echo "==> [12b/19] Restarting API to pick up updated credentials..."
+	-$(DC) restart api
+	@powershell -NoProfile -Command "for ($$i=0; $$i -lt 30; $$i++) { $$r=docker exec soar_api curl -sf http://localhost:8000/health 2>&1; if ($$LASTEXITCODE -eq 0) { break } Start-Sleep -Seconds 2 }"
+	@echo "==> [13/19] Copying webhook_info.json out of container..."
+	-@docker cp soar_api:/app/reports/validation/results/webhook_info.json reports/validation/results/webhook_info.json 2>nul
+	@echo "==> [14/19] Rewriting host-facing URLs in webhook_info.json..."
+	@python scripts/setup/rewrite_webhook_info.py
+	-@docker cp reports/validation/results/webhook_info.json soar_api:/app/reports/validation/results/webhook_info.json 2>nul
+	@echo "==> [15/19] Setting up Cortex analyzers and MISP IOCs..."
+	-@docker exec soar_api python /app/scripts/setup/setup_analyzers_and_iocs.py || echo [INFO] Analyzer/IOC setup completed with warnings
+	@echo "==> [16/19] Setting up Grafana KPI dashboard..."
+	-@python scripts/setup/setup_grafana_kpis.py || echo [INFO] Grafana KPI setup completed with warnings
+	@echo "==> [17/19] Fixing Shuffle organization users..."
+	-@docker exec soar_api python /app/scripts/setup/fix_org_users.py || echo [INFO] Org-user fix completed with warnings
+	@echo ""
+	@echo "==> [18/19] Refreshing Grafana to load updated datasources..."
+	$(DC) up -d --no-deps --force-recreate grafana
+	@echo "==> [19/19] Waiting for OpenSearch mappings to stabilize (30s)..."
+	@powershell -NoProfile -Command "Start-Sleep -Seconds 30"
+	@echo "==> Disabling OpenSearch replicas (single-node optimization)..."
+	-@docker cp scripts/setup/disable_replicas.py soar_opensearch:/tmp/disable_replicas.py 2>nul || true
+	-@docker exec soar_opensearch python3 /tmp/disable_replicas.py 2>nul || echo [INFO] Replica disable skipped
+	@python scripts/setup/show_access.py
 
 down:
 	$(DC) down -v --remove-orphans
@@ -192,7 +250,6 @@ health:
 	@curl -sf http://localhost:8083 && echo "✓ MISP: OK" || echo "✗ MISP: FAILED"
 	@echo ""
 	@echo "=== Observability ==="
-	@curl -sf http://localhost:15601/kibana/api/status && echo "✓ Wazuh Dashboard: OK" || echo "✗ Wazuh Dashboard: FAILED"
 	@curl -sf http://localhost:8084 && echo "✓ Grafana: OK" || echo "✗ Grafana: FAILED"
 	@echo ""
 	@echo "=== Infrastructure ==="
@@ -202,165 +259,928 @@ health:
 init-webhook:
 	@echo "Initializing Shuffle webhook..."
 	@docker ps | findstr soar_shuffle_backend >nul || (echo ERROR: Shuffle backend is not running. Start services with 'make up' first && exit 1)
-	docker exec soar_api python /app/src/soar_lab/scripts/setup/init_shuffle_webhook.py
+	docker exec soar_api python /app/scripts/setup/init_shuffle_webhook.py
+
+clean-shuffle:
+	@echo "Cleaning stale Shuffle executions from OpenSearch..."
+	@docker ps | findstr soar_api >nul || (echo ERROR: soar_api is not running. Start services with 'make up' first && exit 1)
+	docker exec soar_api python /app/scripts/maintenance/clean_shuffle_executions.py
+	@echo "Shuffle cleanup complete."
+
+clean-thehive:
+	@echo "Cleaning old TheHive cases..."
+	@docker ps | findstr soar_api >nul || (echo ERROR: soar_api is not running. Start services with 'make up' first && exit 1)
+	docker exec soar_api python /app/scripts/maintenance/clean_thehive_cases.py
+	@echo "TheHive cleanup complete."
 
 # SIEM Simulation
 SIMULATE_N ?= 5
-SIMULATE_DELAY ?= 3
+SIMULATE_DELAY ?= 10
 SIEM_PYTHON ?= python3
 
 simulate:
 	@curl -sf http://localhost:8000/health >nul 2>&1 || (echo ERROR: API not available. Start services with 'make up' first && exit 1)
+	-@docker cp src/soar_lab/simulator/simulate_alerts.py soar_api:/app/src/soar_lab/simulator/simulate_alerts.py 2>nul || true
 	@echo "==> Simulating ransomware attack ($(SIMULATE_N) malicious alerts)..."
-	$(SIEM_PYTHON) -m soar_lab.services.send_alert --type malicious --num-alerts $(SIMULATE_N) --delay $(SIMULATE_DELAY)
+	docker exec soar_api python3 -m soar_lab.simulator.simulate_alerts --count $(SIMULATE_N) --delay $(SIMULATE_DELAY)
 
 simulate-malicious:
 	@curl -sf http://localhost:8000/health >nul 2>&1 || (echo ERROR: API not available. Start services with 'make up' first && exit 1)
 	@echo "==> Sending malicious alert..."
-	$(SIEM_PYTHON) -m soar_lab.services.send_alert --type malicious --single
+	docker exec soar_api python3 -m soar_lab.simulator.simulate_alerts --count 1
 
 simulate-benign:
 	@curl -sf http://localhost:8000/health >nul 2>&1 || (echo ERROR: API not available. Start services with 'make up' first && exit 1)
 	@echo "==> Sending benign alert..."
-	$(SIEM_PYTHON) -m soar_lab.services.send_alert --type benign --single
+	docker exec soar_api python3 -m soar_lab.simulator.simulate_alerts --count 1
 
 simulate-batch:
 	@curl -sf http://localhost:8000/health >nul 2>&1 || (echo ERROR: API not available. Start services with 'make up' first && exit 1)
+	-@docker cp src/soar_lab/simulator/simulate_alerts.py soar_api:/app/src/soar_lab/simulator/simulate_alerts.py 2>nul || true
+	@echo "==> Waiting 180s for Shuffle backend and OpenSearch to fully stabilize..."
+	@powershell -NoProfile -Command "Start-Sleep -Seconds 180"
 	@echo "==> Sending batch of $(or $(N),10) alerts..."
-	$(SIEM_PYTHON) -m soar_lab.services.send_alert --type malicious --num-alerts $(or $(N),10) --delay $(SIMULATE_DELAY)
+	docker exec soar_api python3 -m soar_lab.simulator.simulate_alerts --count $(or $(N),10) --delay $(SIMULATE_DELAY)
 
-# Vagrant targets
-vagrant-up:
-	cd infra/vagrant && vagrant up --provision
+simulate-and-report: simulate-batch
+	@echo "==> Waiting for all workflows to finish..."
+	-@docker cp scripts/maintenance/wait_for_workflows.py soar_api:/app/scripts/maintenance/wait_for_workflows.py 2>nul || true
+	docker exec soar_api python3 /app/scripts/maintenance/wait_for_workflows.py --expected $(or $(N),10) --timeout 600 --poll 10
+	@echo "==> Generating report..."
+	@$(MAKE) --no-print-directory -f Makefile.win test-e2e-report
 
-vagrant-provision:
-	cd infra/vagrant && vagrant up --provision
-
-vagrant-reload:
-	cd infra/vagrant && vagrant reload --provision
-
-vagrant-ssh:
-	cd infra/vagrant && vagrant ssh soar-ubuntu
-
-vagrant-status:
-	cd infra/vagrant && vagrant status
-
-vagrant-logs:
-	cd infra/vagrant && vagrant ssh soar-ubuntu -c "sudo tail -n 50 /opt/soar-ransomware-lab/artifacts/logs/notify.log 2>/dev/null || true; sudo docker logs --tail 50 soar_api 2>/dev/null || true"
-
-vagrant-ubuntu:
-	cd infra/vagrant && vagrant up soar-ubuntu
-
-vagrant-windows:
-	cd infra/vagrant && vagrant up victima-windows
-
-vagrant-down:
-	cd infra/vagrant && vagrant destroy -f
-
-vagrant-simulate:
-	@echo "Simulating ransomware alerts from Ubuntu VM (Windows VM disabled)..."
-	cd infra/vagrant && vagrant ssh soar-ubuntu -- "sudo docker cp /opt/soar-ransomware-lab/infra/vagrant/simulate_alerts.py soar_api:/tmp/simulate_alerts.py && sudo docker exec soar_api python3 /tmp/simulate_alerts.py --count 5 --delay 2 || true"
+# simulate-clean: clean stale executions, then simulate + report
+# Use this to avoid Orborus re-executing stale workflows (which creates
+# duplicate TheHive cases).  Stale = EXECUTING/ABORTED only; FINISHED
+# executions are preserved for report statistics.
+simulate-clean:
+	@echo "==> Cleaning stale Shuffle executions (EXECUTING/ABORTED only)..."
+	-@docker cp scripts/maintenance/clean_shuffle_executions.py soar_api:/app/scripts/maintenance/clean_shuffle_executions.py 2>nul || true
+	-@docker exec soar_api python3 /app/scripts/maintenance/clean_shuffle_executions.py || echo [INFO] Clean completed with warnings
+	@echo "==> Waiting 60s for Orborus to stabilize..."
+	@powershell -NoProfile -Command "Start-Sleep -Seconds 60"
+	@echo "==> Sending batch of $(or $(N),10) alerts (delay=$(SIMULATE_DELAY)s)..."
+	-@docker cp src/soar_lab/simulator/simulate_alerts.py soar_api:/app/src/soar_lab/simulator/simulate_alerts.py 2>nul || true
+	docker exec soar_api python3 -m soar_lab.simulator.simulate_alerts --count $(or $(N),10) --delay $(SIMULATE_DELAY)
+	@echo "==> Waiting for all workflows to finish..."
+	-@docker cp scripts/maintenance/wait_for_workflows.py soar_api:/app/scripts/maintenance/wait_for_workflows.py 2>nul || true
+	docker exec soar_api python3 /app/scripts/maintenance/wait_for_workflows.py --expected $(or $(N),10) --timeout 600 --poll 10
+	@echo "==> Generating report..."
+	@$(MAKE) --no-print-directory -f Makefile.win test-e2e-report
 
 # Metrics & Backup
 metrics:
-	@set PYTHONPATH=src&& set ELASTICSEARCH_URL=http://localhost:19200&& set ELASTIC_PASSWORD=ElasticLab2024SecurePass&& set ELASTIC_USER=elastic&& python3 src\soar_lab\data\calc_kpis.py --output artifacts\results\kpis.csv
-
-# Data Analysis Commands
-data-status:
-	@echo "Checking data availability status..."
-	@powershell -Command "if (Test-Path artifacts\results) { Get-ChildItem artifacts\results | Select-Object Name, Length } else { Write-Host 'No artifacts found - run tests first' }"
-	@powershell -Command "if (Test-Path artifacts\logs) { Get-ChildItem artifacts\logs | Select-Object Name, Length } else { Write-Host 'No logs found' }"
-
-data-generate:
-	@echo "Generating complete analysis data..."
-	@set PYTHONPATH=src&& set ELASTICSEARCH_URL=http://localhost:19200&& set ELASTIC_PASSWORD=ElasticLab2024SecurePass&& set ELASTIC_USER=elastic&& python3 src\soar_lab\data\calc_kpis.py --output artifacts\results\kpis.csv
-
-data-view:
-	@echo "Viewing all available data..."
-	@powershell -Command "if (Test-Path artifacts\results\kpis.csv) { Get-Content artifacts\results\kpis.csv } else { Write-Host 'No kpis.csv found - run make metrics first' }"
-	@powershell -Command "if (Test-Path artifacts\results) { Get-ChildItem artifacts\results\*.json -ErrorAction SilentlyContinue | Select-Object Name } else { Write-Host 'No JSON reports found' }"
-
-data-watch:
-	@echo "Monitoring data changes in real-time..."
-	@powershell -Command "if (Test-Path artifacts\logs\notify.log) { Get-Content artifacts\logs\notify.log -Wait -Tail 50 } else { Write-Host 'No notify.log found - run tests first' }"
+	@docker exec soar_api python /app/src/soar_lab/data/calc_kpis.py --output /app/reports/validation/results/kpis.csv
+	@-docker cp soar_api:/app/reports/validation/results/kpis.csv reports/validation/results/kpis.csv 2>nul || echo [INFO] kpis.csv not found in container
 
 backup:
 	@curl -sf http://localhost:8000/health >nul 2>&1 || (echo ERROR: API not available. Start services with 'make up' first && exit 1)
 	curl -sf -X POST http://localhost:8000/backup/create -H "Content-Type: application/json" -d '{"backup_name":"manual-backup.tar.gz"}' | python3 -m json.tool
 
 restore:
-	@if "$(BACKUP)"=="" (echo ERROR: BACKUP parameter required. Usage: make restore BACKUP=<backup_name> && echo Available backups: && dir artifacts\backups 2>nul || echo No backups found && exit 1)
-	@if not exist artifacts\backups\$(BACKUP) (echo ERROR: Backup file artifacts\backups\$(BACKUP) not found && exit 1)
+	@if "$(BACKUP)"=="" (echo ERROR: BACKUP parameter required. Usage: make restore BACKUP=<backup_name> && echo Available backups: && dir runtime\backups 2>nul || echo No backups found && exit 1)
+	@if not exist runtime\backups\$(BACKUP) (echo ERROR: Backup file runtime\backups\$(BACKUP) not found && exit 1)
 	@curl -sf http://localhost:8000/health >nul 2>&1 || (echo ERROR: API not available. Start services with 'make up' first && exit 1)
 	curl -sf -X POST http://localhost:8000/backup/restore -H "Content-Type: application/json" -d '{"backup_name":"$(BACKUP)"}' | python3 -m json.tool
 
 reset:
 	@echo "==> [0/12] Backing up .env.full so it survives the reset..."
-	@powershell -Command "if (Test-Path .env.full) { Copy-Item -Force .env.full .env.full.reset.bak }"
+	@powershell -NoProfile -Command "if (Test-Path .env.full) { Copy-Item -Force .env.full .env.full.reset.bak }"
 	@echo "==> [1/12] Preserving service credentials before reset..."
-	-docker ps | findstr soar_api >nul && docker exec soar_api python /app/src/soar_lab/scripts/setup/preserve_credentials.py && docker cp soar_api:/app/src/soar_lab/infrastructure/artifacts/credentials_backup.json src/soar_lab/infrastructure/artifacts/credentials_backup.json || echo [INFO] API container not running, skipping credential preservation
+	-docker ps | findstr soar_api >nul && docker exec soar_api python /app/scripts/setup/preserve_credentials.py && docker cp soar_api:/app/reports/validation/results/credentials_backup.json reports/validation/results/credentials_backup.json || echo [INFO] API container not running, skipping credential preservation
 	@echo "==> [2/12] Stopping project stack and removing project volumes..."
 	-$(DC) down -v --remove-orphans
 	@echo "==> [3/12] Force-removing any leftover soar_* containers..."
-	-powershell -Command "docker ps -aq --filter name=soar_ | ForEach-Object { docker rm -f $$_ } 2>$$null"
+	-powershell -NoProfile -Command "docker ps -aq --filter name=soar_ | ForEach-Object { docker rm -f $$_ } 2>$$null"
 	@echo "==> [4/12] Removing any leftover project Docker volumes..."
-	-powershell -Command "docker volume ls -q | Where-Object { $$_ -match '^soar' -or $$_ -match '^soar-lab' } | ForEach-Object { docker volume rm $$_ } 2>$$null"
+	-powershell -NoProfile -Command "docker volume ls -q | Where-Object { $$_ -match '^soar' -or $$_ -match '^soar-lab' } | ForEach-Object { docker volume rm $$_ } 2>$$null"
 	@echo "==> [5/12] Removing any leftover project Docker networks..."
-	-powershell -Command "docker network ls --format '{{.Name}}' | Where-Object { $$_ -match 'soar' -or $$_ -eq 'logging_net' -or $$_ -eq 'ti_net' } | ForEach-Object { docker network rm $$_ } 2>$$null"
-	@echo "==> [6/12] Removing local artifacts/data directories..."
-	-powershell -Command "if (Test-Path artifacts\data) { Remove-Item -Recurse -Force artifacts\data -ErrorAction SilentlyContinue }"
-	@echo "==> [7/12] Removing local artifacts/logs directory..."
-	-powershell -Command "if (Test-Path artifacts\logs) { Remove-Item -Recurse -Force artifacts\logs }"
-	@echo "==> [8/12] Removing local artifacts/backups directory..."
-	-powershell -Command "if (Test-Path artifacts\backups) { Remove-Item -Recurse -Force artifacts\backups }"
-	@echo "==> [9/12] Removing local artifacts/results directory..."
-	-powershell -Command "if (Test-Path artifacts\results) { Remove-Item -Recurse -Force artifacts\results }"
-	@echo "==> [10/12] Removing local artifacts/coverage directory..."
-	-powershell -Command "if (Test-Path artifacts\coverage) { Remove-Item -Recurse -Force artifacts\coverage }"
+	-powershell -NoProfile -Command "docker network ls --format '{{.Name}}' | Where-Object { $$_ -match 'soar' -or $$_ -eq 'logging_net' -or $$_ -eq 'ti_net' } | ForEach-Object { docker network rm $$_ } 2>$$null"
+	@echo "==> [6/12] Removing local runtime/data directories..."
+	-powershell -NoProfile -Command "if (Test-Path runtime\data) { Remove-Item -Recurse -Force runtime\data -ErrorAction SilentlyContinue }"
+	@echo "==> [7/12] Removing local runtime/logs directory..."
+	-powershell -NoProfile -Command "if (Test-Path runtime\logs) { Remove-Item -Recurse -Force runtime\logs }"
+	@echo "==> [8/12] Removing local runtime/backups directory..."
+	-powershell -NoProfile -Command "if (Test-Path runtime\backups) { Remove-Item -Recurse -Force runtime\backups }"
+	-powershell -NoProfile -Command "if (Test-Path runtime\results) { Remove-Item -Recurse -Force runtime\results }"
+	-powershell -NoProfile -Command "if (Test-Path runtime\config) { Remove-Item -Recurse -Force runtime\config }"
+	@echo "==> [9/12] Removing local reports/validation/results directory..."
+	-powershell -NoProfile -Command "if (Test-Path reports\validation\results) { Remove-Item -Recurse -Force reports\validation\results }"
+	@echo "==> [10/12] Removing local reports/coverage directory..."
+	-powershell -NoProfile -Command "if (Test-Path reports\coverage) { Remove-Item -Recurse -Force reports\coverage }"
 	@echo "==> [11/12] Restoring .env.full backup..."
-	@powershell -Command "if (Test-Path .env.full.reset.bak) { Move-Item -Force .env.full.reset.bak .env.full } else { if (Test-Path .env.example) { Copy-Item -Force .env.example .env.full } }"
+	@powershell -NoProfile -Command "if (Test-Path .env.full.reset.bak) { Move-Item -Force .env.full.reset.bak .env.full } else { if (Test-Path .env.example) { Copy-Item -Force .env.example .env.full } }"
 	@echo "==> [12/12] Reset complete. Run 'make up' to start fresh."
+
+# Sync (copy src/tests into running container for dev without rebuild)
+sync-src:
+	@echo "src/ and pytest.ini are bind-mounted in docker-compose.api.yml — no sync needed"
+
+sync-tests:
+	@echo "tests/ is bind-mounted in docker-compose.api.yml — no sync needed"
 
 # Testing
 test-unit:
-	@echo "Running unit tests inside Docker container..."
-	docker exec soar_api python3 -m pytest tests/unit -v
+	@echo "Running unit tests with coverage inside Docker container..."
+	docker exec soar_api python3 -m pytest tests/unit -v --cov=src/soar_lab --cov-report=term --cov-report=json:runtime/coverage/coverage.json --cov-report=html:artifacts/coverage/htmlcov --cov-report=xml:artifacts/coverage/coverage.xml --cov-fail-under=80
+	-@docker exec soar_api cp /app/runtime/coverage/coverage.json /app/reports/coverage/coverage.json 2>nul || true
 
 test-integration:
 	@echo "Running integration tests inside Docker container..."
 	docker exec soar_api python3 -m pytest tests/integration -v
 
-test-e2e:
-	@echo "Running E2E tests inside Docker container..."
-	docker exec soar_api python3 -m pytest tests/e2e -v --no-cov
+test-e2e: clean-shuffle clean-thehive test-e2e-tc01 test-e2e-tc02 test-e2e-tc03 test-e2e-tc04 test-e2e-tc05 test-e2e-tc06 test-e2e-tc07 test-e2e-tc08 test-e2e-tc09 test-e2e-tc10 test-e2e-tc11 test-e2e-tc12 test-e2e-tc13 test-e2e-tc14 test-e2e-tc15 test-e2e-tc16 test-e2e-tc17 test-e2e-tc18 test-e2e-tc19 test-e2e-tc20 test-e2e-tc21 test-e2e-tc22 test-e2e-tc23 test-e2e-tc24 test-e2e-tc25 test-e2e-tc26 test-e2e-tc27 test-e2e-tc28 test-e2e-tc29 test-e2e-tc30 test-e2e-tc31 test-e2e-tc32 test-e2e-tc33 test-e2e-kpi-01 test-e2e-kpi-02 test-e2e-kpi-03 test-e2e-kpi-04 test-e2e-kpi-05
+	@echo "All E2E tests completed. Generating report..."
+	@$(MAKE) --no-print-directory -f Makefile.win test-e2e-report
+	@echo "All E2E tests completed. Report at reports/e2e/e2e_report.md"
 
-test-e2e-tc01:
-	@echo "Running TC-01: Malicious IOC detection..."
-	docker exec soar_api python3 -m pytest tests/e2e/TC-01 -v
+test-e2e-report:
+	@echo "Generating E2E test report (MD + JSON + charts)..."
+	@powershell -NoProfile -Command "if (!(Test-Path reports\e2e)) { New-Item -ItemType Directory -Force -Path reports\e2e }"
+	-@docker cp scripts/reports/generate_e2e_report.py soar_api:/app/scripts/reports/generate_e2e_report.py 2>nul || true
+	-@docker cp scripts/setup/shuffle_workflow/scripts/build_metrics_json.py soar_api:/app/scripts/setup/shuffle_workflow/scripts/build_metrics_json.py 2>nul || true
+	-@docker cp scripts/maintenance/wait_for_workflows.py soar_api:/app/scripts/maintenance/wait_for_workflows.py 2>nul || true
+	-@docker exec soar_api python3 /app/scripts/reports/generate_e2e_report.py --output-dir /app/reports/e2e
+	-@docker cp soar_api:/app/reports/e2e/. reports/e2e/ 2>nul || true
+	@echo "E2E report generated at reports/e2e/e2e_report.md"
 
-test-e2e-tc02:
-	@echo "Running TC-02: Benign IOC verification..."
-	docker exec soar_api python3 -m pytest tests/e2e/TC-02 -v
+test-e2e-tc01: test-e2e-tc01-01 test-e2e-tc01-02 test-e2e-tc01-03 test-e2e-tc01-04 test-e2e-tc01-05 test-e2e-tc01-06 test-e2e-tc01-07 test-e2e-tc01-08 test-e2e-tc01-09 test-e2e-tc01-10 test-e2e-tc01-11
+	@echo "TC-01: All subtests completed."
 
-test-e2e-tc10:
-	@echo "Running TC-10: Tenzir integration..."
-	docker exec soar_api python3 -m pytest tests/e2e/TC-10 -v
+test-e2e-tc01-01:
+	@echo "Running TC-01 (1/11): test_malicious_alert_full_workflow_group_1..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_malicious_alert_full_workflow_group_1" -v
 
-test-e2e-tc11:
-	@echo "Running TC-11: Network Watcher integration..."
-	docker exec soar_api python3 -m pytest tests/e2e/TC-11 -v
+test-e2e-tc01-02:
+	@echo "Running TC-01 (2/11): test_malicious_alert_full_workflow_group_2..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_malicious_alert_full_workflow_group_2" -v
 
-test-e2e-tc12:
-	@echo "Running TC-12: Redis integration..."
-	docker exec soar_api python3 -m pytest tests/e2e/TC-12 -v
+test-e2e-tc01-03:
+	@echo "Running TC-01 (3/11): test_malicious_alert_full_workflow_group_3..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_malicious_alert_full_workflow_group_3" -v
 
-test-e2e-tc13:
-	@echo "Running TC-13: Loki integration..."
-	docker exec soar_api python3 -m pytest tests/e2e/TC-13 -v
+test-e2e-tc01-04:
+	@echo "Running TC-01 (4/11): test_malicious_alert_full_workflow_group_4..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_malicious_alert_full_workflow_group_4" -v
 
-test-e2e-tc14:
-	@echo "Running TC-14: Complete SOAR integration..."
-	docker exec soar_api python3 -m pytest tests/e2e/TC-14 -v
+test-e2e-tc01-05:
+	@echo "Running TC-01 (5/11): test_observable_validation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_observable_validation" -v
+
+test-e2e-tc01-06:
+	@echo "Running TC-01 (6/11): test_ioc_validation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_ioc_validation" -v
+
+test-e2e-tc01-07:
+	@echo "Running TC-01 (7/11): test_tag_validation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_tag_validation" -v
+
+test-e2e-tc01-08:
+	@echo "Running TC-01 (8/11): test_tlp_pap_validation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_tlp_pap_validation" -v
+
+test-e2e-tc01-09:
+	@echo "Running TC-01 (9/11): test_task_validation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_task_validation" -v
+
+test-e2e-tc01-10:
+	@echo "Running TC-01 (10/11): test_state_machine_validation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_state_machine_validation" -v
+
+test-e2e-tc01-11:
+	@echo "Running TC-01 (11/11): test_opensearch_validation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-01/test_malicious.py::TestMaliciousAlert::test_opensearch_validation" -v
+
+test-e2e-tc02: test-e2e-tc02-01 test-e2e-tc02-02 test-e2e-tc02-03 test-e2e-tc02-04 test-e2e-tc02-05
+	@echo "TC-02: All subtests completed."
+
+test-e2e-tc02-01:
+	@echo "Running TC-02 (1/5): test_benign_alert_workflow..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-02/test_benign.py::TestBenignAlert::test_benign_alert_workflow" -v
+
+test-e2e-tc02-02:
+	@echo "Running TC-02 (2/5): test_no_blocking..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-02/test_benign.py::TestBenignAlert::test_no_blocking" -v
+
+test-e2e-tc02-03:
+	@echo "Running TC-02 (3/5): test_no_isolation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-02/test_benign.py::TestBenignAlert::test_no_isolation" -v
+
+test-e2e-tc02-04:
+	@echo "Running TC-02 (4/5): test_no_unnecessary_intelligence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-02/test_benign.py::TestBenignAlert::test_no_unnecessary_intelligence" -v
+
+test-e2e-tc02-05:
+	@echo "Running TC-02 (5/5): test_audit_trail..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-02/test_benign.py::TestBenignAlert::test_audit_trail" -v
+
+test-e2e-tc03: test-e2e-tc03-01
+	@echo "TC-03: All subtests completed."
+
+test-e2e-tc03-01:
+	@echo "Running TC-03 (1/1): test_edge_cases_resilience..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-03/test_edge_cases.py::TestEdgeCases::test_edge_cases_resilience" -v
+
+test-e2e-tc04: test-e2e-tc04-01 test-e2e-tc04-02 test-e2e-tc04-03 test-e2e-tc04-04 test-e2e-tc04-05 test-e2e-tc04-06 test-e2e-tc04-07 test-e2e-tc04-08
+	@echo "TC-04: All subtests completed."
+
+test-e2e-tc04-01:
+	@echo "Running TC-04 (1/8): test_single_alert_latency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-04/test_performance.py::TestPerformance::test_single_alert_latency" -v
+
+test-e2e-tc04-02:
+	@echo "Running TC-04 (2/8): test_concurrent_alerts..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-04/test_performance.py::TestPerformance::test_concurrent_alerts" -v
+
+test-e2e-tc04-03:
+	@echo "Running TC-04 (3/8): test_sequential_batch..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-04/test_performance.py::TestPerformance::test_sequential_batch" -v
+
+test-e2e-tc04-04:
+	@echo "Running TC-04 (4/8): test_workflow_latency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-04/test_performance.py::TestPerformance::test_workflow_latency" -v
+
+test-e2e-tc04-05:
+	@echo "Running TC-04 (5/8): test_total_response_time..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-04/test_performance.py::TestPerformance::test_total_response_time" -v
+
+test-e2e-tc04-06:
+	@echo "Running TC-04 (6/8): test_p50_percentile..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-04/test_performance.py::TestPerformance::test_p50_percentile" -v
+
+test-e2e-tc04-07:
+	@echo "Running TC-04 (7/8): test_p95_percentile..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-04/test_performance.py::TestPerformance::test_p95_percentile" -v
+
+test-e2e-tc04-08:
+	@echo "Running TC-04 (8/8): test_p99_percentile..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-04/test_performance.py::TestPerformance::test_p99_percentile" -v
+
+test-e2e-tc05: test-e2e-tc05-01 test-e2e-tc05-02 test-e2e-tc05-03 test-e2e-tc05-04
+	@echo "TC-05: All subtests completed."
+
+test-e2e-tc05-01:
+	@echo "Running TC-05 (1/4): test_concurrent_alerts..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-05/test_concurrent_alerts.py::TestConcurrentAlerts::test_concurrent_alerts" -v
+
+test-e2e-tc05-02:
+	@echo "Running TC-05 (2/4): test_10_concurrent_alerts..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-05/test_concurrent_alerts.py::TestConcurrentAlerts::test_10_concurrent_alerts" -v
+
+test-e2e-tc05-03:
+	@echo "Running TC-05 (3/4): test_mass_concurrent_alerts..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-05/test_concurrent_alerts.py::TestConcurrentAlerts::test_mass_concurrent_alerts" -v
+
+test-e2e-tc05-04:
+	@echo "Running TC-05 (4/4): test_recovery_after_load..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-05/test_concurrent_alerts.py::TestConcurrentAlerts::test_recovery_after_load" -v
+
+test-e2e-tc06: test-e2e-tc06-01 test-e2e-tc06-02
+	@echo "TC-06: All subtests completed."
+
+test-e2e-tc06-01:
+	@echo "Running TC-06 (1/2): test_critical_severity..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-06/test_critical_severity.py::TestCriticalSeverity::test_critical_severity" -v
+
+test-e2e-tc06-02:
+	@echo "Running TC-06 (2/2): test_critical_tasks..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-06/test_critical_severity.py::TestCriticalSeverity::test_critical_tasks" -v
+
+test-e2e-tc07: test-e2e-tc07-01 test-e2e-tc07-02 test-e2e-tc07-03 test-e2e-tc07-04 test-e2e-tc07-05
+	@echo "TC-07: All subtests completed."
+
+test-e2e-tc07-01:
+	@echo "Running TC-07 (1/5): test_missing_fields..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-07/test_missing_fields.py::TestMissingFields::test_missing_fields" -v
+
+test-e2e-tc07-02:
+	@echo "Running TC-07 (2/5): test_missing_required_field..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-07/test_missing_fields.py::TestMissingFields::test_missing_required_field" -v
+
+test-e2e-tc07-03:
+	@echo "Running TC-07 (3/5): test_missing_optional_field..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-07/test_missing_fields.py::TestMissingFields::test_missing_optional_field" -v
+
+test-e2e-tc07-04:
+	@echo "Running TC-07 (4/5): test_derivable_field..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-07/test_missing_fields.py::TestMissingFields::test_derivable_field" -v
+
+test-e2e-tc07-05:
+	@echo "Running TC-07 (5/5): test_error_message..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-07/test_missing_fields.py::TestMissingFields::test_error_message" -v
+
+test-e2e-tc08: test-e2e-tc08-01 test-e2e-tc08-02 test-e2e-tc08-03 test-e2e-tc08-04
+	@echo "TC-08: All subtests completed."
+
+test-e2e-tc08-01:
+	@echo "Running TC-08 (1/4): test_additional_fields..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-08/test_additional_fields.py::TestAdditionalFields::test_additional_fields" -v
+
+test-e2e-tc08-02:
+	@echo "Running TC-08 (2/4): test_custom_metadata..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-08/test_additional_fields.py::TestAdditionalFields::test_custom_metadata" -v
+
+test-e2e-tc08-03:
+	@echo "Running TC-08 (3/4): test_field_override_prevention..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-08/test_additional_fields.py::TestAdditionalFields::test_field_override_prevention" -v
+
+test-e2e-tc08-04:
+	@echo "Running TC-08 (4/4): test_unknown_field..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-08/test_additional_fields.py::TestAdditionalFields::test_unknown_field" -v
+
+test-e2e-tc09: test-e2e-tc09-01 test-e2e-tc09-02 test-e2e-tc09-03 test-e2e-tc09-04 test-e2e-tc09-05 test-e2e-tc09-06 test-e2e-tc09-07
+	@echo "TC-09: All subtests completed."
+
+test-e2e-tc09-01:
+	@echo "Running TC-09 (1/7): test_realistic_ransomware..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-09/test_realistic_ransomware.py::TestRealisticRansomware::test_realistic_ransomware" -v
+
+test-e2e-tc09-02:
+	@echo "Running TC-09 (2/7): test_ransomware_detection..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-09/test_realistic_ransomware.py::TestRealisticRansomware::test_ransomware_detection" -v
+
+test-e2e-tc09-03:
+	@echo "Running TC-09 (3/7): test_case_creation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-09/test_realistic_ransomware.py::TestRealisticRansomware::test_case_creation" -v
+
+test-e2e-tc09-04:
+	@echo "Running TC-09 (4/7): test_cortex_analysis..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-09/test_realistic_ransomware.py::TestRealisticRansomware::test_cortex_analysis" -v
+
+test-e2e-tc09-05:
+	@echo "Running TC-09 (5/7): test_misp_ioc..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-09/test_realistic_ransomware.py::TestRealisticRansomware::test_misp_ioc" -v
+
+test-e2e-tc09-06:
+	@echo "Running TC-09 (6/7): test_evidence_collection..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-09/test_realistic_ransomware.py::TestRealisticRansomware::test_evidence_collection" -v
+
+test-e2e-tc09-07:
+	@echo "Running TC-09 (7/7): test_task_assignment..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-09/test_realistic_ransomware.py::TestRealisticRansomware::test_task_assignment" -v
+
+test-e2e-tc10: test-e2e-tc10-01 test-e2e-tc10-02 test-e2e-tc10-03 test-e2e-tc10-04 test-e2e-tc10-05 test-e2e-tc10-06 test-e2e-tc10-07
+	@echo "TC-10: All subtests completed."
+
+test-e2e-tc10-01:
+	@echo "Running TC-10 (1/7): test_tenzir_service_availability..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-10/test_tenzir_integration.py::TestTenzirIntegration::test_tenzir_service_availability" -v
+
+test-e2e-tc10-02:
+	@echo "Running TC-10 (2/7): test_tenzir_pipeline_execution..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-10/test_tenzir_integration.py::TestTenzirIntegration::test_tenzir_pipeline_execution" -v
+
+test-e2e-tc10-03:
+	@echo "Running TC-10 (3/7): test_tenzir_network_events_retrieval..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-10/test_tenzir_integration.py::TestTenzirIntegration::test_tenzir_network_events_retrieval" -v
+
+test-e2e-tc10-04:
+	@echo "Running TC-10 (4/7): test_tenzir_integration_completeness..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-10/test_tenzir_integration.py::TestTenzirIntegration::test_tenzir_integration_completeness" -v
+
+test-e2e-tc10-05:
+	@echo "Running TC-10 (5/7): test_tenzir_error_handling..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-10/test_tenzir_integration.py::TestTenzirIntegration::test_tenzir_error_handling" -v
+
+test-e2e-tc10-06:
+	@echo "Running TC-10 (6/7): test_tenzir_performance_requirements..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-10/test_tenzir_integration.py::TestTenzirIntegration::test_tenzir_performance_requirements" -v
+
+test-e2e-tc10-07:
+	@echo "Running TC-10 (7/7): test_tenzir_ingestion..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-10/test_tenzir_integration.py::TestTenzirIntegration::test_tenzir_ingestion" -v
+
+test-e2e-tc11: test-e2e-tc11-01 test-e2e-tc11-02 test-e2e-tc11-03 test-e2e-tc11-04 test-e2e-tc11-05 test-e2e-tc11-06 test-e2e-tc11-07 test-e2e-tc11-08 test-e2e-tc11-09 test-e2e-tc11-10 test-e2e-tc11-11 test-e2e-tc11-12 test-e2e-tc11-13
+	@echo "TC-11: All subtests completed."
+
+test-e2e-tc11-01:
+	@echo "Running TC-11 (1/13): test_network_watcher_service_availability..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_service_availability" -v
+
+test-e2e-tc11-02:
+	@echo "Running TC-11 (2/13): test_network_watcher_connections_endpoint..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_connections_endpoint" -v
+
+test-e2e-tc11-03:
+	@echo "Running TC-11 (3/13): test_network_watcher_ip_filtering..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_ip_filtering" -v
+
+test-e2e-tc11-04:
+	@echo "Running TC-11 (4/13): test_network_watcher_in_workflow..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_in_workflow" -v
+
+test-e2e-tc11-05:
+	@echo "Running TC-11 (5/13): test_network_watcher_real_time_monitoring..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_real_time_monitoring" -v
+
+test-e2e-tc11-06:
+	@echo "Running TC-11 (6/13): test_network_watcher_connection_details..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_connection_details" -v
+
+test-e2e-tc11-07:
+	@echo "Running TC-11 (7/13): test_network_watcher_error_handling..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_error_handling" -v
+
+test-e2e-tc11-08:
+	@echo "Running TC-11 (8/13): test_network_watcher_performance_requirements..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_performance_requirements" -v
+
+test-e2e-tc11-09:
+	@echo "Running TC-11 (9/13): test_network_watcher_integration_completeness..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_watcher_integration_completeness" -v
+
+test-e2e-tc11-10:
+	@echo "Running TC-11 (10/13): test_network_connection..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_connection" -v
+
+test-e2e-tc11-11:
+	@echo "Running TC-11 (11/13): test_network_source..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_source" -v
+
+test-e2e-tc11-12:
+	@echo "Running TC-11 (12/13): test_network_destination..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_destination" -v
+
+test-e2e-tc11-13:
+	@echo "Running TC-11 (13/13): test_network_correlation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-11/test_network_watcher_integration.py::TestNetworkWatcherIntegration::test_network_correlation" -v
+
+test-e2e-tc12: test-e2e-tc12-01 test-e2e-tc12-02 test-e2e-tc12-03 test-e2e-tc12-04 test-e2e-tc12-05 test-e2e-tc12-06 test-e2e-tc12-07 test-e2e-tc12-08 test-e2e-tc12-09 test-e2e-tc12-10
+	@echo "TC-12: All subtests completed."
+
+test-e2e-tc12-01:
+	@echo "Running TC-12 (1/10): test_redis_service_availability..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_service_availability" -v
+
+test-e2e-tc12-02:
+	@echo "Running TC-12 (2/10): test_redis_direct_connection..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_direct_connection" -v
+
+test-e2e-tc12-03:
+	@echo "Running TC-12 (3/10): test_redis_ioc_caching_in_workflow..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_ioc_caching_in_workflow" -v
+
+test-e2e-tc12-04:
+	@echo "Running TC-12 (4/10): test_redis_ioc_storage..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_ioc_storage" -v
+
+test-e2e-tc12-05:
+	@echo "Running TC-12 (5/10): test_redis_ioc_retrieval..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_ioc_retrieval" -v
+
+test-e2e-tc12-06:
+	@echo "Running TC-12 (6/10): test_redis_cache_expiration..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_cache_expiration" -v
+
+test-e2e-tc12-07:
+	@echo "Running TC-12 (7/10): test_redis_pattern_matching..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_pattern_matching" -v
+
+test-e2e-tc12-08:
+	@echo "Running TC-12 (8/10): test_redis_performance_requirements..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_performance_requirements" -v
+
+test-e2e-tc12-09:
+	@echo "Running TC-12 (9/10): test_redis_error_handling..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_error_handling" -v
+
+test-e2e-tc12-10:
+	@echo "Running TC-12 (10/10): test_redis_integration_completeness..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-12/test_redis_integration.py::TestRedisIntegration::test_redis_integration_completeness" -v
+
+test-e2e-tc13: test-e2e-tc13-01 test-e2e-tc13-02 test-e2e-tc13-03 test-e2e-tc13-04 test-e2e-tc13-05 test-e2e-tc13-06 test-e2e-tc13-07 test-e2e-tc13-08 test-e2e-tc13-09 test-e2e-tc13-10 test-e2e-tc13-11 test-e2e-tc13-12 test-e2e-tc13-13
+	@echo "TC-13: All subtests completed."
+
+test-e2e-tc13-01:
+	@echo "Running TC-13 (1/13): test_loki_service_availability..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_service_availability" -v
+
+test-e2e-tc13-02:
+	@echo "Running TC-13 (2/13): test_loki_query_range_endpoint..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_query_range_endpoint" -v
+
+test-e2e-tc13-03:
+	@echo "Running TC-13 (3/13): test_loki_hostname_filtering..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_hostname_filtering" -v
+
+test-e2e-tc13-04:
+	@echo "Running TC-13 (4/13): test_loki_ip_filtering..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_ip_filtering" -v
+
+test-e2e-tc13-05:
+	@echo "Running TC-13 (5/13): test_loki_in_workflow..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_in_workflow" -v
+
+test-e2e-tc13-06:
+	@echo "Running TC-13 (6/13): test_loki_log_parsing..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_log_parsing" -v
+
+test-e2e-tc13-07:
+	@echo "Running TC-13 (7/13): test_loki_time_range_queries..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_time_range_queries" -v
+
+test-e2e-tc13-08:
+	@echo "Running TC-13 (8/13): test_loki_error_handling..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_error_handling" -v
+
+test-e2e-tc13-09:
+	@echo "Running TC-13 (9/13): test_loki_performance_requirements..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_performance_requirements" -v
+
+test-e2e-tc13-10:
+	@echo "Running TC-13 (10/13): test_loki_integration_completeness..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_integration_completeness" -v
+
+test-e2e-tc13-11:
+	@echo "Running TC-13 (11/13): test_loki_log_aggregation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_log_aggregation" -v
+
+test-e2e-tc13-12:
+	@echo "Running TC-13 (12/13): test_loki_ingestion..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_ingestion" -v
+
+test-e2e-tc13-13:
+	@echo "Running TC-13 (13/13): test_loki_trace_id_search..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-13/test_loki_integration.py::TestLokiIntegration::test_loki_trace_id_search" -v
+
+test-e2e-tc14: test-e2e-tc14-01 test-e2e-tc14-02 test-e2e-tc14-03 test-e2e-tc14-04 test-e2e-tc14-05 test-e2e-tc14-06 test-e2e-tc14-07
+	@echo "TC-14: All subtests completed."
+
+test-e2e-tc14-01:
+	@echo "Running TC-14 (1/7): test_all_new_services_availability..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-14/test_complete_soar_integration.py::TestCompleteSOARIntegration::test_all_new_services_availability" -v
+
+test-e2e-tc14-02:
+	@echo "Running TC-14 (2/7): test_complete_workflow_execution..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-14/test_complete_soar_integration.py::TestCompleteSOARIntegration::test_complete_workflow_execution" -v
+
+test-e2e-tc14-03:
+	@echo "Running TC-14 (3/7): test_workflow_action_sequence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-14/test_complete_soar_integration.py::TestCompleteSOARIntegration::test_workflow_action_sequence" -v
+
+test-e2e-tc14-04:
+	@echo "Running TC-14 (4/7): test_performance_with_new_features..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-14/test_complete_soar_integration.py::TestCompleteSOARIntegration::test_performance_with_new_features" -v
+
+test-e2e-tc14-05:
+	@echo "Running TC-14 (5/7): test_integration_with_existing_features..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-14/test_complete_soar_integration.py::TestCompleteSOARIntegration::test_integration_with_existing_features" -v
+
+test-e2e-tc14-06:
+	@echo "Running TC-14 (6/7): test_trace_id_propagation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-14/test_traceability.py::TestTraceability::test_trace_id_propagation" -v
+
+test-e2e-tc14-07:
+	@echo "Running TC-14 (7/7): test_cross_system_coherence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-14/test_traceability.py::TestTraceability::test_cross_system_coherence" -v
+
+test-e2e-tc15: test-e2e-tc15-01 test-e2e-tc15-02 test-e2e-tc15-03 test-e2e-tc15-04 test-e2e-tc15-05 test-e2e-tc15-06
+	@echo "TC-15: All subtests completed."
+
+test-e2e-tc15-01:
+	@echo "Running TC-15 (1/6): test_thehive_api_latency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-15/test_api_latency.py::TestAPILatency::test_thehive_api_latency" -v
+
+test-e2e-tc15-02:
+	@echo "Running TC-15 (2/6): test_cortex_api_latency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-15/test_api_latency.py::TestAPILatency::test_cortex_api_latency" -v
+
+test-e2e-tc15-03:
+	@echo "Running TC-15 (3/6): test_misp_api_latency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-15/test_api_latency.py::TestAPILatency::test_misp_api_latency" -v
+
+test-e2e-tc15-04:
+	@echo "Running TC-15 (4/6): test_get_latency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-15/test_api_latency.py::TestAPILatency::test_get_latency" -v
+
+test-e2e-tc15-05:
+	@echo "Running TC-15 (5/6): test_post_latency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-15/test_api_latency.py::TestAPILatency::test_post_latency" -v
+
+test-e2e-tc15-06:
+	@echo "Running TC-15 (6/6): test_p95_latency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-15/test_api_latency.py::TestAPILatency::test_p95_latency" -v
+
+test-e2e-tc16: test-e2e-tc16-01 test-e2e-tc16-02 test-e2e-tc16-03
+	@echo "TC-16: All subtests completed."
+
+test-e2e-tc16-01:
+	@echo "Running TC-16 (1/3): test_error_classification..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-16/test_error_handling.py::TestErrorHandling::test_error_classification" -v
+
+test-e2e-tc16-02:
+	@echo "Running TC-16 (2/3): test_error_rate_by_service..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-16/test_error_rate.py::TestErrorRate::test_error_rate_by_service" -v
+
+test-e2e-tc16-03:
+	@echo "Running TC-16 (3/3): test_error_rate_by_type..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-16/test_error_rate.py::TestErrorRate::test_error_rate_by_type" -v
+
+test-e2e-tc17: test-e2e-tc17-01 test-e2e-tc17-02 test-e2e-tc17-03 test-e2e-tc17-04 test-e2e-tc17-05 test-e2e-tc17-06 test-e2e-tc17-07
+	@echo "TC-17: All subtests completed."
+
+test-e2e-tc17-01:
+	@echo "Running TC-17 (1/7): test_network_watcher_health..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-17/test_network_watcher_monitoring.py::TestNetworkWatcherMonitoring::test_network_watcher_health" -v
+
+test-e2e-tc17-02:
+	@echo "Running TC-17 (2/7): test_network_watcher_connections..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-17/test_network_watcher_monitoring.py::TestNetworkWatcherMonitoring::test_network_watcher_connections" -v
+
+test-e2e-tc17-03:
+	@echo "Running TC-17 (3/7): test_network_watcher_real_time_updates..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-17/test_network_watcher_monitoring.py::TestNetworkWatcherMonitoring::test_network_watcher_real_time_updates" -v
+
+test-e2e-tc17-04:
+	@echo "Running TC-17 (4/7): test_heartbeat..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-17/test_network_watcher_monitoring.py::TestNetworkWatcherMonitoring::test_heartbeat" -v
+
+test-e2e-tc17-05:
+	@echo "Running TC-17 (5/7): test_continuous_monitoring..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-17/test_network_watcher_monitoring.py::TestNetworkWatcherMonitoring::test_continuous_monitoring" -v
+
+test-e2e-tc17-06:
+	@echo "Running TC-17 (6/7): test_restart_recovery..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-17/test_network_watcher_monitoring.py::TestNetworkWatcherMonitoring::test_restart_recovery" -v
+
+test-e2e-tc17-07:
+	@echo "Running TC-17 (7/7): test_recovery..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-17/test_network_watcher_monitoring.py::TestNetworkWatcherMonitoring::test_recovery" -v
+
+test-e2e-tc18: test-e2e-tc18-01 test-e2e-tc18-02 test-e2e-tc18-03
+	@echo "TC-18: All subtests completed."
+
+test-e2e-tc18-01:
+	@echo "Running TC-18 (1/3): test_cortex_unavailable..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-18/test_resilience.py::TestResilience::test_cortex_unavailable" -v
+
+test-e2e-tc18-02:
+	@echo "Running TC-18 (2/3): test_misp_unavailable..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-18/test_resilience.py::TestResilience::test_misp_unavailable" -v
+
+test-e2e-tc18-03:
+	@echo "Running TC-18 (3/3): test_both_unavailable..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-18/test_resilience.py::TestResilience::test_both_unavailable" -v
+
+test-e2e-tc19: test-e2e-tc19-01
+	@echo "TC-19: All subtests completed."
+
+test-e2e-tc19-01:
+	@echo "Running TC-19 (1/1): test_malformed_json..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-19/test_security.py::TestSecurity::test_malformed_json" -v
+
+test-e2e-tc20: test-e2e-tc20-01
+	@echo "TC-20: All subtests completed."
+
+test-e2e-tc20-01:
+	@echo "Running TC-20 (1/1): test_zero_trust_authentication..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-20/test_zero_trust.py::TestZeroTrust::test_zero_trust_authentication" -v
+
+test-e2e-tc21: test-e2e-tc21-01 test-e2e-tc21-02
+	@echo "TC-21: All subtests completed."
+
+test-e2e-tc21-01:
+	@echo "Running TC-21 (1/2): test_chain_of_custody..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-21/test_forensic.py::TestForensic::test_chain_of_custody" -v
+
+test-e2e-tc21-02:
+	@echo "Running TC-21 (2/2): test_audit_trail..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-21/test_forensic.py::TestForensic::test_audit_trail" -v
+
+test-e2e-tc22: test-e2e-tc22-01 test-e2e-tc22-02
+	@echo "TC-22: All subtests completed."
+
+test-e2e-tc22-01:
+	@echo "Running TC-22 (1/2): test_elasticsearch_persistence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-22/test_persistence.py::TestPersistence::test_elasticsearch_persistence" -v
+
+test-e2e-tc22-02:
+	@echo "Running TC-22 (2/2): test_thehive_persistence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-22/test_persistence.py::TestPersistence::test_thehive_persistence" -v
+
+test-e2e-tc23: test-e2e-tc23-01
+	@echo "TC-23: All subtests completed."
+
+test-e2e-tc23-01:
+	@echo "Running TC-23 (1/1): test_pii_masking..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-23/test_privacy.py::TestPrivacy::test_pii_masking" -v
+
+test-e2e-tc24: test-e2e-tc24-01 test-e2e-tc24-02 test-e2e-tc24-03 test-e2e-tc24-04
+	@echo "TC-24: All subtests completed."
+
+test-e2e-tc24-01:
+	@echo "Running TC-24 (1/4): test_ransomware_response..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-24/test_malware_specific.py::TestMalwareSpecific::test_ransomware_response" -v
+
+test-e2e-tc24-02:
+	@echo "Running TC-24 (2/4): test_rat_response..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-24/test_malware_specific.py::TestMalwareSpecific::test_rat_response" -v
+
+test-e2e-tc24-03:
+	@echo "Running TC-24 (3/4): test_worm_response..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-24/test_malware_specific.py::TestMalwareSpecific::test_worm_response" -v
+
+test-e2e-tc24-04:
+	@echo "Running TC-24 (4/4): test_cryptominer_response..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-24/test_malware_specific.py::TestMalwareSpecific::test_cryptominer_response" -v
+
+test-e2e-tc25: test-e2e-tc25-01 test-e2e-tc25-02 test-e2e-tc25-03
+	@echo "TC-25: All subtests completed."
+
+test-e2e-tc25-01:
+	@echo "Running TC-25 (1/3): test_polymorphic_behavior..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-25/test_behavioral_detection.py::TestBehavioralDetection::test_polymorphic_behavior" -v
+
+test-e2e-tc25-02:
+	@echo "Running TC-25 (2/3): test_multi_stage_correlation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-25/test_behavioral_detection.py::TestBehavioralDetection::test_multi_stage_correlation" -v
+
+test-e2e-tc25-03:
+	@echo "Running TC-25 (3/3): test_canary_file_detection..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-25/test_behavioral_detection.py::TestBehavioralDetection::test_canary_file_detection" -v
+
+test-e2e-tc26: test-e2e-tc26-01 test-e2e-tc26-02
+	@echo "TC-26: All subtests completed."
+
+test-e2e-tc26-01:
+	@echo "Running TC-26 (1/2): test_alert_storm..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-26/test_extreme_load.py::TestExtremeLoad::test_alert_storm" -v
+
+test-e2e-tc26-02:
+	@echo "Running TC-26 (2/2): test_duplicate_prevention..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-26/test_extreme_load.py::TestExtremeLoad::test_duplicate_prevention" -v
+
+test-e2e-tc27: test-e2e-tc27-01 test-e2e-tc27-02
+	@echo "TC-27: All subtests completed."
+
+test-e2e-tc27-01:
+	@echo "Running TC-27 (1/2): test_configuration_drift_detection..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-27/test_configuration.py::TestConfiguration::test_configuration_drift_detection" -v
+
+test-e2e-tc27-02:
+	@echo "Running TC-27 (2/2): test_golden_configuration..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-27/test_configuration.py::TestConfiguration::test_golden_configuration" -v
+
+test-e2e-tc28: test-e2e-tc28-01 test-e2e-tc28-02 test-e2e-tc28-03 test-e2e-tc28-04 test-e2e-tc28-05 test-e2e-tc28-06 test-e2e-tc28-07 test-e2e-tc28-08 test-e2e-tc28-09
+	@echo "TC-28: All subtests completed."
+
+test-e2e-tc28-01:
+	@echo "Running TC-28 (1/9): test_shuffle_login..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_shuffle_login" -v
+
+test-e2e-tc28-02:
+	@echo "Running TC-28 (2/9): test_thehive_navigation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_thehive_navigation" -v
+
+test-e2e-tc28-03:
+	@echo "Running TC-28 (3/9): test_thehive_case_creation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_thehive_case_creation" -v
+
+test-e2e-tc28-04:
+	@echo "Running TC-28 (4/9): test_cortex_ui..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_cortex_ui" -v
+
+test-e2e-tc28-05:
+	@echo "Running TC-28 (5/9): test_network_watcher_ui..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_network_watcher_ui" -v
+
+test-e2e-tc28-06:
+	@echo "Running TC-28 (6/9): test_api_ui..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_api_ui" -v
+
+test-e2e-tc28-07:
+	@echo "Running TC-28 (7/9): test_docs_site_ui..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_docs_site_ui" -v
+
+test-e2e-tc28-08:
+	@echo "Running TC-28 (8/9): test_web_management_ui..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_web_management_ui" -v
+
+test-e2e-tc28-09:
+	@echo "Running TC-28 (9/9): test_misp_ui..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-28/test_ui_e2e.py::TestUIE2E::test_misp_ui" -v
+
+test-e2e-tc29: test-e2e-tc29-01
+	@echo "TC-29: All subtests completed."
+
+test-e2e-tc29-01:
+	@echo "Running TC-29 (1/1): test_mitre_attack_mapping..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-29/test_compliance.py::TestCompliance::test_mitre_attack_mapping" -v
+
+test-e2e-tc30: test-e2e-tc30-01 test-e2e-tc30-02
+	@echo "TC-30: All subtests completed."
+
+test-e2e-tc30-01:
+	@echo "Running TC-30 (1/2): test_golden_thread_integrity..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-30/test_golden_thread.py::TestGoldenThread::test_golden_thread_integrity" -v
+
+test-e2e-tc30-02:
+	@echo "Running TC-30 (2/2): test_end_to_end_data_flow..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-30/test_golden_thread.py::TestGoldenThread::test_end_to_end_data_flow" -v
+
+test-e2e-tc31: test-e2e-tc31-01 test-e2e-tc31-02 test-e2e-tc31-03
+	@echo "TC-31: All subtests completed."
+
+test-e2e-tc31-01:
+	@echo "Running TC-31 (1/3): test_containment_endpoint_success..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-31/test_containment_endpoint.py::TestContainmentEndpoint::test_containment_endpoint_success" -v
+
+test-e2e-tc31-02:
+	@echo "Running TC-31 (2/3): test_containment_endpoint_validation_error..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-31/test_containment_endpoint.py::TestContainmentEndpoint::test_containment_endpoint_validation_error" -v
+
+test-e2e-tc31-03:
+	@echo "Running TC-31 (3/3): test_containment_endpoint_default_mode..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-31/test_containment_endpoint.py::TestContainmentEndpoint::test_containment_endpoint_default_mode" -v
+
+test-e2e-tc32: test-e2e-tc32-01
+	@echo "TC-32: All subtests completed."
+
+test-e2e-tc32-01:
+	@echo "Running TC-32 (1/1): test_ioc_analysis_time..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-32/test_ioc_analysis_time.py::TestIoCAnalysisTime::test_ioc_analysis_time" -v
+
+test-e2e-tc33: test-e2e-tc33-01 test-e2e-tc33-02 test-e2e-tc33-03 test-e2e-tc33-04 test-e2e-tc33-05 test-e2e-tc33-06 test-e2e-tc33-07 test-e2e-tc33-08 test-e2e-tc33-09 test-e2e-tc33-10
+	@echo "TC-33: All subtests completed."
+
+test-e2e-tc33-01:
+	@echo "Running TC-33 (1/10): test_download_and_hash_all_samples..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_download_and_hash_all_samples" -v
+
+test-e2e-tc33-02:
+	@echo "Running TC-33 (2/10): test_malicious_hash_ioc..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_malicious_hash_ioc" -v
+
+test-e2e-tc33-03:
+	@echo "Running TC-33 (3/10): test_pulsar_rat_hash..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_pulsar_rat_hash" -v
+
+test-e2e-tc33-04:
+	@echo "Running TC-33 (4/10): test_c2_url_ioc..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_c2_url_ioc" -v
+
+test-e2e-tc33-05:
+	@echo "Running TC-33 (5/10): test_c2_domain_ioc..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_c2_domain_ioc" -v
+
+test-e2e-tc33-06:
+	@echo "Running TC-33 (6/10): test_c2_ip_ioc..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_c2_ip_ioc" -v
+
+test-e2e-tc33-07:
+	@echo "Running TC-33 (7/10): test_telegram_ioc..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_telegram_ioc" -v
+
+test-e2e-tc33-08:
+	@echo "Running TC-33 (8/10): test_registry_persistence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_registry_persistence" -v
+
+test-e2e-tc33-09:
+	@echo "Running TC-33 (9/10): test_mitre_mapping..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_mitre_mapping" -v
+
+test-e2e-tc33-10:
+	@echo "Running TC-33 (10/10): test_multi_ioc_alert..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-33/test_gminst4ll_real_iocs.py::TestGMinst4llRealIoCs::test_multi_ioc_alert" -v
+
+test-e2e-kpi-01: test-e2e-kpi-01-01
+	@echo "TC-KPI-01: All subtests completed."
+
+test-e2e-kpi-01-01:
+	@echo "Running TC-KPI-01 (1/1): test_mttr_calculation..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-01/test_mttr_calculation.py::TestMTRRCalculation::test_mttr_calculation" -v --no-cov
+
+test-e2e-kpi-02: test-e2e-kpi-02-01 test-e2e-kpi-02-02
+	@echo "TC-KPI-02: All subtests completed."
+
+test-e2e-kpi-02-01:
+	@echo "Running TC-KPI-02 (1/2): test_kpi_dashboard..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-02/test_kpi_dashboard.py::TestKPIDashboard::test_kpi_dashboard" -v --no-cov
+
+test-e2e-kpi-02-02:
+	@echo "Running TC-KPI-02 (2/2): test_mttr_percentiles..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-02/test_mttr_percentiles.py::TestMTTRPercentiles::test_mttr_percentiles" -v --no-cov
+
+test-e2e-kpi-03: test-e2e-kpi-03-01
+	@echo "TC-KPI-03: All subtests completed."
+
+test-e2e-kpi-03-01:
+	@echo "Running TC-KPI-03 (1/1): test_kpi_alerts..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-03/test_kpi_alerts.py::test_kpi_alerts" -v --no-cov
+
+test-e2e-kpi-04: test-e2e-kpi-04-01
+	@echo "TC-KPI-04: All subtests completed."
+
+test-e2e-kpi-04-01:
+	@echo "Running TC-KPI-04 (1/1): test_service_success_rates_by_alert_type..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-04/test_service_success_rates.py::TestServiceSuccessRates::test_service_success_rates_by_alert_type" -v --no-cov
+
+test-e2e-kpi-05: test-e2e-kpi-05-01
+	@echo "TC-KPI-05: All subtests completed."
+
+test-e2e-kpi-05-01:
+	@echo "Running TC-KPI-05 (1/1): test_node_timings..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-05/test_node_timings.py::TestNodeTimings::test_node_timings" -v --no-cov
 
 test-e2e-new-features:
 	@echo "Running all new SOAR features tests..."
@@ -369,6 +1189,10 @@ test-e2e-new-features:
 test-atomic:
 	@echo "Running atomic operation tests inside Docker container..."
 	docker exec soar_api python3 -m pytest tests/atomic -v
+
+test-smoke:
+	@echo "Running smoke tests inside Docker container..."
+	docker exec soar_api python3 -m pytest tests/integration/test_smoke.py -v
 
 test-security:
 	@echo "Running security tests inside Docker container..."
@@ -384,52 +1208,175 @@ test-all:
 
 test-coverage:
 	@echo "Running tests with coverage report inside Docker container..."
-	docker exec soar_api python3 -m pytest tests/ --cov=src/soar_lab --cov-report=html --cov-report=xml --cov-report=term
-	-@docker exec soar_api cp -r /app/htmlcov /app/results/ 2>nul
-	-@docker exec soar_api cp /app/coverage.xml /app/results/ 2>nul
+	docker exec soar_api python3 -m pytest tests/ --ignore=tests/e2e --cov=src/soar_lab --cov-report=html --cov-report=xml --cov-report=json:runtime/coverage/coverage.json --cov-report=term --cov-fail-under=80
+	-@docker exec soar_api cp -r /app/htmlcov /app/reports/coverage/ 2>nul
+	-@docker exec soar_api cp /app/coverage.xml /app/reports/coverage/ 2>nul
+	-@docker exec soar_api cp /app/runtime/coverage/coverage.json /app/reports/coverage/coverage.json 2>nul || true
+
+test-docker-runtime:
+	@echo "Running Docker runtime status tests..."
+	@set PYTHONPATH=src&& python3 -m pytest tests/integration/test_docker_runtime_status.py -v
 
 # Maintenance
 deps:
 	@echo "Installing Python dependencies..."
-	pip install -r requirements.txt
+	pip install -e .
 
 deps-test:
 	@echo "Installing test dependencies..."
-	pip install -r requirements-test.txt
+	pip install -e ".[dev,test]"
+
+deps-lint:
+	@echo "Installing linter dependencies (ruff, black, isort, flake8, mypy, vulture, bandit, radon)..."
+	pip install -e ".[dev]"
+	pip install ruff vulture bandit radon flake8-docstrings flake8-bandit flake8-bugbear flake8-comprehensions
+	pip install flake8-quotes flake8-isort flake8-mypy flake8-pytest-style pydoclint flake8-pyproject
+	@echo "==> Linter dependencies installed!"
 
 generate-secrets:
 	@echo "Generating secure passwords/tokens..."
-	@python src/soar_lab/scripts/setup/generate_secrets.py
+	@python scripts/setup/generate_secrets.py
+
+generate-iocs:
+	@echo "Generating simulated IOCs..."
+	@set PYTHONPATH=src&& python3 -m soar_lab.interfaces.api.cli generate-iocs
 
 certs:
 	@echo "Generating TLS certificates for Nginx..."
-	python3 src/soar_lab/infrastructure/generate_certs.py
-
-check-deps:
-	@echo "Verifying all dependencies are installed..."
-	python3 src/soar_lab/infrastructure/check_deps.py
+	@powershell -NoProfile -Command "if (!(Test-Path infra\docker\config\nginx\ssl)) { New-Item -ItemType Directory -Force -Path infra\docker\config\nginx\ssl }"
+	@set CERT_DIR=infra/docker/config/nginx/ssl&& bash scripts/setup/gen_certs.sh soar.local
 
 # Cleanup
 clean:
 	@echo "Cleaning temporary files..."
-	powershell -Command "if (Test-Path artifacts\results) { Remove-Item -Recurse -Force artifacts\results }"
-	powershell -Command "if (Test-Path artifacts\coverage) { Remove-Item -Recurse -Force artifacts\coverage }"
-	powershell -Command "if (Test-Path artifacts\logs\*.log) { Remove-Item -Force artifacts\logs\*.log }"
+	powershell -NoProfile -Command "if (Test-Path reports\validation\results) { Remove-Item -Recurse -Force reports\validation\results }"
+	powershell -NoProfile -Command "if (Test-Path reports\coverage) { Remove-Item -Recurse -Force reports\coverage }"
+	powershell -NoProfile -Command "if (Test-Path runtime\logs\*.log) { Remove-Item -Force runtime\logs\*.log }"
 
-clean-full:
-	@echo "Full cleanup: removing all artifacts..."
-	powershell -Command "if (Test-Path artifacts) { Remove-Item -Recurse -Force artifacts }"
+# Maintenance Commands
+logs-service:
+	@if "$(SERVICE)"=="" (echo ERROR: SERVICE parameter required. Usage: make logs-service SERVICE=<service_name> && exit 1)
+	@echo "Viewing logs for service: $(SERVICE)"
+	$(DC) logs -f $(SERVICE)
 
-clean-all: clean-full
-	@echo "Cleaning all: artifacts + Docker resources..."
-	-$(DC) down -v --remove-orphans
-	-powershell -Command "docker ps -aq --filter name=soar_ | ForEach-Object { docker rm -f $$_ } 2>$$null"
-	-powershell -Command "docker volume ls -q | Where-Object { $$_ -match '^soar' -or $$_ -match '^soar-lab' } | ForEach-Object { docker volume rm $$_ } 2>$$null"
-	-powershell -Command "docker network ls --format '{{.Name}}' | Where-Object { $$_ -match 'soar' -or $$_ -eq 'logging_net' -or $$_ -eq 'ti_net' } | ForEach-Object { docker network rm $$_ } 2>$$null"
+# Development Commands
+dev-reload: sync-src
+	@echo "Reloading code in API container without rebuild..."
+	$(DC) up -d --no-deps --force-recreate api
 
-clean-docker:
-	@echo "Cleaning Docker resources only..."
-	-$(DC) down -v --remove-orphans
-	-powershell -Command "docker ps -aq --filter name=soar_ | ForEach-Object { docker rm -f $$_ } 2>$$null"
-	-powershell -Command "docker volume ls -q | Where-Object { $$_ -match '^soar' -or $$_ -match '^soar-lab' } | ForEach-Object { docker volume rm $$_ } 2>$$null"
-	-powershell -Command "docker network ls --format '{{.Name}}' | Where-Object { $$_ -match 'soar' -or $$_ -eq 'logging_net' -or $$_ -eq 'ti_net' } | ForEach-Object { docker network rm $$_ } 2>$$null"
+dev-shell:
+	@echo "Opening shell in API container..."
+	docker exec -it soar_api /bin/bash
+
+dev-debug:
+	@echo "Starting API in debug mode..."
+	$(DC) up -d --no-deps --force-recreate api
+	docker exec -it soar_api python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m uvicorn soar_lab.interfaces.api:app --host 0.0.0.0 --port 8000 --reload
+
+# Documentation Commands
+docs-build:
+	@echo "Building documentation..."
+	docker exec soar_api python -m sphinx -b html docs/ reports/docs/
+
+docs-serve:
+	@echo "Serving documentation at http://localhost:8001..."
+	docker run -d -p 8001:8001 -v $(CURDIR)/reports/docs:/usr/share/nginx/html nginx:alpine
+
+docs-lint:
+	@echo "==> Running docs-lint (all doc linters + doc generation)..."
+	@echo "  1. markdownlint"
+	-@command -v markdownlint >nul 2>&1 && markdownlint docs/ || echo "  markdownlint not installed, skipping"
+	@echo "  2. link-checker (lychee)"
+	-@command -v lychee >nul 2>&1 && lychee --quiet docs/ || echo "  lychee not installed, skipping"
+	@echo "  3. docs_quality.py (OpenAPI diff + banned patterns + test inventory)"
+	python3 scripts/ci/docs_quality.py
+	@echo "  4. pytest collect-only"
+	python3 -m pytest --collect-only -q
+	@echo "  5. Generate documentation (Sphinx HTML)"
+	-@powershell -NoProfile -Command "if (!(Test-Path reports\docs)) { New-Item -ItemType Directory -Force -Path reports\docs }"
+	-@python3 -m sphinx -b html docs/ reports/docs/ 2>nul || echo "  Sphinx not available locally, trying Docker..."
+	-@docker ps | findstr soar_api >nul 2>&1 && docker exec soar_api python -m sphinx -b html docs/ reports/docs/ || echo "  Docker not running, skipping Sphinx build"
+	@echo "==> docs-lint complete!"
+
+# Code quality — single lint target runs ALL linters inline
+lint:
+	@echo ""
+	@echo "=========================================================="
+	@echo "  [1/6] Ruff — lint lógico (imports, unused, bugs)"
+	@echo "=========================================================="
+	@python3 -m ruff check src/ tests/ scripts/setup/
+	@echo ""
+	@echo "=========================================================="
+	@echo "  [2/6] Black — formato de código (check only)"
+	@echo "=========================================================="
+	@python3 -m black --check src/ tests/
+	@echo ""
+	@echo "=========================================================="
+	@echo "  [3/6] isort — orden de imports (check only)"
+	@echo "=========================================================="
+	@python3 -m isort --check-only src/ tests/
+	@echo ""
+	@echo "=========================================================="
+	@echo "  [4/6] Flake8 — estilo + 60 plugins"
+	@echo "=========================================================="
+	@python3 -m flake8 src/ tests/
+	@echo ""
+	@echo "=========================================================="
+	@echo "  [5/6] Mypy — type checker"
+	@echo "=========================================================="
+	@python3 -m mypy src/
+	@echo ""
+	@echo "=========================================================="
+	@echo "  [6/6] docs-lint — linters de docs + generación"
+	@echo "=========================================================="
+	@echo "  1. markdownlint"
+	-@command -v markdownlint >nul 2>&1 && markdownlint docs/ || echo "  markdownlint not installed, skipping"
+	@echo "  2. link-checker (lychee)"
+	-@command -v lychee >nul 2>&1 && lychee --quiet docs/ || echo "  lychee not installed, skipping"
+	@echo "  3. docs_quality.py (OpenAPI diff + banned patterns + test inventory)"
+	python3 scripts/ci/docs_quality.py
+	@echo "  4. pytest collect-only"
+	python3 -m pytest --collect-only -q
+	@echo "  5. Generate documentation (Sphinx HTML)"
+	-@powershell -NoProfile -Command "if (!(Test-Path reports\docs)) { New-Item -ItemType Directory -Force -Path reports\docs }"
+	-@python3 -m sphinx -b html docs/ reports/docs/ 2>nul || echo "  Sphinx not available locally, trying Docker..."
+	-@docker ps | findstr soar_api >nul 2>&1 && docker exec soar_api python -m sphinx -b html docs/ reports/docs/ || echo "  Docker not running, skipping Sphinx build"
+	@echo ""
+	@echo "=========================================================="
+	@echo "  All linters passed!"
+	@echo "=========================================================="
+
+quality:
+	@echo "==> Running quality checks (scripts/quality/)..."
+	@powershell -NoProfile -Command "if (!(Test-Path reports\quality)) { New-Item -ItemType Directory -Force -Path reports\quality }"
+	@powershell -NoProfile -Command "if (!(Test-Path reports\coverage\coverage.xml)) { Write-Host '  Coverage XML not found, generating...'; python -m pytest tests/unit tests/atomic tests/architecture --cov=src/soar_lab --cov-branch --cov-report=xml:reports/coverage/coverage.xml --cov-report=json:reports/coverage/coverage.json -q --tb=no 2>nul }"
+	@python3 scripts/quality/run_quality_checks.py --output-dir reports/quality
+	@echo "==> Quality checks passed! Report at reports/quality/quality-summary.md"
+
+mutation:
+	@echo "==> Running mutation testing (mutmut) in Docker..."
+	@echo "    This mutates src/soar_lab/ and runs tests for each mutant."
+	@echo "    Estimated time: 60-180 min depending on hardware."
+	@powershell -NoProfile -Command "if (!(Test-Path reports\mutmut)) { New-Item -ItemType Directory -Force -Path reports\mutmut }"
+	@docker exec soar_api python scripts/reports/generate_mutmut_report.py --output-dir reports/mutmut
+	@if exist reports\mutmut\mutation_report.md (echo ==> Mutation report generated: reports/mutmut/mutation_report.md) else (echo ==> Report not found. Check Docker container logs. && exit 1)
+
+test-review:
+	@echo "==> Generating test review report (7-dimension methodology)..."
+	@powershell -NoProfile -Command "if (!(Test-Path reports\test-review)) { New-Item -ItemType Directory -Force -Path reports\test-review }"
+	@python3 scripts/reports/test_review.py --output-dir reports/test-review --with-coverage
+	@echo "==> Test review report: reports/test-review/test_review_report.md"
+
+holistic-review:
+	@echo "==> Running Holistic Project Radar (5 layers, 15 dimensions)..."
+	@powershell -NoProfile -Command "if (!(Test-Path reports\holistic)) { New-Item -ItemType Directory -Force -Path reports\holistic }"
+	@python3 scripts/reports/holistic_review.py --output-dir reports/holistic
+	@echo "==> Holistic review report: reports/holistic/holistic_review_report.md"
+
+lint-fix:
+	@echo "==> Auto-fixing code with ruff, black and isort..."
+	@python3 -m ruff check --fix src/ tests/ scripts/setup/
+	@python3 -m ruff format src/ tests/ scripts/setup/
+	@python3 -m black src/ tests/
+	@python3 -m isort src/ tests/
+	@echo "==> Lint fix complete!"

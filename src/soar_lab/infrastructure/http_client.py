@@ -4,21 +4,23 @@ This adapter provides an aiohttp-based implementation of the HTTPClient port,
 allowing the application layer to make HTTP requests without knowing about aiohttp.
 """
 
-import aiohttp
 import ssl
-from typing import Dict, Any
+from typing import Any
+
+import aiohttp
 
 from soar_lab.config.logging import get_logger
+
+__all__ = ["AioHTTPClient"]
 
 logger = get_logger(__name__)
 
 
 class AioHTTPClient:
-    """aiohttp-based implementation of HTTPClient port."""
+    """Aiohttp-based implementation of HTTPClient port."""
 
-    def __init__(self, default_timeout: int = 5, default_verify_ssl: bool = True):
-        """
-        Initialize the HTTP client.
+    def __init__(self, default_timeout: int = 5, default_verify_ssl: bool = True) -> None:
+        """Initialize the HTTP client.
 
         Args:
             default_timeout: Default request timeout in seconds
@@ -28,8 +30,7 @@ class AioHTTPClient:
         self.default_verify_ssl = default_verify_ssl
 
     async def get(self, url: str, timeout: int = 5, verify_ssl: bool = True) -> int:
-        """
-        Perform a GET request and return status code.
+        """Perform a GET request and return status code.
 
         Args:
             url: URL to request
@@ -52,8 +53,7 @@ class AioHTTPClient:
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
 
             async with aiohttp.ClientSession(
-                connector=connector,
-                timeout=aiohttp.ClientTimeout(total=effective_timeout)
+                connector=connector, timeout=aiohttp.ClientTimeout(total=effective_timeout)
             ) as session:
                 async with session.get(url, allow_redirects=True) as response:
                     return response.status
@@ -61,9 +61,8 @@ class AioHTTPClient:
             logger.error(f"HTTP GET request failed for {url}: {e}")
             raise
 
-    async def get_json(self, url: str, timeout: int = 5, verify_ssl: bool = True) -> Dict[str, Any]:
-        """
-        Perform a GET request and return JSON response.
+    async def get_json(self, url: str, timeout: int = 5, verify_ssl: bool = True) -> dict[str, Any]:
+        """Perform a GET request and return JSON response.
 
         Args:
             url: URL to request
@@ -86,8 +85,7 @@ class AioHTTPClient:
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
 
             async with aiohttp.ClientSession(
-                connector=connector,
-                timeout=aiohttp.ClientTimeout(total=effective_timeout)
+                connector=connector, timeout=aiohttp.ClientTimeout(total=effective_timeout)
             ) as session:
                 async with session.get(url, allow_redirects=True) as response:
                     response.raise_for_status()

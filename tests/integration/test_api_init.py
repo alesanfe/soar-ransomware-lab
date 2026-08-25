@@ -5,15 +5,18 @@ Tests real instantiation without mocks - verifies production behavior
 """
 
 import os
-import pytest
 from pathlib import Path
 
+import pytest
 
+
+@pytest.mark.requires_external
 class TestAPIInitReal:
-    """Test real API initialization with actual dependencies"""
+    """Test real API initialization with actual dependencies."""
 
     def test_eager_instantiation_with_real_dependencies(self):
-        """Test that app instantiates eagerly with real dependencies when SOAR_SKIP_EAGER_INIT is not set"""
+        """Test that app instantiates eagerly with real dependencies when
+        SOAR_SKIP_EAGER_INIT is not set."""
         # This test must run in a subprocess to avoid the module being already imported
         # with SOAR_SKIP_EAGER_INIT=1 from conftest.py
         import subprocess
@@ -62,7 +65,7 @@ print("SUCCESS: Eager instantiation works with real dependencies")
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -70,14 +73,16 @@ print("SUCCESS: Eager instantiation works with real dependencies")
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
-        assert result.returncode == 0, f"Eager instantiation failed: {result.stderr}\n{result.stdout}"
+        assert (
+            result.returncode == 0
+        ), f"Eager instantiation failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_skip_eager_instantiation_when_flag_set(self):
-        """Test that app is None when SOAR_SKIP_EAGER_INIT is set"""
+        """Test that app is None when SOAR_SKIP_EAGER_INIT is set."""
         import subprocess
         import sys
 
@@ -105,7 +110,7 @@ print("SUCCESS: Skip eager instantiation works")
 """
 
         env = os.environ.copy()
-        env['SOAR_SKIP_EAGER_INIT'] = '1'
+        env["SOAR_SKIP_EAGER_INIT"] = "1"
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -113,14 +118,17 @@ print("SUCCESS: Skip eager instantiation works")
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
-        assert result.returncode == 0, f"Skip eager instantiation failed: {result.stderr}\n{result.stdout}"
+        assert (
+            result.returncode == 0
+        ), f"Skip eager instantiation failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"
 
     def test_create_app_factory_works(self):
-        """Test that create_app factory function works with real dependencies"""
+        """Test that create_app factory function works with real
+        dependencies."""
         import subprocess
         import sys
 
@@ -147,20 +155,20 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import factory and dependencies
-from soar_lab.api.main import create_app
+from soar_lab.interfaces.api.main import create_app
 from soar_lab.config.settings import Settings
 from soar_lab.application.use_cases.auth_service import AuthService
 from soar_lab.infrastructure.jwt_token_provider import JWTTokenProvider
-from soar_lab.infrastructure.system_metrics_driver import SystemMetricsDriver
+from soar_lab.infrastructure.monitoring.system_metrics_driver import SystemMetricsDriver
 from soar_lab.infrastructure.http_client import AioHTTPClient
-from soar_lab.infrastructure.health_check_adapter import HTTPHealthCheckAdapter
+from soar_lab.infrastructure.monitoring.health_check_adapter import HTTPHealthCheckAdapter
 from soar_lab.infrastructure.monitoring.health_service import HealthService
 from soar_lab.infrastructure.path_service import PathService
 from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
 from soar_lab.infrastructure.in_memory_alert_repository import InMemoryAlertRepository
 from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner
 from soar_lab.infrastructure.pytest_output_parser import PytestOutputParser
-from soar_lab.scripts.test_service import TestService
+from scripts.test_service import TestService
 
 # Create real dependencies
 settings = Settings()
@@ -169,7 +177,10 @@ auth_service = AuthService(settings, token_provider)
 
 system_metrics = SystemMetricsDriver()
 http_client = AioHTTPClient(default_timeout=5, default_verify_ssl=False)
-health_checker = HTTPHealthCheckAdapter(http_client, verify_ssl_config={'thehive': False, 'cortex': False, 'shuffle-backend': False})
+health_checker = HTTPHealthCheckAdapter(
+    http_client,
+    verify_ssl_config={'thehive': False, 'cortex': False, 'shuffle-backend': False},
+)
 health_service = HealthService(health_checker, system_metrics)
 
 base_dir = Path(settings.get('base_dir', '/app'))
@@ -204,7 +215,7 @@ print("SUCCESS: create_app factory works with real dependencies")
 """
 
         env = os.environ.copy()
-        env.pop('SOAR_SKIP_EAGER_INIT', None)
+        env.pop("SOAR_SKIP_EAGER_INIT", None)
 
         result = subprocess.run(
             [sys.executable, "-c", test_code],
@@ -212,8 +223,10 @@ print("SUCCESS: create_app factory works with real dependencies")
             capture_output=True,
             text=True,
             timeout=90,
-            env=env
+            env=env,
         )
 
-        assert result.returncode == 0, f"create_app factory failed: {result.stderr}\n{result.stdout}"
+        assert (
+            result.returncode == 0
+        ), f"create_app factory failed: {result.stderr}\n{result.stdout}"
         assert "SUCCESS" in result.stdout, "Test did not complete successfully"

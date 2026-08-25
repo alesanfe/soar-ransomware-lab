@@ -58,10 +58,6 @@ flowchart LR
   TheHive <--> Elasticsearch
   Cortex <--> Redis
   Shuffle <--> OpenSearch[OpenSearch]
-  Wazuh[Wazuh Manager] --> WazuhIndexer[Wazuh Indexer]
-  Wazuh --> Shuffle
-  Wazuh --> WazuhDashboard[Wazuh Dashboard]
-  WazuhIndexer --> WazuhDashboard
   Shuffle -- Metrics --> Elasticsearch
   Elasticsearch --> Grafana[Grafana]
   Promtail[Promtail] --> Loki[Loki]
@@ -72,7 +68,7 @@ flowchart LR
 
 ### Resumen de Arquitectura
 
-En el flujo operativo, Wazuh o el simulador generan alertas que Shuffle consume mediante webhook. Shuffle orquesta la
+En el flujo operativo, el simulador genera alertas que Shuffle consume mediante webhook. Shuffle orquesta la
 creación de casos en TheHive, el enriquecimiento de observables en Cortex y la decisión de contención simulada. Las
 métricas se indexan en Elasticsearch y se visualizan en Grafana; los logs se agregan en Loki. Nginx actúa como proxy
 inverso HTTPS para los servicios que lo soportan, mientras que otros servicios se acceden directamente por puerto.
@@ -82,11 +78,8 @@ inverso HTTPS para los servicios que lo soportan, mientras que otros servicios s
 - **Shuffle**: Orquestador principal, recibiendo alertas y ejecutando flujos automatizados
 - **TheHive**: Gestiona casos de incidentes y evidencias forenses
 - **Cortex**: Analiza Indicadores de Compromiso (IoCs) mediante analyzers especializados
-- **Wazuh Manager**: Plataforma SIEM/XDR para detección de amenazas y respuesta a incidentes
-- **Wazuh Dashboard**: Dashboard de visualización de datos y logs de Wazuh/Wazuh Indexer
 - **Elasticsearch 7.10.2**: Motor de búsqueda para TheHive, Cortex y las métricas indexadas por Shuffle
 - **OpenSearch 2.10.0**: Motor de búsqueda usado por Shuffle y el backend del stack de logging
-- **Wazuh Indexer**: Clúster OpenSearch interno de Wazuh para almacenar alertas y logs del SIEM
 - **Redis**: Servicio de soporte para persistencia y caché
 - **PostgreSQL**: Base de datos para TheHive y Grafana
 - **MariaDB**: Base de datos para MISP
@@ -117,7 +110,18 @@ soar-ransomware-lab/
 ├── .env.example                # Plantilla saneada de variables de entorno con marcadores de relleno
 ├── CHANGELOG.md                # Historial de cambios
 ├── CONTRIBUTING.md              # Guía de contribución
-├── docs/API_DOCUMENTATION.md   # Documentación de la API
+├── docs/                       # Documentación técnica (6 docs principales + assets + archive + thesis)
+│   ├── 01-getting-started.md   # Instalación, requisitos y guía rápida
+│   ├── 02-architecture.md      # Arquitectura hexagonal, Docker, código, seguridad
+│   ├── 03-api-and-integrations.md  # API REST, endpoints e integraciones
+│   ├── 04-operations.md        # Configuración, infraestructura, backups, troubleshooting
+│   ├── 05-testing.md           # Estrategia de pruebas y suite
+│   ├── 06-project-management.md  # Objetivos, plan, riesgos, auditorías
+│   ├── glossary.md             # Glosario central
+│   ├── index.md                # Índice de documentación
+│   ├── assets/                 # Imágenes y referencias técnicas (openapi.json)
+│   ├── archive/                # Auditorías y archivos obsoletos
+│   └── thesis/                 # Tesis de Máster (TFM)
 ├── infra/                      # Infraestructura como código
 │   ├── docker/                # Configuración Docker
 │   │   ├── compose/           # Archivos docker-compose yml
@@ -125,21 +129,14 @@ soar-ransomware-lab/
 │   │   │   ├── docker-compose.core.yml
 │   │   │   ├── docker-compose.misp.yml
 │   │   │   ├── docker-compose.opensearch.yml
-│   │   │   ├── docker-compose.vagrant.yml
-│   │   │   ├── docker-compose.wazuh.yml
 │   │   │   ├── docker-compose.api.yml
 │   │   │   └── logging/       # Stack de logging (Loki, Promtail, Grafana)
 │   │   ├── config/            # Configuraciones centralizadas
 │   │   │   ├── nginx/
 │   │   │   ├── cortex.application.conf/
 │   │   │   └── thehive.application.conf/
-│   │   ├── images/            # Dockerfiles personalizados
-│   │   │   └── cortex/
-│   │   └── wazuh/             # Configuración Wazuh + certificados
-│   └── vagrant/              # Automatización con Vagrant
-│       ├── Vagrantfile
-│       ├── provision.sh
-│       └── provision-windows.ps1
+│   │   └── images/            # Dockerfiles personalizados
+│   │       └── cortex/
 ├── apps/                       # Aplicaciones del proyecto
 │   ├── api/                   # Contenedor API FastAPI (Dockerfile)
 │   ├── docs-site/             # Sitio de documentación Docusaurus
@@ -147,9 +144,11 @@ soar-ransomware-lab/
 ├── src/soar_lab/             # Código fuente principal (Hexagonal Architecture)
 │   ├── application/           # Casos de uso y servicios de aplicación
 │   │   └── use_cases/         # analytics, auth, backup, etc.
+│   ├── auth/                  # Re-export de AuthService (fachada)
 │   ├── common/                # Excepciones y utilidades compartidas
-│   ├── config/                # Configuración y logging
+│   ├── config/                # Configuración, esquemas y logging
 │   ├── data/                  # Esquemas y utilidades de datos
+│   ├── db/                    # Inicialización de base de datos
 │   ├── domain/                # Lógica de negocio pura
 │   │   ├── models.py          # Entidades de dominio (dataclasses)
 │   │   ├── ports/             # Interfaces (Protocolos)
@@ -157,37 +156,49 @@ soar-ransomware-lab/
 │   │   ├── statistical_calculator.py
 │   │   └── value_objects/
 │   ├── infrastructure/        # Adaptadores e implementaciones
-│   │   ├── external/          # Clientes de integraciones (Shuffle, MISP, etc.)
+│   │   ├── integrations/      # Clientes de integraciones (Shuffle, MISP, TheHive, Cortex, ES)
 │   │   ├── messaging/         # Envío de alertas
 │   │   ├── monitoring/        # Health checks, métricas, KPI alerts
 │   │   ├── network_watcher/   # Conectividad dinámica de workers Shuffle
-│   │   ├── persistence/       # Repositorios (SQLite)
+│   │   ├── persistence/       # Repositorios (SQLite, InMemory)
 │   │   ├── scripts/           # Scripts de setup y utilidades
-│   │   └── security/          # JWT y credenciales
+│   │   ├── security/          # JWT y credenciales
+│   │   └── templates/         # Plantillas
 │   ├── interfaces/            # Puntos de entrada (API, CLI, Webhooks)
 │   │   └── api/               # FastAPI routes, models, auth
-│   ├── scripts/               # Scripts CLI del laboratorio
+│   ├── logging/               # StructuredLogger wrapper
+│   ├── resilience/            # Circuit breaker, retry, timeout
+│   ├── security/              # PayloadSanitizer
 │   ├── simulator/             # Simulador de alertas SIEM
-│   └── validation/            # Validadores
+│   └── validation/            # Validadores reutilizables
 ├── tests/                      # Suite de pruebas completa
 │   ├── unit/                  # Pruebas unitarias
 │   ├── atomic/                # Pruebas atómicas
 │   ├── integration/           # Pruebas de integración
 │   ├── e2e/                   # Pruebas end-to-end
+│   ├── architecture/          # Pruebas de arquitectura
+│   ├── baseline/              # Inventario de tests
+│   ├── contracts/             # Tests de contratos
 │   ├── general/               # Pruebas generales
 │   ├── performance/           # Pruebas de rendimiento
-│   ├── security/              # Pruebas de seguridad
-│   ├── fixtures/              # Datos de prueba
+│   ├── quality/               # Tests de calidad
+│   ├── reports/               # Tests de reportes
 │   ├── runners/               # Ejecutores de tests
+│   ├── runtime/               # Tests de runtime
+│   ├── security/              # Pruebas de seguridad
 │   └── conftest.py            # Configuración pytest
 ├── docs/                       # Documentación completa
-│   ├── architecture/          # Documentación de arquitectura
-│   ├── audit/                 # Informes de auditoría
-│   ├── getting_started/       # Guías de inicio
-│   ├── integrations/          # Integraciones y contratos
-│   ├── operations/            # Guías operativas
-│   ├── project/               # Documentación de proyecto
-│   ├── testing/               # Documentación de pruebas
+│   ├── 01-getting-started.md  # Instalación y guía rápida
+│   ├── 02-architecture.md     # Arquitectura hexagonal, Docker, código
+│   ├── 03-api-and-integrations.md  # API REST e integraciones
+│   ├── 04-operations.md       # Operaciones, infraestructura, backups
+│   ├── 05-testing.md          # Estrategia de pruebas
+│   ├── 06-project-management.md  # Gestión del proyecto
+│   ├── glossary.md            # Glosario central
+│   ├── index.md               # Índice de documentación
+│   ├── api/                   # Documentación de API (Sphinx/OpenAPI)
+│   ├── archive/               # Documentación histórica (audits, deprecated)
+│   ├── assets/                # Imágenes y referencias
 │   └── thesis/                # Documentación académica TFM
 └── artifacts/                  # Artefactos generados
     ├── backups/               # Copias de seguridad
@@ -203,12 +214,14 @@ soar-ransomware-lab/
 
 | Área | Documento principal | Estado |
 |------|---------------------|--------|
-| Arquitectura | [architecture/overview.md](docs/architecture/overview.md) | En revisión |
-| Operaciones | [operations/configuration_manual.md](docs/operations/configuration_manual.md) | En revisión |
-| Integraciones | [integrations/overview.md](docs/integrations/overview.md) | En revisión |
-| Pruebas | [testing/test_suite.md](docs/testing/test_suite.md) | Actualizado |
-| Proyecto | [project/glossary.md](docs/project/glossary.md) | En revisión |
-| Tesis | [thesis/introduction.md](docs/thesis/introduction.md) | En revisión |
+| Getting Started | [01-getting-started.md](docs/01-getting-started.md) | En revisión |
+| Arquitectura | [02-architecture.md](docs/02-architecture.md) | En revisión |
+| API e Integraciones | [03-api-and-integrations.md](docs/03-api-and-integrations.md) | En revisión |
+| Operaciones | [04-operations.md](docs/04-operations.md) | En revisión |
+| Pruebas | [05-testing.md](docs/05-testing.md) | Actualizado |
+| Gestión de Proyecto | [06-project-management.md](docs/06-project-management.md) | En revisión |
+| Glosario | [glossary.md](docs/glossary.md) | Actualizado |
+| Tesis | [thesis/](docs/thesis/) | En revisión |
 | Índice completo | [docs/README.md](docs/README.md) | En revisión |
 
 > La tabla detallada con fechas de última revisión y responsable está en [`docs/README.md`](docs/README.md).
@@ -222,41 +235,18 @@ Este proyecto incluye documentación técnica completa organizada en el director
 ### Documentación Principal
 
 - **[Índice de Documentación](docs/README.md)** - Índice completo de toda la documentación del proyecto
-- **[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)** - Documentación completa de todas las APIs del sistema. La fuente de verdad de contratos es `docs/api/openapi.json` generado por FastAPI.
 - **[CHANGELOG.md](docs/thesis/CHANGELOG_THESIS_UPDATE.md)** - Historial de cambios y versiones del proyecto
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guía para desarrolladores y contribuidores
 
 ### Documentación Técnica
 
-- **[Índice de Documentación](docs/README.md)** - Índice completo de toda la documentación del proyecto
-- **[Arquitectura](docs/architecture/overview.md)** - Diseño detallado del sistema y relaciones entre componentes
-- **[Arquitectura Docker](docs/architecture/docker_architecture.md)** - Arquitectura Docker, archivos compose y
-  despliegue
-- **[Seguridad](docs/architecture/security.md)** - Consideraciones de seguridad y mejores prácticas
-
-### Guías de Usuario
-
-- **[Visión General](docs/getting_started/overview.md)** - Visión general del laboratorio
-- **[Guía de Instalación](docs/getting_started/installation_guide.md)** - Guía paso a paso de instalación
-- **[Guía de Usuario](docs/getting_started/user_guide.md)** - Manual completo de operación del laboratorio
-
-### Operaciones
-
-- **[Manual de Configuración](docs/operations/configuration_manual.md)** - Configuración completa del laboratorio
-- **[Playbooks](docs/operations/playbooks/)** - Documentación de playbooks
-- **[Troubleshooting](docs/operations/troubleshooting.md)** - Guía de diagnóstico y soluciones
-
-### Integraciones
-
-- **[Integraciones](docs/integrations/)** - Documentación de integraciones y contratos de APIs
-
-### Pruebas
-
-- **[Testing](docs/testing/)** - Documentación de pruebas y estrategias de testing
-
-### Gestión de Proyecto
-
-- **[Proyecto](docs/project/)** - Documentación de gestión de proyecto (alcance, objetivos, planificación, riesgos)
+- **[01-getting-started.md](docs/01-getting-started.md)** - Visión general, requisitos, instalación y guía rápida
+- **[02-architecture.md](docs/02-architecture.md)** - Arquitectura hexagonal, Docker, código, seguridad y matriz de versiones
+- **[03-api-and-integrations.md](docs/03-api-and-integrations.md)** - API REST, endpoints, contratos e integraciones con TheHive, Cortex y Shuffle
+- **[04-operations.md](docs/04-operations.md)** - Configuración, infraestructura, backups, certificados, logging, troubleshooting y playbooks
+- **[05-testing.md](docs/05-testing.md)** - Estrategia de pruebas, suite, tests unitarios, de integración y E2E
+- **[06-project-management.md](docs/06-project-management.md)** - Objetivos, alcance, plan, requisitos, riesgos, deuda técnica y auditorías
+- **[glossary.md](docs/glossary.md)** - Glosario central de acrónimos, términos y componentes
 
 ### Documentación Académica (TFM)
 
@@ -309,22 +299,20 @@ Este proyecto incluye documentación técnica completa organizada en el director
 | **Web Management UI** | `http://localhost:8085` / `/`        | Sí (/)    | Panel de gestión principal             |
 | **API REST**          | `http://localhost:8000` / `/api/`    | Sí        | API de gestión del laboratorio         |
 | **Shuffle UI**        | `http://localhost:8081`                | No        | Orquestador SOAR                       |
-| **Shuffle API**       | `http://localhost:15001` / `/shuffle-api/` | Sí     | API REST de Shuffle                    |
-| **TheHive**           | `http://localhost:19000` / `/thehive/`| Sí        | Gestión de casos e incidentes          |
-| **Cortex**            | `http://localhost:19001` / `/cortex/` | Sí        | Análisis de IoCs y analyzers           |
+| **Shuffle API**       | `http://localhost:5001` / `/shuffle-api/` | Sí     | API REST de Shuffle                    |
+| **TheHive**           | `http://localhost:8100` / `/thehive/`| Sí        | Gestión de casos e incidentes          |
+| **Cortex**            | `http://localhost:8101` / `/cortex/` | Sí        | Análisis de IoCs y analyzers           |
 | **MISP**              | `http://localhost:8083`                | No        | Inteligencia de amenazas               |
 | **Grafana**           | `http://localhost:8084`                | No        | Dashboards de KPIs y logging           |
-| **Wazuh Dashboard**   | `https://localhost:15601`               | No        | Dashboards y visualización de logs (TLS)     |
 | **Docs Site**         | `http://localhost:8086`                | No        | Documentación Docusaurus               |
-| **Elasticsearch**     | `http://localhost:19200`               | No        | Motor de búsqueda (puerto externo)     |
-| **Wazuh Manager**     | `https://localhost:55100`              | No        | SIEM/XDR API                           |
+| **Elasticsearch**     | `http://localhost:8200`               | No        | Motor de búsqueda (puerto externo)     |
 
 > **Swagger/OpenAPI** de la API: `http://localhost:8000/docs` (o `https://soar.local/api/docs` a través de Nginx).
 
 > Servicios marcados como *No* en la columna *Vía Nginx* usan SPA/assets absolutos o no soportan subpath proxy; accede a ellos directamente por puerto.
 
-> **Nota Windows/Docker Desktop**: Los puertos de Wazuh API (55000) y Elasticsearch están bloqueados por rangos de
-> exclusión de Hyper-V. Todos los servicios internos funcionan correctamente a través de la red Docker.
+> **Nota Windows/Docker Desktop**: Algunos puertos pueden estar bloqueados por rangos de exclusión de Hyper-V.
+> Todos los servicios internos funcionan correctamente a través de la red Docker.
 
 ---
 
@@ -349,26 +337,12 @@ Linux/macOS:
 make docs-lint
 ```
 
-### Vagrant
-
-```bash
-# Crear entorno automatizado
-make vagrant-up
-# o directamente
-vagrant up soar-ubuntu
-
-# La VM Windows victima está deshabilitada por incompatibilidades
-# (ver infra/vagrant/Vagrantfile)
-```
-
-> **Nota:** Ansible no está configurado en este repositorio.
-
 ---
 
 ## 🛡️ Buenas Prácticas
 
 - No subir archivos `.env` ni certificados al repositorio (usar `.gitignore`)
-- Documentar pruebas en `tests/e2e` y resultados en `docs/testing/test_suite.md`
+- Documentar pruebas en `tests/e2e` y resultados en `docs/05-testing.md`
 - Utilizar TLS y credenciales seguras en todo momento
 - Realizar copias de seguridad periódicas de la configuración
 - Mantener actualizadas las dependencias y Docker images
@@ -379,7 +353,7 @@ vagrant up soar-ubuntu
 
 ### Ejecución de Pruebas
 
-Para ejecutar pruebas, consultar la documentación completa en **[docs/testing/test_suite.md](docs/testing/test_suite.md)
+Para ejecutar pruebas, consultar la documentación completa en **[docs/05-testing.md](docs/05-testing.md)
 **:
 
 ```bash
@@ -408,13 +382,13 @@ python src/soar_lab/infrastructure/messaging/send_alert.py --type benign --singl
 
 **Estado Actual de Tests (v1.4.0):**
 
-- Archivos de prueba (`test_*.py`): 157
-  - Unit: 66 · Atomic: 4 · Integration: 36 · E2E: 44 · Security: 1 · Performance: 4 · General: 2
-- Funciones definidas: ~1884
-- Recolección reproducible (`python -m pytest --collect-only -q`): 1944 items / 33 deselected / 1911 seleccionados (0 errores de colección).
+- Archivos de prueba (`test_*.py`): 184
+  - Unit: 79 · Atomic: 4 · Integration: 30 · E2E: 49 (TC-00..TC-33 + TC-99 + TC-KPI-01..06) · Security: 1 · Performance: 4 · Quality: 14 · Architecture: 1 · General: 2
+- Funciones definidas: ~2092
+- Recolección reproducible (`python -m pytest --collect-only -q`): 2232 items / 327 deselected / 1905 seleccionados (0 errores de colección).
 - Todos los errores previos de recolección (`ModuleNotFoundError`, `NameError`, `SyntaxError`) han sido resueltos.
-- El desglose completo se mantiene en `docs/testing/test_suite.md` y `baseline/tests_inventory.json`.
-- Última sincronización documental: 2026-07-18.
+- El desglose completo se mantiene en `docs/05-testing.md` y `baseline/tests_inventory.json`.
+- Última sincronización documental: 2026-08-21.
 
 ### Cálculo de KPIs
 
@@ -450,7 +424,7 @@ make data-watch
 - Documentar resultados en `artifacts/results/kpis.csv` y `docs/test_report.md`
 - Verificar cumplimiento de umbrales: p50 ≤ 120s, p90 ≤ 180s
 - Analizar logs de ejecución en `artifacts/logs/notify.log`
-- Ver documentación completa de pruebas en **[docs/testing/test_suite.md](docs/testing/test_suite.md)**
+- Ver documentación completa de pruebas en **[docs/05-testing.md](docs/05-testing.md)**
 
 ---
 

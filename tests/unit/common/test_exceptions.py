@@ -1,71 +1,69 @@
 #!/usr/bin/env python3
-"""
-Unit tests for exceptions.py
-"""
+"""Unit tests for exceptions.py."""
 
 import pytest
 
 from soar_lab.common.exceptions import (
-    SOARError,
-    ConfigurationError,
-    ValidationError,
-    IntegrationError,
-    BackupError,
-    KPIError,
     AuthError,
-    SubprocessError
+    BackupError,
+    ConfigurationError,
+    IntegrationError,
+    KPIError,
+    SOARError,
+    SubprocessError,
+    ValidationError,
 )
 
 
 class TestExceptions:
-    """Test custom exceptions"""
+    """Test custom exceptions."""
 
     def test_soar_error(self):
-        """Test base SOARError"""
+        """Test base SOARError."""
         with pytest.raises(SOARError):
             raise SOARError("Test error")
 
     def test_configuration_error(self):
-        """Test ConfigurationError"""
+        """Test ConfigurationError."""
         with pytest.raises(ConfigurationError):
             raise ConfigurationError("Missing config")
 
     def test_validation_error(self):
-        """Test ValidationError"""
+        """Test ValidationError."""
         with pytest.raises(ValidationError):
             raise ValidationError("Invalid input")
 
     def test_integration_error(self):
-        """Test IntegrationError"""
+        """Test IntegrationError."""
         exc = IntegrationError("TheHive", "Connection failed")
         assert exc.service == "TheHive"
         assert "[TheHive]" in str(exc)
         assert "Connection failed" in str(exc)
 
     def test_backup_error(self):
-        """Test BackupError"""
+        """Test BackupError."""
         with pytest.raises(BackupError):
             raise BackupError("Backup failed")
 
     def test_kpi_error(self):
-        """Test KPIError"""
+        """Test KPIError."""
         with pytest.raises(KPIError):
             raise KPIError("KPI calculation failed")
 
     def test_auth_error_default_status(self):
-        """Test AuthError with default status code"""
+        """Test AuthError with default status code."""
         exc = AuthError("Invalid token")
         assert exc.status_code == 401
         assert str(exc) == "Invalid token"
 
     def test_auth_error_custom_status(self):
-        """Test AuthError with custom status code"""
+        """Test AuthError with custom status code."""
         exc = AuthError("Forbidden", 403)
         assert exc.status_code == 403
         assert str(exc) == "Forbidden"
 
     def test_subprocess_error(self):
-        """Test SubprocessError"""
+        """Test SubprocessError."""
         exc = SubprocessError(["ls", "-la"], 1, "Permission denied")
         assert exc.cmd == ["ls", "-la"]
         assert exc.returncode == 1
@@ -75,7 +73,7 @@ class TestExceptions:
         assert "Permission denied" in str(exc)
 
     def test_subprocess_error_no_stderr(self):
-        """Test SubprocessError without stderr"""
+        """Test SubprocessError without stderr."""
         exc = SubprocessError(["echo", "test"], 0)
         assert exc.cmd == ["echo", "test"]
         assert exc.returncode == 0

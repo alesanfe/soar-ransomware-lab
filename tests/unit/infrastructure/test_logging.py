@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
-"""Unit tests for Logging configuration"""
+"""Unit tests for Logging configuration."""
 
 import logging
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
-from soar_lab.config.logging import setup_logging, get_logger
+from soar_lab.config.logging import get_logger, setup_logging
 
 
 class TestLogging:
-    """Test logging configuration"""
+    """Test logging configuration."""
 
     def test_setup_logging_console_only(self):
-        """Test setup logging with console only"""
+        """Test setup logging with console only."""
         # Clear existing handlers
         root = logging.getLogger()
         root.handlers.clear()
@@ -26,7 +23,7 @@ class TestLogging:
         assert isinstance(root.handlers[0], logging.StreamHandler)
 
     def test_setup_logging_with_file(self, tmp_path):
-        """Test setup logging with file output"""
+        """Test setup logging with file output."""
         # Clear existing handlers
         root = logging.getLogger()
         root.handlers.clear()
@@ -40,7 +37,7 @@ class TestLogging:
         assert any(isinstance(h, logging.FileHandler) for h in root.handlers)
 
     def test_setup_logging_invalid_level(self):
-        """Test setup logging with invalid log level"""
+        """Test setup logging with invalid log level."""
         # Clear existing handlers
         root = logging.getLogger()
         root.handlers.clear()
@@ -52,7 +49,7 @@ class TestLogging:
         assert root.level == logging.INFO
 
     def test_setup_logging_existing_handlers(self):
-        """Test setup logging when handlers already exist"""
+        """Test setup logging when handlers already exist."""
         # Clear existing handlers
         root = logging.getLogger()
         root.handlers.clear()
@@ -69,14 +66,14 @@ class TestLogging:
         assert second_handler_count <= first_handler_count + 2
 
     def test_get_logger(self):
-        """Test get_logger function"""
+        """Test get_logger function."""
         logger = get_logger("test_module")
 
         assert logger.name == "test_module"
         assert isinstance(logger, logging.Logger)
 
     def test_get_logger_multiple_calls(self):
-        """Test that get_logger returns same logger for same name"""
+        """Test that get_logger returns same logger for same name."""
         logger1 = get_logger("test_module")
         logger2 = get_logger("test_module")
 

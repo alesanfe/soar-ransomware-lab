@@ -1,0 +1,80 @@
+{
+  "play": {
+    "secret": "${CORTEX_SECRET}"
+  },
+  "search": {
+    "uri": "${ELASTICSEARCH_URL:-http://elasticsearch:9200}",
+    "username": "${ELASTIC_USERNAME:-elastic}",
+    "password": "${ELASTIC_PASSWORD}",
+    "index": "cortex",
+    "keepalive": "1m",
+    "pagesize": 50
+  },
+  "auth": {
+    "provider": ["local", "key"],
+    "method": {
+      "basic": true,
+      "key": true
+    },
+    "byKey": {
+      "maxAge": "30 days"
+    },
+    "local": {
+      "autoCreateAdmin": true
+    }
+  },
+  "play": {
+    "filters": {
+      "csrf": {
+        "bypassCorsTrustedOrigins": true,
+        "header": {
+          "bypassHeaders": {
+            "X-Requested-With": "*",
+            "Raw-Request-URI": "*"
+          }
+        }
+      }
+    }
+  },
+  "job": {
+    "timeout": 300,
+    "maxConcurrentJobs": 10,
+    "directory": "/tmp/cortex-jobs",
+    "dockerDirectory": "${CORTEX_DOCKER_JOB_DIR:-/run/desktop/mnt/host/c/Users/alex0/PycharmProjects/soar-ransomware-lab/runtime/data/cortex/jobs}"
+  },
+  "http": {
+    "port": 9001,
+    "host": "0.0.0.0"
+  },
+  "analyzer": {
+    "urls": [
+      "https://download.thehive-project.org/analyzers.json"
+    ],
+    "fork-join-executor": {
+      "parallelism-min": 2,
+      "parallelism-factor": 2.0,
+      "parallelism-max": 4
+    },
+    "docker": {
+      "network": "soar_net"
+    }
+  },
+  "responder": {
+    "urls": [
+      "https://download.thehive-project.org/responders.json"
+    ],
+    "fork-join-executor": {
+      "parallelism-min": 2,
+      "parallelism-factor": 2.0,
+      "parallelism-max": 4
+    },
+    "docker": {
+      "network": "soar_net"
+    }
+  },
+  "cache": {
+    "job": "10 minutes",
+    "user": "5 minutes",
+    "organization": "5 minutes"
+  }
+}

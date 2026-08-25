@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - Centralized Exception Hierarchy
+"""SOAR Ransomware Lab - Centralized Exception Hierarchy.
+
 All custom exceptions used across the project.
 """
+
+__all__ = [
+    "SOARError",
+    "ConfigurationError",
+    "ValidationError",
+    "IntegrationError",
+    "BackupError",
+    "KPIError",
+    "AuthError",
+    "SubprocessError",
+]
 
 
 class SOARError(Exception):
@@ -20,7 +31,7 @@ class ValidationError(SOARError):
 class IntegrationError(SOARError):
     """Raised when communication with an external SOAR tool fails."""
 
-    def __init__(self, service: str, message: str):
+    def __init__(self, service: str, message: str) -> None:
         self.service = service
         super().__init__(f"[{service}] {message}")
 
@@ -36,7 +47,7 @@ class KPIError(SOARError):
 class AuthError(SOARError):
     """Raised for authentication/authorisation errors."""
 
-    def __init__(self, message: str, status_code: int = 401):
+    def __init__(self, message: str, status_code: int = 401) -> None:
         self.status_code = status_code
         super().__init__(message)
 
@@ -44,10 +55,8 @@ class AuthError(SOARError):
 class SubprocessError(SOARError):
     """Raised when a subprocess command fails."""
 
-    def __init__(self, cmd: list, returncode: int, stderr: str = ""):
+    def __init__(self, cmd: list, returncode: int, stderr: str = "") -> None:
         self.cmd = cmd
         self.returncode = returncode
         self.stderr = stderr
-        super().__init__(
-            f"Command {cmd[0]!r} exited with code {returncode}: {stderr}"
-        )
+        super().__init__(f"Command {cmd[0]!r} exited with code {returncode}: {stderr}")

@@ -1,6 +1,13 @@
+"""Authentication and authorization data models for the SOAR RBAC system."""
+
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
+
+__all__ = [
+    "Permission",
+    "Role",
+    "User",
+]
 
 
 class Permission(Enum):
@@ -28,9 +35,10 @@ class User:
     id: str = ""
     username: str = ""
     role: Role = field(default=Role.READONLY)
-    permissions: List[Permission] = field(default_factory=list)
+    permissions: list[Permission] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Apply default values for None permissions and role fields."""
         if self.permissions is None:
             self.permissions = []
         if self.role is None:

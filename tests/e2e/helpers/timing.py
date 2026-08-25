@@ -1,10 +1,16 @@
-"""
-Shared timing helpers for E2E tests.
-"""
+"""Shared timing helpers for E2E tests."""
 
 import time
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Callable, Any, List
+from typing import Any
+
+__all__ = [
+    "measure_time",
+    "time_execution",
+    "measure_multiple_executions",
+    "calculate_percentiles",
+]
 
 
 @contextmanager
@@ -17,8 +23,7 @@ def measure_time():
 
 
 def time_execution(func: Callable[..., Any], *args, **kwargs) -> tuple[Any, float]:
-    """
-    Execute a function and return its result along with execution time.
+    """Execute a function and return its result along with execution time.
 
     Args:
         func: Function to execute
@@ -34,9 +39,10 @@ def time_execution(func: Callable[..., Any], *args, **kwargs) -> tuple[Any, floa
     return result, elapsed
 
 
-def measure_multiple_executions(func: Callable[..., Any], count: int, *args, **kwargs) -> List[float]:
-    """
-    Execute a function multiple times and return execution times.
+def measure_multiple_executions(
+    func: Callable[..., Any], count: int, *args, **kwargs
+) -> list[float]:
+    """Execute a function multiple times and return execution times.
 
     Args:
         func: Function to execute
@@ -56,9 +62,8 @@ def measure_multiple_executions(func: Callable[..., Any], count: int, *args, **k
     return times
 
 
-def calculate_percentiles(times: List[float]) -> dict:
-    """
-    Calculate percentiles from a list of times.
+def calculate_percentiles(times: list[float]) -> dict:
+    """Calculate percentiles from a list of times.
 
     Args:
         times: List of execution times in seconds
@@ -83,5 +88,5 @@ def calculate_percentiles(times: List[float]) -> dict:
         "p99": percentile(0.99),
         "mean": sum(times) / n,
         "min": min(times),
-        "max": max(times)
+        "max": max(times),
     }

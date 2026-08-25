@@ -4,181 +4,182 @@ SOAR Ransomware Lab - External Service Failure Tests
 Tests for handling failures of external services (MISP, Cortex, TheHive)
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
 from requests.exceptions import ConnectionError, Timeout
-from soar_lab.infrastructure.external.integrations.cortex_client import CortexClient
-from soar_lab.infrastructure.external.integrations.misp_client import MISPClient
-from soar_lab.infrastructure.external.integrations.thehive_client import TheHiveClient
-from unittest.mock import Mock, patch
+
+from soar_lab.common.exceptions import IntegrationError
+from soar_lab.infrastructure.integrations.cortex.client import CortexClient
+from soar_lab.infrastructure.integrations.misp.client import MISPClient
+from soar_lab.infrastructure.integrations.thehive.client import TheHiveClient
+from soar_lab.resilience.circuit_breaker import CircuitBreakerState
 
 
 class TestExternalServiceFailure:
-    """Test handling of external service failures"""
+    """Test handling of external service failures."""
 
     @pytest.fixture
     def misp_client(self):
-        """Create MISP client for testing"""
-        return MISPClient(
-            base_url="http://localhost:8083",
-            api_key="test-key",
-            verify_ssl=False
-        )
+        """Create MISP client for testing."""
+        return MISPClient(base_url="http://localhost:8083", api_key="test-key", verify_ssl=False)
 
     @pytest.fixture
     def cortex_client(self):
-        """Create Cortex client for testing"""
-        return CortexClient(
-            base_url="http://localhost:9001",
-            api_key="test-key",
-            verify_ssl=False
-        )
+        """Create Cortex client for testing."""
+        return CortexClient(base_url="http://localhost:9001", api_key="test-key", verify_ssl=False)
 
     @pytest.fixture
     def thehive_client(self):
-        """Create TheHive client for testing"""
-        return TheHiveClient(
-            base_url="http://localhost:9000",
-            api_key="test-key",
-            verify_ssl=False
-        )
+        """Create TheHive client for testing."""
+        return TheHiveClient(base_url="http://localhost:9000", api_key="test-key", verify_ssl=False)
 
     def test_misp_connection_failure(self, misp_client):
-        """Test handling of MISP connection failure"""
-        with patch.object(misp_client.session, 'get') as mock_get:
+        """Test handling of MISP connection failure."""
+        with patch.object(misp_client.session, "get") as mock_get:
             mock_get.side_effect = ConnectionError("MISP unreachable")
 
-            with pytest.raises(ConnectionError):
-                misp_client.get_events()
+            with pytest.raises(IntegrationError):
+                misp_client.list_events()
 
     def test_misp_timeout_handling(self, misp_client):
-        """Test handling of MISP timeout"""
-        with patch.object(misp_client.session, 'get') as mock_get:
+        """Test handling of MISP timeout."""
+        with patch.object(misp_client.session, "get") as mock_get:
             mock_get.side_effect = Timeout("MISP timeout")
 
-            with pytest.raises(Timeout):
-                misp_client.get_events()
+            with pytest.raises(IntegrationError):
+                misp_client.list_events()
 
     def test_cortex_connection_failure(self, cortex_client):
-        """Test handling of Cortex connection failure"""
-        with patch.object(cortex_client.session, 'get') as mock_get:
-            mock_get.side_effect = ConnectionError("Cortex unreachable")
+        """Test handling of Cortex connection failure."""
+        with patch.object(cortex_client.session, "post") as mock_post:
+            mock_post.side_effect = ConnectionError("Cortex unreachable")
 
-            with pytest.raises(ConnectionError):
+            with pytest.raises(IntegrationError):
                 cortex_client.list_analyzers()
 
     def test_cortex_timeout_handling(self, cortex_client):
-        """Test handling of Cortex timeout"""
-        with patch.object(cortex_client.session, 'get') as mock_get:
-            mock_get.side_effect = Timeout("Cortex timeout")
+        """Test handling of Cortex timeout."""
+        with patch.object(cortex_client.session, "post") as mock_post:
+            mock_post.side_effect = Timeout("Cortex timeout")
 
-            with pytest.raises(Timeout):
+            with pytest.raises(IntegrationError):
                 cortex_client.list_analyzers()
 
     def test_thehive_connection_failure(self, thehive_client):
-        """Test handling of TheHive connection failure"""
-        with patch.object(thehive_client.session, 'get') as mock_get:
+        """Test handling of TheHive connection failure."""
+        with patch.object(thehive_client.session, "get") as mock_get:
             mock_get.side_effect = ConnectionError("TheHive unreachable")
 
-            with pytest.raises(ConnectionError):
+            with pytest.raises(IntegrationError):
                 thehive_client.search_cases()
 
     def test_thehive_timeout_handling(self, thehive_client):
-        """Test handling of TheHive timeout"""
-        with patch.object(thehive_client.session, 'get') as mock_get:
+        """Test handling of TheHive timeout."""
+        with patch.object(thehive_client.session, "get") as mock_get:
             mock_get.side_effect = Timeout("TheHive timeout")
 
-            with pytest.raises(Timeout):
+            with pytest.raises(IntegrationError):
                 thehive_client.search_cases()
 
     def test_circuit_breaker_opens_on_failures(self, cortex_client):
-        """Test that circuit breaker opens after repeated failures"""
+        """Test that circuit breaker opens after repeated failures."""
         # Simulate multiple failures
-        with patch.object(cortex_client.session, 'get') as mock_get:
-            mock_get.side_effect = ConnectionError("Service down")
+        with patch.object(cortex_client.session, "post") as mock_post:
+            mock_post.side_effect = ConnectionError("Service down")
 
             # Multiple failures should open circuit breaker
             for _ in range(5):
                 try:
                     cortex_client.list_analyzers()
-                except ConnectionError:
+                except IntegrationError:
                     pass
 
             # Circuit breaker should be open
-            assert cortex_client.circuit_breaker.is_open(), \
-                "Circuit breaker should be open after failures"
+            assert (
+                cortex_client.circuit_breaker.is_open()
+            ), "Circuit breaker should be open after failures"
 
     def test_circuit_breaker_half_open_state(self, cortex_client):
-        """Test circuit breaker half-open state"""
-        # Open circuit breaker
-        cortex_client.circuit_breaker.open()
+        """Test circuit breaker half-open state."""
+        # Open circuit breaker by recording failures
+        cb = cortex_client.circuit_breaker
+        for _ in range(cb.failure_threshold):
+            cb.record_failure()
 
-        # After timeout, should transition to half-open
-        cortex_client.circuit_breaker.attempt_reset()
+        assert cb.is_open(), "Circuit breaker should be open after threshold failures"
 
-        assert cortex_client.circuit_breaker.state == 'half-open', \
-            "Circuit breaker should be in half-open state"
+        # Force recovery timeout to have elapsed
+        import time
+
+        cb.last_failure_time = time.time() - cb.recovery_timeout - 1
+        cb.attempt_reset()
+
+        assert (
+            cb.state == CircuitBreakerState.HALF_OPEN
+        ), "Circuit breaker should be in half-open state"
 
     def test_circuit_breaker_closes_on_success(self, cortex_client):
-        """Test that circuit breaker closes on successful request"""
-        # Open circuit breaker
-        cortex_client.circuit_breaker.open()
+        """Test that circuit breaker closes on successful request."""
+        # Open circuit breaker by recording failures
+        cb = cortex_client.circuit_breaker
+        for _ in range(cb.failure_threshold):
+            cb.record_failure()
+
+        # Force recovery timeout to have elapsed
+        import time
+
+        cb.last_failure_time = time.time() - cb.recovery_timeout - 1
+        cb.attempt_reset()
 
         # Simulate successful request
-        with patch.object(cortex_client.session, 'get') as mock_get:
-            mock_get.return_value = Mock(status_code=200, json=lambda: [])
+        with patch.object(cortex_client.session, "post") as mock_post:
+            mock_post.return_value = Mock(status_code=200, content=b"[]", json=list)
 
             cortex_client.list_analyzers()
 
             # Circuit breaker should close
-            assert not cortex_client.circuit_breaker.is_open(), \
-                "Circuit breaker should close on success"
+            assert not cb.is_open(), "Circuit breaker should close on success"
 
     def test_retry_with_exponential_backoff(self, misp_client):
-        """Test retry with exponential backoff"""
-        call_count = [0]
+        """Test that session is configured with retry strategy.
 
-        def failing_then_succeeding(*args, **kwargs):
-            call_count[0] += 1
-            if call_count[0] < 3:
-                raise ConnectionError("Service down")
-            return Mock(status_code=200, json=lambda: [])
-
-        with patch.object(misp_client.session, 'get') as mock_get:
-            mock_get.side_effect = failing_then_succeeding
-
-            # Should retry and eventually succeed
-            result = misp_client.get_events()
-            assert result is not None, "Should succeed after retries"
-            assert call_count[0] == 3, "Should have retried twice"
+        MISPClient delegates retries to urllib3's Retry mechanism at the
+        transport layer, not at the application layer. This test verifies
+        the session has retries configured.
+        """
+        # The session should have retry configured via urllib3
+        adapter = misp_client.session.get_adapter("http://localhost:8083")
+        retry = adapter.max_retries
+        assert retry.total > 0, "Session should have retries configured"
 
     def test_max_retry_limit(self, cortex_client):
-        """Test that retries are limited"""
+        """Test that retries are limited."""
         call_count = [0]
 
         def always_failing(*args, **kwargs):
             call_count[0] += 1
             raise ConnectionError("Service down")
 
-        with patch.object(cortex_client.session, 'get') as mock_get:
-            mock_get.side_effect = always_failing
+        with patch.object(cortex_client.session, "post") as mock_post:
+            mock_post.side_effect = always_failing
 
             # Should fail after max retries
-            with pytest.raises(ConnectionError):
+            with pytest.raises(IntegrationError):
                 cortex_client.list_analyzers()
 
             # Should not retry indefinitely
-            assert call_count[0] <= cortex_client.max_retries + 1, \
-                "Should respect max retry limit"
+            assert call_count[0] <= cortex_client.max_retries + 1, "Should respect max retry limit"
 
     def test_graceful_degradation_without_misp(self, misp_client):
-        """Test graceful degradation when MISP is unavailable"""
-        with patch.object(misp_client.session, 'get') as mock_get:
+        """Test graceful degradation when MISP is unavailable."""
+        with patch.object(misp_client.session, "get") as mock_get:
             mock_get.side_effect = ConnectionError("MISP down")
 
             # System should continue without MISP enrichment
             try:
-                misp_client.get_events()
-            except ConnectionError:
+                misp_client.list_events()
+            except IntegrationError:
                 # Expected - system should handle this gracefully
                 pass
 
@@ -186,14 +187,14 @@ class TestExternalServiceFailure:
             assert True, "System should degrade gracefully without MISP"
 
     def test_graceful_degradation_without_cortex(self, cortex_client):
-        """Test graceful degradation when Cortex is unavailable"""
-        with patch.object(cortex_client.session, 'get') as mock_get:
-            mock_get.side_effect = ConnectionError("Cortex down")
+        """Test graceful degradation when Cortex is unavailable."""
+        with patch.object(cortex_client.session, "post") as mock_post:
+            mock_post.side_effect = ConnectionError("Cortex down")
 
             # System should continue without Cortex analysis
             try:
                 cortex_client.list_analyzers()
-            except ConnectionError:
+            except IntegrationError:
                 # Expected - system should handle this gracefully
                 pass
 
@@ -201,21 +202,23 @@ class TestExternalServiceFailure:
             assert True, "System should degrade gracefully without Cortex"
 
     def test_service_health_check(self, thehive_client):
-        """Test service health check"""
-        with patch.object(thehive_client.session, 'get') as mock_get:
-            mock_get.return_value = Mock(status_code=200, json=lambda: {"status": "ok"})
+        """Test service health check."""
+        with patch.object(thehive_client.session, "get") as mock_get:
+            mock_get.return_value = Mock(
+                status_code=200, content=b'{"status":"ok"}', json=lambda: {"status": "ok"}
+            )
 
             health = thehive_client.health_check()
-            assert health['status'] == 'ok', "Health check should return ok"
+            assert health is True, "Health check should return True when service is healthy"
 
     def test_service_health_check_failure(self, thehive_client):
-        """Test service health check failure"""
-        with patch.object(thehive_client.session, 'get') as mock_get:
+        """Test service health check failure."""
+        with patch.object(thehive_client.session, "get") as mock_get:
             mock_get.side_effect = ConnectionError("Service down")
 
             health = thehive_client.health_check()
-            assert health['status'] == 'unhealthy', "Health check should return unhealthy"
+            assert health is False, "Health check should return False when service is down"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

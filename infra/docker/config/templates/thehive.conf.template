@@ -1,0 +1,38 @@
+{
+  "play": {
+    "secret": "${THEHIVE_SECRET}"
+  },
+  "search": {
+    "uri": "${ELASTICSEARCH_URL:-http://elasticsearch:9200}",
+    "username": "${ELASTIC_USERNAME:-elastic}",
+    "password": "${ELASTIC_PASSWORD}"
+  },
+  "cortex": {
+    "cortex1": {
+      "url": "${CORTEX_URL:-http://cortex:9001}",
+      "key": "${CORTEX_API_KEY}"
+    }
+  },
+  "baseUrl": "http://${OUTER_HOSTNAME:-localhost}:${THEHIVE_HTTP_PORT:-9000}",
+  "storage": {
+    "provider": "local",
+    "local": {
+      "directory": "/opt/thp/thehive/files"
+    }
+  },
+  "attachment": {
+    "provider": "local",
+    "local": {
+      "directory": "/opt/thp/thehive/files"
+    }
+  },
+  "auth": {
+    "provider": [
+      "local"
+    ],
+    "method": {
+      "basic": true,
+      "key": true
+    }
+  }
+}
