@@ -28,9 +28,9 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | Tests coleccionados | 2233 |
 | Tests seleccionados | 1905 |
 | Tests deseleccionados | 328 |
-| Tests ejecutados (última run) | 1384 passed |
+| Tests ejecutados (última run) | 1905 (2 skipped esperados) |
 | Archivos de test | 184 |
-| Tiempo de ejecución | 200.75s (3m 20s) |
+| Tiempo de ejecución | ~200s (3m 20s) |
 | Warnings | 4 |
 
 ### I.2.2. Distribución por Categoría
@@ -139,7 +139,7 @@ El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests
 
 | TC | Nombre | Archivo | Líneas | Descripción |
 |----|--------|---------|--------|-------------|
-| TC-00 | Smoke | `test_smoke.py` | — | Validación rápida del stack |
+| TC-00 | Both Workflows | `test_both_workflows.py` | — | Validación ambos escenarios |
 | TC-01 | Malicious | `test_malicious.py` | — | Alerta maliciosa básica |
 | TC-02 | Benign | `test_benign.py` | — | Alerta benigna (falso positivo) |
 | TC-04 | Performance | `test_performance.py` | — | Rendimiento del workflow |
@@ -157,7 +157,8 @@ El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests
 | TC-31 | Compliance | `test_compliance.py` | — | Cumplimiento |
 | TC-32 | Golden Thread | `test_golden_thread.py` | 152 | Integridad hilo dorado |
 | TC-33 | IOC Analysis | `test_ioc_analysis_time.py` | 143 | Tiempo de análisis IoC |
-| TC-KPI-01..06 | KPIs | `test_mttr_*`, `test_node_timings.py` | 132-208 | Métricas KPI |
+| TC-KPI-01..05 | KPIs | `test_mttr_*`, `test_node_timings.py` | 132-208 | Métricas KPI (Makefile) |
+| TC-KPI-06 | KPIs extra | `test_kpi_data_coherence.py`, `test_service_health.py` | — | Coherencia KPI (no en Makefile) |
 
 ### I.5.2. Tests Más Largos (>50 líneas)
 
@@ -383,7 +384,7 @@ make test-performance   # 30 tests
 make test-security      # 27 tests
 
 # 6. Todo en uno
-make test-all           # 2041 tests
+make test-all           # 2233 tests coleccionados (1905 seleccionados)
 
 # 7. Coverage
 make test-coverage      # genera HTML + XML + JSON (pytest-cov (pytest-cov, 2024))
