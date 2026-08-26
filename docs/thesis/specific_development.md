@@ -285,19 +285,22 @@ graph TD
     C --> D[TheHive - Crear caso]
     D --> E[TheHive - Observables hash/IP]
     D --> F[TheHive - Tarea de investigación]
-    B --> G[Cortex - Análisis de hash]
-    B --> H[Cortex - Análisis de IP]
+    D --> G[Cortex - Análisis de hash]
+    D --> H[Cortex - Análisis de IP]
     G --> I[MalwareBazaar / FileInfo]
     H --> J[DShield / Mnemonic pDNS / GoogleDNS]
-    B --> K[MISP - Búsqueda de indicadores]
-    B --> L[Tenzir - Análisis de tráfico]
-    B --> M[Network Watcher - Monitor de red]
-    B --> N[Redis - Caché de IoCs]
-    B --> O[Loki - Búsqueda de logs]
+    D --> K[MISP - Búsqueda de indicadores]
+    D --> L[Tenzir - Análisis de tráfico]
+    D --> M[Network Watcher - Monitor de red]
+    D --> N[Redis - Caché de IoCs]
+    D --> O[Loki - Búsqueda de logs]
     G --> P[Calc decision - Score y verdict]
     H --> P
     K --> P
     L --> P
+    M --> P
+    N --> P
+    O --> P
     P --> Q{Score ≥ 80 o malicious?}
     Q -->|Sí| R[Contención simulada]
     Q -->|No| S[Marcar falso positivo]
@@ -305,10 +308,10 @@ graph TD
     S --> U[TheHive - Actualizar a FalsePositive]
     T --> V[Notificación crítica]
     U --> W[Notificación informativa]
-    V --> X[TheHive - Enriquecer caso]
-    W --> X
-    X --> Y[Calc MTTR]
-    Y --> Z[Elasticsearch - Indexar métricas]
+    V --> Y[Calc MTTR]
+    W --> Y
+    Y --> X[TheHive - Enriquecer caso]
+    X --> Z[Elasticsearch - Indexar métricas]
     Z --> AA[Reporte Final]
 ```
 
