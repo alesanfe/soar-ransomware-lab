@@ -297,8 +297,8 @@ graph TD
     D --> ES[Elasticsearch - Indexar alerta]
     E --> P[Calc decision - Score y verdict]
     F --> P
-    G --> P
-    H --> P
+    I --> P
+    J --> P
     K --> P
     L --> P
     M --> P
