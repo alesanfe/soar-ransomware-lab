@@ -424,39 +424,6 @@ La **simulación** genera alertas de ransomware con IoCs realistas (hashes SHA25
 
 La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing y una revisión holística del proyecto en 15 dimensiones.
 
-#### Playbooks de Respuesta a Ransomware
-
-```mermaid
----
-title: Playbook de Respuesta a Ransomware
----
-graph TD     A[Recepción de alerta en Shuffle] --> B[Validación de formato]
-    B --> C[Normalización y extracción de IoCs]
-    C --> D[Creación de caso en TheHive]
-    D --> E[Adjuntar observables al caso]
-    E --> F[Análisis de IoCs en Cortex]
-    F --> G{Score ≥ 80 o verdict malicious?}     G -->|Sí| H[Contención simulada]
-    G -->|No| I[Marcar como falso positivo]
-    H --> J[Caso permanece Open]
-    I --> K[TheHive - Resolved/FalsePositive]
-    J --> L[Notificación crítica]
-    K --> M[Notificación informativa]
-    L --> N[Registro de MTTR]
-    M --> N     N --> O[Cierre del caso]
-```
-
-El playbook principal define el flujo automatizado desde la recepción de la alerta hasta el cierre del caso, implementado en Shuffle.
-
-El flujo comienza con la recepción de la alerta por webhook, donde se valida el formato JSON y se normalizan los datos. Se extraen los IoCs (hash, IP, hostname) y se crea un caso en TheHive con plantillas ransomware, adjuntando los indicadores como observables.
-
-A continuación, Cortex ejecuta analyzers contra fuentes externas (Hashdd_Status, DShield, IP-API, etc.) y el sistema calcula un score de riesgo.
-
-Si el score >= 80 o el verdict es "malicious", se activa la contención simulada (aislamiento de red, terminación de procesos, bloqueo de cuentas), el caso permanece en estado "Open" (TheHive 5 no soporta "InProgress" como status) y se envía una notificación crítica. En caso contrario, se marca el caso como "Resolved/FalsePositive" mediante PATCH a TheHive y se envía una notificación informativa.
-
-En ambas ramas se registra el MTTR desde la detección hasta la contención o clasificación, y el caso se cierra automáticamente.
-
-El playbook se valida con pruebas E2E para escenarios maliciosos, benignos y casos de borde. El detalle completo (46 nodos, 60 ramas, 25 scripts Python embebidos, scoring 0-100) está en el **Anexo B** (sección B.1). Los diagramas canónicos del flujo E2E y el árbol de decisión están en el **Anexo H** (secciones H.5 y H.6).
-
 #### Infraestructura Docker Compose
 
 ```mermaid
