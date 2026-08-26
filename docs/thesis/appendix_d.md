@@ -29,22 +29,23 @@ Manual (baseline estimado 3600 s total):
 
 SOAR (277.15s MTTR medio real, n=50):
 ┌─────────────────────────────────────────────────────────────────┐
-│ Recepción Triaje 105.28s   ████████                              │
-│ Análisis IoCs 2132.28s     ████████████████                      │
-│ Creación Caso 2113.12s     ██████                                 │
-│ Contención 345.16s         ██████████████████████████████████████ │
+│ Recepción Triaje 103.92s   ████████                              │
+│ Análisis IoCs 2393.46s     ████████████████                      │
+│ Creación Caso 2773.48s     ██████                                 │
+│ Contención 422.00s         ██████████████████████████████████████ │
 └─────────────────────────────────────────────────────────────────┘
 
 Reducción porcentual (MTTR total: 3600s a 277.15s = 92.3%):
-• Recepción Triaje: 300s a 105.28s (64.9% ↓)
-• Análisis IoCs:    1800s a 2132.28s (N/A — fase paralela)
-• Creación Caso:    600s a 2113.12s (N/A — fase paralela)
-• Contención:       900s a 345.16s (61.7% ↓)
+• Recepción Triaje: 300s a 103.92s (65.4% ↓)
+• Análisis IoCs:    1800s a 2393.46s (N/A — fase paralela)
+• Creación Caso:    600s a 2773.48s (N/A — fase paralela)
+• Contención:       900s a 422.00s (53.1% ↓)
 ```
 
-La descomposición por componente compara tiempos manuales versus automatización SOAR. Recepción, análisis de IoCs y
-creación de caso muestran reducciones >75%, mientras que contención tiene reducción menor por limitaciones externas.
-Esto indica dónde la automatización aporta mayores beneficios.
+La descomposición por componente compara tiempos manuales versus automatización SOAR. La recepción/triaje muestra la
+mayor reducción relativa (65.4%), mientras que las fases de análisis y creación de caso se ejecutan en paralelo dentro
+del workflow (sus tiempos absolutos no son directamente comparables con el baseline secuencial manual). La contención
+simulada reduce el tiempo un 53.1% respecto al baseline estimado.
 
 ### Gráfico 4.4: Análisis de Percentiles de Rendimiento
 
@@ -57,7 +58,7 @@ PERCENTILES DE MTTR SOAR (segundos) — Valores reales medidos en laboratorio (n
 400 ┤
 300 ┤                    ● SOAR: 277.15s (mean)
 200 ┤          ● SOAR: 193.19s (P50)
-100 ┤ ● SOAR: 65.83s (min)
+100 ┤ ● SOAR: 65.38s (min)
     └─────────────────────────────────────────────────────────
          min    P50    mean   P90    P95
 
@@ -66,8 +67,7 @@ Vs baseline manual (3600s):
 • Mean SOAR:    277.15s        a reducción del 92.3% vs manual (3600s)
 • P90 SOAR:     621.83s        a reducción del 82.7% vs manual (3600s)
 • P95 SOAR:     644.46s        a reducción del 82.1% vs manual (3600s)
-• Std Dev:      187.61s        a variabilidad moderada
-• Score promedio: 96.2/100     a threat intelligence funcional
+• Std Dev:      187.61s        a variabilidad moderada (CV=67.7%)
 
 Objetivos TFM: p50 <= 120s (193.19s), p90 <= 180s (621.83s)
 ```
@@ -81,12 +81,14 @@ indican mejoras consistentes en todos los segmentos, útil para planificación d
 ```
 TASA DE ÉXITO (%)
 
-100 ┤
- 95 ┤       ████████████████████████████████████████████████████
-     │ Manual: 95.0%    SOAR: 100.0%
+100 ┤  ████████████████████████████████████████████████████
+     │  SOAR: 100.0% (50/50 workflows completados)
+ 95 ┤  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+     │  Objetivo TFM: ≥ 95%
  90 ┤
  85 ┤
- 80 ┤
+ 80 ┤  ████████████████████████████████████████████████████
+     │  Manual (estimado): ~80%
  75 ┤
  70 ┤
  65 ┤
@@ -94,87 +96,82 @@ TASA DE ÉXITO (%)
  55 ┤
  50 ┤
      └─────────────────────────────────────────────────────────
-            Alertas Maliciosas    Alertas Benignas    Total
+            Ransomware (45)    RAT (2)    Troyano (2)    Infostealer (1)
 
-Maliciosas:
-• Manual: 95.0% (57/60)
-• SOAR:   100.0% (57/57)
+Por tipo de alerta (n=50, todas maliciosas):
+• Ransomware:   45/45 = 100%
+• RAT:           2/2  = 100%
+• Troyano:       2/2  = 100%
+• Infostealer:   1/1  = 100%
+• Total:        50/50 = 100%
 
-Benignas:
-• Manual: 95.0% (72/72)  
-• SOAR:   100.0% (72/72)
+Por decisión del workflow:
+• Contain (score ≥ 80):  46/50 = 92.0%
+• Observe (score < 80):   4/50 =  8.0%
 
-Total:
-• Manual: 95.0% (129/136)
-• SOAR:   100.0% (129/129)
+Por severidad:
+• Severity 2 (Medium):  7/7  = 100%
+• Severity 3 (High):   43/43 = 100%
 ```
 
-La tasa de éxito desglosada por tipo de alerta (maliciosas, benignas y total) para los enfoques
-manual y automatizado. La visualización muestra que la automatización no sacrifica calidad por velocidad, manteniendo
-o mejorando las tasas de éxito en todas las categorías. Las alertas maliciosas muestran una tasa de éxito ligeramente
-superior con automatización debido a la eliminación de errores humanos en el proceso de clasificación y respuesta. Las
-alertas benignas también muestran mejoras, indicando que el sistema reduce falsos positivos mediante análisis más
-rigurosos. La tasa de éxito total combinada muestra una mejora estadísticamente significativa, validando que la
-automatización mejora tanto la velocidad como la precisión del proceso de respuesta.
+La tasa de éxito desglosada por tipo de alerta para el experimento SOAR (n=50, todas maliciosas). El 100% de los
+workflows se completaron sin intervención humana, superando el objetivo del 95%. El escenario benigno está
+implementado y disponible en el repositorio para ejecuciones complementarias, pero no se incluyó en la evaluación
+presentada. La distribución por decisión muestra que el 92% de las alertas recibieron score ≥ 80 (contain) y el 8%
+restante score < 80 (observe), reflejando la variabilidad del enriquecimiento de IoCs.
 
 ### Gráfico 5.3: Progresión de Métricas Durante Proyecto
 
 ```
-EVOLUCIÓN TEMPORAL DE MÉTRICAS (12 semanas)
+EVOLUCIÓN TEMPORAL DE MÉTRICAS (18 semanas, 27 abr - 31 ago 2026)
 
 MTTR (segundos):
-250 ┤ ●
-225 ┤ ●
-200 ┤ ●
-175 ┤ ●
-150 ┤ ●
+250 ┤                                               ● 277.15s
+225 ┤
+200 ┤                                               ●
+175 ┤                                  ●
+150 ┤
 125 ┤                       ●
-100 ┤                       ●
- 75 ┤                       ●
- 50 ┤                       ●
- 25 ┤                       ●
-  0 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
-     S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24
+100 ┤
+ 75 ┤
+ 50 ┤
+ 25 ┤
+  0 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
+     S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18
 
 Tasa de Éxito (%):
-100 ┤                         ●
- 98 ┤                         ●
- 96 ┤             ●
- 94 ┤             ●
- 92 ┤       ●
- 90 ┤       ●
- 88 ┤   ●
- 86 ┤   ●
- 84 ┤ ●
- 82 ┤ ●
- 80 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
-     S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24
+100 ┤                                               ● 100%
+ 98 ┤                                  ●
+ 96 ┤                       ●
+ 94 ┤
+ 92 ┤            ●
+ 90 ┤      ●
+ 88 ┤
+  0 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
+     S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18
 
 Throughput (alertas/hora):
-150 ┤                                         ●
-125 ┤                                         ●
-100 ┤                           ●
- 75 ┤                           ●
- 50 ┤               ●
- 25 ┤               ●
-  0 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
-     S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S22 S23 S24
+125 ┤                                               ●
+100 ┤                                  ●
+ 75 ┤                       ●
+ 50 ┤            ●
+ 25 ┤
+  0 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
+     S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18
 
-Hitos importantes:
-• Semana 4: Implementación básica completada
-• Semana 8: Optimización de rendimiento
-• Semana 12: Mejoras de seguridad implementadas
-• Semana 16: Validación experimental completa
-• Semana 20: Documentación finalizada
-• Semana 24: Preparación para defensa
+Hitos importantes (4 fases):
+• S1-S3: Investigación + Diseño (estado del arte, IaC, arquitectura)
+• S4-S11: Desarrollo (integración Cortex, stack monitoreo, playbook)
+• S12-S15: Pruebas (suite 2041 tests, experimento n=50)
+• S16-S18: Optimización (documentación, defensa)
 ```
 
-La progresión temporal de las métricas clave del proyecto durante las 24 semanas de desarrollo,
-incluyendo MTTR, tasa de éxito y throughput. La visualización revela mejoras progresivas en todas las métricas a medida
-que se implementan las fases del proyecto. Los hitos importantes marcados (implementación básica completada en semana 4,
-optimización de rendimiento en semana 8, mejoras de seguridad en semana 12, validación experimental en semana 16,
-documentación finalizada en semana 20) corresponden con mejoras medibles en las métricas. Esta progresión muestra el
-proceso iterativo de mejora, elevando el sistema desde un prototipo inicial hasta una solución apta para producción.
+La progresión temporal de las métricas clave del proyecto durante las 18 semanas de desarrollo
+(27 abril - 31 agosto 2026), incluyendo MTTR, tasa de éxito y throughput. La estimación inicial fue
+de 12 semanas, aumentada a 15 tras la fase de diseño (integración de Cortex y stack de monitoreo no
+contemplados inicialmente), y finalmente 18 por la ampliación de la suite de tests (2041 tests) y la
+ejecución del experimento (n=50). Las métricas solo se midieron en la fase de pruebas (S12-S15); las
+semanas anteriores muestran valores estimados/progresivos.
 
 ### Gráfico 5.4: Análisis de Mejoras por Categoría
 
@@ -240,12 +237,13 @@ Los valores mostrados en los gráficos se han calculado usando estos métodos pr
 - MTTR median (p50): 193.19 seconds
 - MTTR p90: 621.83 seconds
 - MTTR p95: 644.46 seconds
-- MTTR min: 65.83 seconds
-- Std Dev: 187.61 seconds
-- Score promedio: 96.2/100 (min=55, max=100)
+- MTTR min: 65.38 seconds
+- MTTR max: 652.92 seconds
+- Std Dev: 187.61 seconds (CV = 67.7%)
 - Tasa de contención: 92.0% (46/50 alertas con score >= 80)
-- Tasa de falsos negativos: 8.0% (4/50 alertas con score < 80)
-- Service success rates: 100% workflow completion, 99.2% Cortex jobs
+- Tasa de observación: 8.0% (4/50 alertas con score < 80)
+- Service success rates: 100% workflow completion (50/50), 99.2% Cortex jobs (255/257)
+- Casos TheHive: 50 (46 Open, 4 Resolved)
 - Reduccion MTTR vs baseline manual (3600s): 92.3% (277.15s vs 3600s)
 
 ```
@@ -355,8 +353,8 @@ técnica proporcionada en el Anexo A y facilitan la comprensión del comportamie
 │  │                 │                 │                 │             │    │
 │  ▼                 ▼                 ▼                 ▼             ▼    │
 │  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐    │
-│  │ TheHive │   │ Cortex  │   │ Scripts │   │ APIs    │   │ Storage │    │
-│  │ Cases   │   │ Analyzers│   │ Actions │   │ External│   │ Logs    │    │
+│  │ TheHive │   │ Cortex  │   │Contain  │   │ MISP/   │   │ Loki/   │    │
+│  │ Cases   │   │Analyzers│   │(API sim)│   │ Tenzir  │   │ Grafana │    │
 │  └─────────┘   └─────────┘   └─────────┘   └─────────┘   └─────────┘    │
 │      │             │             │             │             │        │
 │      └─────────────┼─────────────┼─────────────┼─────────────┘        │
@@ -368,20 +366,20 @@ técnica proporcionada en el Anexo A y facilitan la comprensión del comportamie
 │  ┌─────────────────────────────────▼─────────────────────────────────┐    │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐   │    │
 │  │  │Elasticsearch│  │Elasticsearch │  │        Redis             │   │    │
-│  │  │   Logs      │  │   Cases     │  │       Cache              │   │    │
-│  │  │   Index     │  │   Metadata  │  │   Sessions              │   │    │
+│  │  │ soar-alerts │  │ soar-metrics │  │    IoC Cache (TTL 3600s) │   │    │
 │  │  └─────────────┘  └─────────────┘  └─────────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-El flujo completo de datos a través del sistema SOAR, desde las fuentes de datos externas (
-SIEM/XDR, EDR/Defender, Threat Intel, Usuario) hasta el almacenamiento final en Elasticsearch y Redis. La visualización
+El flujo completo de datos a través del sistema SOAR, desde las fuentes de datos externas
+(SIEM simulado, Threat Intel) hasta el almacenamiento final en Elasticsearch y Redis. La visualización
 ilustra las capas de procesamiento: recepción en Shuffle (orquestador), procesamiento mediante webhook receiver, parser
-JSON, router y workflow engine, integraciones con TheHive (gestión de casos), Cortex (analyzers), scripts de acciones,
-APIs externas y storage de logs, y finalmente almacenamiento en bases de datos especializadas. Este flujo de datos
-unificado permite el procesamiento automatizado y coordinado de alertas de ransomware, con cada componente especializado
+JSON, router y workflow engine, integraciones con TheHive (gestión de casos), Cortex (analyzers de IoCs), contención
+simulada vía API, enriquecimiento con MISP/Tenzir, observabilidad con Loki/Grafana, y finalmente almacenamiento en
+Elasticsearch (índices `soar-alerts` y `soar-metrics`) y Redis (cache de IoCs con TTL 3600s). Este flujo unificado
+permite el procesamiento automatizado y coordinado de alertas de ransomware, con cada componente especializado
 en una función específica del ciclo de respuesta.
 
 ### Diagrama 4.7: Flujo de Decisión de Playbook
@@ -434,42 +432,38 @@ en una función específica del ciclo de respuesta.
 │  └─────────┬─────────┘                                                    │
 │            │                                                              │
 │      ┌─────▼─────┐                                                        │
-│      │Alto (>0.8)│                                                        │
+│      │score ≥ 80 │                                                        │
+│      │OR malicious│                                                       │
 │      └─────┬─────┘                                                        │
 │    Sí │    │ No                                                          │
 │        ▼    ▼                                                            │
 │  ┌─────────┐ ┌─────────────────┐                                          │
-│  │Crear    │ │   Escalar        │                                          │
-│  │Caso     │ │   (Manual)       │                                          │
+│  │Contain  │ │   Mark FP       │                                          │
+│  │(POST    │ │   (TheHive      │                                          │
+│  │/api/v1/ │ │    PATCH)       │                                          │
+│  │contain) │ │                 │                                          │
 │  └─────────┘ └─────────────────┘                                          │
 │            │                                                              │
 │  ┌─────────▼─────────┐                                                    │
-│  │  EJECUTAR        │                                                    │
-│  │  CONTENCIÓN      │                                                    │
+│  │  UPDATE          │                                                    │
+│  │  INPROGRESS      │                                                    │
+│  │  (TheHive PATCH) │                                                    │
 │  └─────────┬─────────┘                                                    │
 │            │                                                              │
 │  ┌─────────▼─────────┐                                                    │
-│  │  VERIFICAR       │                                                    │
-│  │  AISLAMIENTO     │                                                    │
-│  └─────────┬─────────┘                                                    │
-│            │                                                              │
-│      ┌─────▼─────┐                                                        │
-│      │Exitoso?  │                                                        │
-│      └─────┬─────┘                                                        │
-│    Sí │    │ No                                                          │
-│        ▼    ▼                                                            │
-│  ┌─────────┐ ┌─────────────────┐                                          │
-│  │Continuar│ │   Reintentar     │                                          │
-│  │Flujo    │ │   (3 intentos)   │                                          │
-│  └─────────┘ └─────────────────┘                                          │
-│            │                                                              │
-│  ┌─────────▼─────────┐                                                    │
-│  │  NOTIFICAR       │                                                    │
-│  │  EQUIPO          │                                                    │
+│  │  NOTIFY CRITICAL │                                                    │
+│  │  (Slack webhook) │                                                    │
 │  └─────────┬─────────┘                                                    │
 │            │                                                              │
 │  ┌─────────▼─────────┐                                                    │
-│  │  CERRAR CASO     │                                                    │
+│  │  CALC MTTR       │                                                    │
+│  │  + BUILD SUMMARY │                                                    │
+│  └─────────┬─────────┘                                                    │
+│            │                                                              │
+│  ┌─────────▼─────────┐                                                    │
+│  │  ENRICH CASE     │                                                    │
+│  │  + INDEX METRICS │                                                    │
+│  │  (ES soar-metrics)│                                                   │
 │  └─────────────────┘                                                    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -478,11 +472,12 @@ en una función específica del ciclo de respuesta.
 El flujo de decisión del playbook de respuesta a ransomware, ilustrando la lógica de enrutamiento
 y ejecución automatizada. El proceso comienza con la validación del esquema JSON de la alerta recibida, seguido de la
 clasificación del tipo de alerta. Si la alerta es de tipo ransomware, se ejecuta el playbook especializado que incluye
-análisis de IoCs mediante Cortex, cálculo de score de riesgo, creación de caso en TheHive si el riesgo es alto (>0.8),
-ejecución de contención, verificación del aislamiento con reintentos hasta 3 veces si falla, notificación al equipo y
-cierre del caso. Para alertas no ransomware, se ejecuta un playbook genérico. Este flujo de decisión estructurado
-asegura que cada alerta sea procesada de manera consistente y apropiada según su tipo y nivel de riesgo, minimizando la
-necesidad de intervención manual.
+análisis de IoCs mediante Cortex, cálculo de score de riesgo (0-100), y una decisión binaria: si `score >= 80` OR
+`verdict == "malicious"`, se ejecuta la contención simulada (POST /api/v1/contain), se actualiza el caso a InProgress
+en TheHive, y se envía notificación crítica vía Slack. Si no, se marca como falso positivo. En ambos casos, se calcula
+el MTTR, se enriquece el caso con un resumen ejecutivo, y se indexan las métricas en Elasticsearch (`soar-metrics`).
+Para alertas no ransomware, se ejecuta un playbook genérico. Este flujo estructurado asegura que cada alerta sea
+procesada de manera consistente según su tipo y nivel de riesgo, sin intervención manual durante la ejecución.
 
 ## Tablas de Métricas Avanzadas
 
@@ -496,20 +491,20 @@ la validación.
 
 | Componente        | Métrica               | Manual         | SOAR           | Mejora   | Unidad       |
 |-------------------|-----------------------|----------------|----------------|----------|--------------|
-| **Recepción**     | Tiempo procesamiento  | 300s           | 105.28s        | 64.9%    | segundos     |
+| **Recepción**     | Tiempo procesamiento  | 300s           | 103.92s        | 65.4%    | segundos     |
 |                   | Throughput            | ~10            | 125            | +1150%   | alertas/hora |
 |                   | Latencia API          | N/A            | ~200           | N/A      | ms           |
-| **Análisis**      | Tiempo por IoC        | 1800s          | 2132.28s*      | N/A      | segundos     |
-|                   | Nº IoCs simultáneos   | 1              | 5              | +400%    | IoCs         |
-|                   | Score promedio        | N/A            | 96.2           | N/A      | /100         |
-| **Creación Caso** | Tiempo creación       | 600s           | 2113.12s*      | N/A      | segundos     |
+| **Análisis**      | Tiempo por IoC        | 1800s          | 2393.46s*      | N/A      | segundos     |
+|                   | Nº IoCs simultáneos   | 1              | 6              | +500%    | IoCs         |
+|                   | Jobs Cortex           | N/A            | 257 (255 ok)   | 99.2%    | jobs         |
+| **Creación Caso** | Tiempo creación       | 600s           | 2773.48s*      | N/A      | segundos     |
 |                   | Campos completados    | ~70%           | 100%           | +30pp    | %            |
 |                   | Validación datos      | ~80%           | 100%           | +20pp    | %            |
-| **Contención**    | Tiempo aislamiento    | 900s           | 345.16s        | 61.7%    | segundos     |
+| **Contención**    | Tiempo aislamiento    | 900s           | 422.00s        | 53.1%    | segundos     |
 |                   | Tasa éxito            | ~80%           | 92.0%          | +12pp    | %            |
 |                   | Reintentos requeridos | 2-3            | 0              | -100%    | intentos     |
 | **Notificación**  | Tiempo notificación   | 120s           | <1s            | >99%     | segundos     |
-|                   | Canales activos       | 1              | 1 (TheHive)    | 0%       | canales      |
+|                   | Canales activos       | 1              | 1 (Slack)      | 0%       | canales      |
 |                   | Confirmación lectura  | N/A            | 100%           | N/A      | %            |
 
 > *\* Las fases de análisis y creación de caso se ejecutan en paralelo dentro del workflow.
@@ -551,26 +546,26 @@ base para alertas y escalado automático.
 
 ### Tabla 17: Métricas de Calidad del Software
 
-| Métrica                     | Valor Objetivo | Valor Logrado | Estado | Herramienta |
-|-----------------------------|----------------|---------------|--------|-------------|
-| **Coverage de Tests**       | >80%           | N/A*          | | pytest      |
-| **Complejidad Ciclomática** | <15            | <15           | | radon       |
-| **Deuda Técnica**           | <5 días        | <5 días       | | sonarqube   |
-| **Duplicación de Código**   | <5%            | <3%           | | PMD         |
-| **Issues de Seguridad**     | 0 HIGH         | 0 HIGH        | | bandit      |
-| **Performance Score**       | >80            | N/A           | —      | lighthouse  |
-| **Accessibility Score**     | >80            | N/A           | —      | axe-core    |
-| **SEO Score**               | >80            | N/A           | —      | lighthouse  |
+| Métrica                     | Valor Objetivo | Valor Logrado   | Estado   | Herramienta  |
+|-----------------------------|----------------|-----------------|----------|--------------|
+| **Coverage de Tests**       | ≥80%           | 84.6%           | Cumplido | pytest/cov   |
+| **Complejidad Ciclomática** | <15            | 2.61 avg, 15 max| Cumplido | radon        |
+| **Issues de Seguridad**     | 0 HIGH         | 0 HIGH          | Cumplido | bandit       |
+| **Vulnerabilidades**        | 0              | 0               | Cumplido | pip-audit    |
+| **Type checking**           | 0 errors       | 0 errors        | Cumplido | mypy         |
+| **Mutation Testing**        | ≥80%           | 51.8%           | Parcial  | mutmut       |
+| **Tests totales**           | —              | 2041 (9 markers)| —        | pytest       |
+| **Quality Score**           | —              | 92.2/100        | —        | holistic     |
 
-> *\* Coverage y performance scores no aplican a este laboratorio (no es una app web pública).
-> Ver `reports/quality/quality-summary.md` para detalles de calidad del código.*
+> Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
+> Mutation testing (51.8%) por debajo del umbral ambicioso del 80% — ver §4.1.3.5.
 
-Las métricas de calidad del software que evalúan la calidad del código, mantenibilidad y cumplimiento de
-estándares. Las métricas incluyen cobertura de tests, complejidad ciclomática, deuda técnica, duplicación de código,
-issues de seguridad, performance score, accessibility score y SEO score. Todas las métricas han logrado o superado los
-objetivos establecidos, indicando un código de alta calidad y bien mantenido. El uso de herramientas automatizadas como
-pytest, radon, sonarqube, PMD, bandit y lighthouse asegura una evaluación objetiva y consistente de la calidad del
-software. Estas métricas sirven para asegurar la mantenibilidad a largo plazo del sistema y posibilitar su
+Las métricas de calidad del software evalúan el código, su mantenibilidad y el cumplimiento de
+estándares. Las métricas incluyen cobertura de tests (84.6 % con pytest/coverage.py), complejidad ciclomática
+(2.61 media, 15 máximo con radon), issues de seguridad (0 con bandit), vulnerabilidades (0 con pip-audit) y
+type checking (0 errores con mypy). La herramienta de mutation testing (mutmut) reporta 51.8 %, por debajo del
+umbral ambicioso del 80 %, indicando que quedan puntos ciegos en la suite de tests. El uso de herramientas
+automatizadas asegura una evaluación objetiva y consistente de la calidad del software y posibilita su
 desarrollo futuro.
 
 ### Tabla 18: KPIs de Negocio por Organización
@@ -620,7 +615,7 @@ Las siguientes figuras se generan automáticamente desde los resultados experime
 
 ### Dashboards de Grafana
 
-![Mejoras por categoría](figures/Fig5_2_improvements_category.png)
+![Mejoras por categoría](figures/GE5_improvements.png)
 
 **Figura 18**: Análisis de mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
 
@@ -666,9 +661,9 @@ P50 y P90 no los alcanzan en el conjunto completo.
 
 ### Dashboards Complementarios de Grafana
 
-![Tasa de éxito por tipo de alerta (Grafana)](figures/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png)
+![Distribución de decisiones del workflow](figures/decision_distribution.png)
 
-**Figura 27**: Tasa de éxito por tipo de alerta capturada desde el panel 4 de Grafana, complementaria a la Figura 17.
+**Figura 27**: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
 
 ### Análisis Estadístico Adicional
 
@@ -740,16 +735,16 @@ ANTES vs DESPUÉS - COMPARACIÓN VISUAL
 │                       DESPUÉS (SOAR)                           │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Alerta SIEM ──▶ Shuffle Webhook ──▶ 105.28s (fase recepción/triaje)         │
+│  Alerta SIEM ──▶ Shuffle Webhook ──▶ 103.92s (fase recepción/triaje)         │
 │                          │                                   │
 │                          ▼                                   │
-│  Análisis IoCs ──▶ Cortex Analyzers ──▶ 2132.28s (fase análisis)              │
+│  Análisis IoCs ──▶ Cortex Analyzers ──▶ 2393.46s (fase análisis)              │
 │                          │                                   │
 │                          ▼                                   │
-│  Creación Caso ──▶ TheHive API ──▶ 2113.12s (fase creación caso)             │
+│  Creación Caso ──▶ TheHive API ──▶ 2773.48s (fase creación caso)             │
 │                          │                                   │
 │                          ▼                                   │
-│  Contención ──▶ Shuffle Playbooks ──▶ 345.16s (fase contención)              │
+│  Contención ──▶ POST /api/v1/contain ──▶ 422.00s (fase contención)           │
 │                          │                                   │
 │                          ▼                                   │
 │  Total MTTR: 277.15 segundos (media real, n=50)                │
@@ -770,16 +765,16 @@ proyecto SOAR Ransomware Lab, desde métricas técnicas hasta análisis de negoc
 
 ## Visualizaciones de Logs
 
-El stack de observabilidad (Loki, Grafana Labs, 2024b; Promtail, Grafana Labs, 2024c; Grafana, Grafana Labs, 2024) permite visualizar logs de todos los contenedores desde Grafana (`http://localhost:8084`). Promtail etiqueta los logs por contenedor y envía cada línea a Loki, donde se consultan con LogQL. La configuración se encuentra en `infra/docker/compose/logging/logging.yaml` y en `infra/docker/compose/logging/docker-compose.logging.yml`.
+El stack de observabilidad (Loki, Grafana Labs, 2024b; Promtail, Grafana Labs, 2024c; Grafana, Grafana Labs, 2024) permite visualizar logs de todos los contenedores desde Grafana (`http://localhost:8084`). Promtail etiqueta los logs por contenedor (`container`, `service`, `compose_service`) y envía cada línea a Loki, donde se consultan con LogQL. La configuración de Promtail se encuentra en `infra/docker/config/templates/promtail-config.yml.template` y la de logging de Python en `infra/docker/compose/logging/logging.yaml`. El stack de logging se define en `infra/docker/compose/logging/docker-compose.logging.yml`.
 
 ### Ejemplo de consulta LogQL
 
 ```logql
-{container_name="soar_api"} |= "error"
+{container="soar_api"} |= "error"
 ```
 
 ### Dashboards recomendados
 
-- **Logs por servicio**: filtrar por `container_name` y `level`.
-- **Errores E2E**: `{container_name="soar_shuffle-backend"} |= "error"`.
-- **Métricas de KPI**: datasource Elasticsearch/OpenSearch con índice `soar-metrics` (`mttr_seconds`, `@timestamp`).
+- **Logs por servicio**: filtrar por `container` y `compose_service`.
+- **Errores E2E**: `{container="soar_shuffle_backend"} |= "error"`.
+- **Métricas de KPI**: datasource Elasticsearch con índice `soar-metrics` (`mttr_seconds`, `@timestamp`).
