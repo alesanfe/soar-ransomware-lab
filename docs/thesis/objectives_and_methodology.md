@@ -1,12 +1,12 @@
 # 3. Objetivos concretos y metodología de trabajo
 
-Este capítulo define qué se quiere demostrar y cómo se organiza el desarrollo. El resultado esperado es un laboratorio SOAR mínimo viable que ejecute un playbook E2E en dos escenarios y produzca métricas para la evaluación.
+Este capítulo define qué se quiere demostrar y cómo se organiza el desarrollo. El resultado esperado es un laboratorio SOAR mínimo viable que ejecute un playbook E2E en escenarios malicioso y benigno y produzca métricas para la evaluación. La presentación de resultados (§4.1.3.3) se centra en el escenario malicioso (n=50), pero el repositorio incluye el escenario benigno y 49 test cases E2E adicionales listos para ejecutar con `make test-e2e`.
 
 ## 3.1. Objetivo general
 
 Demostrar que un playbook SOAR automatizado reduce el tiempo de respuesta y mejora la consistencia y trazabilidad en la gestión de alertas de ransomware. El entorno debe ser reproducible, usar herramientas open source y generar evidencias verificables.
 
-El objetivo se alcanza cuando el laboratorio ejecuta el flujo completo en dos escenarios (malicioso y benigno), cumple los umbrales de rendimiento (reducción de MTTR ≥ 50 % respecto al baseline manual) y genera evidencias completas (logs, capturas y métricas).
+El objetivo se alcanza cuando el laboratorio ejecuta el flujo completo en los escenarios malicioso y benigno, cumple los umbrales de rendimiento (reducción de MTTR ≥ 50 % respecto al baseline manual) y genera evidencias completas (logs, capturas y métricas). La evaluación experimental presentada en este trabajo se centra en el escenario malicioso (n=50 ejecuciones); el escenario benigno y el resto de test cases están implementados y disponibles en el repositorio para ejecución con `make test-e2e`.
 
 ## 3.2. Objetivos específicos
 
@@ -22,7 +22,7 @@ Diseñar una arquitectura SOAR modular y reproducible basada en TheHive, Cortex 
 
 - **Implementación Funcional**
 
-Implementar un playbook E2E en Shuffle con integración entre TheHive, Cortex y Shuffle. Se cumple cuando hay un playbook funcional E2E en dos escenarios, una integración operativa sin intervención manual, un simulador SIEM funcional y una lógica de contención simulada operativa. El playbook está documentado en el **Anexo B** (sección B.1), los scripts en `src/soar_lab/simulator/`, `src/soar_lab/infrastructure/messaging/send_alert.py`, `src/soar_lab/application/use_cases/analytics_service.py` y los logs en `runtime/logs/`.
+Implementar un playbook E2E en Shuffle con integración entre TheHive, Cortex y Shuffle. Se cumple cuando hay un playbook funcional E2E en los escenarios malicioso y benigno, una integración operativa sin intervención manual, un simulador SIEM funcional y una lógica de contención simulada operativa. El playbook está documentado en el **Anexo B** (sección B.1), los scripts en `src/soar_lab/simulator/`, `src/soar_lab/infrastructure/messaging/send_alert.py`, `src/soar_lab/application/use_cases/analytics_service.py` y los logs en `runtime/logs/`. La evaluación presentada se centra en el escenario malicioso; el benigno está implementado y disponible en el repositorio.
 
 - **Evaluación Experimental**
 
@@ -39,7 +39,7 @@ La **Tabla 3** resume los cuatro objetivos estratégicos con sus métricas de é
 | ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
 |----------|----------------------------|------------------------|----------------|-----------------------------|
 | **TE-1** | Diseño arquitectónico SOAR | Componentes integrados | 5+ componentes | Diagramas, especificaciones |
-| **TE-2** | Implementación funcional   | Playbook E2E operativo | 2 escenarios (malicioso y benigno) | Scripts funcionales, logs   |
+| **TE-2** | Implementación funcional   | Playbook E2E operativo | Escenarios malicioso y benigno | Scripts funcionales, logs   |
 | **TE-3** | Validación experimental    | Reducción MTTR         | ≥50%           | Resultados estadísticos     |
 | **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
 
@@ -128,12 +128,12 @@ Shuffle con 46 nodos y 25 scripts Python. Integración con TheHive (gestión de 
 Desarrollo del simulador SIEM y de la lógica de contención simulada. Implementación de la API FastAPI con arquitectura hexagonal. Configuración del stack de monitoreo (Loki, Promtail, Grafana).
 
 **Fase 4 — Validación (julio-agosto 2026, 6 semanas).** Ejecución de la suite de pruebas
-completa (2041 tests). Pruebas E2E, experimentos con n=50 ejecuciones en dos escenarios (malicioso y benigno),
-análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut.
+completa (2041 tests). Pruebas E2E, experimentos con n=50 ejecuciones del escenario malicioso,
+análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut. El escenario benigno y 49 test cases E2E adicionales están implementados en el repositorio para ejecución con `make test-e2e`.
 
 El stack tecnológico combina herramientas open source para orquestación (TheHive, Cortex y Shuffle), almacenamiento (Elasticsearch, Redis, MariaDB) y monitoreo (Loki, Promtail, Grafana), todo desplegado sobre Docker Compose (Docker Inc., 2024) con Python como lenguaje de implementación. MISP se incluye como componente opcional para el intercambio de indicadores de amenazas. El desarrollo se apoya en Git, Make y pytest (pytest, 2024) para control de versiones, automatización y pruebas.
 
-El experimento compara la respuesta manual frente a la automatizada con SOAR, midiendo MTTR, tasa de éxito y uso de recursos. El entorno, el dataset y la configuración se mantienen constantes, y el orden de ejecuciones se aleatoriza para evitar sesgos. Cada escenario se repite 50 veces, totalizando 100 ejecuciones de las que se extraen los percentiles p50 y p90.
+El experimento compara la respuesta manual frente a la automatizada con SOAR, midiendo MTTR, tasa de éxito y uso de recursos. El entorno, el dataset y la configuración se mantienen constantes, y el orden de ejecuciones se aleatoriza para evitar sesgos. El escenario malicioso se repite 50 veces (n=50), de las que se extraen los percentiles p50 y p90. El escenario benigno está implementado y disponible en el repositorio para ejecuciones complementarias.
 
 El laboratorio opera de forma aislada, sin datos reales ni acceso a sistemas productivos, y los secretos se gestionan mediante variables de entorno. El diseño se alinea con el RGPD (European Union, 2018), ISO 27001 (ISO/IEC, 2022) y el NIST Cybersecurity Framework (NIST, 2024a). Los riesgos principales —fallo de integración y vulnerabilidades— se mitigan con pruebas tempranas y escaneos periódicos, reservando una holgura del 20 % en la planificación de cada fase.
 
