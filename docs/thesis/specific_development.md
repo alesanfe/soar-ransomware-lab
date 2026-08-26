@@ -450,29 +450,20 @@ graph TD
     end
 
     subgraph Fuentes
-        C1[TheHive]
-        C2[Cortex]
-        C3[Shuffle]
-        C4[Orborus]
-        C5[API]
-        C6[OpenSearch]
+        DK[Docker Socket]
+        SH[Shuffle Workflow]
     end
 
-    C1 --> P1
-    C2 --> P1
-    C3 --> P1
-    C4 --> P1
-    C5 --> P1
-    C6 --> P1
+    DK --> P1
     P1 --> L1
-    C5 --> ES
+    SH --> ES
     G1 --> L1
     G1 --> ES
     G1 --> PG
     G1 --> GR
 ```
 
-El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024) con PostgreSQL como base de datos y Grafana Renderer para exportación de paneles. Promtail recopila logs de todos los contenedores vía Docker socket y los envía a Loki. Grafana consulta Loki para logs y Elasticsearch (índice `soar-metrics`) para KPIs, usando PostgreSQL para su configuración.
+El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024) con PostgreSQL como base de datos y Grafana Renderer para exportación de paneles. Promtail descubre automáticamente todos los contenedores vía Docker socket (`docker_sd_configs`) y los envía a Loki. El workflow de Shuffle indexa métricas en Elasticsearch (índice `soar-metrics`). Grafana consulta tres datasources: Loki para logs, Elasticsearch para KPIs y la API FastAPI para datos en tiempo real, usando PostgreSQL para su configuración.
 
 El dashboard de Grafana (`SOAR KPI Dashboard`) implementa 15 paneles con las métricas reales del proyecto: MTTR (medio, P50, P90, max/min, rango), total de alertas procesadas, alertas críticas (severity=3), tasa de éxito por tipo de alerta, tasa de éxito por servicio (TheHive/Cortex/MISP), alertas por severidad, throughput por hora, evolución temporal de MTTR y comparación de MTTR por tipo de alerta. La **Tabla 7** resume las métricas con sus umbrales.
 
