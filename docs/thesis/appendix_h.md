@@ -14,11 +14,11 @@ Diagrama de componentes principales y flujo de datos del sistema SOAR.
 
 ```mermaid
 flowchart LR
-  SIEM[(SIEM/XDR)] -- Webhook/Feeder --> Shuffle
+  SIEM[(SIEM simulado)] -- Webhook/Feeder --> Shuffle
   Shuffle -- API --> TheHive
   TheHive -- Observables --> Cortex
   Cortex -- Analyzers --> TI[(Threat Intel)]
-  Shuffle -- Responder/API --> EDR[(EDR/Defender for Endpoint)]
+  Shuffle -- Contención simulada --> API[Lab API /api/v1/contain]
   TheHive <--> Elasticsearch
   Cortex <--> Redis
   Shuffle <--> OpenSearch[OpenSearch]
@@ -36,8 +36,8 @@ flowchart LR
 
 ## H.2. Arquitectura de Despliegue Docker
 
-Diagrama completo de la topología Docker: Nginx proxy, redes (soar_net, logging_net),
-y conexiones entre los 18 servicios.
+Diagrama completo de la topología Docker: Nginx proxy, redes (soar_net, ti_net,
+logging_net) y conexiones entre los 23 servicios.
 
 ```mermaid
 graph TD
@@ -65,10 +65,14 @@ graph TD
  LabAPI -- HTTP --> Redis[Redis :6379]
  LabAPI -- HTTP --> MISPInternal[MISP :80]
  LabAPI -- HTTP --> GrafanaInternal[Grafana :3000]
+ LabAPI -- HTTP --> OpenSearch[OpenSearch :9200]
+ LabAPI -- HTTP --> NetworkWatcher[Network Watcher :8002]
+ LabAPI -- HTTP --> Tenzir[Tenzir Node :8080]
 
  ShuffleBackend -- HTTP --> ES
  ShuffleBackend -- HTTP --> Redis
  ShuffleBackend -- HTTP --> Orborus[Orborus :5000]
+ ShuffleBackend -- HTTP --> OpenSearch
 
  TheHive -- HTTP --> ES
  TheHive -- HTTP --> Cortex
@@ -80,13 +84,23 @@ graph TD
 
  GrafanaInternal -- HTTP --> ES
  GrafanaInternal -- HTTP --> Loki[Loki :3100]
+ GrafanaInternal -- HTTP --> GrafanaDB[(GrafanaDB PostgreSQL)]
  Promtail[Promtail] --> Loki
+ GrafanaRenderer[Grafana Renderer :8081] --> GrafanaInternal
+ end
+
+ subgraph "Docker network: ti_net"
+ MISPInternal
+ MISPDB[MISP DB MariaDB :3306]
+ MISPModules[MISP Modules :6666]
  end
 
  subgraph "Docker network: logging_net"
  Promtail
  Loki
  GrafanaInternal
+ GrafanaRenderer
+ GrafanaDB
  end
 ```
 
@@ -198,11 +212,11 @@ sequenceDiagram
  Cortex-->>Backend: resultados (score/veredicto)
  Backend->>MISP: POST /events/add (IoC)
  MISP-->>Backend: eventId
- alt score >= DECISION_SCORE_THRESHOLD o veredicto malicioso
- Backend->>Backend: Acción de contención simulada
- Backend->>TheHive: PATCH /api/case (Open -> Resolved)
- else score < umbral y benigno
- Backend->>TheHive: PATCH /api/case (marcar benigno)
+ alt score >= 80 OR verdict == "malicious"
+ Backend->>Backend: POST /api/v1/contain (contención simulada)
+ Backend->>TheHive: PATCH /api/case (Open -> InProgress)
+ else score < 80 y verdict != malicious
+ Backend->>TheHive: PATCH /api/case (marcar observado)
  end
  Backend->>ES: Indexa métricas KPI (@timestamp, mttr_seconds, ...)
  API->>ES: GET /analytics/kpis/aggregated
@@ -231,16 +245,16 @@ flowchart TD
  E --> F[N5: Ejecutar analyzers Cortex]
  F --> G{N6: score ≥ 80\no verdict == malicious?}
 
- G -->|SÍ| H[N7: isolate_host.sh]
+ G -->|SÍ| H[N7: POST /api/v1/contain<br/>(contención simulada)]
  H --> I[N8: TheHive -> InProgress]
- I --> J[N9: Notificación CRITICAL]
- J --> K[N10: Registrar MTTR]
+ I --> J[N9: Notificación CRITICAL Slack]
+ J --> K[N10: Registrar MTTR + métricas ES]
  K --> Z([FIN — caso contenido])
 
  G -->|NO| H2[N7b: TheHive -> FalsePositive]
  H2 --> I2[N8b: TheHive -> Resolved]
  I2 --> J2[N9b: Notificación INFO]
- J2 --> K2[N10b: Registrar MTTR]
+ J2 --> K2[N10b: Registrar MTTR + métricas ES]
  K2 --> Z2([FIN — falso positivo resuelto])
 ```
 
@@ -271,12 +285,12 @@ sequenceDiagram
  Cortex-->>Backend: Resultados (score, verdict)
  Backend->>MISP: POST /events/add (enriquecimiento IoC)
  MISP-->>Backend: Evento creado
- Backend->>Backend: Decisión (score >= 80?)
+ Backend->>Backend: Decisión (score >= 80 OR verdict == "malicious"?)
  alt Score ≥ 80 o verdict malicioso
- Backend->>Backend: Acción de contención simulada
- Backend->>TheHive: PATCH /api/case (actualizar estado)
- else Score < 80 y verdict benigno
- Backend->>TheHive: PATCH /api/case (marcar benigno)
+ Backend->>Backend: POST /api/v1/contain (contención simulada)
+ Backend->>TheHive: PATCH /api/case (Open -> InProgress)
+ else Score < 80 y verdict != malicious
+ Backend->>TheHive: PATCH /api/case (marcar observado)
  end
  LabAPI->>Backend: GET /soar/status /metrics
 ```
@@ -295,7 +309,7 @@ sequenceDiagram
  participant Shuffle as Shuffle Orborus
  participant TheHive as TheHive
  participant Cortex as Cortex
- participant Scripts as Scripts de Contención
+ participant API as Lab API (/api/v1/contain)
  participant ES as Elasticsearch
 
  Shuffle->>TheHive: Consulta caso y observables
@@ -303,11 +317,12 @@ sequenceDiagram
  Shuffle->>Cortex: Ejecuta analyzers en IoCs
  Cortex-->>Shuffle: Resultados (score, verdict)
  alt Score ≥ 80 o verdict malicioso
- Shuffle->>Scripts: Ejecuta contención simulada
- Scripts->>ES: Notificación de aislamiento
- Shuffle->>TheHive: Marca como "contención activada"
+ Shuffle->>API: POST /api/v1/contain (simulación)
+ API-->>Shuffle: Contención confirmada
+ Shuffle->>TheHive: PATCH /api/case (InProgress)
+ Shuffle->>ES: Indexa métricas (soar-metrics)
  else Score < 80 y verdict benigno
- Shuffle->>TheHive: Marca como "benigno"
+ Shuffle->>TheHive: PATCH /api/case (Resolved/FP)
  end
  Shuffle-->>TheHive: Actualización final del caso
 ```
@@ -319,25 +334,25 @@ sequenceDiagram
 ## H.9. Cronograma de Objetivos SMART (Gantt)
 
 Diagrama Gantt del cronograma de los 20 objetivos SMART distribuidos en 4 fases
-(15 semanas totales).
+(planificación inicial 15 semanas; ejecución real 18 semanas, 27 abr - 31 ago 2026).
 
 ```mermaid
 gantt
  title Cronograma de Objetivos SMART - SOAR Ransomware Lab
  dateFormat YYYY-MM-DD
  section Fase 1: Infraestructura
- Objetivo 1: Laboratorio desplegado :active, obj1, 2025-05-01, 14d
+ Objetivo 1: Laboratorio desplegado :active, obj1, 2026-04-27, 14d
  Objetivo 8: Automatización configurada :obj8, after obj1, 7d
  Objetivo 17: API del Laboratorio :obj17, after obj8, 7d
  Objetivo 18: CLI del Laboratorio :obj18, after obj17, 5d
  section Fase 2: Desarrollo
- Objetivo 2: Playbook E2E :obj2, 2025-05-15, 21d
+ Objetivo 2: Playbook E2E :obj2, 2026-05-11, 28d
  Objetivo 5: Integración SIEM :obj5, after obj2, 7d
  Objetivo 6: Contención simulada :obj6, after obj5, 7d
  Objetivo 19: Sitio de Documentación :obj19, after obj6, 7d
  Objetivo 20: Interfaz Web de Gestión :obj20, after obj19, 7d
  section Fase 3: Validación
- Objetivo 3: Métricas MTTR :obj3, 2025-06-05, 14d
+ Objetivo 3: Métricas MTTR :obj3, 2026-06-22, 14d
  Objetivo 9: Pruebas Atómicas :obj9, after obj3, 5d
  Objetivo 10: Pruebas de Integración :obj10, after obj9, 7d
  Objetivo 11: Pruebas de Seguridad :obj11, after obj10, 5d
@@ -345,7 +360,7 @@ gantt
  Objetivo 13: Pruebas de Producción :obj13, after obj12, 3d
  Objetivo 14: KPIs y Análisis :obj14, after obj13, 7d
  section Fase 4: Cierre
- Objetivo 4: Documentación técnica :obj4, 2025-06-26, 7d
+ Objetivo 4: Documentación técnica :obj4, 2026-08-03, 7d
  Objetivo 15: Preparación defensa TFM :obj15, after obj4, 7d
  Objetivo 16: Evidencia aprobación :obj16, after obj15, 7d
 ```
@@ -370,6 +385,11 @@ Fase 3: Validación :crit, f3, after f2, 4w
 Fase 4: Cierre :crit, f4, after f3, 2w
 ```
 
+> **Nota:** La planificación inicial era de 15 semanas (4+5+4+2). La ejecución
+> real se extendió a 18 semanas (27 abr - 31 ago 2026) debido a la ampliación
+> de la suite de tests (2041 tests) y la integración de analyzers externos
+> de Cortex. Ver `objectives_and_methodology.md` para el cronograma real.
+
 **Fuente**: `docs/06-project-management.md` línea 861
 
 ---
@@ -380,15 +400,15 @@ Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e i
 
 ```mermaid
 graph TD
- A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V Si) & R2(Recursos RAM Parcial) & R11(LaLiga/Cloudflare Parcial)
- B[Alta Prob / Bajo Impacto] --> R6(MISP arranque lento Si)
+ A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V Sí) & R2(Recursos RAM Parcial) & R11(LaLiga/Cloudflare Parcial)
+ B[Alta Prob / Bajo Impacto] --> R6(MISP arranque lento Sí)
  C[Media Prob / Alto Impacto] --> R3(Analyzers timeout Parcial) & R4(Integración tokens Parcial) & R7(Umbrales MTTR Parcial) & R12(API no disponible Parcial) & R13(Certificados SSL Parcial) & R16(CI/CD failures Parcial)
- D[Media Prob / Medio Impacto] --> R5(ES compat Si) & R8(APIs externas Parcial) & R14(Validación esquemas Parcial) & R15(Cobertura pruebas Parcial) & R19(Web-management UX Parcial) & R20(Analytics fallan Parcial)
+ D[Media Prob / Medio Impacto] --> R5(ES compat Sí) & R8(APIs externas Parcial) & R14(Validación esquemas Parcial) & R15(Cobertura pruebas Parcial) & R19(Web-management UX Parcial) & R20(Analytics fallan Parcial)
  E[Baja Prob / Alto Impacto] --> R9(Pérdida config Parcial)
- F[Baja Prob / Medio Impacto] --> R10(Deriva alcance Si) & R17(CLI inusable Parcial) & R18(Docs-site desactualizado Parcial)
+ F[Baja Prob / Medio Impacto] --> R10(Deriva alcance Sí) & R17(CLI inusable Parcial) & R18(Docs-site desactualizado Parcial)
 ```
 
-**Leyenda**: Si Mitigado · Parcial En seguimiento
+**Leyenda**: Sí Mitigado · Parcial En seguimiento
 
 **Fuente**: `docs/06-project-management.md` línea 1390
 
@@ -433,13 +453,13 @@ Cortex, MISP, TheHive y Elasticsearch.
 ```mermaid
 graph LR
  A[Webhook Shuffle] --> B[Workflow SOAR]
- B --> C[Cortex: análisis hash/URL/IP]
+ B --> C[Cortex: análisis hash/IP]
  B --> D[MISP: búsqueda IoCs]
  B --> E[TheHive: caso + observables]
  B --> F[Elasticsearch: indexación]
- C --> G[Enriquecimiento VT/Robtex]
+ C --> G[Analyzers: Hashdd, Virusshare,<br/>DShield, Mnemonic pDNS,<br/>IP-API, GoogleDNS]
  D --> H[Correlación amenazas]
- E --> I[Tareas IR: aislar, bloquear, preservar]
+ E --> I[Tareas IR: contener, notificar, preservar]
  style A fill:#2196F3
  style E fill:#4CAF50
  style I fill:#ff6b6b
