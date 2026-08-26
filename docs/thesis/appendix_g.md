@@ -45,7 +45,7 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | performance | 4 | 30 | 1.5% |
 | general | 2 | 20 | 1.0% |
 | architecture | 1 | 1 | 0.05% |
-| **Total** | **170** | **2041** | 100% |
+| **Total** | **184** | **2041** | 100% |
 
 ### I.2.3. Distribución por Capa (Pirámide)
 
@@ -110,19 +110,26 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 
 ## I.4. Marcadores de pytest
 
-El proyecto usa 9 marcadores para clasificar tests:
+El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests/conftest.py`) más marcadores extras para E2E:
 
-| Marcador | Descripción | Requiere |
-|----------|-------------|----------|
-| `@pytest.mark.unit` | Tests unitarios | Sin dependencias externas |
-| `@pytest.mark.integration` | Tests de integración | Servicios externos |
-| `@pytest.mark.e2e` | Tests end-to-end | Stack completo |
-| `@pytest.mark.performance` | Tests de rendimiento | Stack + medición temporal |
-| `@pytest.mark.security` | Tests de seguridad | Stack + bandit/pip-audit |
-| `@pytest.mark.live` | Tests con servicios en vivo | Servicios running |
-| `@pytest.mark.offline` | Tests sin servicios externos | Solo Python |
-| `@pytest.mark.smoke` | Smoke tests | Stack rápido |
-| `@pytest.mark.regression` | Tests de regresión | Variable |
+| Marcador | Descripción | Auto-aplicado a |
+|----------|-------------|-----------------|
+| `@pytest.mark.unit` | Tests unitarios | `tests/unit/` |
+| `@pytest.mark.integration` | Tests de integración | `tests/integration/` |
+| `@pytest.mark.e2e` | Tests end-to-end | `tests/e2e/` |
+| `@pytest.mark.performance` | Tests de rendimiento | `tests/performance/` |
+| `@pytest.mark.security` | Tests de seguridad | `tests/security/` |
+| `@pytest.mark.atomic` | Tests atómicos | `tests/atomic/` |
+| `@pytest.mark.quality` | Tests de calidad | `tests/general/`, `tests/quality/` |
+| `@pytest.mark.architecture` | Tests de arquitectura | `tests/architecture/` |
+| `@pytest.mark.requires_docker` | Requiere Docker | E2E (extra) |
+| `@pytest.mark.requires_external` | Requiere servicios externos | E2E (extra) |
+| `@pytest.mark.slow` | Tests lentos | E2E, performance (extra) |
+
+> Los marcadores se aplican automáticamente según el directorio del test
+> (`pytest_collection_modifyitems` en `conftest.py`), sin necesidad de
+> anotar cada archivo. Adicionalmente, `test_smoke.py` usa sub-marcadores
+> `smoke_critical`, `smoke_high`, `smoke_medium`.
 
 ---
 
@@ -160,7 +167,7 @@ El proyecto usa 9 marcadores para clasificar tests:
 | `test_mttr_percentiles` | TC-KPI-02 | 208 |
 | `test_concurrent_alerts` | TC-05 | 172 |
 | `test_golden_thread_integrity` | TC-32 | 152 |
-| `test_ioc_analysis_time` | TC-32 | 143 |
+| `test_ioc_analysis_time` | TC-33 | 143 |
 | `test_critical_severity` | TC-06 | 138 |
 | `test_node_timings` | TC-KPI-05 | 132 |
 | `test_polymorphic_behavior` | TC-25 | 131 |
@@ -259,9 +266,9 @@ Total de tests largos: **169** (8.3% del total)
 
 | Tipo | Umbral | Actual |
 |------|--------|--------|
-| Coverage general | 70% | 84.6% Si |
-| Funciones críticas | 80% | Si |
-| Funciones de seguridad | 90% | Si |
+| Coverage general | 80% | 84.6% Sí |
+| Funciones críticas | 80% | Sí |
+| Funciones de seguridad | 90% | Sí |
 | Mutation testing (general) | 70% | 51.8% Parcial |
 | Mutation testing (críticas) | 80% | Pendiente |
 
@@ -394,11 +401,11 @@ make holistic-review    # radar 15 dimensiones
 | Categoría | Python | Docker | .env.full | Stack Up | Shuffle Init |
 |-----------|--------|--------|-----------|----------|--------------|
 | Unit/Atomic | 3.11+ | No | placeholders | No | No |
-| Integration | 3.11+ | Si | real creds | Si | Si |
-| E2E | 3.11+ | Si | real creds | Si | Si |
-| Performance | 3.11+ | Si | real creds | Si | Si |
-| Security | 3.11+ | Si | real creds | Si | No |
-| Smoke | 3.11+ | Si | real creds | Si | Si |
+| Integration | 3.11+ | Sí | real creds | Sí | Sí |
+| E2E | 3.11+ | Sí | real creds | Sí | Sí |
+| Performance | 3.11+ | Sí | real creds | Sí | Sí |
+| Security | 3.11+ | Sí | real creds | Sí | No |
+| Smoke | 3.11+ | Sí | real creds | Sí | Sí |
 
 ---
 
@@ -455,13 +462,13 @@ make holistic-review    # radar 15 dimensiones
 | Quality Score global | 92.2/100 | Excellent |
 | Holistic Project Radar | 96.0/100 | Excellent |
 | Test Review | 92.2/100 | Excellent |
-| Coverage de líneas | 84.6% | Si (>80%) |
+| Coverage de líneas | 84.6% | Sí (>80%) |
 | Pirámide de tests | 94.3/100 | Excellent |
 | Salud de tests | 99.9/100 | Excellent |
 | Aislamiento | 97.5/100 | Excellent |
-| Seguridad (bandit) | 0 issues | Si Clean |
-| Linting (ruff) | 0 issues | Si Clean |
-| Tipado (mypy) | 0 errors | Si Clean |
+| Seguridad (bandit) | 0 issues | Sí Clean |
+| Linting (ruff) | 0 issues | Sí Clean |
+| Tipado (mypy) | 0 errors | Sí Clean |
 | Complejidad | 98.6/100 | Excellent |
 | Docstrings | 94.6% | Excellent |
 | Mutation testing | 51.8% | Parcial High risk |
