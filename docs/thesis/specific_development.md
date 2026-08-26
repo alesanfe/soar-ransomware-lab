@@ -579,11 +579,11 @@ Las métricas siguientes son específicas del sistema SOAR automatizado, sin equ
 
 La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025). El tiempo mínimo fue 65.38 s.
 
-La **Figura 7** desglosa los tiempos medios por componente del workflow. Se aprecia que la creación de caso (2773.48 s) y el análisis de IoCs (2393.46 s) dominan el tiempo acumulado, mientras que la contención (422.0 s) y el triaje (103.92 s) son relativamente rápidos. La **Tabla 9** detalla estas fases:
+La **Figura 7** muestra las tasas de éxito por tipo de alerta, donde se aprecia que el sistema mantiene 100 % de éxito en todos los tipos procesados (ransomware, RAT, troyano, infostealer). La **Tabla 9** detalla los tiempos por fase del workflow:
 
-![Figura 7: Tiempos por componente del workflow](figures/mttr_by_phase.png)
+![Figura 7: Tasas de éxito por tipo de alerta](figures/GE3_success_rates.png)
 
-**Figura 7**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso, contención y cierre).
+**Figura 7**: Tasas de éxito por tipo de alerta durante las 50 ejecuciones E2E, mostrando 100 % de éxito en todos los tipos procesados.
 
 ## Tabla 9: Análisis por Componente de Tiempo
 
@@ -595,11 +595,11 @@ La **Figura 7** desglosa los tiempos medios por componente del workflow. Se apre
 | **Contención**         | 422.0s      | 7.4%        |
 | **MTTR medio (wall-clock)** | 277.15s | —      |
 
-Los tiempos por fase son acumulativos con solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Esto identifica oportunidades de mejora en caché de resultados y ejecución concurrente de analyzers. La **Figura 8** muestra la distribución de percentiles MTTR capturada desde Grafana, donde se observa una cola larga: mientras el P50 se sitúa en 193.19 s, el P90 escala a 621.83 s y el P95 a 644.46 s, reflejando la variabilidad introducida por los analyzers de Cortex con tiempos de respuesta heterogéneos.
+Los tiempos por fase son acumulativos con solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Esto identifica oportunidades de mejora en caché de resultados y ejecución concurrente de analyzers. La **Figura 8** muestra el cumplimiento de los umbrales definidos frente a los valores medidos: el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles P50 (193.19 s) y P90 (621.83 s) no alcanzan los objetivos (≤ 120 s y ≤ 180 s), reflejando la cola larga introducida por los analyzers de Cortex con tiempos de respuesta heterogéneos.
 
-![Figura 8: Análisis de percentiles MTTR](figures/GE2_percentiles.png)
+![Figura 8: Cumplimiento de umbrales](figures/threshold_compliance.png)
 
-**Figura 8**: Distribución de percentiles MTTR (P50, P75, P90, P95) del experimento con n=50 ejecuciones.
+**Figura 8**: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los valores medidos.
 
 El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 9** muestra esta distribución de decisiones, donde se aprecia que ninguna alerta fue clasificada como *benign*: el motor de scoring asignó score >= 80 al 92 % de las alertas, activando contención en 46/50 casos. Los 4 casos restantes (score < 80) se marcaron como *observe*, constituyendo falsos negativos (8.0 %), mejorando el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring fue del 92.0 %.
 
@@ -663,8 +663,8 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 | Figura 4 | Diagrama de Despliegue Docker Compose          | Anexo H (H.3)                              |
 | Figura 5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
 | Figura 6 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
-| Figura 7 | Tiempos por componente del workflow            | `figures/mttr_by_phase.png`                |
-| Figura 8 | Análisis de percentiles MTTR                   | `figures/GE2_percentiles.png`              |
+| Figura 7 | Tasas de éxito por tipo de alerta              | `figures/GE3_success_rates.png`            |
+| Figura 8 | Cumplimiento de umbrales                       | `figures/threshold_compliance.png`         |
 | Figura 9 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
 | Figura 10 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
 
