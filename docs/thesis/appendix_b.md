@@ -165,15 +165,16 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
                  ┌────────▼────────┐                    ┌─────────▼─────────┐
                  │ CONTAINMENT     │                    │ MARK FALSE        │
                  │ (Python)        │                    │ POSITIVE          │
-                 │ EDR + Firewall  │                    │ (Python)          │
-                 │ simulation      │                    │ TheHive PATCH     │
+                 │ Lab API         │                    │ (Python)          │
+                 │ POST /api/v1/   │                    │ TheHive PATCH     │
+                 │  contain        │                    │ Resolved/FP       │
                  └────────┬────────┘                    └─────────┬─────────┘
                           │                                       │
                  ┌────────▼────────┐                    ┌─────────▼─────────┐
                  │ UPDATE          │                    │ NOTIFY INFO       │
                  │ INPROGRESS      │                    │ (Python)          │
                  │ (Python)        │                    │ Slack webhook     │
-                 │ TheHive PATCH   │                    └─────────┬─────────┘
+                 │ Case stays Open │                    └─────────┬─────────┘
                  └────────┬────────┘                              │
                           │                                       │
                  ┌────────▼────────┐                              │
@@ -232,7 +233,7 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 | `act_thehive_obs_hash` | Observable Hash | HTTP POST | `POST /api/case/{id}/artifact` — registra hash como IoC |
 | `act_thehive_obs_ip` | Observable IP | HTTP POST | `POST /api/case/{id}/artifact` — registra IP como IoC |
 | `act_enrich_case` | Enrich Case | HTTP PATCH | `PATCH /api/case/{id}` — actualiza descripción con resumen y tags |
-| `act_update_inprogress` | Update InProgress | Python | Marca caso como "InProgress" en TheHive (vía HTTP PATCH) |
+| `act_update_inprogress` | Update InProgress | Python | Confirma que el caso permanece `Open` durante la contención (TheHive 3.5.2 solo soporta Open/Resolved/Deleted; no se hace PATCH) |
 | `act_mark_false_positive` | Mark FP | Python | Marca caso como falso positivo en TheHive (vía HTTP PATCH) |
 
 ### B.3.3. Nodos de Verificación (Python)
@@ -256,15 +257,19 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 | ID | Nombre | Analyzer | Tipo | Descripción |
 |----|--------|----------|------|-------------|
 | `act_cortex_hash` | Cortex Hash | Hashdd_Status | HTTP POST | Analiza hash del proceso |
-| `act_cortex_hash_virusshare` | Virusshare | Virusshare_2_0 | HTTP POST | Busca hash en Virusshare |
 | `act_cortex_ip` | Cortex IP | IP-API | HTTP POST | Geolocaliza IP source |
 | `act_cortex_ip_dshield` | DShield | DShield_lookup | HTTP POST | Reputa IP en DShield |
 | `act_cortex_ip_mnemonic_pdns` | Mnemonic pDNS | Mnemonic_pDNS_Public | HTTP POST | Passive DNS lookup |
 | `act_cortex_ip_googledns` | GoogleDNS | GoogleDNS_resolve | HTTP POST | DNS resolution |
 | `act_cortex_ip_ipapi` | IP-API (sec) | IP-API | HTTP POST | Info adicional de IP |
 
-> **Nota**: Los analyzers secundarios se incluyen dinámicamente solo si están instalados
-> en Cortex. El workflow detecta automáticamente qué analyzers están disponibles.
+> **Nota**: Los analyzers secundarios (DShield, Mnemonic pDNS, GoogleDNS, IP-API secundario)
+> se incluyen dinámicamente solo si están instalados en Cortex. El workflow detecta
+> automáticamente qué analyzers están disponibles. Adicionalmente, cualquier analyzer
+> instalado no listado arriba se cablea dinámicamente como `act_cortex_dyn_*` (ej.
+> `DomainMailSPFDMARC_1_2` para análisis de dominios SPF/DMARC, 12 jobs en la ejecución
+> experimental). `Virusshare_2_0` está en `_SKIP_DYNAMIC_NAMES` (fallo persistente) y no
+> se cablea.
 
 ### B.3.5. Nodos de MISP (Threat Intelligence)
 
@@ -288,7 +293,7 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 | ID | Nombre | Tipo | Descripción |
 |----|--------|------|-------------|
 | `act_calc_decision` | Calc Decision | Python | **Núcleo del workflow**: calcula score (0-100) y verdict |
-| `act_containment` | Containment | Python | Simula contención EDR + bloqueo firewall |
+| `act_containment` | Containment | Python | Contención vía Lab API (`POST /api/v1/contain` al servicio `api:8000`) |
 | `act_notify_critical` | Notify Critical | Python | Envía notificación crítica (Slack webhook) |
 | `act_notify_info` | Notify Info | Python | Envía notificación informativa (Slack webhook) |
 
@@ -318,18 +323,19 @@ El nodo `calc_decision` es el núcleo del workflow. Calcula un score de 0 a 100 
 | **MISP IoCs** | +15 si hay matches | Suma fija si MISP encuentra coincidencias |
 | **Webhook confidence** | base score | Confianza declarada por el SIEM en la alerta |
 | **Severidad** | 1->20, 2->40, 3->60 | Mapeo directo de severidad (Low/Medium/High) |
-| **Tipo de alerta** | ransomware +25, otros +15 | Bonus para alertas de ransomware |
+| **Tipo de alerta** | ransomware +25, malware/phishing/intrusion +15 | Bonus según tipo de alerta |
+| **Event type** | +10 si contiene "ransomware" | Bonus adicional para eventos de ransomware |
 | **MITRE high-risk** | +10 por técnica | Técnicas de alto riesgo (T1486, T1485, T1490, etc.) |
 | **Tenzir** | +5 a +25 | Patrones de red sospechosos |
 | **Network Watcher** | +5 a +20 | Conexiones sospechosas detectadas |
-| **Loki** | +10 a +30 | Indicadores de ransomware en logs |
+| **Loki** | +3 a +30 | Indicadores de ransomware en logs (fórmula: `min(30, matches*3 + critical*10)`) |
 
 ### B.4.2. Umbral de Decisión
 
 | Condición | Verdict | Decision | Acción |
 |-----------|---------|----------|--------|
-| `score ≥ 80` OR `verdict == "malicious"` | malicious | **contain** | Contención EDR + firewall, caso -> InProgress, notify critical |
-| `score < 80` AND `verdict != "malicious"` | suspicious/safe | **observe** | Marcar como falso positivo, caso -> cerrado, notify info |
+| `score ≥ 80` OR `verdict == "malicious"` | malicious | **contain** | Contención vía Lab API (`POST /api/v1/contain`), caso permanece `Open`, notify critical |
+| `score < 80` AND `verdict != "malicious"` | suspicious/safe | **observe** | Marcar caso como `Resolved`/`FalsePositive` en TheHive, notify info |
 
 > **Nota**: La condición de contención es `score >= 80 OR verdict == "malicious"`, no solo `score >= 80`.
 > Esto permite que un verdict "malicious" de Cortex (independientemente del score) dispare contención.
@@ -384,11 +390,11 @@ El workflow tiene **60 ramas** que conectan los nodos. Las principales son:
 | Origen | Destino | Descripción |
 |--------|---------|-------------|
 | Todas las verificaciones | act_calc_decision | Convergencia: todas las señales -> decisión |
-| act_calc_decision | act_containment | Decisión -> contención (score ≥ 80) |
-| act_calc_decision | act_mark_false_positive | Decisión -> falso positivo (score < 80) |
-| act_containment | act_update_inprogress | Contención -> actualizar caso |
-| act_update_inprogress | act_notify_critical | Actualización -> notificación crítica |
-| act_mark_false_positive | act_notify_info | FP -> notificación informativa |
+| act_calc_decision | act_containment | Decisión -> contención (score ≥ 80 OR verdict=malicious) |
+| act_calc_decision | act_mark_false_positive | Decisión -> falso positivo (score < 80 AND verdict≠malicious) |
+| act_containment | act_update_inprogress | Contención -> caso permanece Open |
+| act_update_inprogress | act_notify_critical | Confirmación Open -> notificación crítica |
+| act_mark_false_positive | act_notify_info | FP (Resolved/FalsePositive) -> notificación informativa |
 
 ### B.5.3. Flujo de Cierre
 
@@ -432,9 +438,9 @@ Cada script vive como archivo `.py` independiente en `scripts/setup/shuffle_work
 | `verify_loki.py` | Procesa logs Loki |
 | `build_es_json.py` | Construye documento ES para alerta |
 | `calc_decision.py` | **Núcleo**: calcula score y verdict |
-| `containment.py` | Simula contención EDR + firewall |
+| `containment.py` | Contención vía Lab API (`POST /api/v1/contain`) |
 | `mark_false_positive.py` | Marca caso como FP en TheHive |
-| `update_inprogress.py` | Actualiza caso a InProgress |
+| `update_inprogress.py` | Confirma caso permanece Open (sin PATCH) |
 | `notify_critical.py` | Notificación crítica (Slack) |
 | `notify_info.py` | Notificación informativa (Slack) |
 | `calc_mttr.py` | Calcula MTTR total |
@@ -451,8 +457,9 @@ El workflow está diseñado para ser idempotente:
   por `alert_id` antes de crear uno nuevo
 - **Elasticsearch**: usa `alert_id` como `_doc` ID en `soar-alerts` y `soar-metrics`,
   evitando duplicados en reintentos
-- **Cortex**: los jobs se identifican por `(analyzer_id, data, alert_id)`, permitiendo
-  re-ejecución sin duplicar análisis
+- **Cortex**: los jobs no son idempotentes nativamente (cada `POST /api/analyzer/{id}/run`
+  crea un job nuevo). Los scripts `verify_cortex_*.py` toleran re-ejecuciones procesando
+  solo el job más reciente y manejando errores gracefully
 - **MISP**: el evento se crea con `info: "SOAR alert {alert_id}"`, permitiendo
   búsqueda previa antes de crear
 
