@@ -221,20 +221,6 @@ graph TD     subgraph Capa de Datos         DB1[Elasticsearch]
 En la capa de datos se encuentran Elasticsearch (Elastic, 2024; Elastic, n.d.) y Redis (Redis Ltd., 2024). Sobre ella se apoya la capa de aplicación SOAR, formada por TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (frontend y backend) (Shuffle Tools, 2024; Shuffle Tools, n.d.) y Orborus. Este último es el ejecutor de workflows de Shuffle: se conecta al backend y a Elasticsearch, y accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores.
 La integración se resuelve con Nginx (Nginx, 2024; Nginx, n.d.), la API FastAPI (FastAPI, 2024) y el sitio de documentación. El monitoreo se compone de Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) y PostgreSQL.
 
-Relaciones entre componentes:
-
-- TheHive y Cortex dependen de Elasticsearch para almacenar casos, alertas y resultados de análisis.
-- Shuffle Backend depende de Elasticsearch para almacenar workflows y ejecuciones, y de Redis para gestión de colas y
-  caché.
-- Shuffle Frontend depende de Shuffle Backend para la API de orquestación.
-- Orborus depende de Shuffle Backend para obtener workflows a ejecutar, de Elasticsearch para almacenar resultados de
-  ejecución, y del socket de Docker para lanzar contenedores de workers.
-- Nginx actúa como proxy inverso para TheHive, Cortex y Shuffle Frontend, proporcionando un punto de entrada unificado.
-- La API FastAPI se conecta a TheHive, Cortex y Shuffle Backend para combinar sus funcionalidades.
-- Promtail recopila logs de todos los contenedores de aplicación para enviarlos a Loki.
-
-La composición modular mediante múltiples archivos Docker Compose permite desplegar diferentes configuraciones según las necesidades del entorno, desde configuraciones mínimas de desarrollo hasta despliegues completos.
-
 #### Componentes Principales
 
 ```mermaid
@@ -294,10 +280,7 @@ Cortex (v3.2.0) ejecuta el análisis de IoCs en entornos aislados (Cortex Projec
 | **GoogleDNS**         | Domain   | 1-3s             | No      | Resolución DNS      |
 | **Mnemonic pDNS**     | Domain/IP| 3-8s             | No      | Passive DNS         |
 
-Los analyzers Cortex configurados ofrecen capacidades de análisis de IoCs para diferentes indicadores (archivos, IPs,
-dominios, hashes). La selección prioriza analyzers libres sin API key para mantener la solución accesible, alineándose
-con el requisito RF-02. Los tiempos de respuesta varían desde 1-3s para resolución DNS hasta 5-10s para enriquecimiento
-OTX. Todos los analyzers están integrados en el playbook de respuesta, enriqueciendo automáticamente cada IoC detectado.
+La selección prioriza analyzers libres sin API key para mantener la solución accesible, alineándose con el requisito RF-02. Todos los analyzers están integrados en el playbook de respuesta, enriqueciendo automáticamente cada IoC detectado.
 
 Shuffle (v2.2.1) orquesta los flujos mediante una interfaz visual de bloques, sin necesidad de escribir código (Shuffle Tools, 2024). Orborus ejecuta los workflows en paralelo entre varios workers y gestiona reintentos automáticos ante fallos. La ejecución condicional y la programación de tareas permiten adaptar el flujo según el contexto del incidente.
 
@@ -448,12 +431,7 @@ Los volúmenes usan enlaces al directorio runtime, con subdirectorios por servic
 | **Orborus**          | 1.0 cores  | 2GB            | 0.5 cores   | 1GB             | Cada 15s   |
 | **Nginx**            | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
 
-Los límites y reservas de CPU y memoria para cada servicio aseguran uso ajustado de recursos. Los servicios críticos
-como Elasticsearch, TheHive, Cortex y Shuffle Backend tienen asignaciones más generosas (2.0 cores CPU, 4GB memoria)
-para manejar cargas de trabajo intensivas, mientras que servicios de soporte como Nginx tienen asignaciones más
-modestas. Los health checks implementados cada 15-30 segundos aseguran la detección temprana de fallos y la recuperación
-automática. Esta configuración permite el despliegue en sistemas con 16GB+ RAM, haciendo el laboratorio accesible para
-organizaciones con recursos moderados.
+Esta configuración permite el despliegue en sistemas con 16GB+ RAM, haciendo el laboratorio accesible para organizaciones con recursos moderados.
 
 #### Sistema de Monitoreo
 
@@ -518,13 +496,7 @@ Las métricas monitoreadas incluyen el tiempo de respuesta de las APIs para dete
 | **Errores**        | Error Rate   | >5%           | 1min       | Aplicación |
 | **Negocio**        | Success Rate | <95%          | 5min       | Principal  |
 
-Las métricas de monitoreo implementadas ofrecen visibilidad sobre el rendimiento, disponibilidad, uso de recursos y
-errores del sistema. Las métricas como MTTR y throughput se monitorean en tiempo real para detectar degradaciones
-inmediatamente, mientras que métricas de disponibilidad y recursos se monitorean cada 30s a 1min. Los umbrales de alerta
-se configuran para activarse antes de que los problemas afecten la operación crítica. Todas las métricas están
-disponibles en dashboards de Grafana, ofreciendo visualización en tiempo real para operadores.
-
-El arranque del stack de monitoreo se realiza con el comando de Docker Compose correspondiente. La interfaz de visualización está disponible con credenciales configuradas en el archivo de entorno.
+El stack se inicia con `make up` y la interfaz de Grafana está disponible con credenciales configuradas en el archivo de entorno.
 
 ### 4.1.3. Evaluación
 
@@ -551,10 +523,7 @@ Comandos de ejecución:
 - `pytest tests/e2e/TC-03/test_edge_cases.py -v` (casos de borde E2E)
 - `pytest tests/integration/test_app_e2e.py -v` (flujo E2E completo)
 
-La suite de pruebas completa incluye tests unitarios, de integración, E2E, atómicos, de seguridad y de rendimiento. Los scripts de automatización se encuentran en `scripts/setup/`.
-- `make metrics` para calcular KPIs desde los logs
-
-El Makefile automatiza el despliegue, las pruebas y la generación de métricas. Los resultados experimentales y KPIs calculados se almacenan en `reports/e2e/`.
+El Makefile automatiza el despliegue, las pruebas y la generación de métricas (`make metrics` para KPIs). Los resultados experimentales se almacenan en `reports/e2e/`.
 
 #### 4.1.3.3. Resultados Experimentales
 
@@ -590,20 +559,7 @@ La **Tabla 8** presenta los resultados experimentales detallados del experimento
 | **Falsos Positivos**    | N/A               | 8.0%         | N/A       |
 | **Recursos (mem pico)** | N/A               | 2.58 GiB     | N/A       |
 
-Los resultados experimentales detallados evidencian la superioridad de la respuesta
-automatizada frente a la respuesta manual. La reducción del 92.3% en MTTR promedio (3600s a 277.15s)
-supone una mejora sustancial en la capacidad de respuesta. La tasa de éxito del 100% (50/50 workflows completados)
-y la tasa de contención del 92.0% (46/50 alertas con score >= 80) indican que la automatización
-no sacrifica calidad por velocidad. El score promedio de 96.2/100 indica que el motor de scoring
-basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025) funciona correctamente.
-
-![Figura 6: Resultados de MTTR](figures/Fig5_1_mttr_results.png)
-
-**Figura 6**: Resultados de MTTR comparando respuesta manual (3600 s) y automatizada (277.15 s medio), con
-distribución de percentiles P50, P90 y P95.
-
-**MTTR detallado.** El MTTR medio fue de 277.15 s frente a los 3600 s de la condición manual, lo que supone una
-reducción del 92.3 %. La mediana (P50) se situó en 193.19 s y el percentil 90 en 621.83 s, con desviación estándar de 187.61 s. El tiempo mínimo registrado fue 65.38 s. La **Figura 7** muestra la distribución de tiempos por fase del workflow.
+Los resultados evidencian la superioridad de la respuesta automatizada frente a la manual. La tasa de éxito del 100 % (50/50 workflows completados) y la tasa de contención del 92.0 % (46/50 alertas con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma que el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025) funciona correctamente. El tiempo mínimo registrado fue 65.38 s. La **Figura 7** muestra la distribución de tiempos por fase del workflow.
 
 ![Figura 7: Tiempos por componente del workflow](figures/GE1_component_timings.png)
 
@@ -622,21 +578,13 @@ El análisis por componente de tiempo se detalla en la **Tabla 9**, que desglosa
 | **Contención**         | N/A    | 422.0s  | N/A                | N/A                  |
 | **MTTR medio**         | 3600s  | 277.15s | 3322.85s           | 92.3%                |
 
-El análisis por componente de tiempo revela que la reducción del 92.3% en MTTR medio (de 3600s a 277.15s) se
-concentra en la eliminación del tiempo de espera humano entre pasos. En la condición manual, el analista debe
-relacionar entre herramientas, esperar resultados y documentar manualmente, lo que suma tiempos muertos que la
-automatización elimina mediante ejecución paralela y orquestación ininterrumpida. Los tiempos por fase del workflow
-automatizado (recepción 103.92s, análisis 2393.46s, creación de caso 2773.48s, contención 422.0s) son acumulativos
-e incluyen solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15s. Este análisis
-identifica oportunidades de mejora futuras, sobre todo en la aceleración de procesos de análisis mediante
-caché de resultados y ejecución concurrente de analyzers en Cortex.
+La reducción del 92.3 % en MTTR medio se concentra en la eliminación del tiempo de espera humano entre pasos. Los tiempos por fase son acumulativos e incluyen solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Este análisis identifica oportunidades de mejora futuras, sobre todo en la aceleración de procesos de análisis mediante caché de resultados y ejecución concurrente de analyzers en Cortex.
 
 ![Figura 8: Análisis de percentiles MTTR](figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
 
 **Figura 8**: Distribución de percentiles MTTR capturada desde el dashboard de Grafana.
 
-**Decisiones automatizadas.** El 92 % de las alertas (46/50) obtuvieron un score ≥ 80 que activó la contención
-simulada; el 8 % restante (4/50) se cerró como benigno. El score promedio fue 96.2/100 (mínimo 55, máximo 100). El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 9** muestra la distribución de decisiones y la **Figura 5** el estado de los jobs de Cortex.
+**Decisiones automatizadas.** El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 9** muestra la distribución de decisiones y la **Figura 5** el estado de los jobs de Cortex.
 
 ![Figura 9: Distribución de decisiones del playbook](figures/decision_distribution.png)
 
@@ -647,7 +595,7 @@ simulada; el 8 % restante (4/50) se cerró como benigno. El score promedio fue 9
 **Figura 5**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito).
 
 **Servicios e integraciones.** Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones. Se
-completaron 50/50 workflows, se crearon 50/50 casos en TheHive y se ejecutaron 255/257 jobs en Cortex (99.2 %). El workflow incluye 25 nodos y la tasa de automatización fue del 100 %, sin intervención humana durante la ejecución.
+completaron 50/50 workflows, se crearon 50/50 casos en TheHive y se ejecutaron 255/257 jobs en Cortex (99.2 %). El workflow incluye 46 nodos y la tasa de automatización fue del 100 %, sin intervención humana durante la ejecución.
 
 **Precisión.** La tasa de falsos positivos fue del 8.0 % (4/50 alertas clasificadas como *observe* cuando el
 verdict esperado era *contain*). Este valor mejora el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring, entendida como tasa de clasificación correcta, fue del 92.0 % (46/50 decisiones acertadas).
@@ -673,50 +621,7 @@ Comandos de prueba disponibles:
 
 En usabilidad, el tiempo de aprendizaje es asumible y requiere una formación inicial mínima. La reducción de errores humanos es consistente con las mejoras reportadas en la literatura sobre automatización de tareas en SOC (Kinyua & Awuah, 2021; Mohammad & Lakshmisri, 2018).
 
-#### 4.1.3.5. Sistema de Monitoreo
-
-El laboratorio incluye un sistema de logging centralizado basado en Loki, Promtail y Grafana. Este stack permite la agregación, recopilación y visualización de logs de todos los servicios del laboratorio.
-
-#### Componentes del stack de logging
-
-- **Loki**: Sistema de agregación de logs inspirado en Prometheus (Prometheus, 2024; Prometheus, n.d.). Almacena logs de forma compacta y permite consultas
-  mediante el lenguaje LogQL (Grafana Labs, 2024b).
-- **Promtail**: Agente de recopilación de logs que se ejecuta en cada contenedor y envía los logs a Loki (Grafana Labs, 2024c). Configurado
-  para recopilar logs de todos los servicios de aplicación.
-- **Grafana**: Plataforma de visualización y análisis de datos (Grafana Labs, 2024). Proporciona dashboards para monitorear el estado del
-  laboratorio y visualizar logs agregados.
-- **PostgreSQL**: Base de datos para Grafana, usada para almacenar configuración de dashboards, usuarios y datos de
-  sesiones.
-
-#### Configuración
-
-Los archivos de configuración del stack de logging se encuentran en `infra/docker/compose/logging/`:
-
-- `docker-compose.logging.yml`: Definición de servicios de logging
-- `loki-config.yml`: Configuración de Loki (retención, almacenamiento, límites)
-- `logging.yaml`: Configuración de Promtail (fuentes de logs, etiquetas, destinos)
-- `grafana-kpi-dashboard.yml`: Configuración de datasources de Grafana (Loki)
-
-#### Redes y volúmenes
-
-El stack de logging usa la red dedicada `logging_net` (172.23.0.0/16) para aislar el tráfico de logging. Los datos persistentes se almacenan en:
-
-- `runtime/data/loki/`: Logs almacenados en Loki
-- `runtime/data/grafana/`: Configuración y dashboards de Grafana
-
-#### Uso
-
-Este stack se inicia automáticamente con el comando `make up`. La interfaz de Grafana está disponible en `http://localhost:8084` con credenciales configuradas en el archivo de entorno.
-
-#### Beneficios
-
-- Centralización de logs de todos los servicios en un único punto de consulta
-- Dashboards preconfigurados para monitoreo del laboratorio
-- Consultas avanzadas de logs mediante LogQL
-- Alertas y notificaciones basadas en patrones de logs
-- Integración con el conjunto de herramientas de observabilidad
-
-#### 4.1.3.6. Discusión
+#### 4.1.3.5. Discusión
 
 La reducción observada en MTTR medio (3600 s a 277.15 s) respalda la hipótesis principal de que la automatización SOAR acorta los tiempos de respuesta frente a los procesos manuales. Este resultado es coherente con la literatura revisada:
 Kinyua y Awuah identifican MTTR como métrica habitual para evaluar el valor operativo de SOAR (Kinyua & Awuah, 2021), y Obuse et al.
@@ -731,14 +636,14 @@ Aunque este valor refleja la cola larga mencionada, debe contrastarse con la var
 **Análisis por subconjuntos.** Al examinar las ejecuciones cronológicamente se observa que las primeras 12 alertas
 (n=12, antes de la degradación por acumulación de jobs en Cortex) presentan P50 = 128.40 s y P90 = 163.90 s. En este subconjunto el P90 sí cumple el umbral de ≤ 180 s, y el P50 se sitúa cerca del umbral (128 s vs 120 s). Esto sugiere que los umbrales definidos son alcanzables en condiciones de baja carga, y que la degradación observada en el conjunto completo (n=50) responde a saturación progresiva del worker de Cortex por acumulación de jobs más que a una limitación intrínseca del diseño. El objetivo de n ≥ 50 ejecuciones, sin embargo, se cumple y es el que se reporta como resultado principal.
 
-El resultado negativo (2/7 objetivos no cumplidos) no invalida la contribución: la reducción del MTTR medio supera ampliamente el objetivo del 50 %, y la tasa de éxito del 100 % confirma la fiabilidad funcional del playbook. Estos hallazgos delimitan el alcance de las conclusiones: el laboratorio demuestra viabilidad y cuantifica mejoras, pero no puede generalizarse a entornos productivos sin ajustes adicionales.
+El resultado negativo (2 de 5 objetivos no cumplidos) no invalida la contribución: la reducción del MTTR medio supera ampliamente el objetivo del 50 %, y la tasa de éxito del 100 % confirma la fiabilidad funcional del playbook. Estos hallazgos delimitan el alcance de las conclusiones: el laboratorio demuestra viabilidad y cuantifica mejoras, pero no puede generalizarse a entornos productivos sin ajustes adicionales.
 
 Comparado con el trabajo de Núñez Fernández (Núñez Fernández, 2023), que despliega una plataforma SIRP similar con TheHive, Cortex, MISP y Wazuh, este TFM aporta evidencia cuantitativa adicional (n=50, percentiles, análisis estadístico) que complementa su validación cualitativa. La diferencia principal es que Núñez Fernández se centra en pymes, mientras que este trabajo fija el contexto en un laboratorio académico reproducible.
 
 Stevens et al. concluyen que los playbooks comunitarios suelen requerir adaptación antes de ser operativos (Stevens et al., 2022).
 El playbook E2E de este TFM, diseñado para el entorno del laboratorio, confirma esa observación: la adaptación al contexto concreto (simulación de contención, umbral de score ajustable, integraciones mock) fue necesaria para lograr la tasa de éxito del 100 %.
 
-#### 4.1.3.8. Limitaciones
+#### 4.1.3.6. Limitaciones
 
 Las limitaciones principales son la validación en laboratorio (no en producción real) y el alcance restringido a ransomware. La dependencia de APIs externas como DShield y Mnemonic pDNS requiere estrategias de caché para entornos productivos.
 
