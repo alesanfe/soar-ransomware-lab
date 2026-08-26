@@ -128,7 +128,7 @@ Shuffle con 46 nodos y 25 scripts Python. Integración con TheHive (gestión de 
 Desarrollo del simulador SIEM y de la lógica de contención simulada. Implementación de la API FastAPI con arquitectura hexagonal. Configuración del stack de monitoreo (Loki, Promtail, Grafana).
 
 **Fase 4 — Validación (julio-agosto 2026, 6 semanas).** Ejecución de la suite de pruebas
-completa (2041 tests). Pruebas E2E, experimentos con n=50 ejecuciones del escenario malicioso,
+completa (2233 tests coleccionados, 1905 seleccionados). Pruebas E2E, experimentos con n=50 ejecuciones del escenario malicioso,
 análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut. El escenario benigno y 49 test cases E2E adicionales están implementados en el repositorio para ejecución con `make test-e2e`.
 
 El stack tecnológico combina herramientas open source para orquestación (TheHive, Cortex y Shuffle), almacenamiento (Elasticsearch, Redis, MariaDB) y monitoreo (Loki, Promtail, Grafana), todo desplegado sobre Docker Compose (Docker Inc., 2024) con Python como lenguaje de implementación. MISP se incluye como componente opcional para el intercambio de indicadores de amenazas. El desarrollo se apoya en Git, Make y pytest (pytest, 2024) para control de versiones, automatización y pruebas.
