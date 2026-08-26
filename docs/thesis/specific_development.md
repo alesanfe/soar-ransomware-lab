@@ -277,31 +277,56 @@ La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) para TheHi
 
 ```mermaid
 ---
-title: Componentes Principales (TheHive, Cortex, Shuffle)
+title: Componentes Principales
 ---
-graph LR     subgraph TheHive         H1[Gestión de casos]
+graph LR
+    subgraph TheHive
+        H1[Gestión de casos]
         H2[Plantillas ransomware]
         H3[Asignación de tareas]
         H4[Registro de acciones]
         H5[Verificación hash]
     end
 
-    subgraph Cortex         C1[Análisis IoCs sandbox]
-        C2[7 analyzers libres]
-        C3[FileInfo/MalwareBazaar]
-        C4[DShield/Abuse_Finder]
-        C5[OTXQuery/GoogleDNS/Mnemonic pDNS]
-        C6[Caché de resultados]
+    subgraph Cortex
+        C1[Análisis de IoCs]
+        C2[FileInfo / MalwareBazaar]
+        C3[DShield / Abuse_Finder]
+        C4[OTXQuery / GoogleDNS / Mnemonic pDNS]
     end
 
-    subgraph Shuffle         S1[Orquestación visual]
+    subgraph Shuffle
+        S1[Orquestación visual]
         S2[Interfaz de bloques]
         S3[Orborus - ejecución paralela]
         S4[Reintentos automáticos]
         S5[Ejecución condicional]
     end
 
-    H1 <--> C1     S1 --> H1     S1 --> C1     C1 --> C2     C2 --> C3     C2 --> C4     C2 --> C5     C2 --> C6
+    subgraph Soporte
+        R1[Redis - Caché y colas]
+        M1[MISP - Threat intelligence]
+        T1[Tenzir - Análisis de tráfico]
+        NW1[Network Watcher - Monitor de red]
+        L1[Loki - Búsqueda de logs]
+    end
+
+    subgraph API
+        A1[FastAPI - Gestión y métricas]
+    end
+
+    H1 <--> C1
+    S1 --> H1
+    S1 --> C1
+    S1 --> M1
+    S1 --> T1
+    S1 --> NW1
+    S1 --> R1
+    S1 --> L1
+    A1 --> H1
+    A1 --> C1
+    A1 --> S1
+    A1 --> R1
 ```
 
 Flujo de Integración entre Componentes
