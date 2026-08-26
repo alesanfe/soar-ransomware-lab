@@ -505,16 +505,19 @@ Fase 1 (baseline manual): el analista recibe la alerta simulada, revisa la infor
 
 Fase 2 (respuesta SOAR): Shuffle recibe la alerta por webhook, clasifica el incidente, lanza los analyzers de Cortex en paralelo, crea el caso en TheHive mediante API y activa la contención simulada si el score supera el umbral. El analista no interviene durante la ejecución.
 
-`AnalyticsService` calcula las métricas desde los logs mediante `LogParser`, `KPIAnalyzer` y `StatisticalCalculator`. Las métricas recogidas son: tiempo de recepción a triage, análisis de IoCs, creación de caso, contención y MTTR total. Los resultados se exportan a CSV con `KPIFormatter`.
+`AnalyticsService` calcula las métricas desde los logs mediante `ExecutionLogParser`, `KPIAnalyzer` y `StatisticalCalculator`. La métrica principal recogida es el MTTR total (desde recepción de la alerta hasta contención o clasificación), indexada en Elasticsearch como `mttr_seconds`. Los resultados se exportan a CSV con `CSVKPIFormatter`.
 
 Comandos de ejecución:
 
-- `pytest tests/e2e/TC-01/test_malicious.py -v` (escenario malicioso)
-- `pytest tests/e2e/TC-02/test_benign.py -v` (escenario benigno / falso positivo)
-- `pytest tests/e2e/TC-03/test_edge_cases.py -v` (casos de borde E2E)
-- `pytest tests/integration/test_app_e2e.py -v` (flujo E2E completo)
+- `make up` (despliegue del stack completo)
+- `make test-e2e-tc01` (escenario malicioso, 11 subtests)
+- `make test-e2e-tc02` (escenario benigno / falso positivo, 5 subtests)
+- `make test-e2e-tc03` (casos de borde E2E)
+- `make test-e2e` (suite completa: 33 casos de test + 5 tests de KPI)
+- `make simulate-batch N=50` (envío de lote de 50 alertas para experimentos)
+- `make metrics` (cálculo de KPIs y exportación a CSV)
 
-El Makefile automatiza el despliegue, las pruebas y la generación de métricas (`make metrics` para KPIs). Los resultados experimentales se almacenan en `reports/e2e/`.
+Los resultados experimentales se almacenan en `reports/e2e/` y `reports/validation/results/kpis.csv`.
 
 #### 4.1.3.3. Resultados Experimentales
 
