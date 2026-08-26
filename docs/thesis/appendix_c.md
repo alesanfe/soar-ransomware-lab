@@ -62,7 +62,7 @@ Métricas (%)
  20 ┤ █████████████████████   ████████████████████████████████
  10 ┤ █████████████████████   ████████████████████████████████
   0 └─────────────────────────────────────────────────────────────
-      Semana 1    Semana 4    Semana 8    Semana 12
+      Semana 1    Semana 6    Semana 12    Semana 18
     
       ■ Success Rate  ● MTTR Reduction  ▲ Throughput
 ```
@@ -97,7 +97,8 @@ Impacto (puntos)
 ┌─────────────────────────────────────────────────────────────────┐
 │                        EXTERNO                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│  SIEM/XDR    EDR/Defender    Threat Intel    Usuario           │
+│  SIEM simulado   Lab API    Threat Intel    Usuario           │
+│  (send_alert)    (contain)      (MISP)          (admin)         │
 │     │             │               │             │                 │
 └─────┼─────────────┼───────────────┼─────────────┼─────────────────┘
       │             │               │             │
@@ -126,9 +127,8 @@ Impacto (puntos)
 │ ┌─────────┐ │ │ ┌─────────┐ │ │  │  Network Watcher          │  │
 │ │ Casos   │ │ │ │Analyzers│ │ │  │  Redis Cache              │  │
 │ │Evidencias│ │ │ │Hashdd   │ │ │  └───────────────────────────┘  │
-│ └─────────┘ │ │ │Virusshar│ │ └─────────────────────────────────┘
-└─────────────┘ │ │IP-API   │ │
-                │ │DShield  │ │
+│ └─────────┘ │ │ │IP-API   │ │ └─────────────────────────────────┘
+└─────────────┘ │ │DShield  │ │
                 │ │Mnemonic │ │
                 │ │GoogleDNS│ │
                 │ └─────────┘ │
@@ -144,7 +144,7 @@ Impacto (puntos)
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 
-Contención: simulada vía POST /api/v1/contain (modo "simulation")
+Contención: vía POST /api/v1/contain (Lab API, modo "simulation")
             No ejecuta scripts reales de aislamiento EDR/firewall
 ```
 
@@ -170,8 +170,8 @@ Contención: simulada vía POST /api/v1/contain (modo "simulation")
 │                  │  Analyzers  │                               │
 │  ┌─────────────┐ │ ┌─────────┐ │ ┌─────────────────────────┐   │
 │  │ Hashdd     │ │ │IP-API   │ │ │   MISP / Tenzir          │   │
-│  │ Virusshare │ │ │DShield  │ │ │   Network Watcher        │   │
-│  │   (hash)   │ │ │Mnemonic │ │ │   Loki / Redis           │   │
+│  │   (hash)   │ │ │DShield  │ │ │   Network Watcher        │   │
+│  │            │ │ │Mnemonic │ │ │   Loki / Redis           │   │
 │  └─────────────┘ │ │GoogleDNS│ │ └─────────────────────────┘   │
 │                  └─────────────┘                               │
 │                          │                                     │
@@ -210,9 +210,9 @@ Contención: simulada vía POST /api/v1/contain (modo "simulation")
 │      │                   │                   │                 │
 │  ┌───▼───┐         ┌─────▼─────┐       ┌─────▼─────┐           │
 │  │POST   │         │TheHive    │       │Notify     │          │
-│  │/api/  │         │PATCH      │       │Critical   │          │
-│  │v1/    │         │InProgress │       │(Slack)    │          │
-│  │contain│         │           │       │           │          │
+│  │/api/  │         │Case stays │       │Critical   │          │
+│  │v1/    │         │Open       │       │(Slack)    │          │
+│  │contain│         │(no PATCH) │       │           │          │
 │  └───────┘         └───────────┘       └───────────┘           │
 └─────────────────────────────────────────────────────────────────┘
                                  │
@@ -243,13 +243,25 @@ Contención: simulada vía POST /api/v1/contain (modo "simulation")
 │  ┌─────────────────────soar_net (10.100.0.0/16)──────────────┐  │
 │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │  │
 │  │  │  Nginx  │  │ TheHive │  │ Cortex  │  │ Shuffle │       │  │
-│  │  │ :80/443 │  │ :8100   │  │ :8101   │  │ :5001   │       │  │
+│  │  │ :80/443 │  │ :8100   │  │ :8101   │  │ :8081   │       │  │
+│  │  │         │  │         │  │         │  │ (UI)    │       │  │
 │  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘       │  │
 │  │                                                           │  │
 │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │  │
 │  │  │  Redis  │  │ Orborus │  │ Network │  │ Tenzir  │       │  │
 │  │  │         │  │         │  │ Watcher │  │  Node   │       │  │
 │  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘       │  │
+│  │                                                           │  │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐                    │  │
+│  │  │   API   │  │  Web    │  │  Docs   │                    │  │
+│  │  │ :8000   │  │ Mgmt    │  │ Site    │                    │  │
+│  │  │ FastAPI │  │ :8085   │  │ :8086   │                    │  │
+│  │  └─────────┘  └─────────┘  └─────────┘                    │  │
+│  │                                                           │  │
+│  │  ┌─────────┐  ┌─────────┐                                │  │
+│  │  │OpenSearch│ │OpenSearch│                                │  │
+│  │  │  :8201  │  │ Dashb.  │                                │  │
+│  │  └─────────┘  └─────────┘                                │  │
 │  │                                                           │  │
 │  │  ┌─────────────────────────────────────────┐              │  │
 │  │  │       Elasticsearch :8200 (9200 int)    │              │  │
@@ -329,13 +341,13 @@ Contención: simulada vía POST /api/v1/contain (modo "simulation")
 │  │              METODOLOGÍA ÁGIL + DevSecOps               │   │
 │  │                                                         │   │
 │  │  ┌─────────────┐    ┌─────────────────────────────────┐   │   │
-│  │  │   Sprints   │    │      Principios DevSecOps        │   │   │
-│  │  │   2 semanas │───▶│                                 │   │   │
+│  │  │  4 Fases    │    │      Principios DevSecOps        │   │   │
+│  │  │  18 semanas │───▶│                                 │   │   │
 │  │  └─────────────┘    │  ┌─────────┐  ┌─────────────────┐ │   │   │
 │  │         │           │  │Security│  │   Compliance     │ │   │   │
 │  │         ▼           │  │ by Dev │  │   by Design      │ │   │   │
 │  │  ┌─────────────┐    │  └─────────┘  └─────────────────┘ │   │   │
-│  │  │   5 Fases    │    └─────────────────────────────────┘   │   │
+│  │  │   4 Fases    │    └─────────────────────────────────┘   │   │
 │  │  └─────────────┘                                           │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                          │                                     │
@@ -343,16 +355,13 @@ Contención: simulada vía POST /api/v1/contain (modo "simulation")
 │  │                FASES DEL PROYECTO                       │   │
 │  │                                                         │   │
 │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐    │   │
-│  │  │Fase I   │  │Fase II  │  │Fase III │  │Fase IV  │    │   │
-│  │  │Invest   │  │Diseño   │  │Desarrollo│  │Pruebas  │    │   │
-│  │  │(2 sem)  │  │(2 sem)  │  │(4 sem)  │  │(2 sem)  │    │   │
+│  │  │Fase 1   │  │Fase 2   │  │Fase 3   │  │Fase 4   │    │   │
+│  │  │Invest   │  │Diseño   │  │Desarrollo│  │Validación│   │   │
+│  │  │(3 sem)  │  │(3 sem)  │  │(6 sem)  │  │(6 sem)  │    │   │
 │  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘    │   │
 │  │                                                         │   │
-│  │  ┌─────────┐                                            │   │
-│  │  │Fase V   │                                            │   │
-│  │  │Optimización│                                         │   │
-│  │  │(2 sem)  │                                            │   │
-│  │  └─────────┘                                            │   │
+│  │  Total: 18 semanas (27 abr - 31 ago 2026)              │   │
+│  │  Planificación inicial: 12 sem → 15 sem → 18 sem real  │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -381,18 +390,18 @@ Contención: simulada vía POST /api/v1/contain (modo "simulation")
 │  │                DISEÑO EXPERIMENTAL                     │   │
 │  │                                                         │   │
 │  │  ┌─────────────────┐    ┌─────────────────────────┐     │   │
-│  │  │Within-Subjects  │    │      n=50 (malicious)    │     │   │
-│  │  │   Crossover      │    │  benigno en repositorio  │     │   │
+│  │  │Single-Group     │    │      n=50 (malicious)    │     │   │
+│  │  │Pre/Post Design  │    │  benigno en repositorio  │     │   │
 │  │  └─────────────────┘    └─────────────────────────┘     │   │
 │  │                                                         │   │
 │  │  ┌─────────────────┐    ┌─────────────────────────┐     │   │
-│  │  │Randomización    │    │    Replicación           │     │   │
-│  │  │Orden aleatorio  │    │Múltiples ejecuciones     │     │   │
+│  │  │Entorno aislado  │    │    Replicación           │     │   │
+│  │  │Docker lab       │    │50 ejecuciones idénticas  │     │   │
 │  │  └─────────────────┘    └─────────────────────────┘     │   │
 │  │                                                         │   │
 │  │  ┌─────────────────┐    ┌─────────────────────────┐     │   │
-│  │  │Blinding         │    │   Control de Variables   │     │   │
-│  │  │Análisis ciego    │    │Entorno controlado       │     │   │
+│  │  │Alertas fijas    │    │   Control de Variables   │     │   │
+│  │  │Dataset simulado │    │Entorno Docker controlado │     │   │
 │  │  └─────────────────┘    └─────────────────────────┘     │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                          │                                     │
