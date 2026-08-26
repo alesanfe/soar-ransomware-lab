@@ -29,7 +29,7 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | Tests seleccionados | 1905 |
 | Tests deseleccionados | 328 |
 | Tests ejecutados (última run) | 1905 (2 skipped esperados) |
-| Archivos de test | 184 |
+| Archivos de test | 170 |
 | Tiempo de ejecución | ~200s (3m 20s) |
 | Warnings | 4 |
 
@@ -45,7 +45,7 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | performance | 4 | 30 | 1.5% |
 | general | 2 | 20 | 1.0% |
 | architecture | 1 | 1 | 0.05% |
-| **Total** | **184** | **2041** | 100% |
+| **Total** | **170** | **2041** | 100% |
 
 ### I.2.3. Distribución por Capa (Pirámide)
 
