@@ -215,33 +215,63 @@ La infraestructura se organiza en cuatro capas:
 ---
 title: Arquitectura de Despliegue (cuatro capas)
 ---
-graph TD     subgraph Capa de Datos         DB1[Elasticsearch]
+graph TD
+    subgraph Capa de Datos
+        DB1[Elasticsearch]
         DB2[Redis]
+        DB3[OpenSearch]
     end
 
-    subgraph Capa Aplicación SOAR         APP1[TheHive]
+    subgraph Capa Aplicación SOAR
+        APP1[TheHive]
         APP2[Cortex]
         APP3[Shuffle Frontend]
         APP4[Shuffle Backend]
-        APP5[Orborus - Ejecutor de Workflows]
+        APP5[Orborus]
+        APP6[Tenzir]
+        APP7[Network Watcher]
     end
 
-    subgraph Capa Integración         INT1[Nginx]
+    subgraph Capa Integración
+        INT1[Nginx]
         INT2[API FastAPI]
-        INT3[Documentación]
+        INT3[Docs-site]
+        INT4[Web-management]
     end
 
-    subgraph Capa Monitoreo         MON1[Loki]
+    subgraph Capa Monitoreo
+        MON1[Loki]
         MON2[Promtail]
         MON3[Grafana]
         MON4[PostgreSQL]
+        MON5[Grafana Renderer]
     end
 
-    APP1 --> DB1     APP2 --> DB1     APP4 --> DB1     APP4 --> DB2     APP3 --> APP4     APP5 --> APP4     APP5 --> DB1     APP5 --> Docker[Docker Socket]
-    INT1 --> APP1     INT1 --> APP2     INT1 --> APP3     INT2 --> APP1     INT2 --> APP2     INT2 --> APP4     MON2 --> APP1     MON2 --> APP2     MON2 --> APP4     MON2 --> APP5     MON2 --> MON1     MON3 --> MON1     MON3 --> MON4
+    APP1 --> DB1
+    APP2 --> DB1
+    APP4 --> DB3
+    APP4 --> DB2
+    APP3 --> APP4
+    APP5 --> APP4
+    APP5 --> DB3
+    APP5 --> Docker[Docker Socket]
+    APP4 --> Docker
+    INT1 --> APP1
+    INT1 --> APP2
+    INT1 --> APP3
+    INT1 --> INT4
+    INT2 --> APP1
+    INT2 --> APP2
+    INT2 --> APP4
+    INT2 --> DB2
+    MON2 --> Docker
+    MON2 --> MON1
+    MON3 --> MON1
+    MON3 --> MON4
+    MON3 --> MON5
 ```
 
-La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) y Redis (Redis Ltd., 2024). La capa de aplicación SOAR la forman TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (Shuffle Tools, 2024; Shuffle Tools, n.d.) y Orborus, que ejecuta workflows en paralelo, se conecta al backend y a Elasticsearch, y accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores. La integración se resuelve con Nginx (Nginx, 2024; Nginx, n.d.), la API FastAPI (FastAPI, 2024) y el sitio de documentación. El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) y PostgreSQL.
+La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) para TheHive y Cortex, Redis (Redis Ltd., 2024) para colas y caché, y OpenSearch (OpenSearch Project, 2024) como motor de búsqueda de Shuffle. La capa de aplicación SOAR la forman TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (frontend y backend) (Shuffle Tools, 2024; Shuffle Tools, n.d.), Orborus (ejecutor de workflows que accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores), Tenzir (procesamiento de eventos de red) y Network Watcher (monitor de la red soar_net). La capa de integración incluye Nginx (Nginx, 2024; Nginx, n.d.) como proxy inverso, la API FastAPI (FastAPI, 2024), el sitio de documentación y la interfaz web de gestión. El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) con PostgreSQL como base de datos y Grafana Renderer para exportación de paneles.
 
 #### Componentes Principales
 
@@ -433,8 +463,9 @@ graph TD     subgraph Redes Docker         R1[Red perimetral bridge]
         CC5[Shuffle Backend]
         CC6[Orborus]
         CC7[Network Watcher]
-        CC8[Verificaciones de salud]
-        CC9[Límites de recursos]
+        CC8[Tenzir]
+        CC9[Verificaciones de salud]
+        CC10[Límites de recursos]
     end
 
     subgraph Archivos complementarios         OC1[infra/docker/compose/docker-compose.misp.yml]
@@ -450,11 +481,11 @@ La infraestructura se define con varios archivos Docker Compose (Docker Inc., 20
 
 El archivo principal `docker-compose.yml` define cuatro redes (perimetral bridge, interna soar_net, inteligencia ti_net, monitoreo logging_net) y los volúmenes persistentes, e incluye Elasticsearch como base de datos centralizada.
 
-El archivo `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle (frontend y backend), Orborus y Network Watcher, con verificaciones de salud, límites de recursos y dependencias entre servicios.
+El archivo `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle (frontend y backend), Orborus, Network Watcher y Tenzir, con verificaciones de salud, límites de recursos y dependencias entre servicios.
 
-Los archivos complementarios añaden: `docker-compose.api.yml` (API FastAPI y documentación), `docker-compose.misp.yml` (MISP) (MISP Project, 2024), `docker-compose.opensearch.yml` (OpenSearch para Shuffle) (OpenSearch Project, 2024) y `docker-compose.logging.yml` (Loki, Promtail, Grafana, PostgreSQL).
+Los archivos complementarios añaden: `docker-compose.api.yml` (API FastAPI, docs-site, web-management y Nginx), `docker-compose.misp.yml` (MISP, misp-db y misp-modules) (MISP Project, 2024), `docker-compose.opensearch.yml` (OpenSearch y OpenSearch Dashboards para Shuffle) (OpenSearch Project, 2024) y `docker-compose.logging.yml` (Loki, Promtail, Grafana, PostgreSQL y Grafana Renderer).
 
-La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net conecta los componentes SOAR, ti_net vincula Redis y Cortex con servicios externos, y logging_net aísla el stack de logging. Esta separación limita el movimiento lateral en caso de compromiso.
+La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging. Esta separación limita el movimiento lateral en caso de compromiso.
 
 Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio. Los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 6** detalla la configuración de recursos.
 
@@ -463,12 +494,19 @@ Los volúmenes usan enlaces al directorio runtime con subdirectorios por servici
 | Servicio             | CPU Límite | Memoria Límite | CPU Reserva | Memoria Reserva | Health Check |
 |----------------------|------------|----------------|-------------|-----------------|--------------|
 | **Elasticsearch**    | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
+| **OpenSearch**       | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
 | **TheHive**          | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
 | **Cortex**           | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
-| **Shuffle Backend**  | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 15s   |
+| **Shuffle Backend**  | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Disabled    |
 | **Shuffle Frontend** | 1.0 cores  | 2GB            | 0.5 cores   | 1GB             | Cada 15s   |
-| **Orborus**          | 1.0 cores  | 2GB            | 0.5 cores   | 1GB             | Cada 15s   |
-| **Nginx**            | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Orborus**          | 2.0 cores  | 2GB            | 1.0 cores   | 1GB             | Cada 15s   |
+| **Tenzir**           | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Redis**            | 0.5 cores  | 1GB            | 0.25 cores  | 512MB           | Cada 10s   |
+| **API FastAPI**      | 1.0 cores  | 2GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Nginx**            | 0.5 cores  | 512MB          | 0.25 cores  | 128MB           | Cada 30s   |
+| **Grafana**          | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Loki**             | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Promtail**         | 0.5 cores  | 512MB          | 0.25 cores  | 256MB           | Cada 30s   |
 
 Esta configuración permite el despliegue en sistemas con 16GB+ RAM, haciendo el laboratorio accesible para organizaciones con recursos moderados.
 
