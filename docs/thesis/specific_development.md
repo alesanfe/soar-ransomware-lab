@@ -503,7 +503,7 @@ La evaluación compara la respuesta manual con la automatizada SOAR. La variable
 
 En la respuesta SOAR, Shuffle recibe la alerta por webhook, clasifica el incidente, lanza los analyzers de Cortex en paralelo, crea el caso en TheHive mediante API y activa la contención simulada si el score supera el umbral, sin intervención del analista durante la ejecución. El baseline manual (3600 s) se fundamenta en benchmarks de la industria (sección 4.1.3.1) y no se ejecuta experimentalmente.
 
-`AnalyticsService` calcula las métricas desde los logs mediante `ExecutionLogParser`, `KPIAnalyzer` y `StatisticalCalculator`. La métrica principal recogida es el MTTR total (desde recepción de la alerta hasta contención o clasificación), indexada en Elasticsearch como `mttr_seconds`. Los resultados se exportan a CSV con `CSVKPIFormatter`.
+El cálculo de KPIs se realiza con `calc_kpis.py`, que instancia `ExecutionLogParser`, `KPIAnalyzer` y `StatisticalCalculator`. La métrica principal es el MTTR total (desde recepción de la alerta hasta contención o clasificación), indexada en Elasticsearch como `mttr_seconds`; el script consulta el índice `soar-metrics` por defecto y usa `notify.log` como fallback. Los resultados se exportan a CSV con `CSVKPIFormatter`.
 
 Comandos de ejecución:
 
