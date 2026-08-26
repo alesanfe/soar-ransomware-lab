@@ -425,95 +425,78 @@ La **simulación** genera alertas de ransomware con IoCs realistas (hashes SHA25
 
 La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing, control de calidad y terminología de la documentación, y una revisión holística del proyecto en 15 dimensiones. La **seguridad operacional** preserva y restaura las credenciales de los servicios entre resets, evitando rotaciones manuales de API keys.
 
-## Tabla 6: Configuración de Recursos Docker
 
-| Servicio             | CPU Límite | Memoria Límite | CPU Reserva | Memoria Reserva | Health Check |
-|----------------------|------------|----------------|-------------|-----------------|--------------|
-| **Elasticsearch**    | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
-| **OpenSearch**       | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
-| **TheHive**          | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
-| **Cortex**           | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
-| **Shuffle Backend**  | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Disabled    |
-| **Shuffle Frontend** | 1.0 cores  | 2GB            | 0.5 cores   | 1GB             | Cada 15s   |
-| **Orborus**          | 2.0 cores  | 2GB            | 1.0 cores   | 1GB             | Cada 15s   |
-| **Tenzir**           | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
-| **Redis**            | 0.5 cores  | 1GB            | 0.25 cores  | 512MB           | Cada 10s   |
-| **API FastAPI**      | 1.0 cores  | 2GB            | 0.5 cores   | 512MB           | Cada 30s   |
-| **Nginx**            | 0.5 cores  | 512MB          | 0.25 cores  | 128MB           | Cada 30s   |
-| **Grafana**          | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
-| **Loki**             | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
-| **Promtail**         | 0.5 cores  | 512MB          | 0.25 cores  | 256MB           | Cada 30s   |
-
-Esta configuración permite el despliegue en sistemas con 16GB+ RAM, haciendo el laboratorio accesible para organizaciones con recursos moderados.
 
 #### Sistema de Monitoreo
 
 ```mermaid
 ---
-title: Sistema de Monitoreo (stack y métricas)
+title: Sistema de Monitoreo
 ---
-graph TD     subgraph Stack de Monitoreo         L1[Agregación de logs]
-        P1[Recopilación de logs]
-        G1[Dashboards]
-        DB1[Base de datos]
+graph TD
+    subgraph Recopilación
+        P1[Promtail]
     end
 
-    subgraph Contenedores         C1[TheHive]
+    subgraph Almacenamiento
+        L1[Loki]
+        ES[Elasticsearch soar-metrics]
+    end
+
+    subgraph Visualización
+        G1[Grafana]
+        GR[Grafana Renderer]
+        PG[PostgreSQL]
+    end
+
+    subgraph Fuentes
+        C1[TheHive]
         C2[Cortex]
         C3[Shuffle]
         C4[Orborus]
         C5[API]
+        C6[OpenSearch]
     end
 
-    subgraph Métricas Técnicas         M1[Tiempo de respuesta]
-        M2[Tasa de éxito]
-        M3[Recursos del sistema]
-        M4[Conexiones]
-        M5[Colas]
-    end
-
-    subgraph Métricas de Negocio         N1[MTTR]
-        N2[Tasa de alertas]
-        N3[Casos cerrados]
-    end
-
-    P1 --> C1     P1 --> C2     P1 --> C3     P1 --> C4     P1 --> C5     P1 --> L1     G1 --> L1     G1 --> DB1     G1 --> M1     G1 --> M2     G1 --> M3     G1 --> M4     G1 --> M5     G1 --> N1     G1 --> N2     G1 --> N3
+    C1 --> P1
+    C2 --> P1
+    C3 --> P1
+    C4 --> P1
+    C5 --> P1
+    C6 --> P1
+    P1 --> L1
+    C5 --> ES
+    G1 --> L1
+    G1 --> ES
+    G1 --> PG
+    G1 --> GR
 ```
 
-Flujo de Datos de Monitoreo
+El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024) con PostgreSQL como base de datos y Grafana Renderer para exportación de paneles. Promtail recopila logs de todos los contenedores vía Docker socket y los envía a Loki. Grafana consulta Loki para logs y Elasticsearch (índice `soar-metrics`) para KPIs, usando PostgreSQL para su configuración.
 
-```mermaid
----
-title: Flujo de Datos de Monitoreo
----
-graph TD     A[Contenedores de Aplicación] --> B[Generación de Logs]
-    B --> C[Recopilador de Logs]
-    C --> D[Agregador de Logs]
-    D --> E[Base de Datos de Logs]
-    E --> F[Interfaz de Visualización]
-    F --> G[Dashboards en Tiempo Real]
-    F --> H[Alertas y Notificaciones]
-    G --> I[Análisis de Tendencias]
-    H --> I
-```
+El dashboard de Grafana (`SOAR KPI Dashboard`) implementa 15 paneles con las métricas reales del proyecto: MTTR (medio, P50, P90, max/min, rango), total de alertas procesadas, alertas críticas (severity=3), tasa de éxito por tipo de alerta, tasa de éxito por servicio (TheHive/Cortex/MISP), alertas por severidad, throughput por hora, evolución temporal de MTTR y comparación de MTTR por tipo de alerta. La **Tabla 7** resume las métricas con sus umbrales.
 
-El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024) y PostgreSQL. Promtail recopila logs de todos los contenedores y los envía a Loki. Grafana ofrece dashboards en tiempo real y usa PostgreSQL para su configuración.
+## Tabla 7: Métricas del Dashboard de Grafana
 
-Las métricas técnicas (tiempo de respuesta, tasa de éxito, CPU, memoria, conexiones, colas) y de negocio (MTTR, tasa de alertas, casos cerrados) conectan el rendimiento técnico con la eficacia operativa. La **Tabla 7** resume las métricas con sus umbrales y frecuencia.
+| Categoría          | Métrica              | Objetivo       | Panel |
+|--------------------|----------------------|----------------|-------|
+| **Rendimiento**    | MTTR medio           | ≤ 120s         | MTTR Medio (s) |
+| **Rendimiento**    | MTTR P50 (mediana)   | ≤ 120s         | MTTR p50 |
+| **Rendimiento**    | MTTR P90             | ≤ 180s         | MTTR p90 |
+| **Rendimiento**    | MTTR max/min         | —              | MTTR Max / Min |
+| **Rendimiento**    | Percentiles P50/P75/P90/P95 | —       | Análisis de Percentiles |
+| **Rendimiento**    | Throughput           | —              | Alertas procesadas por hora |
+| **Negocio**        | Total alertas        | —              | Total Alerts Processed |
+| **Negocio**        | Alertas críticas     | —              | Alertas Criticas (severity=3) |
+| **Negocio**        | Tasa de éxito por tipo | 100%         | Tasa de Exito por Tipo |
+| **Negocio**        | Tasa de éxito por servicio | 100%    | Tasa de Exito Servicios |
+| **Negocio**        | Alertas por severidad | —             | Alertas por Severidad |
+| **Negocio**        | Evolución MTTR diario | —            | Evolucion MTTR |
+| **Negocio**        | MTTR por tipo de alerta | —           | MTTR por Tipo de Alerta |
+| **Negocio**        | Tasa de éxito por severidad | 100%   | Tasa de Exito por Severidad |
+| **Negocio**        | Evolución de alertas por tipo | —     | Evolucion de Alertas por Tipo |
 
-## Tabla 7: Métricas de Monitoreo Implementadas
-
-| Categoría          | Métrica      | Umbral Alerta | Frecuencia | Dashboard    |
-|--------------------|--------------|---------------|------------|--------------|
-| **Rendimiento**    | MTTR         | >120s         | Real-time  | Principal  |
-| **Rendimiento**    | Throughput   | <80 alerts/h  | Real-time  | Principal  |
-| **Disponibilidad** | Uptime       | <99%          | 1min       | Sistema    |
-| **Recursos**       | CPU Usage    | >80%          | 30s        | Sistema    |
-| **Recursos**       | Memory Usage | >85%          | 30s        | Sistema    |
-| **Errores**        | Error Rate   | >5%           | 1min       | Aplicación |
-| **Negocio**        | Success Rate | <95%          | 5min       | Principal  |
-
-El stack se inicia con `make up` y la interfaz de Grafana está disponible con credenciales configuradas en el archivo de entorno.
+El stack se inicia con `make up` y la interfaz de Grafana está disponible en el puerto configurado con credenciales del archivo de entorno.
 
 ### 4.1.3. Evaluación
 
