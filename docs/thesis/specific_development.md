@@ -519,7 +519,7 @@ Los resultados experimentales se almacenan en `reports/e2e/` y `reports/validati
 
 #### 4.1.3.3. Resultados Experimentales
 
-El experimento ejecutó 50 runs del playbook en dos escenarios (malicioso y benigno) sobre el entorno Docker aislado. La **Figura 6** muestra la comparación visual del MTTR.
+El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, todas con alertas maliciosas (45 ransomware, 2 RAT, 2 troyano, 1 infostealer). La **Figura 6** muestra la comparación visual del MTTR.
 
 **Cumplimiento de objetivos.** La tabla resume los umbrales definidos frente a los valores medidos:
 
@@ -548,7 +548,7 @@ La **Tabla 8** presenta los resultados experimentales detallados del experimento
 | **Tasa Éxito**          | ~80% (est.)       | 100%         | +20pp     |
 | **Tasa Contención**     | N/A               | 92.0%        | N/A       |
 | **Score Promedio**      | N/A               | 96.2/100     | N/A       |
-| **Falsos Positivos**    | N/A               | 8.0%         | N/A       |
+| **Falsos Negativos**    | N/A               | 8.0%         | N/A       |
 | **Recursos (mem pico)** | N/A               | 2.58 GiB     | N/A       |
 
 La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025). El tiempo mínimo fue 65.38 s. La **Figura 7** muestra los tiempos por fase.
@@ -586,9 +586,9 @@ La reducción del 92.3 % en MTTR medio se concentra en la eliminación del tiemp
 
 **Figura 5**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito).
 
-**Servicios e integraciones.** Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones. Se completaron 50/50 workflows, 50/50 casos en TheHive y 255/257 jobs en Cortex (99.2 %). El workflow incluye 46 nodos y la automatización fue del 100 %, sin intervención humana.
+**Servicios e integraciones.** Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones. Se completaron 50/50 workflows, 50/50 casos en TheHive y 255/257 jobs en Cortex (99.2 %). El workflow incluye 46 nodos (25 ejecutados en las 50 runs) y la automatización fue del 100 %, sin intervención humana.
 
-**Precisión.** La tasa de falsos positivos fue del 8.0 % (4/50 clasificadas como *observe* cuando se esperaba *contain*), mejorando el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring fue del 92.0 % (46/50 decisiones acertadas).
+**Precisión.** La tasa de falsos negativos fue del 8.0 % (4/50 alertas maliciosas clasificadas como *observe* cuando se esperaba *contain* por tener score < 80), mejorando el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring fue del 92.0 % (46/50 decisiones acertadas).
 
 **Uso de recursos.** El consumo medido con `docker stats` se mantuvo dentro de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %). Ningún contenedor superó su límite, confirmando la viabilidad en un host con 16 GiB RAM. La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) se detalla en el **Anexo E** (sección E.1).
 
