@@ -2235,7 +2235,7 @@ def generate_charts(data: dict, output_dir: Path) -> list[str]:
         chart_paths.append("charts/severity_distribution.png")
         print(f"  [severity_distribution] Generated")
 
-    # ---- Additional: Decision Distribution (pie) ----
+    # ---- Additional: Decision Distribution (pie, by verdict) ----
     decisions = metrics.get("decisions", [])
     if decisions:
         fig, ax = plt.subplots(figsize=(6, 5))
@@ -2244,13 +2244,33 @@ def generate_charts(data: dict, output_dir: Path) -> list[str]:
         colors = {"observe": "#3498db", "contain": "#e74c3c", "block": "#2c3e50"}
         colors_list = [colors.get(l, "#95a5a6") for l in labels]
         ax.pie(counts, labels=labels, autopct="%1.1f%%", colors=colors_list)
-        ax.set_title("Distribución de Decisiones del Workflow")
+        ax.set_title("Distribución de Decisiones del Workflow (contain/observe)")
         plt.tight_layout()
         path = charts_dir / "decision_distribution.png"
         fig.savefig(path)
         plt.close(fig)
         chart_paths.append("charts/decision_distribution.png")
         print(f"  [decision_distribution] Generated")
+
+    # ---- Additional: Verdict Distribution (pie, by verdict) ----
+    verdict_data = _es_post("soar-metrics", {"size": 0, "aggs": {
+        "by_verdict": {"terms": {"field": "verdict.keyword", "size": 10}}
+    }})
+    verdict_buckets = verdict_data.get("aggregations", {}).get("by_verdict", {}).get("buckets", [])
+    if verdict_buckets:
+        fig, ax = plt.subplots(figsize=(6, 5))
+        labels = [vb["key"] for vb in verdict_buckets]
+        counts = [vb["doc_count"] for vb in verdict_buckets]
+        colors = {"malicious": "#e74c3c", "suspicious": "#f39c12", "benign": "#2ecc71"}
+        colors_list = [colors.get(l, "#95a5a6") for l in labels]
+        ax.pie(counts, labels=labels, autopct="%1.1f%%", colors=colors_list)
+        ax.set_title("Distribución de Verdicts del Playbook (malicious/suspicious)")
+        plt.tight_layout()
+        path = charts_dir / "verdict_distribution.png"
+        fig.savefig(path)
+        plt.close(fig)
+        chart_paths.append("charts/verdict_distribution.png")
+        print(f"  [verdict_distribution] Generated")
 
     # ---- Additional: Service Health (horizontal bar) ----
     services = data.get("service_health", {})
@@ -2405,20 +2425,36 @@ def generate_charts(data: dict, output_dir: Path) -> list[str]:
         chart_paths.append("charts/org_daily_stats.png")
         print(f"  [org_daily_stats] Generated")
 
-    # ---- Additional: Cortex Jobs by Status ----
+    # ---- Additional: Cortex Jobs by Status (pie + bar by analyzer) ----
     cortex_details = data.get("cortex_job_details", {})
     cortex_status = cortex_details.get("by_status", [])
+    cortex_workers = cortex_details.get("by_worker", [])
     if cortex_status:
-        fig, ax = plt.subplots(figsize=(7, 5))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+        # Left: pie chart by status
         labels = [s["status"] for s in cortex_status]
         counts = [s["count"] for s in cortex_status]
         colors = ["#2ecc71" if s == "Success" else "#e74c3c" if s == "Failure" else "#f1c40f"
                   for s in labels]
-        ax.bar(labels, counts, color=colors)
-        ax.set_ylabel("Número de Jobs")
-        ax.set_title("Jobs Cortex por Estado")
-        for i, v in enumerate(counts):
-            ax.text(i, v + 10, str(v), ha="center", fontsize=10)
+        ax1.pie(counts, labels=labels, autopct="%1.1f%%", colors=colors, startangle=90)
+        ax1.set_title("Jobs Cortex por Estado")
+
+        # Right: horizontal bar by analyzer (worker)
+        if cortex_workers:
+            w_labels = [w["worker"][:30] for w in cortex_workers[:10]]
+            w_counts = [w["count"] for w in cortex_workers[:10]]
+            y_pos = range(len(w_labels))
+            ax2.barh(y_pos, w_counts, color="#3498db")
+            ax2.set_yticks(y_pos)
+            ax2.set_yticklabels(w_labels, fontsize=8)
+            ax2.set_xlabel("Número de Jobs")
+            ax2.set_title("Jobs por Analyzer")
+            ax2.invert_yaxis()
+        else:
+            ax2.text(0.5, 0.5, "Sin datos por analyzer", ha="center", va="center", transform=ax2.transAxes)
+            ax2.set_title("Jobs por Analyzer")
+
         plt.tight_layout()
         path = charts_dir / "cortex_job_status.png"
         fig.savefig(path)
