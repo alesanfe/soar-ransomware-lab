@@ -501,9 +501,7 @@ La evaluación compara la respuesta manual con la automatizada SOAR. La variable
 
 #### 4.1.3.2. Procedimiento de Evaluación
 
-Fase 1 (baseline manual): el analista recibe la alerta simulada, revisa la información en TheHive, consulta Cortex manualmente, decide la contención, ejecuta los scripts de aislamiento y documenta el caso.
-
-Fase 2 (respuesta SOAR): Shuffle recibe la alerta por webhook, clasifica el incidente, lanza los analyzers de Cortex en paralelo, crea el caso en TheHive mediante API y activa la contención simulada si el score supera el umbral. El analista no interviene durante la ejecución.
+El experimento contrasta dos fases: en la **fase 1** (baseline manual), el analista recibe la alerta simulada, revisa la información en TheHive, consulta Cortex manualmente, decide la contención, ejecuta los scripts de aislamiento y documenta el caso; en la **fase 2** (respuesta SOAR), Shuffle recibe la alerta por webhook, clasifica el incidente, lanza los analyzers de Cortex en paralelo, crea el caso en TheHive mediante API y activa la contención simulada si el score supera el umbral, sin intervención del analista durante la ejecución.
 
 `AnalyticsService` calcula las métricas desde los logs mediante `ExecutionLogParser`, `KPIAnalyzer` y `StatisticalCalculator`. La métrica principal recogida es el MTTR total (desde recepción de la alerta hasta contención o clasificación), indexada en Elasticsearch como `mttr_seconds`. Los resultados se exportan a CSV con `CSVKPIFormatter`.
 
