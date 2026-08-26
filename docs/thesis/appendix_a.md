@@ -239,866 +239,395 @@ utiliza extensivamente en las pruebas E2E del sistema para validar el flujo comp
 
 ```python
 #!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - Alert Sender CLI
+"""SOAR Ransomware Lab - Alert Sender CLI.
+
 Generates and sends alert payloads to the SOAR webhook.
+
+Usage:
+python src/soar_lab/infrastructure/messaging/send_alert.py
+python src/soar_lab/infrastructure/messaging/send_alert.py --type malicious --single
+python src/soar_lab/infrastructure/messaging/send_alert.py --type benign \
+--num-alerts 10 --delay 5
 """
 
 import argparse
+import json
 import os
 import sys
 import time
 from pathlib import Path
 
+from soar_lab.common.constants import (
+    SHUFFLE_WEBHOOK_DEFAULT,
+    WEBHOOK_INFO_PATHS,
+)
+
+
+def _default_webhook_url(base_dir: Path) -> str:
+    """Return the host webhook URL from webhook_info.json if available."""
+    env_url = os.environ.get("SHUFFLE_WEBHOOK_URL")
+    if env_url:
+        return env_url
+    info_paths = [
+        base_dir / "runtime" / "results" / "webhook_info.json",
+        base_dir / "artifacts" / "results" / "webhook_info.json",
+    ] + [Path(p) for p in WEBHOOK_INFO_PATHS]
+    for p in info_paths:
+        if p.exists():
+            try:
+                info = json.loads(p.read_text())
+                return info.get("webhook_url_host", "") or info.get("webhook_url", "")
+            except Exception:
+                pass
+    return SHUFFLE_WEBHOOK_DEFAULT
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Send SOAR alert payloads to webhook")
+    parser.add_argument("--type", choices=["malicious", "benign"], default="malicious")
     parser.add_argument("--single", action="store_true")
     parser.add_argument("--num-alerts", type=int, default=1)
     parser.add_argument("--delay", type=int, default=3)
-    parser.add_argument("--webhook-url",
-                        default=os.environ.get("SHUFFLE_WEBHOOK_URL", ""))
-    args = parser.parse_args()
+    parser.add_argument("--webhook-url", default=None)
+    parser.add_argument(
+        "--api-token",
+        default=os.environ.get("SIEM_WEBHOOK_TOKEN", os.environ.get("SHUFFLE_API_TOKEN", "")),
+    )
 
-    # Bootstrap dependencies
-    base_dir = Path(os.environ.get("BASE_DIR", Path(__file__).parent.parent.parent.parent))
+    base_dir = Path(os.environ.get("BASE_DIR", Path(__file__).parent.parent.parent.parent.parent))
+    if "--webhook-url" not in sys.argv:
+        default_url = _default_webhook_url(base_dir)
+    else:
+        default_url = None
+    parser.set_defaults(webhook_url=default_url)
+    args = parser.parse_args()
+    if args.webhook_url is None:
+        args.webhook_url = _default_webhook_url(base_dir)
+
     sys.path.insert(0, str(base_dir / "src"))
     os.environ.setdefault("BASE_DIR", str(base_dir))
     os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
 
-    from soar_lab.simulator.simulate_alerts import generate_malicious_alert, send_alert
     from soar_lab.config.logging import get_logger
+    from soar_lab.domain.alert_generator import AlertGenerator
+    from soar_lab.infrastructure.http_alert_sender import HTTPAlertSender
 
     logger = get_logger(__name__)
+    alert_generator = AlertGenerator()
+    sender = HTTPAlertSender(webhook_url=args.webhook_url, api_token=args.api_token)
 
     num_alerts = 1 if args.single else args.num_alerts
-    webhook_url = args.webhook_url
+    alert_type = args.type
+    logger.info(f"Sending {num_alerts} {alert_type} alert(s) to {args.webhook_url}")
 
-    logger.info(f"Sending {num_alerts} alert(s) to {webhook_url}")
-
-    sent = 0
-    failed = 0
-    for i in range(1, num_alerts + 1):
-        alert = generate_malicious_alert(i)
-        ok, status = send_alert(alert, webhook_url)
-        if ok:
-            sent += 1
-            print(f"[{i}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
+    for i in range(num_alerts):
+        if alert_type == "malicious":
+            alert = alert_generator.generate_malicious()
         else:
-            failed += 1
-            print(f"[{i}/{num_alerts}] Failed to send alert: HTTP {status}")
+            alert = alert_generator.generate_benign()
+
+        result = sender.send(alert)
+        if result.get("success"):
+            print(f"[{i + 1}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
+        else:
+            print(f"[{i + 1}/{num_alerts}] Failed to send alert: {result.get('error', 'Unknown error')}")
             sys.exit(1)
 
-        if i < num_alerts and args.delay > 0:
+        if i < num_alerts - 1 and args.delay > 0:
             time.sleep(args.delay)
 
-    print(f"\nSummary: {sent} sent, {failed} failed")
+    metrics = sender.get_metrics()
+    print(f"\nSummary: {metrics['alerts_sent']} sent, {metrics['alerts_failed']} failed")
 
 
 if __name__ == "__main__":
     main()
 ```
 
-### A.2.2. KPI Calculator (AnalyticsService)
+### A.2.2. AnalyticsService (KPI Calculator)
 
-El script KPI Calculator calcula métricas MTTR desde logs de ejecución del sistema, ofreciendo la base para evaluar la
-eficacia de la automatización. Este componente es importante para la validación cuantitativa de los beneficios de SOAR,
-permitiendo el análisis estadístico de tiempos de respuesta, el cálculo de percentiles, la exportación de resultados a
-CSV y JSON, y la generación de informes de rendimiento. El script implementa algoritmos de análisis de logs
-estructurados, extrayendo automáticamente los timestamps de cada etapa del ciclo de respuesta y calculando las
-duraciones correspondientes. El análisis de rendimiento permite identificar áreas de mejora y optimizar el sistema.
+El `AnalyticsService` es el servicio de aplicación responsable de calcular métricas MTTR y KPIs desde logs de ejecución del sistema. Sigue la arquitectura hexagonal del proyecto: recibe sus dependencias por inyección (repositories, log_parser, statistical_calculator, kpi_formatter, kpi_analyzer) y delega los cálculos puros a colaboradores especializados. Este componente es la base para la validación cuantitativa de los beneficios de SOAR, permitiendo el análisis estadístico de tiempos de respuesta, el cálculo de percentiles (p50, p90), la exportación de resultados a CSV y la generación de informes de rendimiento.
 
 ```python
-#!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - KPI Calculator
-Calculates MTTR metrics from workflow execution logs
-"""
-import re
-import csv
-import statistics
-import logging
-from datetime import datetime
-from pathlib import Path
-from collections import defaultdict
-from typing import List, Dict, Any, Optional
+"""Analytics Service for SOAR Lab - Centralized KPI and Metrics Management."""
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/kpi_calculator.log'),
-        logging.StreamHandler()
-    ]
+from datetime import UTC, datetime
+from typing import Any
+
+from soar_lab.config.logging import get_logger
+from soar_lab.domain.ports import (
+    AlertRepository,
+    FileSystemInterface,
+    KPIFormatter,
+    LogParser,
+    LogReader,
+    StatisticalCalculatorInterface,
+    SystemMetricsInterface,
 )
-logger = logging.getLogger(__name__)
 
-# Configuration
-LOG_PATH = Path('logs/notify.log')
-RESULTS_PATH = Path('results')
-RESULTS_PATH.mkdir(parents=True, exist_ok=True)
+logger = get_logger(__name__)
 
-class KPICalculator:
-    def __init__(self):
-        self.log_entries = []
-        self.response_times = []
-        self.success_rate = 0
-        self.error_rate = 0
-        
-    def parse_log_file(self) -> bool:
-        """Parse log file and extract response times"""
+
+class AnalyticsService:
+    """Service for analytics, KPIs, and system metrics."""
+
+    def __init__(
+        self,
+        data_repository: AlertRepository,
+        system_metrics: SystemMetricsInterface,
+        file_system: FileSystemInterface,
+        log_reader: LogReader | None = None,
+        log_parser: LogParser = None,
+        kpi_formatter: KPIFormatter = None,
+        statistical_calculator: StatisticalCalculatorInterface = None,
+        kpi_analyzer: object | None = None,
+    ) -> None:
+        self.data_repository = data_repository
+        self.system_metrics = system_metrics
+        self.file_system = file_system
+        self.log_reader = log_reader
+        if not log_parser:
+            raise ValueError("log_parser is required for AnalyticsService")
+        self.log_parser = log_parser
+        if not kpi_formatter:
+            raise ValueError("kpi_formatter is required for AnalyticsService")
+        self.kpi_formatter = kpi_formatter
+        if not statistical_calculator:
+            raise ValueError("statistical_calculator is required for AnalyticsService")
+        self.statistical_calculator = statistical_calculator
+        if not kpi_analyzer:
+            raise ValueError("kpi_analyzer is required for AnalyticsService")
+        self.kpi_analyzer = kpi_analyzer
+
+    def get_comprehensive_system_stats(self) -> dict[str, Any]:
+        """Get comprehensive system statistics (application + hardware)."""
         try:
-            with open(LOG_PATH, 'r') as f:
-                content = f.read()
-                
-            # Regex pattern to extract timestamps and events
-            pattern = r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d{3}) - (\w+) - (\w+) - (.+)'
-            matches = re.findall(pattern, content)
-            
-            for match in matches:
-                timestamp_str, level, component, message = match
-                timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S.%f')
-                
-                entry = {
-                    'timestamp': timestamp,
-                    'level': level,
-                    'component': component,
-                    'message': message
-                }
-                
-                self.log_entries.append(entry)
-            
-            logger.info(f"Parsed {len(self.log_entries)} log entries")
-            return True
-            
-        except FileNotFoundError:
-            logger.error(f"Log file not found: {LOG_PATH}")
-            return False
+            app_stats = self._get_application_stats()
+            hw_stats = self.system_metrics.get_hardware_metrics()
+            proc_stats = self.system_metrics.get_process_metrics()
+            return {
+                "application": app_stats,
+                "hardware": hw_stats,
+                "process": proc_stats,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
         except Exception as e:
-            logger.error(f"Error parsing log file: {e}")
-            return False
-    
-    def calculate_response_times(self) -> List[float]:
-        """Calculate response times from log entries"""
-        alert_received_times = {}
-        case_closed_times = {}
-        
-        for entry in self.log_entries:
-            message = entry['message']
-            timestamp = entry['timestamp']
-            
-            # Extract alert received events
-            if 'Alert received' in message:
-                alert_id = self.extract_alert_id(message)
-                if alert_id:
-                    alert_received_times[alert_id] = timestamp
-            
-            # Extract case closed events
-            elif 'Case closed' in message:
-                alert_id = self.extract_alert_id(message)
-                if alert_id and alert_id in alert_received_times:
-                    response_time = (timestamp - alert_received_times[alert_id]).total_seconds()
-                    self.response_times.append(response_time)
-                    logger.info(f"Alert {alert_id}: {response_time:.2f}s response time")
-        
-        return self.response_times
-    
-    def extract_alert_id(self, message: str) -> Optional[str]:
-        """Extract alert ID from message"""
-        match = re.search(r'ALERT-(\d+)-(\d+)', message)
-        if match:
-            return f"ALERT-{match.group(1)}-{match.group(2)}"
-        return None
-    
-    def calculate_statistics(self) -> Dict[str, float]:
-        """Calculate statistical metrics"""
-        if not self.response_times:
-            return {}
-        
-        stats = {
-            'mean': statistics.mean(self.response_times),
-            'median': statistics.median(self.response_times),
-            'min': min(self.response_times),
-            'max': max(self.response_times),
-            'std_dev': statistics.stdev(self.response_times) if len(self.response_times) > 1 else 0
-        }
-        
-        # Calculate percentiles
-        sorted_times = sorted(self.response_times)
-        n = len(sorted_times)
-        
-        stats['p50'] = sorted_times[int(n * 0.5)]
-        stats['p75'] = sorted_times[int(n * 0.75)]
-        stats['p90'] = sorted_times[int(n * 0.9)]
-        stats['p95'] = sorted_times[int(n * 0.95)]
-        stats['p99'] = sorted_times[int(n * 0.99)]
-        
-        return stats
-    
-    def calculate_success_rate(self) -> float:
-        """Calculate success rate from log entries"""
-        total_alerts = 0
-        successful_alerts = 0
-        
-        for entry in self.log_entries:
-            message = entry['message']
-            
-            if 'Alert received' in message:
-                total_alerts += 1
-            elif 'Case closed successfully' in message:
-                successful_alerts += 1
-        
-        if total_alerts > 0:
-            self.success_rate = (successful_alerts / total_alerts) * 100
-            self.error_rate = 100 - self.success_rate
-        else:
-            self.success_rate = 0
-            self.error_rate = 0
-        
-        return self.success_rate
-    
-    def generate_report(self) -> Dict[str, Any]:
-        """Generate comprehensive KPI report"""
-        # Parse log and calculate metrics
-        if not self.parse_log_file():
-            return {'error': 'Failed to parse log file'}
-        
-        response_times = self.calculate_response_times()
-        statistics = self.calculate_statistics()
-        success_rate = self.calculate_success_rate()
-        
-        # Generate report
-        report = {
-            'summary': {
-                'total_alerts': len(response_times),
-                'success_rate': success_rate,
-                'error_rate': self.error_rate,
-                'report_generated': datetime.now().isoformat()
-            },
-            'response_time_metrics': statistics,
-            'performance_analysis': self.analyze_performance(statistics),
-            'recommendations': self.generate_recommendations(statistics, success_rate)
-        }
-        
-        return report
-    
-    def analyze_performance(self, stats: Dict[str, float]) -> Dict[str, str]:
-        """Analyze performance and provide insights"""
-        analysis = {}
-        
-        if not stats:
-            return {'status': 'No data available'}
-        
-        # MTTR analysis
-        mttr = stats.get('mean', 0)
-        if mttr < 60:
-            analysis['mttr_status'] = 'Excellent'
-        elif mttr < 120:
-            analysis['mttr_status'] = 'Good'
-        elif mttr < 180:
-            analysis['mttr_status'] = 'Needs Improvement'
-        else:
-            analysis['mttr_status'] = 'Poor'
-        
-        # Consistency analysis
-        std_dev = stats.get('std_dev', 0)
-        if std_dev < 30:
-            analysis['consistency'] = 'High'
-        elif std_dev < 60:
-            analysis['consistency'] = 'Medium'
-        else:
-            analysis['consistency'] = 'Low'
-        
-        # Outlier analysis
-        p95 = stats.get('p95', 0)
-        max_time = stats.get('max', 0)
-        if max_time > p95 * 2:
-            analysis['outliers'] = 'Significant outliers detected'
-        else:
-            analysis['outliers'] = 'Normal distribution'
-        
-        return analysis
-    
-    def generate_recommendations(self, stats: Dict[str, float], success_rate: float) -> List[str]:
-        """Generate improvement recommendations"""
-        recommendations = []
-        
-        if not stats:
-            return ['No data available for analysis']
-        
-        mttr = stats.get('mean', 0)
-        std_dev = stats.get('std_dev', 0)
-        
-        # MTTR recommendations
-        if mttr > 120:
-            recommendations.append('Consider optimizing playbook execution to reduce MTTR below 120 seconds')
-        elif mttr > 60:
-            recommendations.append('Good MTTR performance, but further optimization possible')
-        
-        # Consistency recommendations
-        if std_dev > 60:
-            recommendations.append('High variability detected - standardize procedures and improve error handling')
-        
-        # Success rate recommendations
-        if success_rate < 95:
-            recommendations.append('Investigate failed executions to improve success rate above 95%')
-        elif success_rate < 98:
-            recommendations.append('Good success rate, aim for >98% for production readiness')
-        
-        # Performance recommendations
-        p95 = stats.get('p95', 0)
-        if p95 > 180:
-            recommendations.append('Address outliers affecting P95 response time')
-        
-        if not recommendations:
-            recommendations.append('Excellent performance - consider advanced optimizations and ML integration')
-        
-        return recommendations
-    
-    def save_report(self, report: Dict[str, Any], format: str = 'csv') -> Path:
-        """Save report to file"""
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        
-        if format == 'csv':
-            filename = f'kpis_{timestamp}.csv'
-            filepath = RESULTS_PATH / filename
-            
-            with open(filepath, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                
-                # Write summary
-                writer.writerow(['Metric', 'Value'])
-                for key, value in report['summary'].items():
-                    writer.writerow([key, value])
-                
-                writer.writerow([])
-                writer.writerow(['Response Time Metrics', 'Value'])
-                for key, value in report['response_time_metrics'].items():
-                    writer.writerow([key, value])
-        
-        elif format == 'json':
-            filename = f'kpis_{timestamp}.json'
-            filepath = RESULTS_PATH / filename
-            
-            with open(filepath, 'w') as jsonfile:
-                import json
-                json.dump(report, jsonfile, indent=2, default=str)
-        
-        logger.info(f"Report saved to {filepath}")
-        return filepath
+            logger.error(f"Error getting comprehensive system stats: {e}")
+            raise
 
-def main():
-    calculator = KPICalculator()
-    
-    # Generate report
-    report = calculator.generate_report()
-    
-    if 'error' in report:
-        logger.error(report['error'])
-        return
-    
-    # Save reports
-    csv_file = calculator.save_report(report, 'csv')
-    json_file = calculator.save_report(report, 'json')
-    
-    # Display summary
-    print("\n=== SOAR Ransomware Lab - KPI Report ===")
-    print(f"Total Alerts: {report['summary']['total_alerts']}")
-    print(f"Success Rate: {report['summary']['success_rate']:.1f}%")
-    
-    if report['response_time_metrics']:
-        print(f"Mean MTTR: {report['response_time_metrics']['mean']:.2f}s")
-        print(f"Median MTTR: {report['response_time_metrics']['median']:.2f}s")
-        print(f"P95 MTTR: {report['response_time_metrics']['p95']:.2f}s")
-    
-    print("\nPerformance Analysis:")
-    for key, value in report['performance_analysis'].items():
-        print(f"  {key}: {value}")
-    
-    print("\nRecommendations:")
-    for rec in report['recommendations']:
-        print(f"  • {rec}")
-    
-    print(f"\nReports saved:")
-    print(f"  CSV: {csv_file}")
-    print(f"  JSON: {json_file}")
+    def get_performance_kpis(self, hours: int = 24) -> dict[str, Any]:
+        """Get performance KPIs for the specified time period."""
+        try:
+            test_results = self.data_repository.get_test_results(hours=hours)
+            return self.kpi_analyzer.calculate_performance_kpis(test_results, hours)
+        except Exception as e:
+            logger.error(f"Error calculating performance KPIs: {e}")
+            raise
 
-if __name__ == '__main__':
-    main()
+    def get_health_score(self) -> dict[str, Any]:
+        """Calculate overall system health score based on various metrics."""
+        try:
+            hw_metrics = self.system_metrics.get_hardware_metrics()
+            app_stats = self._get_application_stats()
+            def _pct(val: dict | float | None) -> float:
+                return val.get("percent", 0.0) if isinstance(val, dict) else float(val or 0)
+            return self.kpi_analyzer.calculate_health_score(
+                cpu_percent=_pct(hw_metrics.get("cpu", 0)),
+                memory_percent=_pct(hw_metrics.get("memory", 0)),
+                disk_percent=_pct(hw_metrics.get("disk", 0)),
+                test_coverage=app_stats["tests"]["avg_coverage_24h"],
+            )
+        except Exception as e:
+            logger.error(f"Error calculating health score: {e}")
+            return {"score": 0.0, "status": "unknown"}
+
+    def calculate_mttr_metrics(self, log_file_path: str | None = None) -> dict[str, Any]:
+        """Calculate MTTR (Mean Time To Respond) metrics from execution logs.
+
+        Returns:
+            Dict with MTTR metrics including p50, p90, mean, std_dev, count.
+        """
+        try:
+            if not log_file_path:
+                if self.log_reader and hasattr(self.log_reader, "get_default_log_path"):
+                    log_file_path = self.log_reader.get_default_log_path()
+                else:
+                    raise ValueError(
+                        "log_file_path is required when log_reader does not provide default path"
+                    )
+            alert_steps = self.parse_execution_logs(log_file_path)
+            execution_times = self.statistical_calculator.calculate_execution_times(alert_steps)
+            return self.kpi_analyzer.calculate_mttr_metrics(execution_times)
+        except Exception as e:
+            logger.error(f"Error calculating MTTR metrics: {e}")
+            return {"p50": 0.0, "p90": 0.0, "mean": 0.0, "count": 0}
+
+    def parse_execution_logs(self, log_file_path: str) -> dict[str, list[datetime]]:
+        """Parse execution logs to extract timestamps for MTTR calculation."""
+        try:
+            log_content = self.file_system.read_file(log_file_path)
+            if log_content is None:
+                return {}
+            return self.log_parser.parse(log_content)
+        except Exception as e:
+            logger.error(f"Error parsing execution logs: {e}")
+            raise
+
+    def save_kpis_to_csv(self, metrics: dict[str, Any], output_path: str | None = None) -> None:
+        """Save KPI metrics to CSV file using injected formatter and file system."""
+        try:
+            if not output_path:
+                output_path = "kpis.csv"
+            self.file_system.ensure_directory_exists(output_path)
+            csv_content = self.kpi_formatter.format_csv(metrics)
+            self.file_system.write_file(output_path, csv_content)
+            logger.info(f"KPIs saved to {output_path}")
+        except Exception as e:
+            logger.error(f"Error saving KPIs to CSV: {e}")
+            raise
+
+    def get_comprehensive_kpis(self, log_file_path: str | None = None) -> dict[str, Any]:
+        """Get comprehensive KPIs including MTTR, performance, and health metrics."""
+        try:
+            mttr_metrics = self.calculate_mttr_metrics(log_file_path)
+            performance_kpis = self.get_performance_kpis()
+            health_score = self.get_health_score()
+            return self.kpi_analyzer.calculate_comprehensive_kpis(
+                mttr_metrics=mttr_metrics,
+                performance_kpis=performance_kpis,
+                health_score=health_score,
+            )
+        except Exception as e:
+            logger.error(f"Error getting comprehensive KPIs: {e}")
+            raise
 ```
 
-## A.3. Plantilla de Caso TheHive
+El servicio se compone en `src/soar_lab/interfaces/api/composition.py` con sus dependencias concretas (`ElasticsearchAlertRepository`, `SystemMetricsProvider`, `LocalFileSystem`, `LogParserImpl`, `StatisticalCalculator`, `KPIFormatterImpl`, `KPIAnalyzer`). El cálculo estadístico puro (percentiles, media, desviación estándar, coeficiente de variación) se delega a `StatisticalCalculator` (puerto `StatisticalCalculatorInterface`), lo que mantiene el dominio independiente de la infraestructura.
 
-La plantilla de caso TheHive para incidentes de ransomware define la estructura estándar para la documentación forense y
-la coordinación de respuesta. Esta plantilla asegura que cada incidente capture la información específica necesaria para
-este tipo de amenazas, incluyendo vectores de entrada, variantes identificadas, estado de cifrado, demanda de rescate y
-estado de contención. La implementación de campos personalizados permite la captura de información específica de
-ransomware que no está disponible en plantillas genéricas, mientras que la definición de fases y tareas establece un
-proceso estructurado de respuesta que guía a los analistas a través de las acciones necesarias desde la detección
-inicial hasta la recuperación final.
+## A.3. Configuración de TheHive
 
-### A.3.1. Plantilla Ransomware (thehive_template.json)
+La integración con TheHive se realiza mediante el script `scripts/setup/init_thehive.py`, que crea el índice Elasticsearch con el mapping correcto para TheHive 3.5.2 (join field + keyword fix), configura el usuario administrador y genera la API key que se almacena en `.env.full` como `THEHIVE_API_KEY`. Los casos se crean automáticamente desde el workflow de Shuffle durante la ejecución del playbook E2E.
 
-```json
-{
-  "name": "Ransomware Incident Template",
-  "description": "Template for ransomware incident response with automated analysis",
-  "version": "1.0",
-  "status": "Ok",
-  "tags": ["ransomware", "malware", "encryption"],
-  "severity": 2,
-  "tlp": 2,
-  "pap": 2,
-  "customFields": [
-    {
-      "name": "encryption_status",
-      "description": "Current encryption status",
-      "type": "string",
-      "options": ["Not Encrypted", "Partially Encrypted", "Fully Encrypted", "Unknown"],
-      "defaultValue": "Unknown"
+### A.3.1. Index Template para TheHive (init_thehive.py)
+
+TheHive 3.5.2 requiere un mapping Elasticsearch específico para el campo `relations` (join field) y para evitar conflictos con campos `text` vs `keyword`. El script `init_thehive.py` pre-crea el index template antes del arranque de TheHive:
+
+```python
+THEHIVE_INDEX_TEMPLATE = {
+    "index_patterns": ["thehive*"],
+    "settings": {
+        "number_of_replicas": "0",
+        "number_of_shards": "1",
+        "analysis": {
+            "analyzer": {
+                "lowercase": {"type": "custom", "filter": ["lowercase"]}
+            }
+        },
     },
-    {
-      "name": "ransomware_variant",
-      "description": "Identified ransomware variant",
-      "type": "string",
-      "options": ["Unknown", "WannaCry", "LockBit", "REvil", "Conti", "Ryuk", "Other"],
-      "defaultValue": "Unknown"
+    "mappings": {
+        "dynamic_templates": [
+            {
+                "strings_as_keyword": {
+                    "match_mapping_type": "string",
+                    "mapping": {"type": "keyword"},
+                }
+            },
+        ],
+        "properties": {
+            "relations": {"type": "join", "relations": {"case": ["artifact", "task", "log"]}},
+            "caseTemplate": ["dummy-caseTemplate"],
+        },
     },
-    {
-      "name": "payment_demand",
-      "description": "Ransom payment demand",
-      "type": "string",
-      "options": ["No Demand", "Bitcoin", "Monero", "Other Cryptocurrency", "Unknown"],
-      "defaultValue": "Unknown"
-    },
-    {
-      "name": "data_exfiltrated",
-      "description": "Data exfiltration confirmed",
-      "type": "boolean",
-      "defaultValue": false
-    },
-    {
-      "name": "backup_available",
-      "description": "Clean backups available",
-      "type": "boolean",
-      "defaultValue": false
-    },
-    {
-      "name": "containment_status",
-      "description": "Containment actions status",
-      "type": "string",
-      "options": ["Not Started", "In Progress", "Partially Contained", "Fully Contained"],
-      "defaultValue": "Not Started"
-    },
-    {
-      "name": "recovery_time",
-      "description": "Estimated recovery time (hours)",
-      "type": "number",
-      "defaultValue": 0
-    },
-    {
-      "name": "business_impact",
-      "description": "Business impact assessment",
-      "type": "string",
-      "options": ["Low", "Medium", "High", "Critical"],
-      "defaultValue": "Unknown"
-    }
-  ],
-  "phases": [
-    {
-      "name": "Initial Assessment",
-      "description": "Initial triage and assessment of the incident",
-      "order": 1,
-      "tasks": [
-        {
-          "title": "Verify Alert",
-          "description": "Confirm ransomware activity and assess scope",
-          "status": "Waiting",
-          "order": 1
-        },
-        {
-          "title": "Initial Triage",
-          "description": "Classify severity and determine immediate actions",
-          "status": "Waiting",
-          "order": 2
-        },
-        {
-          "title": "Stakeholder Notification",
-          "description": "Notify relevant stakeholders and leadership",
-          "status": "Waiting",
-          "order": 3
-        }
-      ]
-    },
-    {
-      "name": "Containment",
-      "description": "Immediate containment actions to prevent further spread",
-      "order": 2,
-      "tasks": [
-        {
-          "title": "Network Isolation",
-          "description": "Isolate affected systems from network",
-          "status": "Waiting",
-          "order": 1
-        },
-        {
-          "title": "Account Lockdown",
-          "description": "Lock affected user accounts",
-          "status": "Waiting",
-          "order": 2
-        },
-        {
-          "title": "System Shutdown",
-          "description": "Shutdown critical systems if necessary",
-          "status": "Waiting",
-          "order": 3
-        }
-      ]
-    },
-    {
-      "name": "Investigation",
-      "description": "Detailed investigation and analysis",
-      "order": 3,
-      "tasks": [
-        {
-          "title": "Malware Analysis",
-          "description": "Analyze malware samples and identify variant",
-          "status": "Waiting",
-          "order": 1
-        },
-        {
-          "title": "IoC Extraction",
-          "description": "Extract and analyze indicators of compromise",
-          "status": "Waiting",
-          "order": 2
-        },
-        {
-          "title": "Timeline Reconstruction",
-          "description": "Reconstruct incident timeline",
-          "status": "Waiting",
-          "order": 3
-        },
-        {
-          "title": "Data Impact Assessment",
-          "description": "Assess data encryption and exfiltration",
-          "status": "Waiting",
-          "order": 4
-        }
-      ]
-    },
-    {
-      "name": "Recovery",
-      "description": "System recovery and restoration",
-      "order": 4,
-      "tasks": [
-        {
-          "title": "Backup Verification",
-          "description": "Verify backup integrity and availability",
-          "status": "Waiting",
-          "order": 1
-        },
-        {
-          "title": "System Restoration",
-          "description": "Restore systems from clean backups",
-          "status": "Waiting",
-          "order": 2
-        },
-        {
-          "title": "Data Recovery",
-          "description": "Recover encrypted data if possible",
-          "status": "Waiting",
-          "order": 3
-        },
-        {
-          "title": "System Hardening",
-          "description": "Apply security patches and hardening",
-          "status": "Waiting",
-          "order": 4
-        }
-      ]
-    },
-    {
-      "name": "Post-Incident",
-      "description": "Post-incident activities and lessons learned",
-      "order": 5,
-      "tasks": [
-        {
-          "title": "Final Report",
-          "description": "Prepare comprehensive incident report",
-          "status": "Waiting",
-          "order": 1
-        },
-        {
-          "title": "Lessons Learned",
-          "description": "Conduct lessons learned session",
-          "status": "Waiting",
-          "order": 2
-        },
-        {
-          "title": "Security Improvements",
-          "description": "Implement security improvements",
-          "status": "Waiting",
-          "order": 3
-        },
-        {
-          "title": "Case Closure",
-          "description": "Close case and archive evidence",
-          "status": "Waiting",
-          "order": 4
-        }
-      ]
-    }
-  ]
 }
 ```
+
+Este template se aplica con `PUT _template/thehive_template` antes de que TheHive arranque, evitando el error `mapper_parsing_exception` que ocurre cuando Elasticsearch infiere automáticamente el tipo `text` para campos que TheHive espera como `keyword`.
+
+### A.3.2. Creación de casos desde el workflow
+
+El workflow E2E de Shuffle crea casos en TheHive mediante la app `TheHive_app` con los siguientes campos:
+
+- `title`: `Ransomware Alert - {alert_id}` (ej. `Ransomware Alert - ALERT-001-001`)
+- `description`: Resumen de la alerta con IoCs (IPs, dominios, hashes)
+- `severity`: 2 (alto) para alertas maliciosas, 1 (medio) para sospechosas
+- `tags`: `ransomware`, `malicious`/`suspicious`, `auto-contained` (si se contiene)
+- `tlp`: 2 (AMBER)
+- `pap`: 2 (AMBER)
+
+Los observables (IoCs) se añaden al caso como artifacts con `dataType` (`ip`, `domain`, `hash`, `url`) y `message` con el valor del IoC. El estado del caso se actualiza a `Closed` tras la contención simulada.
 
 ## A.4. Configuración de Monitoreo
 
-### A.4.1. Prometheus Configuration (prometheus.yml)
+El laboratorio usa un stack de observabilidad basado en **Loki + Promtail + Grafana** (no Prometheus). Los logs de los contenedores se recogen con Promtail, se agregan en Loki y se visualizan en Grafana mediante el dashboard KPI definido en `infra/docker/compose/logging/kpi-dashboard.json`.
+
+### A.4.1. Stack de Logging (Loki + Promtail + Grafana)
+
+El servicio `loki` (imagen `grafana/loki:2.9.10`) agrega logs de todos los contenedores. `promtail` (`grafana/promtail:2.9.9`) los recoge vía Docker API y los envía a Loki con labels por servicio. `grafana` (`grafana/grafana:10.3.4`) visualiza los datos y `grafana-renderer` (`grafana/grafana-image-renderer:3.10.4`) renderiza paneles para alertas. `grafana-db` (`postgres:14-alpine`) persiste dashboards y usuarios.
+
+### A.4.2. Dashboard KPI de Grafana (kpi-dashboard.json)
+
+El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.json` y consulta el índice `soar-metrics-v2` de Elasticsearch (datasource `soar-es`). Contiene 15 paneles:
+
+| Panel | Título | Tipo |
+|-------|--------|------|
+| 1 | Total Alerts Processed | stat |
+| 2 | MTTR Medio (s) | stat |
+| 3 | Alertas Críticas (severity=3) | stat |
+| 4 | Tasa de Éxito por Tipo de Alerta | piechart |
+| 5 | Análisis de Percentiles MTTR (distribución completa) | timeseries |
+| 6 | Tasa de Éxito Servicios (TheHive / Cortex / MISP) | timeseries |
+| 7 | Alertas por Severidad (distribución SOAR) | barchart |
+| 8 | MTTR p50 (Mediana) | stat |
+| 9 | MTTR p90 | stat |
+| 10 | Evolución MTTR (tendencia diaria) | timeseries |
+| 11 | MTTR Max / Min (rango de variabilidad) | stat |
+| 12 | Alertas procesadas por hora (throughput SOAR) | timeseries |
+| 13 | MTTR por Tipo de Alerta | barchart |
+| 14 | Tasa de Éxito por Severidad | barchart |
+| 15 | Evolución de Alertas por Tipo | timeseries |
+
+Las consultas usan Lucene/Elasticsearch Query DSL sobre el índice `soar-metrics-v2`, que se pobla desde el workflow de Shuffle tras cada ejecución del playbook. El campo `mttr_seconds` (float) almacena el MTTR por ejecución, `verdict.keyword` el veredicto (malicious/suspicious) y `decision.keyword` la decisión (contain/observe).
+
+### A.4.3. Configuración de Promtail
+
+Promtail recoge logs de todos los contenedores Docker vía el socket `/var/run/docker.sock` y los envía a Loki. La configuración se define en `infra/docker/config/templates/promtail-config.yml.template`:
 
 ```yaml
-# Prometheus Configuration for SOAR Ransomware Lab
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+server:
+  http_listen_port: 9080
 
-rule_files:
-  - "alert_rules.yml"
-  - "recording_rules.yml"
-
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          - alertmanager:9093
+clients:
+  - url: ${LOKI_URL:-http://loki:3100}/loki/api/v1/push
 
 scrape_configs:
-  # Prometheus itself
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
+  - job_name: docker-logs
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: [ '__meta_docker_container_name' ]
+        regex: '/(.*)'
+        target_label: container
+      - source_labels: [ '__meta_docker_container_name' ]
+        regex: '(.*)_\\d+'
+        target_label: service
+      - source_labels: [ '__meta_docker_container_label_com_docker_compose_service' ]
+        regex: '(.+)'
+        target_label: compose_service
+      - source_labels: [ '__meta_docker_container_label_com_docker_compose_project' ]
+        regex: '(.+)'
+        target_label: compose_project
 
-  # Node Exporter for system metrics
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['node-exporter:9100']
-
-  # cAdvisor for container metrics
-  - job_name: 'cadvisor'
-    static_configs:
-      - targets: ['cadvisor:8080']
-
-  # TheHive metrics
-  - job_name: 'thehive'
-    static_configs:
-      - targets: ['thehive:9000']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
-
-  # Cortex metrics
-  - job_name: 'cortex'
-    static_configs:
-      - targets: ['cortex:9001']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
-
-  # Shuffle Frontend metrics
-  - job_name: 'shuffle-frontend'
-    static_configs:
-      - targets: ['shuffle-frontend:80']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
-
-  # Shuffle Backend metrics
-  - job_name: 'shuffle-backend'
-    static_configs:
-      - targets: ['shuffle-backend:5001']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
-
-  # Elasticsearch metrics
-  - job_name: 'elasticsearch'
-    static_configs:
-      - targets: ['elasticsearch:9200']
-    metrics_path: '/_prometheus/metrics'
-    scrape_interval: 30s
-
-  # Nginx metrics
-  - job_name: 'nginx'
-    static_configs:
-      - targets: ['nginx:9113']
-    scrape_interval: 30s
-
-  # Docker metrics
-  - job_name: 'docker'
-    static_configs:
-      - targets: ['docker-exporter:9323']
-    scrape_interval: 30s
-
-  # Custom SOAR application metrics
-  - job_name: 'soar-app'
-    static_configs:
-      - targets: ['soar-app:8080']
-    metrics_path: '/api/v1/metrics'
-    scrape_interval: 15s
-
-  # Blackbox exporter for endpoint monitoring
-  - job_name: 'blackbox'
-    metrics_path: /probe
-    params:
-      module: [http_2xx]
+  - job_name: system-logs
     static_configs:
       - targets:
-        - http://nginx/nginx-health
-        - http://thehive:9000/api/status
-        - http://cortex:9001/api/health
-        - http://shuffle-frontend:80/health
-        - http://shuffle-backend:5001/health
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: __address__
-        replacement: blackbox-exporter:9115
+          - localhost
+        labels:
+          job: system-logs
+          __path__: /var/log/**/*.log
 ```
 
-### A.4.2. Grafana Dashboard Configuration
-
-```json
-{
-  "dashboard": {
-    "id": null,
-    "title": "SOAR Ransomware Lab Dashboard",
-    "tags": ["soar", "ransomware", "security"],
-    "timezone": "browser",
-    "panels": [
-      {
-        "id": 1,
-        "title": "System Overview",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "up{job=\"thehive\"}",
-            "legendFormat": "TheHive"
-          },
-          {
-            "expr": "up{job=\"cortex\"}",
-            "legendFormat": "Cortex"
-          },
-          {
-            "expr": "up{job=\"shuffle-backend\"}",
-            "legendFormat": "Shuffle"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [
-              {
-                "options": {
-                  "0": {
-                    "text": "DOWN",
-                    "color": "red"
-                  },
-                  "1": {
-                    "text": "UP",
-                    "color": "green"
-                  }
-                },
-                "type": "value"
-              }
-            ]
-          }
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 0
-        }
-      },
-      {
-        "id": 2,
-        "title": "Response Time Distribution",
-        "type": "histogram",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, rate(soar_response_time_seconds_bucket[5m]))",
-            "legendFormat": "95th percentile"
-          },
-          {
-            "expr": "histogram_quantile(0.50, rate(soar_response_time_seconds_bucket[5m]))",
-            "legendFormat": "50th percentile"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 0
-        }
-      },
-      {
-        "id": 3,
-        "title": "Alert Processing Rate",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(soar_alerts_processed_total[5m])",
-            "legendFormat": "Alerts/sec"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 24,
-          "x": 0,
-          "y": 8
-        }
-      },
-      {
-        "id": 4,
-        "title": "Success Rate",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "rate(soar_alerts_successful_total[5m]) / rate(soar_alerts_processed_total[5m]) * 100",
-            "legendFormat": "Success Rate %"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 16
-        }
-      },
-      {
-        "id": 5,
-        "title": "Resource Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "container_cpu_usage_seconds_total",
-            "legendFormat": "{{container_label_com_docker_compose_service}}"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 16
-        }
-      }
-    ],
-    "time": {
-      "from": "now-1h",
-      "to": "now"
-    },
-    "refresh": "5s"
-  }
-}
-```
+Esto etiqueta cada línea de log con `container` (nombre del contenedor), `service` (nombre del servicio sin sufijo de réplica), `compose_service` (label Docker Compose) y `compose_project` (nombre del proyecto), permitiendo filtrar en Grafana por servicio o proyecto.
 
 ## A.5. Guía de Instalación Rápida
 
@@ -1338,7 +867,7 @@ curl http://localhost:8200/users* -u elastic:$ELASTIC_PASSWORD
 **Criterio de verificación.**
 
 - La ejecución del workflow finaliza con estado `SUCCESS`.
-- `pytest tests/e2e/` devuelve 281/281 PASSED (o el total actual del proyecto).
+- `make test-e2e` pasa sin fallos (ver `reports/e2e/` para el total actual de TCs).
 
 ---
 
