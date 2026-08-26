@@ -211,7 +211,7 @@ graph TD     subgraph Capa de Datos         DB1[Elasticsearch]
         INT3[Documentación]
     end
 
-    subgraph Capa Monitoreo opcional         MON1[Loki]
+    subgraph Capa Monitoreo         MON1[Loki]
         MON2[Promtail]
         MON3[Grafana]
         MON4[PostgreSQL]
@@ -222,7 +222,7 @@ graph TD     subgraph Capa de Datos         DB1[Elasticsearch]
 ```
 
 En la capa de datos se encuentran Elasticsearch (Elastic, 2024; Elastic, n.d.) y Redis (Redis Ltd., 2024). Sobre ella se apoya la capa de aplicación SOAR, formada por TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (frontend y backend) (Shuffle Tools, 2024; Shuffle Tools, n.d.) y Orborus. Este último es el ejecutor de workflows de Shuffle: se conecta al backend y a Elasticsearch, y accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores.
-La integración se resuelve con Nginx (Nginx, 2024; Nginx, n.d.), la API FastAPI (FastAPI, 2024) y el sitio de documentación. El monitoreo, opcional, se compone de Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) y PostgreSQL.
+La integración se resuelve con Nginx (Nginx, 2024; Nginx, n.d.), la API FastAPI (FastAPI, 2024) y el sitio de documentación. El monitoreo se compone de Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) y PostgreSQL.
 
 Relaciones entre componentes:
 
@@ -421,7 +421,7 @@ graph TD     subgraph Redes Docker         R1[Red perimetral bridge]
         CC9[Límites de recursos]
     end
 
-    subgraph Archivos opcionales         OC1[infra/docker/compose/docker-compose.misp.yml]
+    subgraph Archivos complementarios         OC1[infra/docker/compose/docker-compose.misp.yml]
         OC2[infra/docker/compose/docker-compose.opensearch.yml]
         OC3[infra/docker/compose/docker-compose.api.yml]
         OC4[infra/docker/compose/logging/docker-compose.logging.yml]
@@ -436,7 +436,7 @@ El archivo principal `infra/docker/compose/docker-compose.yml` define las redes 
 
 El archivo de componentes principales `infra/docker/compose/docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle Frontend, Shuffle Backend, Orborus y Network Watcher. Cada servicio tiene verificaciones de salud, límites de recursos y dependencias entre servicios. Redis se conecta a la red de inteligencia para integración con servicios externos.
 
-Los archivos opcionales añaden funcionalidades adicionales:
+Los archivos complementarios añaden funcionalidades adicionales:
 `infra/docker/compose/docker-compose.api.yml` para la API FastAPI y documentación, `infra/docker/compose/docker-compose.misp.yml` para MISP (threat intelligence) (MISP Project, 2024), `infra/docker/compose/docker-compose.opensearch.yml` para OpenSearch (motor de búsqueda de Shuffle) (OpenSearch Project, 2024) y `infra/docker/compose/logging/docker-compose.logging.yml` para el stack de monitoreo (Loki, Promtail, Grafana, PostgreSQL).
 
 La segmentación de redes sigue un modelo por zonas de seguridad. La red perimetral bridge es accesible desde el host, mientras que la red interna soar_net conecta los componentes SOAR entre sí. Una tercera red, ti_net, vincula Redis y Cortex con servicios externos, y la red de monitoreo logging_net aísla el stack de logging. Esta separación limita el movimiento lateral en caso de compromiso.
@@ -690,7 +690,7 @@ En usabilidad, el tiempo de aprendizaje es asumible y requiere una formación in
 
 #### 4.1.3.5. Sistema de Monitoreo
 
-El laboratorio incluye un sistema de logging centralizado opcional basado en Loki, Promtail y Grafana. Este stack permite la agregación, recopilación y visualización de logs de todos los servicios del laboratorio.
+El laboratorio incluye un sistema de logging centralizado basado en Loki, Promtail y Grafana. Este stack permite la agregación, recopilación y visualización de logs de todos los servicios del laboratorio.
 
 #### Componentes del stack de logging
 
