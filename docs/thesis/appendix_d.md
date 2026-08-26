@@ -160,17 +160,17 @@ Throughput (alertas/hora):
      S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18
 
 Hitos importantes (4 fases):
-• S1-S3: Investigación + Diseño (estado del arte, IaC, arquitectura)
-• S4-S11: Desarrollo (integración Cortex, stack monitoreo, playbook)
-• S12-S15: Pruebas (suite 2041 tests, experimento n=50)
-• S16-S18: Optimización (documentación, defensa)
+• S1-S3: Fase 1 Investigación (estado del arte, revisión literatura)
+• S4-S6: Fase 2 Diseño (arquitectura hexagonal, IaC, stack monitoreo)
+• S7-S12: Fase 3 Desarrollo (integración Cortex, playbook, suite tests)
+• S13-S18: Fase 4 Validación (experimento n=50, documentación, defensa)
 ```
 
 La progresión temporal de las métricas clave del proyecto durante las 18 semanas de desarrollo
 (27 abril - 31 agosto 2026), incluyendo MTTR, tasa de éxito y throughput. La estimación inicial fue
 de 12 semanas, aumentada a 15 tras la fase de diseño (integración de Cortex y stack de monitoreo no
 contemplados inicialmente), y finalmente 18 por la ampliación de la suite de tests (2041 tests) y la
-ejecución del experimento (n=50). Las métricas solo se midieron en la fase de pruebas (S12-S15); las
+ejecución del experimento (n=50). Las métricas solo se midieron en la fase de validación (S13-S18); las
 semanas anteriores muestran valores estimados/progresivos.
 
 ### Gráfico 5.4: Análisis de Mejoras por Categoría
@@ -201,7 +201,7 @@ Automatización (35 pts):
 10 ┤
  5 ┤
  0 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
-    Scripts  Playbooks  CI/CD  Testing  Auto-escalado  Recovery
+    Scripts  Playbooks  CI/CD  Testing  Backup  Recovery
 
 Calidad Código (15 pts):
 15 ┤ ████████████████████████████████████████████████████
@@ -216,7 +216,7 @@ Monitoreo (20 pts):
 10 ┤
  5 ┤
  0 └─┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┘
-    Prometheus  Grafana  Alertas  Logs  Métricas  Dashboard
+    Loki  Grafana  Alertas  Logs  Métricas  Dashboard
 ```
 
 ### Gráfico 5.5: Comparación de Costos y Beneficios
@@ -445,9 +445,9 @@ en una función específica del ciclo de respuesta.
 │  └─────────┘ └─────────────────┘                                          │
 │            │                                                              │
 │  ┌─────────▼─────────┐                                                    │
-│  │  UPDATE          │                                                    │
-│  │  INPROGRESS      │                                                    │
-│  │  (TheHive PATCH) │                                                    │
+│  │  CASE STAYS      │                                                    │
+│  │  OPEN            │                                                    │
+│  │  (no PATCH)      │                                                    │
 │  └─────────┬─────────┘                                                    │
 │            │                                                              │
 │  ┌─────────▼─────────┐                                                    │
@@ -473,8 +473,9 @@ El flujo de decisión del playbook de respuesta a ransomware, ilustrando la lóg
 y ejecución automatizada. El proceso comienza con la validación del esquema JSON de la alerta recibida, seguido de la
 clasificación del tipo de alerta. Si la alerta es de tipo ransomware, se ejecuta el playbook especializado que incluye
 análisis de IoCs mediante Cortex, cálculo de score de riesgo (0-100), y una decisión binaria: si `score >= 80` OR
-`verdict == "malicious"`, se ejecuta la contención simulada (POST /api/v1/contain), se actualiza el caso a InProgress
-en TheHive, y se envía notificación crítica vía Slack. Si no, se marca como falso positivo. En ambos casos, se calcula
+`verdict == "malicious"`, se ejecuta la contención vía Lab API (POST /api/v1/contain), el caso permanece `Open`
+en TheHive (sin PATCH — TheHive 3.5.2 solo soporta Open/Resolved/Deleted), y se envía notificación crítica vía
+Slack. Si no, se marca como `Resolved`/`FalsePositive` en TheHive. En ambos casos, se calcula
 el MTTR, se enriquece el caso con un resumen ejecutivo, y se indexan las métricas en Elasticsearch (`soar-metrics`).
 Para alertas no ransomware, se ejecuta un playbook genérico. Este flujo estructurado asegura que cada alerta sea
 procesada de manera consistente según su tipo y nivel de riesgo, sin intervención manual durante la ejecución.
@@ -675,7 +676,7 @@ Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del play
 ![Evolución de métricas durante el proyecto](figures/GE4_metrics_evolution.png)
 
 **Figura 29**: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
-cinco fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
+cuatro fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
 
 ![Análisis coste-beneficio (versión extendida)](figures/GE6_cost_benefit.png)
 
