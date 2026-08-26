@@ -71,10 +71,10 @@ La matriz de trazabilidad conecta cada requisito con su componente implementador
 | RF-03  | Orquestación       | Shuffle    | Alta      | Prueba funcional del playbook                    |
 | RF-04  | Gestión de Casos   | TheHive    | Alta      | Prueba E2E de creación y cierre de casos         |
 | RF-05  | Monitoreo          | Loki/Grafana | Media   | Verificación de métricas en dashboard            |
-| RF-06  | Simulador          | Python/simulator | Alta | Prueba unit del generador de alertas        |
-| RF-07  | Contención simulada | FastAPI   | Alta      | Prueba E2E de endpoint `/api/v1/contain`        |
-| RF-08  | API REST           | FastAPI    | Media     | Prueba de contratos de API                       |
-| RF-09  | Métricas estadísticas | Python/domain | Alta | Prueba unit de `statistical_calculator`     |
+| RF-06  | Simulador          | Python/simulator | Alta | Pruebas E2E y de carga usan el simulador    |
+| RF-07  | Contención simulada | FastAPI   | Alta      | Endpoint `/api/v1/contain` en `routes_services` |
+| RF-08  | API REST           | FastAPI    | Media     | Pruebas de integración de API                    |
+| RF-09  | Métricas estadísticas | Python/domain | Alta | Resultados en `reports/e2e/` (n=50)          |
 | RNF-01 | Rendimiento        | Sistema    | Alta      | Benchmark de MTTR (n=50 por escenario)           |
 | RNF-02 | Reproducibilidad   | Docker     | Alta      | `make up` + `pytest tests/e2e/`                  |
 | RNF-03 | Seguridad          | Docker/Nginx/FastAPI | Media | Revisión de config, JWT, sanitización    |
@@ -84,35 +84,35 @@ La matriz de trazabilidad conecta cada requisito con su componente implementador
 | RI-01  | TheHive ↔ Cortex   | TheHive/Cortex | Alta  | Prueba de integración de observables             |
 | RI-02  | Shuffle ↔ TheHive  | Shuffle/TheHive | Alta | Prueba E2E de webhook y creación de casos        |
 | RI-03  | Threat intelligence | Cortex    | Media     | Verificación de analyzers libres                 |
-| RI-04  | MISP (opcional)    | MISP       | Baja      | Prueba de integración con MISP                   |
+| RI-04  | MISP (opcional)    | MISP       | Baja      | `docker-compose.misp.yml` disponible             |
 
 La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 
 ## Tabla 4: Estado de Cumplimiento de Requisitos
 
-| Tipo   | Requisito                     | Métrica de Verificación  | Estado             |
-|--------|-------------------------------|--------------------------|--------------------|
-| **F**  | Gestión de alertas ransomware | 100% alertas procesadas  | Cumplido           |
-| **F**  | Análisis automático IoCs      | Analyzers libres Cortex  | Cumplido           |
-| **F**  | Orquestación playbook         | 1 playbook E2E, 2 escenarios | Cumplido      |
-| **F**  | Gestión de casos              | Integración TheHive      | Cumplido           |
-| **F**  | Monitoreo                     | Dashboard Grafana + Loki | Cumplido           |
-| **F**  | Simulador de alertas          | `src/soar_lab/simulator/` | Cumplido          |
-| **F**  | Contención simulada           | Endpoint `/api/v1/contain` | Cumplido         |
-| **F**  | API REST de gestión           | FastAPI + OpenAPI        | Cumplido           |
-| **F**  | Métricas estadísticas         | `statistical_calculator.py` | Cumplido        |
-| **NF** | Reducción MTTR ≥ 50%          | n=50 por escenario       | Cumplido (92.3%)   |
-| **NF** | Reproducibilidad              | `make up` + tests E2E    | Cumplido           |
-| **NF** | Seguridad                     | Aislamiento, JWT, sanitización | Cumplido     |
-| **NF** | Calidad                       | 2041 tests automatizados | Cumplido           |
-| **NF** | Resiliencia                   | Circuit breaker + retry  | Cumplido           |
-| **NF** | Observabilidad                | Health checks + Loki     | Cumplido           |
-| **I**  | TheHive ↔ Cortex              | Observables enriquecidos | Cumplido           |
-| **I**  | Shuffle ↔ TheHive             | Webhook + API            | Cumplido           |
-| **I**  | Threat intelligence           | DShield, GoogleDNS, Mnemonic pDNS | Cumplido  |
-| **I**  | MISP (opcional)               | Intercambio de IoCs      | Cumplido           |
+| ID     | Tipo   | Requisito                     | Métrica de Verificación  | Estado             |
+|--------|--------|-------------------------------|--------------------------|--------------------|
+| RF-01  | **F**  | Gestión de alertas ransomware | 100% alertas procesadas  | Cumplido           |
+| RF-02  | **F**  | Análisis automático IoCs      | Analyzers libres Cortex  | Cumplido           |
+| RF-03  | **F**  | Orquestación playbook         | 1 playbook E2E, 2 escenarios | Cumplido      |
+| RF-04  | **F**  | Gestión de casos              | Integración TheHive      | Cumplido           |
+| RF-05  | **F**  | Monitoreo                     | Dashboard Grafana + Loki | Cumplido           |
+| RF-06  | **F**  | Simulador de alertas          | E2E + pruebas de carga   | Cumplido           |
+| RF-07  | **F**  | Contención simulada           | Endpoint mock FastAPI    | Cumplido           |
+| RF-08  | **F**  | API REST de gestión           | Tests de integración API | Cumplido           |
+| RF-09  | **F**  | Métricas estadísticas         | Resultados n=50 en `reports/e2e/` | Cumplido   |
+| RNF-01 | **NF** | Reducción MTTR ≥ 50%          | 92.3% (n=50)             | Cumplido           |
+| RNF-02 | **NF** | Reproducibilidad              | `make up` + tests E2E    | Cumplido           |
+| RNF-03 | **NF** | Seguridad                     | Aislamiento, JWT, sanitización | Cumplido     |
+| RNF-04 | **NF** | Calidad                       | 2041 tests automatizados | Cumplido           |
+| RNF-05 | **NF** | Resiliencia                   | Circuit breaker + retry  | Cumplido           |
+| RNF-06 | **NF** | Observabilidad                | Health checks + Loki     | Cumplido           |
+| RI-01  | **I**  | TheHive ↔ Cortex              | Observables enriquecidos | Cumplido           |
+| RI-02  | **I**  | Shuffle ↔ TheHive             | Webhook + API            | Cumplido           |
+| RI-03  | **I**  | Threat intelligence           | DShield, GoogleDNS, Mnemonic pDNS | Cumplido  |
+| RI-04  | **I**  | MISP (opcional)               | `docker-compose.misp.yml` | Opcional          |
 
-Los nueve requisitos funcionales, los seis no funcionales y los cuatro de integración se han implementado y verificado. La reducción del MTTR del 92.3 % respecto al baseline manual supera el objetivo del 50 %. La reproducibilidad se verifica con `make up` y `pytest tests/e2e/`. La seguridad combina aislamiento de red Docker, autenticación JWT en la API, sanitización de payloads y secretos mediante variables de entorno. La resiliencia se garantiza con circuit breaker y reintentos en las integraciones. La suite de tests cubre unit (1245), integration (336), e2e (281), atomic (101), security (27), performance (30) y architecture (1), totalizando 2041 tests. MISP se incluye como componente opcional para intercambio de indicadores, sin ser requisito para la ejecución del playbook E2E.
+Los nueve requisitos funcionales, los seis no funcionales y los tres de integración obligatorios se han implementado y verificado. MISP (RI-04) es opcional y no bloquea el playbook E2E. La reducción del MTTR del 92.3 % respecto al baseline manual supera el objetivo del 50 %. La reproducibilidad se verifica con `make up` y `pytest tests/e2e/`. La seguridad combina aislamiento de red Docker, autenticación JWT en la API, sanitización de payloads y secretos mediante variables de entorno. La resiliencia se garantiza con circuit breaker y reintentos en las integraciones. La suite de tests cubre unit (1245), integration (336), e2e (281), atomic (101), security (27), performance (30) y architecture (1), totalizando 2041 tests.
 
 ### 4.1.2. Descripción de la herramienta software desarrollada
 
