@@ -620,9 +620,9 @@ Las siguientes figuras se generan automáticamente desde los resultados experime
 
 ### Dashboards de Grafana
 
-![Progresión de MTTR (tendencia diaria)](figures/org_daily_stats.png)
+![Mejoras por categoría](figures/Fig5_2_improvements_category.png)
 
-**Figura 18**: Progresión de MTTR (tendencia diaria) y estadísticas agregadas por día durante las ejecuciones E2E.
+**Figura 18**: Análisis de mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
 
 ![Alertas procesadas por hora (throughput)](figures/workflow_durations.png)
 
@@ -638,82 +638,60 @@ Las siguientes figuras se generan automáticamente desde los resultados experime
 
 ### Estado de Servicios
 
-![Salud de servicios](figures/service_health.png)
+![Resultados de MTTR](figures/Fig5_1_mttr_results.png)
 
-**Figura 22**: Estado de salud de los 10 servicios críticos del laboratorio (100 % healthy).
+**Figura 22**: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
 
 ![Estado de casos en TheHive](figures/thehive_case_status.png)
 
 **Figura 23**: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
 
-![Duración de workflows](figures/workflow_durations.png)
-
-**Figura 24**: Distribución de duraciones de los 50 workflows ejecutados.
-
 ### Monitoreo de Logs
 
 ![Volumen de logs en Loki](figures/loki_log_volume.png)
 
-**Figura 25**: Volumen de logs agregados en Loki durante las ejecuciones E2E.
-
-![Mapa de calor de logs](figures/loki_log_heatmap.png)
-
-**Figura 26**: Mapa de calor de actividad de logs por servicio y tiempo.
+**Figura 24**: Volumen de logs agregados en Loki durante las ejecuciones E2E.
 
 ### Cumplimiento de Umbrales y Notificaciones
 
 ![Cumplimiento de umbrales](figures/threshold_compliance.png)
 
-**Figura 27**: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
+**Figura 25**: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
 valores medidos. Se aprecia que el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles
 P50 y P90 no los alcanzan en el conjunto completo.
 
-![Notificaciones del workflow](figures/workflow_notifications.png)
+![Análisis coste-beneficio](figures/Fig5_5_cost_benefit.png)
 
-**Figura 28**: Notificaciones generadas por el workflow durante las 50 ejecuciones E2E, incluyendo alertas de
-contención, cierre de caso y errores de integración.
+**Figura 26**: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
 
 ### Dashboards Complementarios de Grafana
 
 ![Tasa de éxito por tipo de alerta (Grafana)](figures/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png)
 
-**Figura 29**: Tasa de éxito por tipo de alerta capturada desde el panel 4 de Grafana, complementaria a la Figura 17.
-
-![Tasa de éxito de servicios TheHive y Cortex (Grafana)](figures/thehive_case_status.png)
-
-**Figura 30**: Estado de los 50 casos creados en TheHive, mostrando la disponibilidad de las integraciones durante las ejecuciones.
-
-![Alertas por severidad (Grafana)](figures/cortex_job_status.png)
-
-**Figura 31**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito), complementaria al análisis de severidad.
-
-![Evolución de alertas por tipo (Grafana)](figures/alert_distribution.png)
-
-**Figura 32**: Distribución de alertas por tipo durante las 50 ejecuciones, mostrando la proporción de ransomware, RAT, troyano e infostealer.
+**Figura 27**: Tasa de éxito por tipo de alerta capturada desde el panel 4 de Grafana, complementaria a la Figura 17.
 
 ### Análisis Estadístico Adicional
 
 ![Correlación entre métricas](figures/correlation_heatmap.png)
 
-**Figura 33**: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
+**Figura 28**: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
 Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del playbook y el tiempo de respuesta.
 
 ![Evolución de métricas durante el proyecto](figures/GE4_metrics_evolution.png)
 
-**Figura 34**: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
+**Figura 29**: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
 cinco fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
 
 ![Análisis coste-beneficio (versión extendida)](figures/GE6_cost_benefit.png)
 
-**Figura 35**: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
+**Figura 30**: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
 extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
 
 ### Estadísticas Operativas
 
-![Estadísticas diarias organizativas](figures/org_daily_stats.png)
+![Estadísticas diarias organizativas](figures/GE5_improvements.png)
 
-**Figura 36**: Estadísticas diarias agregadas por organización durante el período de validación, incluyendo volumen
-de alertas procesadas, MTTR medio diario y tasa de éxito.
+**Figura 31**: Mejoras implementadas por categoría durante el proyecto, mostrando el impacto acumulado en MTTR, precisión y automatización.
 
 Los KPIs de negocio escalados por tipo de organización (PYME, mediana, grande, enterprise), con objetivos
 realistas adaptados al tamaño y recursos de cada una. Los KPIs incluyen MTTR objetivo, costo por incidente, ROI de SOAR,
