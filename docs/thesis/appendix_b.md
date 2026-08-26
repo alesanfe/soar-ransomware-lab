@@ -19,7 +19,7 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 | **Nombre** | `SOAR-Ransomware-Response` |
 | **Trigger** | Webhook (Shuffle Triggers) |
 | **Acciones totales** | 45 nodos de acción + 1 trigger = 46 nodos definidos (49 ejecutados) |
-| **Ramas (edges)** | 61 (59 base + 2 dinámicas) |
+| **Ramas (edges)** | 63 (61 base + 2 dinámicas) |
 | **Apps usadas** | HTTP, Shuffle Tools (Python embebido) |
 | **Timeout por acción** | 30-180s según nodo |
 | **Concurrencia** | Análisis paralelo tras creación de caso |
@@ -173,14 +173,14 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
                  ┌────────▼────────┐                    ┌─────────▼─────────┐
                  │ UPDATE          │                    │ NOTIFY INFO       │
                  │ INPROGRESS      │                    │ (Python)          │
-                 │ (Python)        │                    │ Slack webhook     │
+                 │ (Python)        │                    │ Email notification│
                  │ Case stays Open │                    └─────────┬─────────┘
                  └────────┬────────┘                              │
                           │                                       │
                  ┌────────▼────────┐                              │
                  │ NOTIFY CRITICAL │                              │
                  │ (Python)        │                              │
-                 │ Slack webhook   │                              │
+                 │ Email notification│                           │
                  └────────┬────────┘                              │
                           │                                       │
                           └───────────────────┬───────────────────┘
@@ -294,8 +294,8 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 |----|--------|------|-------------|
 | `act_calc_decision` | Calc Decision | Python | **Núcleo del workflow**: calcula score (0-100) y verdict |
 | `act_containment` | Containment | Python | Contención vía Lab API (`POST /api/v1/contain` al servicio `api:8000`) |
-| `act_notify_critical` | Notify Critical | Python | Envía notificación crítica (Slack webhook) |
-| `act_notify_info` | Notify Info | Python | Envía notificación informativa (Slack webhook) |
+| `act_notify_critical` | Notify Critical | Python | Envía notificación crítica (email) |
+| `act_notify_info` | Notify Info | Python | Envía notificación informativa (email) |
 
 ### B.3.8. Nodos de Métricas y Cierre
 
@@ -364,7 +364,7 @@ Cada técnica de alto riesgo detectada suma **+10 puntos** al score.
 
 ## B.5. Ramas (Edges) del Workflow
 
-El workflow tiene **61 ramas** (59 base + 2 dinámicas) que conectan los nodos. Las principales son:
+El workflow tiene **63 ramas** (61 base + 2 dinámicas) que conectan los nodos. Las principales son:
 
 ### B.5.1. Flujo Principal
 
@@ -441,8 +441,8 @@ Cada script vive como archivo `.py` independiente en `scripts/setup/shuffle_work
 | `containment.py` | Contención vía Lab API (`POST /api/v1/contain`) |
 | `mark_false_positive.py` | Marca caso como FP en TheHive |
 | `update_inprogress.py` | Confirma caso permanece Open (sin PATCH) |
-| `notify_critical.py` | Notificación crítica (Slack) |
-| `notify_info.py` | Notificación informativa (Slack) |
+| `notify_critical.py` | Notificación crítica (email) |
+| `notify_info.py` | Notificación informativa (email) |
 | `calc_mttr.py` | Calcula MTTR total |
 | `build_hive_summary.py` | Construye resumen ejecutivo |
 | `build_metrics_json.py` | Construye documento de métricas |
@@ -479,7 +479,7 @@ Datos medidos en ejecución experimental (n=50 alertas, 2026-08-24, fuente: `doc
 | Tasa de contención (score ≥ 80) | 92.0% (46/50) |
 | Tasa de observación (score < 80) | 8.0% (4/50) |
 | Nodos por ejecución | 49 (reportado por Shuffle; 46 definidos + 3 dinámicos) |
-| Ramas definidas | 61 (59 base + 2 dinámicas) |
+| Ramas definidas | 63 (61 base + 2 dinámicas) |
 | Jobs de Cortex | 257 (255 success, 2 failure) |
 | Casos TheHive | 50 (46 Open, 4 Resolved) |
 | Tasa de automatización | 100% (sin intervención humana) |
