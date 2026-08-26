@@ -18,7 +18,7 @@ flowchart LR
   Shuffle -- API --> TheHive
   TheHive -- Observables --> Cortex
   Cortex -- Analyzers --> TI[(Threat Intel)]
-  Shuffle -- Contención simulada --> API[Lab API /api/v1/contain]
+  Shuffle -- Contención Lab API --> API[Lab API /api/v1/contain]
   TheHive <--> Elasticsearch
   Cortex <--> Redis
   Shuffle <--> OpenSearch[OpenSearch]
@@ -166,7 +166,7 @@ C4Context
  title Sistema de Contexto - SOAR Ransomware Lab
  Person(operador, "Operador / Analista")
  System(soar, "SOAR Ransomware Lab", "Orquesta detección, análisis y contención simulada de ransomware")
- System_Ext(siem, "SIEM / EDR")
+ System_Ext(siem, "SIEM simulado")
  System_Ext(thehive, "TheHive", "Gestión de casos")
  System_Ext(cortex, "Cortex", "Análisis de IoC")
  System_Ext(misp, "MISP", "Inteligencia de amenazas")
@@ -213,10 +213,10 @@ sequenceDiagram
  Backend->>MISP: POST /events/add (IoC)
  MISP-->>Backend: eventId
  alt score >= 80 OR verdict == "malicious"
- Backend->>Backend: POST /api/v1/contain (contención simulada)
- Backend->>TheHive: PATCH /api/case (Open -> InProgress)
+ Backend->>Backend: POST /api/v1/contain (contención Lab API)
+ Backend->>TheHive: Case stays Open (no PATCH)
  else score < 80 y verdict != malicious
- Backend->>TheHive: PATCH /api/case (marcar observado)
+ Backend->>TheHive: PATCH /api/case (marcar Resolved/FalsePositive)
  end
  Backend->>ES: Indexa métricas KPI (@timestamp, mttr_seconds, ...)
  API->>ES: GET /analytics/kpis/aggregated
@@ -245,8 +245,8 @@ flowchart TD
  E --> F[N5: Ejecutar analyzers Cortex]
  F --> G{N6: score ≥ 80\no verdict == malicious?}
 
- G -->|SÍ| H[N7: POST /api/v1/contain<br/>(contención simulada)]
- H --> I[N8: TheHive -> InProgress]
+ G -->|SÍ| H[N7: POST /api/v1/contain<br/>(contención Lab API)]
+ H --> I[N8: Case stays Open<br/>(no PATCH)]
  I --> J[N9: Notificación CRITICAL Slack]
  J --> K[N10: Registrar MTTR + métricas ES]
  K --> Z([FIN — caso contenido])
@@ -287,10 +287,10 @@ sequenceDiagram
  MISP-->>Backend: Evento creado
  Backend->>Backend: Decisión (score >= 80 OR verdict == "malicious"?)
  alt Score ≥ 80 o verdict malicioso
- Backend->>Backend: POST /api/v1/contain (contención simulada)
- Backend->>TheHive: PATCH /api/case (Open -> InProgress)
+ Backend->>Backend: POST /api/v1/contain (contención Lab API)
+ Backend->>TheHive: Case stays Open (no PATCH)
  else Score < 80 y verdict != malicious
- Backend->>TheHive: PATCH /api/case (marcar observado)
+ Backend->>TheHive: PATCH /api/case (Resolved/FalsePositive)
  end
  LabAPI->>Backend: GET /soar/status /metrics
 ```
@@ -317,12 +317,12 @@ sequenceDiagram
  Shuffle->>Cortex: Ejecuta analyzers en IoCs
  Cortex-->>Shuffle: Resultados (score, verdict)
  alt Score ≥ 80 o verdict malicioso
- Shuffle->>API: POST /api/v1/contain (simulación)
+ Shuffle->>API: POST /api/v1/contain (Lab API)
  API-->>Shuffle: Contención confirmada
- Shuffle->>TheHive: PATCH /api/case (InProgress)
+ Shuffle->>TheHive: Case stays Open (no PATCH)
  Shuffle->>ES: Indexa métricas (soar-metrics)
  else Score < 80 y verdict benigno
- Shuffle->>TheHive: PATCH /api/case (Resolved/FP)
+ Shuffle->>TheHive: PATCH /api/case (Resolved/FalsePositive)
  end
  Shuffle-->>TheHive: Actualización final del caso
 ```
@@ -334,24 +334,25 @@ sequenceDiagram
 ## H.9. Cronograma de Objetivos SMART (Gantt)
 
 Diagrama Gantt del cronograma de los 20 objetivos SMART distribuidos en 4 fases
-(planificación inicial 15 semanas; ejecución real 18 semanas, 27 abr - 31 ago 2026).
+(planificación inicial 12 semanas, aumentada a 15 tras diseño, ejecución real 18 semanas,
+27 abr - 31 ago 2026).
 
 ```mermaid
 gantt
  title Cronograma de Objetivos SMART - SOAR Ransomware Lab
  dateFormat YYYY-MM-DD
- section Fase 1: Infraestructura
+ section Fase 1: Investigación
  Objetivo 1: Laboratorio desplegado :active, obj1, 2026-04-27, 14d
  Objetivo 8: Automatización configurada :obj8, after obj1, 7d
  Objetivo 17: API del Laboratorio :obj17, after obj8, 7d
  Objetivo 18: CLI del Laboratorio :obj18, after obj17, 5d
- section Fase 2: Desarrollo
+ section Fase 2: Diseño
  Objetivo 2: Playbook E2E :obj2, 2026-05-11, 28d
  Objetivo 5: Integración SIEM :obj5, after obj2, 7d
  Objetivo 6: Contención simulada :obj6, after obj5, 7d
  Objetivo 19: Sitio de Documentación :obj19, after obj6, 7d
  Objetivo 20: Interfaz Web de Gestión :obj20, after obj19, 7d
- section Fase 3: Validación
+ section Fase 3: Desarrollo
  Objetivo 3: Métricas MTTR :obj3, 2026-06-22, 14d
  Objetivo 9: Pruebas Atómicas :obj9, after obj3, 5d
  Objetivo 10: Pruebas de Integración :obj10, after obj9, 7d
@@ -359,7 +360,7 @@ gantt
  Objetivo 12: Pruebas de Rendimiento :obj12, after obj11, 5d
  Objetivo 13: Pruebas de Producción :obj13, after obj12, 3d
  Objetivo 14: KPIs y Análisis :obj14, after obj13, 7d
- section Fase 4: Cierre
+ section Fase 4: Validación
  Objetivo 4: Documentación técnica :obj4, 2026-08-03, 7d
  Objetivo 15: Preparación defensa TFM :obj15, after obj4, 7d
  Objetivo 16: Evidencia aprobación :obj16, after obj15, 7d
@@ -379,16 +380,18 @@ title Roadmap por Semanas
 dateFormat WW
 axisFormat "S%V"
 section Fases
-Fase 1: Infraestructura :active, f1, 01, 4w
-Fase 2: Desarrollo :crit, f2, after f1, 5w
-Fase 3: Validación :crit, f3, after f2, 4w
-Fase 4: Cierre :crit, f4, after f3, 2w
+Fase 1: Investigación :active, f1, 01, 3w
+Fase 2: Diseño :crit, f2, after f1, 3w
+Fase 3: Desarrollo :crit, f3, after f2, 6w
+Fase 4: Validación :crit, f4, after f3, 6w
 ```
 
-> **Nota:** La planificación inicial era de 15 semanas (4+5+4+2). La ejecución
-> real se extendió a 18 semanas (27 abr - 31 ago 2026) debido a la ampliación
-> de la suite de tests (2041 tests) y la integración de analyzers externos
-> de Cortex. Ver `objectives_and_methodology.md` para el cronograma real.
+> **Nota:** La planificación inicial era de 12 semanas, aumentada a 15 tras
+> la fase de diseño (integración de Cortex con analyzers externos y stack de
+> monitoreo no contemplados inicialmente). La ejecución real se extendió a
+> 18 semanas (27 abr - 31 ago 2026, 3+3+6+6) debido a la ampliación de la
+> suite de tests (2041 tests) y la ejecución del experimento (n=50).
+> Ver `objectives_and_methodology.md` para el cronograma real.
 
 **Fuente**: `docs/06-project-management.md` línea 861
 
@@ -457,7 +460,7 @@ graph LR
  B --> D[MISP: búsqueda IoCs]
  B --> E[TheHive: caso + observables]
  B --> F[Elasticsearch: indexación]
- C --> G[Analyzers: Hashdd, Virusshare,<br/>DShield, Mnemonic pDNS,<br/>IP-API, GoogleDNS]
+ C --> G[Analyzers: Hashdd,<br/>DShield, Mnemonic pDNS,<br/>IP-API, GoogleDNS]
  D --> H[Correlación amenazas]
  E --> I[Tareas IR: contener, notificar, preservar]
  style A fill:#2196F3
