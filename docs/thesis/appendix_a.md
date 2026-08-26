@@ -207,10 +207,13 @@ La **Tabla 13** resume las variables de entorno Docker más relevantes para la p
 | `SHUFFLE_UI_PORT`      | 8081              | Puerto Shuffle UI        | No        |
 | `SHUFFLE_API_PORT`     | 5001              | Puerto Shuffle API       | No        |
 | `ELASTICSEARCH_PORT`   | 8200              | Puerto Elasticsearch     | No        |
+| `OPENSEARCH_PORT`      | 8201              | Puerto OpenSearch        | No        |
 | `HTTP_PORT`            | 80                | Puerto HTTP público      | No        |
 | `HTTPS_PORT`           | 443               | Puerto HTTPS público     | No        |
 | `WEB_UI_PORT`          | 8085              | Puerto UI gestión        | No        |
 | `API_PORT`             | 8000              | Puerto API FastAPI       | No        |
+| `DOCS_PORT`            | 8086              | Puerto Docs Site         | No        |
+| `MISP_PORT`            | 8083              | Puerto MISP              | No        |
 | `GRAFANA_PORT`         | 8084              | Puerto Grafana           | No        |
 
 Las variables de entorno Docker especificadas en esta tabla permiten la personalización del despliegue del laboratorio
@@ -575,7 +578,7 @@ El servicio `loki` (imagen `grafana/loki:2.9.10`) agrega logs de todos los conte
 
 ### A.4.2. Dashboard KPI de Grafana (kpi-dashboard.json)
 
-El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.json` y consulta el índice `soar-metrics` de Elasticsearch (datasource `soar-es`). Contiene 15 paneles:
+El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.json` y consulta el índice `soar-metrics` de Elasticsearch (datasource `Elasticsearch`, uid `${DS_ELASTICSEARCH}`). Contiene 15 paneles:
 
 | Panel | Título | Tipo |
 |-------|--------|------|
@@ -1089,7 +1092,7 @@ sección A.1.1:
 | Archivos compose | 6 |
 | Servicios totales | 23 |
 | Redes | 4 (soar_net, ti_net, logging_net + bridge) |
-| Volúmenes persistentes | 15 |
+| Volúmenes persistentes | 17 |
 | Imágenes Docker | 23 (6 builds locales + 17 pulls) |
 | Versiones pinned | 100% (todas las imágenes tienen tag fijo) |
 
