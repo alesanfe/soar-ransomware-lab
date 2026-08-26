@@ -573,7 +573,7 @@ desarrollo futuro.
 
 | KPI                       | PYME   | Mediana | Grande  | Enterprise |
 |---------------------------|--------|---------|---------|------------|
-| **MTTR Objetivo**         | <600s  | <300s   | <120s   | <60s       |
+| **MTTR Objetivo**         | <180s  | <120s   | <90s    | <60s       |
 | **Costo Incidente**       | <$50K  | <$200K  | <$1M    | <$5M       |
 | **ROI SOAR**              | >150%  | >200%   | >250%   | >300%      |
 | **Time to Value**         | 4 sem  | 6 sem   | 8 sem   | 12 sem     |
@@ -692,7 +692,7 @@ extendida con desglose por componente de coste (licencia, infraestructura, mante
 Los KPIs de negocio escalados por tipo de organización (PYME, mediana, grande, enterprise), con objetivos
 realistas adaptados al tamaño y recursos de cada una. Los KPIs incluyen MTTR objetivo, costo por incidente, ROI de SOAR,
 time to value, productividad del equipo, score de cumplimiento y satisfacción del cliente. La progresión de valores
-refleja que organizaciones más grandes con mayores recursos pueden aspirar a objetivos más ambiciosos (MTTR <60s, ROI >
+refleja que organizaciones más grandes con mayores recursos pueden aspirar a objetivos más ambiciosos (MTTR <90s, ROI >
 250%), mientras que PYMEs con recursos limitados tienen objetivos más conservadores (MTTR <180s, ROI >150%). Esta
 escalabilidad permite a las organizaciones establecer objetivos apropiados para su contexto y justificar la inversión en
 capacidades SOAR basándose en el retorno esperado según su tamaño.
