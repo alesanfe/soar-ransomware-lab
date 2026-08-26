@@ -120,7 +120,7 @@ Arquitectura General del Sistema
 
 El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal (también llamada ports and adapters) que coloca el dominio en el centro y lo aísla de los detalles técnicos. En la práctica, esto significa que `domain/` no importa nada de `infrastructure/`: los puertos definen qué operaciones necesita el dominio, y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites, de modo que el dominio recibe tipos ya verificados. El beneficio tangible es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
 
-Para la infraestructura Docker se emplea una arquitectura en capas. Esta separación entre dominio e infraestructura mantiene la lógica de negocio desacoplada de las implementaciones concretas, lo que facilita las pruebas y el mantenimiento del sistema. La **Figura 3** muestra la arquitectura general del laboratorio y la **Figura 4** el despliegue Docker Compose. Ambos diagramas están disponibles en formato Mermaid canónico en el **Anexo H** (`appendix_h.md`).
+Para la infraestructura Docker se emplea una arquitectura en capas. Esta separación entre dominio e infraestructura mantiene la lógica de negocio desacoplada de las implementaciones concretas, lo que facilita las pruebas y el mantenimiento del sistema. La **Figura 3** muestra la arquitectura general del laboratorio y la **Figura 4** el despliegue Docker Compose. Ambos diagramas están disponibles en formato Mermaid canónico en el **Anexo H** (sección H.1).
 
 Flujo General del Sistema
 
@@ -140,7 +140,7 @@ graph TD     A[Generación de Alertas] --> B[Recepción en Shuffle]
 
 #### Arquitectura de Código Python
 
-El código en `src/soar_lab/` se organiza en capas según el patrón hexagonal. Los diagramas canónicos completos de arquitectura (hexagonal, despliegue Docker, contexto C4) están en el **Anexo H** (`appendix_h.md`, secciones H.2, H.3 y H.4).
+El código en `src/soar_lab/` se organiza en capas según el patrón hexagonal. Los diagramas canónicos completos de arquitectura (hexagonal, despliegue Docker, contexto C4) están en el **Anexo H** (secciones H.2, H.3 y H.4).
 
 ```mermaid
 graph TD     subgraph Dominio         D1[Entidades y lógica de negocio]
@@ -382,7 +382,7 @@ Si el score es mayor o igual a 80 o el verdict es "malicious", se activa la rama
 
 En ambas ramas se registra el MTTR (Mean Time To Respond) calculado desde el tiempo de detección hasta el tiempo de contención o clasificación. El caso se cierra automáticamente tras completar el flujo.
 
-El playbook se valida mediante pruebas E2E para escenarios maliciosos, falsos positivos benignos y casos de borde. El detalle completo del workflow (46 nodos, 60 ramas, 25 scripts Python embebidos, modelo de scoring 0-100) se encuentra en el **Anexo B** (`appendix_b.md`). Los diagramas canónicos del flujo E2E y del árbol de decisión están en el **Anexo H** (`appendix_h.md`, secciones H.5 y H.6).
+El playbook se valida mediante pruebas E2E para escenarios maliciosos, falsos positivos benignos y casos de borde. El detalle completo del workflow (46 nodos, 60 ramas, 25 scripts Python embebidos, modelo de scoring 0-100) se encuentra en el **Anexo B** (sección B.1). Los diagramas canónicos del flujo E2E y del árbol de decisión están en el **Anexo H** (secciones H.5 y H.6).
 
 #### Infraestructura Docker Compose
 
@@ -653,11 +653,11 @@ completaron 50/50 workflows, se crearon 50/50 casos en TheHive y se ejecutaron 2
 verdict esperado era *contain*). Este valor mejora el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring, entendida como tasa de clasificación correcta, fue del 92.0 % (46/50 decisiones acertadas).
 
 **Uso de recursos.** El consumo medido mediante `docker stats` durante las 50 ejecuciones se mantuvo dentro
-de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %) por procesamiento de eventos de red. Ningún contenedor superó su límite de memoria, confirmando que el despliegue es viable en un host con 16 GiB RAM. La validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100, 13 servicios, 38 endpoints API) se detalla en el **Anexo E** (`appendix_e.md`).
+de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %) por procesamiento de eventos de red. Ningún contenedor superó su límite de memoria, confirmando que el despliegue es viable en un host con 16 GiB RAM. La validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100, 13 servicios, 38 endpoints API) se detalla en el **Anexo E** (sección E.1).
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
-El laboratorio cumple los requisitos funcionales y de calidad definidos, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron, como se detalla en la §4.1.3.3. La cobertura de tests se puede verificar en `reports/coverage/` mediante el comando `make test-coverage`. La estrategia completa de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en el **Anexo G** (`appendix_g.md`). La validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo E** (`appendix_e.md`).
+El laboratorio cumple los requisitos funcionales y de calidad definidos, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron, como se detalla en la §4.1.3.3. La cobertura de tests se puede verificar en `reports/coverage/` mediante el comando `make test-coverage`. La estrategia completa de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en el **Anexo G** (sección G.1). La validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo E** (sección E.1).
 
 Comandos de prueba disponibles:
 
