@@ -307,8 +307,8 @@ graph TD
     ES --> P
     P --> Q{Score ≥ 80 o malicious?}
     Q -->|Sí| R[Contención simulada]
-    Q -->|No| S[Marcar falso positivo]
-    R --> T[TheHive - Actualizar a In Progress]
+    Q -->|No| S[TheHive - Resolved/FalsePositive]
+    R --> T[TheHive - Caso permanece Open]
     T --> V[Notificación crítica]
     S --> W[Notificación informativa]
     V --> Y[Calc MTTR]
@@ -410,8 +410,8 @@ graph TD     A[Recepción de alerta en Shuffle] --> B[Validación de formato]
     E --> F[Análisis de IoCs en Cortex]
     F --> G{Score ≥ 80 o verdict malicious?}     G -->|Sí| H[Contención simulada]
     G -->|No| I[Marcar como falso positivo]
-    H --> J[Actualizar caso a In Progress]
-    I --> K[Actualizar caso a FalsePositive]
+    H --> J[Caso permanece Open]
+    I --> K[TheHive - Resolved/FalsePositive]
     J --> L[Notificación crítica]
     K --> M[Notificación informativa]
     L --> N[Registro de MTTR]
@@ -424,7 +424,7 @@ El flujo comienza con la recepción de la alerta por webhook, donde se valida el
 
 A continuación, Cortex ejecuta analyzers contra fuentes externas (MalwareBazaar, DShield, etc.) y el sistema calcula un score de riesgo.
 
-Si el score >= 80 o el verdict es "malicious", se activa la contención simulada (aislamiento de red, terminación de procesos, bloqueo de cuentas), se actualiza el caso a "In Progress" y se envía una notificación crítica. En caso contrario, se marca como falso positivo ("FalsePositive") con notificación informativa.
+Si el score >= 80 o el verdict es "malicious", se activa la contención simulada (aislamiento de red, terminación de procesos, bloqueo de cuentas), el caso permanece en estado "Open" (TheHive 5 no soporta "InProgress" como status) y se envía una notificación crítica. En caso contrario, se marca el caso como "Resolved/FalsePositive" mediante PATCH a TheHive y se envía una notificación informativa.
 
 En ambas ramas se registra el MTTR desde la detección hasta la contención o clasificación, y el caso se cierra automáticamente.
 
