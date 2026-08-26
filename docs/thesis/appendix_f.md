@@ -3,7 +3,7 @@
 > La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md). Este anexo registra
 > únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental.
 
-## 2026-07-19 — Revisión de docs/thesis (FASE 53)
+## 2026-07-19 — Revisión de docs/thesis
 
 - **Tesis / Troubleshooting (A.6.1).**
   - Expandido `docs/thesis/appendix_a.md` con problemas frecuentes concretos: contenedores, Elasticsearch/OpenSearch, conectividad, E2E Shuffle, Grafana/métricas, MISP DB, autenticación JWT y certificados SSL.
@@ -44,6 +44,7 @@
 ---
 
 > La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md).
-> Se han eliminado 61 referencias placeholder inventadas (nombres académicos genéricos,
-> conferencias sin autor, blogs sin URL específica, patentes con números irreales).
+> Durante la remediación documental se depuraron las referencias placeholder inventadas
+> (nombres académicos genéricos, conferencias sin autor, blogs sin URL específica, patentes
+> con números irreales) y se reemplazaron por fuentes verificables con DOI o URL real.
 
