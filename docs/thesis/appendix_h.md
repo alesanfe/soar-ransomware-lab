@@ -66,8 +66,8 @@ graph TD
  LabAPI -- HTTP --> MISPInternal[MISP :80]
  LabAPI -- HTTP --> GrafanaInternal[Grafana :3000]
  LabAPI -- HTTP --> OpenSearch[OpenSearch :9200]
- LabAPI -- HTTP --> NetworkWatcher[Network Watcher :8002]
- LabAPI -- HTTP --> Tenzir[Tenzir Node :8080]
+ LabAPI -- HTTP --> NetworkWatcher[Network Watcher :8080]
+ LabAPI -- HTTP --> Tenzir[Tenzir Node :5160]
 
  ShuffleBackend -- HTTP --> ES
  ShuffleBackend -- HTTP --> Redis
