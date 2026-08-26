@@ -452,7 +452,7 @@ en una función específica del ciclo de respuesta.
 │            │                                                              │
 │  ┌─────────▼─────────┐                                                    │
 │  │  NOTIFY CRITICAL │                                                    │
-│  │  (Slack webhook) │                                                    │
+│  │  (email)         │                                                    │
 │  └─────────┬─────────┘                                                    │
 │            │                                                              │
 │  ┌─────────▼─────────┐                                                    │
@@ -475,7 +475,7 @@ clasificación del tipo de alerta. Si la alerta es de tipo ransomware, se ejecut
 análisis de IoCs mediante Cortex, cálculo de score de riesgo (0-100), y una decisión binaria: si `score >= 80` OR
 `verdict == "malicious"`, se ejecuta la contención vía Lab API (POST /api/v1/contain), el caso permanece `Open`
 en TheHive (sin PATCH — TheHive 3.5.2 solo soporta Open/Resolved/Deleted), y se envía notificación crítica vía
-Slack. Si no, se marca como `Resolved`/`FalsePositive` en TheHive. En ambos casos, se calcula
+email. Si no, se marca como `Resolved`/`FalsePositive` en TheHive. En ambos casos, se calcula
 el MTTR, se enriquece el caso con un resumen ejecutivo, y se indexan las métricas en Elasticsearch (`soar-metrics`).
 Para alertas no ransomware, se ejecuta un playbook genérico. Este flujo estructurado asegura que cada alerta sea
 procesada de manera consistente según su tipo y nivel de riesgo, sin intervención manual durante la ejecución.
@@ -505,7 +505,7 @@ la validación.
 |                   | Tasa éxito            | ~80%           | 92.0%          | +12pp    | %            |
 |                   | Reintentos requeridos | 2-3            | 0              | -100%    | intentos     |
 | **Notificación**  | Tiempo notificación   | 120s           | <1s            | >99%     | segundos     |
-|                   | Canales activos       | 1              | 1 (Slack)      | 0%       | canales      |
+|                   | Canales activos       | 1              | 1 (email)      | 0%       | canales      |
 |                   | Confirmación lectura  | N/A            | 100%           | N/A      | %            |
 
 > *\* Las fases de análisis y creación de caso se ejecutan en paralelo dentro del workflow.
