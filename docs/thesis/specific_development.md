@@ -368,6 +368,8 @@ graph TD
         M1[Limpieza de ejecuciones stale]
         M2[Espera de workflows]
         M3[Verificación de imágenes]
+        M4[Limpieza de casos TheHive]
+        M5[Warmup de Shuffle]
     end
 
     subgraph Observabilidad
@@ -383,7 +385,13 @@ graph TD
     subgraph Calidad y CI
         Q1[Análisis estático]
         Q2[Mutation testing]
-        Q3[Revisión holística]
+        Q3[Calidad de documentación]
+        Q4[Revisión holística]
+    end
+
+    subgraph Seguridad operacional
+        SF1[Preservación de credenciales]
+        SF2[Restauración de credenciales]
     end
 
     P3 --> O1
@@ -397,16 +405,21 @@ graph TD
     OB3 --> OB4
     OB4 --> OB5
     OB5 --> OB6
+    M1 --> O1
     M2 --> OB7
-    Q1 --> Q3
-    Q2 --> Q3
+    M5 --> O1
+    Q1 --> Q4
+    Q2 --> Q4
+    Q3 --> Q4
+    SF1 --> SF2
+    SF2 --> P3
 ```
 
-La automatización se organiza en seis capacidades. El **provisionamiento** genera secretos, renderiza configuración desde plantillas, inicializa TheHive/Cortex/Shuffle y instala los analyzers de Cortex junto con los IoCs en MISP, de forma que un único comando (`make up`) deja el laboratorio operativo. La **orquestación de workflows** define el playbook completo (46 nodos, 60 ramas) y cablea cada integración; 21 scripts Python embebidos se ejecutan dentro de Shuffle para normalizar, decidir y enriquecer.
+La automatización se organiza en siete capacidades. El **provisionamiento** genera secretos, renderiza configuración desde plantillas, inicializa TheHive/Cortex/Shuffle y instala los analyzers de Cortex junto con los IoCs en MISP, de forma que un único comando (`make up`) deja el laboratorio operativo. La **orquestación de workflows** define el playbook completo (46 nodos, 60 ramas) y cablea cada integración; 21 scripts Python embebidos se ejecutan dentro de Shuffle para normalizar, decidir y enriquecer.
 
-La **simulación** genera alertas de ransomware con IoCs realistas (hashes SHA256 de advisories CISA, IPs C2, técnicas MITRE ATT&CK) y las envía al webhook de Shuffle vía HTTP, permitiendo configurar tipo, volumen y frecuencia. El **mantenimiento** limpia ejecuciones stale de Shuffle, espera a que los workflows terminen para sincronizar los tests E2E y verifica la integridad de las imágenes Docker.
+La **simulación** genera alertas de ransomware con IoCs realistas (hashes SHA256 de advisories CISA, IPs C2, técnicas MITRE ATT&CK) y las envía al webhook de Shuffle vía HTTP, permitiendo configurar tipo, volumen y frecuencia. El **mantenimiento** limpia ejecuciones stale de Shuffle y casos de TheHive, hace warmup del orquestador antes de los tests, espera a que los workflows terminen para sincronizar los tests E2E y verifica la integridad de las imágenes Docker.
 
-La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing y una revisión holística del proyecto en 15 dimensiones.
+La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing, control de calidad y terminología de la documentación, y una revisión holística del proyecto en 15 dimensiones. La **seguridad operacional** preserva y restaura las credenciales de los servicios entre resets, evitando rotaciones manuales de API keys.
 
 #### Infraestructura Docker Compose
 
