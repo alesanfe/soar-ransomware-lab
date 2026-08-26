@@ -4,7 +4,7 @@
 
 ### 4.1.1. Identificación de requisitos
 
-El problema a tratar es la gestión manual de incidentes de ransomware en equipos de respuesta (SOC y CSIRT), donde la fragmentación de herramientas y la falta de estandarización provocan tiempos de respuesta elevados, variabilidad entre analistas y dificultad para generar evidencias trazables. El contexto habitual de uso comprende organizaciones con recursos limitados (pymes, universidades y CSIRTs en formación) que no pueden asumir el coste de licencias comerciales de plataformas SOAR propietarias. La identificación de requisitos se ha realizado a partir del análisis de la literatura revisada en el Capítulo 2, de los marcos de referencia (NIST SP 800-61, ISO/IEC 27035, MITRE ATT&CK) y de la experiencia en despliegue de laboratorios reproducibles con herramientas open source.
+El problema abordado es la gestión manual de incidentes de ransomware en equipos de respuesta (SOC y CSIRT), donde la fragmentación de herramientas provoca tiempos de respuesta elevados, variabilidad entre analistas y dificultad para generar evidencias trazables. El contexto de uso comprende organizaciones con recursos limitados (pymes, universidades y CSIRTs en formación) que no pueden asumir licencias comerciales de plataformas SOAR propietarias. Los requisitos se han identificado a partir de la literatura revisada en el Capítulo 2, los marcos de referencia (NIST SP 800-61, ISO/IEC 27035, MITRE ATT&CK) y la experiencia en despliegue de laboratorios reproducibles con herramientas open source.
 
 Requisitos Funcionales
 
@@ -118,9 +118,9 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 
 Arquitectura General del Sistema
 
-El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal (también llamada ports and adapters) que coloca el dominio en el centro y lo aísla de los detalles técnicos. En la práctica, esto significa que `domain/` no importa nada de `infrastructure/`: los puertos definen qué operaciones necesita el dominio, y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites, de modo que el dominio recibe tipos ya verificados. El beneficio tangible es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
+El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal (ports and adapters) que aísla el dominio de los detalles técnicos: `domain/` no importa nada de `infrastructure/`, los puertos definen qué operaciones necesita el dominio y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites. El beneficio es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
 
-Para la infraestructura Docker se emplea una arquitectura en capas. Esta separación entre dominio e infraestructura mantiene la lógica de negocio desacoplada de las implementaciones concretas, lo que facilita las pruebas y el mantenimiento del sistema. La **Figura 3** muestra la arquitectura general del laboratorio y la **Figura 4** el despliegue Docker Compose. Ambos diagramas están disponibles en formato Mermaid canónico en el **Anexo H** (sección H.1).
+Para la infraestructura Docker se emplea una arquitectura en capas que mantiene la lógica de negocio desacoplada de las implementaciones concretas. La **Figura 3** muestra la arquitectura general y la **Figura 4** el despliegue Docker Compose, ambos en formato Mermaid canónico en el **Anexo H** (sección H.1).
 
 Flujo General del Sistema
 
@@ -140,7 +140,7 @@ graph TD     A[Generación de Alertas] --> B[Recepción en Shuffle]
 
 #### Arquitectura de Código Python
 
-El código en `src/soar_lab/` se organiza en capas según el patrón hexagonal. Los diagramas canónicos completos de arquitectura (hexagonal, despliegue Docker, contexto C4) están en el **Anexo H** (secciones H.2, H.3 y H.4).
+El código en `src/soar_lab/` se organiza en capas según el patrón hexagonal. Los diagramas canónicos completos están en el **Anexo H** (secciones H.2, H.3 y H.4).
 
 ```mermaid
 graph TD     subgraph Dominio         D1[Entidades y lógica de negocio]
@@ -166,26 +166,14 @@ graph TD     subgraph Dominio         D1[Entidades y lógica de negocio]
 
 Las capas son:
 
-- `domain/`: contiene la lógica de negocio pura. Define las entidades del sistema como alertas, casos e indicadores de
-  compromiso. Especifica los contratos de infraestructura y centraliza los cálculos de métricas.
-
-- `services/`: contiene la lógica de aplicación que orquesta los puertos del dominio. Incluye servicios de análisis de
-  KPIs, autenticación, backup, verificación de salud y ejecución de pruebas.
-
-- `infrastructure/`: contiene las implementaciones concretas de los puertos. Incluye clientes para comunicaciones HTTP,
-  repositorios de datos, drivers de backup y métricas, y gestores de logs y conexiones en tiempo real.
-
-- `api/`: contiene la aplicación web con endpoints para salud, autenticación, métricas, pruebas, backup y comunicación
-  en tiempo real. Gestiona la inyección de dependencias entre componentes.
-
-- `integrations/`: contiene los clientes para conectar con las plataformas externas como TheHive, Cortex, Shuffle y
-  MISP.
-
-- `config/`: contiene la configuración general del sistema, esquemas de datos y configuración de logging.
-
-- `validation/`: contiene validadores de datos para asegurar la integridad de la información.
-
-- `data/`: contiene scripts para el cálculo de KPIs y generación de indicadores de compromiso.
+- `domain/`: lógica de negocio pura. Define entidades (alertas, casos, IoCs), contratos de infraestructura y cálculos de métricas.
+- `services/`: lógica de aplicación que orquesta los puertos del dominio (KPIs, autenticación, backup, salud, pruebas).
+- `infrastructure/`: implementaciones concretas de los puertos (clientes HTTP, repositorios, drivers de backup y métricas, logs).
+- `api/`: aplicación web con endpoints para salud, autenticación, métricas, pruebas, backup y WebSocket. Gestiona la inyección de dependencias.
+- `integrations/`: clientes para TheHive, Cortex, Shuffle y MISP.
+- `config/`: configuración general, esquemas de datos y logging.
+- `validation/`: validadores de datos para integridad de la información.
+- `data/`: scripts para cálculo de KPIs y generación de IoCs.
 
 #### Arquitectura de Despliegue
 
@@ -218,8 +206,7 @@ graph TD     subgraph Capa de Datos         DB1[Elasticsearch]
     INT1 --> APP1     INT1 --> APP2     INT1 --> APP3     INT2 --> APP1     INT2 --> APP2     INT2 --> APP4     MON2 --> APP1     MON2 --> APP2     MON2 --> APP4     MON2 --> APP5     MON2 --> MON1     MON3 --> MON1     MON3 --> MON4
 ```
 
-En la capa de datos se encuentran Elasticsearch (Elastic, 2024; Elastic, n.d.) y Redis (Redis Ltd., 2024). Sobre ella se apoya la capa de aplicación SOAR, formada por TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (frontend y backend) (Shuffle Tools, 2024; Shuffle Tools, n.d.) y Orborus. Este último es el ejecutor de workflows de Shuffle: se conecta al backend y a Elasticsearch, y accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores.
-La integración se resuelve con Nginx (Nginx, 2024; Nginx, n.d.), la API FastAPI (FastAPI, 2024) y el sitio de documentación. El monitoreo se compone de Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) y PostgreSQL.
+La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) y Redis (Redis Ltd., 2024). La capa de aplicación SOAR la forman TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (Shuffle Tools, 2024; Shuffle Tools, n.d.) y Orborus, que ejecuta workflows en paralelo, se conecta al backend y a Elasticsearch, y accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores. La integración se resuelve con Nginx (Nginx, 2024; Nginx, n.d.), la API FastAPI (FastAPI, 2024) y el sitio de documentación. El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) y PostgreSQL.
 
 #### Componentes Principales
 
@@ -264,9 +251,9 @@ graph TD     A[Alerta Entrante] --> B[Shuffle - Orquestador]
     J --> K[Reporte Final]
 ```
 
-TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024). Incluye plantillas especializadas para ransomware, asignación de tareas entre analistas y registro de todas las acciones. Su integración directa con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
+TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024) con plantillas especializadas para ransomware, asignación de tareas y registro de acciones. Su integración con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
 
-Cortex (v3.2.0) ejecuta el análisis de IoCs en entornos aislados (Cortex Project, 2024). Dispone de 7 analyzers libres configurados (sin API key requerida) para investigaciones de ransomware. Para hashes se usan FileInfo (metadatos de archivo) y MalwareBazaar (lookup de hashes). Para IPs se usan Abuse_Finder (abuse lookup) y DShield (reputación SANS ISC). Para dominios se usa OTXQuery (AlienVault OTX en modo anónimo). Para resolución DNS se usa GoogleDNS y para passive DNS se usa Mnemonic pDNS. El sistema cachea resultados previos para evitar consultas redundantes y reduce la carga sobre las APIs externas. La arquitectura Docker permite añadir nodos de análisis según la demanda. La **Tabla 5** lista los analyzers configurados con su tipo, tiempo de respuesta, precisión y uso en el playbook.
+Cortex (v3.2.0) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: FileInfo y MalwareBazaar (hashes), Abuse_Finder y DShield (IPs), OTXQuery (dominios), GoogleDNS (resolución DNS) y Mnemonic pDNS (passive DNS). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 5** lista los analyzers con su tipo, tiempo de respuesta y uso en el playbook.
 
 ## Tabla 5: Analyzers Cortex Configurados
 
@@ -280,9 +267,9 @@ Cortex (v3.2.0) ejecuta el análisis de IoCs en entornos aislados (Cortex Projec
 | **GoogleDNS**         | Domain   | 1-3s             | No      | Resolución DNS      |
 | **Mnemonic pDNS**     | Domain/IP| 3-8s             | No      | Passive DNS         |
 
-La selección prioriza analyzers libres sin API key para mantener la solución accesible, alineándose con el requisito RF-02. Todos los analyzers están integrados en el playbook de respuesta, enriqueciendo automáticamente cada IoC detectado.
+La selección prioriza analyzers libres sin API key (RF-02). Todos están integrados en el playbook, enriqueciendo cada IoC detectado.
 
-Shuffle (v2.2.1) orquesta los flujos mediante una interfaz visual de bloques, sin necesidad de escribir código (Shuffle Tools, 2024). Orborus ejecuta los workflows en paralelo entre varios workers y gestiona reintentos automáticos ante fallos. La ejecución condicional y la programación de tareas permiten adaptar el flujo según el contexto del incidente.
+Shuffle (v2.2.1) orquesta los flujos mediante una interfaz visual de bloques (Shuffle Tools, 2024). Orborus ejecuta workflows en paralelo entre workers y gestiona reintentos automáticos. La ejecución condicional y la programación de tareas permiten adaptar el flujo al contexto del incidente.
 
 #### Scripts de Automatización Desarrollados
 
@@ -331,11 +318,11 @@ graph TD     A[Logs de Ejecución] --> B[Servicio de Análisis]
     M --> N[Dashboards de Monitoreo]
 ```
 
-El sistema incluye un cliente HTTP que implementa el transporte de alertas. Una herramienta de línea de comandos genera alertas simuladas y las envía al webhook de Shuffle, permitiendo configurar el tipo de alerta, el volumen y la frecuencia de envío. La validación de formato garantiza la estructura esperada y la autenticación protege el endpoint.
+El sistema incluye un cliente HTTP para el transporte de alertas. Una CLI genera alertas simuladas y las envía al webhook de Shuffle, permitiendo configurar tipo, volumen y frecuencia. La validación de formato garantiza la estructura esperada y la autenticación protege el endpoint.
 
-El servicio de KPIs extrae métricas de tiempo de respuesta de los logs. Coordina la recolección de datos, realiza cálculos estadísticos como percentiles y medias, y exporta los resultados a un formato estructurado. Un comando automatizado ejecuta este proceso para generar el archivo de resultados desde los logs de ejecución.
+El servicio de KPIs extrae métricas de tiempo de respuesta de los logs, realiza cálculos estadísticos (percentiles, medias) y exporta los resultados a formato estructurado mediante un comando automatizado.
 
-La lógica de contención simulada se implementa en el playbook de Shuffle. Registra las acciones en logs sin ejecutar comandos reales de firewall, verifica el nivel de riesgo antes de activar el aislamiento y notifica el resultado al caso en TheHive.
+La contención simulada se implementa en el playbook de Shuffle: registra acciones en logs sin ejecutar comandos reales, verifica el riesgo antes del aislamiento y notifica el resultado al caso en TheHive.
 
 #### Playbooks de Respuesta a Ransomware
 
@@ -355,17 +342,17 @@ graph TD     A[Recepción de alerta en Shuffle] --> B[Validación de formato]
     M --> N     N --> O[Cierre del caso]
 ```
 
-El playbook principal define el flujo automatizado desde la recepción de la alerta hasta el cierre del caso. Está implementado en Shuffle y documentado en el archivo de operaciones.
+El playbook principal define el flujo automatizado desde la recepción de la alerta hasta el cierre del caso, implementado en Shuffle.
 
-El flujo comienza con la recepción de la alerta en Shuffle mediante webhook, donde se valida el formato del JSON y se normalizan los datos. Se extraen los indicadores de compromiso (hash, IP, hostname) y se crea un caso en TheHive con plantillas especializadas en ransomware. Los indicadores se adjuntan al caso como observables.
+El flujo comienza con la recepción de la alerta por webhook, donde se valida el formato JSON y se normalizan los datos. Se extraen los IoCs (hash, IP, hostname) y se crea un caso en TheHive con plantillas ransomware, adjuntando los indicadores como observables.
 
-A continuación, se ejecutan analyzers en Cortex para analizar los IoCs contra fuentes de inteligencia externas como MalwareBazaar, DShield y otras. El sistema calcula un score de riesgo basado en los resultados de los analyzers.
+A continuación, Cortex ejecuta analyzers contra fuentes externas (MalwareBazaar, DShield, etc.) y el sistema calcula un score de riesgo.
 
-Si el score es mayor o igual a 80 o el verdict es "malicious", se activa la rama de contención. Se ejecuta el script de contención simulada (aislamiento de red, terminación de procesos, bloqueo de cuentas), se actualiza el caso en TheHive a estado "In Progress" y se envía una notificación crítica al equipo. Si el score es menor y el verdict no es malicioso, se marca el caso como falso positivo, se actualiza a estado "FalsePositive" y se envía una notificación informativa.
+Si el score >= 80 o el verdict es "malicious", se activa la contención simulada (aislamiento de red, terminación de procesos, bloqueo de cuentas), se actualiza el caso a "In Progress" y se envía una notificación crítica. En caso contrario, se marca como falso positivo ("FalsePositive") con notificación informativa.
 
-En ambas ramas se registra el MTTR (Mean Time To Respond) calculado desde el tiempo de detección hasta el tiempo de contención o clasificación. El caso se cierra automáticamente tras completar el flujo.
+En ambas ramas se registra el MTTR desde la detección hasta la contención o clasificación, y el caso se cierra automáticamente.
 
-El playbook se valida mediante pruebas E2E para escenarios maliciosos, falsos positivos benignos y casos de borde. El detalle completo del workflow (46 nodos, 60 ramas, 25 scripts Python embebidos, modelo de scoring 0-100) se encuentra en el **Anexo B** (sección B.1). Los diagramas canónicos del flujo E2E y del árbol de decisión están en el **Anexo H** (secciones H.5 y H.6).
+El playbook se valida con pruebas E2E para escenarios maliciosos, benignos y casos de borde. El detalle completo (46 nodos, 60 ramas, 25 scripts Python embebidos, scoring 0-100) está en el **Anexo B** (sección B.1). Los diagramas canónicos del flujo E2E y el árbol de decisión están en el **Anexo H** (secciones H.5 y H.6).
 
 #### Infraestructura Docker Compose
 
@@ -406,18 +393,17 @@ graph TD     subgraph Redes Docker         R1[Red perimetral bridge]
     DC1 --> R1     DC1 --> R2     DC1 --> R3     DC1 --> R4     DC2 --> V1     V1 --> V2     V2 --> V3     CC1 --> R2     CC1 --> R3     CC2 --> R2     CC3 --> R2     CC4 --> R2     CC5 --> R2     CC6 --> R2     CC7 --> R2
 ```
 
-La infraestructura se define con varios archivos Docker Compose (Docker Inc., 2024) que se combinan para desplegar el sistema completo. Esto permite configuraciones que van desde entornos mínimos de desarrollo hasta despliegues completos en producción.
+La infraestructura se define con varios archivos Docker Compose (Docker Inc., 2024) que se combinan para desplegar el sistema completo, desde entornos mínimos de desarrollo hasta despliegues completos.
 
-El archivo principal `infra/docker/compose/docker-compose.yml` define las redes y los volúmenes persistentes. Las redes incluyen la red perimetral bridge accesible desde el host, la red interna soar_net de componentes SOAR, la red de inteligencia ti_net y la red de monitoreo logging_net. También incluye Elasticsearch como base de datos centralizada.
+El archivo principal `docker-compose.yml` define cuatro redes (perimetral bridge, interna soar_net, inteligencia ti_net, monitoreo logging_net) y los volúmenes persistentes, e incluye Elasticsearch como base de datos centralizada.
 
-El archivo de componentes principales `infra/docker/compose/docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle Frontend, Shuffle Backend, Orborus y Network Watcher. Cada servicio tiene verificaciones de salud, límites de recursos y dependencias entre servicios. Redis se conecta a la red de inteligencia para integración con servicios externos.
+El archivo `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle (frontend y backend), Orborus y Network Watcher, con verificaciones de salud, límites de recursos y dependencias entre servicios.
 
-Los archivos complementarios añaden funcionalidades adicionales:
-`infra/docker/compose/docker-compose.api.yml` para la API FastAPI y documentación, `infra/docker/compose/docker-compose.misp.yml` para MISP (threat intelligence) (MISP Project, 2024), `infra/docker/compose/docker-compose.opensearch.yml` para OpenSearch (motor de búsqueda de Shuffle) (OpenSearch Project, 2024) y `infra/docker/compose/logging/docker-compose.logging.yml` para el stack de monitoreo (Loki, Promtail, Grafana, PostgreSQL).
+Los archivos complementarios añaden: `docker-compose.api.yml` (API FastAPI y documentación), `docker-compose.misp.yml` (MISP) (MISP Project, 2024), `docker-compose.opensearch.yml` (OpenSearch para Shuffle) (OpenSearch Project, 2024) y `docker-compose.logging.yml` (Loki, Promtail, Grafana, PostgreSQL).
 
-La segmentación de redes sigue un modelo por zonas de seguridad. La red perimetral bridge es accesible desde el host, mientras que la red interna soar_net conecta los componentes SOAR entre sí. Una tercera red, ti_net, vincula Redis y Cortex con servicios externos, y la red de monitoreo logging_net aísla el stack de logging. Esta separación limita el movimiento lateral en caso de compromiso.
+La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net conecta los componentes SOAR, ti_net vincula Redis y Cortex con servicios externos, y logging_net aísla el stack de logging. Esta separación limita el movimiento lateral en caso de compromiso.
 
-Los volúmenes usan enlaces al directorio runtime, con subdirectorios por servicio (elasticsearch, thehive, cortex, shuffle, redis, etc.). Los datos sobreviven a reinicios y pueden migrarse entre entornos copiando ese directorio. Las verificaciones de salud permiten recuperación automática. Los límites de CPU y memoria previenen la contención de recursos entre contenedores. La **Tabla 6** detalla la configuración de recursos asignada a cada servicio.
+Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio. Los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 6** detalla la configuración de recursos.
 
 ## Tabla 6: Configuración de Recursos Docker
 
@@ -478,11 +464,9 @@ graph TD     A[Contenedores de Aplicación] --> B[Generación de Logs]
     H --> I
 ```
 
-El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024) y PostgreSQL para proporcionar visibilidad sobre el estado y el rendimiento del sistema.
+El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024) y PostgreSQL. Promtail recopila logs de todos los contenedores y los envía a Loki. Grafana ofrece dashboards en tiempo real y usa PostgreSQL para su configuración.
 
-Loki agrega logs estructurados. Promtail los recopila de todos los contenedores y los envía a Loki. Grafana ofrece dashboards de logs en tiempo real y usa PostgreSQL como base de datos para su configuración y dashboards (Grafana Labs, 2024).
-
-Las métricas monitoreadas incluyen el tiempo de respuesta de las APIs para detectar cuellos de botella, la tasa de éxito de los playbooks, el uso de recursos del sistema como CPU, memoria y disco, las conexiones concurrentes y las colas de mensajes. Las métricas de negocio como el tiempo de respuesta medio, la tasa de alertas y los casos cerrados conectan el rendimiento técnico con la eficacia operativa. La **Tabla 7** resume las métricas de monitoreo implementadas con sus umbrales de alerta y frecuencia de recolección.
+Las métricas técnicas (tiempo de respuesta, tasa de éxito, CPU, memoria, conexiones, colas) y de negocio (MTTR, tasa de alertas, casos cerrados) conectan el rendimiento técnico con la eficacia operativa. La **Tabla 7** resume las métricas con sus umbrales y frecuencia.
 
 ## Tabla 7: Métricas de Monitoreo Implementadas
 
@@ -502,19 +486,17 @@ El stack se inicia con `make up` y la interfaz de Grafana está disponible con c
 
 #### 4.1.3.1. Diseño Experimental
 
-La evaluación compara la respuesta manual con la respuesta automatizada SOAR. La variable independiente es el tipo de respuesta (manual vs. SOAR). La variable dependiente es el MTTR en segundos, registrado desde la recepción de la alerta hasta la contención simulada. Las variables controladas comprenden el entorno de despliegue (Docker Compose), el hardware, la configuración de los componentes y el conjunto de alertas generadas.
+La evaluación compara la respuesta manual con la automatizada SOAR. La variable independiente es el tipo de respuesta; la dependiente, el MTTR en segundos (desde recepción de la alerta hasta contención simulada). Las variables controladas comprenden el entorno Docker Compose, el hardware, la configuración de los componentes y el conjunto de alertas.
 
-**Justificación del baseline manual.** El valor de 3600 s (1 hora) empleado como referencia de la respuesta manual
-se fundamenta en los datos de la industria. CrowdStrike establece como benchmark ideal la regla 1-10-60: detectar en 1 minuto, investigar en 10 y contener en 60 (CrowdStrike, 2021). Sin embargo, el mismo survey muestra que la media real de las organizaciones encuestadas es de 16 horas para contener, muy por encima del benchmark.
-ReliaQuest reporta un MTTR tradicional de 2.3 días (55 horas) sin automatización (ReliaQuest, 2024). La SANS SOC Survey 2025 sitúa el tiempo mediano de triaje y escalado de alertas en 260 minutos (SANS Institute, 2025). El valor de 3600 s adoptado en este trabajo se alinea con el benchmark ideal de CrowdStrike (60 minutos para contener) y es conservador frente a las medias reales observadas en la industria, lo que evita sobreestimar la reducción lograda por la automatización.
+**Justificación del baseline manual.** El valor de 3600 s (1 hora) se fundamenta en datos de la industria. CrowdStrike establece el benchmark ideal 1-10-60: detectar en 1 minuto, investigar en 10 y contener en 60 (CrowdStrike, 2021), aunque la media real de las organizaciones encuestadas es de 16 horas. ReliaQuest reporta un MTTR tradicional de 2.3 días sin automatización (ReliaQuest, 2024). La SANS SOC Survey 2025 sitúa el tiempo mediano de triaje en 260 minutos (SANS Institute, 2025). El valor de 3600 s adoptado se alinea con el benchmark de CrowdStrike y es conservador frente a las medias reales, evitando sobreestimar la reducción lograda.
 
 #### 4.1.3.2. Procedimiento de Evaluación
 
-Fase 1 (baseline manual): el analista recibe la alerta simulada de `send_alert.py`, revisa la información en TheHive, consulta Cortex manualmente, decide la contención, ejecuta los scripts de aislamiento y documenta el caso.
+Fase 1 (baseline manual): el analista recibe la alerta simulada, revisa la información en TheHive, consulta Cortex manualmente, decide la contención, ejecuta los scripts de aislamiento y documenta el caso.
 
-Fase 2 (respuesta SOAR): Shuffle recibe la alerta por webhook, clasifica el incidente de forma automática, lanza los analyzers de Cortex en paralelo, crea el caso en TheHive mediante API y activa la contención simulada si el score de riesgo supera el umbral configurado. El analista no interviene durante la ejecución, aunque conserva visibilidad sobre el proceso en tiempo real. El ciclo se cierra con la generación automática del registro de evidencias.
+Fase 2 (respuesta SOAR): Shuffle recibe la alerta por webhook, clasifica el incidente, lanza los analyzers de Cortex en paralelo, crea el caso en TheHive mediante API y activa la contención simulada si el score supera el umbral. El analista no interviene durante la ejecución.
 
-`AnalyticsService` (en `src/soar_lab/application/use_cases/analytics_service.py`) calcula las métricas desde los logs, extrayendo timestamps con `LogParser`. El cálculo estadístico se delega a `KPIAnalyzer` y `StatisticalCalculator`. Las métricas recogidas son: tiempo de recepción a triage, tiempo de análisis de IoCs, tiempo de creación de caso, tiempo de contención y MTTR total. Los resultados se exportan a CSV con `KPIFormatter`.
+`AnalyticsService` calcula las métricas desde los logs mediante `LogParser`, `KPIAnalyzer` y `StatisticalCalculator`. Las métricas recogidas son: tiempo de recepción a triage, análisis de IoCs, creación de caso, contención y MTTR total. Los resultados se exportan a CSV con `KPIFormatter`.
 
 Comandos de ejecución:
 
@@ -527,7 +509,7 @@ El Makefile automatiza el despliegue, las pruebas y la generación de métricas 
 
 #### 4.1.3.3. Resultados Experimentales
 
-Los resultados se obtienen mediante las pruebas E2E y el análisis de logs mediante `AnalyticsService` (que incorpora la lógica de cálculo de KPIs consolidada). El experimento ejecutó 50 runs del playbook en dos escenarios (malicioso y benigno) sobre el entorno Docker aislado. La **Figura 6** muestra la comparación visual del MTTR entre la condición manual y la automatizada.
+El experimento ejecutó 50 runs del playbook en dos escenarios (malicioso y benigno) sobre el entorno Docker aislado. La **Figura 6** muestra la comparación visual del MTTR.
 
 **Cumplimiento de objetivos.** La tabla resume los umbrales definidos frente a los valores medidos:
 
@@ -559,7 +541,7 @@ La **Tabla 8** presenta los resultados experimentales detallados del experimento
 | **Falsos Positivos**    | N/A               | 8.0%         | N/A       |
 | **Recursos (mem pico)** | N/A               | 2.58 GiB     | N/A       |
 
-Los resultados evidencian la superioridad de la respuesta automatizada frente a la manual. La tasa de éxito del 100 % (50/50 workflows completados) y la tasa de contención del 92.0 % (46/50 alertas con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma que el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025) funciona correctamente. El tiempo mínimo registrado fue 65.38 s. La **Figura 7** muestra la distribución de tiempos por fase del workflow.
+La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025). El tiempo mínimo fue 65.38 s. La **Figura 7** muestra los tiempos por fase.
 
 ![Figura 7: Tiempos por componente del workflow](figures/GE1_component_timings.png)
 
@@ -578,7 +560,7 @@ El análisis por componente de tiempo se detalla en la **Tabla 9**, que desglosa
 | **Contención**         | N/A    | 422.0s  | N/A                | N/A                  |
 | **MTTR medio**         | 3600s  | 277.15s | 3322.85s           | 92.3%                |
 
-La reducción del 92.3 % en MTTR medio se concentra en la eliminación del tiempo de espera humano entre pasos. Los tiempos por fase son acumulativos e incluyen solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Este análisis identifica oportunidades de mejora futuras, sobre todo en la aceleración de procesos de análisis mediante caché de resultados y ejecución concurrente de analyzers en Cortex.
+La reducción del 92.3 % en MTTR medio se concentra en la eliminación del tiempo de espera humano entre pasos. Los tiempos por fase son acumulativos con solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Esto identifica oportunidades de mejora en caché de resultados y ejecución concurrente de analyzers.
 
 ![Figura 8: Análisis de percentiles MTTR](figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
 
@@ -594,18 +576,15 @@ La reducción del 92.3 % en MTTR medio se concentra en la eliminación del tiemp
 
 **Figura 5**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito).
 
-**Servicios e integraciones.** Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones. Se
-completaron 50/50 workflows, se crearon 50/50 casos en TheHive y se ejecutaron 255/257 jobs en Cortex (99.2 %). El workflow incluye 46 nodos y la tasa de automatización fue del 100 %, sin intervención humana durante la ejecución.
+**Servicios e integraciones.** Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones. Se completaron 50/50 workflows, 50/50 casos en TheHive y 255/257 jobs en Cortex (99.2 %). El workflow incluye 46 nodos y la automatización fue del 100 %, sin intervención humana.
 
-**Precisión.** La tasa de falsos positivos fue del 8.0 % (4/50 alertas clasificadas como *observe* cuando el
-verdict esperado era *contain*). Este valor mejora el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring, entendida como tasa de clasificación correcta, fue del 92.0 % (46/50 decisiones acertadas).
+**Precisión.** La tasa de falsos positivos fue del 8.0 % (4/50 clasificadas como *observe* cuando se esperaba *contain*), mejorando el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring fue del 92.0 % (46/50 decisiones acertadas).
 
-**Uso de recursos.** El consumo medido mediante `docker stats` durante las 50 ejecuciones se mantuvo dentro
-de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %) por procesamiento de eventos de red. Ningún contenedor superó su límite de memoria, confirmando que el despliegue es viable en un host con 16 GiB RAM. La validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100, 13 servicios, 38 endpoints API) se detalla en el **Anexo E** (sección E.1).
+**Uso de recursos.** El consumo medido con `docker stats` se mantuvo dentro de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %). Ningún contenedor superó su límite, confirmando la viabilidad en un host con 16 GiB RAM. La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) se detalla en el **Anexo E** (sección E.1).
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
-El laboratorio cumple los requisitos funcionales y de calidad definidos, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron, como se detalla en la §4.1.3.3. La cobertura de tests se puede verificar en `reports/coverage/` mediante el comando `make test-coverage`. La estrategia completa de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en el **Anexo G** (sección G.1). La validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo E** (sección E.1).
+El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en el **Anexo G** (sección G.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo E** (sección E.1).
 
 Comandos de prueba disponibles:
 
@@ -619,35 +598,27 @@ Comandos de prueba disponibles:
 - `make test-smoke`: validación rápida post-despliegue
 - `make test-coverage`: informe de cobertura
 
-En usabilidad, el tiempo de aprendizaje es asumible y requiere una formación inicial mínima. La reducción de errores humanos es consistente con las mejoras reportadas en la literatura sobre automatización de tareas en SOC (Kinyua & Awuah, 2021; Mohammad & Lakshmisri, 2018).
+En usabilidad, el tiempo de aprendizaje es asumible con formación inicial mínima. La reducción de errores humanos es consistente con la literatura sobre automatización en SOC (Kinyua & Awuah, 2021; Mohammad & Lakshmisri, 2018).
 
 #### 4.1.3.5. Discusión
 
-La reducción observada en MTTR medio (3600 s a 277.15 s) respalda la hipótesis principal de que la automatización SOAR acorta los tiempos de respuesta frente a los procesos manuales. Este resultado es coherente con la literatura revisada:
-Kinyua y Awuah identifican MTTR como métrica habitual para evaluar el valor operativo de SOAR (Kinyua & Awuah, 2021), y Obuse et al.
-reportan mejoras observadas en la automatización de respuesta en infraestructuras críticas (Obuse et al., 2023).
+La reducción del MTTR medio (3600 s a 277.15 s) respalda la hipótesis de que la automatización SOAR acorta los tiempos de respuesta, coherente con la literatura: Kinyua y Awuah identifican MTTR como métrica habitual de valor operativo de SOAR (Kinyua & Awuah, 2021), y Obuse et al. reportan mejoras en automatización de respuesta en infraestructuras críticas (Obuse et al., 2023).
 
-Sin embargo, los percentiles P50 (193.19 s) y P90 (621.83 s) no alcanzaron los umbrales ambiciosos definidos (≤ 120 s y ≤ 180 s respectivamente). Esta discrepancia entre el MTTR medio y los percentiles indica una distribución asimétrica con cola larga: la mayoría de ejecuciones se completan rápidamente, pero un subconjunto experimenta latencias elevadas, atribuibles a la saturación progresiva del worker de Cortex (que procesa los analyzers en paralelo pero con un límite de concurrencia) y a timeouts de APIs externas (DShield, Mnemonic pDNS, GoogleDNS). Aunque el workflow lanza los analyzers de forma concurrente mediante un patrón fan-out desde el nodo de creación del caso, la acumulación de jobs en colas sucesivas degrada el tiempo de respuesta en ejecuciones posteriores. Un escalado horizontal del worker de Cortex, propuesto como trabajo futuro, debería reducir la cola y acercar P50/P90 a los umbrales.
+Sin embargo, P50 (193.19 s) y P90 (621.83 s) no alcanzaron los umbrales (≤ 120 s y ≤ 180 s). Esta discrepancia indica una distribución asimétrica con cola larga: la mayoría de ejecuciones se completan rápido, pero un subconjunto experimenta latencias elevadas por saturación del worker de Cortex y timeouts de APIs externas (DShield, Mnemonic pDNS, GoogleDNS). El workflow lanza analyzers concurrentes (fan-out), pero la acumulación de jobs en colas sucesivas degrada el tiempo de respuesta. Un escalado horizontal del worker de Cortex, propuesto como trabajo futuro, debería acercar P50/P90 a los umbrales.
 
-**Consistencia.** La pregunta de investigación indaga también por la consistencia de la respuesta. El coeficiente de
-variación (CV = desviación estándar / media) del MTTR automatizado fue del 67.7 % (σ = 187.61 s, μ = 277.15 s).
-Aunque este valor refleja la cola larga mencionada, debe contrastarse con la variabilidad inherente de la respuesta manual, donde las diferencias entre analistas, fatiga y contexto hacen que la consistencia sea prácticamente inmedible. La automatización, incluso con cola larga, garantiza que cada ejecución sigue el mismo flujo y registra las mismas evidencias, lo que sí supone una mejora de consistencia estructural frente al proceso manual.
+**Consistencia.** El coeficiente de variación del MTTR fue del 67.7 % (σ = 187.61 s, μ = 277.15 s). Aunque refleja la cola larga, debe contrastarse con la variabilidad inherente de la respuesta manual, donde las diferencias entre analistas, fatiga y contexto hacen la consistencia prácticamente inmedible. La automatización garantiza que cada ejecución sigue el mismo flujo y registra las mismas evidencias, lo que supone una mejora de consistencia estructural.
 
-**Análisis por subconjuntos.** Al examinar las ejecuciones cronológicamente se observa que las primeras 12 alertas
-(n=12, antes de la degradación por acumulación de jobs en Cortex) presentan P50 = 128.40 s y P90 = 163.90 s. En este subconjunto el P90 sí cumple el umbral de ≤ 180 s, y el P50 se sitúa cerca del umbral (128 s vs 120 s). Esto sugiere que los umbrales definidos son alcanzables en condiciones de baja carga, y que la degradación observada en el conjunto completo (n=50) responde a saturación progresiva del worker de Cortex por acumulación de jobs más que a una limitación intrínseca del diseño. El objetivo de n ≥ 50 ejecuciones, sin embargo, se cumple y es el que se reporta como resultado principal.
+**Análisis por subconjuntos.** Las primeras 12 alertas (n=12, antes de la degradación por acumulación de jobs) presentan P50 = 128.40 s y P90 = 163.90 s. En este subconjunto el P90 cumple el umbral (≤ 180 s) y el P50 se sitúa cerca (128 s vs 120 s). Esto sugiere que los umbrales son alcanzables en condiciones de baja carga, y que la degradación en el conjunto completo (n=50) responde a saturación progresiva más que a una limitación intrínseca del diseño.
 
-El resultado negativo (2 de 5 objetivos no cumplidos) no invalida la contribución: la reducción del MTTR medio supera ampliamente el objetivo del 50 %, y la tasa de éxito del 100 % confirma la fiabilidad funcional del playbook. Estos hallazgos delimitan el alcance de las conclusiones: el laboratorio demuestra viabilidad y cuantifica mejoras, pero no puede generalizarse a entornos productivos sin ajustes adicionales.
+El resultado negativo (2 de 5 objetivos no cumplidos) no invalida la contribución: la reducción del MTTR medio supera ampliamente el 50 %, y la tasa de éxito del 100 % confirma la fiabilidad funcional. El laboratorio demuestra viabilidad y cuantifica mejoras, pero no puede generalizarse a entornos productivos sin ajustes adicionales.
 
-Comparado con el trabajo de Núñez Fernández (Núñez Fernández, 2023), que despliega una plataforma SIRP similar con TheHive, Cortex, MISP y Wazuh, este TFM aporta evidencia cuantitativa adicional (n=50, percentiles, análisis estadístico) que complementa su validación cualitativa. La diferencia principal es que Núñez Fernández se centra en pymes, mientras que este trabajo fija el contexto en un laboratorio académico reproducible.
+Comparado con Núñez Fernández (2023), que despliega una plataforma SIRP similar con TheHive, Cortex, MISP y Wazuh, este TFM aporta evidencia cuantitativa adicional (n=50, percentiles, análisis estadístico) que complementa su validación cualitativa. La diferencia es que Núñez Fernández se centra en pymes, mientras que este trabajo fija el contexto en un laboratorio académico reproducible.
 
-Stevens et al. concluyen que los playbooks comunitarios suelen requerir adaptación antes de ser operativos (Stevens et al., 2022).
-El playbook E2E de este TFM, diseñado para el entorno del laboratorio, confirma esa observación: la adaptación al contexto concreto (simulación de contención, umbral de score ajustable, integraciones mock) fue necesaria para lograr la tasa de éxito del 100 %.
+Stevens et al. concluyen que los playbooks comunitarios suelen requerir adaptación antes de ser operativos (Stevens et al., 2022). El playbook E2E de este TFM confirma esa observación: la adaptación al contexto (simulación de contención, umbral de score ajustable, integraciones mock) fue necesaria para lograr la tasa de éxito del 100 %.
 
 #### 4.1.3.6. Limitaciones
 
-Las limitaciones principales son la validación en laboratorio (no en producción real) y el alcance restringido a ransomware. La dependencia de APIs externas como DShield y Mnemonic pDNS requiere estrategias de caché para entornos productivos.
-
-Los resultados muestran que el laboratorio cumple los requisitos funcionales y no funcionales definidos y puede emplearse como base reproducible para respuesta automatizada a ransomware.
+Las limitaciones principales son la validación en laboratorio (no en producción real) y el alcance restringido a ransomware. La dependencia de APIs externas (DShield, Mnemonic pDNS) requiere estrategias de caché para entornos productivos. Los resultados muestran que el laboratorio cumple los requisitos definidos y puede emplearse como base reproducible para respuesta automatizada a ransomware.
 
 ---
 
