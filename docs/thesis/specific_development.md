@@ -581,7 +581,7 @@ La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score
 
 La **Figura 7** desglosa los tiempos medios por componente del workflow. Se aprecia que la creación de caso (2773.48 s) y el análisis de IoCs (2393.46 s) dominan el tiempo acumulado, mientras que la contención (422.0 s) y el triaje (103.92 s) son relativamente rápidos. La **Tabla 9** detalla estas fases:
 
-![Figura 7: Tiempos por componente del workflow](figures/GE1_component_timings.png)
+![Figura 7: Tiempos por componente del workflow](figures/mttr_by_phase.png)
 
 **Figura 7**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso, contención y cierre).
 
@@ -597,9 +597,9 @@ La **Figura 7** desglosa los tiempos medios por componente del workflow. Se apre
 
 Los tiempos por fase son acumulativos con solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Esto identifica oportunidades de mejora en caché de resultados y ejecución concurrente de analyzers. La **Figura 8** muestra la distribución de percentiles MTTR capturada desde Grafana, donde se observa una cola larga: mientras el P50 se sitúa en 193.19 s, el P90 escala a 621.83 s y el P95 a 644.46 s, reflejando la variabilidad introducida por los analyzers de Cortex con tiempos de respuesta heterogéneos.
 
-![Figura 8: Análisis de percentiles MTTR](figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
+![Figura 8: Análisis de percentiles MTTR](figures/GE2_percentiles.png)
 
-**Figura 8**: Distribución de percentiles MTTR capturada desde el dashboard de Grafana.
+**Figura 8**: Distribución de percentiles MTTR (P50, P75, P90, P95) del experimento con n=50 ejecuciones.
 
 El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 9** muestra esta distribución de decisiones, donde se aprecia que ninguna alerta fue clasificada como *benign*: el motor de scoring asignó score >= 80 al 92 % de las alertas, activando contención en 46/50 casos. Los 4 casos restantes (score < 80) se marcaron como *observe*, constituyendo falsos negativos (8.0 %), mejorando el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring fue del 92.0 %.
 
@@ -663,8 +663,8 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 | Figura 4 | Diagrama de Despliegue Docker Compose          | Anexo H (H.3)                              |
 | Figura 5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
 | Figura 6 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
-| Figura 7 | Tiempos por componente del workflow            | `figures/GE1_component_timings.png`        |
-| Figura 8 | Análisis de percentiles MTTR (Grafana)         | `figures/grafana_panel_5_..._Percentiles_MTTR.png` |
+| Figura 7 | Tiempos por componente del workflow            | `figures/mttr_by_phase.png`                |
+| Figura 8 | Análisis de percentiles MTTR                   | `figures/GE2_percentiles.png`              |
 | Figura 9 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
 | Figura 10 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
 
