@@ -298,7 +298,7 @@ graph TD
     H --> P
     K --> P
     L --> P
-    P --> Q{Score >= 80 o malicious?}
+    P --> Q{Score ≥ 80 o malicious?}
     Q -->|Sí| R[Contención simulada]
     Q -->|No| S[Marcar falso positivo]
     R --> T[TheHive - Actualizar a In Progress]
