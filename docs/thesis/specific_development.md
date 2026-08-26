@@ -566,6 +566,8 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 
 Las métricas siguientes son específicas del sistema SOAR automatizado, sin equivalente en la respuesta manual:
 
+## Tabla 8b: Métricas Específicas del Sistema SOAR
+
 | Métrica                 | SOAR (n=50)  |
 |-------------------------|--------------|
 | **Desviación Estándar** | 187.61s      |
@@ -676,5 +678,6 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 | Tabla 6  | Configuración de Recursos Docker                |
 | Tabla 7  | Métricas del Dashboard de Grafana               |
 | Tabla 8  | Resultados Experimentales Detallados            |
+| Tabla 8b | Métricas Específicas del Sistema SOAR           |
 | Tabla 9  | Análisis por Componente de Tiempo               |
 | Tabla 10 | Cumplimiento de Objetivos del Experimento       |
