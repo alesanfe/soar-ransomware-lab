@@ -142,7 +142,7 @@
 | L3a | Quality | 100 | Linting (0 issues ruff) |
 | L3b | Quality | 100 | Seguridad (0 issues bandit) |
 | L3c | Quality | 94.6 | Docstrings (964/1019) |
-| L4a | Infra | 100.0 | Docker Compose (6/6 válidos, 23 servicios) |
+| L4a | Infra | 100.0 | Docker Compose (5/5 válidos revisados, 18 servicios en 5 archivos; 6 archivos y 23 servicios en total) |
 | L4b | Infra | 100 | OpenAPI (38 endpoints, válido) |
 | L4c | Infra | 100.0 | Env vars (131/131, 100% coverage) |
 | L5a | Docs | 86.9 | Links (260 links, 34 rotos en reports) |
@@ -290,8 +290,8 @@
 
 | Integración | Timeout | Retries | Concurrente |
 |-------------|---------|---------|-------------|
-| TheHive API | 30s | 3 (backoff 5s) | — |
-| Cortex API | 30s | 1 | 7 analyzers en paralelo |
+| TheHive API | 120s | 3 (backoff 5s) | — |
+| Cortex API | 120s | 1 | 7 analyzers en paralelo |
 | Shuffle webhook | — | — | 60 req/min |
 
 ---
@@ -306,16 +306,18 @@
 
 ### 7.2. Fases del Proyecto
 
-| Fase | Duración planificada | Duración real | Objetivos |
-|------|---------------------|---------------|-----------|
-| 1. Infraestructura | 4 semanas | 4 semanas | 1, 8, 17, 18 |
-| 2. Desarrollo | 5 semanas | 7 semanas | 2, 5, 6, 19, 20 |
-| 3. Validación | 4 semanas | 5 semanas | 3, 9-14 |
-| 4. Cierre | 2 semanas | 2 semanas | 4, 15, 16 |
+| Fase | Duración | Periodo | Objetivos |
+|------|----------|---------|-----------|
+| 1. Investigación | 3 semanas | abr-may 2026 | 1, 8, 17, 18 |
+| 2. Diseño | 3 semanas | may-jun 2026 | 2, 5, 6, 19, 20 |
+| 3. Desarrollo | 6 semanas | jun-jul 2026 | 3, 9-14 |
+| 4. Validación | 6 semanas | jul-ago 2026 | 4, 15, 16 |
 
-> La estimación inicial fue de 15 semanas, aumentada a 18 tras la
-> integración de Cortex con analyzers externos y el stack de monitoreo
-> (fase 2) y la ampliación de la suite de tests a 2041 (fase 3).
+> La estimación inicial fue de 12 semanas, aumentada a 15 tras la fase
+> de diseño (integración de Cortex con analyzers externos y stack de
+> monitoreo no contemplados inicialmente), y finalmente a 18 por la
+> ampliación de la suite de tests a 2041 y la ejecución del experimento
+> (n=50).
 
 ### 7.3. Consideraciones Éticas
 
@@ -335,7 +337,7 @@
 | Automatización | Sí 100% | Sin intervención humana |
 | Calidad código | Sí 92.2/100 | Quality score Excellent |
 | HPR | Sí 96.0/100 | Holistic radar Excellent |
-| Tests | Sí 2041 tests | 1384 passed (última run), coverage 84.6% |
+| Tests | Sí 2041 tests | 2 skipped (esperados), coverage 84.6% |
 | Seguridad | Sí 0 issues | Bandit + pip-audit limpios |
 | Infraestructura | Sí 23 servicios | 6 compose files válidos |
 | API | Sí 38 endpoints | OpenAPI 3.1.0 válido |
