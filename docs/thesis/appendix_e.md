@@ -290,8 +290,8 @@
 
 | Integración | Timeout | Retries | Concurrente |
 |-------------|---------|---------|-------------|
-| TheHive API | 120s | 3 (backoff 5s) | — |
-| Cortex API | 120s | 1 | 7 analyzers en paralelo |
+| TheHive API | 120s | 3 (backoff 0.5) | — |
+| Cortex API | 120s | 3 | 7 analyzers en paralelo |
 | Shuffle webhook | — | — | 60 req/min |
 
 ---
