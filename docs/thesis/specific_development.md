@@ -140,40 +140,66 @@ graph TD     A[Generación de Alertas] --> B[Recepción en Shuffle]
 
 #### Arquitectura de Código Python
 
-El código en `src/soar_lab/` se organiza en capas según el patrón hexagonal. Los diagramas canónicos completos están en el **Anexo H** (secciones H.2, H.3 y H.4).
+El código en `src/soar_lab/` se organiza según el patrón hexagonal: el dominio en el centro, aislado de infraestructura y frameworks. Los diagramas canónicos completos están en el **Anexo H** (secciones H.2, H.3 y H.4).
 
 ```mermaid
-graph TD     subgraph Dominio         D1[Entidades y lógica de negocio]
+graph TD
+    subgraph Dominio
+        D1[domain/ - entidades, puertos, servicios de dominio]
     end
 
-    subgraph Servicios         S1[Orquestación y lógica de aplicación]
+    subgraph Aplicación
+        A1[application/ - casos de uso y puertos input/output]
+        A2[auth/ - fachada de autenticación]
     end
 
-    subgraph Infraestructura         I1[Implementaciones técnicas]
+    subgraph Infraestructura
+        I1[infrastructure/ - adaptadores: integraciones, persistencia, monitoring]
+        I2[db/ - inicialización de base de datos]
+        I3[logging/ - logger estructurado]
     end
 
-    subgraph API         A1[Interfaz web]
+    subgraph Interfaces
+        IF1[interfaces/api/ - API FastAPI, CLI, static]
     end
 
-    subgraph Integraciones         INT1[Conexiones externas]
+    subgraph Soporte
+        S1[config/ - settings, esquemas, logging config]
+        S2[common/ - constantes, excepciones, runtime]
+        S3[validation/ - validadores reutilizables]
+        S4[security/ - sanitización de payloads]
+        S5[resilience/ - circuit breaker, retry, timeout]
+        S6[simulator/ - simulador de alertas SIEM]
+        S7[data/ - cálculo de KPIs, generación de IoCs]
     end
 
-    subgraph Configuración y Utilidades         CU1[Configuración, validación y scripts]
-    end
-
-    A1 --> S1     S1 --> D1     S1 --> I1     S1 --> CU1     INT1 --> I1     CU1 --> D1
+    IF1 --> A1
+    A1 --> D1
+    A1 --> I1
+    I1 --> D1
+    A2 --> I1
+    S1 --> D1
+    S5 --> I1
+    S6 --> IF1
+    S7 --> A1
 ```
 
 Las capas son:
 
-- `domain/`: lógica de negocio pura. Define entidades (alertas, casos, IoCs), contratos de infraestructura y cálculos de métricas.
-- `services/`: lógica de aplicación que orquesta los puertos del dominio (KPIs, autenticación, backup, salud, pruebas).
-- `infrastructure/`: implementaciones concretas de los puertos (clientes HTTP, repositorios, drivers de backup y métricas, logs).
-- `api/`: aplicación web con endpoints para salud, autenticación, métricas, pruebas, backup y WebSocket. Gestiona la inyección de dependencias.
-- `integrations/`: clientes para TheHive, Cortex, Shuffle y MISP.
-- `config/`: configuración general, esquemas de datos y logging.
-- `validation/`: validadores de datos para integridad de la información.
+- `domain/`: lógica de negocio pura. Define entidades (alertas, casos, IoCs), puertos (contratos de infraestructura) y servicios de dominio (cálculos de métricas).
+- `application/`: casos de uso que orquestan los puertos del dominio (análisis de KPIs, autenticación, backup, salud, pruebas).
+- `auth/`: fachada que re-exporta `AuthService` para acceso desde la API.
+- `infrastructure/`: adaptadores concretos de los puertos. Incluye `integrations/` (clientes de TheHive, Cortex, Shuffle, MISP), `persistence/`, `monitoring/`, `messaging/`, `network_watcher/`, `security/` y `templates/`.
+- `interfaces/`: API FastAPI (`api/`), CLI y recursos estáticos. Gestiona la inyección de dependencias.
+- `config/`: settings, esquemas de datos y configuración de logging.
+- `common/`: constantes, excepciones y utilidades de runtime compartidas.
+- `validation/`: validadores de datos reutilizables.
+- `security/`: sanitización de payloads de entrada.
+- `resilience/`: circuit breaker, retry con backoff y timeout para integraciones.
+- `simulator/`: simulador de alertas SIEM (maliciosas y benignas).
 - `data/`: scripts para cálculo de KPIs y generación de IoCs.
+- `db/`: inicialización y gestión de transacciones de base de datos.
+- `logging/`: wrapper de logger estructurado.
 
 #### Arquitectura de Despliegue
 
