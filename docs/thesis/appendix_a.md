@@ -121,7 +121,7 @@ services:
     volumes:
       - es_data:/usr/share/elasticsearch/data
     ports:
-      - "${ELASTICSEARCH_PORT:-8200}:9200"
+      - "${ELASTICSEARCH_PORT:-19200}:9200"
     networks: [soar_net, ti_net]
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS -u elastic:${ELASTIC_PASSWORD} 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1"]
@@ -547,8 +547,28 @@ THEHIVE_INDEX_TEMPLATE = {
                     "dashboard": ["dummy-dashboard"],
                     "audit": ["dummy-audit"],
                     "sequence": ["dummy-sequence"],
+                    "dblist": ["dblistitem"],
                 },
-            }
+            },
+            "key": {"type": "keyword"},
+            "password": {"type": "keyword"},
+            "status": {"type": "keyword"},
+            "login": {"type": "keyword"},
+            "flag": {"type": "boolean"},
+            "tlp": {"type": "integer"},
+            "pap": {"type": "integer"},
+            "severity": {"type": "integer"},
+            "caseId": {"type": "integer"},
+            "startDate": {"type": "date"},
+            "endDate": {"type": "date"},
+            "createdAt": {"type": "date"},
+            "updatedAt": {"type": "date"},
+            "date": {"type": "date"},
+            "order": {"type": "integer"},
+            "ioc": {"type": "boolean"},
+            "sighted": {"type": "boolean"},
+            "ignoreSimilarity": {"type": "boolean"},
+            "dblist": {"type": "keyword"},
         },
     },
 }
@@ -583,17 +603,17 @@ El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.
 | Panel | Título | Tipo |
 |-------|--------|------|
 | 1 | Total Alerts Processed | stat |
-| 2 | MTTR Medio (s) | stat |
+| 2 | MTTR Medio (s) — Gráfico 4.4 | stat |
 | 3 | Alertas Críticas (severity=3) | stat |
-| 4 | Tasa de Éxito por Tipo de Alerta | piechart |
-| 5 | Análisis de Percentiles MTTR (distribución completa) | timeseries |
-| 6 | Tasa de Éxito Servicios (TheHive / Cortex / MISP) | timeseries |
-| 7 | Alertas por Severidad (distribución SOAR) | barchart |
-| 8 | MTTR p50 (Mediana) | stat |
-| 9 | MTTR p90 | stat |
-| 10 | Evolución MTTR (tendencia diaria) | timeseries |
+| 4 | MTTR p50 (Mediana) — Gráfico 4.4 | stat |
+| 5 | MTTR p90 — Gráfico 4.4 | stat |
+| 6 | Análisis de Percentiles MTTR (distribución completa) — Gráfico 4.4 | timeseries |
+| 7 | Evolución MTTR (tendencia diaria) — Gráfico 5.3 | timeseries |
+| 8 | Tasa de Éxito por Tipo de Alerta — Gráfico 4.5 | piechart |
+| 9 | Alertas por Severidad (distribución SOAR) — Gráfico 4.3 | barchart |
+| 10 | Tasa de Éxito Servicios (TheHive / Cortex / MISP) — Gráfico 4.5 | timeseries |
 | 11 | MTTR Max / Min (rango de variabilidad) | stat |
-| 12 | Alertas procesadas por hora (throughput SOAR) | timeseries |
+| 12 | Alertas procesadas por hora (throughput SOAR) — Gráfico 5.4 | timeseries |
 | 13 | MTTR por Tipo de Alerta | barchart |
 | 14 | Tasa de Éxito por Severidad | barchart |
 | 15 | Evolución de Alertas por Tipo | timeseries |
@@ -620,9 +640,16 @@ scrape_configs:
       - source_labels: [ '__meta_docker_container_name' ]
         regex: '/(.*)'
         target_label: container
+      - source_labels: [ '__meta_docker_container_log_path' ]
+        regex: '/var/lib/docker/containers/([^/]+)/[^/]+'
+        replacement: '$1'
+        target_label: container_id
       - source_labels: [ '__meta_docker_container_name' ]
         regex: '(.*)_\\d+'
         target_label: service
+      - source_labels: [ '__meta_docker_network_name' ]
+        regex: '(.+)'
+        target_label: network
       - source_labels: [ '__meta_docker_container_label_com_docker_compose_service' ]
         regex: '(.+)'
         target_label: compose_service
@@ -639,7 +666,7 @@ scrape_configs:
           __path__: /var/log/**/*.log
 ```
 
-Esto etiqueta cada línea de log con `container` (nombre del contenedor), `service` (nombre del servicio sin sufijo de réplica), `compose_service` (label Docker Compose) y `compose_project` (nombre del proyecto), permitiendo filtrar en Grafana por servicio o proyecto.
+Esto etiqueta cada línea de log con `container` (nombre del contenedor), `container_id` (ID del contenedor), `service` (nombre del servicio sin sufijo de réplica), `network` (nombre de la red Docker), `compose_service` (label Docker Compose) y `compose_project` (nombre del proyecto), permitiendo filtrar en Grafana por servicio, red o proyecto.
 
 ## A.5. Guía de Instalación Rápida
 
@@ -1092,7 +1119,7 @@ sección A.1.1:
 | Archivos compose | 6 |
 | Servicios totales | 23 |
 | Redes | 4 (soar_net, ti_net, logging_net + bridge) |
-| Volúmenes persistentes | 17 |
+| Volúmenes persistentes | 15 |
 | Imágenes Docker | 23 (6 builds locales + 17 pulls) |
 | Versiones pinned | 100% (todas las imágenes tienen tag fijo) |
 
