@@ -60,7 +60,7 @@ Los requisitos de integración especifican las conexiones entre componentes del 
 - RI-04: Integración opcional con MISP. Intercambio de indicadores de amenazas con MISP para enriquecimiento
   adicional, sin ser requisito para la ejecución del playbook E2E.
 
-Matriz de Trazabilidad de Requisitos
+## Tabla 3: Matriz de Trazabilidad de Requisitos
 
 La matriz de trazabilidad conecta cada requisito con su componente implementador, prioridad y método de verificación:
 
@@ -276,6 +276,27 @@ La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) para TheHi
 La infraestructura se define con varios archivos Docker Compose (Docker Inc., 2024) que se combinan para desplegar el sistema completo. El archivo principal `docker-compose.yml` define cuatro redes (perimetral bridge, interna soar_net, inteligencia ti_net, monitoreo logging_net) y los volúmenes persistentes, e incluye Elasticsearch. El archivo `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle, Orborus, Network Watcher y Tenzir, con verificaciones de salud, límites de recursos y dependencias. Los archivos complementarios añaden: `docker-compose.api.yml` (API FastAPI, docs-site, web-management y Nginx), `docker-compose.misp.yml` (MISP, misp-db y misp-modules) (MISP Project, 2024), `docker-compose.opensearch.yml` (OpenSearch y OpenSearch Dashboards) (OpenSearch Project, 2024) y `docker-compose.logging.yml` (Loki, Promtail, Grafana, PostgreSQL y Grafana Renderer).
 
 La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging (Grafana, Loki y Promtail conectan además a soar_net para recoger datos de los servicios). Esta separación limita el movimiento lateral en caso de compromiso. Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio; los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 6** detalla la configuración de recursos.
+
+## Tabla 6: Configuración de Recursos Docker
+
+| Servicio             | CPU Límite | Memoria Límite | CPU Reserva | Memoria Reserva | Health Check |
+|----------------------|------------|----------------|-------------|-----------------|--------------|
+| **Elasticsearch**    | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
+| **OpenSearch**       | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
+| **TheHive**          | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
+| **Cortex**           | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Cada 30s   |
+| **Shuffle Backend**  | 2.0 cores  | 4GB            | 1.0 cores   | 2GB             | Disabled    |
+| **Shuffle Frontend** | 1.0 cores  | 2GB            | 0.5 cores   | 1GB             | Cada 15s   |
+| **Orborus**          | 2.0 cores  | 2GB            | 1.0 cores   | 1GB             | Cada 15s   |
+| **Tenzir**           | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Redis**            | 0.5 cores  | 1GB            | 0.25 cores  | 512MB           | Cada 10s   |
+| **API FastAPI**      | 1.0 cores  | 2GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Nginx**            | 0.5 cores  | 512MB          | 0.25 cores  | 128MB           | Cada 30s   |
+| **Grafana**          | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Loki**             | 1.0 cores  | 1GB            | 0.5 cores   | 512MB           | Cada 30s   |
+| **Promtail**         | 0.5 cores  | 512MB          | 0.25 cores  | 256MB           | Cada 30s   |
+
+Esta configuración permite el despliegue en sistemas con 16GB+ RAM, haciendo el laboratorio accesible para organizaciones con recursos moderados.
 
 Flujo de Integración entre Componentes
 
@@ -521,6 +542,8 @@ Los resultados experimentales se almacenan en `reports/e2e/` y `reports/validati
 
 El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, todas con alertas maliciosas (45 ransomware, 2 RAT, 2 troyano, 1 infostealer). La **Figura 6** muestra la comparación visual del MTTR manual vs automatizado, donde se aprecia la drástica reducción de 3600 s a 277.15 s (92.3 %). El cumplimiento de objetivos resume los umbrales definidos frente a los valores medidos:
 
+## Tabla 10: Cumplimiento de Objetivos del Experimento
+
 | Objetivo | Umbral | Valor medido | Cumple |
 |----------|--------|--------------|--------|
 | MTTR P50 (mediana) | ≤ 120 s | 193.19 s | No |
@@ -647,9 +670,11 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 
 | Tabla    | Título                                          |
 |----------|-------------------------------------------------|
-| Tabla 4  | Requisitos Funcionales vs No Funcionales        |
+| Tabla 3  | Matriz de Trazabilidad de Requisitos            |
+| Tabla 4  | Estado de Cumplimiento de Requisitos            |
 | Tabla 5  | Analyzers Cortex Configurados                   |
 | Tabla 6  | Configuración de Recursos Docker                |
-| Tabla 7  | Métricas de Monitoreo Implementadas             |
+| Tabla 7  | Métricas del Dashboard de Grafana               |
 | Tabla 8  | Resultados Experimentales Detallados            |
 | Tabla 9  | Análisis por Componente de Tiempo               |
+| Tabla 10 | Cumplimiento de Objetivos del Experimento       |
