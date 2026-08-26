@@ -169,7 +169,7 @@ Hitos importantes (4 fases):
 La progresión temporal de las métricas clave del proyecto durante las 18 semanas de desarrollo
 (27 abril - 31 agosto 2026), incluyendo MTTR, tasa de éxito y throughput. La estimación inicial fue
 de 12 semanas, aumentada a 15 tras la fase de diseño (integración de Cortex y stack de monitoreo no
-contemplados inicialmente), y finalmente 18 por la ampliación de la suite de tests (2041 tests) y la
+contemplados inicialmente), y finalmente 18 por la ampliación de la suite de tests (2233 tests coleccionados, 1905 seleccionados) y la
 ejecución del experimento (n=50). Las métricas solo se midieron en la fase de validación (S13-S18); las
 semanas anteriores muestran valores estimados/progresivos.
 
@@ -254,7 +254,7 @@ Costo Total ($ miles):
      │                         IBM Resilient: $500K
 450 ┤
 400 ┤                     ████████████████████████████████
-     │                     Palo Alto XSOAR: $500K
+     │                     Palo Alto XSOAR: $400K
 350 ┤
 300 ┤                 ████████████████████████████████
      │                 Híbrido: $350K
@@ -555,7 +555,7 @@ base para alertas y escalado automático.
 | **Vulnerabilidades**        | 0              | 0               | Cumplido | pip-audit    |
 | **Type checking**           | 0 errors       | 0 errors        | Cumplido | mypy         |
 | **Mutation Testing**        | ≥80%           | 51.8%           | Parcial  | mutmut       |
-| **Tests totales**           | —              | 2041 (9 markers)| —        | pytest       |
+| **Tests totales**           | —              | 2233 coleccionados (1905 seleccionados, 11 markers)| —        | pytest       |
 | **Quality Score**           | —              | 92.2/100        | —        | holistic     |
 
 > Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
