@@ -88,7 +88,7 @@ La literatura revisada converge en tres ideas. Primera: el tiempo de reacción c
 
 Pese a la abundancia de modelos conceptuales (CACAO, ATT&CK), guías prácticas (NIST, CISA) y estudios cualitativos, ningún trabajo revisado ejecuta un playbook SOAR específico para ransomware en condiciones controladas midiendo MTTR con percentiles, desviación estándar y consistencia entre ejecuciones. Gutzwiller et al. (2023) no reportan MTTR cuantitativo; Karlzén y Sommestad (2023) detectan vaguedad en entradas y salidas; Kok et al. (2023) y Brown et al. (2023) se centran en el diseño, no en la medición. Este TFM aborda dicha brecha ejecutando un playbook E2E sobre 50 alertas simuladas y reportando métricas estadísticas que permiten contrastar la hipótesis de que la automatización reduce el MTTR frente a la respuesta manual.
 
-El **Anexo H** (`appendix_h.md`) recopila 13 diagramas Mermaid canónicos que ilustran la arquitectura y los flujos referenciados en esta revisión.
+El **Anexo H** (sección H.1) recopila 13 diagramas Mermaid canónicos que ilustran la arquitectura y los flujos referenciados en esta revisión.
 
 ---
 
