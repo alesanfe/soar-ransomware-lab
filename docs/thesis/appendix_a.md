@@ -33,6 +33,7 @@ name: soar-lab
 #   - compose/docker-compose.core.yml     (redis, thehive, cortex, shuffle)
 #   - compose/docker-compose.misp.yml     (MISP threat intelligence)
 #   - compose/docker-compose.api.yml      (API, docs, web-management, nginx)
+#   - compose/docker-compose.opensearch.yml (opensearch, opensearch-dashboards)
 #   - compose/logging/docker-compose.logging.yml  (Loki, Promtail, Grafana)
 
 networks:
@@ -556,12 +557,11 @@ Este template se aplica con `PUT _template/thehive_template` antes de que TheHiv
 
 El workflow E2E de Shuffle crea casos en TheHive mediante la app `TheHive_app` con los siguientes campos:
 
-- `title`: `Ransomware Alert - {alert_id}` (ej. `Ransomware Alert - ALERT-001-001`)
-- `description`: Resumen de la alerta con IoCs (IPs, dominios, hashes)
-- `severity`: 2 (alto) para alertas maliciosas, 1 (medio) para sospechosas
-- `tags`: `ransomware`, `malicious`/`suspicious`, `auto-contained` (si se contiene)
+- `title`: `{alert_type}: {hostname} - {alert_id} | MITRE: {mitre_str}` (ej. `Ransomware: DESKTOP-ABC - ALERT-001 | MITRE: T1486, T1490`)
+- `description`: Resumen de la alerta con IoCs (IPs, dominios, hashes, MITRE)
+- `severity`: 3 (alto/crítico) para la mayoría de alertas maliciosas; 2 (medio) para troyanos
+- `tags`: `ransomware`, `soar-lab`, `automated`, `{alert_type}`, `alert_id:{id}`, `priority:critical` (si severity=3) o `priority:high` (si severity=2)
 - `tlp`: 2 (AMBER)
-- `pap`: 2 (AMBER)
 
 Los observables (IoCs) se añaden al caso como artifacts con `dataType` (`ip`, `domain`, `hash`, `url`) y `message` con el valor del IoC. El estado del caso permanece `Open` durante la contención simulada (TheHive 3.5.2 solo soporta `Open`/`Resolved`/`Deleted`; el script `update_inprogress.py` confirma que el caso se mantiene `Open` en la rama maliciosa). En la rama benigna, el caso se marca como `Resolved` con `resolutionStatus: FalsePositive` vía `mark_false_positive.py`.
 
@@ -675,9 +675,8 @@ python3 --version
 git clone https://github.com/alesanfe/soar-ransomware-lab.git
 cd soar-ransomware-lab
 
-# 2. Configure environment
-cp .env.example .env.full
-nano .env.full  # Edit with your configuration
+# 2. Generate environment with secrets
+make generate-secrets    # Genera .env.full con secretos aleatorios seguros
 
 # 3. Generate TLS certificates
 bash scripts/setup/gen_certs.sh
@@ -698,11 +697,11 @@ make metrics
 ### A.5.3. Verificación de Instalación
 
 ```bash
-# Check service status
-docker compose -f infra/docker/compose/docker-compose.yml ps
+# Check service status (all 23 services)
+make ps
 
 # Check logs
-docker compose -f infra/docker/compose/docker-compose.yml logs -f
+make logs
 
 # Test web interfaces (ajustar puertos según .env.full)
 curl -f http://localhost:8100/api/status  # TheHive
@@ -870,7 +869,7 @@ cat reports/validation/results/webhook_info.json
 docker exec soar_api cat /app/.env.full | grep SHUFFLE_DEFAULT_APIKEY
 
 # 4. Verificar ejecuciones del workflow desde Shuffle UI o ES
-curl http://localhost:8200/users* -u elastic:$ELASTIC_PASSWORD
+curl http://localhost:8200/soar-alerts/_count -u elastic:$ELASTIC_PASSWORD
 ```
 
 **Criterio de verificación.**
