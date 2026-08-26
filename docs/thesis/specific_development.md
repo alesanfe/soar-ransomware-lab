@@ -342,72 +342,56 @@ Shuffle (v2.2.1) orquesta los flujos mediante una interfaz visual de bloques (Sh
 
 ```mermaid
 ---
-title: Scripts de Automatización Desarrollados
+title: Capacidades de Automatización
 ---
 graph TD
-    subgraph scripts/setup
-        S1[generate_secrets.py]
-        S2[generate_env.py]
-        S3[render_configs.py]
-        S4[init_thehive.py]
-        S5[reset_cortex.py]
-        S6[init_shuffle_webhook.py]
-        S7[setup_analyzers_and_iocs.py]
-        S8[setup_grafana_kpis.py]
-        S9[configure_es.py]
-        S10[fix_org_users.py]
+    subgraph Provisionamiento
+        P1[Generación de secretos]
+        P2[Renderizado de configuración]
+        P3[Inicialización de servicios]
+        P4[Instalación de analyzers e IoCs]
     end
 
-    subgraph scripts/setup/shuffle_workflow
-        W1[workflow_definition.py]
-        W2[workflow_actions.py]
-        W3[cortex_setup.py]
-        W4[shuffle_setup.py]
-        W5[scripts/ 21 nodos Python]
+    subgraph Orquestación de Workflows
+        O1[Definición del workflow]
+        O2[Cableado de integraciones]
+        O3[Scripts embebidos en Shuffle]
     end
 
-    subgraph scripts/maintenance
-        M1[clean_shuffle_executions.py]
-        M2[clean_thehive_cases.py]
-        M3[wait_for_workflows.py]
-        M4[warmup_shuffle.py]
-        M5[check_opensearch.py]
-        M6[verify_image_digests.py]
+    subgraph Simulación
+        SM1[Generación de alertas]
+        SM2[IoCs realistas CISA/MITRE]
+        SM3[Envío al webhook]
     end
 
-    subgraph scripts/reports
-        R1[generate_e2e_report.py]
-        R2[generate_e2e_md_from_json.py]
-        R3[generate_mutmut_report.py]
-        R4[holistic_review.py]
-        R5[test_review.py]
+    subgraph Mantenimiento
+        M1[Limpieza de ejecuciones stale]
+        M2[Espera de workflows]
+        M3[Verificación de imágenes]
     end
 
-    subgraph scripts/quality
-        Q1[run_quality_checks.py]
-        Q2[calculate_quality_score.py]
-        Q3[parse_bandit.py]
-        Q4[parse_coverage.py]
-        Q5[parse_mutmut.py]
+    subgraph Observabilidad
+        OB1[Cálculo de KPIs]
+        OB2[Dashboards Grafana]
+        OB3[Reportes E2E]
     end
 
-    subgraph scripts/ci
-        C1[e2e_suites.py]
-        C2[docs_quality.py]
-        C3[terminology_check.py]
-        C4[sync_docs_to_docusaurus.py]
+    subgraph Calidad y CI
+        Q1[Análisis estático]
+        Q2[Mutation testing]
+        Q3[Revisión holística]
     end
 
-    subgraph scripts/safety
-        SF1[preserve_credentials.py]
-        SF2[restore_credentials.py]
-    end
-
-    S6 --> W1
-    W1 --> W2
-    W2 --> W3
-    W2 --> W5
-    S7 --> W3
+    P3 --> O1
+    O1 --> O2
+    O2 --> O3
+    P4 --> O2
+    SM3 --> O1
+    O3 --> OB1
+    OB1 --> OB2
+    M2 --> OB3
+    Q1 --> Q3
+    Q2 --> Q3
 ```
 
 Flujo de Cálculo de KPIs
@@ -434,11 +418,11 @@ graph TD
     K --> L[Dashboard Grafana]
 ```
 
-El repositorio incluye 80+ scripts Python organizados en 7 categorías bajo `scripts/`. La categoría `setup/` (18 scripts) orquesta el arranque completo: `generate_secrets.py` genera claves, `render_configs.py` renderiza configuración desde plantillas, `init_thehive.py` y `reset_cortex.py` inicializan servicios, `init_shuffle_webhook.py` crea el workflow completo en Shuffle, y `setup_analyzers_and_iocs.py` instala los analyzers de Cortex y carga IoCs en MISP. El subpaquete `shuffle_workflow/` contiene la definición del workflow (46 nodos, 60 ramas) y 21 scripts Python embebidos que se ejecutan dentro de Shuffle.
+La automatización se organiza en seis capacidades. El **provisionamiento** genera secretos, renderiza configuración desde plantillas, inicializa TheHive/Cortex/Shuffle y instala los analyzers de Cortex junto con los IoCs en MISP, de forma que un único comando (`make up`) deja el laboratorio operativo. La **orquestación de workflows** define el playbook completo (46 nodos, 60 ramas) y cablea cada integración; 21 scripts Python embebidos se ejecutan dentro de Shuffle para normalizar, decidir y enriquecer.
 
-La categoría `maintenance/` (6 scripts) incluye `clean_shuffle_executions.py` para limpiar workflows stale, `wait_for_workflows.py` para sincronizar tests E2E, y `verify_image_digests.py` para verificar digests de imágenes Docker. `reports/` (5 scripts) genera informes de tests E2E, mutmut y revisión holística. `quality/` (9 scripts) parsea resultados de bandit, coverage, mutmut, pylint, radon, ruff y vulture. `ci/` (4 scripts) gestiona suites E2E, calidad de docs y sincronización con Docusaurus. `safety/` preserva y restaura credenciales entre resets.
+La **simulación** genera alertas de ransomware con IoCs realistas (hashes SHA256 de advisories CISA, IPs C2, técnicas MITRE ATT&CK) y las envía al webhook de Shuffle vía HTTP, permitiendo configurar tipo, volumen y frecuencia. El **mantenimiento** limpia ejecuciones stale de Shuffle, espera a que los workflows terminen para sincronizar los tests E2E y verifica la integridad de las imágenes Docker.
 
-El simulador de alertas (`src/soar_lab/simulator/simulate_alerts.py`) genera alertas de ransomware con IoCs realistas (hashes SHA256 de CISA, IPs C2, técnicas MITRE ATT&CK) y las envía al webhook de Shuffle vía HTTP, permitiendo configurar tipo, volumen y frecuencia. La contención simulada se implementa en el playbook de Shuffle: registra acciones en logs sin ejecutar comandos reales, verifica el riesgo antes del aislamiento y notifica el resultado al caso en TheHive.
+La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing y una revisión holística del proyecto en 15 dimensiones.
 
 #### Playbooks de Respuesta a Ransomware
 
