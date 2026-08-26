@@ -247,7 +247,7 @@ flowchart TD
 
  G -->|SÍ| H[N7: POST /api/v1/contain<br/>(contención Lab API)]
  H --> I[N8: Case stays Open<br/>(no PATCH)]
- I --> J[N9: Notificación CRITICAL Slack]
+ I --> J[N9: Notificación CRITICAL email]
  J --> K[N10: Registrar MTTR + métricas ES]
  K --> Z([FIN — caso contenido])
 
