@@ -3,8 +3,6 @@
 > La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md). Este anexo registra
 > únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental.
 
-> La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md). Esta sección registra únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental.
-
 ## 2026-07-19 — Revisión de docs/thesis (FASE 53)
 
 - **Tesis / Troubleshooting (A.6.1).**
@@ -21,8 +19,8 @@
 ## 2026-07-18 — Remediación documental masiva
 
 - **Seguridad y secretos.**
-  - `.env.example` saneado: todos los secretos se convirtieron en marcadores `<VARIABLE>`.
-  - Creado `src/soar_lab/scripts/setup/generate_env.py` para generar `.env.full` y `infra/docker/compose/logging/grafana-datasources.yml` a partir de plantillas.
+  - `.env.example` documentado como plantilla no operativa; los secretos reales se generan con `make generate-secrets` y se escriben en `.env.full` (en `.gitignore`).
+  - Creado `scripts/setup/generate_env.py` para generar `.env.full` y `infra/docker/config/templates/grafana-datasources.yml.template` a partir de plantillas.
   - `grafana-datasources.yml` y `.env.full` añadidos a `.gitignore`; ya no se publican valores operativos.
   - `Makefile.linux` y `Makefile.win` actualizados: `make generate-secrets` genera el entorno y `make up` lo genera si falta.
 
@@ -31,7 +29,7 @@
 
 - **CLI y JWT.**
   - `soar-lab generate-secrets` añade `JWT_SECRET_KEY` a la salida `.env`.
-  - Manual `docs/operations/cli_manual.md` sincronizado para reflejar la generación automática de JWT.
+  - `docs/04-operations.md` sincronizado para reflejar la generación automática de JWT.
 
 - **Tesis.**
   - `docs/thesis/appendix_a.md`, `specific_development.md`, `appendix_c.md`, `conclusions_and_future_work.md` actualizados para advertir que el anexo es una instantánea estática y señalar los compose canónicos.
