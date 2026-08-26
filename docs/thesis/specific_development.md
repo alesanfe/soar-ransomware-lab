@@ -294,20 +294,23 @@ graph TD
     D --> M[Network Watcher - Monitor de red]
     D --> N[Redis - Caché de IoCs]
     D --> O[Loki - Búsqueda de logs]
-    G --> P[Calc decision - Score y verdict]
+    D --> ES[Elasticsearch - Indexar alerta]
+    E --> P[Calc decision - Score y verdict]
+    F --> P
+    G --> P
     H --> P
     K --> P
     L --> P
     M --> P
     N --> P
     O --> P
+    ES --> P
     P --> Q{Score ≥ 80 o malicious?}
     Q -->|Sí| R[Contención simulada]
     Q -->|No| S[Marcar falso positivo]
     R --> T[TheHive - Actualizar a In Progress]
-    S --> U[TheHive - Actualizar a FalsePositive]
     T --> V[Notificación crítica]
-    U --> W[Notificación informativa]
+    S --> W[Notificación informativa]
     V --> Y[Calc MTTR]
     W --> Y
     Y --> X[TheHive - Enriquecer caso]
