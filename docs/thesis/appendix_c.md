@@ -211,7 +211,7 @@ Contención: vía POST /api/v1/contain (Lab API, modo "simulation")
 │  ┌───▼───┐         ┌─────▼─────┐       ┌─────▼─────┐           │
 │  │POST   │         │TheHive    │       │Notify     │          │
 │  │/api/  │         │Case stays │       │Critical   │          │
-│  │v1/    │         │Open       │       │(Slack)    │          │
+│  │v1/    │         │Open       │       │(email)    │          │
 │  │contain│         │(no PATCH) │       │           │          │
 │  └───────┘         └───────────┘       └───────────┘           │
 └─────────────────────────────────────────────────────────────────┘
@@ -258,6 +258,10 @@ Contención: vía POST /api/v1/contain (Lab API, modo "simulation")
 │  │  │ FastAPI │  │ :8085   │  │ :8086   │                    │  │
 │  │  └─────────┘  └─────────┘  └─────────┘                    │  │
 │  │                                                           │  │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐                    │  │
+│  │  │  MISP   │  │MISP DB  │  │MISP Mod │                    │  │
+│  │  └─────────┘  └─────────┘  └─────────┘                    │  │
+│  │                                                           │  │
 │  │  ┌─────────┐  ┌─────────┐                                │  │
 │  │  │OpenSearch│ │OpenSearch│                                │  │
 │  │  │  :8201  │  │ Dashb.  │                                │  │
@@ -269,9 +273,9 @@ Contención: vía POST /api/v1/contain (Lab API, modo "simulation")
 │  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
 │  ┌─────────────────────ti_net (172.22.0.0/16)────────────────┐  │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐                    │  │
-│  │  │  MISP   │  │MISP DB  │  │MISP Mod │                    │  │
-│  │  └─────────┘  └─────────┘  └─────────┘                    │  │
+│  │  Red interna (internal: true) — sin acceso externo        │  │
+│  │  Servicios con interfaz en ti_net: ES, Redis, Shuffle,    │  │
+│  │  API (compartidos con soar_net para aislamiento TI)       │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
 │  ┌─────────────────────logging_net (172.23.0.0/16)───────────┐  │
