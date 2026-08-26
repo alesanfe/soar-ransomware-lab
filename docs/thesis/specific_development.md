@@ -452,6 +452,7 @@ graph TD
     subgraph Fuentes
         DK[Docker Socket]
         SH[Shuffle Workflow]
+        API2[API FastAPI]
     end
 
     DK --> P1
@@ -459,7 +460,7 @@ graph TD
     SH --> ES
     G1 --> L1
     G1 --> ES
-    G1 --> API2[API FastAPI]
+    G1 --> API2
     G1 --> PG
     G1 --> GR
 ```
