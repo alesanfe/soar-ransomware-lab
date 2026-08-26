@@ -411,7 +411,7 @@ make holistic-review    # radar 15 dimensiones
 | Integration | 3.11+ | Sí | real creds | Sí | Sí |
 | E2E | 3.11+ | Sí | real creds | Sí | Sí |
 | Performance | 3.11+ | Sí | real creds | Sí | Sí |
-| Security | 3.11+ | Sí | real creds | Sí | No |
+| Security | 3.11+ | No | placeholders | No | No |
 | Smoke | 3.11+ | Sí | real creds | Sí | Sí |
 
 ---
