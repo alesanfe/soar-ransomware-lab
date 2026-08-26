@@ -519,9 +519,7 @@ Los resultados experimentales se almacenan en `reports/e2e/` y `reports/validati
 
 #### 4.1.3.3. Resultados Experimentales
 
-El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, todas con alertas maliciosas (45 ransomware, 2 RAT, 2 troyano, 1 infostealer). La **Figura 6** muestra la comparación visual del MTTR.
-
-**Cumplimiento de objetivos.** La tabla resume los umbrales definidos frente a los valores medidos:
+El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, todas con alertas maliciosas (45 ransomware, 2 RAT, 2 troyano, 1 infostealer). La **Figura 6** muestra la comparación visual del MTTR manual vs automatizado, donde se aprecia la drástica reducción de 3600 s a 277.15 s (92.3 %). El cumplimiento de objetivos resume los umbrales definidos frente a los valores medidos:
 
 | Objetivo | Umbral | Valor medido | Cumple |
 |----------|--------|--------------|--------|
@@ -531,9 +529,7 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 | Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
 | Reducción MTTR vs manual | ≥ 50 % | 92.3 % | Sí |
 
-**Cumplimiento global: 3 de 5 objetivos.**
-
-La **Tabla 8** presenta los resultados experimentales detallados del experimento con n=50 ejecuciones, contrastando las métricas de la respuesta manual estimada con la respuesta SOAR automatizada.
+**Cumplimiento global: 3 de 5 objetivos.** La **Tabla 8** presenta los resultados detallados contrastando la respuesta manual estimada con la SOAR automatizada.
 
 ## Tabla 8: Resultados Experimentales Detallados
 
@@ -551,14 +547,13 @@ La **Tabla 8** presenta los resultados experimentales detallados del experimento
 | **Falsos Negativos**    | N/A               | 8.0%         | N/A       |
 | **Recursos (mem pico)** | N/A               | 2.58 GiB     | N/A       |
 
-La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025). El tiempo mínimo fue 65.38 s. La **Figura 7** muestra los tiempos por fase.
+La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025). El tiempo mínimo fue 65.38 s.
+
+La **Figura 7** desglosa los tiempos medios por componente del workflow. Se aprecia que la creación de caso (2773.48 s) y el análisis de IoCs (2393.46 s) dominan el tiempo acumulado, mientras que la contención (422.0 s) y el triaje (103.92 s) son relativamente rápidos. La **Tabla 9** detalla estas fases:
 
 ![Figura 7: Tiempos por componente del workflow](figures/GE1_component_timings.png)
 
-**Figura 7**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso,
-contención y cierre).
-
-El análisis por componente de tiempo se detalla en la **Tabla 9**, que desglosa la duración de cada fase del workflow automatizado frente a la condición manual.
+**Figura 7**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso, contención y cierre).
 
 ## Tabla 9: Análisis por Componente de Tiempo
 
@@ -570,27 +565,25 @@ El análisis por componente de tiempo se detalla en la **Tabla 9**, que desglosa
 | **Contención**         | N/A    | 422.0s  | N/A                | N/A                  |
 | **MTTR medio**         | 3600s  | 277.15s | 3322.85s           | 92.3%                |
 
-La reducción del 92.3 % en MTTR medio se concentra en la eliminación del tiempo de espera humano entre pasos. Los tiempos por fase son acumulativos con solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Esto identifica oportunidades de mejora en caché de resultados y ejecución concurrente de analyzers.
+Los tiempos por fase son acumulativos con solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Esto identifica oportunidades de mejora en caché de resultados y ejecución concurrente de analyzers. La **Figura 8** muestra la distribución de percentiles MTTR capturada desde Grafana, donde se observa una cola larga: mientras el P50 se sitúa en 193.19 s, el P90 escala a 621.83 s y el P95 a 644.46 s, reflejando la variabilidad introducida por los analyzers de Cortex con tiempos de respuesta heterogéneos.
 
 ![Figura 8: Análisis de percentiles MTTR](figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
 
 **Figura 8**: Distribución de percentiles MTTR capturada desde el dashboard de Grafana.
 
-**Decisiones automatizadas.** El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 9** muestra la distribución de decisiones y la **Figura 5** el estado de los jobs de Cortex.
+El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 9** muestra esta distribución de decisiones, donde se aprecia que ninguna alerta fue clasificada como *benign*: el motor de scoring asignó score >= 80 al 92 % de las alertas, activando contención en 46/50 casos. Los 4 casos restantes (score < 80) se marcaron como *observe*, constituyendo falsos negativos (8.0 %), mejorando el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring fue del 92.0 %.
 
 ![Figura 9: Distribución de decisiones del playbook](figures/decision_distribution.png)
 
 **Figura 9**: Distribución de decisiones automatizadas (malicious, suspicious, benign) sobre las 50 ejecuciones.
 
+La **Figura 5** muestra el estado de los jobs de Cortex: 255 de 257 jobs se completaron correctamente (99.2 %), con 2 fallos atribuibles a timeouts puntuales en analyzers externos. Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones, completándose 50/50 workflows y 50/50 casos en TheHive. El workflow incluye 46 nodos (25 ejecutados en las 50 runs) y la automatización fue del 100 %, sin intervención humana.
+
 ![Figura 5: Estado de jobs de Cortex](figures/cortex_job_status.png)
 
 **Figura 5**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito).
 
-**Servicios e integraciones.** Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones. Se completaron 50/50 workflows, 50/50 casos en TheHive y 255/257 jobs en Cortex (99.2 %). El workflow incluye 46 nodos (25 ejecutados en las 50 runs) y la automatización fue del 100 %, sin intervención humana.
-
-**Precisión.** La tasa de falsos negativos fue del 8.0 % (4/50 alertas maliciosas clasificadas como *observe* cuando se esperaba *contain* por tener score < 80), mejorando el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring fue del 92.0 % (46/50 decisiones acertadas).
-
-**Uso de recursos.** El consumo medido con `docker stats` se mantuvo dentro de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %). Ningún contenedor superó su límite, confirmando la viabilidad en un host con 16 GiB RAM. La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) se detalla en el **Anexo E** (sección E.1).
+El consumo medido con `docker stats` se mantuvo dentro de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %). Ningún contenedor superó su límite, confirmando la viabilidad en un host con 16 GiB RAM. La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) se detalla en el **Anexo E** (sección E.1).
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
