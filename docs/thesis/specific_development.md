@@ -310,16 +310,37 @@ Flujo de Integración entre Componentes
 ---
 title: Flujo de Integración entre Componentes
 ---
-graph TD     A[Alerta Entrante] --> B[Shuffle - Orquestador]
-    B --> C[TheHive - Gestión de Casos]
-    B --> D[Cortex - Análisis de IoCs]
-    D --> E[Fuentes Externas de Inteligencia]
-    E --> F[MalwareBazaar]
-    E --> G[DShield]
-    E --> H[OTX/GoogleDNS/Mnemonic pDNS]
-    F --> D     G --> D     H --> D     D --> I[Resultados de Análisis]
-    I --> B     I --> C     C --> J[Registro de Evidencias]
-    J --> K[Reporte Final]
+graph TD
+    A[Simulador SIEM] -->|webhook| B[Shuffle - Orquestador]
+    B --> C[Normalize + Build Case JSON]
+    C --> D[TheHive - Crear caso]
+    D --> E[TheHive - Observables hash/IP]
+    D --> F[TheHive - Tarea de investigación]
+    B --> G[Cortex - Análisis de hash]
+    B --> H[Cortex - Análisis de IP]
+    G --> I[MalwareBazaar / FileInfo]
+    H --> J[DShield / Mnemonic pDNS / GoogleDNS]
+    B --> K[MISP - Búsqueda de indicadores]
+    B --> L[Tenzir - Análisis de tráfico]
+    B --> M[Network Watcher - Monitor de red]
+    B --> N[Redis - Caché de IoCs]
+    B --> O[Loki - Búsqueda de logs]
+    G --> P[Calc decision - Score y verdict]
+    H --> P
+    K --> P
+    L --> P
+    P --> Q{Score >= 80 o malicious?}
+    Q -->|Sí| R[Contención simulada]
+    Q -->|No| S[Marcar falso positivo]
+    R --> T[TheHive - Actualizar a In Progress]
+    S --> U[TheHive - Actualizar a FalsePositive]
+    T --> V[Notificación crítica]
+    U --> W[Notificación informativa]
+    V --> X[TheHive - Enriquecer caso]
+    W --> X
+    X --> Y[Calc MTTR]
+    Y --> Z[Elasticsearch - Indexar métricas]
+    Z --> AA[Reporte Final]
 ```
 
 TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024) con plantillas especializadas para ransomware, asignación de tareas y registro de acciones. Su integración con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
