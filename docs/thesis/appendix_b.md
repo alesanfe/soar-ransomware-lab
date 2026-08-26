@@ -2,7 +2,7 @@
 
 > **Aviso de sincronización**: este anexo es una instantánea estática del workflow de Shuffle.
 > La versión canónica y actualizada se encuentra en `scripts/setup/shuffle_workflow/`
-> (`workflow_definition.py`, `workflow_actions.py`, y 26 scripts embebidos en `scripts/`).
+> (`workflow_definition.py`, `workflow_actions.py`, y 25 scripts embebidos en `scripts/`).
 > En caso de discrepancia, prevalece el código del repositorio.
 
 ---
@@ -16,9 +16,9 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 
 | Parámetro | Valor |
 |-----------|-------|
-| **Nombre** | `soar-ransomware-e2e` |
+| **Nombre** | `SOAR-Ransomware-Response` |
 | **Trigger** | Webhook (Shuffle Triggers) |
-| **Acciones totales** | 45 nodos de acción + 1 trigger = 46 nodos |
+| **Acciones totales** | 45 nodos de acción + 1 trigger = 46 nodos definidos (49 ejecutados) |
 | **Ramas (edges)** | 60 |
 | **Apps usadas** | HTTP, Shuffle Tools (Python embebido) |
 | **Timeout por acción** | 30-180s según nodo |
@@ -326,10 +326,13 @@ El nodo `calc_decision` es el núcleo del workflow. Calcula un score de 0 a 100 
 
 ### B.4.2. Umbral de Decisión
 
-| Score | Verdict | Decision | Acción |
-|-------|---------|----------|--------|
-| ≥ 80 | malicious | **contain** | Contención EDR + firewall, caso -> InProgress, notify critical |
-| < 80 | suspicious | **observe** | Marcar como falso positivo, caso -> cerrado, notify info |
+| Condición | Verdict | Decision | Acción |
+|-----------|---------|----------|--------|
+| `score ≥ 80` OR `verdict == "malicious"` | malicious | **contain** | Contención EDR + firewall, caso -> InProgress, notify critical |
+| `score < 80` AND `verdict != "malicious"` | suspicious/safe | **observe** | Marcar como falso positivo, caso -> cerrado, notify info |
+
+> **Nota**: La condición de contención es `score >= 80 OR verdict == "malicious"`, no solo `score >= 80`.
+> Esto permite que un verdict "malicious" de Cortex (independientemente del score) dispare contención.
 
 ### B.4.3. Técnicas MITRE de Alto Riesgo
 
@@ -344,7 +347,7 @@ HIGH_RISK_TECHNIQUES = {
     "T1218": "System Binary Proxy Execution",
     "T1071": "Application Layer Protocol",
     "T1571": "Non-Standard Port",
-    "T1572": "Lateral Tool Transfer",
+    "T1572": "Protocol Tunneling",
     "T1573": "Encrypted Channel",
 }
 ```
@@ -369,7 +372,7 @@ El workflow tiene **60 ramas** que conectan los nodos. Las principales son:
 | act_thehive_create_case | act_calc_task_title | Caso -> cálculo título tarea (paralelo) |
 | act_thehive_create_case | act_cortex_hash | Caso -> análisis Cortex hash (paralelo) |
 | act_thehive_create_case | act_cortex_ip | Caso -> análisis Cortex IP (paralelo) |
-| act_thehive_create_case | act_misp_create | Caso -> creación evento MISP (paralelo) |
+| act_thehive_create_case | act_misp_create_event | Caso -> creación evento MISP (paralelo) |
 | act_thehive_create_case | act_build_es_json | Caso -> indexación ES (paralelo) |
 | act_thehive_create_case | act_tenzir_analyze | Caso -> análisis Tenzir (paralelo) |
 | act_thehive_create_case | act_network_watch | Caso -> Network Watcher (paralelo) |
@@ -457,16 +460,19 @@ El workflow está diseñado para ser idempotente:
 
 ## B.8. Resultados Experimentales del Workflow
 
-Datos medidos en ejecución experimental (n=50 alertas, 2026-08-24):
+Datos medidos en ejecución experimental (n=50 alertas, 2026-08-24, fuente: `docs/thesis/reports/e2e_report.json`):
 
 | Métrica | Valor |
 |---------|-------|
 | Workflows completados | 50/50 (100%) |
 | MTTR medio | 277.15s |
 | MTTR P50 | 193.19s |
-| Score promedio | 96.2/100 |
+| MTTR P90 | 621.83s |
+| MTTR min/max | 65.38s / 652.92s |
 | Tasa de contención (score ≥ 80) | 92.0% (46/50) |
 | Tasa de observación (score < 80) | 8.0% (4/50) |
-| Nodos por ejecución | 46 (45 acciones + 1 trigger) |
-| Ramas por ejecución | 60 |
+| Nodos por ejecución | 49 (reportado por Shuffle; 46 definidos + 3 dinámicos) |
+| Ramas definidas | 60 |
+| Jobs de Cortex | 257 (255 success, 2 failure) |
+| Casos TheHive | 50 (46 Open, 4 Resolved) |
 | Tasa de automatización | 100% (sin intervención humana) |
