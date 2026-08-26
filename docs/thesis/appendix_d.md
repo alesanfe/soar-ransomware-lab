@@ -620,21 +620,21 @@ Las siguientes figuras se generan automáticamente desde los resultados experime
 
 ### Dashboards de Grafana
 
-![Progresión de MTTR (tendencia diaria)](figures/grafana_panel_10_Grafico_5_3___Evolucion_MTTR__tendencia_diaria_.png)
+![Progresión de MTTR (tendencia diaria)](figures/org_daily_stats.png)
 
-**Figura 18**: Progresión de MTTR (tendencia diaria) capturada desde el dashboard de Grafana.
+**Figura 18**: Progresión de MTTR (tendencia diaria) y estadísticas agregadas por día durante las ejecuciones E2E.
 
-![Alertas procesadas por hora (throughput)](figures/grafana_panel_12_Grafico_5_4___Alertas_procesadas_por_hora__through.png)
+![Alertas procesadas por hora (throughput)](figures/workflow_durations.png)
 
-**Figura 19**: Alertas procesadas por hora (throughput) desde el dashboard de Grafana.
+**Figura 19**: Distribución de duraciones de los 50 workflows ejecutados, mostrando el throughput del sistema.
 
 ![MTTR por tipo de alerta](figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
 
 **Figura 20**: MTTR por tipo de alerta desde el dashboard de Grafana.
 
-![Tasa de éxito por severidad](figures/grafana_panel_14_Tasa_de__xito_por_Severidad.png)
+![Tasa de éxito por severidad](figures/severity_distribution.png)
 
-**Figura 21**: Tasa de éxito por severidad desde el dashboard de Grafana.
+**Figura 21**: Distribución de alertas por severidad durante las ejecuciones E2E, mostrando la proporción de alertas críticas (severity=3) frente a las de menor severidad.
 
 ### Estado de Servicios
 
@@ -679,19 +679,17 @@ contención, cierre de caso y errores de integración.
 
 **Figura 29**: Tasa de éxito por tipo de alerta capturada desde el panel 4 de Grafana, complementaria a la Figura 17.
 
-![Tasa de éxito de servicios TheHive y Cortex (Grafana)](figures/grafana_panel_6_Grafico_4_5___Tasa_de_Exito_Servicios__TheHive___C.png)
+![Tasa de éxito de servicios TheHive y Cortex (Grafana)](figures/thehive_case_status.png)
 
-**Figura 30**: Tasa de éxito de los servicios TheHive y Cortex desde el panel 6 de Grafana, mostrando la disponibilidad
-de las integraciones durante las ejecuciones.
+**Figura 30**: Estado de los 50 casos creados en TheHive, mostrando la disponibilidad de las integraciones durante las ejecuciones.
 
-![Alertas por severidad (Grafana)](figures/grafana_panel_7_Grafico_4_3___Alertas_por_Severidad__distribucion_.png)
+![Alertas por severidad (Grafana)](figures/cortex_job_status.png)
 
-**Figura 31**: Distribución de alertas por severidad desde el panel 7 de Grafana, complementaria a la Figura 12.
+**Figura 31**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito), complementaria al análisis de severidad.
 
-![Evolución de alertas por tipo (Grafana)](figures/grafana_panel_15_Evoluci_n_de_Alertas_por_Tipo.png)
+![Evolución de alertas por tipo (Grafana)](figures/alert_distribution.png)
 
-**Figura 32**: Evolución temporal de alertas por tipo desde el panel 15 de Grafana, mostrando la progresión de
-alertas maliciosas y benignas durante las 50 ejecuciones.
+**Figura 32**: Distribución de alertas por tipo durante las 50 ejecuciones, mostrando la proporción de ransomware, RAT, troyano e infostealer.
 
 ### Análisis Estadístico Adicional
 

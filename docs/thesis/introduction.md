@@ -19,7 +19,7 @@ Los incidentes de ransomware han aumentado en los últimos años. El Global Thre
 En la práctica, una alerta de ransomware exige varias tareas. Primero se valida la información. Luego se abre un caso, se añaden los observables y se consulta información contextual. Solo entonces se toma una decisión sobre la contención.
 Cuando estas actividades se ejecutan manualmente, el tiempo de respuesta aumenta. También aparecen diferencias entre analistas, lo que dificulta la mejora continua. La **Figura 1** anticipa la magnitud de esta mejora: el MTTR (Mean Time to Respond, Tiempo Medio de Respuesta) pasa de 3600 s en la respuesta manual a 277.15 s con la respuesta automatizada SOAR, una reducción del 92.3 %. El baseline manual de 3600 s (1 hora) es conservador frente a los datos de la industria: CrowdStrike fija como benchmark ideal 60 minutos para contener (regla 1-10-60), pero la media real observada en su survey es de 16 horas (CrowdStrike, 2021). ReliaQuest reporta un MTTR tradicional de 2.3 días sin automatización (ReliaQuest, 2024), y la SANS SOC (Security Operations Center) Survey 2025 sitúa el tiempo mediano de triaje y escalado de alertas en 260 minutos (SANS Institute, 2025).
 
-![Figura 1: Comparación MTTR manual vs automatizado](figures/Fig1_3_mttr_comparison.png)
+![Figura 1: Comparación MTTR manual vs automatizado](figures/Fig5_1_mttr_results.png)
 
 **Figura 1**: Comparación del MTTR entre la respuesta manual (3600 s) y la respuesta automatizada SOAR (277.15 s),
 que muestra una reducción del 92.3 %.
@@ -102,7 +102,7 @@ sugerencias para entornos que deseen aplicar capacidades SOAR similares.
 
 | Figura    | Título                                    | Archivo                              |
 |-----------|-------------------------------------------|--------------------------------------|
-| Figura 1 | Comparación MTTR manual vs automatizado | `figures/Fig1_3_mttr_comparison.png` |
+| Figura 1 | Comparación MTTR manual vs automatizado | `figures/Fig5_1_mttr_results.png` |
 
 ## Índice de Tablas del Capítulo 1
 
