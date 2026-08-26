@@ -273,6 +273,10 @@ graph TD
 
 La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) para TheHive y Cortex, Redis (Redis Ltd., 2024) para colas y caché, y OpenSearch (OpenSearch Project, 2024) como motor de búsqueda de Shuffle. La capa de aplicación SOAR la forman TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (frontend y backend) (Shuffle Tools, 2024; Shuffle Tools, n.d.), Orborus (ejecutor de workflows que accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores), Tenzir (procesamiento de eventos de red) y Network Watcher (monitor de la red soar_net). La capa de integración incluye Nginx (Nginx, 2024; Nginx, n.d.) como proxy inverso, la API FastAPI (FastAPI, 2024), el sitio de documentación y la interfaz web de gestión. El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) con PostgreSQL como base de datos y Grafana Renderer para exportación de paneles.
 
+La infraestructura se define con varios archivos Docker Compose (Docker Inc., 2024) que se combinan para desplegar el sistema completo. El archivo principal `docker-compose.yml` define cuatro redes (perimetral bridge, interna soar_net, inteligencia ti_net, monitoreo logging_net) y los volúmenes persistentes, e incluye Elasticsearch. El archivo `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle, Orborus, Network Watcher y Tenzir, con verificaciones de salud, límites de recursos y dependencias. Los archivos complementarios añaden: `docker-compose.api.yml` (API FastAPI, docs-site, web-management y Nginx), `docker-compose.misp.yml` (MISP, misp-db y misp-modules) (MISP Project, 2024), `docker-compose.opensearch.yml` (OpenSearch y OpenSearch Dashboards) (OpenSearch Project, 2024) y `docker-compose.logging.yml` (Loki, Promtail, Grafana, PostgreSQL y Grafana Renderer).
+
+La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging. Esta separación limita el movimiento lateral en caso de compromiso. Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio; los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 6** detalla la configuración de recursos.
+
 Flujo de Integración entre Componentes
 
 ```mermaid
@@ -420,61 +424,6 @@ La automatización se organiza en siete capacidades. El **provisionamiento** gen
 La **simulación** genera alertas de ransomware con IoCs realistas (hashes SHA256 de advisories CISA, IPs C2, técnicas MITRE ATT&CK) y las envía al webhook de Shuffle vía HTTP, permitiendo configurar tipo, volumen y frecuencia. El **mantenimiento** limpia ejecuciones stale de Shuffle y casos de TheHive, hace warmup del orquestador antes de los tests, espera a que los workflows terminen para sincronizar los tests E2E y verifica la integridad de las imágenes Docker.
 
 La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing, control de calidad y terminología de la documentación, y una revisión holística del proyecto en 15 dimensiones. La **seguridad operacional** preserva y restaura las credenciales de los servicios entre resets, evitando rotaciones manuales de API keys.
-
-#### Infraestructura Docker Compose
-
-```mermaid
----
-title: Infraestructura Docker Compose
----
-graph TD     subgraph Redes Docker         R1[Red perimetral bridge]
-        R2[Red interna SOAR soar_net]
-        R3[Red de inteligencia ti_net]
-        R4[Red de monitoreo logging_net]
-    end
-
-    subgraph Volúmenes         V1[Directorio de datos runtime]
-        V2[Subdirectorios por servicio]
-        V3[Datos persistentes]
-    end
-
-    subgraph Archivo principal infra/docker/compose/docker-compose.yml         DC1[Definición de redes]
-        DC2[Definición de volúmenes]
-        DC3[Elasticsearch]
-    end
-
-    subgraph Archivo de componentes infra/docker/compose/docker-compose.core.yml         CC1[Redis]
-        CC2[TheHive]
-        CC3[Cortex]
-        CC4[Shuffle Frontend]
-        CC5[Shuffle Backend]
-        CC6[Orborus]
-        CC7[Network Watcher]
-        CC8[Tenzir]
-        CC9[Verificaciones de salud]
-        CC10[Límites de recursos]
-    end
-
-    subgraph Archivos complementarios         OC1[infra/docker/compose/docker-compose.misp.yml]
-        OC2[infra/docker/compose/docker-compose.opensearch.yml]
-        OC3[infra/docker/compose/docker-compose.api.yml]
-        OC4[infra/docker/compose/logging/docker-compose.logging.yml]
-    end
-
-    DC1 --> R1     DC1 --> R2     DC1 --> R3     DC1 --> R4     DC2 --> V1     V1 --> V2     V2 --> V3     CC1 --> R2     CC1 --> R3     CC2 --> R2     CC3 --> R2     CC4 --> R2     CC5 --> R2     CC6 --> R2     CC7 --> R2
-```
-
-La infraestructura se define con varios archivos Docker Compose (Docker Inc., 2024) que se combinan para desplegar el sistema completo, desde entornos mínimos de desarrollo hasta despliegues completos.
-
-El archivo principal `docker-compose.yml` define cuatro redes (perimetral bridge, interna soar_net, inteligencia ti_net, monitoreo logging_net) y los volúmenes persistentes, e incluye Elasticsearch como base de datos centralizada.
-
-El archivo `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle (frontend y backend), Orborus, Network Watcher y Tenzir, con verificaciones de salud, límites de recursos y dependencias entre servicios.
-
-Los archivos complementarios añaden: `docker-compose.api.yml` (API FastAPI, docs-site, web-management y Nginx), `docker-compose.misp.yml` (MISP, misp-db y misp-modules) (MISP Project, 2024), `docker-compose.opensearch.yml` (OpenSearch y OpenSearch Dashboards para Shuffle) (OpenSearch Project, 2024) y `docker-compose.logging.yml` (Loki, Promtail, Grafana, PostgreSQL y Grafana Renderer).
-
-La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging. Esta separación limita el movimiento lateral en caso de compromiso.
-
-Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio. Los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 6** detalla la configuración de recursos.
 
 ## Tabla 6: Configuración de Recursos Docker
 
