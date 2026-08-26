@@ -4,7 +4,7 @@
 
 ### 4.1.1. Identificación de requisitos
 
-El problema a tratar es la gestión manual de incidentes de ransomware en equipos de respuesta (SOC y CSIRT), donde la fragmentación de herramientas y la falta de estandarización provocan tiempos de respuesta elevados, variabilidad entre analistas y dificultad para generar evidencias trazables. El contexto habitual de uso comprende organizaciones con recursos limitados —pymes, universidades y CSIRTs en formación— que no pueden asumir el coste de licencias comerciales de plataformas SOAR propietarias. La identificación de requisitos se ha realizado a partir del análisis de la literatura revisada en el Capítulo 2, de los marcos de referencia (NIST SP 800-61, ISO/IEC 27035, MITRE ATT&CK) y de la experiencia en despliegue de laboratorios reproducibles con herramientas open source.
+El problema a tratar es la gestión manual de incidentes de ransomware en equipos de respuesta (SOC y CSIRT), donde la fragmentación de herramientas y la falta de estandarización provocan tiempos de respuesta elevados, variabilidad entre analistas y dificultad para generar evidencias trazables. El contexto habitual de uso comprende organizaciones con recursos limitados (pymes, universidades y CSIRTs en formación) que no pueden asumir el coste de licencias comerciales de plataformas SOAR propietarias. La identificación de requisitos se ha realizado a partir del análisis de la literatura revisada en el Capítulo 2, de los marcos de referencia (NIST SP 800-61, ISO/IEC 27035, MITRE ATT&CK) y de la experiencia en despliegue de laboratorios reproducibles con herramientas open source.
 
 Requisitos Funcionales
 
@@ -112,13 +112,13 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 | RI-03  | **I**  | Threat intelligence           | DShield, GoogleDNS, Mnemonic pDNS | Cumplido  |
 | RI-04  | **I**  | MISP (opcional)               | `docker-compose.misp.yml` | Opcional          |
 
-Los nueve requisitos funcionales, los seis no funcionales y los tres de integración obligatorios se han implementado y verificado. MISP (RI-04) es opcional y no bloquea el playbook E2E. La reducción del MTTR del 92.3 % respecto al baseline manual supera el objetivo del 50 %. La reproducibilidad se verifica con `make up` y `pytest tests/e2e/`. La seguridad combina aislamiento de red Docker, autenticación JWT en la API, sanitización de payloads y secretos mediante variables de entorno. La resiliencia se garantiza con circuit breaker y reintentos en las integraciones. La suite de tests cubre unit (1245), integration (336), e2e (281), atomic (101), security (27), performance (30) y architecture (1), totalizando 2041 tests.
+
 
 ### 4.1.2. Descripción de la herramienta software desarrollada
 
 Arquitectura General del Sistema
 
-El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal —también llamada ports and adapters— que coloca el dominio en el centro y lo aísla de los detalles técnicos. En la práctica, esto significa que `domain/` no importa nada de `infrastructure/`: los puertos definen qué operaciones necesita el dominio, y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites, de modo que el dominio recibe tipos ya verificados. El beneficio tangible es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
+El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal (también llamada ports and adapters) que coloca el dominio en el centro y lo aísla de los detalles técnicos. En la práctica, esto significa que `domain/` no importa nada de `infrastructure/`: los puertos definen qué operaciones necesita el dominio, y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites, de modo que el dominio recibe tipos ya verificados. El beneficio tangible es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
 
 Para la infraestructura Docker se emplea una arquitectura en capas. Esta separación entre dominio e infraestructura mantiene la lógica de negocio desacoplada de las implementaciones concretas, lo que facilita las pruebas y el mantenimiento del sistema. La **Figura 3** muestra la arquitectura general del laboratorio y la **Figura 4** el despliegue Docker Compose. Ambos diagramas están disponibles en formato Mermaid canónico en el **Anexo H** (`appendix_h.md`).
 
@@ -221,7 +221,7 @@ graph TD     subgraph Capa de Datos         DB1[Elasticsearch]
     INT1 --> APP1     INT1 --> APP2     INT1 --> APP3     INT2 --> APP1     INT2 --> APP2     INT2 --> APP4     MON2 --> APP1     MON2 --> APP2     MON2 --> APP4     MON2 --> APP5     MON2 --> MON1     MON3 --> MON1     MON3 --> MON4
 ```
 
-En la capa de datos se encuentran Elasticsearch (Elastic, 2024; Elastic, n.d.) y Redis (Redis Ltd., 2024). Sobre ella se apoya la capa de aplicación SOAR, formada por TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle —frontend y backend— (Shuffle Tools, 2024; Shuffle Tools, n.d.) y Orborus. Este último es el ejecutor de workflows de Shuffle: se conecta al backend y a Elasticsearch, y accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores.
+En la capa de datos se encuentran Elasticsearch (Elastic, 2024; Elastic, n.d.) y Redis (Redis Ltd., 2024). Sobre ella se apoya la capa de aplicación SOAR, formada por TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (frontend y backend) (Shuffle Tools, 2024; Shuffle Tools, n.d.) y Orborus. Este último es el ejecutor de workflows de Shuffle: se conecta al backend y a Elasticsearch, y accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores.
 La integración se resuelve con Nginx (Nginx, 2024; Nginx, n.d.), la API FastAPI (FastAPI, 2024) y el sitio de documentación. El monitoreo, opcional, se compone de Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) y PostgreSQL.
 
 Relaciones entre componentes:
@@ -249,10 +249,10 @@ graph LR     subgraph TheHive         H1[Gestión de casos]
     end
 
     subgraph Cortex         C1[Análisis IoCs sandbox]
-        C2[15+ analyzers]
-        C3[VirusTotal/Hybrid Analysis]
-        C4[AbuseIPDB/Shodan/PassiveTotal]
-        C5[Whois/DNSDB/MalwareBazaar]
+        C2[7 analyzers libres]
+        C3[FileInfo/MalwareBazaar]
+        C4[DShield/Abuse_Finder]
+        C5[OTXQuery/GoogleDNS/Mnemonic pDNS]
         C6[Caché de resultados]
     end
 
@@ -273,9 +273,9 @@ graph TD     A[Alerta Entrante] --> B[Shuffle - Orquestador]
     B --> C[TheHive - Gestión de Casos]
     B --> D[Cortex - Análisis de IoCs]
     D --> E[Fuentes Externas de Inteligencia]
-    E --> F[VirusTotal]
-    E --> G[AbuseIPDB]
-    E --> H[Otras fuentes]
+    E --> F[MalwareBazaar]
+    E --> G[DShield]
+    E --> H[OTX/GoogleDNS/Mnemonic pDNS]
     F --> D     G --> D     H --> D     D --> I[Resultados de Análisis]
     I --> B     I --> C     C --> J[Registro de Evidencias]
     J --> K[Reporte Final]
@@ -283,27 +283,24 @@ graph TD     A[Alerta Entrante] --> B[Shuffle - Orquestador]
 
 TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024). Incluye plantillas especializadas para ransomware, asignación de tareas entre analistas y registro de todas las acciones. Su integración directa con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
 
-Cortex (v3.1.4) ejecuta el análisis de IoCs en entornos aislados (Cortex Project, 2024). Dispone de más de 15 analyzers configurados para investigaciones de ransomware. Para archivos se usan VirusTotal y Hybrid Analysis. Para infraestructura de red se usan AbuseIPDB, Shodan y PassiveTotal. Para dominios se usan Whois y DNSDB. Para hashes se usa MalwareBazaar. El sistema cachea resultados previos para evitar consultas redundantes y reduce la carga sobre las APIs externas. La arquitectura Docker permite añadir nodos de análisis según la demanda. La **Tabla 6** lista los analyzers configurados con su tipo, tiempo de respuesta, precisión y uso en el playbook.
+Cortex (v3.2.0) ejecuta el análisis de IoCs en entornos aislados (Cortex Project, 2024). Dispone de 7 analyzers libres configurados (sin API key requerida) para investigaciones de ransomware. Para hashes se usan FileInfo (metadatos de archivo) y MalwareBazaar (lookup de hashes). Para IPs se usan Abuse_Finder (abuse lookup) y DShield (reputación SANS ISC). Para dominios se usa OTXQuery (AlienVault OTX en modo anónimo). Para resolución DNS se usa GoogleDNS y para passive DNS se usa Mnemonic pDNS. El sistema cachea resultados previos para evitar consultas redundantes y reduce la carga sobre las APIs externas. La arquitectura Docker permite añadir nodos de análisis según la demanda. La **Tabla 5** lista los analyzers configurados con su tipo, tiempo de respuesta, precisión y uso en el playbook.
 
 ## Tabla 5: Analyzers Cortex Configurados
 
-| Analyzer            | Tipo     | Tiempo Respuesta | Precisión | Costo | Uso en Playbook   |
-|---------------------|----------|------------------|-----------|-------|-------------------|
-| **VirusTotal**      | File     | 5-10s            | 95%       | Free  | Principal       |
-| **Hybrid Analysis** | File     | 30-60s           | 98%       | Free  | Confirmación    |
-| **AbuseIPDB**       | IP       | 2-5s             | 85%       | Free  | Principal       |
-| **Shodan**          | IP       | 3-8s             | 90%       | Free  | Contexto        |
-| **PassiveTotal**    | Domain   | 5-15s            | 92%       | Paid  | Opcional       |
-| **Whois**           | Domain   | 2-5s             | 100%      | Free  | Principal       |
-| **MalwareBazaar**   | Hash     | 3-8s             | 88%       | Free  | Principal       |
-| **OTX AlienVault**  | Multiple | 5-10s            | 91%       | Free  | Enriquecimiento |
+| Analyzer              | Tipo     | Tiempo Respuesta | API Key | Uso en Playbook   |
+|-----------------------|----------|------------------|---------|-------------------|
+| **FileInfo**          | File     | 2-5s             | No      | Metadatos de archivo |
+| **MalwareBazaar**     | Hash     | 3-8s             | No      | Lookup de hashes    |
+| **OTXQuery**          | Multiple | 5-10s            | No (anon) | Enriquecimiento   |
+| **Abuse_Finder**      | IP/Domain| 2-5s             | No      | Abuse lookup        |
+| **DShield**           | IP       | 2-5s             | No      | Reputación SANS ISC |
+| **GoogleDNS**         | Domain   | 1-3s             | No      | Resolución DNS      |
+| **Mnemonic pDNS**     | Domain/IP| 3-8s             | No      | Passive DNS         |
 
 Los analyzers Cortex configurados ofrecen capacidades de análisis de IoCs para diferentes indicadores (archivos, IPs,
-dominios, hashes). La selección prioriza analyzers gratuitos para mantener la solución accesible, mientras que analyzers
-de pago como PassiveTotal se marcan como opcionales. Los tiempos de respuesta varían desde 2-5s para análisis rápidos
-hasta 30-60s para análisis profundos. La precisión varía del 85% al 100%, siendo VirusTotal y Hybrid Analysis los más
-precisos. Todos los analyzers principales están integrados en el playbook de respuesta, enriqueciendo automáticamente
-cada IoC detectado.
+dominios, hashes). La selección prioriza analyzers libres sin API key para mantener la solución accesible, alineándose
+con el requisito RF-02. Los tiempos de respuesta varían desde 1-3s para resolución DNS hasta 5-10s para enriquecimiento
+OTX. Todos los analyzers están integrados en el playbook de respuesta, enriqueciendo automáticamente cada IoC detectado.
 
 Shuffle (v2.2.1) orquesta los flujos mediante una interfaz visual de bloques, sin necesidad de escribir código (Shuffle Tools, 2024). Orborus ejecuta los workflows en paralelo entre varios workers y gestiona reintentos automáticos ante fallos. La ejecución condicional y la programación de tareas permiten adaptar el flujo según el contexto del incidente.
 
@@ -382,7 +379,7 @@ El playbook principal define el flujo automatizado desde la recepción de la ale
 
 El flujo comienza con la recepción de la alerta en Shuffle mediante webhook, donde se valida el formato del JSON y se normalizan los datos. Se extraen los indicadores de compromiso (hash, IP, hostname) y se crea un caso en TheHive con plantillas especializadas en ransomware. Los indicadores se adjuntan al caso como observables.
 
-A continuación, se ejecutan analyzers en Cortex para analizar los IoCs contra fuentes de inteligencia externas como VirusTotal, AbuseIPDB y otras. El sistema calcula un score de riesgo basado en los resultados de los analyzers.
+A continuación, se ejecutan analyzers en Cortex para analizar los IoCs contra fuentes de inteligencia externas como MalwareBazaar, DShield y otras. El sistema calcula un score de riesgo basado en los resultados de los analyzers.
 
 Si el score es mayor o igual a 80 o el verdict es "malicious", se activa la rama de contención. Se ejecuta el script de contención simulada (aislamiento de red, terminación de procesos, bloqueo de cuentas), se actualiza el caso en TheHive a estado "In Progress" y se envía una notificación crítica al equipo. Si el score es menor y el verdict no es malicioso, se marca el caso como falso positivo, se actualiza a estado "FalsePositive" y se envía una notificación informativa.
 
@@ -403,7 +400,7 @@ graph TD     subgraph Redes Docker         R1[Red perimetral bridge]
         R4[Red de monitoreo logging_net]
     end
 
-    subgraph Volúmenes         V1[Directorio de datos artifacts]
+    subgraph Volúmenes         V1[Directorio de datos runtime]
         V2[Subdirectorios por servicio]
         V3[Datos persistentes]
     end
@@ -444,7 +441,7 @@ Los archivos opcionales añaden funcionalidades adicionales:
 
 La segmentación de redes sigue un modelo por zonas de seguridad. La red perimetral bridge es accesible desde el host, mientras que la red interna soar_net conecta los componentes SOAR entre sí. Una tercera red, ti_net, vincula Redis y Cortex con servicios externos, y la red de monitoreo logging_net aísla el stack de logging. Esta separación limita el movimiento lateral en caso de compromiso.
 
-Los volúmenes usan enlaces al directorio artifacts, con subdirectorios por servicio (elasticsearch, thehive, cortex, shuffle, redis, etc.). Los datos sobreviven a reinicios y pueden migrarse entre entornos copiando ese directorio. Las verificaciones de salud permiten recuperación automática. Los límites de CPU y memoria previenen la contención de recursos entre contenedores. La **Tabla 5** detalla la configuración de recursos asignada a cada servicio.
+Los volúmenes usan enlaces al directorio runtime, con subdirectorios por servicio (elasticsearch, thehive, cortex, shuffle, redis, etc.). Los datos sobreviven a reinicios y pueden migrarse entre entornos copiando ese directorio. Las verificaciones de salud permiten recuperación automática. Los límites de CPU y memoria previenen la contención de recursos entre contenedores. La **Tabla 6** detalla la configuración de recursos asignada a cada servicio.
 
 ## Tabla 6: Configuración de Recursos Docker
 
@@ -590,15 +587,15 @@ La **Tabla 8** presenta los resultados experimentales detallados del experimento
 |-------------------------|-------------------|--------------|-----------|
 | **MTTR Promedio**       | 3600s             | 277.15s      | 92.3%     |
 | **MTTR Mediana (P50)**  | 3600s             | 193.19s      | 94.6%     |
-| **Desviación Estándar** | N/A               | 187.61s      | —         |
-| **Coef. Variación**     | N/A               | 67.7%        | —         |
+| **Desviación Estándar** | N/A               | 187.61s      | N/A       |
+| **Coef. Variación**     | N/A               | 67.7%        | N/A       |
 | **P90**                 | 3600s             | 621.83s      | 82.7%     |
 | **P95**                 | 3600s             | 644.46s      | 82.1%     |
 | **Tasa Éxito**          | ~80% (est.)       | 100%         | +20pp     |
-| **Tasa Contención**     | —                 | 92.0%        | —         |
-| **Score Promedio**      | —                 | 96.2/100     | —         |
-| **Falsos Positivos**    | —                 | 8.0%         | —         |
-| **Recursos (mem pico)** | —                 | 2.58 GiB     | —         |
+| **Tasa Contención**     | N/A               | 92.0%        | N/A       |
+| **Score Promedio**      | N/A               | 96.2/100     | N/A       |
+| **Falsos Positivos**    | N/A               | 8.0%         | N/A       |
+| **Recursos (mem pico)** | N/A               | 2.58 GiB     | N/A       |
 
 Los resultados experimentales detallados evidencian la superioridad de la respuesta
 automatizada frente a la respuesta manual. La reducción del 92.3% en MTTR promedio (3600s a 277.15s)
@@ -624,13 +621,13 @@ El análisis por componente de tiempo se detalla en la **Tabla 9**, que desglosa
 
 ## Tabla 9: Análisis por Componente de Tiempo
 
-| Componente             | Manual | SOAR  | Reducción Absoluta | Reducción Porcentual |
-|------------------------|--------|-------|--------------------|----------------------|
-| **Recepción y Triaje** | —      | 105.28s | —                 | —                    |
-| **Análisis de IoCs**   | —      | 2132.28s| —                 | —                    |
-| **Creación de Caso**   | —      | 2113.12s| —                 | —                    |
-| **Contención**         | —      | 345.16s | —                 | —                    |
-| **MTTR medio**         | 3600s  | 277.15s | 3322.85s          | 92.3%                |
+| Componente             | Manual | SOAR    | Reducción Absoluta | Reducción Porcentual |
+|------------------------|--------|---------|--------------------|----------------------|
+| **Recepción y Triaje** | N/A    | 103.92s | N/A                | N/A                  |
+| **Análisis de IoCs**   | N/A    | 2393.46s| N/A                | N/A                  |
+| **Creación de Caso**   | N/A    | 2773.48s| N/A                | N/A                  |
+| **Contención**         | N/A    | 422.0s  | N/A                | N/A                  |
+| **MTTR medio**         | 3600s  | 277.15s | 3322.85s           | 92.3%                |
 
 El análisis por componente de tiempo revela que la reducción del 92.3% en MTTR medio (de 3600s a 277.15s) se
 concentra en la eliminación del tiempo de espera humano entre pasos. En la condición manual, el analista debe
@@ -740,7 +737,7 @@ La reducción observada en MTTR medio (3600 s a 277.15 s) respalda la hipótesis
 Kinyua y Awuah identifican MTTR como métrica habitual para evaluar el valor operativo de SOAR (Kinyua & Awuah, 2021), y Obuse et al.
 reportan mejoras observadas en la automatización de respuesta en infraestructuras críticas (Obuse et al., 2023).
 
-Sin embargo, los percentiles P50 (193.19 s) y P90 (621.83 s) no alcanzaron los umbrales ambiciosos definidos (≤ 120 s y ≤ 180 s respectivamente). Esta discrepancia entre el MTTR medio y los percentiles indica una distribución asimétrica con cola larga: la mayoría de ejecuciones se completan rápidamente, pero un subconjunto experimenta latencias elevadas, atribuibles a la saturación progresiva del worker de Cortex (que procesa los analyzers en paralelo pero con un límite de concurrencia) y a timeouts de APIs externas (VirusTotal, AbuseIPDB). Aunque el workflow lanza los analyzers de forma concurrente mediante un patrón fan-out desde el nodo de creación del caso, la acumulación de jobs en colas sucesivas degrada el tiempo de respuesta en ejecuciones posteriores. Un escalado horizontal del worker de Cortex, propuesto como trabajo futuro, debería reducir la cola y acercar P50/P90 a los umbrales.
+Sin embargo, los percentiles P50 (193.19 s) y P90 (621.83 s) no alcanzaron los umbrales ambiciosos definidos (≤ 120 s y ≤ 180 s respectivamente). Esta discrepancia entre el MTTR medio y los percentiles indica una distribución asimétrica con cola larga: la mayoría de ejecuciones se completan rápidamente, pero un subconjunto experimenta latencias elevadas, atribuibles a la saturación progresiva del worker de Cortex (que procesa los analyzers en paralelo pero con un límite de concurrencia) y a timeouts de APIs externas (DShield, Mnemonic pDNS, GoogleDNS). Aunque el workflow lanza los analyzers de forma concurrente mediante un patrón fan-out desde el nodo de creación del caso, la acumulación de jobs en colas sucesivas degrada el tiempo de respuesta en ejecuciones posteriores. Un escalado horizontal del worker de Cortex, propuesto como trabajo futuro, debería reducir la cola y acercar P50/P90 a los umbrales.
 
 **Consistencia.** La pregunta de investigación indaga también por la consistencia de la respuesta. El coeficiente de
 variación (CV = desviación estándar / media) del MTTR automatizado fue del 67.7 % (σ = 187.61 s, μ = 277.15 s).
@@ -758,7 +755,7 @@ El playbook E2E de este TFM, diseñado para el entorno del laboratorio, confirma
 
 #### 4.1.3.8. Limitaciones
 
-Las limitaciones principales son la validación en laboratorio (no en producción real) y el alcance restringido a ransomware. La dependencia de APIs externas como VirusTotal y AbuseIPDB requiere estrategias de caché para entornos productivos.
+Las limitaciones principales son la validación en laboratorio (no en producción real) y el alcance restringido a ransomware. La dependencia de APIs externas como DShield y Mnemonic pDNS requiere estrategias de caché para entornos productivos.
 
 Los resultados muestran que el laboratorio cumple los requisitos funcionales y no funcionales definidos y puede emplearse como base reproducible para respuesta automatizada a ransomware.
 
