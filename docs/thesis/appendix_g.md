@@ -47,6 +47,11 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | architecture | 1 | 1 | 0.05% |
 | **Total** | **170** | **2041** | 100% |
 
+> **Nota.** El desglose por categoría (2041 tests) corresponde a la instantánea del
+> `holistic_review` en el momento de generación del reporte. El total actual es
+> **2233 tests coleccionados (1905 seleccionados, 328 deseleccionados)** — ver I.2.1.
+> La diferencia (192 tests) corresponde a tests añadidos tras la generación del reporte.
+
 ### I.2.3. Distribución por Capa (Pirámide)
 
 | Capa | Tests | % Actual | % Ideal | Desviación |
@@ -156,7 +161,8 @@ El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests
 | TC-30 | Offline | `test_offline_mode.py` | — | Modo offline |
 | TC-31 | Compliance | `test_compliance.py` | — | Cumplimiento |
 | TC-32 | Golden Thread | `test_golden_thread.py` | 152 | Integridad hilo dorado |
-| TC-33 | IOC Analysis | `test_ioc_analysis_time.py` | 143 | Tiempo de análisis IoC |
+| TC-32 | IOC Analysis | `test_ioc_analysis_time.py` | 143 | Tiempo de análisis IoC |
+| TC-33 | Real IoCs | `test_gminst4ll_real_iocs.py` | — | IoCs reales (gminst4ll) |
 | TC-KPI-01..05 | KPIs | `test_mttr_*`, `test_node_timings.py` | 132-208 | Métricas KPI (Makefile) |
 | TC-KPI-06 | KPIs extra | `test_kpi_data_coherence.py`, `test_service_health.py` | — | Coherencia KPI (no en Makefile) |
 
@@ -168,7 +174,7 @@ El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests
 | `test_mttr_percentiles` | TC-KPI-02 | 208 |
 | `test_concurrent_alerts` | TC-05 | 172 |
 | `test_golden_thread_integrity` | TC-32 | 152 |
-| `test_ioc_analysis_time` | TC-33 | 143 |
+| `test_ioc_analysis_time` | TC-32 | 143 |
 | `test_critical_severity` | TC-06 | 138 |
 | `test_node_timings` | TC-KPI-05 | 132 |
 | `test_polymorphic_behavior` | TC-25 | 131 |
@@ -187,7 +193,7 @@ Total de tests largos: **169** (8.3% del total)
 | XFail | 0 |
 | Skips esperados | 2 |
 | Skips inesperados | 0 |
-| **Health score** | **99.9/100** |
+| **Health score** | **99.5/100** |
 
 ### I.6.1. Razones de Skip
 
@@ -336,9 +342,9 @@ verifiquen tanto el camino feliz como las ramificaciones lógicas
 
 El módulo `simulator.simulate_alerts` aporta 1321 mutantes sin cobertura, lo que
 refleja que el simulador de alertas no tiene tests unitarios directos (se prueba
-indirectamente vía tests E2E). Excluir este módulo de la mutación reduciría el
-total a 12 648 mutantes y elevaría el score a (5603 + 125) / (12 648 - 2919 + 1321)
-≈ 57.3%.
+indirectamente vía tests E2E). Excluir este módulo reduciría el total a 12 648
+mutantes, pero el score se mantendría en 51.8% porque los mutantes sin cobertura
+no afectan al ratio killed/tested (11050 mutantes probados, 5728 killed+timeout).
 
 **Configuración utilizada.**
 
@@ -465,7 +471,7 @@ make holistic-review    # radar 15 dimensiones
 | Test Review | 92.2/100 | Excellent |
 | Coverage de líneas | 84.6% | Sí (>80%) |
 | Pirámide de tests | 94.3/100 | Excellent |
-| Salud de tests | 99.9/100 | Excellent |
+| Salud de tests | 99.5/100 | Excellent |
 | Aislamiento | 97.5/100 | Excellent |
 | Seguridad (bandit) | 0 issues | Sí Clean |
 | Linting (ruff) | 0 issues | Sí Clean |
