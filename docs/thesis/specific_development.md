@@ -273,62 +273,6 @@ graph TD
 
 La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) para TheHive y Cortex, Redis (Redis Ltd., 2024) para colas y caché, y OpenSearch (OpenSearch Project, 2024) como motor de búsqueda de Shuffle. La capa de aplicación SOAR la forman TheHive (TheHive Project, 2024; TheHive Project, n.d.), Cortex (Cortex Project, 2024; Cortex Project, n.d.), Shuffle (frontend y backend) (Shuffle Tools, 2024; Shuffle Tools, n.d.), Orborus (ejecutor de workflows que accede al socket de Docker (Docker Inc., 2024; Docker, n.d.) para lanzar contenedores), Tenzir (procesamiento de eventos de red) y Network Watcher (monitor de la red soar_net). La capa de integración incluye Nginx (Nginx, 2024; Nginx, n.d.) como proxy inverso, la API FastAPI (FastAPI, 2024), el sitio de documentación y la interfaz web de gestión. El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024; Grafana, n.d.) con PostgreSQL como base de datos y Grafana Renderer para exportación de paneles.
 
-#### Componentes Principales
-
-```mermaid
----
-title: Componentes Principales
----
-graph LR
-    subgraph TheHive
-        H1[Gestión de casos]
-        H2[Plantillas ransomware]
-        H3[Asignación de tareas]
-        H4[Registro de acciones]
-        H5[Verificación hash]
-    end
-
-    subgraph Cortex
-        C1[Análisis de IoCs]
-        C2[FileInfo / MalwareBazaar]
-        C3[DShield / Abuse_Finder]
-        C4[OTXQuery / GoogleDNS / Mnemonic pDNS]
-    end
-
-    subgraph Shuffle
-        S1[Orquestación visual]
-        S2[Interfaz de bloques]
-        S3[Orborus - ejecución paralela]
-        S4[Reintentos automáticos]
-        S5[Ejecución condicional]
-    end
-
-    subgraph Soporte
-        R1[Redis - Caché y colas]
-        M1[MISP - Threat intelligence]
-        T1[Tenzir - Análisis de tráfico]
-        NW1[Network Watcher - Monitor de red]
-        L1[Loki - Búsqueda de logs]
-    end
-
-    subgraph API
-        A1[FastAPI - Gestión y métricas]
-    end
-
-    H1 <--> C1
-    S1 --> H1
-    S1 --> C1
-    S1 --> M1
-    S1 --> T1
-    S1 --> NW1
-    S1 --> R1
-    S1 --> L1
-    A1 --> H1
-    A1 --> C1
-    A1 --> S1
-    A1 --> R1
-```
-
 Flujo de Integración entre Componentes
 
 ```mermaid
