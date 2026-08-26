@@ -22,10 +22,10 @@
   - `.env.example` documentado como plantilla no operativa; los secretos reales se generan con `make generate-secrets` y se escriben en `.env.full` (en `.gitignore`).
   - Creado `scripts/setup/generate_env.py` para generar `.env.full` y `infra/docker/config/templates/grafana-datasources.yml.template` a partir de plantillas.
   - `grafana-datasources.yml` y `.env.full` añadidos a `.gitignore`; ya no se publican valores operativos.
-  - `Makefile.linux` y `Makefile.win` actualizados: `make generate-secrets` genera el entorno y `make up` lo genera si falta.
+  - `Makefile.linux` actualizado: `make generate-secrets` invoca `generate_env.py` para generar `.env.full` y `grafana-datasources.yml` desde plantillas; `make up` lo genera si falta. `Makefile.win` mantiene `generate_secrets.py` como target de generación de secretos individuales.
 
 - **Healthchecks.**
-  - TheHive ahora usa `/api/status` en `docker-compose.api.yml`, Makefiles y guías para evitar falsos negativos durante la inicialización de Elasticsearch.
+  - TheHive ahora usa `/api/status` en `docker-compose.core.yml`, Makefiles y guías para evitar falsos negativos durante la inicialización de Elasticsearch.
 
 - **CLI y JWT.**
   - `soar-lab generate-secrets` añade `JWT_SECRET_KEY` a la salida `.env`.
@@ -33,7 +33,7 @@
 
 - **Tesis.**
   - `docs/thesis/appendix_a.md`, `specific_development.md`, `appendix_c.md`, `conclusions_and_future_work.md` actualizados para advertir que el anexo es una instantánea estática y señalar los compose canónicos.
-  - `appendix_c.md`: TLS marcado como parcial/autofirmado.
+  - `appendix_e.md`: TLS marcado como self-signed en la matriz de estado real/simulado/planificado.
 
 ## 2026-07-15 — Logging y métricas funcionales
 
