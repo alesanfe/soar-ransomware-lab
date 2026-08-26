@@ -371,9 +371,13 @@ graph TD
     end
 
     subgraph Observabilidad
-        OB1[Cálculo de KPIs]
-        OB2[Dashboards Grafana]
-        OB3[Reportes E2E]
+        OB1[notify.log + Elasticsearch]
+        OB2[StatisticalCalculator]
+        OB3[MTTR / P50 / P90 / Medias]
+        OB4[KPIAnalyzer]
+        OB5[kpis.csv]
+        OB6[Dashboard Grafana]
+        OB7[Reportes E2E]
     end
 
     subgraph Calidad y CI
@@ -389,33 +393,13 @@ graph TD
     SM3 --> O1
     O3 --> OB1
     OB1 --> OB2
-    M2 --> OB3
+    OB2 --> OB3
+    OB3 --> OB4
+    OB4 --> OB5
+    OB5 --> OB6
+    M2 --> OB7
     Q1 --> Q3
     Q2 --> Q3
-```
-
-Flujo de Cálculo de KPIs
-
-```mermaid
----
-title: Flujo de Cálculo de KPIs
----
-graph TD
-    A[notify.log] --> B[ExecutionLogParser]
-    ES[Elasticsearch soar-metrics] --> B
-    B --> C[Extracción de mttr_seconds]
-    C --> D[StatisticalCalculator]
-    D --> E[Cálculo de MTTR]
-    D --> F[Cálculo de Percentiles P50/P90]
-    D --> G[Cálculo de Medias]
-    D --> H[Cálculo de Desviaciones]
-    E --> I[KPIAnalyzer]
-    F --> I
-    G --> I
-    H --> I
-    I --> J[CSVKPIFormatter]
-    J --> K[kpis.csv]
-    K --> L[Dashboard Grafana]
 ```
 
 La automatización se organiza en seis capacidades. El **provisionamiento** genera secretos, renderiza configuración desde plantillas, inicializa TheHive/Cortex/Shuffle y instala los analyzers de Cortex junto con los IoCs en MISP, de forma que un único comando (`make up`) deja el laboratorio operativo. La **orquestación de workflows** define el playbook completo (46 nodos, 60 ramas) y cablea cada integración; 21 scripts Python embebidos se ejecutan dentro de Shuffle para normalizar, decidir y enriquecer.
