@@ -344,30 +344,70 @@ Shuffle (v2.2.1) orquesta los flujos mediante una interfaz visual de bloques (Sh
 ---
 title: Scripts de Automatización Desarrollados
 ---
-graph TD     subgraph Generación de Alertas         G1[CLI de generación]
-        G2[Generador de alertas]
-        G3[Configuración tipo]
-        G4[Control volumen/frecuencia]
+graph TD
+    subgraph scripts/setup
+        S1[generate_secrets.py]
+        S2[generate_env.py]
+        S3[render_configs.py]
+        S4[init_thehive.py]
+        S5[reset_cortex.py]
+        S6[init_shuffle_webhook.py]
+        S7[setup_analyzers_and_iocs.py]
+        S8[setup_grafana_kpis.py]
+        S9[configure_es.py]
+        S10[fix_org_users.py]
     end
 
-    subgraph Transporte HTTP         T1[Cliente HTTP]
-        T2[Validación de formato]
-        T3[Autenticación]
+    subgraph scripts/setup/shuffle_workflow
+        W1[workflow_definition.py]
+        W2[workflow_actions.py]
+        W3[cortex_setup.py]
+        W4[shuffle_setup.py]
+        W5[scripts/ 21 nodos Python]
     end
 
-    subgraph Servicio KPIs         K1[Servicio de análisis]
-        K2[Analizador de KPIs]
-        K3[Calculadora estadística]
-        K4[Formateador de resultados]
+    subgraph scripts/maintenance
+        M1[clean_shuffle_executions.py]
+        M2[clean_thehive_cases.py]
+        M3[wait_for_workflows.py]
+        M4[warmup_shuffle.py]
+        M5[check_opensearch.py]
+        M6[verify_image_digests.py]
     end
 
-    subgraph Contención Simulada         C1[Playbook Shuffle]
-        C2[Registro de acciones]
-        C3[Verificación de riesgo]
-        C4[Notificación a TheHive]
+    subgraph scripts/reports
+        R1[generate_e2e_report.py]
+        R2[generate_e2e_md_from_json.py]
+        R3[generate_mutmut_report.py]
+        R4[holistic_review.py]
+        R5[test_review.py]
     end
 
-    G1 --> G2     G1 --> G3     G1 --> G4     G2 --> T1     T1 --> T2     T1 --> T3     K1 --> K2     K2 --> K3     K3 --> K4     C1 --> C2     C1 --> C3     C1 --> C4
+    subgraph scripts/quality
+        Q1[run_quality_checks.py]
+        Q2[calculate_quality_score.py]
+        Q3[parse_bandit.py]
+        Q4[parse_coverage.py]
+        Q5[parse_mutmut.py]
+    end
+
+    subgraph scripts/ci
+        C1[e2e_suites.py]
+        C2[docs_quality.py]
+        C3[terminology_check.py]
+        C4[sync_docs_to_docusaurus.py]
+    end
+
+    subgraph scripts/safety
+        SF1[preserve_credentials.py]
+        SF2[restore_credentials.py]
+    end
+
+    S6 --> W1
+    W1 --> W2
+    W2 --> W3
+    W2 --> W5
+    S7 --> W3
 ```
 
 Flujo de Cálculo de KPIs
@@ -376,26 +416,29 @@ Flujo de Cálculo de KPIs
 ---
 title: Flujo de Cálculo de KPIs
 ---
-graph TD     A[Logs de Ejecución] --> B[Servicio de Análisis]
-    B --> C[Extracción de Eventos]
-    C --> D[Identificación de Alertas]
-    D --> E[Registro de Tiempos]
-    E --> F[Calculadora Estadística]
-    F --> G[Cálculo de MTTR]
-    F --> H[Cálculo de Percentiles]
-    F --> I[Cálculo de Medias]
-    F --> J[Cálculo de Desviaciones]
-    G --> K[Analizador de KPIs]
-    H --> K     I --> K     J --> K     K --> L[Formateador de Resultados]
-    L --> M[Archivo CSV]
-    M --> N[Dashboards de Monitoreo]
+graph TD
+    A[notify.log] --> B[ExecutionLogParser]
+    ES[Elasticsearch soar-metrics] --> B
+    B --> C[Extracción de mttr_seconds]
+    C --> D[StatisticalCalculator]
+    D --> E[Cálculo de MTTR]
+    D --> F[Cálculo de Percentiles P50/P90]
+    D --> G[Cálculo de Medias]
+    D --> H[Cálculo de Desviaciones]
+    E --> I[KPIAnalyzer]
+    F --> I
+    G --> I
+    H --> I
+    I --> J[CSVKPIFormatter]
+    J --> K[kpis.csv]
+    K --> L[Dashboard Grafana]
 ```
 
-El sistema incluye un cliente HTTP para el transporte de alertas. Una CLI genera alertas simuladas y las envía al webhook de Shuffle, permitiendo configurar tipo, volumen y frecuencia. La validación de formato garantiza la estructura esperada y la autenticación protege el endpoint.
+El repositorio incluye 80+ scripts Python organizados en 7 categorías bajo `scripts/`. La categoría `setup/` (18 scripts) orquesta el arranque completo: `generate_secrets.py` genera claves, `render_configs.py` renderiza configuración desde plantillas, `init_thehive.py` y `reset_cortex.py` inicializan servicios, `init_shuffle_webhook.py` crea el workflow completo en Shuffle, y `setup_analyzers_and_iocs.py` instala los analyzers de Cortex y carga IoCs en MISP. El subpaquete `shuffle_workflow/` contiene la definición del workflow (46 nodos, 60 ramas) y 21 scripts Python embebidos que se ejecutan dentro de Shuffle.
 
-El servicio de KPIs extrae métricas de tiempo de respuesta de los logs, realiza cálculos estadísticos (percentiles, medias) y exporta los resultados a formato estructurado mediante un comando automatizado.
+La categoría `maintenance/` (6 scripts) incluye `clean_shuffle_executions.py` para limpiar workflows stale, `wait_for_workflows.py` para sincronizar tests E2E, y `verify_image_digests.py` para verificar digests de imágenes Docker. `reports/` (5 scripts) genera informes de tests E2E, mutmut y revisión holística. `quality/` (9 scripts) parsea resultados de bandit, coverage, mutmut, pylint, radon, ruff y vulture. `ci/` (4 scripts) gestiona suites E2E, calidad de docs y sincronización con Docusaurus. `safety/` preserva y restaura credenciales entre resets.
 
-La contención simulada se implementa en el playbook de Shuffle: registra acciones en logs sin ejecutar comandos reales, verifica el riesgo antes del aislamiento y notifica el resultado al caso en TheHive.
+El simulador de alertas (`src/soar_lab/simulator/simulate_alerts.py`) genera alertas de ransomware con IoCs realistas (hashes SHA256 de CISA, IPs C2, técnicas MITRE ATT&CK) y las envía al webhook de Shuffle vía HTTP, permitiendo configurar tipo, volumen y frecuencia. La contención simulada se implementa en el playbook de Shuffle: registra acciones en logs sin ejecutar comandos reales, verifica el riesgo antes del aislamiento y notifica el resultado al caso en TheHive.
 
 #### Playbooks de Respuesta a Ransomware
 
