@@ -109,7 +109,7 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 | RNF-06 | **NF** | Observabilidad                | Health checks + Loki     | Cumplido           |
 | RI-01  | **I**  | TheHive ↔ Cortex              | Observables enriquecidos | Cumplido           |
 | RI-02  | **I**  | Shuffle ↔ TheHive             | Webhook + API            | Cumplido           |
-| RI-03  | **I**  | Threat intelligence           | DShield, GoogleDNS, Mnemonic pDNS | Cumplido  |
+| RI-03  | **I**  | Threat intelligence           | Hashdd_Status, IP-API, DShield, Mnemonic pDNS, GoogleDNS, DomainMailSPFDMARC, ValidateObservable | Cumplido  |
 | RI-04  | **I**  | MISP (opcional)               | `docker-compose.misp.yml` | Opcional          |
 
 
@@ -287,7 +287,7 @@ graph TD
     D --> F[TheHive - Tarea de investigación]
     D --> G[Cortex - Análisis de hash]
     D --> H[Cortex - Análisis de IP]
-    G --> I[MalwareBazaar / FileInfo]
+    G --> I[Hashdd_Status / IP-API]
     H --> J[DShield / Mnemonic pDNS / GoogleDNS]
     D --> K[MISP - Búsqueda de indicadores]
     D --> L[Tenzir - Análisis de tráfico]
@@ -320,19 +320,19 @@ graph TD
 
 TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024) con plantillas especializadas para ransomware, asignación de tareas y registro de acciones. Su integración con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
 
-Cortex (v3.2.0) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: FileInfo y MalwareBazaar (hashes), Abuse_Finder y DShield (IPs), OTXQuery (dominios), GoogleDNS (resolución DNS) y Mnemonic pDNS (passive DNS). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 5** lista los analyzers con su tipo, tiempo de respuesta y uso en el playbook.
+Cortex (v3.2.0) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: Hashdd_Status (hashes), IP-API y DShield (IPs), GoogleDNS y DomainMailSPFDMARC (dominios), Mnemonic pDNS (passive DNS) y ValidateObservable (validación). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 5** lista los analyzers con su tipo y uso en el playbook.
 
 ## Tabla 5: Analyzers Cortex Configurados
 
-| Analyzer              | Tipo     | Tiempo Respuesta | API Key | Uso en Playbook   |
-|-----------------------|----------|------------------|---------|-------------------|
-| **FileInfo**          | File     | 2-5s             | No      | Metadatos de archivo |
-| **MalwareBazaar**     | Hash     | 3-8s             | No      | Lookup de hashes    |
-| **OTXQuery**          | Multiple | 5-10s            | No (anon) | Enriquecimiento   |
-| **Abuse_Finder**      | IP/Domain| 2-5s             | No      | Abuse lookup        |
-| **DShield**           | IP       | 2-5s             | No      | Reputación SANS ISC |
-| **GoogleDNS**         | Domain   | 1-3s             | No      | Resolución DNS      |
-| **Mnemonic pDNS**     | Domain/IP| 3-8s             | No      | Passive DNS         |
+| Analyzer              | Tipo     | API Key | Uso en Playbook   |
+|-----------------------|----------|---------|-------------------|
+| **Hashdd_Status**     | Hash     | No      | Status lookup de hashes |
+| **IP-API**            | IP       | No      | Geolocalización de IP |
+| **DShield**           | IP       | No      | Reputación SANS ISC |
+| **Mnemonic pDNS**     | Domain/IP| No      | Passive DNS |
+| **GoogleDNS**         | Domain   | No      | Resolución DNS |
+| **DomainMailSPFDMARC**| Domain   | No      | SPF/DMARC lookup |
+| **ValidateObservable**| Multiple | No      | Validación de observables |
 
 La selección prioriza analyzers libres sin API key (RF-02). Todos están integrados en el playbook, enriqueciendo cada IoC detectado.
 
@@ -422,7 +422,7 @@ El playbook principal define el flujo automatizado desde la recepción de la ale
 
 El flujo comienza con la recepción de la alerta por webhook, donde se valida el formato JSON y se normalizan los datos. Se extraen los IoCs (hash, IP, hostname) y se crea un caso en TheHive con plantillas ransomware, adjuntando los indicadores como observables.
 
-A continuación, Cortex ejecuta analyzers contra fuentes externas (MalwareBazaar, DShield, etc.) y el sistema calcula un score de riesgo.
+A continuación, Cortex ejecuta analyzers contra fuentes externas (Hashdd_Status, DShield, IP-API, etc.) y el sistema calcula un score de riesgo.
 
 Si el score >= 80 o el verdict es "malicious", se activa la contención simulada (aislamiento de red, terminación de procesos, bloqueo de cuentas), el caso permanece en estado "Open" (TheHive 5 no soporta "InProgress" como status) y se envía una notificación crítica. En caso contrario, se marca el caso como "Resolved/FalsePositive" mediante PATCH a TheHive y se envía una notificación informativa.
 
