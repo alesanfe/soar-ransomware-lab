@@ -136,7 +136,7 @@
 | L1b | Core | 98.6 | Complejidad (814 bloques, max CX=15) |
 | L1c | Core | 100 | Tipado (0 errores mypy) |
 | L1d | Core | 78.8 | Dead code (18 items, todos en tests) |
-| L2a | Tests | 94.3 | Pirámide (2041 tests, 65.9% unit) |
+| L2a | Tests | 94.3 | Pirámide (2233 tests coleccionados, 1905 seleccionados, 65.9% unit) |
 | L2b | Tests | 99.9 | Salud (2 skips esperados, 0 inesperados) |
 | L2c | Tests | 97.5 | Aislamiento (1.7% requieren Docker) |
 | L3a | Quality | 100 | Linting (0 issues ruff) |
@@ -171,7 +171,7 @@
 | Integration | 336 | 16.5% | 20% |
 | E2E | 281 | 13.8% | 10% |
 | Other | 78 | 3.8% | — |
-| **Total** | **2041** | | |
+| **Total** | **2233 coleccionados (1905 seleccionados)** | | |
 
 ### 4.2. Tests por Categoría
 
@@ -308,7 +308,7 @@
 
 | Fase | Duración | Periodo | Objetivos |
 |------|----------|---------|-----------|
-| 1. Investigación | 3 semanas | abr-may 2026 | 1, 8, 17, 18 |
+| 1. Investigación | 3 semanas | abr-may 2026 | 1, 7, 8, 17, 18 |
 | 2. Diseño | 3 semanas | may-jun 2026 | 2, 5, 6, 19, 20 |
 | 3. Desarrollo | 6 semanas | jun-jul 2026 | 3, 9-14 |
 | 4. Validación | 6 semanas | jul-ago 2026 | 4, 15, 16 |
@@ -316,7 +316,7 @@
 > La estimación inicial fue de 12 semanas, aumentada a 15 tras la fase
 > de diseño (integración de Cortex con analyzers externos y stack de
 > monitoreo no contemplados inicialmente), y finalmente a 18 por la
-> ampliación de la suite de tests a 2041 y la ejecución del experimento
+> ampliación de la suite de tests a 2233 tests coleccionados (1905 seleccionados) y la ejecución del experimento
 > (n=50).
 
 ### 7.3. Consideraciones Éticas
@@ -337,7 +337,7 @@
 | Automatización | Sí 100% | Sin intervención humana |
 | Calidad código | Sí 92.2/100 | Quality score Excellent |
 | HPR | Sí 96.0/100 | Holistic radar Excellent |
-| Tests | Sí 2041 tests | 2 skipped (esperados), coverage 84.6% |
+| Tests | Sí 2233 tests (1905 seleccionados) | 2 skipped (esperados), coverage 84.6% |
 | Seguridad | Sí 0 issues | Bandit + pip-audit limpios |
 | Infraestructura | Sí 23 servicios | 6 compose files válidos |
 | API | Sí 38 endpoints | OpenAPI 3.1.0 válido |
