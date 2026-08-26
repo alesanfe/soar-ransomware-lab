@@ -13,302 +13,132 @@ La configuración Docker Compose define los servicios, redes, volúmenes y depen
 arquitectura modular permite despliegues desde configuraciones mínimas hasta entornos completos, separando
 responsabilidades entre componentes.
 
-### A.1.1. Archivo docker-compose.yml
+### A.1.1. Archivo docker-compose.yml (orquestador principal)
+
+El archivo `docker-compose.yml` es el orquestador principal: define las redes Docker (`soar_net`, `ti_net`, `logging_net`), los volúmenes bind-mount centralizados en `runtime/` y el servicio Elasticsearch. Los servicios de aplicación (TheHive, Cortex, Shuffle, Nginx, etc.) se definen en `docker-compose.core.yml` y los restantes compose files (ver §A.7.1). `make up` combina automáticamente todos los archivos.
 
 ```yaml
-version: "3.9"
 name: soar-lab
 
-services:
-  # === Data layer ===
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-true}
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xms1g -Xmx1g"}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    ports:
-      - "${ELASTICSEARCH_PORT:-19200}:9200"
-    networks:
-      - soar_net
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s | grep -q '\"status\":\"green\\|yellow\"' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '1.0'
-          memory: 2G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+# === SOAR Ransomware Lab - Main Orchestrator ===
+# This file defines networks, volumes, and elasticsearch service
+#
+# Usage:
+#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml \
+#     -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml \
+#     -f compose/docker-compose.api.yml up -d
+#
+# Compose files:
+#   - compose/docker-compose.yml         (networks, volumes, elasticsearch)
+#   - compose/docker-compose.core.yml     (redis, thehive, cortex, shuffle)
+#   - compose/docker-compose.misp.yml     (MISP threat intelligence)
+#   - compose/docker-compose.api.yml      (API, docs, web-management, nginx)
+#   - compose/logging/docker-compose.logging.yml  (Loki, Promtail, Grafana)
 
-  # === Apps ===
-  thehive:
-    image: thehiveproject/thehive:3.5.2-1
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_thehive
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    ports:
-      - "${THEHIVE_HTTP_PORT:-9000}:9000"
-    volumes:
-      - thehive_files:/opt/thp/thehive/files
-      - ./thehive.application.conf:/etc/thehive/application.conf:ro
-    networks:
-      - soar_edge
-      - soar_net
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/status || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '1.0'
-          memory: 2G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  cortex:
-    image: thehiveproject/cortex:3.2.0-1
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    ports:
-      - "${CORTEX_HTTP_PORT:-9001}:9001"
-    volumes:
-      - cortex_data:/var/lib/cortex
-      - ./cortex.application.conf:/etc/cortex/application.conf:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - soar_edge
-      - soar_net
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9001/api/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '1.0'
-          memory: 2G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  shuffle-frontend:
-    image: ${SHUFFLE_FRONTEND_IMAGE:-ghcr.io/shuffle/shuffle-frontend:2.2.1}
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_frontend
-    environment:
-      BACKEND_HOSTNAME: shuffle-backend
-    ports:
-      - "${SHUFFLE_UI_PORT:-8081}:80"
-    networks:
-      - soar_edge
-      - soar_net
-    depends_on:
-      shuffle-backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:80 || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  shuffle-backend:
-    image: ${SHUFFLE_BACKEND_IMAGE:-ghcr.io/shuffle/shuffle-backend:2.2.1}
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend
-    environment:
-      SHUFFLE_ELASTIC: "true"
-      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
-      SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "true"
-      OUTER_HOSTNAME: ${OUTER_HOSTNAME:-localhost}
-      SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
-      SHUFFLE_FILE_LOCATION: /shuffle-files
-      SHUFFLE_APP_DOWNLOAD_LOCATION: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
-      SHUFFLE_DEFAULT_USERNAME: ${SHUFFLE_DEFAULT_USERNAME:-admin}
-      SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD}
-      SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY}
-      DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.44}
-    volumes:
-      - shuffle_app_storage:/shuffle-apps
-      - shuffle_file_storage:/shuffle-files
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    ports:
-      - "${SHUFFLE_API_PORT:-15001}:5001"
-    networks:
-      - soar_edge
-      - soar_net
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5001/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '1.0'
-          memory: 2G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  orborus:
-    image: ${ORBORUS_IMAGE:-ghcr.io/shuffle/shuffle-orborus:latest}
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_orborus
-    environment:
-      ORG_ID: Shuffle
-      ENVIRONMENT_NAME: Shuffle
-      BASE_URL: http://shuffle-backend:5001
-      DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.44}
-      SHUFFLE_OPENSEARCH_URL: http://elasticsearch:9200
-    networks:
-      - soar_net
-    depends_on:
-      shuffle-backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://shuffle-backend:5001/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_nginx
-    ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - certs:/etc/ssl/certs:ro
-      - certs:/etc/ssl/private:ro
-      - nginx_logs:/var/log/nginx
-    networks:
-      - soar_edge
-      - soar_net
-    depends_on:
-      thehive:
-        condition: service_healthy
-      cortex:
-        condition: service_healthy
-      shuffle-frontend:
-        condition: service_healthy
-      shuffle-backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost/nginx-health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+networks:
+  bridge:
+    name: bridge
+    external: true
+  soar_net:
+    name: soar_net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.100.0.0/16
+  ti_net:
+    name: ti_net
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+  logging_net:
+    name: logging_net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
 
 volumes:
   es_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${RUNTIME_DIR:-runtime}/data/elasticsearch
   thehive_files:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/thehive/files }
   cortex_data:
-  shuffle_app_storage:
-  shuffle_file_storage:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/cortex }
+  shuffle_apps:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/shuffle/apps }
+  shuffle_files:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/shuffle/files }
+  redis_data:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/redis }
   nginx_logs:
-  certs:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/logs/nginx }
+  misp_db:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/misp/db }
+  misp_files:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/misp/files }
+  misp_logs:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/logs/misp }
+  misp_configs:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/misp/configs }
+  loki_data:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/loki }
+  grafana_data:
+    driver: local
+    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/grafana }
 
-networks:
-  soar_edge:
-    driver: bridge
-  soar_net:
-    driver: bridge
-    internal: true
+services:
+  elasticsearch:
+    image: ${ELASTICSEARCH_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:7.10.2}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-false}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - action.auto_create_index=true
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true}"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 65536, hard: 65536 }
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "${ELASTICSEARCH_PORT:-8200}:9200"
+    networks: [soar_net, ti_net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u elastic:${ELASTIC_PASSWORD} 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 90s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: '2.0', memory: 4G }
+        reservations: { cpus: '1.0', memory: 2G }
+    logging:
+      driver: "json-file"
+      options: { max-size: "10m", max-file: "3" }
 ```
+
+> **Nota.** Los servicios de aplicación (TheHive, Cortex, Shuffle, Orborus, Redis, Nginx, etc.) se definen en `docker-compose.core.yml` y `docker-compose.api.yml`. El contenido completo de cada compose file está en `infra/docker/compose/`. La sección A.7 proporciona el inventario completo.
 
 ### A.1.2. Archivo .env.full
 
@@ -322,39 +152,43 @@ configuración modular en el despliegue sin necesidad de modificar los archivos 
 # Project Configuration
 COMPOSE_PROJECT_NAME=soar
 
-# Elasticsearch Configuration
-ELASTICSEARCH_PORT=19200
-ELASTIC_SECURITY_ENABLED=true
-ELASTIC_PASSWORD=<ELASTIC_PASSWORD>
-ES_JAVA_OPTS=-Xms1g -Xmx1g
-
-# TheHive Configuration
-THEHIVE_HTTP_PORT=19000
-
-# Cortex Configuration
-CORTEX_HTTP_PORT=19001
-
-# Shuffle Configuration
+# Ports — Core SOAR
+THEHIVE_HTTP_PORT=8100
+CORTEX_HTTP_PORT=8101
 SHUFFLE_UI_PORT=8081
-SHUFFLE_API_PORT=15001
+SHUFFLE_API_PORT=5001
+ELASTICSEARCH_PORT=8200
+OPENSEARCH_PORT=8201
+
+# Ports — Management
+HTTP_PORT=80
+HTTPS_PORT=443
+WEB_UI_PORT=8085
+API_PORT=8000
+DOCS_PORT=8086
+MISP_PORT=8083
+GRAFANA_PORT=8084
+
+# Elasticsearch
+ELASTIC_USERNAME=elastic
+ELASTIC_PASSWORD=<ELASTIC_PASSWORD>
+ELASTIC_SECURITY_ENABLED=false
+ES_JAVA_OPTS=-Xms2g -Xmx2g
+
+# Shuffle
 SHUFFLE_FRONTEND_IMAGE=ghcr.io/shuffle/shuffle-frontend:2.2.1
 SHUFFLE_BACKEND_IMAGE=ghcr.io/shuffle/shuffle-backend:2.2.1
-SHUFFLE_APP_DOWNLOAD_LOCATION=https://github.com/shuffle/python-apps
 SHUFFLE_DEFAULT_USERNAME=admin
 SHUFFLE_DEFAULT_PASSWORD=<SHUFFLE_DEFAULT_PASSWORD>
 SHUFFLE_DEFAULT_APIKEY=<SHUFFLE_DEFAULT_APIKEY>
 
-# Orborus Configuration
-ORBORUS_IMAGE=ghcr.io/shuffle/shuffle-orborus:latest
+# Orborus
+ORBORUS_IMAGE=ghcr.io/shuffle/shuffle-orborus:2.2.1-patched
 
-# Nginx Configuration
-HTTP_PORT=80
-HTTPS_PORT=443
-
-# Docker Configuration
+# Docker
 DOCKER_API_VERSION=1.44
 
-# Network Configuration
+# Network
 OUTER_HOSTNAME=localhost
 ```
 
@@ -365,13 +199,18 @@ La **Tabla 13** resume las variables de entorno Docker más relevantes para la p
 | Variable               | Valor por Defecto | Descripción              | Requerido |
 |------------------------|-------------------|--------------------------|-----------|
 | `COMPOSE_PROJECT_NAME` | soar              | Nombre del proyecto      | No        |
-| `ELASTIC_PASSWORD`     | Ver `.env.full`   | Contraseña Elasticsearch | Sí      |
-| `THEHIVE_HTTP_PORT`    | 19000             | Puerto TheHive           | No        |
-| `CORTEX_HTTP_PORT`     | 19001             | Puerto Cortex            | No        |
+| `ELASTIC_PASSWORD`     | Ver `.env.full`   | Contraseña Elasticsearch | Sí        |
+| `ELASTIC_SECURITY_ENABLED` | false         | Seguridad Elasticsearch  | No        |
+| `THEHIVE_HTTP_PORT`    | 8100              | Puerto TheHive           | No        |
+| `CORTEX_HTTP_PORT`     | 8101              | Puerto Cortex            | No        |
 | `SHUFFLE_UI_PORT`      | 8081              | Puerto Shuffle UI        | No        |
-| `SHUFFLE_API_PORT`     | 15001             | Puerto Shuffle API       | No        |
+| `SHUFFLE_API_PORT`     | 5001              | Puerto Shuffle API       | No        |
+| `ELASTICSEARCH_PORT`   | 8200              | Puerto Elasticsearch     | No        |
 | `HTTP_PORT`            | 80                | Puerto HTTP público      | No        |
 | `HTTPS_PORT`           | 443               | Puerto HTTPS público     | No        |
+| `WEB_UI_PORT`          | 8085              | Puerto UI gestión        | No        |
+| `API_PORT`             | 8000              | Puerto API FastAPI       | No        |
+| `GRAFANA_PORT`         | 8084              | Puerto Grafana           | No        |
 
 Las variables de entorno Docker especificadas en esta tabla permiten la personalización del despliegue del laboratorio
 SOAR según las necesidades específicas de cada entorno. La única variable obligatoria es `ELASTIC_PASSWORD`, que debe
@@ -1081,7 +920,7 @@ scrape_configs:
   # Elasticsearch metrics
   - job_name: 'elasticsearch'
     static_configs:
-      - targets: ['elasticsearch:19200']
+      - targets: ['elasticsearch:9200']
     metrics_path: '/_prometheus/metrics'
     scrape_interval: 30s
 
@@ -1312,7 +1151,7 @@ make up
 make health
 
 # 6. Run initial tests
-make test-malicious
+make simulate-malicious
 
 # 7. Check metrics
 make metrics
@@ -1328,33 +1167,33 @@ docker compose -f infra/docker/compose/docker-compose.yml ps
 docker compose -f infra/docker/compose/docker-compose.yml logs -f
 
 # Test web interfaces (ajustar puertos según .env.full)
-curl -f http://localhost:19000/api/status  # TheHive
-curl -f http://localhost:19001/api/health  # Cortex
-curl -f http://localhost:15001/api/v1/health      # Shuffle
-curl -f http://localhost:19200/_cluster/health  # Elasticsearch
+curl -f http://localhost:8100/api/status  # TheHive
+curl -f http://localhost:8101/api/health  # Cortex
+curl -f http://localhost:5001/api/v1/health      # Shuffle
+curl -f http://localhost:8200/_cluster/health  # Elasticsearch
 ```
 
 La **Tabla 14** recopila los comandos Make disponibles para la operación del laboratorio SOAR.
 
 ## Tabla 14: Comandos Make Disponibles
 
-| Comando               | Descripción                 | Uso Típico         |
-|-----------------------|-----------------------------|--------------------|
-| `make up`             | Iniciar todos los servicios | Despliegue inicial |
-| `make down`           | Detener todos los servicios | Mantenimiento      |
-| `make health`         | Verificar salud servicios   | Diagnóstico        |
-| `make test`           | Ejecutar prueba funcional   | Validación         |
-| `make test-malicious` | Prueba alerta maliciosa     | Testing            |
-| `make test-benign`    | Prueba alerta benigna       | Testing            |
-| `make metrics`        | Calcular KPIs               | Análisis           |
-| `make backup`         | Crear backup                | Mantenimiento      |
-| `make clean`          | Limpiar volúmenes           | Reset              |
-| `make logs`           | Ver logs                    | Depuración         |
+| Comando                 | Descripción                 | Uso Típico         |
+|-------------------------|-----------------------------|--------------------|
+| `make up`               | Iniciar todos los servicios | Despliegue inicial |
+| `make down`             | Detener todos los servicios | Mantenimiento      |
+| `make health`           | Verificar salud servicios   | Diagnóstico        |
+| `make test-all`         | Suite completa de tests     | Validación         |
+| `make simulate-malicious` | Enviar alerta maliciosa   | Testing            |
+| `make simulate-benign`  | Enviar alerta benigna       | Testing            |
+| `make metrics`          | Calcular KPIs               | Análisis           |
+| `make backup`           | Crear backup                | Mantenimiento      |
+| `make clean`            | Limpiar temporales          | Reset              |
+| `make logs`             | Ver logs                    | Depuración         |
 
 Los comandos Make disponibles en esta tabla proporcionan una interfaz simplificada para todas las operaciones comunes
 del laboratorio SOAR, reduciendo la complejidad operativa y facilitando la adopción por usuarios con diferentes niveles
 de experiencia técnica. Los comandos de despliegue (`make up`, `make down`) simplifican la orquestación de múltiples
-servicios Docker. Los comandos de prueba (`make test`, `make test-malicious`, `make test-benign`) facilitan la
+servicios Docker. Los comandos de prueba (`make test-all`, `make simulate-malicious`, `make simulate-benign`) facilitan la
 validación del sistema sin requerir conocimiento detallado de la configuración de pruebas. Los comandos de
 mantenimiento (`make health`, `make backup`, `make clean`, `make logs`) proporcionan las herramientas necesarias para
 operación continua. Esta automatización mediante Makefile es un factor determinante en la reproducibilidad y facilidad de uso
@@ -1431,7 +1270,7 @@ wsl -d docker-desktop sysctl -w vm.max_map_count=262144
 **Criterio de verificación.**
 
 - `docker logs soar_elasticsearch` termina con `"Cluster health status changed from [YELLOW] to [GREEN]"`.
-- `curl -f http://localhost:19200/_cluster/health` devuelve `status` `green` o `yellow`.
+- `curl -f http://localhost:8200/_cluster/health` devuelve `status` `green` o `yellow`.
 
 ---
 
@@ -1493,7 +1332,7 @@ cat reports/validation/results/webhook_info.json
 docker exec soar_api cat /app/.env.full | grep SHUFFLE_DEFAULT_APIKEY
 
 # 4. Verificar ejecuciones del workflow desde Shuffle UI o ES
-curl http://localhost:19200/users* -u elastic:$ELASTIC_PASSWORD
+curl http://localhost:8200/users* -u elastic:$ELASTIC_PASSWORD
 ```
 
 **Criterio de verificación.**
@@ -1523,14 +1362,14 @@ docker network inspect soar-lab_logging_net
 docker network inspect soar-lab_soar_net
 
 # 3. Verificar mapping del índice
-curl http://localhost:19200/soar-metrics-v2/_mapping -u elastic:$ELASTIC_PASSWORD
+curl http://localhost:8200/soar-metrics-v2/_mapping -u elastic:$ELASTIC_PASSWORD
 
 # 4. Reindexar si es necesario (ver docs/04-operations.md sección logging)
 ```
 
 **Criterio de verificación.**
 
-- `curl http://localhost:19200/soar-metrics/_count` devuelve documentos.
+- `curl http://localhost:8200/soar-metrics/_count` devuelve documentos.
 - Grafana muestra datos en el dashboard KPI.
 
 ---
@@ -1652,20 +1491,20 @@ docker logs soar_nginx -f
 ## A.7. Inventario Completo de Archivos Docker Compose
 
 El laboratorio SOAR usa **5 archivos Docker Compose** principales (más 1 de logging en subdirectorio)
-que se combinan automáticamente con `make up`.
-La sección A.1.1 muestra solo el archivo principal (`docker-compose.yml`); los restantes se documentan aquí
+que se combinan automáticamente con `make up`, totalizando 23 servicios.
+La sección A.1.1 muestra el archivo principal (`docker-compose.yml`); los restantes se documentan aquí
 como referencia. La versión canónica está en `infra/docker/compose/`.
 
 ### A.7.1. Mapa de Archivos Compose
 
 | Archivo | Ubicación | Servicios | Propósito |
 |---------|-----------|-----------|-----------|
-| `docker-compose.yml` | `infra/docker/compose/` | elasticsearch, thehive, cortex, shuffle-frontend, shuffle-backend, orborus, nginx | Stack core (ver A.1.1) |
-| `docker-compose.core.yml` | `infra/docker/compose/` | redis, network-watcher, tenzir-node, misp, misp-db, misp-modules | Servicios core adicionales |
-| `docker-compose.misp.yml` | `infra/docker/compose/` | (incluido en core) | Configuración específica MISP |
-| `docker-compose.api.yml` | `infra/docker/compose/` | api, web-management, docs-site, nginx | API FastAPI + UI + docs |
+| `docker-compose.yml` | `infra/docker/compose/` | elasticsearch | Orquestador: redes, volúmenes, Elasticsearch (ver A.1.1) |
+| `docker-compose.core.yml` | `infra/docker/compose/` | redis, thehive, cortex, shuffle-frontend, shuffle-backend, network-watcher, tenzir-node, orborus | Servicios SOAR principales |
+| `docker-compose.misp.yml` | `infra/docker/compose/` | misp, misp-db, misp-modules | Threat intelligence (MISP) |
+| `docker-compose.api.yml` | `infra/docker/compose/` | api, web-management, docs-site, nginx | API FastAPI + UI + docs + proxy |
 | `docker-compose.opensearch.yml` | `infra/docker/compose/` | opensearch, opensearch-dashboards | OpenSearch para Shuffle |
-| `docker-compose.logging.yml` | `infra/docker/compose/logging/` | loki, promtail, grafana, grafana-db | Observabilidad (subdirectorio) |
+| `docker-compose.logging.yml` | `infra/docker/compose/logging/` | loki, promtail, grafana, grafana-db, grafana-renderer | Observabilidad (subdirectorio) |
 
 ### A.7.2. Servicios Adicionales (no en A.1.1)
 
@@ -1675,20 +1514,27 @@ sección A.1.1:
 | Servicio | Imagen | Compose File | Función |
 |----------|--------|--------------|---------|
 | `redis` | `redis:7-alpine` | core | Cache/cola con autenticación |
+| `thehive` | `thehiveproject/thehive:3.5.2-1` | core | Gestión de casos |
+| `cortex` | build (local) | core | Análisis de IoCs |
+| `shuffle-frontend` | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | core | UI Shuffle |
+| `shuffle-backend` | `ghcr.io/shuffle/shuffle-backend:2.2.1` | core | Backend Shuffle |
 | `network-watcher` | build (local) | core | Diagnóstico/recuperación de red |
 | `tenzir-node` | `tenzir/tenzir:v6.8.1` | core | Nodo Tenzir (modo dev) |
+| `orborus` | `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched` | core | Orquestador de workers Shuffle |
 | `misp` | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | misp | Threat intelligence |
 | `misp-db` | `mariadb:10.11` | misp | BD MISP |
 | `misp-modules` | `ghcr.io/misp/misp-docker/misp-modules:v3.0.9` | misp | Módulos MISP |
 | `api` | build `apps/api/Dockerfile` | api | API FastAPI (Lab API) |
 | `web-management` | build `apps/web-management/Dockerfile` | api | UI de gestión web |
 | `docs-site` | build `apps/docs-site/Dockerfile` | api | Docusaurus (docs) |
+| `nginx` | `nginx:1.25-alpine` | api | Proxy inverso + TLS |
 | `opensearch` | `opensearchproject/opensearch:2.10.0` | opensearch | Motor de búsqueda Shuffle |
 | `opensearch-dashboards` | `opensearchproject/opensearch-dashboards:2.10.0` | opensearch | Dashboard OpenSearch |
 | `loki` | `grafana/loki:2.9.10` | logging | Agregación de logs |
 | `promtail` | `grafana/promtail:2.9.9` | logging | Shipper de logs |
 | `grafana` | `grafana/grafana:10.3.4` | logging | Visualización |
 | `grafana-db` | `postgres:14-alpine` | logging | BD Grafana |
+| `grafana-renderer` | `grafana/grafana-image-renderer:3.10.4` | logging | Renderizado de imágenes para alertas |
 
 ### A.7.3. Redes Docker
 
@@ -1704,10 +1550,10 @@ sección A.1.1:
 | Métrica | Valor |
 |---------|-------|
 | Archivos compose | 5 (+1 logging en subdirectorio) |
-| Servicios totales | 18 |
-| Redes | 4 (3 internas + bridge) |
-| Volúmenes persistentes | 12+ |
-| Imágenes Docker | 15 (5 builds locales + 10 pulls) |
+| Servicios totales | 23 |
+| Redes | 4 (soar_net, ti_net, logging_net + bridge) |
+| Volúmenes persistentes | 15 |
+| Imágenes Docker | 23 (6 builds locales + 17 pulls) |
 | Versiones pinned | 100% (todas las imágenes tienen tag fijo) |
 
 > **Nota.** Para el contenido completo de cada compose file, ver `infra/docker/compose/`.
