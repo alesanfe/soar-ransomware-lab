@@ -651,6 +651,7 @@
           "query": "*",
           "index": "soar-metrics",
           "timeField": "@timestamp",
+          "alias": "$term",
           "metrics": [
             {
               "id": "1",
@@ -672,7 +673,10 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        },
         "overrides": [
           {
             "matcher": {
@@ -1018,26 +1022,11 @@
           "query": "*",
           "index": "soar-metrics",
           "timeField": "@timestamp",
-          "alias": "Severidad $term",
+          "alias": "$term",
           "metrics": [
             {
               "id": "1",
-              "type": "bucket_script",
-              "bucketScript": {
-                "script": "params.thehive / params.total * 100",
-                "variables": [
-                  {
-                    "name": "thehive",
-                    "type": "metric",
-                    "id": "thehive_metric"
-                  },
-                  {
-                    "name": "total",
-                    "type": "metric",
-                    "id": "total_metric"
-                  }
-                ]
-              }
+              "type": "count"
             }
           ],
           "bucketAggs": [
@@ -1056,10 +1045,8 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "decimals": 1,
-          "min": 0,
-          "max": 100
+          "unit": "short",
+          "decimals": 0
         }
       },
       "gridPos": {
@@ -1101,7 +1088,7 @@
               "type": "date_histogram",
               "field": "@timestamp",
               "settings": {
-                "interval": "1d",
+                "calendar_interval": "1d",
                 "min_doc_count": "1"
               }
             },

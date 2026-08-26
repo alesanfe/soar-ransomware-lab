@@ -45,26 +45,20 @@
 | Figura 15 | MTTR por Severidad (boxplot)                     | `figures/mttr_severity_boxplot.png` |
 | Figura 16 | Percentiles MTTR                                 | `figures/GE2_percentiles.png` |
 | Figura 17 | Tasas de Éxito por Tipo de Alerta                | `figures/GE3_success_rates.png` |
-| Figura 18 | Evolución de MTTR (tendencia diaria)             | `figures/org_daily_stats.png` |
+| Figura 18 | Mejoras por Categoría                            | `figures/Fig5_2_improvements_category.png` |
 | Figura 19 | Distribución de Duraciones de Workflows          | `figures/workflow_durations.png` |
 | Figura 20 | MTTR por Tipo de Alerta (Grafana)                | `figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png` |
 | Figura 21 | Distribución de Alertas por Severidad            | `figures/severity_distribution.png` |
-| Figura 22 | Salud de Servicios                               | `figures/service_health.png` |
+| Figura 22 | Resultados de MTTR (manual vs automatizado)      | `figures/Fig5_1_mttr_results.png` |
 | Figura 23 | Estado de Casos en TheHive                       | `figures/thehive_case_status.png` |
-| Figura 24 | Duración de Workflows                            | `figures/workflow_durations.png` |
-| Figura 25 | Volumen de Logs en Loki                          | `figures/loki_log_volume.png` |
-| Figura 26 | Mapa de Calor de Logs                            | `figures/loki_log_heatmap.png` |
-| Figura 27 | Cumplimiento de Umbrales                         | `figures/threshold_compliance.png` |
-| Figura 28 | Notificaciones del Workflow                      | `figures/workflow_notifications.png` |
-| Figura 29 | Tasa de Éxito por Tipo de Alerta (Grafana panel 4) | `figures/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png` |
-| Figura 30 | Estado de Casos en TheHive                       | `figures/thehive_case_status.png` |
-| Figura 31 | Estado de Jobs de Cortex                         | `figures/cortex_job_status.png` |
-| Figura 32 | Distribución de Alertas por Tipo                 | `figures/alert_distribution.png` |
-| Figura 33 | Correlación entre Métricas                       | `figures/correlation_heatmap.png` |
-| Figura 34 | Evolución de Métricas durante el Proyecto        | `figures/GE4_metrics_evolution.png` |
-| Figura 35 | Mejoras por Categoría (versión extendida)        | `figures/GE5_improvements.png` |
-| Figura 36 | Análisis Coste-Beneficio (versión extendida)     | `figures/GE6_cost_benefit.png` |
-| Figura 37 | Estadísticas Diarias Organizativas               | `figures/org_daily_stats.png` |
+| Figura 24 | Volumen de Logs en Loki                          | `figures/loki_log_volume.png` |
+| Figura 25 | Cumplimiento de Umbrales                         | `figures/threshold_compliance.png` |
+| Figura 26 | Análisis Coste-Beneficio                         | `figures/Fig5_5_cost_benefit.png` |
+| Figura 27 | Tasa de Éxito por Tipo de Alerta (Grafana panel 4) | `figures/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png` |
+| Figura 28 | Correlación entre Métricas                       | `figures/correlation_heatmap.png` |
+| Figura 29 | Evolución de Métricas durante el Proyecto        | `figures/GE4_metrics_evolution.png` |
+| Figura 30 | Análisis Coste-Beneficio (versión extendida)     | `figures/GE6_cost_benefit.png` |
+| Figura 31 | Mejoras por Categoría (versión extendida)        | `figures/GE5_improvements.png` |
 
 ## Figuras del Anexo H (Diagramas Mermaid)
 
