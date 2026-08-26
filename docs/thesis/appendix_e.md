@@ -12,11 +12,11 @@
 
 | Objetivo | Umbral | Valor Medido | Cumple |
 |----------|--------|--------------|--------|
-| MTTR P50 (mediana) | ≤ 120s | 193.19s | No No |
-| MTTR P90 | ≤ 180s | 621.83s | No No |
-| Tasa de Éxito | ≥ 95% | 100% | Si Sí |
-| Dataset (n ejecuciones) | ≥ 50 | 50 | Si Sí |
-| Reducción MTTR vs Manual | ≥ 50% | 92.3% | Si Sí |
+| MTTR P50 (mediana) | ≤ 120s | 193.19s | No |
+| MTTR P90 | ≤ 180s | 621.83s | No |
+| Tasa de Éxito | ≥ 95% | 100% | Sí |
+| Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
+| Reducción MTTR vs Manual | ≥ 50% | 92.3% | Sí |
 
 **Cumplimiento: 3/5 objetivos.**
 
@@ -37,7 +37,7 @@
 | Métrica | Valor |
 |---------|-------|
 | Tasa de contención (score ≥ 80) | 92.0% (46/50) |
-| Tasa de falsos negativos (score < 80) | 8.0% (4/50) |
+| Tasa de observación (score < 80) | 8.0% (4/50) |
 | Score promedio | 96.2/100 (min=55, max=100) |
 | Verdict malicious | 13 (score medio 97.3) |
 | Verdict suspicious | 37 (score medio 95.8) |
@@ -52,7 +52,7 @@
 | Jobs Cortex | 255/257 (99.2%) |
 | Analyzers Cortex disponibles | 34 |
 | Técnicas MITRE detectadas | 32 (MITRE, 2025) |
-| Nodos en workflow | 25 |
+| Nodos en workflow | 46 definidos (49 ejecutados) |
 | Tasa de automatización | 100% |
 
 ---
@@ -142,7 +142,7 @@
 | L3a | Quality | 100 | Linting (0 issues ruff) |
 | L3b | Quality | 100 | Seguridad (0 issues bandit) |
 | L3c | Quality | 94.6 | Docstrings (964/1019) |
-| L4a | Infra | 100.0 | Docker Compose (5/5 válidos, 18 servicios) |
+| L4a | Infra | 100.0 | Docker Compose (6/6 válidos, 23 servicios) |
 | L4b | Infra | 100 | OpenAPI (38 endpoints, válido) |
 | L4c | Infra | 100.0 | Env vars (131/131, 100% coverage) |
 | L5a | Docs | 86.9 | Links (260 links, 34 rotos en reports) |
@@ -235,8 +235,8 @@
 
 ### 5.2. Docker Compose
 
-- Archivos compose: **5** (todos válidos)
-- Servicios totales: **18**
+- Archivos compose: **6** (todos válidos)
+- Servicios totales: **23**
 - Pipeline de despliegue: **19 pasos** automáticos (`make up`)
 
 ### 5.3. Requisitos de Hardware
@@ -261,7 +261,7 @@
 ### 5.5. Seguridad
 
 - TLS: Nginx termina TLS con certificados self-signed
-- Zonas de seguridad: DMZ, Aplicación, Datos, Gestión
+- Redes Docker aisladas: `soar_net` (10.100.0.0/16), `ti_net` (172.22.0.0/16), `logging_net` (172.23.0.0/16)
 - Rate limiting webhook: 60 req/min
 - Payload máximo: 65536 bytes
 - CORS configurado para localhost
@@ -270,10 +270,10 @@
 
 ### 5.6. Backup
 
-- Automático: diario a las 2:00 AM (cron `0 2 * * *`)
-- Retención: 30 días
-- Cifrado: habilitado
-- Compresión: habilitada
+- Manual: `make backup` (POST `/backup/create`)
+- Restore: `make restore BACKUP=<name>` (POST `/backup/restore`)
+- Almacenamiento: `runtime/backups/` (tar.gz)
+- No hay cron automático configurado en el laboratorio
 
 ---
 
@@ -284,14 +284,14 @@
 - Total: **38 endpoints** (OpenAPI 3.1.0, válido)
 - WebSocket: `/api/ws/logs` (streaming en tiempo real)
 - APIs reales: **7** (TheHive, Cortex, Shuffle, Lab API, MISP, Elasticsearch, OpenSearch)
-- APIs simuladas: **3** (SIEM, EDR, Firewall)
+- APIs simuladas: **1** (SIEM simulado — `src/soar_lab/simulator/simulate_alerts.py`)
 
 ### 6.2. Integraciones Clave
 
 | Integración | Timeout | Retries | Concurrente |
 |-------------|---------|---------|-------------|
 | TheHive API | 30s | 3 (backoff 5s) | — |
-| Cortex API | 30s | 1 | 3 analyzers |
+| Cortex API | 30s | 1 | 7 analyzers en paralelo |
 | Shuffle webhook | — | — | 60 req/min |
 
 ---
@@ -301,17 +301,21 @@
 ### 7.1. Objetivos SMART
 
 - **20 objetivos SMART** definidos con métricas cuantificables
-- **15 semanas** distribuidas en 4 fases
+- **18 semanas** distribuidas en 4 fases (27 abr - 31 ago 2026)
 - **4 hitos** (milestones) de validación
 
 ### 7.2. Fases del Proyecto
 
-| Fase | Duración | Objetivos |
-|------|----------|-----------|
-| 1. Infraestructura | 4 semanas | 1, 8, 17, 18 |
-| 2. Desarrollo | 5 semanas | 2, 5, 6, 19, 20 |
-| 3. Validación | 4 semanas | 3, 9-14 |
-| 4. Cierre | 2 semanas | 4, 15, 16 |
+| Fase | Duración planificada | Duración real | Objetivos |
+|------|---------------------|---------------|-----------|
+| 1. Infraestructura | 4 semanas | 4 semanas | 1, 8, 17, 18 |
+| 2. Desarrollo | 5 semanas | 7 semanas | 2, 5, 6, 19, 20 |
+| 3. Validación | 4 semanas | 5 semanas | 3, 9-14 |
+| 4. Cierre | 2 semanas | 2 semanas | 4, 15, 16 |
+
+> La estimación inicial fue de 15 semanas, aumentada a 18 tras la
+> integración de Cortex con analyzers externos y el stack de monitoreo
+> (fase 2) y la ampliación de la suite de tests a 2041 (fase 3).
 
 ### 7.3. Consideraciones Éticas
 
@@ -325,15 +329,15 @@
 
 | Aspecto | Resultado | Evidencia |
 |---------|-----------|-----------|
-| Workflow E2E | Si Funcional | 50/50 workflows completados |
-| MTTR | Si Mejora 92.3% | 3600s -> 277.15s |
-| Contención | Si 92% | 46/50 alertas con score ≥ 80 |
-| Automatización | Si 100% | Sin intervención humana |
-| Calidad código | Si 92.2/100 | Quality score Excellent |
-| HPR | Si 96.0/100 | Holistic radar Excellent |
-| Tests | Si 2041 tests | 1384 pasados, coverage 84.6% |
-| Seguridad | Si 0 issues | Bandit + pip-audit limpios |
-| Infraestructura | Si 18 servicios | 5 compose files válidos |
-| API | Si 38 endpoints | OpenAPI 3.1.0 válido |
-| Mutation testing | Parcial 51.8% | 13 969 mutantes, 5603 killed, 5322 survived |
-| Objetivos TFM | Parcial 5/7 | MTTR P50 y P90 no cumplidos |
+| Workflow E2E | Sí Funcional | 50/50 workflows completados |
+| MTTR | Sí Mejora 92.3% | 3600s -> 277.15s |
+| Contención | Sí 92% | 46/50 alertas con score ≥ 80 |
+| Automatización | Sí 100% | Sin intervención humana |
+| Calidad código | Sí 92.2/100 | Quality score Excellent |
+| HPR | Sí 96.0/100 | Holistic radar Excellent |
+| Tests | Sí 2041 tests | 1384 passed (última run), coverage 84.6% |
+| Seguridad | Sí 0 issues | Bandit + pip-audit limpios |
+| Infraestructura | Sí 23 servicios | 6 compose files válidos |
+| API | Sí 38 endpoints | OpenAPI 3.1.0 válido |
+| Mutation testing | Parcial 51.8% | 13969 mutantes, 5603 killed, 5322 survived |
+| Objetivos TFM | Parcial 3/5 | MTTR P50 y P90 no cumplidos |
