@@ -228,14 +228,14 @@ la materialización práctica de la automatización SOAR, permitiendo la validac
 controladas y ofreciendo las herramientas necesarias para el análisis de rendimiento. Cada script sigue buenas prácticas
 de desarrollo software, incluyendo manejo de errores, logging estructurado y documentación completa.
 
-### A.2.1. SIEM Simulator (send_alert.py)
+### A.2.1. Alert Sender CLI (send_alert.py)
 
-El script SIEM Simulator simula alertas de ransomware con datos realistas y las envía al webhook de Shuffle para su
-procesamiento. Este componente es necesario para la validación del sistema, ya que permite generar alertas controladas
-que representan escenarios realistas de ransomware sin exponer el sistema a amenazas reales. La implementación incluye
-la generación de alertas con IoCs conocidos, soporte para alertas maliciosas y benignas, distribución temporal
-configurable para pruebas de carga, validación de esquemas JSON y autenticación mediante API token. Este script se
-utiliza extensivamente en las pruebas E2E del sistema para validar el flujo completo de respuesta a incidentes.
+El script `send_alert.py` es el CLI que genera y envía alertas de ransomware con datos realistas al webhook de Shuffle
+para su procesamiento. El simulador E2E (`src/soar_lab/simulator/simulate_alerts.py`) usa este mismo mecanismo para
+inyectar alertas controladas que representan escenarios realistas de ransomware sin exponer el sistema a amenazas reales.
+La implementación incluye la generación de alertas con IoCs conocidos, soporte para alertas maliciosas y benignas,
+distribución temporal configurable para pruebas de carga, validación de esquemas JSON y autenticación mediante API token.
+Este script se utiliza extensivamente en las pruebas E2E del sistema para validar el flujo completo de respuesta a incidentes.
 
 ```python
 #!/usr/bin/env python3
@@ -502,7 +502,7 @@ class AnalyticsService:
             raise
 ```
 
-El servicio se compone en `src/soar_lab/interfaces/api/composition.py` con sus dependencias concretas (`ElasticsearchAlertRepository`, `SystemMetricsProvider`, `LocalFileSystem`, `LogParserImpl`, `StatisticalCalculator`, `KPIFormatterImpl`, `KPIAnalyzer`). El cálculo estadístico puro (percentiles, media, desviación estándar, coeficiente de variación) se delega a `StatisticalCalculator` (puerto `StatisticalCalculatorInterface`), lo que mantiene el dominio independiente de la infraestructura.
+El servicio se compone en `src/soar_lab/interfaces/api/composition.py` con sus dependencias concretas (`SqliteAlertRepository`, `SystemMetricsDriver`, `FilesystemStorage`, `ExecutionLogParser`, `StatisticalCalculator`, `CSVKPIFormatter`, `KPIAnalyzer`). El cálculo estadístico puro (percentiles, media, desviación estándar, coeficiente de variación) se delega a `StatisticalCalculator` (puerto `StatisticalCalculatorInterface`), lo que mantiene el dominio independiente de la infraestructura.
 
 ## A.3. Configuración de TheHive
 
@@ -514,34 +514,43 @@ TheHive 3.5.2 requiere un mapping Elasticsearch específico para el campo `relat
 
 ```python
 THEHIVE_INDEX_TEMPLATE = {
-    "index_patterns": ["thehive*"],
-    "settings": {
-        "number_of_replicas": "0",
-        "number_of_shards": "1",
-        "analysis": {
-            "analyzer": {
-                "lowercase": {"type": "custom", "filter": ["lowercase"]}
-            }
-        },
-    },
+    "index_patterns": ["the_hive_*"],
+    "settings": {"number_of_shards": 5, "number_of_replicas": 0},
     "mappings": {
         "dynamic_templates": [
             {
-                "strings_as_keyword": {
+                "strings": {
                     "match_mapping_type": "string",
-                    "mapping": {"type": "keyword"},
+                    "mapping": {
+                        "type": "text",
+                        "fielddata": True,
+                        "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+                    },
                 }
-            },
+            }
         ],
         "properties": {
-            "relations": {"type": "join", "relations": {"case": ["artifact", "task", "log"]}},
-            "caseTemplate": ["dummy-caseTemplate"],
+            "relations": {
+                "type": "join",
+                "relations": {
+                    "case": ["case_task", "case_artifact", "dummy-case"],
+                    "case_task": ["case_task_log", "dummy-case_task"],
+                    "case_task_log": ["dummy-case_task_log"],
+                    "case_artifact": ["dummy-case_artifact"],
+                    "caseTemplate": ["dummy-caseTemplate"],
+                    "alert": ["dummy-alert"],
+                    "user": ["dummy-user"],
+                    "dashboard": ["dummy-dashboard"],
+                    "audit": ["dummy-audit"],
+                    "sequence": ["dummy-sequence"],
+                },
+            }
         },
     },
 }
 ```
 
-Este template se aplica con `PUT _template/thehive_template` antes de que TheHive arranque, evitando el error `mapper_parsing_exception` que ocurre cuando Elasticsearch infiere automáticamente el tipo `text` para campos que TheHive espera como `keyword`.
+Este template se aplica con `PUT _template/thehive_template` antes de que TheHive arranque, evitando el error `mapper_parsing_exception` que ocurre cuando Elasticsearch infiere automáticamente el tipo `text` para campos que TheHive espera como `keyword`. El campo `relations` se declara como `join` con relaciones jerárquicas completas (case → case_task → case_task_log, case → case_artifact) y children dummy para cada tipo raíz (alert, user, dashboard, audit, sequence, caseTemplate).
 
 ### A.3.2. Creación de casos desde el workflow
 
@@ -554,7 +563,7 @@ El workflow E2E de Shuffle crea casos en TheHive mediante la app `TheHive_app` c
 - `tlp`: 2 (AMBER)
 - `pap`: 2 (AMBER)
 
-Los observables (IoCs) se añaden al caso como artifacts con `dataType` (`ip`, `domain`, `hash`, `url`) y `message` con el valor del IoC. El estado del caso se actualiza a `Closed` tras la contención simulada.
+Los observables (IoCs) se añaden al caso como artifacts con `dataType` (`ip`, `domain`, `hash`, `url`) y `message` con el valor del IoC. El estado del caso permanece `Open` durante la contención simulada (TheHive 3.5.2 solo soporta `Open`/`Resolved`/`Deleted`; el script `update_inprogress.py` confirma que el caso se mantiene `Open` en la rama maliciosa). En la rama benigna, el caso se marca como `Resolved` con `resolutionStatus: FalsePositive` vía `mark_false_positive.py`.
 
 ## A.4. Configuración de Monitoreo
 
@@ -566,7 +575,7 @@ El servicio `loki` (imagen `grafana/loki:2.9.10`) agrega logs de todos los conte
 
 ### A.4.2. Dashboard KPI de Grafana (kpi-dashboard.json)
 
-El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.json` y consulta el índice `soar-metrics-v2` de Elasticsearch (datasource `soar-es`). Contiene 15 paneles:
+El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.json` y consulta el índice `soar-metrics` de Elasticsearch (datasource `soar-es`). Contiene 15 paneles:
 
 | Panel | Título | Tipo |
 |-------|--------|------|
@@ -586,7 +595,7 @@ El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.
 | 14 | Tasa de Éxito por Severidad | barchart |
 | 15 | Evolución de Alertas por Tipo | timeseries |
 
-Las consultas usan Lucene/Elasticsearch Query DSL sobre el índice `soar-metrics-v2`, que se pobla desde el workflow de Shuffle tras cada ejecución del playbook. El campo `mttr_seconds` (float) almacena el MTTR por ejecución, `verdict.keyword` el veredicto (malicious/suspicious) y `decision.keyword` la decisión (contain/observe).
+Las consultas usan Lucene/Elasticsearch Query DSL sobre el índice `soar-metrics`, que se pobla desde el workflow de Shuffle tras cada ejecución del playbook. El campo `mttr_seconds` (float) almacena el MTTR por ejecución, `verdict.keyword` el veredicto (malicious/suspicious) y `decision.keyword` la decisión (contain/observe).
 
 ### A.4.3. Configuración de Promtail
 
@@ -663,7 +672,7 @@ python3 --version
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-org/soar-ransomware-lab.git
+git clone https://github.com/alesanfe/soar-ransomware-lab.git
 cd soar-ransomware-lab
 
 # 2. Configure environment
@@ -875,7 +884,7 @@ curl http://localhost:8200/users* -u elastic:$ELASTIC_PASSWORD
 
 **Causas típicas.**
 
-- Plugin Elasticsearch no instalado en Grafana 13.
+- Plugin Elasticsearch no instalado en Grafana 10.3.4.
 - Grafana no puede resolver `elasticsearch`.
 - Mapping incorrecto del índice (`mttr_seconds` como `object` en lugar de `float`).
 - Falta `@timestamp` en los documentos.
@@ -891,7 +900,7 @@ docker network inspect logging_net
 docker network inspect soar_net
 
 # 3. Verificar mapping del índice
-curl http://localhost:8200/soar-metrics-v2/_mapping -u elastic:$ELASTIC_PASSWORD
+curl http://localhost:8200/soar-metrics/_mapping -u elastic:$ELASTIC_PASSWORD
 
 # 4. Reindexar si es necesario (ver docs/04-operations.md sección logging)
 ```
@@ -1019,7 +1028,7 @@ docker logs soar_nginx -f
 
 ## A.7. Inventario Completo de Archivos Docker Compose
 
-El laboratorio SOAR usa **5 archivos Docker Compose** principales (más 1 de logging en subdirectorio)
+El laboratorio SOAR usa **6 archivos Docker Compose** principales
 que se combinan automáticamente con `make up`, totalizando 23 servicios.
 La sección A.1.1 muestra el archivo principal (`docker-compose.yml`); los restantes se documentan aquí
 como referencia. La versión canónica está en `infra/docker/compose/`.
@@ -1078,7 +1087,7 @@ sección A.1.1:
 
 | Métrica | Valor |
 |---------|-------|
-| Archivos compose | 5 (+1 logging en subdirectorio) |
+| Archivos compose | 6 |
 | Servicios totales | 23 |
 | Redes | 4 (soar_net, ti_net, logging_net + bridge) |
 | Volúmenes persistentes | 15 |
