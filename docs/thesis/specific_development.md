@@ -125,6 +125,9 @@ Para la infraestructura Docker se emplea una arquitectura en capas que mantiene 
 Flujo General del Sistema
 
 ```mermaid
+---
+title: Flujo General del Sistema
+---
 graph TD     A[Generación de Alertas] --> B[Recepción en Shuffle]
     B --> C[Validación y Clasificación]
     C --> D[Análisis de Indicadores]
@@ -143,6 +146,9 @@ graph TD     A[Generación de Alertas] --> B[Recepción en Shuffle]
 El código en `src/soar_lab/` se organiza según el patrón hexagonal: el dominio en el centro, aislado de infraestructura y frameworks. Los diagramas canónicos completos están en el **Anexo H** (secciones H.2, H.3 y H.4).
 
 ```mermaid
+---
+title: Arquitectura de Código Python (patrón hexagonal)
+---
 graph TD
     subgraph Dominio
         D1[domain/ - entidades, puertos, servicios de dominio]
@@ -206,6 +212,9 @@ Las capas son:
 La infraestructura se organiza en cuatro capas:
 
 ```mermaid
+---
+title: Arquitectura de Despliegue (cuatro capas)
+---
 graph TD     subgraph Capa de Datos         DB1[Elasticsearch]
         DB2[Redis]
     end
@@ -237,6 +246,9 @@ La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) y Redis (R
 #### Componentes Principales
 
 ```mermaid
+---
+title: Componentes Principales (TheHive, Cortex, Shuffle)
+---
 graph LR     subgraph TheHive         H1[Gestión de casos]
         H2[Plantillas ransomware]
         H3[Asignación de tareas]
@@ -265,6 +277,9 @@ graph LR     subgraph TheHive         H1[Gestión de casos]
 Flujo de Integración entre Componentes
 
 ```mermaid
+---
+title: Flujo de Integración entre Componentes
+---
 graph TD     A[Alerta Entrante] --> B[Shuffle - Orquestador]
     B --> C[TheHive - Gestión de Casos]
     B --> D[Cortex - Análisis de IoCs]
@@ -300,6 +315,9 @@ Shuffle (v2.2.1) orquesta los flujos mediante una interfaz visual de bloques (Sh
 #### Scripts de Automatización Desarrollados
 
 ```mermaid
+---
+title: Scripts de Automatización Desarrollados
+---
 graph TD     subgraph Generación de Alertas         G1[CLI de generación]
         G2[Generador de alertas]
         G3[Configuración tipo]
@@ -329,6 +347,9 @@ graph TD     subgraph Generación de Alertas         G1[CLI de generación]
 Flujo de Cálculo de KPIs
 
 ```mermaid
+---
+title: Flujo de Cálculo de KPIs
+---
 graph TD     A[Logs de Ejecución] --> B[Servicio de Análisis]
     B --> C[Extracción de Eventos]
     C --> D[Identificación de Alertas]
@@ -353,6 +374,9 @@ La contención simulada se implementa en el playbook de Shuffle: registra accion
 #### Playbooks de Respuesta a Ransomware
 
 ```mermaid
+---
+title: Playbook de Respuesta a Ransomware
+---
 graph TD     A[Recepción de alerta en Shuffle] --> B[Validación de formato]
     B --> C[Normalización y extracción de IoCs]
     C --> D[Creación de caso en TheHive]
@@ -383,6 +407,9 @@ El playbook se valida con pruebas E2E para escenarios maliciosos, benignos y cas
 #### Infraestructura Docker Compose
 
 ```mermaid
+---
+title: Infraestructura Docker Compose
+---
 graph TD     subgraph Redes Docker         R1[Red perimetral bridge]
         R2[Red interna SOAR soar_net]
         R3[Red de inteligencia ti_net]
@@ -448,6 +475,9 @@ Esta configuración permite el despliegue en sistemas con 16GB+ RAM, haciendo el
 #### Sistema de Monitoreo
 
 ```mermaid
+---
+title: Sistema de Monitoreo (stack y métricas)
+---
 graph TD     subgraph Stack de Monitoreo         L1[Agregación de logs]
         P1[Recopilación de logs]
         G1[Dashboards]
@@ -479,6 +509,9 @@ graph TD     subgraph Stack de Monitoreo         L1[Agregación de logs]
 Flujo de Datos de Monitoreo
 
 ```mermaid
+---
+title: Flujo de Datos de Monitoreo
+---
 graph TD     A[Contenedores de Aplicación] --> B[Generación de Logs]
     B --> C[Recopilador de Logs]
     C --> D[Agregador de Logs]
