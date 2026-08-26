@@ -24,8 +24,8 @@
 | Figura 4 | Diagrama de Despliegue Docker Compose            | Anexo H (H.3) |
 | Figura 5 | Estado de Jobs de Cortex                         | `figures/cortex_job_status.png` |
 | Figura 6 | Resultados de MTTR (manual vs automatizado)      | `figures/Fig5_1_mttr_results.png` |
-| Figura 7 | Tiempos por Componente del Workflow              | `figures/mttr_by_phase.png` |
-| Figura 8 | Análisis de Percentiles MTTR                     | `figures/GE2_percentiles.png` |
+| Figura 7 | Tasas de Éxito por Tipo de Alerta                | `figures/GE3_success_rates.png` |
+| Figura 8 | Cumplimiento de Umbrales                         | `figures/threshold_compliance.png` |
 | Figura 9 | Distribución de Decisiones del Playbook          | `figures/decision_distribution.png` |
 | Figura 10 | Distribución de Mejoras por Categoría           | `figures/Fig5_2_improvements_category.png` |
 
