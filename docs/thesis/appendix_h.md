@@ -343,7 +343,8 @@ gantt
  dateFormat YYYY-MM-DD
  section Fase 1: Investigación
  Objetivo 1: Laboratorio desplegado :active, obj1, 2026-04-27, 14d
- Objetivo 8: Automatización configurada :obj8, after obj1, 7d
+ Objetivo 7: Seguridad del Entorno :obj7, after obj1, 7d
+ Objetivo 8: Automatización configurada :obj8, after obj7, 7d
  Objetivo 17: API del Laboratorio :obj17, after obj8, 7d
  Objetivo 18: CLI del Laboratorio :obj18, after obj17, 5d
  section Fase 2: Diseño
@@ -390,7 +391,7 @@ Fase 4: Validación :crit, f4, after f3, 6w
 > la fase de diseño (integración de Cortex con analyzers externos y stack de
 > monitoreo no contemplados inicialmente). La ejecución real se extendió a
 > 18 semanas (27 abr - 31 ago 2026, 3+3+6+6) debido a la ampliación de la
-> suite de tests (2041 tests) y la ejecución del experimento (n=50).
+> suite de tests (2233 tests coleccionados, 1905 seleccionados) y la ejecución del experimento (n=50).
 > Ver `objectives_and_methodology.md` para el cronograma real.
 
 **Fuente**: `docs/06-project-management.md` línea 861
