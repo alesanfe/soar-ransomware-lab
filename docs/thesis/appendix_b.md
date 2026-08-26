@@ -19,7 +19,7 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 | **Nombre** | `SOAR-Ransomware-Response` |
 | **Trigger** | Webhook (Shuffle Triggers) |
 | **Acciones totales** | 45 nodos de acción + 1 trigger = 46 nodos definidos (49 ejecutados) |
-| **Ramas (edges)** | 60 |
+| **Ramas (edges)** | 61 (59 base + 2 dinámicas) |
 | **Apps usadas** | HTTP, Shuffle Tools (Python embebido) |
 | **Timeout por acción** | 30-180s según nodo |
 | **Concurrencia** | Análisis paralelo tras creación de caso |
@@ -364,7 +364,7 @@ Cada técnica de alto riesgo detectada suma **+10 puntos** al score.
 
 ## B.5. Ramas (Edges) del Workflow
 
-El workflow tiene **60 ramas** que conectan los nodos. Las principales son:
+El workflow tiene **61 ramas** (59 base + 2 dinámicas) que conectan los nodos. Las principales son:
 
 ### B.5.1. Flujo Principal
 
@@ -479,7 +479,7 @@ Datos medidos en ejecución experimental (n=50 alertas, 2026-08-24, fuente: `doc
 | Tasa de contención (score ≥ 80) | 92.0% (46/50) |
 | Tasa de observación (score < 80) | 8.0% (4/50) |
 | Nodos por ejecución | 49 (reportado por Shuffle; 46 definidos + 3 dinámicos) |
-| Ramas definidas | 60 |
+| Ramas definidas | 61 (59 base + 2 dinámicas) |
 | Jobs de Cortex | 257 (255 success, 2 failure) |
 | Casos TheHive | 50 (46 Open, 4 Resolved) |
 | Tasa de automatización | 100% (sin intervención humana) |
