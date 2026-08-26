@@ -627,17 +627,23 @@ El consumo medido con `docker stats` se mantuvo dentro de los límites configura
 
 El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en el **Anexo G** (sección G.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo E** (sección E.1).
 
-Comandos de prueba disponibles:
+Comandos de prueba y calidad disponibles:
 
-- `make test-all`: suite completa
+- `make test-all`: suite completa (unit + integration + e2e)
 - `make test-unit`: pruebas unitarias
 - `make test-integration`: pruebas de integración
-- `make test-e2e`: flujos E2E
+- `make test-e2e`: flujos E2E (49 TCs, 50 ejecuciones del playbook)
 - `make test-atomic`: tests de componentes aislados
 - `make test-security`: análisis de vulnerabilidades
 - `make test-performance`: latencia y throughput
 - `make test-smoke`: validación rápida post-despliegue
-- `make test-coverage`: informe de cobertura
+- `make test-coverage`: informe de cobertura (84.6 %, quality gates)
+- `make quality`: análisis estático (radon, bandit, vulture, quality score 92.2/100)
+- `make mutation`: mutation testing con mutmut (robustez de tests)
+- `make test-review`: revisión de tests en 7 dimensiones
+- `make holistic-review`: Holistic Project Radar (5 capas, 15 dims, HPR 96.0/100)
+- `make lint`: linting completo (ruff, black, isort, mypy, flake8, docs-lint)
+- `make health`: healthcheck de los 10 servicios críticos
 
 En usabilidad, el tiempo de aprendizaje es asumible con formación inicial mínima. La reducción de errores humanos es consistente con la literatura sobre automatización en SOC (Kinyua & Awuah, 2021; Mohammad & Lakshmisri, 2018).
 
