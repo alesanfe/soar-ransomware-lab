@@ -697,8 +697,8 @@ docker compose -f infra/docker/compose/docker-compose.yml logs -f
 
 # Test web interfaces (ajustar puertos según .env.full)
 curl -f http://localhost:8100/api/status  # TheHive
-curl -f http://localhost:8101/api/health  # Cortex
-curl -f http://localhost:5001/api/v1/health      # Shuffle
+curl -sk http://localhost:8101/           # Cortex (raíz, -k por TLS)
+curl -f http://localhost:5001/            # Shuffle (nc -z en healthcheck)
 curl -f http://localhost:8200/_cluster/health  # Elasticsearch
 ```
 
@@ -818,7 +818,7 @@ wsl -d docker-desktop sysctl -w vm.max_map_count=262144
 docker network ls
 
 # 2. Inspeccionar la red principal
-docker network inspect soar-lab_soar_net
+docker network inspect soar_net
 
 # 3. Probar resolución DNS entre contenedores
 docker exec soar_thehive nslookup elasticsearch
@@ -840,7 +840,7 @@ docker restart $WORKER_ID
 
 ---
 
-#### 4. Errores E2E en `soar_shuffle-backend`
+#### 4. Errores E2E en `soar_shuffle_backend`
 
 **Causas típicas.**
 
@@ -887,8 +887,8 @@ curl http://localhost:8200/users* -u elastic:$ELASTIC_PASSWORD
 docker exec soar_grafana grafana-cli plugins ls | grep elasticsearch
 
 # 2. Comprobar redes de Grafana
-docker network inspect soar-lab_logging_net
-docker network inspect soar-lab_soar_net
+docker network inspect logging_net
+docker network inspect soar_net
 
 # 3. Verificar mapping del índice
 curl http://localhost:8200/soar-metrics-v2/_mapping -u elastic:$ELASTIC_PASSWORD
