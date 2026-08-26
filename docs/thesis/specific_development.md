@@ -537,15 +537,20 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 |-------------------------|-------------------|--------------|-----------|
 | **MTTR Promedio**       | 3600s             | 277.15s      | 92.3%     |
 | **MTTR Mediana (P50)**  | 3600s             | 193.19s      | 94.6%     |
-| **Desviación Estándar** | N/A               | 187.61s      | N/A       |
-| **Coef. Variación**     | N/A               | 67.7%        | N/A       |
 | **P90**                 | 3600s             | 621.83s      | 82.7%     |
 | **P95**                 | 3600s             | 644.46s      | 82.1%     |
 | **Tasa Éxito**          | ~80% (est.)       | 100%         | +20pp     |
-| **Tasa Contención**     | N/A               | 92.0%        | N/A       |
-| **Score Promedio**      | N/A               | 96.2/100     | N/A       |
-| **Falsos Negativos**    | N/A               | 8.0%         | N/A       |
-| **Recursos (mem pico)** | N/A               | 2.58 GiB     | N/A       |
+
+Las métricas siguientes son específicas del sistema SOAR automatizado, sin equivalente en la respuesta manual:
+
+| Métrica                 | SOAR (n=50)  |
+|-------------------------|--------------|
+| **Desviación Estándar** | 187.61s      |
+| **Coef. Variación**     | 67.7%        |
+| **Tasa Contención**     | 92.0%        |
+| **Score Promedio**      | 96.2/100     |
+| **Falsos Negativos**    | 8.0%         |
+| **Recursos (mem pico)** | 2.58 GiB     |
 
 La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025). El tiempo mínimo fue 65.38 s.
 
@@ -557,13 +562,13 @@ La **Figura 7** desglosa los tiempos medios por componente del workflow. Se apre
 
 ## Tabla 9: Análisis por Componente de Tiempo
 
-| Componente             | Manual | SOAR    | Reducción Absoluta | Reducción Porcentual |
-|------------------------|--------|---------|--------------------|----------------------|
-| **Recepción y Triaje** | N/A    | 103.92s | N/A                | N/A                  |
-| **Análisis de IoCs**   | N/A    | 2393.46s| N/A                | N/A                  |
-| **Creación de Caso**   | N/A    | 2773.48s| N/A                | N/A                  |
-| **Contención**         | N/A    | 422.0s  | N/A                | N/A                  |
-| **MTTR medio**         | 3600s  | 277.15s | 3322.85s           | 92.3%                |
+| Componente             | SOAR (n=50) | % del total |
+|------------------------|-------------|-------------|
+| **Recepción y Triaje** | 103.92s     | 1.8%        |
+| **Análisis de IoCs**   | 2393.46s    | 42.0%       |
+| **Creación de Caso**   | 2773.48s    | 48.7%       |
+| **Contención**         | 422.0s      | 7.4%        |
+| **MTTR medio (wall-clock)** | 277.15s | —      |
 
 Los tiempos por fase son acumulativos con solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Esto identifica oportunidades de mejora en caché de resultados y ejecución concurrente de analyzers. La **Figura 8** muestra la distribución de percentiles MTTR capturada desde Grafana, donde se observa una cola larga: mientras el P50 se sitúa en 193.19 s, el P90 escala a 621.83 s y el P95 a 644.46 s, reflejando la variabilidad introducida por los analyzers de Cortex con tiempos de respuesta heterogéneos.
 
