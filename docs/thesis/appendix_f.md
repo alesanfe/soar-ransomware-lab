@@ -20,13 +20,11 @@ flowchart LR
   Cortex -- Analyzers --> TI[(Threat Intel)]
   Shuffle -- Contención Lab API --> API[Lab API /api/v1/contain]
   TheHive <--> Elasticsearch
-  Cortex <--> Redis
   Shuffle <--> OpenSearch[OpenSearch]
   Shuffle -- Metrics --> Elasticsearch
   Elasticsearch --> Grafana[Grafana]
   Promtail[Promtail] --> Loki[Loki]
   Loki --> Grafana
-  Promtail --> Elasticsearch
   Grafana --> Elasticsearch
 ```
 
@@ -181,7 +179,7 @@ C4Context
  Rel(soar, thehive, "Crea y actualiza casos", "HTTP/REST")
  Rel(soar, cortex, "Ejecuta analyzers", "HTTP/REST")
  Rel(soar, misp, "Enriquece IoCs", "HTTP/REST")
- Rel(soar, shuffle, "Dispara workflows y recibe métricas", "HTTP/REST + WebSocket")
+ Rel(soar, shuffle, "Dispara workflows y recibe métricas", "HTTP/REST")
  Rel(soar, es, "Lee / escribe eventos y KPIs", "HTTP/REST")
  Rel(operador, grafana, "Consulta dashboards", "HTTP")
 ```
@@ -212,7 +210,7 @@ sequenceDiagram
  TheHive-->>Backend: caseId
  Backend->>Cortex: POST /api/analyzer/run
  Cortex-->>Backend: resultados (score/veredicto)
- Backend->>MISP: POST /events/add (IoC)
+ Backend->>MISP: POST /events (IoC)
  MISP-->>Backend: eventId
  alt score >= 80 OR verdict == "malicious"
  Backend->>Backend: POST /api/v1/contain (contención Lab API)
@@ -242,7 +240,7 @@ flowchart TD
  B -->|schema inválido| ERR1([Abort + log error])
  B -->|OK| C[N2: Extraer IoCs]
  C --> D[N3: Crear caso TheHive]
- D -->|API error x3| ERR2([Abort + notificar crítico])
+ D -->|API error| ERR2([Abort + notificar crítico])
  D -->|OK case_id| E[N4: Adjuntar observables]
  E --> F[N5: Ejecutar analyzers Cortex]
  F --> G{N6: score ≥ 80\no verdict == malicious?}
@@ -428,7 +426,7 @@ graph LR
  B --> F[Elasticsearch: indexación]
  C --> G[Analyzers: Hashdd,<br/>DShield, Mnemonic pDNS,<br/>IP-API, GoogleDNS]
  D --> H[Correlación amenazas]
- E --> I[Tareas IR: contener, notificar, preservar]
+ E --> I[Tareas IR: aislar, investigar, preservar]
  style A fill:#2196F3
  style E fill:#4CAF50
  style I fill:#ff6b6b
