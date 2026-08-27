@@ -1,6 +1,6 @@
 # Anexo E: Estrategia de Testing y Quality Assurance
 
-Referencia TFM. complementa el Capítulo 5 (Desarrollo) y el Anexo D (Validación).
+Referencia TFM: complementa el Capítulo 4 (Desarrollo específico) y el Anexo D (Validación).
 Datos extraídos de `docs/05-testing.md`, `reports/test-review/`, `reports/quality/`,
 `reports/holistic/` y `tests/`.
 
