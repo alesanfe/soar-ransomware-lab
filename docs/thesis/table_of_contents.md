@@ -90,7 +90,7 @@
 
 8. **Referencias bibliográficas** — `bibliographic_references.md`
 9. **Declaración de originalidad** — `originality_declaration.md`
-10. **Tablas comparativas de plataformas SOAR** — `appendix_c.md`
+10. **Referencia a gráficos y diagramas reubicados** — `appendix_c.md`
 11. **Visualizaciones de datos y gráficos complementarios** — `appendix_d.md`
 12. **Glosario** — `abbreviations_list.md`
 
@@ -98,7 +98,7 @@
 
 - **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, troubleshooting
 - **Anexo B** — `appendix_b.md` — Workflow SOAR completo (46 nodos, 61 ramas, 25 scripts Python)
-- **Anexo C** — `appendix_c.md` — Gráficos y diagramas complementarios (las tablas se han reubicado en sus capítulos correspondientes)
+- **Anexo C** — `appendix_c.md` — Referencia a gráficos y diagramas reubicados (Anexo H, figuras PNG)
 - **Anexo D** — `appendix_d.md` — Métricas y visualizaciones complementarias
 - **Anexo E** — `appendix_e.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
 - **Anexo F** — `appendix_f.md` — Registro de cambios técnicos y editoriales
