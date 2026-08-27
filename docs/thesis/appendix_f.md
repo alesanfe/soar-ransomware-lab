@@ -1,20 +1,21 @@
 # Anexo F: Documentación de Mejoras Implementadas
 
 La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md). Este anexo registra
-únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental.
+únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental. Durante la
+remediación se depuraron las referencias placeholder inventadas (nombres académicos genéricos, conferencias sin autor,
+blogs sin URL específica, patentes con números irreales) y se reemplazaron por fuentes verificables con DOI o URL real.
 
 ## 2026-07-19 — Revisión de docs/thesis
 
-- **Tesis / Troubleshooting (A.6.1).**
+- **Tesis / Troubleshooting (A.5.1).**
   - Expandido `docs/thesis/appendix_a.md` con problemas frecuentes concretos: contenedores, Elasticsearch/OpenSearch, conectividad, E2E Shuffle, Grafana/métricas, MISP DB, autenticación JWT y certificados SSL.
-  - Añadidos pasos operativos, causas, criterios de verificación y criterios generales de aceptación.
-  - Renumerada sección de logs de depuración a `A.6.3`.
+  - Añadidos pasos operativos, causas y criterios de verificación.
 
 - **Tesis / Makefile y secretos.**
   - Referenciado `make generate-secrets` y `soar-lab generate-secrets` como mecanismos oficiales para generar `.env.full` sin secretos por defecto en el repositorio.
 
 - **Tesis / Tablas y secciones operativas.**
-  - `docs/thesis/figures_list.md`, `tables_list.md` y `table_of_contents.md` mantienen la estructura; las tablas operativas se actualizan en `appendix_c.md` y el resto del corpus de la tesis es una instantánea estática de la remediación.
+  - `docs/thesis/figures_list.md`, `tables_list.md` y `table_of_contents.md` mantienen la estructura; las tablas operativas se reubicaron en sus capítulos correspondientes y el resto del corpus de la tesis es una instantánea estática de la remediación.
 
 ## 2026-07-18 — Remediación documental masiva
 
@@ -40,11 +41,3 @@ La bibliografía canónica se mantiene en [`bibliographic_references.md`](biblio
 - Stack Loki-Promtail-Grafana operativo; Grafana puede consultar `soar-metrics`.
 - Corregido mapping de `soar-metrics` (`mttr_seconds` como `float`, `@timestamp` como `date`).
 - `grafana-datasources.yml` apunta a `esVersion: 8.0.0` e índice `soar-metrics`.
-
----
-
-La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md).
-Durante la remediación documental se depuraron las referencias placeholder inventadas
-(nombres académicos genéricos, conferencias sin autor, blogs sin URL específica, patentes
-con números irreales) y se reemplazaron por fuentes verificables con DOI o URL real.
-
