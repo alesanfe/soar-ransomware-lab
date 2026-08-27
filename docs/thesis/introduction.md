@@ -87,12 +87,9 @@ sugerencias para entornos que deseen aplicar capacidades SOAR similares.
 - Anexo A: documentación técnica requerida para reproducir el ensayo (configuración Docker, scripts, guías de
   instalación).
 - Anexo B: workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python).
-- Anexo C: gráficos y diagramas complementarios (las tablas comparativas se han reubicado en sus capítulos
-  correspondientes).
 - Anexo D: métricas y visualizaciones complementarias (26 figuras generadas desde resultados experimentales y
   dashboards de Grafana).
 - Anexo E: validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100).
-- Anexo F: registro de cambios técnicos y editoriales aplicados durante el desarrollo.
 - Anexo G: estrategia de testing (2041 tests, pirámide, quality gates).
 - Anexo H: diagramas canónicos de arquitectura y flujos (12 diagramas Mermaid).
 
