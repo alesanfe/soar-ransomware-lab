@@ -1,7 +1,7 @@
 # Anexo F: Documentación de Mejoras Implementadas
 
-> La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md). Este anexo registra
-> únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental.
+La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md). Este anexo registra
+únicamente los cambios técnicos y editoriales sustantivos aplicados durante la remediación documental.
 
 ## 2026-07-19 — Revisión de docs/thesis
 
@@ -43,8 +43,8 @@
 
 ---
 
-> La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md).
-> Durante la remediación documental se depuraron las referencias placeholder inventadas
-> (nombres académicos genéricos, conferencias sin autor, blogs sin URL específica, patentes
-> con números irreales) y se reemplazaron por fuentes verificables con DOI o URL real.
+La bibliografía canónica se mantiene en [`bibliographic_references.md`](bibliographic_references.md).
+Durante la remediación documental se depuraron las referencias placeholder inventadas
+(nombres académicos genéricos, conferencias sin autor, blogs sin URL específica, patentes
+con números irreales) y se reemplazaron por fuentes verificables con DOI o URL real.
 

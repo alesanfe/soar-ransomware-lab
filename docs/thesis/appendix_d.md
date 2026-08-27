@@ -9,8 +9,8 @@ los análisis cuantitativos desarrollados en los capítulos principales. Los val
 resultados experimentales obtenidos durante la validación del sistema; las mediciones manuales son estimaciones y deben
 sustituirse por los valores reales medidos durante la ejecución de los tests.
 
-> Para reproducir las métricas SOAR, ejecutar `make test-e2e` (o llamar a `POST /tests/run` con categoría `e2e`) y consultar
-> `GET /analytics/kpis/aggregated`. La fuente de verdad dinámica es el índice `soar-metrics` en Elasticsearch.
+Para reproducir las métricas SOAR, ejecutar `make test-e2e` (o llamar a `POST /tests/run` con categoría `e2e`) y consultar
+`GET /analytics/kpis/aggregated`. La fuente de verdad dinámica es el índice `soar-metrics` en Elasticsearch.
 
 ## Gráficos Estadísticos Detallados
 
@@ -221,7 +221,7 @@ Monitoreo (20 pts):
 
 ### Gráfico 5.5: Comparación de Costos y Beneficios
 
-> **Nota Importante.** La lógica de cálculo de KPIs existe en el código fuente en:
+**Nota Importante.** La lógica de cálculo de KPIs existe en el código fuente en:
 
 - `src/soar_lab/domain/services/kpi_analyzer.py` - KPIAnalyzer.calculate_mttr_metrics() para MTTR, calculate_performance_kpis()
   para rendimiento, calculate_health_score() para health score
@@ -508,8 +508,8 @@ la validación.
 |                   | Canales activos       | 1              | 1 (email)      | 0%       | canales      |
 |                   | Confirmación lectura  | N/A            | 100%           | N/A      | %            |
 
-> *\* Las fases de análisis y creación de caso se ejecutan en paralelo dentro del workflow.
-> El MTTR medio total (277.15s) es menor que la suma de fases porque estas se solapan.*
+*\* Las fases de análisis y creación de caso se ejecutan en paralelo dentro del workflow.
+El MTTR medio total (277.15s) es menor que la suma de fases porque estas se solapan.*
 
 Las métricas de rendimiento desglosadas por componente operativo, comparando los tiempos y tasas de
 éxito manuales baseline con los obtenidos mediante automatización SOAR. La descomposición por componente permite
@@ -532,10 +532,10 @@ completa del rendimiento del sistema.
 | **Response Time API** | ~150ms           | ~200ms          | ~400ms           | 500ms (SLA)    |
 | **Error Rate**        | 0%               | 0%              | 0.8%             | 5% (SLA)       |
 
-> **Nota:** Los valores de CPU/Memory/Queue Depth son estimaciones basadas en observación
-> durante la simulación de 50 alertas. Un test de carga formal con herramientas como Locust
-> o k6 proporcionaría mediciones precisas. El MTTR medido (P50=193s, P90=622s) no cumple
-> los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
+**Nota:** Los valores de CPU/Memory/Queue Depth son estimaciones basadas en observación
+durante la simulación de 50 alertas. Un test de carga formal con herramientas como Locust
+o k6 proporcionaría mediciones precisas. El MTTR medido (P50=193s, P90=622s) no cumple
+los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
 
 El análisis de carga del sistema bajo diferentes condiciones operativas (ligera, media, pesada) y
 los límites del sistema. Las métricas incluyen alertas/hora, uso de CPU, uso de memoria, MTTR, tasa de éxito,
@@ -558,8 +558,8 @@ base para alertas y escalado automático.
 | **Tests totales**           | —              | 2233 coleccionados (1905 seleccionados, 11 markers)| —        | pytest       |
 | **Quality Score**           | —              | 92.2/100        | —        | holistic     |
 
-> Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
-> Mutation testing (51.8%) por debajo del umbral ambicioso del 80% — ver §4.1.3.5.
+Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
+Mutation testing (51.8%) por debajo del umbral ambicioso del 80% — ver §4.1.3.5.
 
 Las métricas de calidad del software evalúan el código, su mantenibilidad y el cumplimiento de
 estándares. Las métricas incluyen cobertura de tests (84.6 % con pytest/coverage.py), complejidad ciclomática
@@ -581,8 +581,8 @@ desarrollo futuro.
 | **Compliance Score**      | >70%   | >80%    | >90%    | >95%       |
 | **Customer Satisfaction** | >85%   | >90%    | >92%    | >95%       |
 
-> **Nota:** Los valores de esta tabla son objetivos referenciales por tamaño de organización.
-> El laboratorio midió MTTR real de 277.15s (n=50), adecuado para PYME/Mediana según estos umbrales.
+**Nota:** Los valores de esta tabla son objetivos referenciales por tamaño de organización.
+El laboratorio midió MTTR real de 277.15s (n=50), adecuado para PYME/Mediana según estos umbrales.
 
 ## Visualizaciones Generadas
 

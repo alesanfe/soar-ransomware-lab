@@ -1,8 +1,8 @@
 # Anexo G: Estrategia de Testing y Quality Assurance
 
-> **Referencia TFM.** complementa el Capítulo 5 (Desarrollo) y el Anexo E (Validación).
-> Datos extraídos de `docs/05-testing.md`, `reports/test-review/`, `reports/quality/`,
-> `reports/holistic/` y `tests/`.
+**Referencia TFM.** complementa el Capítulo 5 (Desarrollo) y el Anexo E (Validación).
+Datos extraídos de `docs/05-testing.md`, `reports/test-review/`, `reports/quality/`,
+`reports/holistic/` y `tests/`.
 
 ---
 
@@ -47,10 +47,10 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | architecture | 1 | 1 | 0.05% |
 | **Total** | **170** | **2041** | 100% |
 
-> **Nota.** El desglose por categoría (2041 tests) corresponde a la instantánea del
-> `holistic_review` en el momento de generación del reporte. El total actual es
-> **2233 tests coleccionados (1905 seleccionados, 328 deseleccionados)** — ver I.2.1.
-> La diferencia (192 tests) corresponde a tests añadidos tras la generación del reporte.
+**Nota.** El desglose por categoría (2041 tests) corresponde a la instantánea del
+`holistic_review` en el momento de generación del reporte. El total actual es
+**2233 tests coleccionados (1905 seleccionados, 328 deseleccionados)** — ver I.2.1.
+La diferencia (192 tests) corresponde a tests añadidos tras la generación del reporte.
 
 ### I.2.3. Distribución por Capa (Pirámide)
 
@@ -131,10 +131,10 @@ El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests
 | `@pytest.mark.requires_external` | Requiere servicios externos | E2E (extra) |
 | `@pytest.mark.slow` | Tests lentos | E2E, performance (extra) |
 
-> Los marcadores se aplican automáticamente según el directorio del test
-> (`pytest_collection_modifyitems` en `conftest.py`), sin necesidad de
-> anotar cada archivo. Adicionalmente, `test_smoke.py` usa sub-marcadores
-> `smoke_critical`, `smoke_high`, `smoke_medium`.
+Los marcadores se aplican automáticamente según el directorio del test
+(`pytest_collection_modifyitems` en `conftest.py`), sin necesidad de
+anotar cada archivo. Adicionalmente, `test_smoke.py` usa sub-marcadores
+`smoke_critical`, `smoke_high`, `smoke_medium`.
 
 ---
 
@@ -202,8 +202,8 @@ Total de tests largos: **169** (8.3% del total)
 | Tenzir REST API not available (404 on /api/v0/status) | 1 |
 | docker compose not available inside container | 1 |
 
-> Ambos skips son esperados: Tenzir está en modo dev y docker compose no está
-> disponible dentro de contenedores (requiere ejecución en host).
+Ambos skips son esperados: Tenzir está en modo dev y docker compose no está
+disponible dentro de contenedores (requiere ejecución en host).
 
 ---
 
@@ -264,8 +264,8 @@ Total de tests largos: **169** (8.3% del total)
 | Nombres duplicados | 88 (4.3%) |
 | **Duplication score** | **86.4/100** |
 
-> Los nombres duplicados son principalmente tests que verifican la misma funcionalidad
-> desde diferentes niveles (unit + integration), lo cual es esperado en una pirámide de tests.
+Los nombres duplicados son principalmente tests que verifican la misma funcionalidad
+desde diferentes niveles (unit + integration), lo cual es esperado en una pirámide de tests.
 
 ---
 
@@ -279,12 +279,12 @@ Total de tests largos: **169** (8.3% del total)
 | Mutation testing (general) | 70% | 51.8% Parcial |
 | Mutation testing (críticas) | 80% | Pendiente |
 
-> Mutation testing con mutmut (mutmut, 2024) ejecutado en Docker (`make mutation`).
-> Resultados: 13 969 mutantes generados, 5603 killed (40.1%), 5322 survived (38.1%),
-> 125 timeout (0.9%), 2919 sin cobertura (20.9%). Mutation Score sobre mutantes con
-> cobertura: **51.8%** (5603 + 125 killed/timeout sobre 11 050 mutantes probados).
-> El score es inferior al umbral del 70%, lo que indica que existe margen de mejora
-> en la calidad de los tests para detectar mutaciones de código.
+Mutation testing con mutmut (mutmut, 2024) ejecutado en Docker (`make mutation`).
+Resultados: 13 969 mutantes generados, 5603 killed (40.1%), 5322 survived (38.1%),
+125 timeout (0.9%), 2919 sin cobertura (20.9%). Mutation Score sobre mutantes con
+cobertura: **51.8%** (5603 + 125 killed/timeout sobre 11 050 mutantes probados).
+El score es inferior al umbral del 70%, lo que indica que existe margen de mejora
+en la calidad de los tests para detectar mutaciones de código.
 
 ### I.9.1. Resultados Detallados de Mutation Testing
 

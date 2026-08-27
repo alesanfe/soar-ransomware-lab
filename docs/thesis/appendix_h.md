@@ -1,10 +1,10 @@
 # Anexo H: Diagramas de Arquitectura y Flujos (Mermaid)
 
-> **Referencia TFM**: complementa el Capítulo 3 (Arquitectura), Capítulo 4 (Desarrollo)
-> y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
-> `docs/02-architecture.md`, `docs/04-operations.md`, `docs/06-project-management.md`
-> y `README.md`. Los diagramas de `specific_development.md` son versiones simplificadas;
-> los de este anexo son los completos.
+**Referencia TFM**: complementa el Capítulo 3 (Arquitectura), Capítulo 4 (Desarrollo)
+y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
+`docs/02-architecture.md`, `docs/04-operations.md`, `docs/06-project-management.md`
+y `README.md`. Los diagramas de `specific_development.md` son versiones simplificadas;
+los de este anexo son los completos.
 
 ---
 
@@ -387,12 +387,12 @@ Fase 3: Desarrollo :crit, f3, after f2, 6w
 Fase 4: Validación :crit, f4, after f3, 6w
 ```
 
-> **Nota:** La planificación inicial era de 12 semanas, aumentada a 15 tras
-> la fase de diseño (integración de Cortex con analyzers externos y stack de
-> monitoreo no contemplados inicialmente). La ejecución real se extendió a
-> 18 semanas (27 abr - 31 ago 2026, 3+3+6+6) debido a la ampliación de la
-> suite de tests (2233 tests coleccionados, 1905 seleccionados) y la ejecución del experimento (n=50).
-> Ver `objectives_and_methodology.md` para el cronograma real.
+**Nota:** La planificación inicial era de 12 semanas, aumentada a 15 tras
+la fase de diseño (integración de Cortex con analyzers externos y stack de
+monitoreo no contemplados inicialmente). La ejecución real se extendió a
+18 semanas (27 abr - 31 ago 2026, 3+3+6+6) debido a la ampliación de la
+suite de tests (2233 tests coleccionados, 1905 seleccionados) y la ejecución del experimento (n=50).
+Ver `objectives_and_methodology.md` para el cronograma real.
 
 **Fuente**: `docs/06-project-management.md` línea 861
 

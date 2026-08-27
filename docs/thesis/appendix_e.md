@@ -1,8 +1,8 @@
 # Anexo E: Validación Experimental y Métricas de Calidad
 
-> **Referencia TFM:** complementa el Capítulo 4 (Desarrollo Específico) y el Anexo D (Métricas y Visualizaciones).
-> Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
-> `reports/holistic/` y `docs/01-getting-started.md`–`docs/06-project-management.md`.
+**Referencia TFM:** complementa el Capítulo 4 (Desarrollo Específico) y el Anexo D (Métricas y Visualizaciones).
+Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
+`reports/holistic/` y `docs/01-getting-started.md`–`docs/06-project-management.md`.
 
 ---
 
@@ -313,11 +313,11 @@
 | 3. Desarrollo | 6 semanas | jun-jul 2026 | 3, 9-14 |
 | 4. Validación | 6 semanas | jul-ago 2026 | 4, 15, 16 |
 
-> La estimación inicial fue de 12 semanas, aumentada a 15 tras la fase
-> de diseño (integración de Cortex con analyzers externos y stack de
-> monitoreo no contemplados inicialmente), y finalmente a 18 por la
-> ampliación de la suite de tests a 2233 tests coleccionados (1905 seleccionados) y la ejecución del experimento
-> (n=50).
+La estimación inicial fue de 12 semanas, aumentada a 15 tras la fase
+de diseño (integración de Cortex con analyzers externos y stack de
+monitoreo no contemplados inicialmente), y finalmente a 18 por la
+ampliación de la suite de tests a 2233 tests coleccionados (1905 seleccionados) y la ejecución del experimento
+(n=50).
 
 ### 7.3. Consideraciones Éticas
 
