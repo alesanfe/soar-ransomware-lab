@@ -1,6 +1,6 @@
 # Anexo B: Playbook de Automatización SOAR en Shuffle
 
-Aviso de sincronización: este anexo es una instantánea estática del workflow de Shuffle.
+Aviso de sincronización: este Anexo es una instantánea estática del workflow de Shuffle.
 La versión canónica y actualizada se encuentra en `scripts/setup/shuffle_workflow/`
 (`workflow_definition.py`, `workflow_actions.py`, y 25 scripts embebidos en `scripts/`).
 En caso de discrepancia, prevalece el código del repositorio.
@@ -30,7 +30,7 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 
 El workflow sigue un patrón fan-out/fan-in: tras la creación del caso en TheHive, 10 ramas paralelas ejecutan enriquecimiento (Cortex, MISP, Tenzir, Network Watcher, Redis, Loki, ES index) y registro de observables (hash, IP, tarea). Todas las señales convergen en `act_calc_decision`, que calcula el score y dispatcha a contención (score ≥ 80 OR verdict=malicious) o falso positivo (score < 80). El flujo cierra con cálculo de MTTR, enriquecimiento del caso y indexación de métricas en `soar-metrics`.
 
-El diagrama canónico del flujo end-to-end está en el Anexo H, sección H.5 (Flujo End-to-End de Alertas) y H.7 (Respuesta Automatizada).
+El diagrama canónico del flujo end-to-end está en el Anexo F, sección F.5 (Flujo End-to-End de Alertas) y F.7 (Respuesta Automatizada).
 
 ---
 

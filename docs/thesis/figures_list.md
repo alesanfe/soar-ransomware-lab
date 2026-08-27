@@ -2,7 +2,7 @@
 
 > Las páginas indicadas son orientativas y se confirmarán en el PDF final.
 > Las figuras siguen enumeración propia y secuencial (Figura 1, 2, 3...) conforme aparecen en el documento,
-> independientemente del capítulo o anexo donde se encuentren (formato APA 7ª edición).
+> independientemente del capítulo o Anexo donde se encuentren (formato APA 7ª edición).
 
 ## Figuras del Capítulo 1: Introducción
 
@@ -20,8 +20,8 @@
 
 | Figura  | Título                                            | Archivo |
 |---------|---------------------------------------------------|---------|
-| Figura 3 | Arquitectura General del Laboratorio SOAR        | Anexo H (H.2) |
-| Figura 4 | Diagrama de Despliegue Docker Compose            | Anexo H (H.3) |
+| Figura 3 | Arquitectura General del Laboratorio SOAR        | Anexo F (F.2) |
+| Figura 4 | Diagrama de Despliegue Docker Compose            | Anexo F (F.3) |
 | Figura 5 | Estado de Jobs de Cortex                         | `figures/cortex_job_status.png` |
 | Figura 6 | Resultados de MTTR (manual vs automatizado)      | `figures/Fig5_1_mttr_results.png` |
 | Figura 7a | Tiempos por Componente del Workflow              | `figures/mttr_by_phase.png` |
@@ -37,7 +37,7 @@
 |---------|---------------------------------------------------|---------|
 | Figura 11 | Análisis Coste-Beneficio SOAR Open Source vs Comercial | `figures/Fig5_5_cost_benefit.png` |
 
-## Figuras del Anexo D: Métricas y Visualizaciones Complementarias
+## Figuras del Anexo C: Métricas y Visualizaciones Complementarias
 
 | Figura  | Título                                            | Archivo |
 |---------|---------------------------------------------------|---------|
@@ -62,7 +62,7 @@
 | Figura 30 | Análisis Coste-Beneficio (versión extendida)     | `figures/GE6_cost_benefit.png` |
 | Figura 31 | Mejoras por Categoría (versión extendida)        | `figures/GE5_improvements.png` |
 
-## Figuras del Anexo H (Diagramas Mermaid)
+## Figuras del Anexo F (Diagramas Mermaid)
 
 | Figura  | Título                                            |
 |---------|---------------------------------------------------|
@@ -98,4 +98,4 @@
 4. **Actualización**: Las figuras han sido actualizadas con los datos experimentales obtenidos durante la validación
    del sistema en agosto de 2026.
 
-5. **Total**: 49 figuras (11 en capítulos + 26 en Anexo D + 12 en Anexo H).
+5. **Total**: 49 figuras (11 en capítulos + 26 en Anexo C + 12 en Anexo F).

@@ -1,168 +1,273 @@
-# Anexo E: Validación Experimental y Métricas de Calidad
+# Anexo E: Estrategia de Testing y Quality Assurance
 
-Referencia TFM: complementa el Capítulo 4 (Desarrollo Específico) y el Anexo D (Métricas y Visualizaciones).
-Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
-`reports/holistic/` y `docs/01-getting-started.md`–`docs/06-project-management.md`.
-
----
-
-## E.1. Resultados Experimentales E2E (n=50)
-
-### Cumplimiento de Objetivos TFM
-
-| Objetivo | Umbral | Valor Medido | Cumple |
-|----------|--------|--------------|--------|
-| MTTR P50 (mediana) | ≤ 120s | 193.19s | No |
-| MTTR P90 | ≤ 180s | 621.83s | No |
-| Tasa de Éxito | ≥ 95% | 100% | Sí |
-| Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
-| Reducción MTTR vs Manual | ≥ 50% | 92.3% | Sí |
-
-Cumplimiento: 3/5 objetivos.
-
-### MTTR Detallado
-
-| Métrica | Valor |
-|---------|-------|
-| MTTR Medio | 277.15s |
-| MTTR Mediana (P50) | 193.19s |
-| MTTR P90 | 621.83s |
-| MTTR P95 | 644.46s |
-| MTTR Mínimo | 65.38s |
-| Desviación Estándar | 187.61s |
-| Reducción vs Manual (3600s) | 92.3% |
-
-### Decisiones Automatizadas
-
-| Métrica | Valor |
-|---------|-------|
-| Tasa de contención (score ≥ 80) | 92.0% (46/50) |
-| Tasa de observación (score < 80) | 8.0% (4/50) |
-| Score promedio | 96.2/100 (min=55, max=100) |
-| Verdict malicious | 13 (score medio 97.3) |
-| Verdict suspicious | 37 (score medio 95.8) |
-
-### Servicios e Integraciones
-
-| Métrica | Valor |
-|---------|-------|
-| Servicios healthy | 10/10 (100%) |
-| Workflows completados | 50/50 (100%) |
-| Casos TheHive creados | 50/50 (100%) |
-| Jobs Cortex | 255/257 (99.2%) |
-| Analyzers Cortex disponibles | 34 |
-| Técnicas MITRE detectadas | 32 (MITRE, 2025) |
-| Nodos en workflow | 46 definidos (49 ejecutados) |
-| Tasa de automatización | 100% |
+Referencia TFM. complementa el Capítulo 5 (Desarrollo) y el Anexo D (Validación).
+Datos extraídos de `docs/05-testing.md`, `reports/test-review/`, `reports/quality/`,
+`reports/holistic/` y `tests/`.
 
 ---
 
-## E.2. Métricas de Calidad Consolidadas
+## E.1. Visión General
 
-| Radar | Score Global | Estado | Fuente |
-|-------|-------------|--------|--------|
-| Quality Score | 92.2/100 | Excellent | `reports/quality/` |
-| Holistic Project Radar (HPR) | 96.0/100 | Excellent | `reports/holistic/` |
-| Test Review (7 dims) | 92.2/100 | Excellent | `reports/test-review/` |
+El laboratorio SOAR implementa una estrategia de testing exhaustiva basada en la pirámide
+de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistemas independientes:
 
-### Quality Score por Categoría
-
-| Categoría | Score | Peso | Estado |
-|-----------|-------|------|--------|
-| Maintainability | 77.6 | 20% | Acceptable |
-| Coverage | 84.6 | 20% | Good |
-| Complexity | 100 | 15% | Excellent |
-| Linting (ruff) | 100 | 15% | Excellent (Astral, 2024) |
-| Typing (mypy) | 100 | 10% | Excellent (Python Software Foundation, 2024) |
-| Security (bandit) | 100 | 10% | Excellent (PyCQA, 2024b) |
-| Documentation | 94.6 | 5% | Excellent |
-| Architecture | 100 | 5% | Excellent |
-
-### HPR por Capa
-
-| Capa | Dimensiones | Score Medio | Estado |
-|------|-------------|-------------|--------|
-| L1 — Core (código producción) | 4 | 94.4 | Excellent |
-| L2 — Tests | 3 | 97.2 | Excellent |
-| L3 — Quality Gates | 3 | 98.2 | Excellent |
-| L4 — Infraestructura | 3 | 100.0 | Excellent |
-| L5 — Documentación | 3 | 90.8 | Excellent |
-
-### Métricas Clave de Código
-
-| Métrica | Valor | Herramienta |
+| Sistema | Score | Dimensiones |
 |---------|-------|-------------|
-| Coverage de líneas | 84.6% (4730/5592) | pytest/cov |
-| Complejidad media | 2.61 (max 15, 0 bloques alto riesgo) | radon |
-| Maintainability Index | 77.57 (min 50.02, max 100) | radon |
-| Issues bandit | 0 (HIGH=0, MEDIUM=0, LOW=0) | bandit |
-| Vulnerabilidades | 0 | pip-audit |
-| Pylint | 9.1/10, 0 errores | pylint |
-| Docstrings | 94.6% (964/1019 funciones) | — |
-| Dead code | 18 items (todos en tests) | vulture |
+| Quality Score | 92.2/100 | 8 categorías (coverage, complexity, security, linting, typing, docs, architecture, maintainability) |
+| Holistic Project Radar | 96.0/100 | 15 dimensiones en 5 capas (core, tests, quality, infra, docs) |
+| Test Review | 92.2/100 | 7 dimensiones (pirámide, salud, aislamiento, complejidad, duplicación) |
 
-### Métricas Clave de Tests
+---
+
+## E.2. Inventario de Tests
+
+### Estadísticas Generales
 
 | Métrica | Valor |
 |---------|-------|
-| Tests coleccionados | 2233 (1905 seleccionados) |
-| Distribución | 65.9% unit, 16.5% integration, 13.8% e2e, 3.8% other |
-| Tests saltados | 2 (esperados: Tenzir 404, docker compose en contenedor) |
-| Requieren Docker | 35 tests (1.7%) |
-| Requieren servicios externos | 83 tests (4.0%) |
-| Tests largos (>50 líneas) | 169 |
-| Nombres duplicados | 88 (4.3%) |
-| Mutation testing | 51.8% (13969 mutantes, 5603 killed, 5322 survived) |
+| Tests coleccionados | 2233 |
+| Tests seleccionados | 1905 |
+| Tests deseleccionados | 328 |
+| Tests ejecutados (última run) | 1905 (2 skipped esperados) |
+| Archivos de test | 170 |
+| Tiempo de ejecución | ~200s (3m 20s) |
+| Warnings | 4 |
+
+### Distribución por Categoría
+
+| Categoría | Archivos | Tests | % del Total |
+|-----------|----------|-------|-------------|
+| unit | 79 | 1245 | 61.0% |
+| integration | 30 | 336 | 16.5% |
+| e2e | 49 | 281 | 13.8% |
+| atomic | 4 | 101 | 5.0% |
+| security | 1 | 27 | 1.3% |
+| performance | 4 | 30 | 1.5% |
+| general | 2 | 20 | 1.0% |
+| architecture | 1 | 1 | 0.05% |
+| **Total** | **170** | **2041** | 100% |
+
+Nota. El desglose por categoría (2041 tests) corresponde a la instantánea del
+`holistic_review` en el momento de generación del reporte. El total actual es
+2233 tests coleccionados (1905 seleccionados, 328 deseleccionados) — ver estadísticas generales.
+La diferencia (192 tests) corresponde a tests añadidos tras la generación del reporte.
+
+### Distribución por Capa (Pirámide)
+
+| Capa | Tests | % Actual | % Ideal | Desviación |
+|------|-------|----------|---------|------------|
+| Unit + Atomic | 1346 | 65.9% | 70% | -4.1% |
+| Integration | 336 | 16.5% | 20% | -3.5% |
+| E2E | 281 | 13.8% | 10% | +3.8% |
+| Other | 78 | 3.8% | — | — |
+| **Pirámide score** | | | | **94.3/100** |
 
 ---
 
-## E.3. Infraestructura y API
+## E.3. Cobertura de Código
 
-| Aspecto | Valor |
+| Métrica | Valor |
 |---------|-------|
-| Servicios totales | 23 (6 compose files, todos válidos) |
-| Endpoints API | 38 (OpenAPI 3.1.0 válido) |
-| WebSocket | `/api/ws/logs` (streaming tiempo real) |
-| APIs reales | 7 (TheHive, Cortex, Shuffle, Lab API, MISP, ES, OpenSearch) |
-| APIs simuladas | 1 (SIEM simulado) |
-| Variables de entorno | 131 (100% documentadas en `.env.example`) |
-| TLS | Nginx self-signed |
-| Redes Docker | 3 aisladas (soar_net, ti_net, logging_net) |
-| Rate limiting webhook | 60 req/min |
-| Backup | `make backup` / `make restore` (tar.gz en `runtime/backups/`) |
+| Cobertura de líneas | 84.6% (4730/5592) |
+| Cobertura de ramas | 73.2% |
+| Archivos analizados | 98 |
+| Archivos < 75% threshold | 17 |
+| Umbral mínimo (pyproject.toml) | 80% |
 
-Integraciones clave: TheHive API (timeout 120s, 3 retries backoff 0.5), Cortex API (timeout 120s, 3 retries, 7 analyzers en paralelo), Shuffle webhook (60 req/min).
+Archivos con menor cobertura: `application/ports/output/__init__.py` (0%), `interfaces/api/__init__.py` (12.5%), `infrastructure/subprocess_runner.py` (30.6%), `interfaces/api/route_helpers.py` (40%), `infrastructure/integrations/shuffle/shuffle_helpers.py` (44.3%).
 
-Stack de servicios: Shuffle 2.2.1, TheHive 3.5.2-1, Cortex 3.2.0-1, MISP 2.5.44, Elasticsearch 7.10.2, OpenSearch 2.10.0, Redis 7, PostgreSQL 14, MariaDB 10.11, Nginx 1.25, Loki 2.9.10, Promtail 2.9.9, Grafana 10.3.4, Tenzir v6.8.1.
-
-Requisitos hardware: 8 GB RAM (16 GB+ recomendado), 2 cores (4+), 50 GB SSD, Docker 20.10+, Python 3.11+.
+Archivos con 100% cobertura: `sqlite_alert_repository.py` (143 líneas), `routes_soar.py` (190), `models.py` (104), `validation.py` (52), `auth.py` (22).
 
 ---
 
-## E.4. Gestión del Proyecto
+## E.4. Marcadores de pytest
 
-- **20 objetivos SMART** en 4 fases (18 semanas, 27 abr - 31 ago 2026)
-- Fase 1 Investigación (3 sem), Fase 2 Diseño (3 sem), Fase 3 Desarrollo (6 sem), Fase 4 Validación (6 sem)
-- Estimación inicial 12 sem → 15 sem → 18 sem real (ampliación tests + experimento n=50)
-- Consideraciones éticas: muestras inertes, no exposición de datos reales, entorno aislado
+El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests/conftest.py`):
 
-Detalle del cronograma y objetivos en `objectives_and_methodology.md` y Anexo H (H.8, H.9).
+| Marcador | Auto-aplicado a |
+|----------|-----------------|
+| `unit` | `tests/unit/` |
+| `integration` | `tests/integration/` |
+| `e2e` | `tests/e2e/` |
+| `performance` | `tests/performance/` |
+| `security` | `tests/security/` |
+| `atomic` | `tests/atomic/` |
+| `quality` | `tests/general/`, `tests/quality/` |
+| `architecture` | `tests/architecture/` |
+| `requires_docker` | E2E (extra) |
+| `requires_external` | E2E (extra) |
+| `slow` | E2E, performance (extra) |
+
+Los marcadores se aplican automáticamente según el directorio del test
+(`pytest_collection_modifyitems` en `conftest.py`), sin necesidad de
+anotar cada archivo. Adicionalmente, `test_smoke.py` usa sub-marcadores
+`smoke_critical`, `smoke_high`, `smoke_medium`.
 
 ---
 
-## E.5. Resumen Ejecutivo de Validación
+## E.5. Tests E2E (49 archivos, 281 tests)
 
-| Aspecto | Resultado | Evidencia |
-|---------|-----------|-----------|
-| Workflow E2E | Sí Funcional | 50/50 workflows completados |
-| MTTR | Sí Mejora 92.3% | 3600s -> 277.15s |
-| Contención | Sí 92% | 46/50 alertas con score ≥ 80 |
-| Automatización | Sí 100% | Sin intervención humana |
-| Calidad código | Sí 92.2/100 | Quality score Excellent |
-| HPR | Sí 96.0/100 | Holistic radar Excellent |
-| Tests | Sí 2233 tests (1905 seleccionados) | 2 skipped (esperados), coverage 84.6% |
-| Seguridad | Sí 0 issues | Bandit + pip-audit limpios |
-| Infraestructura | Sí 23 servicios | 6 compose files válidos |
-| API | Sí 38 endpoints | OpenAPI 3.1.0 válido |
-| Mutation testing | Parcial 51.8% | 13969 mutantes, 5603 killed, 5322 survived |
-| Objetivos TFM | Parcial 3/5 | MTTR P50 y P90 no cumplidos |
+Catálogo de Test Cases E2E principales:
+
+| TC | Nombre | Descripción |
+|----|--------|-------------|
+| TC-00 | Both Workflows | Validación ambos escenarios |
+| TC-01 | Malicious | Alerta maliciosa básica |
+| TC-02 | Benign | Alerta benigna (falso positivo) |
+| TC-04 | Performance | Rendimiento del workflow |
+| TC-05 | Concurrent | Alertas concurrentes (172 líneas) |
+| TC-06 | Critical | Severidad crítica (138 líneas) |
+| TC-09 | Realistic | Escenario ransomware realista (224 líneas, el más largo) |
+| TC-10 | Tenzir | Integración Tenzir |
+| TC-16 | Error Handling | Manejo de errores |
+| TC-20 | Zero Trust | Zero trust / least privilege (123 líneas) |
+| TC-21 | Forensic | Análisis forense |
+| TC-25 | Behavioral | Detección comportamental (131 líneas) |
+| TC-26 | Extreme Load | Carga extrema (126 líneas) |
+| TC-28 | UI E2E | UI end-to-end |
+| TC-30 | Offline | Modo offline |
+| TC-31 | Compliance | Cumplimiento |
+| TC-32 | Golden Thread | Integridad hilo dorado (152 líneas) |
+| TC-33 | Real IoCs | IoCs reales (gminst4ll) |
+| TC-KPI-01..06 | KPIs | Métricas KPI MTTR, node timings, coherencia |
+
+Total de tests largos (>50 líneas): **169** (8.3% del total).
+
+---
+
+## E.6. Salud y Aislamiento
+
+| Métrica | Valor |
+|---------|-------|
+| Tests saltados | 2 (esperados: Tenzir 404, docker compose en contenedor) |
+| XFail | 0 |
+| Health score | 99.5/100 |
+| Tests que requieren Docker | 35 (1.7%) en 3 archivos |
+| Tests que requieren servicios externos | 83 (4.0%) en 9 archivos |
+| Tests offline | ~1923 (94.3%) |
+| Isolation score | 97.5/100 |
+
+---
+
+## E.7. Complejidad y Duplicación
+
+| Métrica | Valor | Score |
+|---------|-------|-------|
+| Tests largos (>50 líneas) | 169 | — |
+| Tests débiles (<1.5 assertions) | 60 | — |
+| Complexity score | — | 83.4/100 |
+| Nombres únicos | 1947 | — |
+| Nombres duplicados | 88 (4.3%) | — |
+| Duplication score | — | 86.4/100 |
+
+Los nombres duplicados son principalmente tests que verifican la misma funcionalidad
+desde diferentes niveles (unit + integration), lo cual es esperado en una pirámide de tests.
+
+---
+
+## E.8. Mutation Testing
+
+| Métrica | Valor |
+|---------|-------|
+| Mutation Score | 51.8% (Parcial High risk) |
+| Total mutantes generados | 13 969 |
+| Mutantes con cobertura (probados) | 11 050 |
+| Killed | 5603 (50.7% de probados) |
+| Survived | 5322 (48.2% de probados) |
+| Timeout | 125 (1.1% de probados) |
+| Sin cobertura | 2919 (20.9% del total) |
+| Throughput | 2.43 mutations/second |
+| Duración | ~96 min |
+
+Mutation testing con mutmut (mutmut, 2024) ejecutado en Docker (`make mutation`). El score del 51.8% es inferior al umbral del 70%, indicando margen de mejora en la calidad de los tests. Los módulos con mayor concentración de mutantes sobrevivientes son `infrastructure.integrations` (1132) e `interfaces.api` (614). El módulo `simulator.simulate_alerts` aporta 1321 mutantes sin cobertura (se prueba indirectamente vía E2E).
+
+Configuración en `pyproject.toml`:
+```toml
+[tool.mutmut]
+source_paths = ["src/soar_lab/"]
+pytest_add_cli_args = ["-q", "--tb=no", "--timeout=30", "--no-cov", ...]
+pytest_add_cli_args_test_selection = ["tests/unit/"]
+do_not_mutate = ["src/soar_lab/__init__.py", "*/scripts/*", "*/tests/*"]
+```
+
+Reproducción: `make mutation` (60-180 min, reporte en `reports/mutmut/mutation_report.md`).
+
+---
+
+## E.9. Requisitos de Cobertura
+
+| Tipo | Umbral | Actual |
+|------|--------|--------|
+| Coverage general | 80% | 84.6% Sí |
+| Funciones críticas | 80% | Sí |
+| Funciones de seguridad | 90% | Sí |
+| Mutation testing (general) | 70% | 51.8% Parcial |
+| Mutation testing (críticas) | 80% | Pendiente |
+
+---
+
+## E.10. Flujo de Ejecución Canónico
+
+```bash
+# 1. Generar secretos y configuración
+make generate-secrets && make generate-iocs
+
+# 2. Levantar stack
+make reset && make health
+
+# 3. Tests sin Docker (rápidos): make test-unit, make test-atomic
+# 4. Tests con stack (lentos): make test-integration, make test-smoke, make test-e2e
+# 5. Tests especializados: make test-performance, make test-security
+# 6. Todo en uno: make test-all (2233 coleccionados, 1905 seleccionados)
+# 7. Coverage: make test-coverage (HTML + XML + JSON)
+# 8. Quality: make quality, make test-review, make holistic-review
+```
+
+---
+
+## E.11. Prerrequisitos por Categoría
+
+| Categoría | Python | Docker | .env.full | Stack Up | Shuffle Init |
+|-----------|--------|--------|-----------|----------|--------------|
+| Unit/Atomic | 3.11+ | No | placeholders | No | No |
+| Integration | 3.11+ | Sí | real creds | Sí | Sí |
+| E2E | 3.11+ | Sí | real creds | Sí | Sí |
+| Performance | 3.11+ | Sí | real creds | Sí | Sí |
+| Security | 3.11+ | No | placeholders | No | No |
+| Smoke | 3.11+ | Sí | real creds | Sí | Sí |
+
+---
+
+## E.12. Quality Gates
+
+| Tool | Issues | Score |
+|------|--------|-------|
+| ruff | 0 | 100/100 |
+| mypy | 0 errors | 100/100 |
+| pylint | 528 issues (0 errors) | 9.1/10 |
+| bandit | 0 (HIGH=0, MED=0, LOW=0) | 100/100 |
+| pip-audit | 0 vulnerabilities | 100/100 |
+
+Complejidad ciclomática: 814 bloques, media 2.61, max 15 (grado C), 0 bloques alto riesgo. Complexity score: 98.6/100.
+
+Documentación: docstrings 94.6% (964/1019 funciones), dead code 18 items (todos en tests). Documentation score: 94.6/100.
+
+---
+
+## E.13. Resumen de Validación
+
+| Aspecto | Score | Estado |
+|---------|-------|--------|
+| Quality Score global | 92.2/100 | Excellent |
+| Holistic Project Radar | 96.0/100 | Excellent |
+| Test Review | 92.2/100 | Excellent |
+| Coverage de líneas | 84.6% | Sí (>80%) |
+| Pirámide de tests | 94.3/100 | Excellent |
+| Salud de tests | 99.5/100 | Excellent |
+| Aislamiento | 97.5/100 | Excellent |
+| Seguridad (bandit) | 0 issues | Sí Clean |
+| Linting (ruff) | 0 issues | Sí Clean |
+| Tipado (mypy) | 0 errors | Sí Clean |
+| Complejidad | 98.6/100 | Excellent |
+| Docstrings | 94.6% | Excellent |
+| Mutation testing | 51.8% | Parcial High risk |

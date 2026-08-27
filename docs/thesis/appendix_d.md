@@ -1,228 +1,168 @@
-# Anexo D: Métricas y Visualizaciones Complementarias
-
-Este anexo presenta visualizaciones de datos y gráficos complementarios que ilustran los resultados experimentales y el
-análisis de rendimiento del laboratorio SOAR. Los valores mostrados corresponden a los
-resultados experimentales obtenidos durante la validación del sistema (n=50, 2026-08-24).
-
-Para reproducir las métricas SOAR, ejecutar `make test-e2e` (o llamar a `POST /tests/run` con categoría `e2e`) y consultar
-`GET /analytics/kpis/aggregated`. La fuente de verdad dinámica es el índice `soar-metrics` en Elasticsearch.
-
-Nota Importante. La lógica de cálculo de KPIs existe en el código fuente en:
-
-- `src/soar_lab/domain/services/kpi_analyzer.py` - KPIAnalyzer.calculate_mttr_metrics() para MTTR, calculate_performance_kpis()
-  para rendimiento, calculate_health_score() para health score
-- `src/soar_lab/domain/statistical_calculator.py` - StatisticalCalculator.calculate_statistical_metrics() para
-  percentiles (p50, p90, etc.) y métricas estadísticas
-
-Los valores mostrados en los gráficos se han calculado usando estos métodos programáticamente.
-
-## Valores Reales Calculados (n=50 ejecuciones)
-
-- Total alerts: 50
-- MTTR mean: 277.15 seconds (4.62 minutes)
-- MTTR median (p50): 193.19 seconds
-- MTTR p90: 621.83 seconds
-- MTTR p95: 644.46 seconds
-- MTTR min: 65.38 seconds
-- MTTR max: 652.92 seconds
-- Std Dev: 187.61 seconds (CV = 67.7%)
-- Tasa de contención: 92.0% (46/50 alertas con score >= 80)
-- Tasa de observación: 8.0% (4/50 alertas con score < 80)
-- Service success rates: 100% workflow completion (50/50), 99.2% Cortex jobs (255/257)
-- Casos TheHive: 50 (46 Open, 4 Resolved)
-- Reduccion MTTR vs baseline manual (3600s): 92.3% (277.15s vs 3600s)
-
-## Tablas de Métricas Avanzadas
-
-### Tabla 14: Métricas de Rendimiento por Componente
-
-| Componente        | Métrica               | Manual         | SOAR           | Mejora   | Unidad       |
-|-------------------|-----------------------|----------------|----------------|----------|--------------|
-| **Recepción**     | Tiempo procesamiento  | 300s           | 103.92s        | 65.4%    | segundos     |
-|                   | Throughput            | ~10            | 125            | +1150%   | alertas/hora |
-|                   | Latencia API          | N/A            | ~200           | N/A      | ms           |
-| **Análisis**      | Tiempo por IoC        | 1800s          | 2393.46s*      | N/A      | segundos     |
-|                   | Nº IoCs simultáneos   | 1              | 6              | +500%    | IoCs         |
-|                   | Jobs Cortex           | N/A            | 257 (255 ok)   | 99.2%    | jobs         |
-| **Creación Caso** | Tiempo creación       | 600s           | 2773.48s*      | N/A      | segundos     |
-|                   | Campos completados    | ~70%           | 100%           | +30pp    | %            |
-|                   | Validación datos      | ~80%           | 100%           | +20pp    | %            |
-| **Contención**    | Tiempo aislamiento    | 900s           | 422.00s        | 53.1%    | segundos     |
-|                   | Tasa éxito            | ~80%           | 92.0%          | +12pp    | %            |
-|                   | Reintentos requeridos | 2-3            | 0              | -100%    | intentos     |
-| **Notificación**  | Tiempo notificación   | 120s           | <1s            | >99%     | segundos     |
-|                   | Canales activos       | 1              | 1 (email)      | 0%       | canales      |
-|                   | Confirmación lectura  | N/A            | 100%           | N/A      | %            |
-
-*\* Las fases de análisis y creación de caso se ejecutan en paralelo dentro del workflow.
-El MTTR medio total (277.15s) es menor que la suma de fases porque estas se solapan.*
-
-### Tabla 15: Análisis de Carga del Sistema
-
-| Métrica               | Condición Ligera | Condición Media | Condición Pesada | Límite Sistema |
-|-----------------------|------------------|-----------------|------------------|----------------|
-| **Alertas/hora**      | 10               | 50              | 125              | 100 (SLA)      |
-| **CPU Usage**         | ~15%             | ~35%            | ~60%             | 80%            |
-| **Memory Usage**      | ~30%             | ~50%            | ~70%             | 90%            |
-| **MTTR**              | 193.19s (P50)    | 277.15s (mean)  | 621.83s (P90)    | 120s (SLA)     |
-| **Success Rate**      | 100%             | 100%            | 100%             | 95% (SLA)      |
-| **Queue Depth**       | 0                | 2               | 6                | 10 (Shuffle)   |
-| **Response Time API** | ~150ms           | ~200ms          | ~400ms           | 500ms (SLA)    |
-| **Error Rate**        | 0%               | 0%              | 0.8%             | 5% (SLA)       |
-
-Nota: Los valores de CPU/Memory/Queue Depth son estimaciones basadas en observación
-durante la simulación de 50 alertas. Un test de carga formal con herramientas como Locust
-o k6 proporcionaría mediciones precisas. El MTTR medido (P50=193s, P90=622s) no cumple
-los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
-
-### Tabla 16: Métricas de Calidad del Software
-
-| Métrica                     | Valor Objetivo | Valor Logrado   | Estado   | Herramienta  |
-|-----------------------------|----------------|-----------------|----------|--------------|
-| **Coverage de Tests**       | ≥80%           | 84.6%           | Cumplido | pytest/cov   |
-| **Complejidad Ciclomática** | <15            | 2.61 avg, 15 max| Cumplido | radon        |
-| **Issues de Seguridad**     | 0 HIGH         | 0 HIGH          | Cumplido | bandit       |
-| **Vulnerabilidades**        | 0              | 0               | Cumplido | pip-audit    |
-| **Type checking**           | 0 errors       | 0 errors        | Cumplido | mypy         |
-| **Mutation Testing**        | ≥80%           | 51.8%           | Parcial  | mutmut       |
-| **Tests totales**           | —              | 2233 coleccionados (1905 seleccionados, 11 markers)| —        | pytest       |
-| **Quality Score**           | —              | 92.2/100        | —        | holistic     |
-
-Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
-Mutation testing (51.8%) por debajo del umbral ambicioso del 80% — ver §4.1.3.5.
-
-### Tabla 17: KPIs de Negocio por Organización
-
-| KPI                       | PYME   | Mediana | Grande  | Enterprise |
-|---------------------------|--------|---------|---------|------------|
-| **MTTR Objetivo**         | <180s  | <120s   | <90s    | <60s       |
-| **Costo Incidente**       | <$50K  | <$200K  | <$1M    | <$5M       |
-| **ROI SOAR**              | >150%  | >200%   | >250%   | >300%      |
-| **Time to Value**         | 4 sem  | 6 sem   | 8 sem   | 12 sem     |
-| **Team Productivity**     | +30%   | +40%    | +50%    | +60%       |
-| **Compliance Score**      | >70%   | >80%    | >90%    | >95%       |
-| **Customer Satisfaction** | >85%   | >90%    | >92%    | >95%       |
-
-Nota: Los valores de esta tabla son objetivos referenciales por tamaño de organización.
-El laboratorio midió MTTR real de 277.15s (n=50), adecuado para PYME/Mediana según estos umbrales.
-
-## Visualizaciones Generadas
-
-Las siguientes figuras se generan automáticamente desde los resultados experimentales y los dashboards de Grafana.
-
-### Figuras de Resultados E2E
-
-![Distribución de alertas por severidad](figures/severity_distribution.png)
-
-Figura 12: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
-
-![Distribución de alertas por tipo](figures/alert_distribution.png)
-
-Figura 13: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
-
-![MTTR por fase del workflow](figures/mttr_by_phase.png)
-
-Figura 14: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
-
-![MTTR por severidad (boxplot)](figures/mttr_severity_boxplot.png)
-
-Figura 15: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
-
-![Percentiles MTTR](figures/GE2_percentiles.png)
-
-Figura 16: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
-
-![Tasas de éxito](figures/GE3_success_rates.png)
-
-Figura 17: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
-
-### Dashboards de Grafana
-
-![Mejoras por categoría](figures/GE5_improvements.png)
-
-Figura 18: Análisis de mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
-
-![Alertas procesadas por hora (throughput)](figures/workflow_durations.png)
-
-Figura 19: Distribución de duraciones de los 50 workflows ejecutados, mostrando el throughput del sistema.
-
-![MTTR por tipo de alerta](figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
-
-Figura 20: MTTR por tipo de alerta desde el dashboard de Grafana.
-
-![Tasa de éxito por severidad](figures/severity_distribution.png)
-
-Figura 21: Distribución de alertas por severidad durante las ejecuciones E2E, mostrando la proporción de alertas críticas (severity=3) frente a las de menor severidad.
-
-### Estado de Servicios
-
-![Resultados de MTTR](figures/Fig5_1_mttr_results.png)
-
-Figura 22: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
-
-![Estado de casos en TheHive](figures/thehive_case_status.png)
-
-Figura 23: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
-
-### Monitoreo de Logs
-
-![Volumen de logs en Loki](figures/loki_log_volume.png)
-
-Figura 24: Volumen de logs agregados en Loki durante las ejecuciones E2E.
-
-### Cumplimiento de Umbrales y Notificaciones
-
-![Cumplimiento de umbrales](figures/threshold_compliance.png)
-
-Figura 25: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
-valores medidos. Se aprecia que el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles
-P50 y P90 no los alcanzan en el conjunto completo.
-
-![Análisis coste-beneficio](figures/Fig5_5_cost_benefit.png)
-
-Figura 26: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
-
-### Dashboards Complementarios de Grafana
-
-![Distribución de decisiones del workflow](figures/decision_distribution.png)
-
-Figura 27: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
-
-### Análisis Estadístico Adicional
-
-![Correlación entre métricas](figures/correlation_heatmap.png)
-
-Figura 28: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
-Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del playbook y el tiempo de respuesta.
-
-![Evolución de métricas durante el proyecto](figures/GE4_metrics_evolution.png)
-
-Figura 29: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
-cuatro fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
-
-![Análisis coste-beneficio (versión extendida)](figures/GE6_cost_benefit.png)
-
-Figura 30: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
-extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
-
-### Estadísticas Operativas
-
-![Estadísticas diarias organizativas](figures/GE5_improvements.png)
-
-Figura 31: Mejoras implementadas por categoría durante el proyecto, mostrando el impacto acumulado en MTTR, precisión y automatización.
-
-## Visualizaciones de Logs
-
-El stack de observabilidad (Loki, Grafana Labs, 2024b; Promtail, Grafana Labs, 2024c; Grafana, Grafana Labs, 2024) permite visualizar logs de todos los contenedores desde Grafana (`http://localhost:8084`). Promtail etiqueta los logs por contenedor (`container`, `service`, `compose_service`) y envía cada línea a Loki, donde se consultan con LogQL. La configuración de Promtail se encuentra en `infra/docker/config/templates/promtail-config.yml.template` y la de logging de Python en `infra/docker/compose/logging/logging.yaml`. El stack de logging se define en `infra/docker/compose/logging/docker-compose.logging.yml`.
-
-### Ejemplo de consulta LogQL
-
-```logql
-{container="soar_api"} |= "error"
-```
-
-### Dashboards recomendados
-
-- **Logs por servicio**: filtrar por `container` y `compose_service`.
-- **Errores E2E**: `{container="soar_shuffle_backend"} |= "error"`.
-- **Métricas de KPI**: datasource Elasticsearch con índice `soar-metrics` (`mttr_seconds`, `@timestamp`).
+# Anexo D: Validación Experimental y Métricas de Calidad
+
+Referencia TFM: complementa el Capítulo 4 (Desarrollo Específico) y el Anexo C (Métricas y Visualizaciones).
+Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
+`reports/holistic/` y `docs/01-getting-started.md`–`docs/06-project-management.md`.
+
+---
+
+## D.1. Resultados Experimentales E2E (n=50)
+
+### Cumplimiento de Objetivos TFM
+
+| Objetivo | Umbral | Valor Medido | Cumple |
+|----------|--------|--------------|--------|
+| MTTR P50 (mediana) | ≤ 120s | 193.19s | No |
+| MTTR P90 | ≤ 180s | 621.83s | No |
+| Tasa de Éxito | ≥ 95% | 100% | Sí |
+| Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
+| Reducción MTTR vs Manual | ≥ 50% | 92.3% | Sí |
+
+Cumplimiento: 3/5 objetivos.
+
+### MTTR Detallado
+
+| Métrica | Valor |
+|---------|-------|
+| MTTR Medio | 277.15s |
+| MTTR Mediana (P50) | 193.19s |
+| MTTR P90 | 621.83s |
+| MTTR P95 | 644.46s |
+| MTTR Mínimo | 65.38s |
+| Desviación Estándar | 187.61s |
+| Reducción vs Manual (3600s) | 92.3% |
+
+### Decisiones Automatizadas
+
+| Métrica | Valor |
+|---------|-------|
+| Tasa de contención (score ≥ 80) | 92.0% (46/50) |
+| Tasa de observación (score < 80) | 8.0% (4/50) |
+| Score promedio | 96.2/100 (min=55, max=100) |
+| Verdict malicious | 13 (score medio 97.3) |
+| Verdict suspicious | 37 (score medio 95.8) |
+
+### Servicios e Integraciones
+
+| Métrica | Valor |
+|---------|-------|
+| Servicios healthy | 10/10 (100%) |
+| Workflows completados | 50/50 (100%) |
+| Casos TheHive creados | 50/50 (100%) |
+| Jobs Cortex | 255/257 (99.2%) |
+| Analyzers Cortex disponibles | 34 |
+| Técnicas MITRE detectadas | 32 (MITRE, 2025) |
+| Nodos en workflow | 46 definidos (49 ejecutados) |
+| Tasa de automatización | 100% |
+
+---
+
+## D.2. Métricas de Calidad Consolidadas
+
+| Radar | Score Global | Estado | Fuente |
+|-------|-------------|--------|--------|
+| Quality Score | 92.2/100 | Excellent | `reports/quality/` |
+| Holistic Project Radar (HPR) | 96.0/100 | Excellent | `reports/holistic/` |
+| Test Review (7 dims) | 92.2/100 | Excellent | `reports/test-review/` |
+
+### Quality Score por Categoría
+
+| Categoría | Score | Peso | Estado |
+|-----------|-------|------|--------|
+| Maintainability | 77.6 | 20% | Acceptable |
+| Coverage | 84.6 | 20% | Good |
+| Complexity | 100 | 15% | Excellent |
+| Linting (ruff) | 100 | 15% | Excellent (Astral, 2024) |
+| Typing (mypy) | 100 | 10% | Excellent (Python Software Foundation, 2024) |
+| Security (bandit) | 100 | 10% | Excellent (PyCQA, 2024b) |
+| Documentation | 94.6 | 5% | Excellent |
+| Architecture | 100 | 5% | Excellent |
+
+### HPR por Capa
+
+| Capa | Dimensiones | Score Medio | Estado |
+|------|-------------|-------------|--------|
+| L1 — Core (código producción) | 4 | 94.4 | Excellent |
+| L2 — Tests | 3 | 97.2 | Excellent |
+| L3 — Quality Gates | 3 | 98.2 | Excellent |
+| L4 — Infraestructura | 3 | 100.0 | Excellent |
+| L5 — Documentación | 3 | 90.8 | Excellent |
+
+### Métricas Clave de Código
+
+| Métrica | Valor | Herramienta |
+|---------|-------|-------------|
+| Coverage de líneas | 84.6% (4730/5592) | pytest/cov |
+| Complejidad media | 2.61 (max 15, 0 bloques alto riesgo) | radon |
+| Maintainability Index | 77.57 (min 50.02, max 100) | radon |
+| Issues bandit | 0 (HIGH=0, MEDIUM=0, LOW=0) | bandit |
+| Vulnerabilidades | 0 | pip-audit |
+| Pylint | 9.1/10, 0 errores | pylint |
+| Docstrings | 94.6% (964/1019 funciones) | — |
+| Dead code | 18 items (todos en tests) | vulture |
+
+### Métricas Clave de Tests
+
+| Métrica | Valor |
+|---------|-------|
+| Tests coleccionados | 2233 (1905 seleccionados) |
+| Distribución | 65.9% unit, 16.5% integration, 13.8% e2e, 3.8% other |
+| Tests saltados | 2 (esperados: Tenzir 404, docker compose en contenedor) |
+| Requieren Docker | 35 tests (1.7%) |
+| Requieren servicios externos | 83 tests (4.0%) |
+| Tests largos (>50 líneas) | 169 |
+| Nombres duplicados | 88 (4.3%) |
+| Mutation testing | 51.8% (13969 mutantes, 5603 killed, 5322 survived) |
+
+---
+
+## D.3. Infraestructura y API
+
+| Aspecto | Valor |
+|---------|-------|
+| Servicios totales | 23 (6 compose files, todos válidos) |
+| Endpoints API | 38 (OpenAPI 3.1.0 válido) |
+| WebSocket | `/api/ws/logs` (streaming tiempo real) |
+| APIs reales | 7 (TheHive, Cortex, Shuffle, Lab API, MISP, ES, OpenSearch) |
+| APIs simuladas | 1 (SIEM simulado) |
+| Variables de entorno | 131 (100% documentadas en `.env.example`) |
+| TLS | Nginx self-signed |
+| Redes Docker | 3 aisladas (soar_net, ti_net, logging_net) |
+| Rate limiting webhook | 60 req/min |
+| Backup | `make backup` / `make restore` (tar.gz en `runtime/backups/`) |
+
+Integraciones clave: TheHive API (timeout 120s, 3 retries backoff 0.5), Cortex API (timeout 120s, 3 retries, 7 analyzers en paralelo), Shuffle webhook (60 req/min).
+
+Stack de servicios: Shuffle 2.2.1, TheHive 3.5.2-1, Cortex 3.2.0-1, MISP 2.5.44, Elasticsearch 7.10.2, OpenSearch 2.10.0, Redis 7, PostgreSQL 14, MariaDB 10.11, Nginx 1.25, Loki 2.9.10, Promtail 2.9.9, Grafana 10.3.4, Tenzir v6.8.1.
+
+Requisitos hardware: 8 GB RAM (16 GB+ recomendado), 2 cores (4+), 50 GB SSD, Docker 20.10+, Python 3.11+.
+
+---
+
+## D.4. Gestión del Proyecto
+
+- **20 objetivos SMART** en 4 fases (18 semanas, 27 abr - 31 ago 2026)
+- Fase 1 Investigación (3 sem), Fase 2 Diseño (3 sem), Fase 3 Desarrollo (6 sem), Fase 4 Validación (6 sem)
+- Estimación inicial 12 sem → 15 sem → 18 sem real (ampliación tests + experimento n=50)
+- Consideraciones éticas: muestras inertes, no exposición de datos reales, entorno aislado
+
+Detalle del cronograma y objetivos en `objectives_and_methodology.md` y Anexo F (F.8, F.9).
+
+---
+
+## D.5. Resumen Ejecutivo de Validación
+
+| Aspecto | Resultado | Evidencia |
+|---------|-----------|-----------|
+| Workflow E2E | Sí Funcional | 50/50 workflows completados |
+| MTTR | Sí Mejora 92.3% | 3600s -> 277.15s |
+| Contención | Sí 92% | 46/50 alertas con score ≥ 80 |
+| Automatización | Sí 100% | Sin intervención humana |
+| Calidad código | Sí 92.2/100 | Quality score Excellent |
+| HPR | Sí 96.0/100 | Holistic radar Excellent |
+| Tests | Sí 2233 tests (1905 seleccionados) | 2 skipped (esperados), coverage 84.6% |
+| Seguridad | Sí 0 issues | Bandit + pip-audit limpios |
+| Infraestructura | Sí 23 servicios | 6 compose files válidos |
+| API | Sí 38 endpoints | OpenAPI 3.1.0 válido |
+| Mutation testing | Parcial 51.8% | 13969 mutantes, 5603 killed, 5322 survived |
+| Objetivos TFM | Parcial 3/5 | MTTR P50 y P90 no cumplidos |
