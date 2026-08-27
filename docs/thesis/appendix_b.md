@@ -1,6 +1,6 @@
 # Anexo B: Playbook de Automatización SOAR en Shuffle
 
-Aviso de sincronización: este Anexo es una instantánea estática del workflow de Shuffle.
+Aviso de sincronización: este anexo es una instantánea estática del workflow de Shuffle.
 La versión canónica y actualizada se encuentra en `scripts/setup/shuffle_workflow/`
 (`workflow_definition.py`, `workflow_actions.py`, y 25 scripts embebidos en `scripts/`).
 En caso de discrepancia, prevalece el código del repositorio.
@@ -164,7 +164,7 @@ El workflow tiene **61 ramas** (59 base + 2 dinámicas) que conectan los nodos e
 | Flujo | Descripción |
 |-------|-------------|
 | Principal | webhook → normalize → build_case → thehive_create_case → fan-out a 10 ramas paralelas (Cortex hash/IP, MISP, Tenzir, Network Watcher, Redis, Loki, ES index, obs hash/IP, task) |
-| Decisión | Todas las verificaciones convergen en `act_calc_decision` → dispatch a `act_containment` (score ≥ 80) o `act_mark_false_positive` (score < 80) |
+| Decisión | Todas las verificaciones convergen en `act_calc_decision` → dispatch a `act_containment` (score ≥ 80 OR verdict=malicious) o `act_mark_false_positive` (score < 80 AND verdict≠malicious) |
 | Cierre | notify → calc_mttr → build_hive_summary → enrich_case → build_metrics_json → index_metrics |
 
 Nota técnica: Shuffle 2.2.1 no evalúa condiciones en las ramas nativamente.
