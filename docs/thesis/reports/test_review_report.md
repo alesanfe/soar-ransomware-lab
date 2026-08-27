@@ -55,7 +55,7 @@ Methodology: 7-dimension structured test review
 |----------|-------|-------|
 | architecture | 1 | 1 |
 | atomic | 4 | 101 |
-| e2e | 49 | 281 |
+| e2e | 48 | 281 |
 | general | 2 | 20 |
 | integration | 30 | 336 |
 | performance | 4 | 30 |

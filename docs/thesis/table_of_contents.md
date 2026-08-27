@@ -273,7 +273,7 @@
 - 2041 tests en 184 archivos (unit, integration, e2e, atomic, security, performance)
 - Pirámide: 65.9 % unit, 16.5 % integration, 13.8 % e2e (score 94.3/100)
 - Coverage: 84.6 % líneas, 73.2 % ramas
-- 49 test cases E2E (TC-00 a TC-33, TC-KPI-01 a 06)
+- 39 test cases E2E (TC-00 a TC-33, TC-KPI-01 a 06)
 - 9 marcadores pytest
 - Quality gates: ruff 0 issues, mypy 0 errors, bandit 0 issues, pip-audit 0 vulns
 - Mutation testing: 51.8 % (13969 mutantes, 5603 killed)

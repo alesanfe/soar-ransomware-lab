@@ -625,7 +625,7 @@ El consumo medido con `docker stats` se mantuvo dentro de los límites configura
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
-El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
+El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 39 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
 
 Comandos de prueba y calidad disponibles:
 

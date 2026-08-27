@@ -1,6 +1,6 @@
 # 3. Objetivos concretos y metodología de trabajo
 
-Este capítulo define qué se quiere demostrar y cómo se organiza el desarrollo. El resultado esperado es un laboratorio SOAR mínimo viable que ejecute un playbook E2E en escenarios malicioso y benigno y produzca métricas para la evaluación. La presentación de resultados (§4.1.3.3) se centra en el escenario malicioso (n=50), pero el repositorio incluye el escenario benigno y 49 test cases E2E adicionales listos para ejecutar con `make test-e2e`.
+Este capítulo define qué se quiere demostrar y cómo se organiza el desarrollo. El resultado esperado es un laboratorio SOAR mínimo viable que ejecute un playbook E2E en escenarios malicioso y benigno y produzca métricas para la evaluación. La presentación de resultados (§4.1.3.3) se centra en el escenario malicioso (n=50), pero el repositorio incluye el escenario benigno y 39 test cases E2E adicionales listos para ejecutar con `make test-e2e`.
 
 ## 3.1. Objetivo general
 
@@ -129,7 +129,7 @@ Desarrollo del simulador SIEM y de la lógica de contención simulada. Implement
 
 **Fase 4 — Validación (julio-agosto 2026, 6 semanas).** Ejecución de la suite de pruebas
 completa (2233 tests coleccionados, 1905 seleccionados). Pruebas E2E, experimentos con n=50 ejecuciones del escenario malicioso,
-análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut. El escenario benigno y 49 test cases E2E adicionales están implementados en el repositorio para ejecución con `make test-e2e`.
+análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut. El escenario benigno y 39 test cases E2E adicionales están implementados en el repositorio para ejecución con `make test-e2e`.
 
 El stack tecnológico combina herramientas open source para orquestación (TheHive, Cortex y Shuffle), almacenamiento (Elasticsearch, Redis, MariaDB) y monitoreo (Loki, Promtail, Grafana), todo desplegado sobre Docker Compose (Docker Inc., 2024) con Python como lenguaje de implementación. MISP se incluye como componente opcional para el intercambio de indicadores de amenazas. El desarrollo se apoya en Git, Make y pytest (pytest, 2024) para control de versiones, automatización y pruebas.
 

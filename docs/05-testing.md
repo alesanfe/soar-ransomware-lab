@@ -385,7 +385,7 @@ tests/
 ├── unit/          # 79 archivos de pruebas unitarias (test_*.py)
 ├── atomic/        # 4 archivos de pruebas atómicas
 ├── integration/   # 30 archivos de pruebas de integración
-├── e2e/           # 49 archivos de pruebas E2E (TC-00..TC-33, TC-99, TC-KPI-01..06)
+├── e2e/           # 48 archivos de pruebas E2E (TC-00..TC-33, TC-KPI-01..06)
 ├── architecture/  # 1 archivo de tests de arquitectura
 ├── performance/   # 4 archivos de pruebas de rendimiento
 ├── security/      # 1 archivo de pruebas de seguridad
@@ -402,7 +402,7 @@ tests/
 
 **Conteo total de archivos `test_*.py`:** 184 archivos.
 
-> **Nota:** `tests/e2e/` SÍ existe como directorio con 49 archivos organizados por test case (TC-00..TC-33, TC-99, TC-KPI-01..06). Los tests marcados `smoke` se encuentran además en `tests/integration/test_smoke.py` y mediante el marcador `smoke` de pytest.
+> **Nota:** `tests/e2e/` SÍ existe como directorio con 48 archivos organizados por test case (TC-00..TC-33, TC-KPI-01..06). Los tests marcados `smoke` se encuentran además en `tests/integration/test_smoke.py` y mediante el marcador `smoke` de pytest.
 
 **Nota:** Los tests unitarios cubren `src/soar_lab/` de forma aislada; los E2E validan workflows completos del playbook
 Shuffle, TheHive, Cortex, MISP y ; las pruebas de integración verifican adaptadores y servicios del dominio.
@@ -2170,7 +2170,7 @@ La suite de pruebas valida los siguientes servicios:
 # Conteo de archivos test_*.py por categoría
 - unit: 79 archivos
 - integration: 30 archivos
-- e2e: 49 archivos (TC-00..TC-33, TC-99, TC-KPI-01..06)
+- e2e: 48 archivos (TC-00..TC-33, TC-KPI-01..06)
 - atomic: 4 archivos
 - architecture: 1 archivo
 - performance: 4 archivos
