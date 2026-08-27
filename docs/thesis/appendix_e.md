@@ -1,6 +1,6 @@
 # Anexo E: Validación Experimental y Métricas de Calidad
 
-**Referencia TFM:** complementa el Capítulo 4 (Desarrollo Específico) y el Anexo D (Métricas y Visualizaciones).
+Referencia TFM: complementa el Capítulo 4 (Desarrollo Específico) y el Anexo D (Métricas y Visualizaciones).
 Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
 `reports/holistic/` y `docs/01-getting-started.md`–`docs/06-project-management.md`.
 
@@ -18,7 +18,7 @@ Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
 | Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
 | Reducción MTTR vs Manual | ≥ 50% | 92.3% | Sí |
 
-**Cumplimiento: 3/5 objetivos.**
+Cumplimiento: 3/5 objetivos.
 
 ### 1.2. MTTR Detallado
 
@@ -61,7 +61,7 @@ Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
 
 ### 2.1. Quality Score Global
 
-**Score: 92.2/100 — Excellent**
+Score: 92.2/100 — Excellent
 
 | Categoría | Score | Peso | Estado |
 |-----------|-------|------|--------|
@@ -118,7 +118,7 @@ Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
 
 ## 3. Holistic Project Radar (HPR)
 
-**Score Global: 96.0/100 — Excellent**
+Score Global: 96.0/100 — Excellent
 
 | Capa | Dimensiones | Score Medio | Estado |
 |------|-------------|-------------|--------|
@@ -153,7 +153,7 @@ Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
 
 ## 4. Revisión de Tests (7 Dimensiones)
 
-**Score Global: 92.2/100 — Excellent**
+Score Global: 92.2/100 — Excellent
 
 | Dim | Score | Estado |
 |-----|-------|--------|

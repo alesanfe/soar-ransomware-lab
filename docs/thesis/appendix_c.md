@@ -1,6 +1,6 @@
 # Anexo C: Gráficos y Diagramas Complementarios
 
-**Nota.** Las tablas comparativas que originalmente se incluían en este anexo (plataformas SOAR, generaciones de
+Nota. Las tablas comparativas que originalmente se incluían en este anexo (plataformas SOAR, generaciones de
 ransomware, objetivos del proyecto, configuración Docker, analyzers Cortex, métricas de monitoreo, resultados
 experimentales, análisis costo-beneficio, KPIs, variables de entorno y comandos Make) se han reubicado en sus
 capítulos correspondientes y renumerado conforme al formato APA secuencial (Tablas 1-14) por orden de aparición.

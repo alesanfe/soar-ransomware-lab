@@ -1,6 +1,6 @@
 # Anexo G: Estrategia de Testing y Quality Assurance
 
-**Referencia TFM.** complementa el Capítulo 5 (Desarrollo) y el Anexo E (Validación).
+Referencia TFM. complementa el Capítulo 5 (Desarrollo) y el Anexo E (Validación).
 Datos extraídos de `docs/05-testing.md`, `reports/test-review/`, `reports/quality/`,
 `reports/holistic/` y `tests/`.
 
@@ -47,9 +47,9 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | architecture | 1 | 1 | 0.05% |
 | **Total** | **170** | **2041** | 100% |
 
-**Nota.** El desglose por categoría (2041 tests) corresponde a la instantánea del
+Nota. El desglose por categoría (2041 tests) corresponde a la instantánea del
 `holistic_review` en el momento de generación del reporte. El total actual es
-**2233 tests coleccionados (1905 seleccionados, 328 deseleccionados)** — ver I.2.1.
+2233 tests coleccionados (1905 seleccionados, 328 deseleccionados) — ver I.2.1.
 La diferencia (192 tests) corresponde a tests añadidos tras la generación del reporte.
 
 ### I.2.3. Distribución por Capa (Pirámide)
@@ -288,7 +288,7 @@ en la calidad de los tests para detectar mutaciones de código.
 
 ### I.9.1. Resultados Detallados de Mutation Testing
 
-**Resumen ejecutivo.**
+Resumen ejecutivo.
 
 | Métrica | Valor |
 |---------|-------|
@@ -305,7 +305,7 @@ en la calidad de los tests para detectar mutaciones de código.
 | Throughput | 2.43 mutations/second |
 | Duración aproximada | ~96 min (13 969 / 2.43) |
 
-**Distribución de mutantes sobrevivientes por módulo (top 10).**
+Distribución de mutantes sobrevivientes por módulo (top 10).
 
 | Módulo | Mutantes sobrevivientes |
 |--------|------------------------|
@@ -320,7 +320,7 @@ en la calidad de los tests para detectar mutaciones de código.
 | `infrastructure.validate_credentials` | 129 |
 | `domain.services` | 126 |
 
-**Distribución de mutantes sin cobertura por módulo (top 5).**
+Distribución de mutantes sin cobertura por módulo (top 5).
 
 | Módulo | Mutantes sin cobertura |
 |--------|----------------------|
@@ -330,7 +330,7 @@ en la calidad de los tests para detectar mutaciones de código.
 | `interfaces.api` | 148 |
 | `application.use_cases` | 147 |
 
-**Interpretación.**
+Interpretación.
 
 El mutation score del 51.8% se clasifica como "High risk" según la escala de mutmut,
 lo que significa que los tests detectan aproximadamente la mitad de las mutaciones
@@ -346,7 +346,7 @@ indirectamente vía tests E2E). Excluir este módulo reduciría el total a 12 64
 mutantes, pero el score se mantendría en 51.8% porque los mutantes sin cobertura
 no afectan al ratio killed/tested (11050 mutantes probados, 5728 killed+timeout).
 
-**Configuración utilizada.**
+Configuración utilizada.
 
 ```toml
 [tool.mutmut]
@@ -356,7 +356,7 @@ pytest_add_cli_args_test_selection = ["tests/unit/"]
 do_not_mutate = ["src/soar_lab/__init__.py", "*/scripts/*", "*/tests/*"]
 ```
 
-**Comando de reproducción.**
+Comando de reproducción.
 
 ```bash
 make mutation    # Ejecuta mutmut en Docker (60-180 min)
