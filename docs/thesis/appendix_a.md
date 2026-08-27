@@ -15,131 +15,9 @@ responsabilidades entre componentes.
 
 ### A.1.1. Archivo docker-compose.yml (orquestador principal)
 
-El archivo `docker-compose.yml` es el orquestador principal: define las redes Docker (`soar_net`, `ti_net`, `logging_net`), los volúmenes bind-mount centralizados en `runtime/` y el servicio Elasticsearch. Los servicios de aplicación (TheHive, Cortex, Shuffle, Nginx, etc.) se definen en `docker-compose.core.yml` y los restantes compose files (ver §A.7.1). `make up` combina automáticamente todos los archivos.
+El archivo `docker-compose.yml` es el orquestador principal: define las redes Docker (`soar_net` 10.100.0.0/16, `ti_net` 172.22.0.0/16 internal, `logging_net` 172.23.0.0/16), los volúmenes bind-mount centralizados en `runtime/` y el servicio Elasticsearch. Los servicios de aplicación (TheHive, Cortex, Shuffle, Nginx, etc.) se definen en `docker-compose.core.yml` y los restantes compose files (ver §A.6.1). `make up` combina automáticamente todos los archivos.
 
-```yaml
-name: soar-lab
-
-# === SOAR Ransomware Lab - Main Orchestrator ===
-# This file defines networks, volumes, and elasticsearch service
-#
-# Usage:
-#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml \
-#     -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml \
-#     -f compose/docker-compose.api.yml up -d
-#
-# Compose files:
-#   - compose/docker-compose.yml         (networks, volumes, elasticsearch)
-#   - compose/docker-compose.core.yml     (redis, thehive, cortex, shuffle)
-#   - compose/docker-compose.misp.yml     (MISP threat intelligence)
-#   - compose/docker-compose.api.yml      (API, docs, web-management, nginx)
-#   - compose/docker-compose.opensearch.yml (opensearch, opensearch-dashboards)
-#   - compose/logging/docker-compose.logging.yml  (Loki, Promtail, Grafana)
-
-networks:
-  bridge:
-    name: bridge
-    external: true
-  soar_net:
-    name: soar_net
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 10.100.0.0/16
-  ti_net:
-    name: ti_net
-    driver: bridge
-    internal: true
-    ipam:
-      config:
-        - subnet: 172.22.0.0/16
-  logging_net:
-    name: logging_net
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.23.0.0/16
-
-volumes:
-  es_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-runtime}/data/elasticsearch
-  thehive_files:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/thehive/files }
-  cortex_data:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/cortex }
-  shuffle_apps:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/shuffle/apps }
-  shuffle_files:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/shuffle/files }
-  redis_data:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/redis }
-  nginx_logs:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/logs/nginx }
-  misp_db:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/misp/db }
-  misp_files:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/misp/files }
-  misp_logs:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/logs/misp }
-  misp_configs:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/misp/configs }
-  loki_data:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/loki }
-  grafana_data:
-    driver: local
-    driver_opts: { type: none, o: bind, device: ${RUNTIME_DIR:-runtime}/data/grafana }
-
-services:
-  elasticsearch:
-    image: ${ELASTICSEARCH_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:7.10.2}
-    container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-false}
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - action.auto_create_index=true
-      - cluster.routing.allocation.disk.threshold_enabled=false
-      - "ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true}"
-    ulimits:
-      memlock: { soft: -1, hard: -1 }
-      nofile: { soft: 65536, hard: 65536 }
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    ports:
-      - "${ELASTICSEARCH_PORT:-19200}:9200"
-    networks: [soar_net, ti_net]
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -u elastic:${ELASTIC_PASSWORD} 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1"]
-      interval: 30s
-      timeout: 15s
-      retries: 10
-      start_period: 90s
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits: { cpus: '2.0', memory: 4G }
-        reservations: { cpus: '1.0', memory: 2G }
-    logging:
-      driver: "json-file"
-      options: { max-size: "10m", max-file: "3" }
-```
-
-Nota. Los servicios de aplicación (TheHive, Cortex, Shuffle, Orborus, Redis, Nginx, etc.) se definen en `docker-compose.core.yml` y `docker-compose.api.yml`. El contenido completo de cada compose file está en `infra/docker/compose/`. La sección A.7 proporciona el inventario completo.
+Nota. Los servicios de aplicación (TheHive, Cortex, Shuffle, Orborus, Redis, Nginx, etc.) se definen en `docker-compose.core.yml` y `docker-compose.api.yml`. El contenido completo de cada compose file está en `infra/docker/compose/`. La sección A.6 proporciona el inventario completo.
 
 ### A.1.2. Archivo .env.full
 
@@ -216,14 +94,6 @@ La **Tabla 13** resume las variables de entorno Docker más relevantes para la p
 | `MISP_PORT`            | 8083              | Puerto MISP              | No        |
 | `GRAFANA_PORT`         | 8084              | Puerto Grafana           | No        |
 
-Las variables de entorno Docker especificadas en esta tabla permiten la personalización del despliegue del laboratorio
-SOAR según las necesidades específicas de cada entorno. La única variable obligatoria es `ELASTIC_PASSWORD`, que debe
-configurarse con un valor seguro antes del despliegue para proteger elasticsearch. Las variables de puerto permiten
-ajustar el despliegue a puertos disponibles en el sistema host, evitando conflictos con otros servicios. La variable
-`COMPOSE_PROJECT_NAME` facilita el despliegue de múltiples instancias del laboratorio en el mismo host mediante prefijos
-de contenedor distintos. Esta configuración modular posibilita la adopción del laboratorio en
-diferentes contextos organizacionales y técnicos.
-
 ## A.2. Scripts de Automatización
 
 Los scripts de automatización desarrollados para el laboratorio SOAR ofrecen las capacidades operativas necesarias para
@@ -241,270 +111,28 @@ La implementación incluye la generación de alertas con IoCs conocidos, soporte
 distribución temporal configurable para pruebas de carga, validación de esquemas JSON y autenticación mediante API token.
 Este script se utiliza extensivamente en las pruebas E2E del sistema para validar el flujo completo de respuesta a incidentes.
 
-```python
-#!/usr/bin/env python3
-"""SOAR Ransomware Lab - Alert Sender CLI.
+Métodos principales:
 
-Generates and sends alert payloads to the SOAR webhook.
-
-Usage:
-python src/soar_lab/infrastructure/messaging/send_alert.py
-python src/soar_lab/infrastructure/messaging/send_alert.py --type malicious --single
-python src/soar_lab/infrastructure/messaging/send_alert.py --type benign \
---num-alerts 10 --delay 5
-"""
-
-import argparse
-import json
-import os
-import sys
-import time
-from pathlib import Path
-
-from soar_lab.common.constants import (
-    SHUFFLE_WEBHOOK_DEFAULT,
-    WEBHOOK_INFO_PATHS,
-)
-
-
-def _default_webhook_url(base_dir: Path) -> str:
-    """Return the host webhook URL from webhook_info.json if available."""
-    env_url = os.environ.get("SHUFFLE_WEBHOOK_URL")
-    if env_url:
-        return env_url
-    info_paths = [
-        base_dir / "runtime" / "results" / "webhook_info.json",
-        base_dir / "artifacts" / "results" / "webhook_info.json",
-    ] + [Path(p) for p in WEBHOOK_INFO_PATHS]
-    for p in info_paths:
-        if p.exists():
-            try:
-                info = json.loads(p.read_text())
-                return info.get("webhook_url_host", "") or info.get("webhook_url", "")
-            except Exception:
-                pass
-    return SHUFFLE_WEBHOOK_DEFAULT
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Send SOAR alert payloads to webhook")
-    parser.add_argument("--type", choices=["malicious", "benign"], default="malicious")
-    parser.add_argument("--single", action="store_true")
-    parser.add_argument("--num-alerts", type=int, default=1)
-    parser.add_argument("--delay", type=int, default=3)
-    parser.add_argument("--webhook-url", default=None)
-    parser.add_argument(
-        "--api-token",
-        default=os.environ.get("SIEM_WEBHOOK_TOKEN", os.environ.get("SHUFFLE_API_TOKEN", "")),
-    )
-
-    base_dir = Path(os.environ.get("BASE_DIR", Path(__file__).parent.parent.parent.parent.parent))
-    if "--webhook-url" not in sys.argv:
-        default_url = _default_webhook_url(base_dir)
-    else:
-        default_url = None
-    parser.set_defaults(webhook_url=default_url)
-    args = parser.parse_args()
-    if args.webhook_url is None:
-        args.webhook_url = _default_webhook_url(base_dir)
-
-    sys.path.insert(0, str(base_dir / "src"))
-    os.environ.setdefault("BASE_DIR", str(base_dir))
-    os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
-
-    from soar_lab.config.logging import get_logger
-    from soar_lab.domain.alert_generator import AlertGenerator
-    from soar_lab.infrastructure.http_alert_sender import HTTPAlertSender
-
-    logger = get_logger(__name__)
-    alert_generator = AlertGenerator()
-    sender = HTTPAlertSender(webhook_url=args.webhook_url, api_token=args.api_token)
-
-    num_alerts = 1 if args.single else args.num_alerts
-    alert_type = args.type
-    logger.info(f"Sending {num_alerts} {alert_type} alert(s) to {args.webhook_url}")
-
-    for i in range(num_alerts):
-        if alert_type == "malicious":
-            alert = alert_generator.generate_malicious()
-        else:
-            alert = alert_generator.generate_benign()
-
-        result = sender.send(alert)
-        if result.get("success"):
-            print(f"[{i + 1}/{num_alerts}] Alert sent successfully: {alert.get('alert_id')}")
-        else:
-            print(f"[{i + 1}/{num_alerts}] Failed to send alert: {result.get('error', 'Unknown error')}")
-            sys.exit(1)
-
-        if i < num_alerts - 1 and args.delay > 0:
-            time.sleep(args.delay)
-
-    metrics = sender.get_metrics()
-    print(f"\nSummary: {metrics['alerts_sent']} sent, {metrics['alerts_failed']} failed")
-
-
-if __name__ == "__main__":
-    main()
-```
+| Función | Descripción |
+|---------|-------------|
+| `_default_webhook_url(base_dir)` | Resuelve la URL del webhook desde `webhook_info.json` o variable de entorno |
+| `main()` | Punto de entrada: parsea argumentos, genera alertas y las envía al webhook |
 
 ### A.2.2. AnalyticsService (KPI Calculator)
 
 El `AnalyticsService` es el servicio de aplicación responsable de calcular métricas MTTR y KPIs desde logs de ejecución del sistema. Sigue la arquitectura hexagonal del proyecto: recibe sus dependencias por inyección (repositories, log_parser, statistical_calculator, kpi_formatter, kpi_analyzer) y delega los cálculos puros a colaboradores especializados. Este componente es la base para la validación cuantitativa de los beneficios de SOAR, permitiendo el análisis estadístico de tiempos de respuesta, el cálculo de percentiles (p50, p90), la exportación de resultados a CSV y la generación de informes de rendimiento.
 
-```python
-"""Analytics Service for SOAR Lab - Centralized KPI and Metrics Management."""
+Métodos principales:
 
-from datetime import UTC, datetime
-from typing import Any
-
-from soar_lab.config.logging import get_logger
-from soar_lab.domain.ports import (
-    AlertRepository,
-    FileSystemInterface,
-    KPIFormatter,
-    LogParser,
-    LogReader,
-    StatisticalCalculatorInterface,
-    SystemMetricsInterface,
-)
-
-logger = get_logger(__name__)
-
-
-class AnalyticsService:
-    """Service for analytics, KPIs, and system metrics."""
-
-    def __init__(
-        self,
-        data_repository: AlertRepository,
-        system_metrics: SystemMetricsInterface,
-        file_system: FileSystemInterface,
-        log_reader: LogReader | None = None,
-        log_parser: LogParser = None,
-        kpi_formatter: KPIFormatter = None,
-        statistical_calculator: StatisticalCalculatorInterface = None,
-        kpi_analyzer: object | None = None,
-    ) -> None:
-        self.data_repository = data_repository
-        self.system_metrics = system_metrics
-        self.file_system = file_system
-        self.log_reader = log_reader
-        if not log_parser:
-            raise ValueError("log_parser is required for AnalyticsService")
-        self.log_parser = log_parser
-        if not kpi_formatter:
-            raise ValueError("kpi_formatter is required for AnalyticsService")
-        self.kpi_formatter = kpi_formatter
-        if not statistical_calculator:
-            raise ValueError("statistical_calculator is required for AnalyticsService")
-        self.statistical_calculator = statistical_calculator
-        if not kpi_analyzer:
-            raise ValueError("kpi_analyzer is required for AnalyticsService")
-        self.kpi_analyzer = kpi_analyzer
-
-    def get_comprehensive_system_stats(self) -> dict[str, Any]:
-        """Get comprehensive system statistics (application + hardware)."""
-        try:
-            app_stats = self._get_application_stats()
-            hw_stats = self.system_metrics.get_hardware_metrics()
-            proc_stats = self.system_metrics.get_process_metrics()
-            return {
-                "application": app_stats,
-                "hardware": hw_stats,
-                "process": proc_stats,
-                "timestamp": datetime.now(UTC).isoformat(),
-            }
-        except Exception as e:
-            logger.error(f"Error getting comprehensive system stats: {e}")
-            raise
-
-    def get_performance_kpis(self, hours: int = 24) -> dict[str, Any]:
-        """Get performance KPIs for the specified time period."""
-        try:
-            test_results = self.data_repository.get_test_results(hours=hours)
-            return self.kpi_analyzer.calculate_performance_kpis(test_results, hours)
-        except Exception as e:
-            logger.error(f"Error calculating performance KPIs: {e}")
-            raise
-
-    def get_health_score(self) -> dict[str, Any]:
-        """Calculate overall system health score based on various metrics."""
-        try:
-            hw_metrics = self.system_metrics.get_hardware_metrics()
-            app_stats = self._get_application_stats()
-            def _pct(val: dict | float | None) -> float:
-                return val.get("percent", 0.0) if isinstance(val, dict) else float(val or 0)
-            return self.kpi_analyzer.calculate_health_score(
-                cpu_percent=_pct(hw_metrics.get("cpu", 0)),
-                memory_percent=_pct(hw_metrics.get("memory", 0)),
-                disk_percent=_pct(hw_metrics.get("disk", 0)),
-                test_coverage=app_stats["tests"]["avg_coverage_24h"],
-            )
-        except Exception as e:
-            logger.error(f"Error calculating health score: {e}")
-            return {"score": 0.0, "status": "unknown"}
-
-    def calculate_mttr_metrics(self, log_file_path: str | None = None) -> dict[str, Any]:
-        """Calculate MTTR (Mean Time To Respond) metrics from execution logs.
-
-        Returns:
-            Dict with MTTR metrics including p50, p90, mean, std_dev, count.
-        """
-        try:
-            if not log_file_path:
-                if self.log_reader and hasattr(self.log_reader, "get_default_log_path"):
-                    log_file_path = self.log_reader.get_default_log_path()
-                else:
-                    raise ValueError(
-                        "log_file_path is required when log_reader does not provide default path"
-                    )
-            alert_steps = self.parse_execution_logs(log_file_path)
-            execution_times = self.statistical_calculator.calculate_execution_times(alert_steps)
-            return self.kpi_analyzer.calculate_mttr_metrics(execution_times)
-        except Exception as e:
-            logger.error(f"Error calculating MTTR metrics: {e}")
-            return {"p50": 0.0, "p90": 0.0, "mean": 0.0, "count": 0}
-
-    def parse_execution_logs(self, log_file_path: str) -> dict[str, list[datetime]]:
-        """Parse execution logs to extract timestamps for MTTR calculation."""
-        try:
-            log_content = self.file_system.read_file(log_file_path)
-            if log_content is None:
-                return {}
-            return self.log_parser.parse(log_content)
-        except Exception as e:
-            logger.error(f"Error parsing execution logs: {e}")
-            raise
-
-    def save_kpis_to_csv(self, metrics: dict[str, Any], output_path: str | None = None) -> None:
-        """Save KPI metrics to CSV file using injected formatter and file system."""
-        try:
-            if not output_path:
-                output_path = "kpis.csv"
-            self.file_system.ensure_directory_exists(output_path)
-            csv_content = self.kpi_formatter.format_csv(metrics)
-            self.file_system.write_file(output_path, csv_content)
-            logger.info(f"KPIs saved to {output_path}")
-        except Exception as e:
-            logger.error(f"Error saving KPIs to CSV: {e}")
-            raise
-
-    def get_comprehensive_kpis(self, log_file_path: str | None = None) -> dict[str, Any]:
-        """Get comprehensive KPIs including MTTR, performance, and health metrics."""
-        try:
-            mttr_metrics = self.calculate_mttr_metrics(log_file_path)
-            performance_kpis = self.get_performance_kpis()
-            health_score = self.get_health_score()
-            return self.kpi_analyzer.calculate_comprehensive_kpis(
-                mttr_metrics=mttr_metrics,
-                performance_kpis=performance_kpis,
-                health_score=health_score,
-            )
-        except Exception as e:
-            logger.error(f"Error getting comprehensive KPIs: {e}")
-            raise
-```
+| Método | Descripción |
+|--------|-------------|
+| `get_comprehensive_system_stats()` | Estadísticas completas (aplicación + hardware + proceso) |
+| `get_performance_kpis(hours=24)` | KPIs de rendimiento para un período dado |
+| `get_health_score()` | Score de salud del sistema (CPU, memoria, disco, cobertura) |
+| `calculate_mttr_metrics(log_file_path)` | Métricas MTTR (p50, p90, media, std_dev) desde logs |
+| `parse_execution_logs(log_file_path)` | Parsea logs de ejecución para extraer timestamps |
+| `save_kpis_to_csv(metrics, output_path)` | Exporta KPIs a archivo CSV |
+| `get_comprehensive_kpis(log_file_path)` | KPIs comprehensivos (MTTR + performance + health) |
 
 El servicio se compone en `src/soar_lab/interfaces/api/composition.py` con sus dependencias concretas (`SqliteAlertRepository`, `SystemMetricsDriver`, `FilesystemStorage`, `ExecutionLogParser`, `StatisticalCalculator`, `CSVKPIFormatter`, `KPIAnalyzer`). El cálculo estadístico puro (percentiles, media, desviación estándar, coeficiente de variación) se delega a `StatisticalCalculator` (puerto `StatisticalCalculatorInterface`), lo que mantiene el dominio independiente de la infraestructura.
 
@@ -514,67 +142,14 @@ La integración con TheHive se realiza mediante el script `scripts/setup/init_th
 
 ### A.3.1. Index Template para TheHive (init_thehive.py)
 
-TheHive 3.5.2 requiere un mapping Elasticsearch específico para el campo `relations` (join field) y para evitar conflictos con campos `text` vs `keyword`. El script `init_thehive.py` pre-crea el index template antes del arranque de TheHive:
+TheHive 3.5.2 requiere un mapping Elasticsearch específico para el campo `relations` (join field) y para evitar conflictos con campos `text` vs `keyword`. El script `init_thehive.py` pre-crea el index template antes del arranque de TheHive. El template define:
 
-```python
-THEHIVE_INDEX_TEMPLATE = {
-    "index_patterns": ["the_hive_*"],
-    "settings": {"number_of_shards": 5, "number_of_replicas": 0},
-    "mappings": {
-        "dynamic_templates": [
-            {
-                "strings": {
-                    "match_mapping_type": "string",
-                    "mapping": {
-                        "type": "text",
-                        "fielddata": True,
-                        "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
-                    },
-                }
-            }
-        ],
-        "properties": {
-            "relations": {
-                "type": "join",
-                "relations": {
-                    "case": ["case_task", "case_artifact", "dummy-case"],
-                    "case_task": ["case_task_log", "dummy-case_task"],
-                    "case_task_log": ["dummy-case_task_log"],
-                    "case_artifact": ["dummy-case_artifact"],
-                    "caseTemplate": ["dummy-caseTemplate"],
-                    "alert": ["dummy-alert"],
-                    "user": ["dummy-user"],
-                    "dashboard": ["dummy-dashboard"],
-                    "audit": ["dummy-audit"],
-                    "sequence": ["dummy-sequence"],
-                    "dblist": ["dblistitem"],
-                },
-            },
-            "key": {"type": "keyword"},
-            "password": {"type": "keyword"},
-            "status": {"type": "keyword"},
-            "login": {"type": "keyword"},
-            "flag": {"type": "boolean"},
-            "tlp": {"type": "integer"},
-            "pap": {"type": "integer"},
-            "severity": {"type": "integer"},
-            "caseId": {"type": "integer"},
-            "startDate": {"type": "date"},
-            "endDate": {"type": "date"},
-            "createdAt": {"type": "date"},
-            "updatedAt": {"type": "date"},
-            "date": {"type": "date"},
-            "order": {"type": "integer"},
-            "ioc": {"type": "boolean"},
-            "sighted": {"type": "boolean"},
-            "ignoreSimilarity": {"type": "boolean"},
-            "dblist": {"type": "keyword"},
-        },
-    },
-}
-```
+- `index_patterns`: `["the_hive_*"]`
+- `dynamic_templates`: strings como `text` con subcampo `keyword` (ignore_above 256)
+- `relations`: tipo `join` con jerarquía case → case_task → case_task_log, case → case_artifact, más children dummy para alert, user, dashboard, audit, sequence, caseTemplate, dblist
+- Campos explícitos: `key`, `password`, `status`, `login` (keyword); `tlp`, `pap`, `severity`, `caseId`, `order` (integer); `startDate`, `endDate`, `createdAt`, `updatedAt`, `date` (date); `flag`, `ioc`, `sighted`, `ignoreSimilarity` (boolean)
 
-Este template se aplica con `PUT _template/thehive_template` antes de que TheHive arranque, evitando el error `mapper_parsing_exception` que ocurre cuando Elasticsearch infiere automáticamente el tipo `text` para campos que TheHive espera como `keyword`. El campo `relations` se declara como `join` con relaciones jerárquicas completas (case → case_task → case_task_log, case → case_artifact) y children dummy para cada tipo raíz (alert, user, dashboard, audit, sequence, caseTemplate).
+Este template se aplica con `PUT _template/thehive_template` antes de que TheHive arranque, evitando el error `mapper_parsing_exception` que ocurre cuando Elasticsearch infiere automáticamente el tipo `text` para campos que TheHive espera como `keyword`.
 
 ### A.3.2. Creación de casos desde el workflow
 
@@ -622,153 +197,11 @@ Las consultas usan Lucene/Elasticsearch Query DSL sobre el índice `soar-metrics
 
 ### A.4.3. Configuración de Promtail
 
-Promtail recoge logs de todos los contenedores Docker vía el socket `/var/run/docker.sock` y los envía a Loki. La configuración se define en `infra/docker/config/templates/promtail-config.yml.template`:
+Promtail recoge logs de todos los contenedores Docker vía el socket `/var/run/docker.sock` y los envía a Loki. La configuración se define en `infra/docker/config/templates/promtail-config.yml.template` y etiqueta cada línea de log con `container` (nombre del contenedor), `container_id` (ID del contenedor), `service` (nombre del servicio sin sufijo de réplica), `network` (nombre de la red Docker), `compose_service` (label Docker Compose) y `compose_project` (nombre del proyecto), permitiendo filtrar en Grafana por servicio, red o proyecto.
 
-```yaml
-server:
-  http_listen_port: 9080
+## A.5. Troubleshooting Común
 
-clients:
-  - url: ${LOKI_URL:-http://loki:3100}/loki/api/v1/push
-
-scrape_configs:
-  - job_name: docker-logs
-    docker_sd_configs:
-      - host: unix:///var/run/docker.sock
-        refresh_interval: 5s
-    relabel_configs:
-      - source_labels: [ '__meta_docker_container_name' ]
-        regex: '/(.*)'
-        target_label: container
-      - source_labels: [ '__meta_docker_container_log_path' ]
-        regex: '/var/lib/docker/containers/([^/]+)/[^/]+'
-        replacement: '$1'
-        target_label: container_id
-      - source_labels: [ '__meta_docker_container_name' ]
-        regex: '(.*)_\\d+'
-        target_label: service
-      - source_labels: [ '__meta_docker_network_name' ]
-        regex: '(.+)'
-        target_label: network
-      - source_labels: [ '__meta_docker_container_label_com_docker_compose_service' ]
-        regex: '(.+)'
-        target_label: compose_service
-      - source_labels: [ '__meta_docker_container_label_com_docker_compose_project' ]
-        regex: '(.+)'
-        target_label: compose_project
-
-  - job_name: system-logs
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: system-logs
-          __path__: /var/log/**/*.log
-```
-
-Esto etiqueta cada línea de log con `container` (nombre del contenedor), `container_id` (ID del contenedor), `service` (nombre del servicio sin sufijo de réplica), `network` (nombre de la red Docker), `compose_service` (label Docker Compose) y `compose_project` (nombre del proyecto), permitiendo filtrar en Grafana por servicio, red o proyecto.
-
-## A.5. Guía de Instalación Rápida
-
-### A.5.1. Prerrequisitos
-
-```bash
-# System Requirements
-- Docker Engine 20.10+
-- Docker Compose 2.0+
-- Python 3.11+
-- 8GB+ RAM (16GB+ recomendado)
-- 50GB+ SSD (100GB+ recomendado)
-- Linux, macOS, or Windows with WSL2
-
-# Software Installation (Ubuntu/Debian)
-sudo apt update
-sudo apt install -y docker.io docker-compose-plugin python3 python3-pip
-
-# Add user to docker group
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Install Python dependencies
-pip3 install requests jsonschema pytest
-
-# Verify installation
-docker --version
-docker compose version
-python3 --version
-```
-
-### A.5.2. Proceso de Instalación
-
-```bash
-# 1. Clone repository
-git clone https://github.com/alesanfe/soar-ransomware-lab.git
-cd soar-ransomware-lab
-
-# 2. Generate environment with secrets
-make generate-secrets    # Genera .env.full con secretos aleatorios seguros
-
-# 3. Generate TLS certificates
-bash scripts/setup/gen_certs.sh
-
-# 4. Start services
-make up
-
-# 5. Verify services
-make health
-
-# 6. Run initial tests
-make simulate-malicious
-
-# 7. Check metrics
-make metrics
-```
-
-### A.5.3. Verificación de Instalación
-
-```bash
-# Check service status (all 23 services)
-make ps
-
-# Check logs
-make logs
-
-# Test web interfaces (ajustar puertos según .env.full)
-curl -f http://localhost:8100/api/status  # TheHive
-curl -sk http://localhost:8101/           # Cortex (raíz, -k por TLS)
-curl -f http://localhost:5001/            # Shuffle (nc -z en healthcheck)
-curl -f http://localhost:8200/_cluster/health  # Elasticsearch
-```
-
-La **Tabla 14** recopila los comandos Make disponibles para la operación del laboratorio SOAR.
-
-## Tabla 14: Comandos Make Disponibles
-
-| Comando                 | Descripción                 | Uso Típico         |
-|-------------------------|-----------------------------|--------------------|
-| `make up`               | Iniciar todos los servicios | Despliegue inicial |
-| `make down`             | Detener todos los servicios | Mantenimiento      |
-| `make health`           | Verificar salud servicios   | Diagnóstico        |
-| `make test-all`         | Suite completa de tests     | Validación         |
-| `make simulate-malicious` | Enviar alerta maliciosa   | Testing            |
-| `make simulate-benign`  | Enviar alerta benigna       | Testing            |
-| `make metrics`          | Calcular KPIs               | Análisis           |
-| `make backup`           | Crear backup                | Mantenimiento      |
-| `make clean`            | Limpiar temporales          | Reset              |
-| `make logs`             | Ver logs                    | Depuración         |
-
-Los comandos Make disponibles en esta tabla proporcionan una interfaz simplificada para todas las operaciones comunes
-del laboratorio SOAR, reduciendo la complejidad operativa y facilitando la adopción por usuarios con diferentes niveles
-de experiencia técnica. Los comandos de despliegue (`make up`, `make down`) simplifican la orquestación de múltiples
-servicios Docker. Los comandos de prueba (`make test-all`, `make simulate-malicious`, `make simulate-benign`) facilitan la
-validación del sistema sin requerir conocimiento detallado de la configuración de pruebas. Los comandos de
-mantenimiento (`make health`, `make backup`, `make clean`, `make logs`) proporcionan las herramientas necesarias para
-operación continua. Esta automatización mediante Makefile es un factor determinante en la reproducibilidad y facilidad de uso
-del laboratorio.
-
-## A.6. Troubleshooting Común
-
-### A.6.1. Problemas Frecuentes
+### A.5.1. Problemas Frecuentes
 
 A continuación se recogen los problemas más frecuentes detectados durante el despliegue y operación del laboratorio, junto con pasos operativos concretos, criterios de verificación y casos de error asociados.
 
@@ -1026,43 +459,14 @@ Criterio de verificación.
 
 ---
 
-### A.6.2. Criterios generales de aceptación para troubleshooting
-
-1. Se ha identificado la causa raíz del problema.
-2. Los pasos documentados son reproducibles en un entorno limpio.
-3. Se han recogido evidencias (logs, capturas, salidas de comando) con fecha y entorno.
-4. La solución no introduce fugas de secretos ni cambios no versionados en configuraciones canónicas.
-5. Tras aplicar la solución, los healthchecks y tests relacionados pasan.
-
-### A.6.3. Logs de Depuración
-
-```bash
-# TheHive logs
-docker logs soar_thehive -f
-
-# Cortex logs
-docker logs soar_cortex -f
-
-# Shuffle logs
-docker logs soar_shuffle_backend -f
-
-# Elasticsearch logs
-docker logs soar_elasticsearch -f
-
-# Nginx logs
-docker logs soar_nginx -f
-```
-
----
-
-## A.7. Inventario Completo de Archivos Docker Compose
+## A.6. Inventario Completo de Archivos Docker Compose
 
 El laboratorio SOAR usa **6 archivos Docker Compose** principales
 que se combinan automáticamente con `make up`, totalizando 23 servicios.
 La sección A.1.1 muestra el archivo principal (`docker-compose.yml`); los restantes se documentan aquí
 como referencia. La versión canónica está en `infra/docker/compose/`.
 
-### A.7.1. Mapa de Archivos Compose
+### A.6.1. Mapa de Archivos Compose
 
 | Archivo | Ubicación | Servicios | Propósito |
 |---------|-----------|-----------|-----------|
@@ -1073,7 +477,7 @@ como referencia. La versión canónica está en `infra/docker/compose/`.
 | `docker-compose.opensearch.yml` | `infra/docker/compose/` | opensearch, opensearch-dashboards | OpenSearch para Shuffle |
 | `docker-compose.logging.yml` | `infra/docker/compose/logging/` | loki, promtail, grafana, grafana-db, grafana-renderer | Observabilidad (subdirectorio) |
 
-### A.7.2. Servicios Adicionales (no en A.1.1)
+### A.6.2. Servicios Adicionales (no en A.1.1)
 
 Los siguientes servicios se definen en los compose files adicionales y no aparecen en la
 sección A.1.1:
@@ -1103,7 +507,7 @@ sección A.1.1:
 | `grafana-db` | `postgres:14-alpine` | logging | BD Grafana |
 | `grafana-renderer` | `grafana/grafana-image-renderer:3.10.4` | logging | Renderizado de imágenes para alertas |
 
-### A.7.3. Redes Docker
+### A.6.3. Redes Docker
 
 | Red | CIDR | Tipo | Propósito |
 |-----|------|------|-----------|
@@ -1112,7 +516,7 @@ sección A.1.1:
 | `logging_net` | `172.23.0.0/16` | bridge | Observabilidad (Loki, Grafana) |
 | `bridge` | — | external | Red por defecto Docker (compatibilidad) |
 
-### A.7.4. Resumen del Stack Completo
+### A.6.4. Resumen del Stack Completo
 
 | Métrica | Valor |
 |---------|-------|
@@ -1124,11 +528,3 @@ sección A.1.1:
 | Versiones pinned | 100% (todas las imágenes tienen tag fijo) |
 
 Nota. Para el contenido completo de cada compose file, ver `infra/docker/compose/`.
-Esta sección es un inventario de referencia; el archivo A.1.1 muestra el compose
-principal como ejemplo representativo.
-
----
-
-Nota. Esta documentación técnica complementaria incluye detalles específicos de implementación, configuración y
-operación del laboratorio SOAR. Para información adicional sobre conceptos teóricos y metodología, consulte los
-capítulos principales del documento.

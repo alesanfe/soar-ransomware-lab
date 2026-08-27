@@ -488,7 +488,7 @@ análisis de carga del sistema, y métricas de calidad del software. Estas métr
 rendimiento, identificando cuellos de botella específicos. Los valores corresponden a los resultados obtenidos durante
 la validación.
 
-### Tabla 15: Métricas de Rendimiento por Componente
+### Tabla 14: Métricas de Rendimiento por Componente
 
 | Componente        | Métrica               | Manual         | SOAR           | Mejora   | Unidad       |
 |-------------------|-----------------------|----------------|----------------|----------|--------------|
@@ -519,7 +519,7 @@ throughput, mientras que el componente de contención muestra mejoras menores de
 métricas adicionales como latencia API, precisión, validación de datos y confirmación de lectura proporcionan una visión
 completa del rendimiento del sistema.
 
-### Tabla 16: Análisis de Carga del Sistema
+### Tabla 15: Análisis de Carga del Sistema
 
 | Métrica               | Condición Ligera | Condición Media | Condición Pesada | Límite Sistema |
 |-----------------------|------------------|-----------------|------------------|----------------|
@@ -545,7 +545,7 @@ planificar la capacidad del sistema y asegurar que pueda manejar picos de carga 
 rendimiento. Los límites del sistema establecen los umbrales máximos aceptables para cada métrica, proporcionando una
 base para alertas y escalado automático.
 
-### Tabla 17: Métricas de Calidad del Software
+### Tabla 16: Métricas de Calidad del Software
 
 | Métrica                     | Valor Objetivo | Valor Logrado   | Estado   | Herramienta  |
 |-----------------------------|----------------|-----------------|----------|--------------|
@@ -569,7 +569,7 @@ umbral ambicioso del 80 %, indicando que quedan puntos ciegos en la suite de tes
 automatizadas asegura una evaluación objetiva y consistente de la calidad del software y posibilita su
 desarrollo futuro.
 
-### Tabla 18: KPIs de Negocio por Organización
+### Tabla 17: KPIs de Negocio por Organización
 
 | KPI                       | PYME   | Mediana | Grande  | Enterprise |
 |---------------------------|--------|---------|---------|------------|
