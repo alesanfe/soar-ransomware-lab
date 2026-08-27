@@ -1,8 +1,8 @@
 # Anexo A
 
-> **Aviso de sincronización.** este anexo es una instantánea estática de la configuración Docker Compose y variables de
-> entorno. La versión canónica y actualizada del stack se encuentra en `infra/docker/compose/` (y `.env.example`/`.env.full`).
-> En caso de discrepancia, prevalecen los archivos Compose del repositorio.
+**Aviso de sincronización.** este anexo es una instantánea estática de la configuración Docker Compose y variables de
+entorno. La versión canónica y actualizada del stack se encuentra en `infra/docker/compose/` (y `.env.example`/`.env.full`).
+En caso de discrepancia, prevalecen los archivos Compose del repositorio.
 
 Este anexo contiene la configuración técnica y código fuente de los componentes principales del laboratorio SOAR para
 reproducir el sistema.
@@ -139,7 +139,7 @@ services:
       options: { max-size: "10m", max-file: "3" }
 ```
 
-> **Nota.** Los servicios de aplicación (TheHive, Cortex, Shuffle, Orborus, Redis, Nginx, etc.) se definen en `docker-compose.core.yml` y `docker-compose.api.yml`. El contenido completo de cada compose file está en `infra/docker/compose/`. La sección A.7 proporciona el inventario completo.
+**Nota.** Los servicios de aplicación (TheHive, Cortex, Shuffle, Orborus, Redis, Nginx, etc.) se definen en `docker-compose.core.yml` y `docker-compose.api.yml`. El contenido completo de cada compose file está en `infra/docker/compose/`. La sección A.7 proporciona el inventario completo.
 
 ### A.1.2. Archivo .env.full
 
@@ -1123,9 +1123,9 @@ sección A.1.1:
 | Imágenes Docker | 23 (6 builds locales + 17 pulls) |
 | Versiones pinned | 100% (todas las imágenes tienen tag fijo) |
 
-> **Nota.** Para el contenido completo de cada compose file, ver `infra/docker/compose/`.
-> Esta sección es un inventario de referencia; el archivo A.1.1 muestra el compose
-> principal como ejemplo representativo.
+**Nota.** Para el contenido completo de cada compose file, ver `infra/docker/compose/`.
+Esta sección es un inventario de referencia; el archivo A.1.1 muestra el compose
+principal como ejemplo representativo.
 
 ---
 
