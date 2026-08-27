@@ -90,18 +90,15 @@
 
 8. **Referencias bibliográficas** — `bibliographic_references.md`
 9. **Declaración de originalidad** — `originality_declaration.md`
-10. **Referencia a gráficos y diagramas reubicados** — `appendix_c.md`
-11. **Visualizaciones de datos y gráficos complementarios** — `appendix_d.md`
-12. **Glosario** — `abbreviations_list.md`
+10. **Visualizaciones de datos y gráficos complementarios** — `appendix_d.md`
+11. **Glosario** — `abbreviations_list.md`
 
 ### Anexos
 
 - **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, troubleshooting
 - **Anexo B** — `appendix_b.md` — Workflow SOAR completo (46 nodos, 61 ramas, 25 scripts Python)
-- **Anexo C** — `appendix_c.md` — Referencia a gráficos y diagramas reubicados (Anexo H, figuras PNG)
 - **Anexo D** — `appendix_d.md` — Métricas y visualizaciones complementarias
 - **Anexo E** — `appendix_e.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
-- **Anexo F** — `appendix_f.md` — Registro de cambios técnicos y editoriales
 - **Anexo G** — `appendix_g.md` — Estrategia de testing (2041 tests, pirámide, quality gates)
 - **Anexo H** — `appendix_h.md` — Diagramas canónicos de arquitectura y flujos (12 diagramas Mermaid)
 
@@ -256,13 +253,6 @@
 
 - Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
 
-**Anexo C** — `appendix_c.md`
-
-- Gráficos ASCII de métricas (MTTR, percentiles, tasas de éxito)
-- Diagramas de arquitectura complementarios
-- Esquemas de flujo de procesos
-- Las tablas comparativas se han reubicado en sus capítulos correspondientes con numeración APA
-
 **Anexo D** — `appendix_d.md`
 
 - Visualizaciones ASCII de métricas (MTTR, percentiles, tasas de éxito)
@@ -277,10 +267,6 @@
 - Test Review: 92.2/100 (7 dimensiones, 2041 tests)
 - Infraestructura: 18 servicios, 18 contenedores, 131 env vars
 - API: 38 endpoints (OpenAPI 3.1.0)
-
-**Anexo F** — `appendix_f.md`
-
-- Registro de cambios técnicos y editoriales aplicados durante el desarrollo
 
 **Anexo G** — `appendix_g.md`
 
