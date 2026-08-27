@@ -47,37 +47,35 @@
 | Figura 15 | MTTR por Severidad (boxplot)                     | `figures/mttr_severity_boxplot.png` |
 | Figura 16 | Percentiles MTTR                                 | `figures/GE2_percentiles.png` |
 | Figura 17 | Tasas de Éxito por Tipo de Alerta                | `figures/GE3_success_rates.png` |
-| Figura 18 | Mejoras por Categoría                            | `figures/Fig5_2_improvements_category.png` |
+| Figura 18 | Mejoras por Categoría                            | `figures/GE5_improvements.png` |
 | Figura 19 | Distribución de Duraciones de Workflows          | `figures/workflow_durations.png` |
 | Figura 20 | MTTR por Tipo de Alerta (Grafana)                | `figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png` |
-| Figura 21 | Distribución de Alertas por Severidad            | `figures/severity_distribution.png` |
-| Figura 22 | Resultados de MTTR (manual vs automatizado)      | `figures/Fig5_1_mttr_results.png` |
-| Figura 23 | Estado de Casos en TheHive                       | `figures/thehive_case_status.png` |
-| Figura 24 | Volumen de Logs en Loki                          | `figures/loki_log_volume.png` |
-| Figura 25 | Cumplimiento de Umbrales                         | `figures/threshold_compliance.png` |
-| Figura 26 | Análisis Coste-Beneficio                         | `figures/Fig5_5_cost_benefit.png` |
-| Figura 27 | Tasa de Éxito por Tipo de Alerta (Grafana panel 4) | `figures/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png` |
-| Figura 28 | Correlación entre Métricas                       | `figures/correlation_heatmap.png` |
-| Figura 29 | Evolución de Métricas durante el Proyecto        | `figures/GE4_metrics_evolution.png` |
-| Figura 30 | Análisis Coste-Beneficio (versión extendida)     | `figures/GE6_cost_benefit.png` |
-| Figura 31 | Mejoras por Categoría (versión extendida)        | `figures/GE5_improvements.png` |
+| Figura 21 | Resultados de MTTR (manual vs automatizado)      | `figures/Fig5_1_mttr_results.png` |
+| Figura 22 | Estado de Casos en TheHive                       | `figures/thehive_case_status.png` |
+| Figura 23 | Volumen de Logs en Loki                          | `figures/loki_log_volume.png` |
+| Figura 24 | Cumplimiento de Umbrales                         | `figures/threshold_compliance.png` |
+| Figura 25 | Análisis Coste-Beneficio                         | `figures/Fig5_5_cost_benefit.png` |
+| Figura 26 | Distribución de Decisiones del Workflow          | `figures/decision_distribution.png` |
+| Figura 27 | Correlación entre Métricas                       | `figures/correlation_heatmap.png` |
+| Figura 28 | Evolución de Métricas durante el Proyecto        | `figures/GE4_metrics_evolution.png` |
+| Figura 29 | Análisis Coste-Beneficio (versión extendida)     | `figures/GE6_cost_benefit.png` |
 
 ## Figuras del Anexo F (Diagramas Mermaid)
 
 | Figura  | Título                                            |
 |---------|---------------------------------------------------|
-| Figura 38 | Arquitectura de Alto Nivel (flowchart LR)       |
-| Figura 39 | Arquitectura de Despliegue Docker (graph TD)    |
-| Figura 40 | Arquitectura Hexagonal (flowchart TD)           |
-| Figura 41 | Diagrama de Contexto C4 (C4Context)             |
-| Figura 42 | Flujo E2E de Alertas (sequenceDiagram)          |
-| Figura 43 | Árbol de Decisión del Playbook (flowchart)      |
-| Figura 44 | Respuesta Automatizada (sequenceDiagram)        |
-| Figura 45 | Cronograma Objetivos SMART (gantt)              |
-| Figura 46 | Roadmap por Semanas (gantt)                     |
-| Figura 47 | Matriz de Priorización de Riesgos (graph)       |
-| Figura 48 | GMinst4ll: Flujo de Infección (graph TD)        |
-| Figura 49 | Pipeline SOAR para IoCs GMinst4ll (graph LR)    |
+| Figura 30 | Arquitectura de Alto Nivel (flowchart LR)       |
+| Figura 31 | Arquitectura de Despliegue Docker (graph TD)    |
+| Figura 32 | Arquitectura Hexagonal (flowchart TD)           |
+| Figura 33 | Diagrama de Contexto C4 (C4Context)             |
+| Figura 34 | Flujo E2E de Alertas (sequenceDiagram)          |
+| Figura 35 | Árbol de Decisión del Playbook (flowchart)      |
+| Figura 36 | Respuesta Automatizada (sequenceDiagram)        |
+| Figura 37 | Cronograma Objetivos SMART (gantt)              |
+| Figura 38 | Roadmap por Semanas (gantt)                     |
+| Figura 39 | Matriz de Priorización de Riesgos (graph)       |
+| Figura 40 | GMinst4ll: Flujo de Infección (graph TD)        |
+| Figura 41 | Pipeline SOAR para IoCs GMinst4ll (graph LR)    |
 
 ---
 
@@ -98,4 +96,4 @@
 4. **Actualización**: Las figuras han sido actualizadas con los datos experimentales obtenidos durante la validación
    del sistema en agosto de 2026.
 
-5. **Total**: 49 figuras (11 en capítulos + 26 en Anexo C + 12 en Anexo F).
+5. **Total**: 41 figuras (11 en capítulos + 18 en Anexo C + 12 en Anexo F).

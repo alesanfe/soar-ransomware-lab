@@ -7,7 +7,7 @@ resultados experimentales obtenidos durante la validación del sistema (n=50, 20
 Para reproducir las métricas SOAR, ejecutar `make test-e2e` (o llamar a `POST /tests/run` con categoría `e2e`) y consultar
 `GET /analytics/kpis/aggregated`. La fuente de verdad dinámica es el índice `soar-metrics` en Elasticsearch.
 
-Nota Importante. La lógica de cálculo de KPIs existe en el código fuente en:
+Nota importante: la lógica de cálculo de KPIs existe en el código fuente en:
 
 - `src/soar_lab/domain/services/kpi_analyzer.py` - KPIAnalyzer.calculate_mttr_metrics() para MTTR, calculate_performance_kpis()
   para rendimiento, calculate_health_score() para health score
@@ -16,7 +16,7 @@ Nota Importante. La lógica de cálculo de KPIs existe en el código fuente en:
 
 Los valores mostrados en los gráficos se han calculado usando estos métodos programáticamente.
 
-## Valores Reales Calculados (n=50 ejecuciones)
+## C.1. Valores Reales Calculados (n=50 ejecuciones)
 
 - Total alerts: 50
 - MTTR mean: 277.15 seconds (4.62 minutes)
@@ -30,9 +30,9 @@ Los valores mostrados en los gráficos se han calculado usando estos métodos pr
 - Tasa de observación: 8.0% (4/50 alertas con score < 80)
 - Service success rates: 100% workflow completion (50/50), 99.2% Cortex jobs (255/257)
 - Casos TheHive: 50 (46 Open, 4 Resolved)
-- Reduccion MTTR vs baseline manual (3600s): 92.3% (277.15s vs 3600s)
+- Reducción MTTR vs baseline manual (3600s): 92.3% (277.15s vs 3600s)
 
-## Tablas de Métricas Avanzadas
+## C.2. Tablas de Métricas Avanzadas
 
 ### Tabla 14: Métricas de Rendimiento por Componente
 
@@ -106,7 +106,7 @@ Mutation testing (51.8%) por debajo del umbral ambicioso del 80% — ver §4.1.3
 Nota: Los valores de esta tabla son objetivos referenciales por tamaño de organización.
 El laboratorio midió MTTR real de 277.15s (n=50), adecuado para PYME/Mediana según estos umbrales.
 
-## Visualizaciones Generadas
+## C.3. Visualizaciones Generadas
 
 Las siguientes figuras se generan automáticamente desde los resultados experimentales y los dashboards de Grafana.
 
@@ -150,68 +150,58 @@ Figura 19: Distribución de duraciones de los 50 workflows ejecutados, mostrando
 
 Figura 20: MTTR por tipo de alerta desde el dashboard de Grafana.
 
-![Tasa de éxito por severidad](figures/severity_distribution.png)
-
-Figura 21: Distribución de alertas por severidad durante las ejecuciones E2E, mostrando la proporción de alertas críticas (severity=3) frente a las de menor severidad.
-
 ### Estado de Servicios
 
 ![Resultados de MTTR](figures/Fig5_1_mttr_results.png)
 
-Figura 22: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
+Figura 21: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
 
 ![Estado de casos en TheHive](figures/thehive_case_status.png)
 
-Figura 23: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
+Figura 22: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
 
 ### Monitoreo de Logs
 
 ![Volumen de logs en Loki](figures/loki_log_volume.png)
 
-Figura 24: Volumen de logs agregados en Loki durante las ejecuciones E2E.
+Figura 23: Volumen de logs agregados en Loki durante las ejecuciones E2E.
 
 ### Cumplimiento de Umbrales y Notificaciones
 
 ![Cumplimiento de umbrales](figures/threshold_compliance.png)
 
-Figura 25: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
+Figura 24: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
 valores medidos. Se aprecia que el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles
 P50 y P90 no los alcanzan en el conjunto completo.
 
 ![Análisis coste-beneficio](figures/Fig5_5_cost_benefit.png)
 
-Figura 26: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
+Figura 25: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
 
 ### Dashboards Complementarios de Grafana
 
 ![Distribución de decisiones del workflow](figures/decision_distribution.png)
 
-Figura 27: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
+Figura 26: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
 
 ### Análisis Estadístico Adicional
 
 ![Correlación entre métricas](figures/correlation_heatmap.png)
 
-Figura 28: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
+Figura 27: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
 Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del playbook y el tiempo de respuesta.
 
 ![Evolución de métricas durante el proyecto](figures/GE4_metrics_evolution.png)
 
-Figura 29: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
+Figura 28: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
 cuatro fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
 
 ![Análisis coste-beneficio (versión extendida)](figures/GE6_cost_benefit.png)
 
-Figura 30: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
+Figura 29: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
 extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
 
-### Estadísticas Operativas
-
-![Estadísticas diarias organizativas](figures/GE5_improvements.png)
-
-Figura 31: Mejoras implementadas por categoría durante el proyecto, mostrando el impacto acumulado en MTTR, precisión y automatización.
-
-## Visualizaciones de Logs
+## C.4. Visualizaciones de Logs
 
 El stack de observabilidad (Loki, Grafana Labs, 2024b; Promtail, Grafana Labs, 2024c; Grafana, Grafana Labs, 2024) permite visualizar logs de todos los contenedores desde Grafana (`http://localhost:8084`). Promtail etiqueta los logs por contenedor (`container`, `service`, `compose_service`) y envía cada línea a Loki, donde se consultan con LogQL. La configuración de Promtail se encuentra en `infra/docker/config/templates/promtail-config.yml.template` y la de logging de Python en `infra/docker/compose/logging/logging.yaml`. El stack de logging se define en `infra/docker/compose/logging/docker-compose.logging.yml`.
 
