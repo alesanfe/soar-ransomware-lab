@@ -89,10 +89,12 @@ graph TD
  GrafanaRenderer[Grafana Renderer :8081] --> GrafanaInternal
  end
 
- subgraph "Docker network: ti_net"
- MISPInternal
- MISPDB[MISP DB MariaDB :3306]
- MISPModules[MISP Modules :6666]
+ subgraph "Docker network: ti_net (internal)"
+ ES
+ Redis
+ LabAPI
+ ShuffleBackend
+ ShuffleUI
  end
 
  subgraph "Docker network: logging_net"
@@ -420,7 +422,7 @@ Cortex, MISP, TheHive y Elasticsearch.
 ```mermaid
 graph LR
  A[Webhook Shuffle] --> B[Workflow SOAR]
- B --> C[Cortex: análisis hash/IP]
+ B --> C[Cortex: análisis hash/IP/domain]
  B --> D[MISP: búsqueda IoCs]
  B --> E[TheHive: caso + observables]
  B --> F[Elasticsearch: indexación]
