@@ -1,6 +1,6 @@
 # Anexo H: Diagramas de Arquitectura y Flujos (Mermaid)
 
-**Referencia TFM**: complementa el Capítulo 3 (Arquitectura), Capítulo 4 (Desarrollo)
+Referencia TFM: complementa el Capítulo 3 (Arquitectura), Capítulo 4 (Desarrollo)
 y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
 `docs/02-architecture.md`, `docs/04-operations.md`, `docs/06-project-management.md`
 y `README.md`. Los diagramas de `specific_development.md` son versiones simplificadas;
@@ -30,7 +30,7 @@ flowchart LR
   Grafana --> Elasticsearch
 ```
 
-**Fuente**: `README.md` línea 51
+Fuente: `README.md` línea 51
 
 ---
 
@@ -104,7 +104,7 @@ graph TD
  end
 ```
 
-**Fuente**: `docs/02-architecture.md` línea 169
+Fuente: `docs/02-architecture.md` línea 169
 
 ---
 
@@ -153,7 +153,7 @@ flowchart TD
  KPI -->|StatisticalCalculatorInterface| STAT[StatisticalCalculator]
 ```
 
-**Fuente**: `docs/02-architecture.md` línea 1390
+Fuente: `docs/02-architecture.md` línea 1390
 
 ---
 
@@ -184,7 +184,7 @@ C4Context
  Rel(operador, grafana, "Consulta dashboards", "HTTP")
 ```
 
-**Fuente**: `docs/04-operations.md` línea 1296
+Fuente: `docs/04-operations.md` línea 1296
 
 ---
 
@@ -225,7 +225,7 @@ sequenceDiagram
  API->>MISP: GET /soar/misp/events
 ```
 
-**Fuente**: `docs/04-operations.md` línea 1380
+Fuente: `docs/04-operations.md` línea 1380
 
 ---
 
@@ -258,7 +258,7 @@ flowchart TD
  K2 --> Z2([FIN — falso positivo resuelto])
 ```
 
-**Fuente**: `docs/04-operations.md` línea 4302
+Fuente: `docs/04-operations.md` línea 4302
 
 ---
 
@@ -295,7 +295,7 @@ sequenceDiagram
  LabAPI->>Backend: GET /soar/status /metrics
 ```
 
-**Fuente**: `docs/03-api-and-integrations.md` línea 741
+Fuente: `docs/03-api-and-integrations.md` línea 741
 
 ---
 
@@ -327,7 +327,7 @@ sequenceDiagram
  Shuffle-->>TheHive: Actualización final del caso
 ```
 
-**Fuente**: `docs/02-architecture.md` línea 519
+Fuente: `docs/02-architecture.md` línea 519
 
 ---
 
@@ -367,7 +367,7 @@ gantt
  Objetivo 16: Evidencia aprobación :obj16, after obj15, 7d
 ```
 
-**Fuente**: `docs/06-project-management.md` línea 171
+Fuente: `docs/06-project-management.md` línea 171
 
 ---
 
@@ -387,14 +387,14 @@ Fase 3: Desarrollo :crit, f3, after f2, 6w
 Fase 4: Validación :crit, f4, after f3, 6w
 ```
 
-**Nota:** La planificación inicial era de 12 semanas, aumentada a 15 tras
+Nota: La planificación inicial era de 12 semanas, aumentada a 15 tras
 la fase de diseño (integración de Cortex con analyzers externos y stack de
 monitoreo no contemplados inicialmente). La ejecución real se extendió a
 18 semanas (27 abr - 31 ago 2026, 3+3+6+6) debido a la ampliación de la
 suite de tests (2233 tests coleccionados, 1905 seleccionados) y la ejecución del experimento (n=50).
 Ver `objectives_and_methodology.md` para el cronograma real.
 
-**Fuente**: `docs/06-project-management.md` línea 861
+Fuente: `docs/06-project-management.md` línea 861
 
 ---
 
@@ -412,9 +412,9 @@ graph TD
  F[Baja Prob / Medio Impacto] --> R10(Deriva alcance Sí) & R17(CLI inusable Parcial) & R18(Docs-site desactualizado Parcial)
 ```
 
-**Leyenda**: Sí Mitigado · Parcial En seguimiento
+Leyenda: Sí Mitigado · Parcial En seguimiento
 
-**Fuente**: `docs/06-project-management.md` línea 1390
+Fuente: `docs/06-project-management.md` línea 1390
 
 ---
 
@@ -445,7 +445,7 @@ graph TD
  style O fill:#ff6b6b
 ```
 
-**Fuente**: `docs/04-operations.md` línea 4720
+Fuente: `docs/04-operations.md` línea 4720
 
 ---
 
@@ -469,7 +469,7 @@ graph LR
  style I fill:#ff6b6b
 ```
 
-**Fuente**: `docs/04-operations.md` línea 4807
+Fuente: `docs/04-operations.md` línea 4807
 
 ---
 
@@ -491,4 +491,4 @@ graph LR
 | H.12 | GMinst4ll flujo infección | graph TD | Cap. 5 | 04-operations.md:4720 |
 | H.13 | Pipeline SOAR GMinst4ll | graph LR | Cap. 5 | 04-operations.md:4807 |
 
-**Total**: 13 diagramas Mermaid canónicos extraídos de la documentación técnica.
+Total: 13 diagramas Mermaid canónicos extraídos de la documentación técnica.

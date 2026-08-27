@@ -1,6 +1,6 @@
 # Anexo B: Playbook de Automatización SOAR en Shuffle
 
-**Aviso de sincronización**: este anexo es una instantánea estática del workflow de Shuffle.
+Aviso de sincronización: este anexo es una instantánea estática del workflow de Shuffle.
 La versión canónica y actualizada se encuentra en `scripts/setup/shuffle_workflow/`
 (`workflow_definition.py`, `workflow_actions.py`, y 25 scripts embebidos en `scripts/`).
 En caso de discrepancia, prevalece el código del repositorio.
@@ -263,7 +263,7 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 | `act_cortex_ip_googledns` | GoogleDNS | GoogleDNS_resolve | HTTP POST | DNS resolution |
 | `act_cortex_ip_ipapi` | IP-API (sec) | IP-API | HTTP POST | Info adicional de IP |
 
-**Nota**: Los analyzers secundarios (DShield, Mnemonic pDNS, GoogleDNS, IP-API secundario)
+Nota: Los analyzers secundarios (DShield, Mnemonic pDNS, GoogleDNS, IP-API secundario)
 se incluyen dinámicamente solo si están instalados en Cortex. El workflow detecta
 automáticamente qué analyzers están disponibles. Adicionalmente, cualquier analyzer
 instalado no listado arriba se cablea dinámicamente como `act_cortex_dyn_*` (ej.
@@ -337,7 +337,7 @@ El nodo `calc_decision` es el núcleo del workflow. Calcula un score de 0 a 100 
 | `score ≥ 80` OR `verdict == "malicious"` | malicious | **contain** | Contención vía Lab API (`POST /api/v1/contain`), caso permanece `Open`, notify critical |
 | `score < 80` AND `verdict != "malicious"` | suspicious/safe | **observe** | Marcar caso como `Resolved`/`FalsePositive` en TheHive, notify info |
 
-**Nota**: La condición de contención es `score >= 80 OR verdict == "malicious"`, no solo `score >= 80`.
+Nota: La condición de contención es `score >= 80 OR verdict == "malicious"`, no solo `score >= 80`.
 Esto permite que un verdict "malicious" de Cortex (independientemente del score) dispare contención.
 
 ### B.4.3. Técnicas MITRE de Alto Riesgo
@@ -407,7 +407,7 @@ El workflow tiene **61 ramas** (59 base + 2 dinámicas) que conectan los nodos. 
 | act_enrich_case | act_build_metrics_json | Enriquecer -> construir métricas |
 | act_build_metrics_json | act_index_metrics | Métricas -> indexar en ES |
 
-**Nota técnica**: Shuffle 2.2.1 no evalúa condiciones en las ramas nativamente.
+Nota técnica: Shuffle 2.2.1 no evalúa condiciones en las ramas nativamente.
 Ambas ramas (contain y observe) se ejecutan incondicionalmente, pero cada nodo
 downstream verifica internamente `$calc_decision.message.decision` y ejecuta
 su lógica solo si el verdict corresponde.

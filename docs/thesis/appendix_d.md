@@ -221,7 +221,7 @@ Monitoreo (20 pts):
 
 ### Gráfico 5.5: Comparación de Costos y Beneficios
 
-**Nota Importante.** La lógica de cálculo de KPIs existe en el código fuente en:
+Nota Importante. La lógica de cálculo de KPIs existe en el código fuente en:
 
 - `src/soar_lab/domain/services/kpi_analyzer.py` - KPIAnalyzer.calculate_mttr_metrics() para MTTR, calculate_performance_kpis()
   para rendimiento, calculate_health_score() para health score
@@ -532,7 +532,7 @@ completa del rendimiento del sistema.
 | **Response Time API** | ~150ms           | ~200ms          | ~400ms           | 500ms (SLA)    |
 | **Error Rate**        | 0%               | 0%              | 0.8%             | 5% (SLA)       |
 
-**Nota:** Los valores de CPU/Memory/Queue Depth son estimaciones basadas en observación
+Nota: Los valores de CPU/Memory/Queue Depth son estimaciones basadas en observación
 durante la simulación de 50 alertas. Un test de carga formal con herramientas como Locust
 o k6 proporcionaría mediciones precisas. El MTTR medido (P50=193s, P90=622s) no cumple
 los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
@@ -581,7 +581,7 @@ desarrollo futuro.
 | **Compliance Score**      | >70%   | >80%    | >90%    | >95%       |
 | **Customer Satisfaction** | >85%   | >90%    | >92%    | >95%       |
 
-**Nota:** Los valores de esta tabla son objetivos referenciales por tamaño de organización.
+Nota: Los valores de esta tabla son objetivos referenciales por tamaño de organización.
 El laboratorio midió MTTR real de 277.15s (n=50), adecuado para PYME/Mediana según estos umbrales.
 
 ## Visualizaciones Generadas
@@ -592,102 +592,102 @@ Las siguientes figuras se generan automáticamente desde los resultados experime
 
 ![Distribución de alertas por severidad](figures/severity_distribution.png)
 
-**Figura 12**: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
+Figura 12: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
 
 ![Distribución de alertas por tipo](figures/alert_distribution.png)
 
-**Figura 13**: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
+Figura 13: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
 
 ![MTTR por fase del workflow](figures/mttr_by_phase.png)
 
-**Figura 14**: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
+Figura 14: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
 
 ![MTTR por severidad (boxplot)](figures/mttr_severity_boxplot.png)
 
-**Figura 15**: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
+Figura 15: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
 
 ![Percentiles MTTR](figures/GE2_percentiles.png)
 
-**Figura 16**: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
+Figura 16: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
 
 ![Tasas de éxito](figures/GE3_success_rates.png)
 
-**Figura 17**: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
+Figura 17: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
 
 ### Dashboards de Grafana
 
 ![Mejoras por categoría](figures/GE5_improvements.png)
 
-**Figura 18**: Análisis de mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
+Figura 18: Análisis de mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
 
 ![Alertas procesadas por hora (throughput)](figures/workflow_durations.png)
 
-**Figura 19**: Distribución de duraciones de los 50 workflows ejecutados, mostrando el throughput del sistema.
+Figura 19: Distribución de duraciones de los 50 workflows ejecutados, mostrando el throughput del sistema.
 
 ![MTTR por tipo de alerta](figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
 
-**Figura 20**: MTTR por tipo de alerta desde el dashboard de Grafana.
+Figura 20: MTTR por tipo de alerta desde el dashboard de Grafana.
 
 ![Tasa de éxito por severidad](figures/severity_distribution.png)
 
-**Figura 21**: Distribución de alertas por severidad durante las ejecuciones E2E, mostrando la proporción de alertas críticas (severity=3) frente a las de menor severidad.
+Figura 21: Distribución de alertas por severidad durante las ejecuciones E2E, mostrando la proporción de alertas críticas (severity=3) frente a las de menor severidad.
 
 ### Estado de Servicios
 
 ![Resultados de MTTR](figures/Fig5_1_mttr_results.png)
 
-**Figura 22**: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
+Figura 22: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
 
 ![Estado de casos en TheHive](figures/thehive_case_status.png)
 
-**Figura 23**: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
+Figura 23: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
 
 ### Monitoreo de Logs
 
 ![Volumen de logs en Loki](figures/loki_log_volume.png)
 
-**Figura 24**: Volumen de logs agregados en Loki durante las ejecuciones E2E.
+Figura 24: Volumen de logs agregados en Loki durante las ejecuciones E2E.
 
 ### Cumplimiento de Umbrales y Notificaciones
 
 ![Cumplimiento de umbrales](figures/threshold_compliance.png)
 
-**Figura 25**: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
+Figura 25: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
 valores medidos. Se aprecia que el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles
 P50 y P90 no los alcanzan en el conjunto completo.
 
 ![Análisis coste-beneficio](figures/Fig5_5_cost_benefit.png)
 
-**Figura 26**: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
+Figura 26: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
 
 ### Dashboards Complementarios de Grafana
 
 ![Distribución de decisiones del workflow](figures/decision_distribution.png)
 
-**Figura 27**: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
+Figura 27: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
 
 ### Análisis Estadístico Adicional
 
 ![Correlación entre métricas](figures/correlation_heatmap.png)
 
-**Figura 28**: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
+Figura 28: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
 Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del playbook y el tiempo de respuesta.
 
 ![Evolución de métricas durante el proyecto](figures/GE4_metrics_evolution.png)
 
-**Figura 29**: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
+Figura 29: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
 cuatro fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
 
 ![Análisis coste-beneficio (versión extendida)](figures/GE6_cost_benefit.png)
 
-**Figura 30**: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
+Figura 30: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
 extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
 
 ### Estadísticas Operativas
 
 ![Estadísticas diarias organizativas](figures/GE5_improvements.png)
 
-**Figura 31**: Mejoras implementadas por categoría durante el proyecto, mostrando el impacto acumulado en MTTR, precisión y automatización.
+Figura 31: Mejoras implementadas por categoría durante el proyecto, mostrando el impacto acumulado en MTTR, precisión y automatización.
 
 Los KPIs de negocio escalados por tipo de organización (PYME, mediana, grande, enterprise), con objetivos
 realistas adaptados al tamaño y recursos de cada una. Los KPIs incluyen MTTR objetivo, costo por incidente, ROI de SOAR,
