@@ -103,7 +103,7 @@
 - **Anexo E** — `appendix_e.md` — Validación experimental (Quality Score 92.2/100, HPR 96.0/100)
 - **Anexo F** — `appendix_f.md` — Registro de cambios técnicos y editoriales
 - **Anexo G** — `appendix_g.md` — Estrategia de testing (2041 tests, pirámide, quality gates)
-- **Anexo H** — `appendix_h.md` — Diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid)
+- **Anexo H** — `appendix_h.md` — Diagramas canónicos de arquitectura y flujos (12 diagramas Mermaid)
 
 
 ## Detalle de Contenido por Capítulo
@@ -294,7 +294,7 @@
 
 **Anexo H** — `appendix_h.md`
 
-- 13 diagramas Mermaid canónicos
+- 12 diagramas Mermaid canónicos
 - Arquitectura: alto nivel, despliegue Docker, hexagonal, contexto C4
 - Flujos: E2E alertas, árbol decisión playbook, integración API
 - Gestión: Gantt objetivos SMART, roadmap semanal, matriz riesgos

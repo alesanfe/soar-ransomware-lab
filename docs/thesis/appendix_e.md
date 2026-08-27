@@ -146,7 +146,7 @@ Requisitos hardware: 8 GB RAM (16 GB+ recomendado), 2 cores (4+), 50 GB SSD, Doc
 - Estimación inicial 12 sem → 15 sem → 18 sem real (ampliación tests + experimento n=50)
 - Consideraciones éticas: muestras inertes, no exposición de datos reales, entorno aislado
 
-Detalle del cronograma y objetivos en `objectives_and_methodology.md` y Anexo H (H.9, H.10).
+Detalle del cronograma y objetivos en `objectives_and_methodology.md` y Anexo H (H.8, H.9).
 
 ---
 

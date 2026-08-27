@@ -262,44 +262,7 @@ Fuente: `docs/04-operations.md` línea 4302
 
 ---
 
-## H.7. Flujo de Integración API (Sequence Diagram)
-
-Diagrama de secuencia de todas las interacciones API entre el simulador, Shuffle,
-TheHive, Cortex, MISP y Lab API.
-
-```mermaid
-sequenceDiagram
- participant Sim as Simulador SIEM
- participant Shuffle as Shuffle Webhook
- participant Backend as Shuffle Backend
- participant TheHive as TheHive API
- participant Cortex as Cortex API
- participant MISP as MISP API
- participant LabAPI as Lab API
-
- Sim->>Shuffle: POST /api/v1/hooks/{workflow_id} (alert)
- Shuffle->>Backend: Reenvía alerta
- Backend->>TheHive: POST /api/case (crear caso)
- TheHive-->>Backend: Case ID
- Backend->>Cortex: POST /api/analyzer/run (analyzers)
- Cortex-->>Backend: Resultados (score, verdict)
- Backend->>MISP: POST /events/add (enriquecimiento IoC)
- MISP-->>Backend: Evento creado
- Backend->>Backend: Decisión (score >= 80 OR verdict == "malicious"?)
- alt Score ≥ 80 o verdict malicioso
- Backend->>Backend: POST /api/v1/contain (contención Lab API)
- Backend->>TheHive: Case stays Open (no PATCH)
- else Score < 80 y verdict != malicious
- Backend->>TheHive: PATCH /api/case (Resolved/FalsePositive)
- end
- LabAPI->>Backend: GET /soar/status /metrics
-```
-
-Fuente: `docs/03-api-and-integrations.md` línea 741
-
----
-
-## H.8. Respuesta Automatizada (Sequence Diagram)
+## H.7. Respuesta Automatizada (Sequence Diagram)
 
 Diagrama de secuencia de la respuesta automatizada con lógica de contención basada en
 score y verdict de Cortex.
@@ -331,7 +294,7 @@ Fuente: `docs/02-architecture.md` línea 519
 
 ---
 
-## H.9. Cronograma de Objetivos SMART (Gantt)
+## H.8. Cronograma de Objetivos SMART (Gantt)
 
 Diagrama Gantt del cronograma de los 20 objetivos SMART distribuidos en 4 fases
 (planificación inicial 12 semanas, aumentada a 15 tras diseño, ejecución real 18 semanas,
@@ -371,7 +334,7 @@ Fuente: `docs/06-project-management.md` línea 171
 
 ---
 
-## H.10. Roadmap por Semanas (Gantt)
+## H.9. Roadmap por Semanas (Gantt)
 
 Diagrama Gantt simplificado del roadmap semanal con ruta crítica marcada.
 
@@ -398,7 +361,7 @@ Fuente: `docs/06-project-management.md` línea 861
 
 ---
 
-## H.11. Matriz de Priorización de Riesgos
+## H.10. Matriz de Priorización de Riesgos
 
 Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e impacto.
 
@@ -418,7 +381,7 @@ Fuente: `docs/06-project-management.md` línea 1390
 
 ---
 
-## H.12. Caso de Estudio: GMinst4ll (Flujo de Infección)
+## H.11. Caso de Estudio: GMinst4ll (Flujo de Infección)
 
 Diagrama del flujo completo de infección del malware GMinst4ll, desde la distribución
 hasta el despliegue del RAT, usado como caso de estudio real para validar el laboratorio.
@@ -449,7 +412,7 @@ Fuente: `docs/04-operations.md` línea 4720
 
 ---
 
-## H.13. Pipeline SOAR para IoCs de GMinst4ll
+## H.12. Pipeline SOAR para IoCs de GMinst4ll
 
 Diagrama del pipeline SOAR procesando IoCs reales del caso GMinst4ll a través de
 Cortex, MISP, TheHive y Elasticsearch.
@@ -471,24 +434,3 @@ graph LR
 
 Fuente: `docs/04-operations.md` línea 4807
 
----
-
-## H.14. Resumen de Diagramas
-
-| # | Diagrama | Tipo | Sección TFM | Fuente |
-|---|----------|------|-------------|--------|
-| H.1 | Arquitectura de alto nivel | flowchart LR | Cap. 3 | README.md:51 |
-| H.2 | Arquitectura de despliegue Docker | graph TD | Cap. 3 | 02-architecture.md:169 |
-| H.3 | Arquitectura hexagonal | flowchart TD | Cap. 3 | 02-architecture.md:1390 |
-| H.4 | Contexto C4 | C4Context | Cap. 3 | 04-operations.md:1296 |
-| H.5 | Flujo E2E de alertas | sequenceDiagram | Cap. 4 | 04-operations.md:1380 |
-| H.6 | Árbol de decisión playbook | flowchart TD | Cap. 4 | 04-operations.md:4302 |
-| H.7 | Flujo de integración API | sequenceDiagram | Cap. 4 | 03-api-and-integrations.md:741 |
-| H.8 | Respuesta automatizada | sequenceDiagram | Cap. 4 | 02-architecture.md:519 |
-| H.9 | Cronograma objetivos SMART | gantt | Cap. 2 | 06-project-management.md:171 |
-| H.10 | Roadmap por semanas | gantt | Cap. 2 | 06-project-management.md:861 |
-| H.11 | Matriz de riesgos | graph TD | Cap. 2 | 06-project-management.md:1390 |
-| H.12 | GMinst4ll flujo infección | graph TD | Cap. 5 | 04-operations.md:4720 |
-| H.13 | Pipeline SOAR GMinst4ll | graph LR | Cap. 5 | 04-operations.md:4807 |
-
-Total: 13 diagramas Mermaid canónicos extraídos de la documentación técnica.
