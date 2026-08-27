@@ -47,7 +47,7 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | architecture | 1 | 1 | 0.05% |
 | **Total** | **170** | **2041** | 100% |
 
-Nota. El desglose por categoría (2041 tests) corresponde a la instantánea del
+Nota: el desglose por categoría (2041 tests) corresponde a la instantánea del
 `holistic_review` en el momento de generación del reporte. El total actual es
 2233 tests coleccionados (1905 seleccionados, 328 deseleccionados) — ver estadísticas generales.
 La diferencia (192 tests) corresponde a tests añadidos tras la generación del reporte.
