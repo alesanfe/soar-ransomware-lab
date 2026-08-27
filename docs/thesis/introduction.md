@@ -94,7 +94,7 @@ sugerencias para entornos que deseen aplicar capacidades SOAR similares.
 - Anexo E: validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100).
 - Anexo F: registro de cambios técnicos y editoriales aplicados durante el desarrollo.
 - Anexo G: estrategia de testing (2041 tests, pirámide, quality gates).
-- Anexo H: diagramas canónicos de arquitectura y flujos (13 diagramas Mermaid).
+- Anexo H: diagramas canónicos de arquitectura y flujos (12 diagramas Mermaid).
 
 ---
 

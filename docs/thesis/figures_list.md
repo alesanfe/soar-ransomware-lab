@@ -72,13 +72,12 @@
 | Figura 41 | Diagrama de Contexto C4 (C4Context)             |
 | Figura 42 | Flujo E2E de Alertas (sequenceDiagram)          |
 | Figura 43 | Árbol de Decisión del Playbook (flowchart)      |
-| Figura 44 | Flujo de Integración API (sequenceDiagram)      |
-| Figura 45 | Respuesta Automatizada (sequenceDiagram)        |
-| Figura 46 | Cronograma Objetivos SMART (gantt)              |
-| Figura 47 | Roadmap por Semanas (gantt)                     |
-| Figura 48 | Matriz de Priorización de Riesgos (graph)       |
-| Figura 49 | GMinst4ll: Flujo de Infección (graph TD)        |
-| Figura 50 | Pipeline SOAR para IoCs GMinst4ll (graph LR)    |
+| Figura 44 | Respuesta Automatizada (sequenceDiagram)        |
+| Figura 45 | Cronograma Objetivos SMART (gantt)              |
+| Figura 46 | Roadmap por Semanas (gantt)                     |
+| Figura 47 | Matriz de Priorización de Riesgos (graph)       |
+| Figura 48 | GMinst4ll: Flujo de Infección (graph TD)        |
+| Figura 49 | Pipeline SOAR para IoCs GMinst4ll (graph LR)    |
 
 ---
 
@@ -99,4 +98,4 @@
 4. **Actualización**: Las figuras han sido actualizadas con los datos experimentales obtenidos durante la validación
    del sistema en agosto de 2026.
 
-5. **Total**: 50 figuras (11 en capítulos + 26 en Anexo D + 13 en Anexo H).
+5. **Total**: 49 figuras (11 en capítulos + 26 en Anexo D + 12 en Anexo H).
