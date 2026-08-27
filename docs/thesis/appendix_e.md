@@ -107,29 +107,55 @@ anotar cada archivo. Adicionalmente, `test_smoke.py` usa sub-marcadores
 
 ## E.5. Tests E2E (49 archivos, 281 tests)
 
-Catálogo de Test Cases E2E principales:
+Catálogo completo de Test Cases E2E (40 TCs en `tests/e2e/TC-*/`):
 
-| TC | Nombre | Descripción |
-|----|--------|-------------|
-| TC-00 | Both Workflows | Validación ambos escenarios |
-| TC-01 | Malicious | Alerta maliciosa básica |
-| TC-02 | Benign | Alerta benigna (falso positivo) |
-| TC-04 | Performance | Rendimiento del workflow |
-| TC-05 | Concurrent | Alertas concurrentes (172 líneas) |
-| TC-06 | Critical | Severidad crítica (138 líneas) |
-| TC-09 | Realistic | Escenario ransomware realista (224 líneas, el más largo) |
-| TC-10 | Tenzir | Integración Tenzir |
-| TC-16 | Error Handling | Manejo de errores |
-| TC-20 | Zero Trust | Zero trust / least privilege (123 líneas) |
-| TC-21 | Forensic | Análisis forense |
-| TC-25 | Behavioral | Detección comportamental (131 líneas) |
-| TC-26 | Extreme Load | Carga extrema (126 líneas) |
-| TC-28 | UI E2E | UI end-to-end |
-| TC-30 | Offline | Modo offline |
-| TC-31 | Compliance | Cumplimiento |
-| TC-32 | Golden Thread | Integridad hilo dorado (152 líneas) |
-| TC-33 | Real IoCs | IoCs reales (gminst4ll) |
-| TC-KPI-01..06 | KPIs | Métricas KPI MTTR, node timings, coherencia |
+| TC | Nombre | Tests | Descripción |
+|----|--------|-------|-------------|
+| TC-00 | Both Workflows | 4 | Validación parametrizada de ambos escenarios (malicioso/benigno) |
+| TC-01 | Malicious | 11 | Alerta maliciosa básica — pipeline SOAR completo |
+| TC-02 | Benign | 5 | Alerta benigna (falso positivo) — pipeline SOAR completo |
+| TC-03 | Edge Cases | 10 | Resiliencia: payloads edge-case no deben causar crash |
+| TC-04 | Performance | 15 | Latencia, throughput y uso de recursos bajo carga |
+| TC-05 | Concurrent | 6 | Alertas concurrentes (múltiples simultáneas) |
+| TC-06 | Critical | 6 | Severidad crítica — comportamiento del workflow |
+| TC-07 | Missing Fields | 5 | Campos ausentes (hash/IP) — manejo de errores |
+| TC-08 | Additional Fields | 4 | Campos adicionales — comportamiento del workflow |
+| TC-09 | Realistic | 7 | Escenario ransomware realista (224 líneas, el más largo) |
+| TC-10 | Tenzir | 11 | Integración Tenzir (ingestión de eventos) |
+| TC-11 | Network Watcher | 11 | Integración Network Watcher (conexiones de red) |
+| TC-12 | Redis | 10 | Integración Redis (caché de IoCs) |
+| TC-13 | Loki | 15 | Integración Loki (ingestión de logs) |
+| TC-14 | Complete SOAR + Traceability | 10 | Integración completa SOAR + trazabilidad end-to-end |
+| TC-15 | API Latency | 9 | Latencia de API por servicio individual |
+| TC-16 | Error Handling | 7 | Clasificación de errores, éxito parcial y modo degradado |
+| TC-17 | Network Watcher Monitoring | 9 | Monitorización de conexiones de red |
+| TC-18 | Resilience | 5 | Resiliencia y modo degradado (Cortex/MISP no disponibles) |
+| TC-19 | Security | 13 | Validación de input y autenticación (payloads malformados) |
+| TC-20 | Zero Trust | 4 | Zero trust y segmentación de red (least privilege) |
+| TC-21 | Forensic | 7 | Integridad forense (cadena de custodia, audit trail) |
+| TC-22 | Persistence | 9 | Persistencia y restauración (reboot, backup) |
+| TC-23 | Privacy | 7 | Privacidad y secretos (PII masking, secret redaction) |
+| TC-24 | Malware Específico | 4 | Respuesta diferenciada para malware específico |
+| TC-25 | Behavioral | 4 | Detección conductual (behavioral detection) |
+| TC-26 | Extreme Load | 4 | Carga extrema: alert storm, estrés del sistema |
+| TC-27 | Configuration | 4 | Gestión de configuración |
+| TC-28 | UI E2E | 12 | UI end-to-end: login, navegación, alert management |
+| TC-29 | Compliance + Large Evidence | 5 | Cumplimiento (MITRE/D3FEND) + evidencia grande |
+| TC-30 | Offline | 3 | Modo offline / air-gapped |
+| TC-31 | Compliance + Containment | 11 | Cumplimiento (MITRE/D3FEND) + contención de endpoint |
+| TC-32 | Golden Thread + IOC Analysis | 5 | Hilo dorado (integridad cross-system) + tiempo de análisis IOC |
+| TC-33 | Real IoCs (gminst4ll) | 10 | Validación con muestra forense real |
+| TC-KPI-01 | MTTR Calculation | 1 | Verificación del cálculo de MTTR |
+| TC-KPI-02 | KPI Dashboard | 2 | Dashboard Grafana + percentiles MTTR |
+| TC-KPI-03 | KPI Alerts | 1 | Alertas basadas en KPIs |
+| TC-KPI-04 | MTTR Percentiles + Success Rates | 3 | Percentiles MTTR (SLA) + tasas de éxito por servicio |
+| TC-KPI-05 | Node Timings + Success Rates | 3 | Timing por nodo + tasas de éxito por servicio |
+| TC-KPI-06 | KPI Data Coherence + Service Health | 9 | Coherencia Shuffle/TheHive/Cortex + salud de servicios |
+
+Nota: TC-99 existe como directorio vacío (placeholder, sin tests). Los 49
+archivos incluyen `__init__.py`, `conftest.py`, `workflow_validator.py`,
+`base/` (8 mixins), `assertions/` (4 módulos) y `helpers/` (4 módulos)
+además de los 40 directorios TC-*/TC-KPI-*.
 
 Total de tests largos (>50 líneas): **169** (8.3% del total).
 
