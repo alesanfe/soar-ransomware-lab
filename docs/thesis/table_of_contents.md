@@ -96,7 +96,7 @@
 
 ### Anexos
 
-- **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, guías de instalación
+- **Anexo A** — `appendix_a.md` — Configuración Docker completa, scripts, troubleshooting
 - **Anexo B** — `appendix_b.md` — Workflow SOAR completo (46 nodos, 60 ramas, 25 scripts Python)
 - **Anexo C** — `appendix_c.md` — Gráficos y diagramas complementarios (las tablas se han reubicado en sus capítulos correspondientes)
 - **Anexo D** — `appendix_d.md` — Métricas y visualizaciones complementarias

@@ -40,16 +40,15 @@
 | Tabla  | Título                                    | Página |
 |--------|-------------------------------------------|--------|
 | Tabla 13 | Variables de Entorno Docker Compose      | 84     |
-| Tabla 14 | Comandos Make Disponibles                | 88     |
 
 ## Tablas del Anexo D: Métricas y Visualizaciones
 
 | Tabla  | Título                                          | Página |
 |--------|-------------------------------------------------|--------|
-| Tabla 15 | Métricas de Rendimiento por Componente          | 126    |
-| Tabla 16 | Análisis de Carga del Sistema                   | 128    |
-| Tabla 17 | Métricas de Calidad del Software                | 130    |
-| Tabla 18 | KPIs de Negocio por Organización                | 132    |
+| Tabla 14 | Métricas de Rendimiento por Componente          | 126    |
+| Tabla 15 | Análisis de Carga del Sistema                   | 128    |
+| Tabla 16 | Métricas de Calidad del Software                | 130    |
+| Tabla 17 | KPIs de Negocio por Organización                | 132    |
 
 ---
 
@@ -63,4 +62,4 @@
 3. **Actualización**: Las tablas han sido actualizadas con los datos experimentales obtenidos durante la validación
    del sistema en agosto de 2026.
 
-4. **Total**: 18 tablas (2 en cap.2 + 1 en cap.3 + 7 en cap.4 + 2 en cap.5 + 2 en Anexo A + 4 en Anexo D).
+4. **Total**: 17 tablas (2 en cap.2 + 1 en cap.3 + 7 en cap.4 + 2 en cap.5 + 1 en Anexo A + 4 en Anexo D).
