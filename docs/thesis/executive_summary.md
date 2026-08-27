@@ -15,7 +15,7 @@ La propuesta se valida mediante escenarios benigno y malicioso, midiendo el tiem
 simulada usando percentiles p50 y p90. El trabajo genera evidencias verificables como logs y métricas. Con un alcance
 académico y educativo, el estudio aporta evidencia de que la automatización mejora la consistencia, la trazabilidad y
 la eficiencia operativa en un entorno controlado. La suite de pruebas contiene 2041 tests (9 marcadores pytest,
-coverage 84.6 %, 49 TCs E2E) y 281 tests E2E del playbook ejecutados correctamente.
+coverage 84.6 %, 39 TCs E2E) y 281 tests E2E del playbook ejecutados correctamente.
 
 **Palabras clave:** SOAR, ransomware, automatización, playbook, MTTR
 

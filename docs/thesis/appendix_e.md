@@ -29,7 +29,7 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 | Tests seleccionados | 1905 |
 | Tests deseleccionados | 328 |
 | Tests ejecutados (última run) | 1905 (2 skipped esperados) |
-| Archivos de test | 170 |
+| Archivos de test | 169 |
 | Tiempo de ejecución | ~200s (3m 20s) |
 | Warnings | 4 |
 
@@ -39,13 +39,13 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 |-----------|----------|-------|-------------|
 | unit | 79 | 1245 | 61.0% |
 | integration | 30 | 336 | 16.5% |
-| e2e | 49 | 281 | 13.8% |
+| e2e | 48 | 281 | 13.8% |
 | atomic | 4 | 101 | 5.0% |
 | security | 1 | 27 | 1.3% |
 | performance | 4 | 30 | 1.5% |
 | general | 2 | 20 | 1.0% |
 | architecture | 1 | 1 | 0.05% |
-| **Total** | **170** | **2041** | 100% |
+| **Total** | **169** | **2041** | 100% |
 
 Nota: el desglose por categoría (2041 tests) corresponde a la instantánea del
 `holistic_review` en el momento de generación del reporte. El total actual es
@@ -105,9 +105,9 @@ anotar cada archivo. Adicionalmente, `test_smoke.py` usa sub-marcadores
 
 ---
 
-## E.5. Tests E2E (49 archivos, 281 tests)
+## E.5. Tests E2E (48 archivos, 281 tests)
 
-Catálogo completo de Test Cases E2E (40 TCs en `tests/e2e/TC-*/`):
+Catálogo completo de Test Cases E2E (39 TCs en `tests/e2e/TC-*/`):
 
 | TC | Nombre | Tests | Descripción |
 |----|--------|-------|-------------|
@@ -152,10 +152,9 @@ Catálogo completo de Test Cases E2E (40 TCs en `tests/e2e/TC-*/`):
 | TC-KPI-05 | Node Timings + Success Rates | 3 | Timing por nodo + tasas de éxito por servicio |
 | TC-KPI-06 | KPI Data Coherence + Service Health | 9 | Coherencia Shuffle/TheHive/Cortex + salud de servicios |
 
-Nota: TC-99 existe como directorio vacío (placeholder, sin tests). Los 49
-archivos incluyen `__init__.py`, `conftest.py`, `workflow_validator.py`,
+Los 48 archivos incluyen `__init__.py`, `conftest.py`, `workflow_validator.py`,
 `base/` (8 mixins), `assertions/` (4 módulos) y `helpers/` (4 módulos)
-además de los 40 directorios TC-*/TC-KPI-*.
+además de los 39 directorios TC-*/TC-KPI-*.
 
 Total de tests largos (>50 líneas): **169** (8.3% del total).
 
