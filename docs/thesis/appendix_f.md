@@ -1,6 +1,6 @@
 # Anexo F: Diagramas de Arquitectura y Flujos (Mermaid)
 
-Referencia TFM: complementa el Capítulo 3 (Arquitectura), Capítulo 4 (Desarrollo)
+Referencia TFM: complementa el Capítulo 4 (Desarrollo específico) y el Capítulo 2 (Estado del arte),
 y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
 `docs/02-architecture.md`, `docs/04-operations.md`, `docs/06-project-management.md`
 y `README.md`. Los diagramas de `specific_development.md` son versiones simplificadas;
