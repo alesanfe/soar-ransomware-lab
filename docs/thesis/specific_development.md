@@ -120,7 +120,7 @@ Arquitectura General del Sistema
 
 El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal (ports and adapters) que aísla el dominio de los detalles técnicos: `domain/` no importa nada de `infrastructure/`, los puertos definen qué operaciones necesita el dominio y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites. El beneficio es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
 
-Para la infraestructura Docker se emplea una arquitectura en capas que mantiene la lógica de negocio desacoplada de las implementaciones concretas. La **Figura 3** muestra la arquitectura general y la **Figura 4** el despliegue Docker Compose, ambos en formato Mermaid canónico en el **Anexo H** (sección H.1).
+Para la infraestructura Docker se emplea una arquitectura en capas que mantiene la lógica de negocio desacoplada de las implementaciones concretas. La **Figura 3** muestra la arquitectura general y la **Figura 4** el despliegue Docker Compose, ambos en formato Mermaid canónico en el **Anexo F** (sección F.1).
 
 Flujo General del Sistema
 
@@ -143,7 +143,7 @@ graph TD     A[Generación de Alertas] --> B[Recepción en Shuffle]
 
 #### Arquitectura de Código Python
 
-El código en `src/soar_lab/` se organiza según el patrón hexagonal: el dominio en el centro, aislado de infraestructura y frameworks. Los diagramas canónicos completos están en el **Anexo H** (secciones H.2, H.3 y H.4).
+El código en `src/soar_lab/` se organiza según el patrón hexagonal: el dominio en el centro, aislado de infraestructura y frameworks. Los diagramas canónicos completos están en el **Anexo F** (secciones F.2, F.3 y F.4).
 
 ```mermaid
 ---
@@ -621,11 +621,11 @@ La **Figura 5** muestra el estado de los jobs de Cortex: 255 de 257 jobs se comp
 
 **Figura 5**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito).
 
-El consumo medido con `docker stats` se mantuvo dentro de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %). Ningún contenedor superó su límite, confirmando la viabilidad en un host con 16 GiB RAM. La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) se detalla en el **Anexo E** (sección E.1).
+El consumo medido con `docker stats` se mantuvo dentro de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %). Ningún contenedor superó su límite, confirmando la viabilidad en un host con 16 GiB RAM. La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) se detalla en el **Anexo D** (sección D.1).
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
-El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en el **Anexo G** (sección G.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo E** (sección E.1).
+El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 49 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
 
 Comandos de prueba y calidad disponibles:
 
@@ -673,8 +673,8 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 
 | Figura    | Título                                          | Archivo                                    |
 |-----------|-------------------------------------------------|--------------------------------------------|
-| Figura 3 | Arquitectura General del Laboratorio SOAR      | Anexo H (H.2)                              |
-| Figura 4 | Diagrama de Despliegue Docker Compose          | Anexo H (H.3)                              |
+| Figura 3 | Arquitectura General del Laboratorio SOAR      | Anexo F (F.2)                              |
+| Figura 4 | Diagrama de Despliegue Docker Compose          | Anexo F (F.3)                              |
 | Figura 5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
 | Figura 6 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
 | Figura 7a | Tiempos por componente del workflow           | `figures/mttr_by_phase.png`                |

@@ -23,7 +23,7 @@ La progresión del ransomware a través de generaciones muestra una tendencia cl
 
 La primera generación se caracterizaba por encriptación básica y demandas de rescate modestas, mientras que la cuarta generación actual incorpora triple extorsión (cifrado + exfiltración + DDoS) y depende de access brokers que venden acceso inicial a redes corporativas (Sophos, 2024). Esta progresión indica la necesidad de capacidades de respuesta automatizadas, ya que la respuesta manual resulta insuficiente ante amenazas de esta complejidad. Los informes anuales de CrowdStrike (CrowdStrike, 2024) y Sophos (Sophos, 2024) corroboran esta tendencia con datos de telemetría global de sus respectivos clientes.
 
-Como muestra de la complejidad que alcanzan las amenazas actuales, el **Anexo H** (secciones H.11 y H.12) documenta el caso real del malware GMinst4ll, un RAT que ilustra varias técnicas propias de la cuarta generación: distribución mediante ingeniería social en plataformas legítimas (YouTube, Tumblr), uso de dead drops (Pastebin, Reddit, Telegram, Dropbox) para la configuración del C2, persistencia mediante scripts VBS y anti-forenses (killer de antivirus, bloqueo DNS), y exfiltración a través de Telegram. El pipeline SOAR diseñado en este TFM procesa los IoCs extraídos de este caso real a través de Cortex, MISP y TheHive (Anexo H, sección H.12).
+Como muestra de la complejidad que alcanzan las amenazas actuales, el **Anexo F** (secciones F.11 y F.12) documenta el caso real del malware GMinst4ll, un RAT que ilustra varias técnicas propias de la cuarta generación: distribución mediante ingeniería social en plataformas legítimas (YouTube, Tumblr), uso de dead drops (Pastebin, Reddit, Telegram, Dropbox) para la configuración del C2, persistencia mediante scripts VBS y anti-forenses (killer de antivirus, bloqueo DNS), y exfiltración a través de Telegram. El pipeline SOAR diseñado en este TFM procesa los IoCs extraídos de este caso real a través de Cortex, MISP y TheHive (Anexo F, sección F.12).
 
 ## 2.2. Automatización, SOAR y playbooks en operaciones de seguridad
 
@@ -88,13 +88,13 @@ La literatura revisada converge en tres ideas. Primera: el tiempo de reacción c
 
 Pese a la abundancia de modelos conceptuales (CACAO, ATT&CK), guías prácticas (NIST, CISA) y estudios cualitativos, ningún trabajo revisado ejecuta un playbook SOAR específico para ransomware en condiciones controladas midiendo MTTR con percentiles, desviación estándar y consistencia entre ejecuciones. Gutzwiller et al. (2023) no reportan MTTR cuantitativo; Karlzén y Sommestad (2023) detectan vaguedad en entradas y salidas; Kok et al. (2023) y Brown et al. (2023) se centran en el diseño, no en la medición. Este TFM aborda dicha brecha ejecutando un playbook E2E sobre 50 alertas simuladas y reportando métricas estadísticas que permiten contrastar la hipótesis de que la automatización reduce el MTTR frente a la respuesta manual.
 
-El **Anexo H** (sección H.1) recopila 12 diagramas Mermaid canónicos que ilustran la arquitectura y los flujos referenciados en esta revisión.
+El **Anexo F** (sección F.1) recopila 12 diagramas Mermaid canónicos que ilustran la arquitectura y los flujos referenciados en esta revisión.
 
 ---
 
 ## Índice de Figuras del Capítulo 2
 
-Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados se encuentran en el Anexo H.
+Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados se encuentran en el Anexo F.
 
 ## Índice de Tablas del Capítulo 2
 

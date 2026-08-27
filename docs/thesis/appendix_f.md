@@ -1,4 +1,4 @@
-# Anexo H: Diagramas de Arquitectura y Flujos (Mermaid)
+# Anexo F: Diagramas de Arquitectura y Flujos (Mermaid)
 
 Referencia TFM: complementa el Capítulo 3 (Arquitectura), Capítulo 4 (Desarrollo)
 y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
@@ -8,7 +8,7 @@ los de este anexo son los completos.
 
 ---
 
-## H.1. Arquitectura de Alto Nivel
+## F.1. Arquitectura de Alto Nivel
 
 Diagrama de componentes principales y flujo de datos del sistema SOAR.
 
@@ -34,7 +34,7 @@ Fuente: `README.md` línea 51
 
 ---
 
-## H.2. Arquitectura de Despliegue Docker
+## F.2. Arquitectura de Despliegue Docker
 
 Diagrama completo de la topología Docker: Nginx proxy, redes (soar_net, ti_net,
 logging_net) y conexiones entre los 23 servicios.
@@ -108,7 +108,7 @@ Fuente: `docs/02-architecture.md` línea 169
 
 ---
 
-## H.3. Arquitectura Hexagonal (Ports & Adapters)
+## F.3. Arquitectura Hexagonal (Ports & Adapters)
 
 Diagrama de la arquitectura hexagonal del código Python: capas de dominio, aplicación,
 infraestructura e interfaces, con sus puertos y adaptadores.
@@ -157,7 +157,7 @@ Fuente: `docs/02-architecture.md` línea 1390
 
 ---
 
-## H.4. Diagrama de Contexto C4
+## F.4. Diagrama de Contexto C4
 
 Modelo C4 de contexto mostrando los límites del sistema y las integraciones externas.
 
@@ -188,7 +188,7 @@ Fuente: `docs/04-operations.md` línea 1296
 
 ---
 
-## H.5. Flujo End-to-End de Alertas (Sequence Diagram)
+## F.5. Flujo End-to-End de Alertas (Sequence Diagram)
 
 Diagrama de secuencia completo del flujo de una alerta desde el simulador SIEM hasta
 la indexación de métricas en Elasticsearch, pasando por Shuffle, TheHive, Cortex y MISP.
@@ -229,7 +229,7 @@ Fuente: `docs/04-operations.md` línea 1380
 
 ---
 
-## H.6. Árbol de Decisión del Playbook
+## F.6. Árbol de Decisión del Playbook
 
 Flowchart del playbook SOAR mostrando la lógica de decisión: validación, creación de caso,
 análisis con Cortex, y branching entre contención (malicioso) y falso positivo (benigno).
@@ -262,7 +262,7 @@ Fuente: `docs/04-operations.md` línea 4302
 
 ---
 
-## H.7. Respuesta Automatizada (Sequence Diagram)
+## F.7. Respuesta Automatizada (Sequence Diagram)
 
 Diagrama de secuencia de la respuesta automatizada con lógica de contención basada en
 score y verdict de Cortex.
@@ -294,7 +294,7 @@ Fuente: `docs/02-architecture.md` línea 519
 
 ---
 
-## H.8. Cronograma de Objetivos SMART (Gantt)
+## F.8. Cronograma de Objetivos SMART (Gantt)
 
 Diagrama Gantt del cronograma de los 20 objetivos SMART distribuidos en 4 fases
 (planificación inicial 12 semanas, aumentada a 15 tras diseño, ejecución real 18 semanas,
@@ -334,7 +334,7 @@ Fuente: `docs/06-project-management.md` línea 171
 
 ---
 
-## H.9. Roadmap por Semanas (Gantt)
+## F.9. Roadmap por Semanas (Gantt)
 
 Diagrama Gantt simplificado del roadmap semanal con ruta crítica marcada.
 
@@ -361,7 +361,7 @@ Fuente: `docs/06-project-management.md` línea 861
 
 ---
 
-## H.10. Matriz de Priorización de Riesgos
+## F.10. Matriz de Priorización de Riesgos
 
 Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e impacto.
 
@@ -381,7 +381,7 @@ Fuente: `docs/06-project-management.md` línea 1390
 
 ---
 
-## H.11. Caso de Estudio: GMinst4ll (Flujo de Infección)
+## F.11. Caso de Estudio: GMinst4ll (Flujo de Infección)
 
 Diagrama del flujo completo de infección del malware GMinst4ll, desde la distribución
 hasta el despliegue del RAT, usado como caso de estudio real para validar el laboratorio.
@@ -412,7 +412,7 @@ Fuente: `docs/04-operations.md` línea 4720
 
 ---
 
-## H.12. Pipeline SOAR para IoCs de GMinst4ll
+## F.12. Pipeline SOAR para IoCs de GMinst4ll
 
 Diagrama del pipeline SOAR procesando IoCs reales del caso GMinst4ll a través de
 Cortex, MISP, TheHive y Elasticsearch.

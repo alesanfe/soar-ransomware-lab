@@ -2,7 +2,7 @@
 
 > Las páginas indicadas son orientativas y se confirmarán en el PDF final.
 > Las tablas siguen enumeración propia y secuencial (Tabla 1, 2, 3...) conforme aparecen en el documento,
-> independientemente del capítulo o anexo donde se encuentren (formato APA 7ª edición).
+> independientemente del capítulo o Anexo donde se encuentren (formato APA 7ª edición).
 
 ## Tablas del Capítulo 2: Estado del Arte
 
@@ -41,7 +41,7 @@
 |--------|-------------------------------------------|--------|
 | Tabla 13 | Variables de Entorno Docker Compose      | 84     |
 
-## Tablas del Anexo D: Métricas y Visualizaciones
+## Tablas del Anexo C: Métricas y Visualizaciones
 
 | Tabla  | Título                                          | Página |
 |--------|-------------------------------------------------|--------|
@@ -62,4 +62,4 @@
 3. **Actualización**: Las tablas han sido actualizadas con los datos experimentales obtenidos durante la validación
    del sistema en agosto de 2026.
 
-4. **Total**: 17 tablas (2 en cap.2 + 1 en cap.3 + 7 en cap.4 + 2 en cap.5 + 1 en Anexo A + 4 en Anexo D).
+4. **Total**: 17 tablas (2 en cap.2 + 1 en cap.3 + 7 en cap.4 + 2 en cap.5 + 1 en Anexo A + 4 en Anexo C).
