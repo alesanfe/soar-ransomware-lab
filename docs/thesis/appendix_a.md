@@ -1,6 +1,6 @@
-# Anexo A
+# Anexo A: Configuración Técnica del Laboratorio
 
-Aviso de sincronización. este anexo es una instantánea estática de la configuración Docker Compose y variables de
+Aviso de sincronización: este anexo es una instantánea estática de la configuración Docker Compose y variables de
 entorno. La versión canónica y actualizada del stack se encuentra en `infra/docker/compose/` (y `.env.example`/`.env.full`).
 En caso de discrepancia, prevalecen los archivos Compose del repositorio.
 
@@ -178,17 +178,17 @@ El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.
 | Panel | Título | Tipo |
 |-------|--------|------|
 | 1 | Total Alerts Processed | stat |
-| 2 | MTTR Medio (s) — Gráfico 4.4 | stat |
+| 2 | MTTR Medio (s) | stat |
 | 3 | Alertas Críticas (severity=3) | stat |
-| 4 | MTTR p50 (Mediana) — Gráfico 4.4 | stat |
-| 5 | MTTR p90 — Gráfico 4.4 | stat |
-| 6 | Análisis de Percentiles MTTR (distribución completa) — Gráfico 4.4 | timeseries |
-| 7 | Evolución MTTR (tendencia diaria) — Gráfico 5.3 | timeseries |
-| 8 | Tasa de Éxito por Tipo de Alerta — Gráfico 4.5 | piechart |
-| 9 | Alertas por Severidad (distribución SOAR) — Gráfico 4.3 | barchart |
-| 10 | Tasa de Éxito Servicios (TheHive / Cortex / MISP) — Gráfico 4.5 | timeseries |
+| 4 | MTTR p50 (Mediana) | stat |
+| 5 | MTTR p90 | stat |
+| 6 | Análisis de Percentiles MTTR (distribución completa) | timeseries |
+| 7 | Evolución MTTR (tendencia diaria) | timeseries |
+| 8 | Tasa de Éxito por Tipo de Alerta | piechart |
+| 9 | Alertas por Severidad (distribución SOAR) | barchart |
+| 10 | Tasa de Éxito Servicios (TheHive / Cortex / MISP) | timeseries |
 | 11 | MTTR Max / Min (rango de variabilidad) | stat |
-| 12 | Alertas procesadas por hora (throughput SOAR) — Gráfico 5.4 | timeseries |
+| 12 | Alertas procesadas por hora (throughput SOAR) | timeseries |
 | 13 | MTTR por Tipo de Alerta | barchart |
 | 14 | Tasa de Éxito por Severidad | barchart |
 | 15 | Evolución de Alertas por Tipo | timeseries |
