@@ -190,16 +190,19 @@ C4Context
  System_Ext(misp, "MISP", "Inteligencia de amenazas")
  System_Ext(shuffle, "Shuffle", "Workflows SOAR")
  System_Ext(es, "Elasticsearch", "Almacén de eventos y métricas")
+ System_Ext(redis, "Redis", "Caché de IoCs")
  System_Ext(grafana, "Grafana / Loki", "Observabilidad")
 
  Rel(operador, soar, "Accede vía navegador", "HTTPS / Web Management")
- Rel(soar, siem, "Recibe alertas o consulta agentes", "HTTP/REST")
+ Rel(siem, soar, "Envía alertas de ransomware", "HTTP/REST")
  Rel(soar, thehive, "Crea y actualiza casos", "HTTP/REST")
  Rel(soar, cortex, "Ejecuta analyzers", "HTTP/REST")
  Rel(soar, misp, "Enriquece IoCs", "HTTP/REST")
- Rel(soar, shuffle, "Dispara workflows y recibe métricas", "HTTP/REST")
+ Rel(soar, shuffle, "Dispara workflows y responde a contención", "HTTP/REST")
+ Rel(shuffle, soar, "Contención + caché IoCs", "HTTP/REST")
  Rel(soar, es, "Lee / escribe eventos y KPIs", "HTTP/REST")
- Rel(operador, grafana, "Consulta dashboards", "HTTP")
+ Rel(soar, redis, "Caché IoCs", "RESP")
+ Rel(operador, grafana, "Consulta dashboards", "HTTPS")
 ```
 
 Fuente: `docs/04-operations.md` línea 1296
