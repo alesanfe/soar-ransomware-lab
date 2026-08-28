@@ -1575,7 +1575,8 @@ python -m pytest tests/e2e --collect-only -q
 
 ```
 tests/e2e/
-├── TC-00/ to TC-32/ # Casos de prueba funcionales
+├── base/ # Clases base y utilidades compartidas
+├── TC-00/ to TC-33/ # Casos de prueba funcionales
 ├── TC-KPI-01/ to TC-KPI-06/ # Casos de validación de KPIs
 ├── assertions/ # Helpers de aserciones compartidas
 ├── conftest.py # Fixtures globales (clientes, alertas, credenciales)
