@@ -2206,7 +2206,7 @@ Respuesta:
 #### CLI (desde el contenedor o entorno Python)
 
 ```bash
-python -m src.soar_lab.interfaces.api.cli api
+python -m soar_lab.interfaces.api.cli api
 # o directamente con la API en http://localhost:8000
 ```
 
@@ -3319,7 +3319,7 @@ Reemplazar el comando inline por una llamada al script Python `configure_es.py`:
 docker exec soar_elasticsearch bash -c "curl -X PUT ..."
 
 # Después (script Python centralizado)
-docker exec soar_api python3 -m soar_lab.scripts.setup.configure_es
+docker exec soar_api python /app/scripts/setup/configure_es.py
 ```
 
 El script `scripts/setup/configure_es.py` centraliza la configuración de Elasticsearch (templates de índice, configuración de réplicas).
@@ -3981,7 +3981,7 @@ El índice se creó automáticamente con un mapping erróneo (p. ej., `mttr_seco
  ```
 4. Si el problema es solo réplicas en un clúster de un nodo, reconfigurar:
  ```bash
- docker exec soar_api python3 -m soar_lab.scripts.setup.configure_es
+ docker exec soar_api python /app/scripts/setup/configure_es.py
  ```
 
 **Verificación:**
