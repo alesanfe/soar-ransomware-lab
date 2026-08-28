@@ -11,36 +11,45 @@ los de este anexo son los completos.
 ## F.1. Arquitectura de Alto Nivel
 
 Diagrama de componentes principales y flujo de datos del sistema SOAR. Muestra
-13 de los 23 contenedores Docker con acciones de negocio (Shuffle, TheHive,
-Cortex, MISP, Lab API, Redis, Network Watcher, Tenzir, Elasticsearch,
-OpenSearch, Loki, Promtail, Grafana) más el simulador SIEM (script Python, no
-contenedor) y TI (sistemas externos). Los 10 contenedores restantes (Orborus,
-Shuffle UI, Nginx, Web Management, Docs Site, GrafanaDB, Grafana Renderer,
-MISP DB, MISP Modules, OpenSearch Dashboards) son internos o UI y se omiten
-en esta vista de alto nivel; aparecen en el diagrama de despliegue F.2.
+los 23 contenedores Docker del laboratorio más el simulador SIEM (script Python,
+no contenedor) y TI (sistemas externos).
 
 ```mermaid
 flowchart LR
-  SIEM[(SIEM simulado)] -- Webhook/Feeder --> Shuffle
-  Shuffle -- API --> TheHive
+  SIEM[(SIEM simulado)] -- Webhook/Feeder --> ShuffleBE[Shuffle Backend]
+  ShuffleBE -- API --> TheHive
   TheHive -- Observables --> Cortex
   Cortex -- Analyzers --> TI[(Threat Intel)]
-  Shuffle -- Eventos/IoCs --> MISP[(MISP)]
-  Shuffle -- Contención + cache --> API[Lab API /api/v1/contain]
+  ShuffleBE -- Eventos/IoCs --> MISP
+  ShuffleBE -- Contención + cache --> API[Lab API]
   API -- cache IoCs --> Redis[(Redis)]
-  Shuffle -- Conexiones --> NW[Network Watcher]
-  Shuffle -- Tráfico red --> Tenzir[Tenzir Node]
-  TheHive <--> Elasticsearch
-  Shuffle <--> OpenSearch[OpenSearch]
-  API -- Metrics --> Elasticsearch
-  Shuffle -- Log search --> Loki[Loki]
+  ShuffleBE -- Conexiones --> NW[Network Watcher]
+  ShuffleBE -- Tráfico red --> Tenzir[Tenzir Node]
+  TheHive <--> ES[Elasticsearch]
+  ShuffleBE <--> OS[OpenSearch]
+  API -- Metrics --> ES
+  ShuffleBE -- Log search --> Loki[Loki]
   Promtail[Promtail] --> Loki
   Loki --> Grafana[Grafana]
-  Elasticsearch --> Grafana
-  Grafana --> Elasticsearch
+  ES --> Grafana
+  Grafana --> ES
+  Grafana --> GrafanaDB[(GrafanaDB)]
+  GrafanaRenderer[Grafana Renderer] --> Grafana
+  ShuffleFE[Shuffle Frontend] --> ShuffleBE
+  Orborus[Orborus] --> ShuffleBE
+  ShuffleBE --> OS
+  OSDashboards[OpenSearch Dashboards] --> OS
+  MISP --> MISPDB[(MISP DB MariaDB)]
+  MISP --> MISPModules[MISP Modules]
+  Nginx[Nginx] --> API
+  Nginx --> WebMgmt[Web Management]
+  Nginx --> TheHive
+  Nginx --> Cortex
+  Nginx --> ShuffleBE
+  DocsSite[Docs Site] --> Nginx
 ```
 
-Fuente: `README.md` línea 51
+Fuente: `README.md` línea 51, `infra/docker/compose/docker-compose*.yml`
 
 ---
 
@@ -65,6 +74,7 @@ graph TD
  MISP[MISP :8083]
  Grafana[Grafana :8084]
  DocsSite[Docs Site :8086]
+ OSDashboards[OpenSearch Dashboards :5602]
  end
 
  subgraph "Docker network: soar_net"
@@ -76,7 +86,6 @@ graph TD
  LabAPI -- HTTP --> MISPInternal[MISP :80]
  LabAPI -- HTTP --> GrafanaInternal[Grafana :3000]
 
- ShuffleBackend -- HTTP --> Orborus[Orborus :5000]
  Orborus -- HTTP --> ShuffleBackend
  ShuffleBackend -- HTTP --> OpenSearch
  ShuffleBackend -- HTTP --> MISPInternal
@@ -92,13 +101,11 @@ graph TD
  MISPInternal -- SQL --> MariaDB[MariaDB :3306]
  MISPInternal -- HTTP --> MISPModules[MISP Modules :6666]
 
- OpenSearch -- HTTP --> OSDashboards[OpenSearch Dashboards :5601]
+ OSDashboards -- HTTP --> OpenSearch
 
  GrafanaInternal -- HTTP --> ES
  GrafanaInternal -- HTTP --> Loki
- GrafanaInternal -- HTTP --> GrafanaDB[(GrafanaDB PostgreSQL)]
  Promtail[Promtail] --> Loki
- GrafanaRenderer[Grafana Renderer :8081] --> GrafanaInternal
  end
 
  subgraph "Docker network: ti_net (internal)"
@@ -113,8 +120,10 @@ graph TD
  Promtail
  Loki
  GrafanaInternal
- GrafanaRenderer
- GrafanaDB
+ GrafanaRenderer[Grafana Renderer :8081]
+ GrafanaDB[(GrafanaDB PostgreSQL)]
+ GrafanaRenderer --> GrafanaInternal
+ GrafanaInternal -- HTTP --> GrafanaDB
  LabAPI
  Nginx
  end
@@ -132,8 +141,8 @@ infraestructura e interfaces, con sus puertos y adaptadores.
 ```mermaid
 flowchart TD
  subgraph Entrada["Adaptadores de entrada"]
- F[FastAPI routes<br/>src/soar_lab/interfaces/api/main.py]
- C[CLI soar-lab<br/>src/soar_lab/interfaces/api/cli.py]
+ F[FastAPI routes<br/>39 endpoints: auth, backup, analytics,<br/>soar proxy, services, tests, ws]
+ C[CLI soar-lab<br/>version, api, generate-iocs,<br/>generate-secrets]
  W[Web Management SPA<br/>apps/web-management/]
  end
 
@@ -141,10 +150,12 @@ flowchart TD
  AS[AuthService]
  BS[BackupService]
  ANS[AnalyticsService]
+ AKU[AggregatedKpisUseCase]
+ NTU[NodeTimingsUseCase]
  end
 
  subgraph Dominio["Capa de dominio"]
- PORTS[Puertos: AlertRepository<br/>BackupDriver, TokenProviderInterface<br/>SystemMetricsInterface<br/>StatisticalCalculatorInterface...]
+ PORTS[Puertos: AlertRepository, IocRepository,<br/>BackupDriver, TokenProviderInterface,<br/>SystemMetricsInterface,<br/>StatisticalCalculatorInterface,<br/>SyncHTTPClient, CacheInterface...]
  ALERT[AlertGenerator]
  KPI[KPIAnalyzer]
  IOC[SimulatedIOCGenerator]
@@ -155,13 +166,21 @@ flowchart TD
  SQLITE[SqliteAlertRepository]
  TAR[TarBackupDriver]
  JWT[JWTTokenProvider]
- HTTP[AioHTTPClient -> Shuffle/TheHive/Cortex/MISP/ES]
+ INTEG[Integration Clients<br/>TheHiveClient, CortexClient,<br/>MISPClient, ShuffleClient,<br/>ElasticsearchClient<br/>BaseHTTPClient SyncHTTPClient]
  SMETRICS[SystemMetricsDriver]
+ HEALTH[HTTPHealthCheckAdapter<br/>AioHTTPClient]
  end
 
  F -->|/auth/login| AS
  F -->|/backup/create| BS
  F -->|/analytics/kpis| ANS
+ F -->|/analytics/kpis/aggregated| AKU
+ F -->|/analytics/node-timings| NTU
+ F -->|/soar/thehive/cases| INTEG
+ F -->|/soar/cortex/jobs| INTEG
+ F -->|/soar/misp/events| INTEG
+ F -->|/api/v1/contain| INTEG
+ F -->|/health /services/status| HEALTH
  C -->|generate-iocs| IOC
  W --> F
  AS -->|TokenProviderInterface| JWT
@@ -169,6 +188,7 @@ flowchart TD
  ANS -->|AlertRepository| SQLITE
  ANS -->|SystemMetricsInterface| SMETRICS
  ANS -->|StatisticalCalculatorInterface| STAT
+ ANS -->|KPIAnalyzer| KPI
  KPI -->|StatisticalCalculatorInterface| STAT
 ```
 
@@ -194,6 +214,8 @@ C4Context
  System_Ext(opensearch, "OpenSearch", "Datastore de ejecuciones de Shuffle")
  System_Ext(redis, "Redis", "Caché de IoCs")
  System_Ext(grafana, "Grafana / Loki", "Observabilidad")
+ System_Ext(tenzir, "Tenzir", "Análisis de tráfico de red")
+ System_Ext(nw, "Network Watcher", "Monitor de conexiones de red")
 
  Rel(operador, soar, "Accede vía navegador", "HTTPS / Web Management")
  Rel(siem, soar, "Envía alertas de ransomware", "HTTP/REST")
@@ -205,6 +227,8 @@ C4Context
  Rel(soar, es, "Lee / escribe eventos y KPIs", "HTTP/REST")
  Rel(shuffle, opensearch, "Almacena ejecuciones de workflows", "HTTP/REST")
  Rel(soar, redis, "Caché IoCs", "RESP")
+ Rel(soar, tenzir, "Analiza tráfico de red", "HTTP/REST")
+ Rel(soar, nw, "Consulta conexiones de red", "HTTP/REST")
  Rel(operador, grafana, "Consulta dashboards", "HTTP")
 ```
 
@@ -240,12 +264,13 @@ sequenceDiagram
  par En paralelo
    Backend->>TheHive: POST observables (hash, IP)
    Backend->>TheHive: POST task (tareas IR)
-   Backend->>Cortex: POST /api/analyzer/{id}/run (hash)
-   Backend->>Cortex: POST /api/analyzer/{id}/run (IP)
+   Backend->>Cortex: POST /api/analyzer/{id}/run (hash: Hashdd, VirusShare)
+   Backend->>Cortex: POST /api/analyzer/{id}/run (IP: DShield, Mnemonic pDNS, IP-API, GoogleDNS)
    Backend->>MISP: POST /events (crear evento)
    Backend->>MISP: POST /attributes/restSearch (buscar IoCs)
    Backend->>NW: GET /api/connections?ip={src_ip}
    Backend->>Tenzir: POST /api/v0/pipeline/create
+   Backend->>Tenzir: POST /api/v0/serve (publicar resultados)
    Backend->>API: POST /api/v1/cache/ioc (caché Redis)
    API->>Redis: SET ioc:{hash} {alert_id} TTL 3600
    Backend->>Loki: GET /loki/api/v1/query_range
@@ -263,6 +288,7 @@ sequenceDiagram
  end
  Backend->>Backend: calc_mttr + build_hive_summary
  Backend->>TheHive: PATCH /api/case (enrich: summary + tags)
+ Backend->>Backend: build_metrics_json (mttr_seconds, score, verdict)
  Backend->>ES: POST /soar-metrics/_doc/{alert_id} (mttr_seconds, ...)
  API->>ES: GET /analytics/kpis/aggregated
  API->>TheHive: GET /soar/thehive/cases
@@ -289,10 +315,11 @@ flowchart TD
  D -->|OK case_id| E[N3: Adjuntar observables<br/>hash + IP + task IR]
  D --> F[N4: Ejecutar analyzers Cortex<br/>hash + IP + dinámicos]
  D --> G[N5: MISP crear evento + buscar IoCs]
- D --> H[N6: ES indexar alerta<br/>POST /soar-alerts]
- D --> I[N7: Network Watcher + Tenzir + Loki + Redis]
+ D --> H[N6: build_es_json + ES indexar<br/>POST /soar-alerts]
+ D --> I[N7: Network Watcher + Tenzir<br/>pipeline/create + serve<br/>+ Loki + Redis]
 
- F --> J{N8: calc_decision<br/>score ≥ 80 o verdict == malicious?}
+ E --> J{N8: calc_decision<br/>score ≥ 80 o verdict == malicious?}
+ F --> J
  G --> J
  H --> J
  I --> J
@@ -300,9 +327,9 @@ flowchart TD
  J -->|SÍ| K["N9: POST /api/v1/contain<br/>(contención Lab API)"]
  K --> L["N10: Case stays Open<br/>(no PATCH)"]
  L --> M[N11: Notificación CRITICAL email]
- M --> N[N12: calc_mttr + build_summary]
+ M --> N[N12: calc_mttr + build_hive_summary]
  N --> O[N13: enrich_case<br/>PATCH /api/case summary+tags]
- O --> P[N14: Indexar métricas ES<br/>POST /soar-metrics]
+ O --> P[N14: build_metrics_json + Indexar ES<br/>POST /soar-metrics]
  P --> Z([FIN — caso contenido])
 
  J -->|NO| K2[N9b: mark_false_positive<br/>PATCH Resolved/FalsePositive]
@@ -316,32 +343,30 @@ Fuente: `docs/04-operations.md` línea 4302
 
 ## F.7. Respuesta Automatizada (Sequence Diagram)
 
-Diagrama de secuencia de la respuesta automatizada con lógica de contención basada en
-score y verdict de Cortex.
+Diagrama de secuencia del zoom sobre la rama de decisión del playbook: tras
+`calc_decision`, el workflow ejecuta contención (malicioso) o marca falso positivo
+(benigno), seguido del enriquecimiento del caso y la indexación de métricas.
 
 ```mermaid
 sequenceDiagram
  participant Shuffle as Shuffle Orborus
  participant TheHive as TheHive
- participant Cortex as Cortex
  participant API as Lab API (/api/v1/contain)
  participant ES as Elasticsearch
 
- Shuffle->>TheHive: Consulta caso y observables
- TheHive-->>Shuffle: Datos del caso
- Shuffle->>Cortex: Ejecuta analyzers en IoCs
- Cortex-->>Shuffle: Resultados (score, verdict)
- alt Score ≥ 80 o verdict malicioso
- Shuffle->>API: POST /api/v1/contain (Lab API)
- API-->>Shuffle: Contención confirmada
- Shuffle->>Shuffle: update_inprogress (case stays Open)
+ Note over Shuffle: calc_decision ya ejecutado<br/>score y verdict disponibles
+ alt score ≥ 80 o verdict == malicious
+ Shuffle->>API: POST /api/v1/contain (contención simulada)
+ API-->>Shuffle: Contención confirmada (modo simulation)
+ Shuffle->>TheHive: update_inprogress (case stays Open, no PATCH status)
  Shuffle->>Shuffle: notify_critical (email CRITICAL)
- else Score < 80 y verdict benigno
- Shuffle->>TheHive: PATCH /api/case (Resolved/FalsePositive)
+ else score < 80 y verdict != malicious
+ Shuffle->>TheHive: PATCH /api/case (status=Resolved, resolutionStatus=FalsePositive)
  Shuffle->>Shuffle: notify_info (email INFO)
  end
  Shuffle->>Shuffle: calc_mttr + build_hive_summary
  Shuffle->>TheHive: PATCH /api/case (enrich: summary + tags)
+ Shuffle->>Shuffle: build_metrics_json (mttr_seconds, score, verdict)
  Shuffle->>ES: POST /soar-metrics/_doc/{alert_id}
 ```
 
@@ -385,11 +410,7 @@ gantt
  Objetivo 16 - Evidencia aprobación :obj16, after obj15, 14d
 ```
 
-Fuente: `docs/06-project-management.md` línea 171
-
----
-
-## F.9. Roadmap por Semanas (Gantt)
+Fuente: `docs/thesis/objectives_and_methodology.md` líneas 86-116 (cronograma 18 semanas 2026), `docs/06-project-management.md` líneas 171-203 (objetivos SMART)
 
 Diagrama Gantt simplificado del roadmap semanal con ruta crítica marcada.
 
@@ -421,11 +442,7 @@ monitoreo no contemplados inicialmente). La ejecución real se extendió a
 suite de tests (2233 tests coleccionados, 1905 seleccionados) y la ejecución del experimento (n=50).
 Ver `objectives_and_methodology.md` para el cronograma real.
 
-Fuente: `docs/06-project-management.md` línea 861
-
----
-
-## F.10. Matriz de Priorización de Riesgos
+Fuente: `docs/thesis/objectives_and_methodology.md` líneas 90-116 (Gantt 18 semanas 2026)
 
 Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e impacto.
 
@@ -441,7 +458,7 @@ graph TD
 
 Leyenda: Sí Mitigado · Parcial En seguimiento
 
-Fuente: `docs/06-project-management.md` línea 1390
+Fuente: `docs/06-project-management.md` línea 1381 (tabla detallada R1-R24, fuente autoritativa)
 
 ---
 
@@ -449,30 +466,34 @@ Fuente: `docs/06-project-management.md` línea 1390
 
 Diagrama del flujo completo de infección del malware GMinst4ll, desde la distribución
 hasta el despliegue del RAT, usado como caso de estudio real para validar el laboratorio.
+Incluye vectores de distribución, C2 (Pastebin, Dropbox, Reddit, Telegram), persistencia,
+evasión y capacidades del Pulsar RAT.
 
 ```mermaid
 graph TD
- A[YouTube/Tumblr] -->|Engaño| B[MediaFire]
+ A[YouTube/Tumblr/Discord] -->|Engaño| B[MediaFire]
  B -->|Descarga RAR pw: 4204| C[GMinst4ll 2.03.rar]
  C -->|Ejecución| D[TREZ_cor 4.52.3.exe]
  D -->|C2 Check| E{C2 Check}
- E -->|Pastebin| F[Configuración dinámica]
+ E -->|Pastebin| F[Configuración dinámica<br/>Token Telegram + Chat ID]
  E -->|Dropbox| G[SystemSP.rar pw: zoroz]
- E -->|Reddit| H[IoCs/Dead drop]
- E -->|Telegram| I[Exfiltración]
+ E -->|Reddit| H[Dead drop resolver]
+ E -->|Telegram| I[Exfiltración Bot API]
  G --> J[4 Scripts VBS/BAT]
- J --> K[max.vbs - Persistencia]
- J --> L[babuchen.bat - Killer AV]
- J --> M[rodendron.vbs - GitHub C2]
- J --> N[WinStatChecking.bat - DNS block]
+ J --> K[max.vbs - Persistencia<br/>Winlogon UserInit]
+ J --> L[babuchen.bat - Killer AV<br/>14 servicios + 34 suites]
+ J --> M[rodendron.vbs - GitHub C2<br/>RunOnceEx loader]
+ J --> N[WinStatChecking.bat - DNS block<br/>hosts: 66 dominios + DNS 8.8.8.8]
  M -->|github.com/boycots563/wlt56| O[Windows Compatibility Agent.exe]
  O --> P[Pulsar RAT v1.6.6.0]
- P --> Q[HVNC, Keylogger, Webcam, Wallet Clipper]
+ P --> Q[HVNC, Keylogger, Webcam,<br/>Audio, Clipboard, Remote desktop,<br/>Wallet clipper BTC/LTC/ETH/XMR/SOL]
+ P --> R[Anti-VM 14 checks<br/>Anti-debug 10 checks<br/>UAC disable EnableLUA=0]
  style A fill:#ff6b6b
  style C fill:#ff6b6b
  style D fill:#ff6b6b
  style P fill:#ff6b6b
  style Q fill:#ff6b6b
+ style R fill:#ff6b6b
 ```
 
 Fuente: `docs/04-operations.md` línea 4720
@@ -482,27 +503,35 @@ Fuente: `docs/04-operations.md` línea 4720
 ## F.12. Pipeline SOAR para IoCs de GMinst4ll
 
 Diagrama del pipeline SOAR procesando IoCs reales del caso GMinst4ll a través de
-Cortex, MISP, TheHive y Elasticsearch.
+Cortex, MISP, TheHive y Elasticsearch. Validado con TC-33 (10 subtests: hashes,
+URLs, dominios, IPs, Telegram, claves de registro, MITRE ATT&CK).
 
 ```mermaid
 graph LR
- A[Webhook Shuffle] --> B[Workflow SOAR]
+ A[Webhook Shuffle<br/>TC-33: 10 subtests] --> B[Workflow SOAR]
  B --> C[Cortex: análisis hash/IP]
- B --> D[MISP: crear evento + buscar IoCs]
- B --> E[TheHive: caso + observables + tareas IR]
+ B --> D[MISP: crear evento hash+IP<br/>+ buscar hash]
+ B --> E[TheHive: caso + observables<br/>hash + IP + tarea IR]
  B --> F[Elasticsearch: soar-alerts + soar-metrics]
- B --> M[Network Watcher + Tenzir + Loki + Redis]
+ B --> M[Network Watcher + Tenzir<br/>+ Loki + Redis]
  C --> G[Analyzers: Hashdd, VirusShare,<br/>DShield, Mnemonic pDNS,<br/>IP-API, GoogleDNS]
  D --> H[Correlación amenazas]
  E --> I[Tareas IR: severity ≥3 aislar<br/>severity <3 investigar + preservar]
  E --> J{calc_decision<br/>score ≥ 80 o malicious?}
- J -->|Sí| K[POST /api/v1/contain]
+ J -->|Sí| K[POST /api/v1/contain<br/>modo simulation]
  J -->|No| L[PATCH /api/case<br/>Resolved/FalsePositive]
+ K --> N[calc_mttr + build_hive_summary<br/>+ enrich_case + soar-metrics]
+ L --> N
  style A fill:#2196F3
  style E fill:#4CAF50
  style I fill:#ff6b6b
  style K fill:#ff6b6b
 ```
+
+Nota: Para IoCs de GMinst4ll sin enriquecimiento previo de Cortex/MISP, el score
+base de `calc_decision` es 60 (severity=3 → +60), veredicto `suspicious`, decisión
+`observe`. La contención se activa cuando los analyzers de Cortex o la correlación
+de MISP elevan el score a ≥80 o el veredicto a `malicious`.
 
 Fuente: `docs/04-operations.md` línea 4807
 
