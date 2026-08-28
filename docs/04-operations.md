@@ -223,7 +223,7 @@ Tras generarlo, revisa `.env.full` y ajusta los valores no secretos (puertos, ho
 
 > **Nota sobre secretos válidos:**
 > - Las contraseñas de las bases de datos (MariaDB/PostgreSQL) **no deben contener `@` ni `!`** para evitar problemas de escaping en URLs de conexión.
-> - requiere una contraseña de alta complejidad: mayúsculas, minúsculas, números y un carácter especial permitido como `.` o `-` (p. ej. ``). No usar `@` ni `!`.
+> - requiere una contraseña de alta complejidad: mayúsculas, minúsculas, números y un carácter especial permitido como `.` o `-` (p. ej. `MyP4ss.word`). No usar `@` ni `!`.
 
 #### Catálogo de variables de entorno
 
