@@ -894,7 +894,18 @@ Scripts principales:
 
 **Estado Actual de Integraciones:**
 
-| Integración | Componentes | Modo | Estado | Notas | |---|---|---|---|---| | Shuffle → TheHive | Shuffle workflow, TheHive API | Creación/actualización de casos | **Implementada** | `THEHIVE_API_KEY` en `.env.full`; app descargada en Shuffle | | Shuffle → Cortex | Shuffle workflow, Cortex API | Ejecución de analyzers | **Implementada** | `CORTEX_API_KEY`; analyzers con API key externa son opcionales | | Shuffle → MISP | Shuffle workflow, MISP API | Enriquecimiento y registro de IoCs | **Implementada** | `MISP_API_KEY`; sincronización bidireccional puede requerir ajuste manual | | Shuffle → Elasticsearch | Shuffle workflow, ES API | Indexado de métricas e incidentes | **Implementada** | Índice `soar-metrics`  | | TheHive → Shuffle | TheHive webhook a Shuffle | Notificación de eventos de caso | **Implementada** | Configurar webhook en `application.conf` / UI | | Lab API → Elasticsearch / TheHive / Cortex / MISP / | API endpoints, clientes Python | Consulta de estado y KPIs | **Implementada** | Clientes en `src/soar_lab/infrastructure/integrations/` | | Contención de endpoints | Shuffle workflow, scripts `notify.sh` | Simulada | **Simulada** | No hay agente EDR real; se registran notificaciones y métricas | | MFA / SSO | — | No operativo | **Planificado** | Autenticación actual: JWT HS256 | | WAF / mTLS / segmentación real | Nginx | No operativo | **Planificado / No verificado** | Nginx es proxy inverso con certificado autofirmado | | Alta disponibilidad | Docker Compose | No operativo | **Planificado** | Despliegue single-host |
+| Integración | Componentes | Modo | Estado | Notas |
+|---|---|---|---|---|
+| Shuffle → TheHive | Shuffle workflow, TheHive API | Creación/actualización de casos | **Implementada** | `THEHIVE_API_KEY` en `.env.full`; app descargada en Shuffle |
+| Shuffle → Cortex | Shuffle workflow, Cortex API | Ejecución de analyzers | **Implementada** | `CORTEX_API_KEY`; analyzers con API key externa son opcionales |
+| Shuffle → MISP | Shuffle workflow, MISP API | Enriquecimiento y registro de IoCs | **Implementada** | `MISP_API_KEY`; sincronización bidireccional puede requerir ajuste manual |
+| Shuffle → Elasticsearch | Shuffle workflow, ES API | Indexado de métricas e incidentes | **Implementada** | Índice `soar-metrics` |
+| TheHive → Shuffle | TheHive webhook a Shuffle | Notificación de eventos de caso | **Implementada** | Configurar webhook en `application.conf` / UI |
+| Lab API → Elasticsearch / TheHive / Cortex / MISP / | API endpoints, clientes Python | Consulta de estado y KPIs | **Implementada** | Clientes en `src/soar_lab/infrastructure/integrations/` |
+| Contención de endpoints | Shuffle workflow, scripts `notify.sh` | Simulada | **Simulada** | No hay agente EDR real; se registran notificaciones y métricas |
+| MFA / SSO | — | No operativo | **Planificado** | Autenticación actual: JWT HS256 |
+| WAF / mTLS / segmentación real | Nginx | No operativo | **Planificado / No verificado** | Nginx es proxy inverso con certificado autofirmado |
+| Alta disponibilidad | Docker Compose | No operativo | **Planificado** | Despliegue single-host |
 
 
 #### 3.3.5 Validación de tests
@@ -1234,7 +1245,14 @@ docker compose \
 
 #### 3.2 Perfiles de despliegue
 
-| Compose file | Propósito | Servicios principales | |---|---|---| | `infra/docker/compose/docker-compose.yml` | Orquestador base | Redes, volúmenes, `elasticsearch` | | `infra/docker/compose/docker-compose.core.yml` | Core SOAR | `redis`, `thehive`, `cortex`, `shuffle-frontend`, `shuffle-backend`, `orborus`, `network-watcher`, `tenzir-node` | | `infra/docker/compose/docker-compose.misp.yml` | Inteligencia de amenazas | `misp-db`, `misp-modules`, `misp` | | `infra/docker/compose/docker-compose.api.yml` | API y aplicaciones | `api`, `docs-site`, `web-management`, `nginx` | | `infra/docker/compose/logging/docker-compose.logging.yml` | Observabilidad | `grafana-db`, `grafana`, `loki`, `promtail` | | `infra/docker/compose/docker-compose.opensearch.yml` | OpenSearch adicional (no se despliega por defecto) | `opensearch`, `opensearch-dashboards` |
+| Compose file | Propósito | Servicios principales |
+|---|---|---|
+| `infra/docker/compose/docker-compose.yml` | Orquestador base | Redes, volúmenes, `elasticsearch` |
+| `infra/docker/compose/docker-compose.core.yml` | Core SOAR | `redis`, `thehive`, `cortex`, `shuffle-frontend`, `shuffle-backend`, `orborus`, `network-watcher`, `tenzir-node` |
+| `infra/docker/compose/docker-compose.misp.yml` | Inteligencia de amenazas | `misp-db`, `misp-modules`, `misp` |
+| `infra/docker/compose/docker-compose.api.yml` | API y aplicaciones | `api`, `docs-site`, `web-management`, `nginx` |
+| `infra/docker/compose/logging/docker-compose.logging.yml` | Observabilidad | `grafana-db`, `grafana`, `loki`, `promtail` |
+| `infra/docker/compose/docker-compose.opensearch.yml` | OpenSearch adicional (no se despliega por defecto) | `opensearch`, `opensearch-dashboards` |
 
 ---
 
@@ -1244,7 +1262,12 @@ docker compose \
 
 El laboratorio define varias redes internas para segmentar el tráfico. Aunque el proyecto no usa el campo `profiles:` de Docker Compose, algunas redes y servicios solo se activan si se incluyen los archivos compose correspondientes. `make up` los incluye todos por defecto.
 
-| Red | CIDR | Tipo | Servicios principales | Propósito | |---|---|---|---|---| | `soar_net` | `10.100.0.0/16` | bridge | Todos los servicios salvo `grafana-db` | Red principal del laboratorio | | `logging_net` | `172.23.0.0/16` | bridge | `grafana-db`, `grafana`, `loki`, `promtail`, `nginx` | Observabilidad (declarada en `docker-compose.yml` y referenciada en `logging/docker-compose.logging.yml`) | | `ti_net` | `172.22.0.0/16` | `internal: true` | `elasticsearch`, `redis`, `api`, `shuffle-backend`, `shuffle-frontend` | Inteligencia de amenazas (sin salida a Internet) | | `bridge` | — | `external: true` | Ninguno directamente | Red por defecto de Docker; declarada por compatibilidad |
+| Red | CIDR | Tipo | Servicios principales | Propósito |
+|---|---|---|---|---|
+| `soar_net` | `10.100.0.0/16` | bridge | Todos los servicios salvo `grafana-db` | Red principal del laboratorio |
+| `logging_net` | `172.23.0.0/16` | bridge | `grafana-db`, `grafana`, `loki`, `promtail`, `nginx` | Observabilidad (declarada en `docker-compose.yml` y referenciada en `logging/docker-compose.logging.yml`) |
+| `ti_net` | `172.22.0.0/16` | `internal: true` | `elasticsearch`, `redis`, `api`, `shuffle-backend`, `shuffle-frontend` | Inteligencia de amenazas (sin salida a Internet) |
+| `bridge` | — | `external: true` | Ninguno directamente | Red por defecto de Docker; declarada por compatibilidad |
 
 `Promtail` está en `soar_net` y `logging_net` para descubrir todos los contenedores y enviar logs a Loki.
 Grafana se conecta a `logging_net` y `soar_net` para poder consultar `elasticsearch:9200` y Loki.
@@ -1267,7 +1290,14 @@ Nginx escucha en `80` y `443` y actúa como proxy inverso. Los certificados SSL 
 Para evitar advertencias de seguridad en el navegador, importar `soar.local.crt` como autoridad de confianza.
 Nginx redirige HTTP a HTTPS y, bajo `443`, enruta los siguientes subpaths:
 
-| Subpath | Backend | Notas | |---|---|---| | `/` | `web-management:80` | SPA principal del panel de operación | | `/api/` | `soar_api:8000` | API REST/SOAR; añade headers CORS | | `/thehive/` | `soar_thehive:9000` | Proxy con reescritura de path | | `/cortex/` | `soar_cortex:9001` | Proxy con reescritura de path | | `/shuffle-api/` | `shuffle-backend:5001` | Endpoint de webhooks y API de Shuffle | | `/nginx-health` | — | Healthcheck de Nginx |
+| Subpath | Backend | Notas |
+|---|---|---|
+| `/` | `web-management:80` | SPA principal del panel de operación |
+| `/api/` | `soar_api:8000` | API REST/SOAR; añade headers CORS |
+| `/thehive/` | `soar_thehive:9000` | Proxy con reescritura de path |
+| `/cortex/` | `soar_cortex:9001` | Proxy con reescritura de path |
+| `/shuffle-api/` | `shuffle-backend:5001` | Endpoint de webhooks y API de Shuffle |
+| `/nginx-health` | — | Healthcheck de Nginx |
 
 Servicios con SPA o assets absolutos **no se sirven por subpath** y requieren acceso directo: Shuffle UI (`8081`), MISP (`8083`), Grafana (`8084`), Docs Site (`8086`) Dashboard (`8202`).
 
@@ -1667,7 +1697,10 @@ docker exec -it soar_api sh -c 'wget -qO- http://elasticsearch:9200/_cluster/hea
 
 #### 2. Acceso
 
-| Modo | URL | Credenciales | |---|---|---| | Via Nginx (recomendado) | `https://soar.local` | `admin` / `WEB_UI_PASSWORD` (`.env.full`) | | Directo | `http://localhost:${WEB_UI_PORT:-8085}` | `admin` / `WEB_UI_PASSWORD` (`.env.full`) |
+| Modo | URL | Credenciales |
+|---|---|---|
+| Via Nginx (recomendado) | `https://soar.local` | `admin` / `WEB_UI_PASSWORD` (`.env.full`) |
+| Directo | `http://localhost:${WEB_UI_PORT:-8085}` | `admin` / `WEB_UI_PASSWORD` (`.env.full`) |
 
 > Requisito: tener `soar.local` resuelto a `127.0.0.1` en `/etc/hosts` o `C:\Windows\System32\drivers\etc\hosts`.
 
@@ -1732,7 +1765,13 @@ La aplicación web (`apps/web-management/script.js`) implementa un SPA que se au
 
 #### 6. Solución de problemas
 
-| Síntoma | Causa probable | Solución | |---|---|---| | `ERR_CONNECTION_REFUSED` en `https://soar.local` | Nginx no arrancó o `soar.local` no está en hosts | `docker compose ps nginx`; añadir `127.0.0.1 soar.local` | | Login incorrecto | Contraseña distinta a `.env.full` | Actualizar `WEB_UI_PASSWORD` y reiniciar `web-management` | | Logs vacíos | WebSocket cerrado o API no inyectó `websocket_manager` | Verificar `docker logs soar_api` | | Tests no devuelven resultado | `test_runner` no disponible o contenedor sin tests | Revisar `pytest` en contenedor `soar_api` | | Métricas a 0 | `system_metrics` no configurado | Verificar que `psutil` esté instalado y `system_metrics` esté en `CompositionRoot` |
+| Síntoma | Causa probable | Solución |
+|---|---|---|
+| `ERR_CONNECTION_REFUSED` en `https://soar.local` | Nginx no arrancó o `soar.local` no está en hosts | `docker compose ps nginx`; añadir `127.0.0.1 soar.local` |
+| Login incorrecto | Contraseña distinta a `.env.full` | Actualizar `WEB_UI_PASSWORD` y reiniciar `web-management` |
+| Logs vacíos | WebSocket cerrado o API no inyectó `websocket_manager` | Verificar `docker logs soar_api` |
+| Tests no devuelven resultado | `test_runner` no disponible o contenedor sin tests | Revisar `pytest` en contenedor `soar_api` |
+| Métricas a 0 | `system_metrics` no configurado | Verificar que `psutil` esté instalado y `system_metrics` esté en `CompositionRoot` |
 
 #### 7. Referencias
 

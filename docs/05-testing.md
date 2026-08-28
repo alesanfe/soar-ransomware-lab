@@ -264,7 +264,15 @@ El archivo `tests/conftest.py` en el directorio raíz de tests contiene fixtures
 
 #### Pirámide de calidad
 
-| Nivel | Tipo | Qué valida | Ejecución canónica | |---|---|---|---| | Unitarios | `tests/unit/` | Funciones, modelos, utilidades sin dependencias externas | `pytest tests/unit/ -v` | | Atómicos | `tests/atomic/` | Componentes individuales con mocks | `pytest tests/atomic/ -v` | | Integración | `tests/integration/` | Interacción entre adaptadores y clientes | `pytest tests/integration/ -v` | | Seguridad | `tests/security/` | Validación de secretos, permisos, entradas maliciosas | `pytest tests/security/ -v` | | Rendimiento | `tests/performance/` | Latencia, carga, benchmarks | `pytest tests/performance/ -v` | | E2E | `tests/e2e/TC-*` | Flujo completo del playbook con servicios en ejecución | `pytest tests/e2e/ -v` | | Smoke | marcadores `smoke*` | Salud mínima tras despliegue | `pytest -m smoke -v` |
+| Nivel | Tipo | Qué valida | Ejecución canónica |
+|---|---|---|---|
+| Unitarios | `tests/unit/` | Funciones, modelos, utilidades sin dependencias externas | `pytest tests/unit/ -v` |
+| Atómicos | `tests/atomic/` | Componentes individuales con mocks | `pytest tests/atomic/ -v` |
+| Integración | `tests/integration/` | Interacción entre adaptadores y clientes | `pytest tests/integration/ -v` |
+| Seguridad | `tests/security/` | Validación de secretos, permisos, entradas maliciosas | `pytest tests/security/ -v` |
+| Rendimiento | `tests/performance/` | Latencia, carga, benchmarks | `pytest tests/performance/ -v` |
+| E2E | `tests/e2e/TC-*` | Flujo completo del playbook con servicios en ejecución | `pytest tests/e2e/ -v` |
+| Smoke | marcadores `smoke*` | Salud mínima tras despliegue | `pytest -m smoke -v` |
 
 No se incluyen conteos estáticos. Para conocer el estado actual:
 
