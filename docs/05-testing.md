@@ -689,7 +689,7 @@ def sample_alert():
 @pytest.fixture
 def mock_thehive_client():
  \"\"\"Mock del cliente API de TheHive\"\"\"
- with patch('scripts.send_alert.TheHiveClient') as mock:
+ with patch('soar_lab.infrastructure.integrations.thehive.client.TheHiveClient') as mock:
  yield mock
 ```
 

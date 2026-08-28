@@ -1705,8 +1705,7 @@ Si `docker compose ps` muestra contenedores `unhealthy`:
 Todas las configuraciones de servicios Docker se han centralizado en `infra/docker/config/`:
 
 - `nginx/` — Configuración de Nginx y certificados SSL (`nginx.conf`, `ssl/`)
-- `cortex.application.conf/` — Configuración `cortex.conf`
-- `thehive.application.conf/` — Configuración `thehive.conf`
+- `templates/` — Plantillas de configuración (`cortex.conf.template`, `thehive.conf.template`, `grafana-datasources.yml.template`, `promtail-config.yml.template`)
 
 Los archivos Docker Compose montan estas configuraciones mediante rutas relativas:
 
