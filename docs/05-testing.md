@@ -17,6 +17,8 @@
  - [3.5 Pruebas E2E](#35-pruebas-e2e)
  - [3.6 Pruebas con Docker](#36-pruebas-con-docker)
  - [3.7 Ejecución y evidencias](#37-ejecución-y-evidencias)
+ - [Anexo: Estrategia de Testing Consolidada](#anexo-estrategia-de-testing-consolidada)
+  - [E.1 a E.13: 2233 tests, pirámide, quality gates, mutation testing](#e1-visión-general)
 - [4. Validación](#4-validación)
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
@@ -26,8 +28,6 @@
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
-- [Anexo: Estrategia de Testing Consolidada](#anexo-estrategia-de-testing-consolidada)
- - [E.1 a E.13: 2233 tests, pirámide, quality gates, mutation testing](#e1-visión-general)
 
 ---
 
