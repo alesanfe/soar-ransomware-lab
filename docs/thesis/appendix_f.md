@@ -289,7 +289,7 @@ sequenceDiagram
  alt score >= 80 OR verdict == "malicious"
    Backend->>API: POST /api/v1/contain (contención simulada)
    API-->>Backend: Contención confirmada (modo simulation)
-   Backend->>TheHive: update_inprogress (case stays Open)
+   Backend->>Backend: update_inprogress (case stays Open, no PATCH)
    Backend->>Backend: notify_critical (email CRITICAL)
  else score < 80 y verdict != malicious
    Backend->>TheHive: PATCH /api/case (Resolved/FalsePositive)
