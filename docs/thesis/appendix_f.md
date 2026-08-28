@@ -278,26 +278,33 @@ análisis con Cortex, y branching entre contención (malicioso) y falso positivo
 
 ```mermaid
 flowchart TD
- A([Webhook POST /webhook]) --> B[N1: Validar esquema]
+ A([Webhook POST /webhook_{trigger_id}]) --> B[N1: normalize_inputs<br/>validar esquema + extraer IoCs]
  B -->|schema inválido| ERR1([Abort + log error])
- B -->|OK| C[N2: Extraer IoCs]
- C --> D[N3: Crear caso TheHive]
+ B -->|OK| B2[N1b: build_case_json]
+ B2 --> D[N2: Crear caso TheHive<br/>POST /api/case]
  D -->|API error| ERR2([Abort + notificar crítico])
- D -->|OK case_id| E[N4: Adjuntar observables]
- E --> F[N5: Ejecutar analyzers Cortex]
- F --> G{N6: score ≥ 80\no verdict == malicious?}
+ D -->|OK case_id| E[N3: Adjuntar observables<br/>hash + IP + task IR]
+ D --> F[N4: Ejecutar analyzers Cortex<br/>hash + IP + dinámicos]
+ D --> G[N5: MISP crear evento + buscar IoCs]
+ D --> H[N6: ES indexar alerta<br/>POST /soar-alerts]
+ D --> I[N7: Network Watcher + Tenzir + Loki + Redis]
 
- G -->|SÍ| H[N7: POST /api/v1/contain<br/>(contención Lab API)]
- H --> I[N8: Case stays Open<br/>(no PATCH)]
- I --> J[N9: Notificación CRITICAL email]
- J --> K[N10: Registrar MTTR + métricas ES]
- K --> Z([FIN — caso contenido])
+ F --> J{N8: calc_decision<br/>score ≥ 80 o verdict == malicious?}
+ G --> J
+ H --> J
+ I --> J
 
- G -->|NO| H2[N7b: TheHive -> FalsePositive]
- H2 --> I2[N8b: TheHive -> Resolved]
- I2 --> J2[N9b: Notificación INFO]
- J2 --> K2[N10b: Registrar MTTR + métricas ES]
- K2 --> Z2([FIN — falso positivo resuelto])
+ J -->|SÍ| K[N9: POST /api/v1/contain<br/>(contención Lab API)]
+ K --> L[N10: Case stays Open<br/>(no PATCH)]
+ L --> M[N11: Notificación CRITICAL email]
+ M --> N[N12: calc_mttr + build_summary]
+ N --> O[N13: enrich_case<br/>PATCH /api/case summary+tags]
+ O --> P[N14: Indexar métricas ES<br/>POST /soar-metrics]
+ P --> Z([FIN — caso contenido])
+
+ J -->|NO| K2[N9b: mark_false_positive<br/>PATCH Resolved/FalsePositive]
+ K2 --> L2[N10b: Notificación INFO]
+ L2 --> N
 ```
 
 Fuente: `docs/04-operations.md` línea 4302
