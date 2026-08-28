@@ -63,25 +63,25 @@ graph TD
  LabAPI -- HTTP --> Redis[Redis :6379]
  LabAPI -- HTTP --> MISPInternal[MISP :80]
  LabAPI -- HTTP --> GrafanaInternal[Grafana :3000]
- LabAPI -- HTTP --> OpenSearch[OpenSearch :9200]
- LabAPI -- HTTP --> NetworkWatcher[Network Watcher :8080]
- LabAPI -- HTTP --> Tenzir[Tenzir Node :5160]
 
  ShuffleBackend -- HTTP --> ES
  ShuffleBackend -- HTTP --> Redis
  ShuffleBackend -- HTTP --> Orborus[Orborus :5000]
  ShuffleBackend -- HTTP --> OpenSearch
+ ShuffleBackend -- HTTP --> MISPInternal
+ ShuffleBackend -- HTTP --> NetworkWatcher[Network Watcher :8080]
+ ShuffleBackend -- HTTP --> Tenzir[Tenzir Node :5160]
+ ShuffleBackend -- HTTP --> Loki[Loki :3100]
 
  TheHive -- HTTP --> ES
  TheHive -- HTTP --> Cortex
 
  Cortex -- HTTP --> ES
- Cortex -- HTTP --> MISPInternal
 
  MISPInternal -- SQL --> MariaDB[MariaDB :3306]
 
  GrafanaInternal -- HTTP --> ES
- GrafanaInternal -- HTTP --> Loki[Loki :3100]
+ GrafanaInternal -- HTTP --> Loki
  GrafanaInternal -- HTTP --> GrafanaDB[(GrafanaDB PostgreSQL)]
  Promtail[Promtail] --> Loki
  GrafanaRenderer[Grafana Renderer :8081] --> GrafanaInternal
