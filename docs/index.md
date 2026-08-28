@@ -98,7 +98,7 @@ Se verifica que todos los enlaces del índice apuntan a archivos existentes medi
 
 ---
 
-## 5. Problemas y consideraciones
+## 5. Problemas
 
 ### 5.1 Limitaciones
 

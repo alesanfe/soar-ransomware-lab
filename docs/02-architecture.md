@@ -886,7 +886,7 @@ Este documento cubre:
 
 Este documento no cubre:
 
-- Arquitectura de alto nivel del sistema (ver docs/02-architecture.md)
+- Arquitectura de alto nivel del sistema (ver [sección 3.1](#31-visión-general-de-arquitectura))
 - Detalles de configuración específicos de cada herramienta (ver documentación individual)
 - Procedimientos operativos paso a paso (ver docs/01-getting-started.md)
 - Estrategias de pruebas específicas (ver docs/05-testing.md)
@@ -896,8 +896,7 @@ Este documento no cubre:
 Este documento depende de:
 
 - Documentación oficial de Docker Compose
-- Documentación de arquitectura (docs/02-architecture.md)
-- Documentación de seguridad (docs/02-architecture.md)
+- Documentación de seguridad ([sección 3.9](#39-seguridad))
 - Guía de usuario (docs/01-getting-started.md)
 
 #### 3. Contenido principal
@@ -1535,8 +1534,8 @@ Este documento cubre:
 Este documento no cubre:
 
 - Detalles de configuración específicos de cada herramienta (ver documentación individual)
-- Procedimientos operativos paso a paso (ver user_guide.md)
-- Estrategias de pruebas específicas (ver testing/)
+- Procedimientos operativos paso a paso (ver docs/04-operations.md)
+- Estrategias de pruebas específicas (ver docs/05-testing.md)
 - Planificación del proyecto (ver docs/06-project-management.md)
 - Contratos de API detallados (ver docs/03-api-and-integrations.md)
 
@@ -1545,9 +1544,8 @@ Este documento no cubre:
 Este documento depende de:
 
 - Documentación oficial de cada componente (Shuffle, TheHive, Cortex, MISP)
-- Documentación de arquitectura (docs/02-architecture.md)
 - Guía de usuario (docs/01-getting-started.md)
-- Estrategia de Docker (docs/02-architecture.md)
+- Estrategia de Docker ([sección 3.5](#35-arquitectura-docker))
 - Documentación de pruebas (docs/05-testing.md)
 - Contratos de API (docs/03-api-and-integrations.md)
 
@@ -3166,7 +3164,7 @@ Apéndice A con origen exacto de cada IoC: archivo fuente + línea). Pipeline SO
 ## Anexo: Desarrollo Específico
 
 
-## 4.1. Desarrollo de software
+### 4.1. Desarrollo de software
 
 ### 4.1.1. Identificación de requisitos
 

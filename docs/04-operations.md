@@ -2911,7 +2911,7 @@ Esta guía depende de:
 
 - [configuration_manual.md](04-operations.md) - Manual de configuración completo
 - [docker_architecture.md](02-architecture.md) - Arquitectura Docker detallada
-- [user_guide.md](01-getting-started.md) - Guía de usuario
+- [01-getting-started.md](01-getting-started.md) - Guía de usuario
 
 #### 3. Contenido principal
 
