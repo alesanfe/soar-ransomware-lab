@@ -3215,7 +3215,5 @@ El uso exclusivo de software open source elimina los costos de licenciamiento as
 | Tabla 11 | Análisis Costo-Beneficio SOAR                   |
 | Tabla 12 | KPIs Recomendados por Tipo de Organización      |
 
-
-
 ---
 

@@ -5870,8 +5870,6 @@ Cada modificación sustantiva de configuración, código o documentación debe r
 - Evidencia de validación (comando ejecutado, test superado, diff).
 - Fecha y entorno.
 
-
-
 ---
 
 ## Anexo: Configuración Técnica del Laboratorio
@@ -6405,8 +6403,6 @@ sección A.1.1:
 | Versiones pinned | 100% (todas las imágenes tienen tag fijo) |
 
 Nota. Para el contenido completo de cada compose file, ver `infra/docker/compose/`.
-
-
 
 ---
 

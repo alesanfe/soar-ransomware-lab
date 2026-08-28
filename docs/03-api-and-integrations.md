@@ -1211,8 +1211,6 @@ Las versiones canónicas de los componentes principales se consultan directament
 
 > **Nota:** La imagen TheHive `3.5.2-1` es la que se despliega; la documentación de StrangeBee cubre tanto TheHive 3 como TheHive 5. La API y los endpoints principales no cambian para las operaciones usadas en este laboratorio.
 
-
-
 ### 3.6 Integración con Cortex
 
 > Ver [3.5 Integración con TheHive](#35-integración-con-thehive) para la visión general, flujo de datos,

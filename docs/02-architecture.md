@@ -3504,9 +3504,6 @@ Fuente: `github.com/alesanfe/gminst4ll-forensics` (03_IOCS_Y_DETECCION_GMINST4LL
 Apéndice A con origen exacto de cada IoC: archivo fuente + línea). Pipeline SOAR:
 `docs/04-operations.md` línea 4807, TC-33: `tests/e2e/TC-33/`.
 
-
-
-
 ---
 
 ## Anexo: Desarrollo Específico
@@ -3623,8 +3620,6 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 | RI-02  | **I**  | Shuffle ↔ TheHive             | Webhook + API            | Cumplido           |
 | RI-03  | **I**  | Threat intelligence           | Hashdd_Status, IP-API, DShield, Mnemonic pDNS, GoogleDNS, DomainMailSPFDMARC, ValidateObservable | Cumplido  |
 | RI-04  | **I**  | MISP (opcional)               | `docker-compose.misp.yml` | Opcional          |
-
-
 
 ### 4.1.2. Descripción de la herramienta software desarrollada
 
@@ -3960,8 +3955,6 @@ La automatización se organiza en siete capacidades. El **provisionamiento** gen
 La **simulación** genera alertas de ransomware con IoCs realistas (hashes SHA256 de advisories CISA, IPs C2, técnicas MITRE ATT&CK) y las envía al webhook de Shuffle vía HTTP, permitiendo configurar tipo, volumen y frecuencia. El **mantenimiento** limpia ejecuciones stale de Shuffle y casos de TheHive, hace warmup del orquestador antes de los tests, espera a que los workflows terminen para sincronizar los tests E2E y verifica la integridad de las imágenes Docker.
 
 La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing, control de calidad y terminología de la documentación, y una revisión holística del proyecto en 15 dimensiones. La **seguridad operacional** preserva y restaura las credenciales de los servicios entre resets, evitando rotaciones manuales de API keys.
-
-
 
 #### Sistema de Monitoreo
 
