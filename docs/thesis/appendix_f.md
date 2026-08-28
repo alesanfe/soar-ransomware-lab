@@ -557,14 +557,15 @@ C2, 9 IPs, 1 clave de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&C
 
 ```mermaid
 graph TD
- subgraph Distrib["Distribucion"]
+ subgraph Distrib["1. Distribucion"]
    A[YouTube/Tumblr/Discord<br/>canal: асьминог] -->|Engaño| B[MediaFire]
  end
- subgraph Payload["Payload principal"]
+ subgraph Payload["2. Payload principal"]
    B -->|RAR pw: 4204| C[GMinst4ll 2.03.rar<br/>884 MB RAR5 anidado]
    C -->|Ejecucion| D[TREZ_cor 4.52.3.exe<br/>835 MB + 13 DLLs motor grafico]
+   D --> S[InfoStealer:<br/>Chrome/Edge/Firefox Login Data<br/>Metamask/Trust/Atomic wallets]
  end
- subgraph C2["C2 - servicios legitimos abusados"]
+ subgraph C2["3. C2 - servicios legitimos abusados"]
    D --> E{C2 Check}
    E -->|Pastebin raw/FgUMQ9vE| F[Config dinamica<br/>Token TG + Chat ID 6820575341]
    E -->|Dropbox| G[SystemSP.rar pw: zoroz<br/>4 KB, 4 scripts]
@@ -572,25 +573,30 @@ graph TD
    E -->|Telegram Bot 7675556882| I[Exfiltracion Bot API<br/>sendDocument]
    F -.->|Token + Chat ID| I
  end
- subgraph Persist["Persistencia y evasion"]
+ subgraph Persist["4. Persistencia y evasion"]
    G --> J[4 Scripts VBS/BAT]
-   J --> K[max.vbs - Launcher/watchdog<br/>Exclusiones Defender appy.exe]
-   J --> L[babuchen.bat - Killer AV<br/>14 srv + 34 suites + WU destroy]
-   J --> M[rodendron.vbs - GitHub C2<br/>Tarea programada recurrente]
-   J --> N[WinStatChecking.bat - DNS block<br/>66 dominios AV + DNS 8.8.8.8]
+   J --> K[max.vbs<br/>Launcher/watchdog<br/>Exclusiones Defender]
+   J --> L[babuchen.bat<br/>Killer AV<br/>14 srv + 34 suites + WU]
+   J --> M[rodendron.vbs<br/>GitHub C2 download<br/>Tarea programada]
+   J --> N[WinStatChecking.bat<br/>DNS block<br/>66 dominios + DNS 8.8.8.8]
  end
- subgraph RAT["Pulsar RAT v1.6.6.0"]
-   M -->|github.com/boycots563/wlt56<br/>253 commits, publico y activo| O[Win Compatibility Agent.exe<br/>Python 3.13, 12.4 MB]
-   O -->|beket.rar contiene| P[appy_patched.exe .NET 4.7.2<br/>ConfuserEx - 1.86 MB]
+ subgraph RAT["5. Pulsar RAT v1.6.6.0"]
+   M -->|github.com/boycots563/wlt56<br/>253 commits, publico| O[Win Compat Agent.exe<br/>Python 3.13, 12.4 MB]
+   O -->|beket.rar contiene| P[appy_patched.exe .NET 4.7.2<br/>ConfuserEx, 1.86 MB]
    P --> Q[Capacidades:<br/>HVNC SharpDX / Keylogger MouseKeyHook v5.7<br/>Webcam AForge / Audio NAudio<br/>Clipboard / Remote desktop<br/>Wallet clipper XMR + 9 inferidas]
-   P --> R[Evasion:<br/>25+ checks anti-VM/anti-debug<br/>2 blobs AES-GCM 1808 bytes entropia 7.92<br/>Config C2 NO recuperable estaticamente]
+   P --> R[Evasion:<br/>25+ checks anti-VM/anti-debug<br/>2 blobs AES-GCM 1808B entropia 7.92<br/>Config C2 NO recuperable]
  end
  style A fill:#ff6b6b
  style C fill:#ff6b6b
  style D fill:#ff6b6b
+ style S fill:#ff9800
  style P fill:#ff6b6b
  style Q fill:#ff6b6b
  style R fill:#ff6b6b
+ style K fill:#fff3cd
+ style L fill:#fff3cd
+ style N fill:#fff3cd
+ style H fill:#d6d6d6
 ```
 
 El malware se distribuye mediante engaño social en cuatro plataformas: YouTube (canal
@@ -599,10 +605,12 @@ distribuir "RPG Maker MZ"), Tumblr (`@tutorialsfrommax`, tutoriales falsos de mi
 MediaFire (`GMinstall_4.11.rar`, variante 4.11 vs 2.03) y Discord (`sub4unlock.io/ajLvu`,
 trust score 10/100, scam CPA). El ejecutable principal `TREZ_cor 4.52.3.exe` (835 MB)
 incluye 13 DLLs de motor gráfico (core_init, physics_core, mesh_processor, renderer,
-etc.) y realiza un C2 check contra cuatro servicios legítimos abusados: Pastebin
-(configuración dinámica con token Telegram y Chat ID), Dropbox (payload SystemSP.rar),
-Reddit (user `Over_Media6257`, dead drop resolver, 403 Forbidden) y Telegram Bot API
-(exfiltración vía `sendDocument`).
+etc.) y actúa como InfoStealer robando credenciales de navegadores (Chrome, Edge,
+Brave, Opera, Firefox — `Login Data` y `logins.json`) y wallets (Metamask, Trust
+Wallet, Atomic). Tras el robo de datos, realiza un C2 check contra cuatro servicios
+legítimos abusados: Pastebin (configuración dinámica con token Telegram y Chat ID),
+Dropbox (payload SystemSP.rar), Reddit (user `Over_Media6257`, dead drop resolver, 403
+Forbidden) y Telegram Bot API (exfiltración vía `sendDocument`).
 
 SystemSP.rar (4 KB, contraseña "zoroz") contiene cuatro scripts VBS/BAT para
 persistencia y evasión:
