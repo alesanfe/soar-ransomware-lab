@@ -451,22 +451,25 @@ hasta el despliegue del RAT, usado como caso de estudio real para validar el lab
 graph TD
  A[YouTube/Tumblr] -->|Engaño| B[MediaFire]
  B -->|Descarga RAR pw: 4204| C[GMinst4ll 2.03.rar]
- C -->|Ejecución TREZ_cor| D{C2 Check}
- D -->|Pastebin| E[Config Telegram]
- D -->|Dropbox| F[SystemSP.rar pw: zoroz]
- D -->|Reddit| G[IoCs/Dead drop]
- D -->|Telegram| H[Exfiltración]
- F --> I[max.vbs - Persistencia]
- F --> J[babuchen.bat - Killer AV]
- F --> K[rodendron.vbs - GitHub C2]
- F --> L[WinStatChecking.bat - DNS block]
- K --> M[Windows Compatibility Agent.exe]
- M --> N[Pulsar RAT v1.6.6.0]
- N --> O[HVNC, Keylogger, Webcam, Wallet Clipper]
+ C -->|Ejecución| D[TREZ_cor 4.52.3.exe]
+ D -->|C2 Check| E{C2 Check}
+ E -->|Pastebin| F[Configuración dinámica]
+ E -->|Dropbox| G[SystemSP.rar pw: zoroz]
+ E -->|Reddit| H[IoCs/Dead drop]
+ E -->|Telegram| I[Exfiltración]
+ G --> J[4 Scripts VBS/BAT]
+ J --> K[max.vbs - Persistencia]
+ J --> L[babuchen.bat - Killer AV]
+ J --> M[rodendron.vbs - GitHub C2]
+ J --> N[WinStatChecking.bat - DNS block]
+ M -->|github.com/boycots563/wlt56| O[Windows Compatibility Agent.exe]
+ O --> P[Pulsar RAT v1.6.6.0]
+ P --> Q[HVNC, Keylogger, Webcam, Wallet Clipper]
  style A fill:#ff6b6b
  style C fill:#ff6b6b
- style N fill:#ff6b6b
- style O fill:#ff6b6b
+ style D fill:#ff6b6b
+ style P fill:#ff6b6b
+ style Q fill:#ff6b6b
 ```
 
 Fuente: `docs/04-operations.md` línea 4720
