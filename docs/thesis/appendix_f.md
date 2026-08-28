@@ -642,7 +642,52 @@ appy.exe"/"Delete kamzat.exe" (oct-nov 2025, dic 2025, abr 2026), indicando rota
 payloads para evadir detección. Ningún ejecutable Python contiene URLs/IPs directas en
 strings — la configuración C2 está probablemente cifrada.
 
+El Pulsar RAT v1.6.6.0 (.NET 4.7.2, ConfuserEx) se distribuye en `beket.rar` como
+`appy_patched.exe` (.NET, 1.86 MB, import mscoree.dll) y debe distinguirse de
+`appy.exe` (Rust, 719 KB, launcher). Sus capacidades y librerías detectadas:
 
+| Capacidad | Librería .NET | Funciones |
+|-----------|---------------|-----------|
+| HVNC | SharpDX DirectX | StartHVNCProcess, DoHVNCInput, CreateDesktop, SetThreadDesktop |
+| Keylogger | Gma.System.MouseKeyHook v5.7 | KeyboardHook, IKeyboardEvents, GetKeyloggerLogsDirectory |
+| Webcam | AForge.Video.DirectShow v2.2.5 | VideoCaptureDevice, StartWebcamStreaming |
+| Audio | NAudio.Core v2.2.1 | Wasapi, WinMM, GetMicrophone, EnumerateAudioEndPoints |
+| Clipboard | Win32 API | SendClipboardData, AddClipboardFormatListener, get/set_ClipboardText |
+| Remote desktop | Pulsar.Common.Messages | RemoteDesktop, RemoteShell, RemoteAddress, RemotePort |
+| Wallet clipper | Regex + protobuf-net | XMR detectado, 9 criptomonedas inferidas (BTC/LTC/ETH/SOL no confirmadas) |
+
+La evasión incluye 25+ checks anti-VM/anti-debug (BeingDebugged, IsDebuggerPresent,
+KernelDebuggerEnabled, WMI_VM_Detect, SystemVmGenerationCountInformation) y ConfuserEx.
+La configuración C2 está cifrada en 2 blobs AES-GCM de 1808 bytes con entropía 7.92 y
+nonces de 12 bytes; no fue recuperable estáticamente (Fase 14 descartada: GUI
+VirtualBox no funcional).
+
+| Categoría | Detalle |
+|-----------|---------|
+| MITRE ATT&CK (7) | T1566.002 Spearphishing Link, T1059.001 PowerShell, T1547.001 Winlogon UserInit, T1562.001 Impair Defenses, T1056.001 Keylogger, T1102 Web Service C2, T1567.002 Exfiltration Telegram |
+| Hashes SHA256 | GMinst4ll `d70c31b0...`, TREZ_cor `a75def53...`, SystemSP `a50e0785...`, appy_patched `eabe4c16...` |
+| Mutex | `Global\{TOKEN-EX-}` |
+| PDF señuelo | `IF IT DOESN'T WORK.pdf` (autor: "David Thompson", keywords: `DAGflPA11iY`, `BAGTfYCSpno`) |
+| Reglas YARA | `GMinst4ll_Stealer`, `PulsarRAT_AES_GCM_Config`, `PulsarRAT_Deobfuscated_Strings` |
+| Reglas Sigma | `Winlogon UserInit Modification`, `SystemSP Directory Creation`, `Suspicious WScript Execution` |
+| Navegadores objetivo | Chrome, Edge, Brave, Opera, Firefox (`Login Data`, `logins.json`) |
+| Wallets objetivo | Metamask (extensión), Trust Wallet (`%APPDATA%\Trust Wallet`), Atomic (`%APPDATA%\atomic`) |
+| Ruta instalación | `%PROGRAMDATA%\SystemSP\SystemSP\` (max.vbs, archive.rar) |
+| Registry | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\UserInit` |
+
+La timeline de la campaña abarca desde marzo 2025 hasta agosto 2026:
+
+| Fecha | Evento |
+|-------|--------|
+| 2025-03-04 | Creación archivo PASSWORD (metadata RAR interna) |
+| 2025-10-17 | Primer commit GitHub C2 (actualización `maximusz.bat`) |
+| 2025-11-02 a 04 | Ciclos Add/Delete `appy.exe` + `PROMOTIO.BAT` |
+| 2025-12-25 a 27 | Ciclos Add/Delete `appy.exe` |
+| 2026-04-19 a 25 | Ciclos Add/Delete `Windows Compatibility Agent Host.exe` |
+| 2026-05-13 | Add files via upload |
+| 2026-06-10 23:57 | Subida a MediaFire desde Eslovaquia |
+| 2026-06-11 a 13 | Análisis forense (15 fases, 39 archivos .txt, 14 análisis detallados) |
+| 2026-08-02 | README.md con disclaimer falso "PoC educativo" |
 
 Las hipótesis de atribución indican una campaña activa desde 2025 (múltiples variantes:
 versiones 2.03, 4.11, 4.52.3, rotación de payloads en GitHub mediante ciclos
