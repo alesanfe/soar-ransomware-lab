@@ -1291,7 +1291,7 @@ pytest tests/integration/ --cov=src/soar_lab --cov-report=html
 #### Inicialización y Configuración
 
 - `test_init_shuffle_webhook.py`: Inicialización de webhook Shuffle
-- `test_docker_compose_validation.py`: Validación de docker-compose
+- `test_docker_compose_validation.py`: Validación de Docker Compose
 - `test_docker_runtime_status.py`: Estado de runtime Docker
 
 #### Comunicación y Datos
