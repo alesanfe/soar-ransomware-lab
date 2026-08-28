@@ -187,19 +187,6 @@ soar-ransomware-lab/
 │   ├── runtime/               # Tests de runtime
 │   ├── security/              # Pruebas de seguridad
 │   └── conftest.py            # Configuración pytest
-├── docs/                       # Documentación completa
-│   ├── 01-getting-started.md  # Instalación y guía rápida
-│   ├── 02-architecture.md     # Arquitectura hexagonal, Docker, código
-│   ├── 03-api-and-integrations.md  # API REST e integraciones
-│   ├── 04-operations.md       # Operaciones, infraestructura, backups
-│   ├── 05-testing.md          # Estrategia de pruebas
-│   ├── 06-project-management.md  # Gestión del proyecto
-│   ├── glossary.md            # Glosario central
-│   ├── index.md               # Índice de documentación
-│   ├── api/                   # Documentación de API (Sphinx/OpenAPI)
-│   ├── archive/               # Documentación histórica (audits, deprecated)
-│   ├── assets/                # Imágenes y referencias
-│   └── thesis/                # Documentación académica TFM
 └── artifacts/                  # Artefactos generados
     ├── backups/               # Copias de seguridad
     ├── coverage/              # Reportes de cobertura
@@ -235,7 +222,7 @@ Este proyecto incluye documentación técnica completa organizada en el director
 ### Documentación Principal
 
 - **[Índice de Documentación](docs/README.md)** - Índice completo de toda la documentación del proyecto
-- **[CHANGELOG.md](docs/thesis/CHANGELOG_THESIS_UPDATE.md)** - Historial de cambios y versiones del proyecto
+- **[CHANGELOG.md](CHANGELOG.md)** - Historial de cambios y versiones del proyecto
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guía para desarrolladores y contribuidores
 
 ### Documentación Técnica
@@ -385,7 +372,7 @@ python src/soar_lab/infrastructure/messaging/send_alert.py --type benign --singl
 - Archivos de prueba (`test_*.py`): 184
   - Unit: 79 · Atomic: 4 · Integration: 30 · E2E: 49 (TC-00..TC-33 + TC-99 + TC-KPI-01..06) · Security: 1 · Performance: 4 · Quality: 14 · Architecture: 1 · General: 2
 - Funciones definidas: ~2092
-- Recolección reproducible (`python -m pytest --collect-only -q`): 2232 items / 327 deselected / 1905 seleccionados (0 errores de colección).
+- Recolección reproducible (`python -m pytest --collect-only -q`): 2233 items / 328 deselected / 1905 seleccionados (0 errores de colección).
 - Todos los errores previos de recolección (`ModuleNotFoundError`, `NameError`, `SyntaxError`) han sido resueltos.
 - El desglose completo se mantiene en `docs/05-testing.md` y `baseline/tests_inventory.json`.
 - Última sincronización documental: 2026-08-21.
