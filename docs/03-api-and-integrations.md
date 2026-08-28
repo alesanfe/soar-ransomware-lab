@@ -1150,9 +1150,9 @@ respuesta ante incidentes de ransomware.
 > Docker. Las acciones de contención sobre endpoints son simuladas salvo que se configuren agentes reales en la red de
 > pruebas.
 
-#### 3.5.3.x Workarounds y limitaciones conocidas
+##### 3.5.3.1 Workarounds y limitaciones conocidas
 
-#### Cortex y MISP
+**Cortex y MISP**
 
 - **Cortex** puede devolver `400` en workflows que requieren autenticación adicional o analyzers no inicializados. En `tests/e2e/TC-03/` se omite la verificación de Cortex temporalmente (`TODO`).
 - **MISP** puede devolver respuesta vacía por `403` o falta de eventos. El test TC-03 la omite mientras se ajusta la autenticación.
