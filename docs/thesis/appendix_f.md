@@ -88,10 +88,10 @@ graph TD
 
  Orborus -- HTTP --> ShuffleBackend
  ShuffleBackend -- HTTP --> OpenSearch
- ShuffleBackend -- HTTP --> MISPInternal
- ShuffleBackend -- HTTP --> NetworkWatcher[Network Watcher :8080]
- ShuffleBackend -- HTTP --> Tenzir[Tenzir Node :5160]
- ShuffleBackend -- HTTP --> Loki[Loki :3100]
+ Orborus -- HTTP --> MISPInternal
+ Orborus -- HTTP --> NetworkWatcher[Network Watcher :8080]
+ Orborus -- HTTP --> Tenzir[Tenzir Node :5160]
+ Orborus -- HTTP --> Loki[Loki :3100]
 
  TheHive -- HTTP --> ES
  TheHive -- HTTP --> Cortex
@@ -169,6 +169,8 @@ flowchart TD
  INTEG[Integration Clients<br/>TheHiveClient, CortexClient,<br/>MISPClient, ShuffleClient,<br/>ElasticsearchClient<br/>BaseHTTPClient SyncHTTPClient]
  SMETRICS[SystemMetricsDriver]
  HEALTH[HTTPHealthCheckAdapter<br/>AioHTTPClient]
+ CFG[InfrastructureConfigProvider]
+ STORAGE[FilesystemStorage<br/>BackupStorageProvider]
  end
 
  F -->|/auth/login| AS
@@ -184,7 +186,9 @@ flowchart TD
  C -->|generate-iocs| IOC
  W --> F
  AS -->|TokenProviderInterface| JWT
+ AS -->|ConfigProvider| CFG
  BS -->|BackupDriver| TAR
+ BS -->|BackupStorageProvider| STORAGE
  ANS -->|AlertRepository| SQLITE
  ANS -->|SystemMetricsInterface| SMETRICS
  ANS -->|StatisticalCalculatorInterface| STAT
@@ -277,6 +281,7 @@ sequenceDiagram
    Backend->>ES: POST /soar-alerts/_doc/{alert_id}
  end
  Backend->>Backend: calc_decision (score + verdict)
+ Note over Backend: Shuffle no soporta alt nativo ambas ramas se ejecutan<br/>y los scripts Python deciden segun decision
  alt score >= 80 OR verdict == "malicious"
    Backend->>API: POST /api/v1/contain (contención)
    API-->>Backend: Contención confirmada
