@@ -10,7 +10,14 @@ los de este anexo son los completos.
 
 ## F.1. Arquitectura de Alto Nivel
 
-Diagrama de componentes principales y flujo de datos del sistema SOAR.
+Diagrama de componentes principales y flujo de datos del sistema SOAR. Muestra
+13 de los 23 contenedores Docker con acciones de negocio (Shuffle, TheHive,
+Cortex, MISP, Lab API, Redis, Network Watcher, Tenzir, Elasticsearch,
+OpenSearch, Loki, Promtail, Grafana) más el simulador SIEM (script Python, no
+contenedor) y TI (sistemas externos). Los 10 contenedores restantes (Orborus,
+Shuffle UI, Nginx, Web Management, Docs Site, GrafanaDB, Grafana Renderer,
+MISP DB, MISP Modules, OpenSearch Dashboards) son internos o UI y se omiten
+en esta vista de alto nivel; aparecen en el diagrama de despliegue F.2.
 
 ```mermaid
 flowchart LR
@@ -18,13 +25,18 @@ flowchart LR
   Shuffle -- API --> TheHive
   TheHive -- Observables --> Cortex
   Cortex -- Analyzers --> TI[(Threat Intel)]
-  Shuffle -- Contención Lab API --> API[Lab API /api/v1/contain]
+  Shuffle -- Eventos/IoCs --> MISP[(MISP)]
+  Shuffle -- Contención + cache --> API[Lab API /api/v1/contain]
+  API -- cache IoCs --> Redis[(Redis)]
+  Shuffle -- Conexiones --> NW[Network Watcher]
+  Shuffle -- Tráfico red --> Tenzir[Tenzir Node]
   TheHive <--> Elasticsearch
   Shuffle <--> OpenSearch[OpenSearch]
   Shuffle -- Metrics --> Elasticsearch
-  Elasticsearch --> Grafana[Grafana]
-  Promtail[Promtail] --> Loki[Loki]
-  Loki --> Grafana
+  Shuffle -- Log search --> Loki[Loki]
+  Promtail[Promtail] --> Loki
+  Loki --> Grafana[Grafana]
+  Elasticsearch --> Grafana
   Grafana --> Elasticsearch
 ```
 
