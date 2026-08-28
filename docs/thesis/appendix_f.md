@@ -461,7 +461,7 @@ graph TD
  F[Baja Prob / Medio Impacto] --> R10(Deriva alcance Sí) & R17(CLI inusable Parcial) & R20(Analytics fallan Parcial)
 ```
 
-Leyenda: Sí Mitigado · Parcial En seguimiento
+Leyenda: Sí Mitigado o Conocido · Parcial En seguimiento / Activo
 
 Fuente: `docs/06-project-management.md` línea 1381 (tabla detallada R1-R24, fuente autoritativa)
 
