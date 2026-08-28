@@ -49,7 +49,7 @@ flowchart LR
   DocsSite[Docs Site] --> Nginx
 ```
 
-Fuente: `README.md` línea 51, `infra/docker/compose/docker-compose*.yml`
+Fuente: `README.md` e `infra/docker/compose/docker-compose*.yml`
 
 ---
 
@@ -262,39 +262,45 @@ sequenceDiagram
 
  Sim->>Shuffle: POST /api/v1/hooks/webhook_{trigger_id}
  Shuffle->>Backend: Reenvía payload de alerta
- Backend->>Backend: normalize_inputs + build_case_json
+ Backend->>Backend: normalize_inputs
+ Backend->>Backend: build_case_json
  Backend->>TheHive: POST /api/case
  TheHive-->>Backend: caseId
- par En paralelo
+ par En paralelo (11 ramas)
    Backend->>TheHive: POST observables (hash, IP)
-   Backend->>TheHive: POST task (tareas IR)
+   Backend->>Backend: calc_task_title (severity >= 3 aislar)
+   Backend->>TheHive: POST task (titulo IR)
    Backend->>Cortex: POST /api/analyzer/{id}/run (hash: Hashdd, VirusShare)
    Backend->>Cortex: POST /api/analyzer/{id}/run (IP: DShield, Mnemonic pDNS, IP-API, GoogleDNS)
    Backend->>MISP: POST /events (crear evento)
-   Backend->>MISP: POST /attributes/restSearch (buscar IoCs)
-   Backend->>NW: GET /api/connections?ip={src_ip}
+   Backend->>MISP: POST /attributes/restSearch (buscar hash)
+   Backend->>NW: GET /api/connections?ip={src_ip}&limit=50
    Backend->>Tenzir: POST /api/v0/pipeline/create
    Backend->>Tenzir: POST /api/v0/serve (publicar resultados)
    Backend->>API: POST /api/v1/cache/ioc (caché Redis)
    API->>Redis: SET ioc:{hash} {alert_id} TTL 3600
    Backend->>Loki: GET /loki/api/v1/query_range
+   Backend->>Backend: build_es_json
    Backend->>ES: POST /soar-alerts/_doc/{alert_id}
  end
+ Note over Backend: 11 nodos verify_* validan cada rama<br/>antes de calc_decision
  Backend->>Backend: calc_decision (score + verdict)
  Note over Backend: Shuffle no soporta alt nativo ambas ramas se ejecutan<br/>y los scripts Python deciden segun decision
  alt score >= 80 OR verdict == "malicious"
-   Backend->>API: POST /api/v1/contain (contención)
-   API-->>Backend: Contención confirmada
-   Backend->>TheHive: Case stays Open (no PATCH)
-   Backend->>Backend: notify_critical (email)
+   Backend->>API: POST /api/v1/contain (contención simulada)
+   API-->>Backend: Contención confirmada (modo simulation)
+   Backend->>TheHive: update_inprogress (case stays Open)
+   Backend->>Backend: notify_critical (email CRITICAL)
  else score < 80 y verdict != malicious
    Backend->>TheHive: PATCH /api/case (Resolved/FalsePositive)
-   Backend->>Backend: notify_info (email)
+   Backend->>Backend: notify_info (email INFO)
  end
- Backend->>Backend: calc_mttr + build_hive_summary
+ Backend->>Backend: calc_mttr
+ Backend->>Backend: build_hive_summary
  Backend->>TheHive: PATCH /api/case (enrich: summary + tags)
  Backend->>Backend: build_metrics_json (mttr_seconds, score, verdict)
  Backend->>ES: POST /soar-metrics/_doc/{alert_id} (mttr_seconds, ...)
+ Note over API: Post-workflow: operador consulta resultados via Lab API
  API->>ES: GET /analytics/kpis/aggregated
  API->>TheHive: GET /soar/thehive/cases
  API->>Cortex: GET /soar/cortex/jobs
