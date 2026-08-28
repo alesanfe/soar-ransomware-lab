@@ -415,7 +415,7 @@ soporte, API, CLI, sitio de documentación e interfaz web de gestión.
 
 ```mermaid
 graph LR
- subgraph Host Único
+ subgraph "Host Único"
  TheHive --> Cortex
  Cortex --> Shuffle
  Shuffle --> OpenSearch
@@ -2433,7 +2433,6 @@ gantt
     title Figura 2: Cronograma de ejecución del proyecto
     dateFormat YYYY-MM-DD
     axisFormat %d %b
-    tickInterval 1week
     todayMarker off
 
     section Inicio
