@@ -182,29 +182,29 @@ TFM académico riguroso.
 gantt
  title Cronograma de Objetivos SMART - SOAR Ransomware Lab
  dateFormat YYYY-MM-DD
- section Fase 1: Infraestructura
- Objetivo 1: Laboratorio desplegado :active, obj1, 2025-05-01, 14d
- Objetivo 8: Automatización configurada :obj8, after obj1, 7d
- Objetivo 17: API del Laboratorio :obj17, after obj8, 7d
- Objetivo 18: CLI del Laboratorio :obj18, after obj17, 5d
- section Fase 2: Desarrollo
- Objetivo 2: Playbook E2E :obj2, 2025-05-15, 21d
- Objetivo 5: Integración SIEM :obj5, after obj2, 7d
- Objetivo 6: Contención simulada :obj6, after obj5, 7d
- Objetivo 19: Sitio de Documentación :obj19, after obj6, 7d
- Objetivo 20: Interfaz Web de Gestión :obj20, after obj19, 7d
- section Fase 3: Validación
- Objetivo 3: Métricas MTTR :obj3, 2025-06-05, 14d
- Objetivo 9: Pruebas Atómicas :obj9, after obj3, 5d
- Objetivo 10: Pruebas de Integración :obj10, after obj9, 7d
- Objetivo 11: Pruebas de Seguridad :obj11, after obj10, 5d
- Objetivo 12: Pruebas de Rendimiento :obj12, after obj11, 5d
- Objetivo 13: Pruebas de Producción :obj13, after obj12, 3d
- Objetivo 14: KPIs y Análisis :obj14, after obj13, 7d
- section Fase 4: Cierre
- Objetivo 4: Documentación técnica :obj4, 2025-06-26, 7d
- Objetivo 15: Preparación defensa TFM :obj15, after obj4, 7d
- Objetivo 16: Evidencia aprobación :obj16, after obj15, 7d
+ section Fase 1 Infraestructura
+ Objetivo 1 Laboratorio desplegado :active, obj1, 2025-05-01, 14d
+ Objetivo 8 Automatizacion configurada :obj8, after obj1, 7d
+ Objetivo 17 API del Laboratorio :obj17, after obj8, 7d
+ Objetivo 18 CLI del Laboratorio :obj18, after obj17, 5d
+ section Fase 2 Desarrollo
+ Objetivo 2 Playbook E2E :obj2, 2025-05-15, 21d
+ Objetivo 5 Integracion SIEM :obj5, after obj2, 7d
+ Objetivo 6 Contencion simulada :obj6, after obj5, 7d
+ Objetivo 19 Sitio de Documentacion :obj19, after obj6, 7d
+ Objetivo 20 Interfaz Web de Gestion :obj20, after obj19, 7d
+ section Fase 3 Validacion
+ Objetivo 3 Metricas MTTR :obj3, 2025-06-05, 14d
+ Objetivo 9 Pruebas Atomicas :obj9, after obj3, 5d
+ Objetivo 10 Pruebas de Integracion :obj10, after obj9, 7d
+ Objetivo 11 Pruebas de Seguridad :obj11, after obj10, 5d
+ Objetivo 12 Pruebas de Rendimiento :obj12, after obj11, 5d
+ Objetivo 13 Pruebas de Produccion :obj13, after obj12, 3d
+ Objetivo 14 KPIs y Analisis :obj14, after obj13, 7d
+ section Fase 4 Cierre
+ Objetivo 4 Documentacion tecnica :obj4, 2025-06-26, 7d
+ Objetivo 15 Preparacion defensa TFM :obj15, after obj4, 7d
+ Objetivo 16 Evidencia aprobacion :obj16, after obj15, 7d
 ```
 
 #### Fases del Proyecto
@@ -418,13 +418,13 @@ graph LR
  subgraph Host Único
  TheHive --> Cortex
  Cortex --> Shuffle
- Shuffle --> Elasticsearch
+ Shuffle --> OpenSearch
  Shuffle --> Redis
  API --> TheHive
  API --> Cortex
  API --> Shuffle
  API --> MISP
- API -->
+ API --> Elasticsearch
  Nginx --> API
  Nginx --> Docs_Site
  Nginx --> Web_Management
@@ -612,7 +612,7 @@ Las evidencias de validación incluyen:
 # Si es mayor: Aprobación requerida
 
 # 6. Implementar cambio
-# Actualizar: docs/06-project-management.md, docs/06-project-management.md, docs/06-project-management.md
+# Actualizar: docs/06-project-management.md, docs/02-architecture.md, docs/04-operations.md
 # Ejecutar: pruebas de regresión
 # Documentar: evidencias del cambio
 ```
@@ -864,20 +864,20 @@ marcadas en los diagramas Gantt como `:crit` para identificar la ruta crítica.
 
 #### Plan por semanas
 
-| Semana | Fase / Hito | Objetivo principal | Entregables / Evidencias | Hitos de Validación Intermedia | |---------|-------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------| | S1-S4 | Fase 1: Infraestructura | Laboratorio, automatización, API, CLI (Objetivos 1, 8, 17, 18) | infra/docker/compose/, Makefile, src/soar_lab/interfaces/api/, src/soar_lab/interfaces/api/cli.py, .github/workflows/ | Validación: servicios funcionando, API y CLI operativos (Semana 4) | | S5-S9 | Fase 2: Desarrollo | Playbook E2E, integración SIEM, scripts, docs-site, web-management (Objetivos 2, 5, 6, 19, 20) | docs/04-operations.md, src/soar_lab/simulator/simulate_alerts.py, apps/docs-site/, apps/web-management/ | Validación: playbook ejecuta, apps desplegadas (Semana 9) | | S10-S13 | Fase 3: Validación | Métricas MTTR, pruebas especializadas, KPIs (Objetivos 3, 9, 10, 11, 12, 13, 14) | tests/atomic/, tests/integration/, tests/security/, tests/performance/, tests/e2e/, runtime/results/kpis.csv, docs/thesis/data_visualizations.md | Validación: pruebas pasan, KPIs cumplen umbrales (Semana 13) | | S14-S15 | Fase 4: Cierre | Documentación, analytics, aprobación (Objetivos 4, 15, 16) | docs/, docs/thesis/data_visualizations.md, docs/06-project-management.md (scope.md, objectives.md, plan.md) | Validación: documentación aprobada (Semana 15) |
+| Semana | Fase / Hito | Objetivo principal | Entregables / Evidencias | Hitos de Validación Intermedia | |---------|-------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------| | S1-S4 | Fase 1: Infraestructura | Laboratorio, automatización, API, CLI (Objetivos 1, 8, 17, 18) | infra/docker/compose/, Makefile, src/soar_lab/interfaces/api/, src/soar_lab/interfaces/api/cli.py, .github/workflows/ | Validación: servicios funcionando, API y CLI operativos (Semana 4) | | S5-S9 | Fase 2: Desarrollo | Playbook E2E, integración SIEM, scripts, docs-site, web-management (Objetivos 2, 5, 6, 19, 20) | docs/04-operations.md, src/soar_lab/simulator/simulate_alerts.py, apps/docs-site/, apps/web-management/ | Validación: playbook ejecuta, apps desplegadas (Semana 9) | | S10-S13 | Fase 3: Validación | Métricas MTTR, pruebas especializadas, KPIs (Objetivos 3, 9, 10, 11, 12, 13, 14) | tests/atomic/, tests/integration/, tests/security/, tests/performance/, tests/e2e/, runtime/results/kpis.csv, docs/thesis/ | Validación: pruebas pasan, KPIs cumplen umbrales (Semana 13) | | S14-S15 | Fase 4: Cierre | Documentación, analytics, aprobación (Objetivos 4, 15, 16) | docs/, docs/thesis/, docs/06-project-management.md | Validación: documentación aprobada (Semana 15) |
 
 #### Diagrama Gantt por semanas
 
 ```mermaid
 gantt
 title Roadmap por Semanas
-dateFormat WW
-axisFormat "S%V"
+dateFormat YYYY-MM-DD
+axisFormat %V
 section Fases
-Fase 1: Infraestructura :active, f1, 01, 4w
-Fase 2: Desarrollo :crit, f2, after f1, 5w
-Fase 3: Validación :crit, f3, after f2, 4w
-Fase 4: Cierre :crit, f4, after f3, 2w
+Fase 1 Infraestructura :active, f1, 2025-01-01, 4w
+Fase 2 Desarrollo :crit, f2, after f1, 5w
+Fase 3 Validacion :crit, f3, after f2, 4w
+Fase 4 Cierre :crit, f4, after f3, 2w
 ```
 
 #### Plan por tareas de la EDT
@@ -889,17 +889,17 @@ Fase 4: Cierre :crit, f4, after f3, 2w
 ```mermaid
 gantt
 title Roadmap por Tareas EDT
-dateFormat WW
-axisFormat "S%V"
+dateFormat YYYY-MM-DD
+axisFormat %V
 section EDT
-2.1 Plan/roadmap :active, t1, 01, 1w
-2.2 Riesgos :t2, 01, 1w
-3.x Arquitectura :crit, t3, 02, 1w
-4.x Entorno :crit, t4, 02, 2w
-5.x Integraciones :crit, t5, 04, 2w
-6.x Playbook :crit, t6, 06, 2w
-7.x Pruebas :crit, t7, 08, 3w
-8.x Documentación :crit, t8, 11, 4w
+2.1 Plan roadmap :active, t1, 2025-01-01, 1w
+2.2 Riesgos :t2, 2025-01-01, 1w
+3.x Arquitectura :crit, t3, 2025-01-08, 1w
+4.x Entorno :crit, t4, 2025-01-08, 2w
+5.x Integraciones :crit, t5, 2025-01-22, 2w
+6.x Playbook :crit, t6, 2025-02-05, 2w
+7.x Pruebas :crit, t7, 2025-02-19, 3w
+8.x Documentacion :crit, t8, 2025-03-12, 4w
 ```
 
 #### 3.4 Gestión de riesgos
@@ -1099,7 +1099,7 @@ Documento consolidado para las FASEs 54–65 del plan de remediación documental
 
 #### 1.2 Tipificación de cambios (N002)
 
-| Tipo | Ejemplo | Documento predominante | |------|---------|--------------------------| | Código | Nuevo test de arquitectura | `tests/architecture/`, `pytest.ini` | | Infraestructura | Ajuste de Compose, volúmenes | `infra/docker/compose/`, `docs/04-operations.md` | | Seguridad | Eliminación de secretos hardcodeados | `docs/06-project-management.md` | | Documentación | Expansión de A.6.1 | `docs/thesis/appendix_a.md`, `CHANGELOG_THESIS_UPDATE.md` | | Pruebas | E2E, unit, smoke | `docs/05-testing.md`, `pytest.ini` | | Académico | Secciones de la tesis | `docs/thesis/` |
+| Tipo | Ejemplo | Documento predominante | |------|---------|--------------------------| | Código | Nuevo test de arquitectura | `tests/architecture/`, `pytest.ini` | | Infraestructura | Ajuste de Compose, volúmenes | `infra/docker/compose/`, `docs/04-operations.md` | | Seguridad | Eliminación de secretos hardcodeados | `docs/06-project-management.md` | | Documentación | Expansión de A.6.1 | `docs/thesis/` | | Pruebas | E2E, unit, smoke | `docs/05-testing.md`, `pytest.ini` | | Académico | Secciones de la tesis | `docs/thesis/` |
 
 #### 1.3 Dependencias y orden de ejecución (N003)
 
@@ -1348,7 +1348,7 @@ Este documento depende de:
 - Stack: 18+ servicios en 6 compose files (`infra/docker/compose/docker-compose.yml`, `infra/docker/compose/docker-compose.core.yml`,
  `infra/docker/compose/docker-compose.misp.yml`, `infra/docker/compose/docker-compose.opensearch.yml`, `infra/docker/compose/docker-compose.api.yml`, `infra/docker/compose/logging/docker-compose.logging.yml`)
 - Entorno: Windows + Docker Desktop (Hyper-V)
-- Tests: ~1580 casos recolectados, 32 errores de recolección pendientes de remediación (`tests/` con 135 archivos de test; unitarias, integración, E2E, atomic, seguridad, rendimiento, smoke)
+- Tests: 2233 tests coleccionados, 1905 seleccionados, 328 deselected (`tests/` con 150 archivos de test; unitarias, integración, E2E, atomic, seguridad, rendimiento, smoke)
 
 #### Categorías de Riesgos
 
@@ -1388,7 +1388,7 @@ Los riesgos activos de mayor prioridad son **R11** (bloqueo LaLiga/Cloudflare), 
 
 #### Matriz de Riesgos
 
-| # | Riesgo | Categoría | Prob | Impacto | Estado | Mitigación | |-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|:-----:|:-------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| | R1 | **Puertos bloqueados por Hyper-V en Windows** — rangos 55000–55099, 5600–5699, 2976–3075 excluidos | Infraestructura | Alta | Alto | ✅ Mitigado | Puertos reubicados: API → 8000, Elasticsearch → 8200, Cortex → 8101, TheHive → 8100, Docs site → 8086, Shuffle UI → 8081, Web Management → 8085, Grafana → 8084, MISP → 8083; sin binding de host donde no es necesario | | R2 | **Recursos insuficientes** — stack completo requiere ≥ 16 GB RAM (Elasticsearch + + MISP son intensivos) | Infraestructura | Alta | Alto | ⚠️ Activo | Requisitos mínimos documentados en `README.md`; `deploy.resources.limits` configurados en todos los servicios | | R3 | **Analyzers de Cortex lentos o sin respuesta** — timeouts del playbook superan p90 = 180 s | Rendimiento | Media | Alto | ⚠️ Activo | Limitar a 3–5 analyzers activos; configurar `timeout` y reintentos; priorizar `FileInfo` y `DomainMailSPFRecord` offline | | R4 | **Integración Shuffle → TheHive → Cortex rota** — tokens inválidos, esquemas incorrectos o endpoints cambiados | Integración | Media | Alto | ⚠️ Activo | Tests de contrato en `tests/integration/`; validar con `src/soar_lab/config/schemas/__init__.py`; healthchecks en todos los servicios del compose | | R5 | ** incompatible con Elasticsearch puro** — requiere OpenSearch con TLS para algunas funciones avanzadas | Compatibilidad | Media | Medio | ✅ Mitigado | 4.14.0 (OpenSearch Dashboards) sustituye Kibana puro; funcionalidad básica de SIEM preservada vía + Elasticsearch | | R6 | **MISP lento en arranque** — MariaDB y misp-modules tardan > 3 min en estar healthy | Infraestructura | Alta | Bajo | ✅ Conocido | `depends_on: condition: service_healthy` configurado; `make up` espera healthchecks; documentado en `README.md` | | R7 | **Tiempo de respuesta supera umbrales** (p50 > 120 s / p90 > 180 s) en el playbook E2E | Rendimiento | Media | Alto | ⚠️ Activo | Monitorizar timestamps en cada paso; ejecutar primero con escenario malicioso offline; calcular KPIs con `make metrics` | | R8 | **APIs externas no disponibles** (VirusTotal, URLHaus) durante pruebas E2E | Dependencia | Media | Medio | ⚠️ Activo | Analyzers externos marcados opcionales; modo offline con `FileInfo` y `DomainMailSPFRecord`; tests e2e hacen skip si servicios no responden | | R9 | **Pérdida o corrupción de configuración** — compose files fragmentados aumentan riesgo de inconsistencias | Operacional | Baja | Alto | ⚠️ Activo | Todo versionado en Git; `make backup` antes de cambios destructivos; `.env.full` con valores completos documentados | | R10 | **Deriva de alcance** — stack más complejo de lo planeado (MISP añadidos) | Tiempo | Baja | Medio | ✅ Controlado | Alcance fijado en `docs/06-project-management.md`; servicios adicionales son opcionales para el playbook E2E principal | | R11 | **Bloqueo de IPs de Cloudflare por orden judicial de LaLiga** — durante jornadas de fútbol, los ISP mayoritarios españoles bloquean rangos de IPs de Cloudflare CDN por resolución judicial. Docker Hub, GitHub Container Registry (`ghcr.io`) y otras dependencias del stack usan Cloudflare, lo que impide `docker pull` y la descarga de imágenes durante el bloqueo | Externo / Regulatorio | Alta | Alto | ⚠️ Activo | Verificar estado del bloqueo antes de ejecutar `make up` o pulls en [hayahora.futbol](https://hayahora.futbol/); programar descargas fuera de jornadas de LaLiga; alternativas: usar VPN o cambiar a una red no afectada; pre-descargar todas las imágenes con `docker pull` cuando no hay partido y almacenarlas en caché local | | R12 | **API del Laboratorio no disponible** — API FastAPI (`src/soar_lab/interfaces/api/`) no responde o tiene errores de autenticación/autorización | Seguridad | Media | Alto | ⚠️ Activo | Tests de integración en `tests/integration/test_api_*.py`; health checks en `/health`; validar JWT tokens en `.env.full`; logs en `docker logs soar_api` | | R13 | **Certificados SSL expirados** — Certificados generados por `scripts/setup/gen_certs.sh` expiran y causan errores de HTTPS en Nginx y servicios | Seguridad | Media | Alto | ⚠️ Activo | Monitorear fechas de expiración (`openssl x509 -in cert.pem -noout -dates`); regenerar certificados antes de expiración; automatizar regeneración en CI/CD | | R14 | **Validación de esquemas falla** — Esquemas en `src/soar_lab/config/schemas/__init__.py` no validan correctamente datos de alertas, causando rechazo de payloads | Seguridad | Media | Medio | ⚠️ Activo | Tests de validación en `tests/atomic/test_schema_validation.py`; actualizar esquemas según cambios en payloads; logs de validación en `src/soar_lab/validation/` | | R15 | **Cobertura de pruebas insuficiente** — Testing especializado (atomic, integration, security, performance, production) no alcanza umbrales de cobertura | Testing | Media | Medio | ⚠️ Activo | Ejecutar `pytest --cov=src/soar_lab`; configurar quality gates en CI/CD; priorizar pruebas de componentes críticos | | R16 | **CI/CD pipeline failures** — Workflows en `.github/workflows/` fallan, bloqueando validaciones automáticas y despliegues | Automatización | Media | Alto | ⚠️ Activo | Logs de CI/CD en `.github/workflows/`; retries automáticos; rollback automático en caso de fallo; alertas en caso de fallos críticos | | R17 | **CLI del Laboratorio inusable** — CLI (`src/soar_lab/interfaces/api/cli.py`) tiene errores de usabilidad o compatibilidad entre plataformas | Operacional | Baja | Medio | ⚠️ Activo | Tests unitarios de CLI; documentación de comandos (`--help`); validación en Windows y Linux | | R18 | **Documentación operativa desincronizada** — Rutas, puertos, URLs, credenciales y contratos en `docs/` difieren del código o de Compose; se mantienen archivos duplicados o históricos sin marcar | Documentación | Alta | Alto | ⚠️ Activo | Plan de remediación documental; generar OpenAPI, tabla canónica de puertos y catálogos de tests automáticamente; marcar `legacy/` como histórico; revisar enlaces y secretos periódicamente | | R21 | **Credenciales y tokens estáticos en repositorio o documentación** — Ejemplos con contraseñas `2024` o tokens operativos pueden confundirse con secretos vigentes o filtrarse en historial Git | Seguridad | Alta | Alto | ✅ Mitigado | Auditar variables de token SIEM, `.env.example` y `grafana-datasources.yml`; usar placeholders (`<...>`) y `<SIEM_TOKEN>` en documentación; generar secretos con `soar-lab generate-secrets`; revisar historial Git | | R22 | **Seguridad interna deshabilitada en Elasticsearch / OpenSearch / ** — Certificados autofirmados sin CA importada reducen la postura de seguridad; `xpack.security.enabled` se parametriza con `ELASTIC_SECURITY_ENABLED` (por defecto `true`) | Seguridad | Media | Alto | ⚠️ Aceptado | Documentar claramente como riesgo aceptado del laboratorio; no prometer producción; planificar hardening en ruta crítica | | R23 | **Mappings de métricas (`soar-metrics`) inconsistentes** — Cambios en `mttr_seconds` o `@timestamp` sin reindexación rompen dashboards de Grafana | Operacional | Media | Medio | ✅ Mitigado | `init_shuffle_webhook.py` crea/actualiza mapping correcto; documentar procedimiento de reindexación | | R24 | **Dependencia crítica de Network Watcher** — Si `soar_network_watcher` no conecta workers de Shuffle a `soar_net` o falla al inyectar hosts, los playbooks no resuelven servicios | Operacional | Media | Alto | ⚠️ Activo | Healthcheck `/health`; logs en `docker logs soar_network_watcher`; reinicio manual; documentar en `docs/04-operations.md`
+| # | Riesgo | Categoría | Prob | Impacto | Estado | Mitigación | |-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|:-----:|:-------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| | R1 | **Puertos bloqueados por Hyper-V en Windows** — rangos 55000–55099, 5600–5699, 2976–3075 excluidos | Infraestructura | Alta | Alto | ✅ Mitigado | Puertos reubicados: API → 8000, Elasticsearch → 8200, Cortex → 8101, TheHive → 8100, Docs site → 8086, Shuffle UI → 8081, Web Management → 8085, Grafana → 8084, MISP → 8083; sin binding de host donde no es necesario | | R2 | **Recursos insuficientes** — stack completo requiere ≥ 16 GB RAM (Elasticsearch + OpenSearch + MISP son intensivos) | Infraestructura | Alta | Alto | ⚠️ Activo | Requisitos mínimos documentados en `README.md`; `deploy.resources.limits` configurados en todos los servicios | | R3 | **Analyzers de Cortex lentos o sin respuesta** — timeouts del playbook superan p90 = 180 s | Rendimiento | Media | Alto | ⚠️ Activo | Limitar a 3–5 analyzers activos; configurar `timeout` y reintentos; priorizar `Hashdd_Status` y `DShield_lookup` offline | | R4 | **Integración Shuffle → TheHive → Cortex rota** — tokens inválidos, esquemas incorrectos o endpoints cambiados | Integración | Media | Alto | ⚠️ Activo | Tests de contrato en `tests/integration/`; validar con `src/soar_lab/config/schemas/__init__.py`; healthchecks en todos los servicios del compose | | R5 | ** incompatible con Elasticsearch puro** — requiere OpenSearch con TLS para algunas funciones avanzadas | Compatibilidad | Media | Medio | ✅ Mitigado | 4.14.0 (OpenSearch Dashboards) sustituye Kibana puro; funcionalidad básica de SIEM preservada vía + Elasticsearch | | R6 | **MISP lento en arranque** — MariaDB y misp-modules tardan > 3 min en estar healthy | Infraestructura | Alta | Bajo | ✅ Conocido | `depends_on: condition: service_healthy` configurado; `make up` espera healthchecks; documentado en `README.md` | | R7 | **Tiempo de respuesta supera umbrales** (p50 > 120 s / p90 > 180 s) en el playbook E2E | Rendimiento | Media | Alto | ⚠️ Activo | Monitorizar timestamps en cada paso; ejecutar primero con escenario malicioso offline; calcular KPIs con `make metrics` | | R8 | **APIs externas no disponibles** (VirusTotal, URLHaus) durante pruebas E2E | Dependencia | Media | Medio | ⚠️ Activo | Analyzers externos marcados opcionales; modo offline con `FileInfo` y `DomainMailSPFRecord`; tests e2e hacen skip si servicios no responden | | R9 | **Pérdida o corrupción de configuración** — compose files fragmentados aumentan riesgo de inconsistencias | Operacional | Baja | Alto | ⚠️ Activo | Todo versionado en Git; `make backup` antes de cambios destructivos; `.env.full` con valores completos documentados | | R10 | **Deriva de alcance** — stack más complejo de lo planeado (MISP añadidos) | Tiempo | Baja | Medio | ✅ Controlado | Alcance fijado en `docs/06-project-management.md`; servicios adicionales son opcionales para el playbook E2E principal | | R11 | **Bloqueo de IPs de Cloudflare por orden judicial de LaLiga** — durante jornadas de fútbol, los ISP mayoritarios españoles bloquean rangos de IPs de Cloudflare CDN por resolución judicial. Docker Hub, GitHub Container Registry (`ghcr.io`) y otras dependencias del stack usan Cloudflare, lo que impide `docker pull` y la descarga de imágenes durante el bloqueo | Externo / Regulatorio | Alta | Alto | ⚠️ Activo | Verificar estado del bloqueo antes de ejecutar `make up` o pulls en [hayahora.futbol](https://hayahora.futbol/); programar descargas fuera de jornadas de LaLiga; alternativas: usar VPN o cambiar a una red no afectada; pre-descargar todas las imágenes con `docker pull` cuando no hay partido y almacenarlas en caché local | | R12 | **API del Laboratorio no disponible** — API FastAPI (`src/soar_lab/interfaces/api/`) no responde o tiene errores de autenticación/autorización | Seguridad | Media | Alto | ⚠️ Activo | Tests de integración en `tests/integration/test_api_*.py`; health checks en `/health`; validar JWT tokens en `.env.full`; logs en `docker logs soar_api` | | R13 | **Certificados SSL expirados** — Certificados generados por `scripts/setup/gen_certs.sh` expiran y causan errores de HTTPS en Nginx y servicios | Seguridad | Media | Alto | ⚠️ Activo | Monitorear fechas de expiración (`openssl x509 -in cert.pem -noout -dates`); regenerar certificados antes de expiración; automatizar regeneración en CI/CD | | R14 | **Validación de esquemas falla** — Esquemas en `src/soar_lab/config/schemas/__init__.py` no validan correctamente datos de alertas, causando rechazo de payloads | Seguridad | Media | Medio | ⚠️ Activo | Tests de validación en `tests/atomic/test_schema_validation.py`; actualizar esquemas según cambios en payloads; logs de validación en `src/soar_lab/validation/` | | R15 | **Cobertura de pruebas insuficiente** — Testing especializado (atomic, integration, security, performance, production) no alcanza umbrales de cobertura | Testing | Media | Medio | ⚠️ Activo | Ejecutar `pytest --cov=src/soar_lab`; configurar quality gates en CI/CD; priorizar pruebas de componentes críticos | | R16 | **CI/CD pipeline failures** — Workflows en `.github/workflows/` fallan, bloqueando validaciones automáticas y despliegues | Automatización | Media | Alto | ⚠️ Activo | Logs de CI/CD en `.github/workflows/`; retries automáticos; rollback automático en caso de fallo; alertas en caso de fallos críticos | | R17 | **CLI del Laboratorio inusable** — CLI (`src/soar_lab/interfaces/api/cli.py`) tiene errores de usabilidad o compatibilidad entre plataformas | Operacional | Baja | Medio | ⚠️ Activo | Tests unitarios de CLI; documentación de comandos (`--help`); validación en Windows y Linux | | R18 | **Documentación operativa desincronizada** — Rutas, puertos, URLs, credenciales y contratos en `docs/` difieren del código o de Compose; se mantienen archivos duplicados o históricos sin marcar | Documentación | Alta | Alto | ⚠️ Activo | Plan de remediación documental; generar OpenAPI, tabla canónica de puertos y catálogos de tests automáticamente; marcar `legacy/` como histórico; revisar enlaces y secretos periódicamente | | R21 | **Credenciales y tokens estáticos en repositorio o documentación** — Ejemplos con contraseñas `2024` o tokens operativos pueden confundirse con secretos vigentes o filtrarse en historial Git | Seguridad | Alta | Alto | ✅ Mitigado | Auditar variables de token SIEM, `.env.example` y `grafana-datasources.yml`; usar placeholders (`<...>`) y `<SIEM_TOKEN>` en documentación; generar secretos con `soar-lab generate-secrets`; revisar historial Git | | R22 | **Seguridad interna deshabilitada en Elasticsearch / OpenSearch / ** — Certificados autofirmados sin CA importada reducen la postura de seguridad; `xpack.security.enabled` se parametriza con `ELASTIC_SECURITY_ENABLED` (por defecto `true`) | Seguridad | Media | Alto | ⚠️ Aceptado | Documentar claramente como riesgo aceptado del laboratorio; no prometer producción; planificar hardening en ruta crítica | | R23 | **Mappings de métricas (`soar-metrics`) inconsistentes** — Cambios en `mttr_seconds` o `@timestamp` sin reindexación rompen dashboards de Grafana | Operacional | Media | Medio | ✅ Mitigado | `init_shuffle_webhook.py` crea/actualiza mapping correcto; documentar procedimiento de reindexación | | R24 | **Dependencia crítica de Network Watcher** — Si `soar_network_watcher` no conecta workers de Shuffle a `soar_net` o falla al inyectar hosts, los playbooks no resuelven servicios | Operacional | Media | Alto | ⚠️ Activo | Healthcheck `/health`; logs en `docker logs soar_network_watcher`; reinicio manual; documentar en `docs/04-operations.md`
 | R19 | **Interfaz web de gestión no funcional** — Web-management (`apps/web-management/`) tiene errores de UX o no muestra estado real de servicios | Operacional | Media | Medio | ⚠️ Activo | Tests de navegador en `tests/e2e/`; validación de datos en tiempo real; logs de errores en consola del navegador | | R20 | **Analytics de TFM fallan** — Módulos en `src/soar_lab/application/use_cases/analytics_service.py` no procesan datos correctamente o generan visualizaciones erróneas | Operacional | Baja | Medio | ⚠️ Activo | Tests de analytics; validación de datos de entrada; revisión de visualizaciones generadas |
 
 #### Leyenda
@@ -1399,12 +1399,26 @@ Los riesgos activos de mayor prioridad son **R11** (bloqueo LaLiga/Cloudflare), 
 
 ```mermaid
 graph TD
- A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V ✅) & R2(Recursos RAM ⚠️) & R11(LaLiga/Cloudflare ⚠️)
+ A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V ✅)
+ A -->|Críticos| R2(Recursos RAM ⚠️)
+ A -->|Críticos| R11(LaLiga/Cloudflare ⚠️)
  B[Alta Prob / Bajo Impacto] --> R6(MISP arranque lento ✅)
- C[Media Prob / Alto Impacto] --> R3(Analyzers timeout ⚠️) & R4(Integración tokens ⚠️) & R7(Umbrales MTTR ⚠️) & R12(API no disponible ⚠️) & R13(Certificados SSL ⚠️) & R16(CI/CD failures ⚠️)
- D[Media Prob / Medio Impacto] --> R5(/ES compat ✅) & R8(APIs externas ⚠️) & R14(Validación esquemas ⚠️) & R15(Cobertura pruebas ⚠️) & R19(Web-management UX ⚠️) & R20(Analytics fallan ⚠️)
+ C[Media Prob / Alto Impacto] --> R3(Analyzers timeout ⚠️)
+ C --> R4(Integración tokens ⚠️)
+ C --> R7(Umbrales MTTR ⚠️)
+ C --> R12(API no disponible ⚠️)
+ C --> R13(Certificados SSL ⚠️)
+ C --> R16(CI/CD failures ⚠️)
+ D[Media Prob / Medio Impacto] --> R5(ES compat ✅)
+ D --> R8(APIs externas ⚠️)
+ D --> R14(Validación esquemas ⚠️)
+ D --> R15(Cobertura pruebas ⚠️)
+ D --> R19(Web-management UX ⚠️)
+ D --> R20(Analytics fallan ⚠️)
  E[Baja Prob / Alto Impacto] --> R9(Pérdida config ⚠️)
- F[Baja Prob / Medio Impacto] --> R10(Deriva alcance ✅) & R17(CLI inusable ⚠️) & R18(Docs-site desactualizado ⚠️)
+ F[Baja Prob / Medio Impacto] --> R10(Deriva alcance ✅)
+ F --> R17(CLI inusable ⚠️)
+ F --> R18(Docs-site desactualizado ⚠️)
 ```
 
 #### Matriz de Seguimiento de Riesgos con Fechas de Revisión
@@ -1681,9 +1695,9 @@ Si aparece un error de puerto:
 # Cloudflare Warp, Mullvad, o cambiar a red no afectada
 
 # Pre-descargar imágenes cuando no hay partido
-docker pull shuffle/shuffle:latest
-docker pull thehiveproject/thehive:latest
-docker pull cortexproject/cortex:latest
+docker pull ghcr.io/shuffle/shuffle-backend:2.2.1
+docker pull thehiveproject/thehive:3.5.2-1
+docker pull thehiveproject/cortex:3.2.0-1
 # ... resto de imágenes
 ```
 
@@ -1869,7 +1883,7 @@ Documento de seguimiento de la **FASE 52** del plan de remediación (`docs/06-pr
 
 #### Resumen ejecutivo
 
-Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomware Lab tras completar las fases AUDIT-F1 a F12. El despliegue principal (`make up`) finaliza con éxito, todos los servicios esenciales superan `make health`, el contenedor `soar_promtail` ya no reinicia, los tests unitarios alcanzan 1030 passed con 83,62 % de cobertura, y los flujos `make metrics` y `make simulate-malicious` producen resultados correctos. Se corrigieron problemas de autenticación de Elasticsearch, dependencias de Shuffle/OpenSearch, variables de , cobertura de tests y múltiples incongruencias documentales. Quedan pendiente un repaso del target `make test-coverage`.
+Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomware Lab tras completar las fases AUDIT-F1 a F12. El despliegue principal (`make up`) finaliza con éxito, todos los servicios esenciales superan `make health`, el contenedor `soar_promtail` ya no reinicia, los tests unitarios alcanzan 1030 passed con 83,62 % de cobertura, y los flujos `make metrics` y `make simulate-malicious` producen resultados correctos. Se corrigieron problemas de autenticación de Elasticsearch, dependencias de Shuffle/OpenSearch, variables de entorno, cobertura de tests y múltiples incongruencias documentales. Quedan pendiente un repaso del target `make test-coverage`.
 
 #### Alcance
 
