@@ -3859,7 +3859,7 @@ Cortex (v3.2.0-1) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7
 
 ### Tabla 6: Analyzers Cortex Configurados
 
-| Analyzer              | Tipo     | API Key | Uso en Playbook   |
+| Analyzer              | Tipo     | API key | Uso en playbook   |
 |-----------------------|----------|---------|-------------------|
 | **Hashdd_Status**     | Hash     | No      | Status lookup de hashes |
 | **IP-API**            | IP       | No      | Geolocalización de IP |

@@ -450,16 +450,16 @@ El usuario administrador se crea automáticamente durante el despliegue con `ini
 3. Nombre: `SOAR Lab`
 4. Descripción: `Laboratorio SOAR para ransomware`
 
-**4. Generar API Key:**
+**4. Generar API key:**
 
 1. Ir a tu perfil (click en tu nombre)
-2. Click en **API Keys**
-3. Click en **Create a new API Key**
-4. Copiar la API Key (¡solo se muestra una vez!)
+2. Click en **API keys**
+3. Click en **Create a new API key**
+4. Copiar la API key (¡solo se muestra una vez!)
 
-![API Key de TheHive](assets/images/thehive/apikey.png)
+![API key de TheHive](assets/images/thehive/apikey.png)
 
-**IMPORTANTE**: Guardar esta API Key, se necesitará para configurar Shuffle.
+**IMPORTANTE**: Guardar esta API key, se necesitará para configurar Shuffle.
 
 **5. Configurar Webhook en TheHive:**
 
@@ -525,12 +525,12 @@ El usuario administrador se crea automáticamente durante el despliegue con `res
 1. Ir a **Organization** > **Analyzers**
 2. Verificar que analyzers como `VirusTotal_3`, `MISP_Search`, `IPInfo` estén habilitados
 
-**5. Generar API Key:**
+**5. Generar API key:**
 
 1. Ir a tu perfil
-2. Click en **API Keys**
-3. Click en **Create a new API Key**
-4. Copiar la API Key
+2. Click en **API keys**
+3. Click en **Create a new API key**
+4. Copiar la API key
 
 **6. Configurar Analyzers Adicionales:**
 Analyzers recomendados:
@@ -542,7 +542,7 @@ Analyzers recomendados:
 - AlienVault OTX (para threat intelligence)
 
 - Have I Been Pwned (para credenciales comprometidas)
- - Requiere API Key de HIBP
+ - Requiere API key de HIBP
  - Verifica si emails/contraseñas han sido comprometidos
  - Referencia: [Have I Been Pwned](https://haveibeenpwned.com/)
 
@@ -551,7 +551,7 @@ Analyzers recomendados:
 1. Ir a **Organization** > **Analyzers**
 2. Buscar el analyzer deseado
 3. Click en **Enable**
-4. Configurar la API Key requerida
+4. Configurar la API key requerida
 5. Click en **Test** para verificar conexión
 
 **Referencia**: [Cortex Analyzers Documentation](https://docs.strangebee.com/cortex/analyzer-tutorial/)
@@ -608,17 +608,17 @@ docker network inspect soar_net
 **CAPTURA:** Screenshot de la salida de
 `docker network inspect soar_net` mostrando los contenedores conectados.
 
-**5. Generar API Key:**
-La API Key de Shuffle es necesaria para autenticar requests a la API de Shuffle, especialmente para ejecutar workflows
+**5. Generar API key:**
+La API key de Shuffle es necesaria para autenticar requests a la API de Shuffle, especialmente para ejecutar workflows
 vía webhook. Esta clave debe guardarse de forma segura.
 
 1. Ir a tu perfil
-2. Click en **API Keys**
-3. Click en **Create new API Key**
+2. Click en **API keys**
+3. Click en **Create new API key**
 4. Nombre: `SOAR Lab Key`
-5. Copiar la API Key
+5. Copiar la API key
 
-**CAPTURA:** Screenshot de la sección de API Keys en Shuffle.
+**CAPTURA:** Screenshot de la sección de API keys en Shuffle.
 
 #### 3.2.7 Paso 7: registro de apps en Shuffle
 
@@ -637,11 +637,11 @@ con las credenciales generadas anteriormente.
 **CAPTURA:** Screenshot de la página de TheHive app en Shuffle mostrando el botón Download/Install.
 
 **2. Configurar Autenticación TheHive:**
-Una vez descargada la app, debes configurar la autenticación con la API Key y URL de TheHive generadas anteriormente.
+Una vez descargada la app, debes configurar la autenticación con la API key y URL de TheHive generadas anteriormente.
 
 1. Después de descargar, click en **Authentication**
 2. Configurar:
- - **apikey**: [Pegar la API Key de TheHive generada anteriormente]
+ - **apikey**: [Pegar la API key de TheHive generada anteriormente]
  - **url**: `http://thehive:9000`
 3. Click en **Save**
 4. Click en **Test** para verificar conexión
@@ -658,7 +658,7 @@ Similar a TheHive, Cortex debe registrarse para que Shuffle pueda ejecutar analy
 3. Click en **Download/Install**
 4. Click en **Authentication**
 5. Configurar:
- - **apikey**: [Pegar la API Key de Cortex generada anteriormente]
+ - **apikey**: [Pegar la API key de Cortex generada anteriormente]
  - **url**: `http://cortex:9001`
 6. Click en **Save**
 7. Click en **Test**
@@ -674,7 +674,7 @@ crear eventos en MISP.
 3. Click en **Download/Install**
 4. Click en **Authentication**
 5. Configurar:
- - **apikey**: [API Key de MISP]
+ - **apikey**: [API key de MISP]
  - **url**: `http://misp`
 6. Click en **Save**
 7. Click en **Test**
@@ -814,7 +814,7 @@ disponible para recibir solicitudes.
 **CAPTURA:** Screenshot del workflow completo mostrando todas las acciones conectadas.
 
 **7. Obtener URL del Webhook:**
-La Webhook URL es necesaria para que sistemas externos (como ) puedan enviar alertas al workflow.
+La URL del webhook es necesaria para que sistemas externos puedan enviar alertas al workflow.
 
 1. Click en el trigger webhook
 2. Copiar la **Webhook URL**
@@ -1191,7 +1191,7 @@ docker logs soar_network_watcher
 #### 3.4.2 App TheHive no funciona
 
 Si la app de TheHive no funciona en Shuffle, puede ser un problema de autenticación o configuración. Verificar que la
-app esté descargada y autenticada correctamente. Revisar la API Key y URL de TheHive.
+app esté descargada y autenticada correctamente. Revisar la API key y URL de TheHive.
 
 #### 3.4.3 Workflow se queda en "Step is still running"
 
@@ -3689,7 +3689,7 @@ Revisar la configuración de TheHive en Shuffle (API key, URL) y los logs de err
 API key incorrecta, URL mal configurada o esquema de datos incompatible.
 
 **Solución:**
-- Verificar API Key de TheHive en Shuffle.
+- Verificar API key de TheHive en Shuffle.
 - Verificar URL de TheHive en configuración de Shuffle.
 - Validar esquema de datos del caso.
 - Ejecutar tests de contrato en `tests/integration/`.
@@ -3710,7 +3710,7 @@ Revisar la configuración de Cortex en Shuffle y el estado de los analyzers.
 API key o URL de Cortex incorrecta, o analyzers deshabilitados/no instalados.
 
 **Solución:**
-- Verificar API Key de Cortex en Shuffle.
+- Verificar API key de Cortex en Shuffle.
 - Verificar URL de Cortex en configuración de Shuffle.
 - Validar que los analyzers estén habilitados en Cortex.
 - Verificar que los analyzers necesarios estén instalados.
