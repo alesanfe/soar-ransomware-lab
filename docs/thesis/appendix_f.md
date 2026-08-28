@@ -266,7 +266,7 @@ sequenceDiagram
  Backend->>Backend: build_case_json
  Backend->>TheHive: POST /api/case
  TheHive-->>Backend: caseId
- par En paralelo (11 ramas)
+ par En paralelo (16 ramas desde case creation)
    Backend->>TheHive: POST observables (hash, IP)
    Backend->>Backend: calc_task_title (severity >= 3 aislar)
    Backend->>TheHive: POST task (titulo IR)
