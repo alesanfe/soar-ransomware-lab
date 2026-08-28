@@ -586,13 +586,62 @@ Reddit, Telegram, GitHub), T1567.002 Exfiltration Over Web Service (Telegram Bot
 
 **IoCs principales:** SHA256 GMinst4ll `d70c31b0...`, TREZ_cor `a75def53...`,
 SystemSP.rar `a50e0785...`, appy_patched.exe `eabe4c16...`. Mutex `Global\{TOKEN-EX-}`.
-PDF señuelo `IF IT DOESN'T WORK.pdf` (autor: "David Thompson"). Reglas YARA:
-`GMinst4ll_Stealer`, `PulsarRAT_AES_GCM_Config`, `PulsarRAT_Deobfuscated_Strings`.
+PDF señuelo `IF IT DOESN'T WORK.pdf` (autor: "David Thompson", keywords:
+`DAGflPA11iY`, `BAGTfYCSpno` — posibles claves de cifrado o identificadores de campaña).
+Reglas YARA: `GMinst4ll_Stealer`, `PulsarRAT_AES_GCM_Config`,
+`PulsarRAT_Deobfuscated_Strings`. Reglas Sigma: `Winlogon UserInit Modification`,
+`SystemSP Directory Creation`, `Suspicious WScript Execution`.
+
+**Objetivos de robo (InfoStealer):** Navegadores Chrome, Edge, Brave, Opera, Firefox
+(rutas `Login Data` y `logins.json`). Wallets Metamask (extensión), Trust Wallet
+(`%APPDATA%\Trust Wallet`), Atomic (`%APPDATA%\atomic`). Ruta de instalación:
+`%PROGRAMDATA%\SystemSP\SystemSP\` (max.vbs, archive.rar).
+
+**Plataformas de distribución:** YouTube canal "асьминог" (octopus en ruso, vídeo
+`okNhSxfa__U` reciclado posteriormente para distribuir "RPG Maker MZ"). Tumblr
+`@tutorialsfrommax` (tutoriales falsos de minería). MediaFire
+`GMinstall_4.11.rar` (variante 4.11 vs 2.03 analizada). Discord `sub4unlock.io/ajLvu`
+(trust score 10/100, scam CPA, requiere completar acciones antes de mostrar contenido).
+
+**Actor y atribución:** GitHub `boycots563` (251 commits, repo `wlt56` eliminado tras
+detección). Nombres temáticos de payloads: babuchen (killer AV), rodendron (GitHub C2,
+posible variante de "rhododendron"), kamzat (payload Python con PyCryptodome completo:
+AES, SHA, HMAC, BLAKE2, keccak + asyncio + multiprocesamiento), postevak (payload
+Python simple, HTTP básico sin criptografía avanzada). Origen probable Eslovaquia
+(archivo subido a MediaFire el 2026-06-10 23:57:07). Operador Telegram @KJL4999S.
+Bot Telegram `buchstys4_bot` (Bot ID 7675556882, token completo en IoCs).
+
+**Payloads GitHub C2 (4 ejecutables Python):** `Windows_Compatibility_Agent.exe`
+(12.4 MB, Python 3.13), `Windows_Compatibility_Agent_Host.exe` (8.5 MB, Python 3.14),
+`kamzat.exe` (12.4 MB, Python 3.13), `postevak.exe` (7.9 MB, Python 3.13). Todos con
+imports comunes (USER32, KERNEL32, ADVAPI32, GDI32), funciones de token
+(OpenProcessToken, GetTokenInformation) y packer MachO_File_pyinstaller. Sin URLs/IPs
+directas en strings — configuración C2 probablemente cifrada.
+
+**Distinción de ejecutables appy:** `appy.exe` (Rust, 719 KB, 5 secciones, imports
+ntdll.dll: NtWriteFile, NtCreateNamedPipeFile — launcher). `appy_patched.exe` (.NET
+4.7.2, 1.86 MB, 3 secciones, import mscoree.dll — Pulsar RAT real). ConfuserEx
+obfuscación impide extracción estática de config C2: 2 blobs AES-GCM de 1808 bytes
+con entropía 7.92, nonces de 12 bytes. Config C2 NO recuperable sin análisis dinámico
+(Fase 14 descartada: GUI VirtualBox no funcional).
+
+**Timeline de campaña:** 2025-03-04 (creación archivo PASSWORD, metadata RAR),
+2026-06-10 23:57:07 (subida a MediaFire desde Eslovaquia), 2026-06-11 (modificación
+GMinst4ll 2.03.rar + inicio del análisis forense), 2026-06-12 (análisis Pulsar RAT),
+2026-06-13 (consolidación IoCs + 39 archivos .txt + 14 análisis detallados).
+
+**Hipótesis de campaña:** H1 — activa desde 2025 (múltiples variantes indican
+desarrollo continuo: versiones 2.03, 4.11, 4.52.3). H2 — operador rusohablante
+(cirílico "асьминог" en YouTube, nombres temáticos eslavos). H3 — monetización
+múltiple (robo de wallets, venta de credenciales en foros, ingresos por sub4unlock.io
+CPA). Nivel de sofisticación: medio-alto (empaquetado RAR anidado, camuflaje temático
+GMiner, uso de servicios legítimos para C2, ConfuserEx).
 
 Fuente: `github.com/alesanfe/gminst4ll-forensics` (README.md, 01_INFORME_PRINCIPAL,
 02_BITACORA_FASES, 03_IOCS_Y_DETECCION, 04_OSINT_Y_CAMPANA, 05_PENDIENTES_Y_PLAN,
 06_METADATOS_ANALISIS). Análisis forense completo: 39 archivos .txt de strings/hashes/PE,
 14 archivos de análisis detallado, 15 fases (11 completadas, 4 pendientes/bloqueadas).
+Entorno: Ubuntu 20.04 LTS + Windows Server 2016 (Vagrant, red aislada, Sysmon).
 
 ---
 
@@ -637,6 +686,24 @@ score a >=80 o el veredicto a `malicious`. Los IoCs de GMinst4ll son especialmen
 valiosos para validación porque incluyen hashes reales con reputation en VirusShare,
 IPs de servicios legítimos abusados (Pastebin, Dropbox, Reddit, Telegram) y técnicas
 MITRE ATT&CK mapeadas desde análisis estático confirmado.
+
+**IoCs por tipo (TC-33, 10 subtests):**
+
+| Tipo | Cantidad | Ejemplos |
+|------|----------|----------|
+| Hashes SHA256 | 4 | GMinst4ll `d70c31b0...`, TREZ_cor `a75def53...`, SystemSP `a50e0785...`, appy_patched `eabe4c16...` |
+| URLs C2 | 7 | `pastebin.com/raw/FgUMQ9vE`, `pastebin.com/raw/E3s5iTTz`, `dropbox.com/scl/fi/.../SystemSP.rar`, `reddit.com/user/Over_Media6257/...`, `api.telegram.org/bot7675556882/...`, `github.com/boycots563/wlt56/`, `mediafire.com/.../GMinstall_4.11.rar` |
+| Dominios | 4 | pastebin.com, dropbox.com, reddit.com, telegram.org |
+| IPs | 7 | 172.66.171.73, 104.20.29.150 (Pastebin), 162.125.248.18 (Dropbox), 151.101.129.140, 151.101.65.140 (Reddit), 149.154.166.110 (Telegram) |
+| Telegram | 2 | Bot ID 7675556882 (buchstys4_bot), Chat ID 6820575341 |
+| Registry | 1 | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\UserInit` |
+| MITRE ATT&CK | 7 | T1566.002, T1059.001, T1547.001, T1562.001, T1056.001, T1102, T1567.002 |
+
+**Consultas SIEM para hunting:** `pastebin.com` (o URLs específicas `/raw/FgUMQ9vE`,
+`/raw/E3s5iTTz`), `dropbox.com/scl/fi/` (path SystemSP.rar), `reddit.com/user/Over_Media6257/`,
+`api.telegram.org/bot7675556882`, `github.com/boycots563/wlt56/`. Patrones de proceso:
+`TREZ_cor` en línea de comandos, `wscript.exe` ejecutando `.vbs` desde `%PROGRAMDATA%`,
+PowerShell con `-Verb RunAs` tras ejecutar archivos sospechosos.
 
 Fuente: `github.com/alesanfe/gminst4ll-forensics` (03_IOCS_Y_DETECCION_GMINST4LL.md —
 Apéndice A con origen exacto de cada IoC: archivo fuente + línea). Pipeline SOAR:
