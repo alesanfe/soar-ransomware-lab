@@ -1300,25 +1300,25 @@ Los siguientes diagramas Mermaid resumen el contexto, los contenedores Docker y 
 
 ```mermaid
 C4Context
- title Sistema de Contexto - SOAR Ransomware Lab
- Person(operador, "Operador / Analista")
- System(soar, "SOAR Ransomware Lab", "Orquesta detección, análisis y contención simulada de ransomware")
- System_Ext("", "SIEM / EDR")
- System_Ext(thehive, "TheHive", "Gestión de casos")
- System_Ext(cortex, "Cortex", "Análisis de IoC")
- System_Ext(misp, "MISP", "Inteligencia de amenazas")
- System_Ext(shuffle, "Shuffle", "Workflows SOAR")
- System_Ext(es, "Elasticsearch", "Almacén de eventos y métricas")
- System_Ext(grafana, "Grafana / Loki", "Observabilidad")
+title Sistema de Contexto - SOAR Ransomware Lab
+Person(operador, "Operador / Analista")
+System(soar, "SOAR Ransomware Lab", "Orquesta detección, análisis y contención simulada de ransomware")
+System_Ext(siem, "SIEM / EDR")
+System_Ext(thehive, "TheHive", "Gestión de casos")
+System_Ext(cortex, "Cortex", "Análisis de IoC")
+System_Ext(misp, "MISP", "Inteligencia de amenazas")
+System_Ext(shuffle, "Shuffle", "Workflows SOAR")
+System_Ext(es, "Elasticsearch", "Almacén de eventos y métricas")
+System_Ext(grafana, "Grafana / Loki", "Observabilidad")
 
- Rel(operador, soar, "Accede vía navegador a ", "HTTPS / Web Management")
- Rel(soar, "Recibe alertas o consulta agentes", "HTTP/REST")
- Rel(soar, thehive, "Crea y actualiza casos", "HTTP/REST")
- Rel(soar, cortex, "Ejecuta analyzers", "HTTP/REST")
- Rel(soar, misp, "Enriquece IoCs", "HTTP/REST")
- Rel(soar, shuffle, "Dispara workflows y recibe métricas", "HTTP/REST + WebSocket")
- Rel(soar, es, "Lee / escribe eventos y KPIs", "HTTP/REST")
- Rel(operador, grafana, "Consulta dashboards", "HTTP")
+Rel(operador, soar, "Accede vía navegador", "HTTPS / Web Management")
+Rel(siem, soar, "Envía alertas", "HTTP/REST")
+Rel(soar, thehive, "Crea y actualiza casos", "HTTP/REST")
+Rel(soar, cortex, "Ejecuta analyzers", "HTTP/REST")
+Rel(soar, misp, "Enriquece IoCs", "HTTP/REST")
+Rel(soar, shuffle, "Dispara workflows y recibe métricas", "HTTP/REST + WebSocket")
+Rel(soar, es, "Lee / escribe eventos y KPIs", "HTTP/REST")
+Rel(operador, grafana, "Consulta dashboards", "HTTP")
 ```
 
 #### Diagrama de contenedores Docker
@@ -1367,7 +1367,7 @@ graph TB
  operator -->|":8081 directo"| shuffle_fe
  operator -->|":8083 directo"| misp
  operator -->|":8084 directo"| grafana
- operator -->|":
+ operator -->|":8086 directo"| docs_site
  api --> es
  api --> thehive
  api --> cortex

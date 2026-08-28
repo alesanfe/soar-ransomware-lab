@@ -2866,7 +2866,8 @@ flowchart TD
         end
     end
 
-    Row1 --> Row2 --> Row3
+    Row1 --> Row2
+    Row2 --> Row3
 ```
 
 Leyenda: Sí Mitigado o Conocido · Parcial En seguimiento / Activo
