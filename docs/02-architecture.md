@@ -1087,11 +1087,11 @@ La orquestación se divide en varios archivos `docker-compose*.yml` bajo `infra/
 ```
 infra/docker/compose/logging/
 ├── docker-compose.logging.yml
-├── promtail-config.yml # descubrimiento de contenedores Docker → Loki
+├── logging.yaml # configuración de logging
 ├── loki-config.yml # archivo de referencia; compose usa la config por defecto de la imagen
-├── grafana-datasources.yml # datasource Elasticsearch para KPIs
 ├── grafana-kpi-dashboard.yml # provisioning del dashboard
-└── kpi-dashboard.json # definición del dashboard de KPIs
+├── kpi-dashboard.json # definición del dashboard de KPIs
+└── grafana-dashboard-soar-kpis.json # dashboard alternativo de KPIs SOAR
 ```
 
 #### Iniciar servicios

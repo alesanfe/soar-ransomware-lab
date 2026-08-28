@@ -1324,11 +1324,13 @@ infra/
 │ │ └── docker-compose.logging.yml
 │ ├── config/ # Configuraciones centralizadas
 │ │ ├── nginx/ # nginx.conf y certificados SSL
-│ │ ├── cortex.application.conf/ # Configuración de Cortex
-│ │ └── thehive.application.conf/ # Configuración de TheHive
+│ │ └── templates/ # Plantillas (.template) de Cortex, TheHive, Grafana, Promtail
+│ ├── cortex-analyzers/ # Analyzers personalizados de Cortex
 │ └── images/ # Dockerfiles personalizados
-│   └── cortex/
-│     └── Dockerfile # Imagen de Cortex con dependencias Python
+│   ├── cortex/
+│   │ └── Dockerfile # Imagen de Cortex con dependencias Python
+│   └── orborus/
+│     └── Dockerfile # Imagen personalizada de Orborus
 ```
 
 ---
@@ -3002,50 +3004,41 @@ contribute to the score (its 20% weight is lost, capping the maximum score at 80
 #### Structure
 
 ```
-quality/
-├── README.md # This file
-├── pyproject-quality.toml # Index of quality tool configs (references pyproject.toml, .bandit, etc.)
-├── run_quality_checks.py # Main runner script
-├── reports/ # Generated reports (JSON + Markdown)
-│ ├── quality-summary.md # Human-readable summary (all 15 categories)
-│ ├── quality-summary.json # Machine-readable JSON with all metrics
-│ ├── complexity-report.json # Detailed complexity data
-│ ├── maintainability-report.json # Detailed maintainability data
-│ ├── security-report.json # Bandit security findings
-│ ├── dependency-audit.json # pip-audit vulnerabilities
-│ └── architecture-report.json # import-linter violations
-├── checks/ # pytest test files for each quality dimension
-│ ├── test_architecture_rules.py # Hexagonal architecture (AST-based)
-│ ├── test_complexity_project.py # Cyclomatic complexity (radon cc)
-│ ├── test_coverage_quality.py # Test coverage (coverage.py XML)
-│ ├── test_dead_code.py # Dead code detection (vulture)
-│ ├── test_dependencies.py # Layer rules + circular imports (AST)
-│ ├── test_dependency_security.py # Dependency vulnerabilities (pip-audit)
-│ ├── test_docstring_coverage.py # Docstring coverage (interrogate)
-│ ├── test_halstead_metrics.py # Halstead metrics (radon hal)
-│ ├── test_maintainability.py # Maintainability Index (radon mi)
-│ ├── test_mutation_quality.py # Mutation testing (mutmut)
-│ ├── test_quality_score.py # Score calculation unit tests
-│ ├── test_security.py # Security analysis (bandit)
-│ ├── test_style_quality.py # Linting (ruff)
-│ └── test_type_quality.py # Static typing (mypy)
-├── thresholds/ # YAML threshold configs
-│ ├── complexity_thresholds.yaml # max_complexity_per_function, fail_grades
-│ ├── coverage_thresholds.yaml # min_global_coverage, min_file_coverage
-│ ├── maintainability_thresholds.yaml # min_mi_per_file, min_mi_global
-│ ├── mutation_thresholds.yaml # min_mutation_score
-│ ├── security_thresholds.yaml # bandit severity, pip-audit, secrets
-│ └── documentation_thresholds.yaml # min_docstring_coverage
-└── tools/ # Parsers for each quality tool
- ├── parse_radon.py # cc, mi, hal, raw
- ├── parse_ruff.py # linting + format
- ├── parse_bandit.py # security
- ├── parse_vulture.py # dead code
- ├── parse_pylint.py # deep analysis
- ├── parse_coverage.py # coverage XML
- ├── parse_mutmut.py # mutation testing
- ├── calculate_quality_score.py # score 0-100 weighted
- └── generate_report.py # JSON + Markdown generation
+tests/quality/               # pytest test files for each quality dimension
+├── test_architecture_rules.py # Hexagonal architecture (AST-based)
+├── test_complexity_project.py # Cyclomatic complexity (radon cc)
+├── test_coverage_quality.py   # Test coverage (coverage.py XML)
+├── test_dead_code.py          # Dead code detection (vulture)
+├── test_dependencies.py       # Layer rules + circular imports (AST)
+├── test_dependency_security.py # Dependency vulnerabilities (pip-audit)
+├── test_docstring_coverage.py # Docstring coverage (interrogate)
+├── test_halstead_metrics.py   # Halstead metrics (radon hal)
+├── test_maintainability.py    # Maintainability Index (radon mi)
+├── test_mutation_quality.py   # Mutation testing (mutmut)
+├── test_quality_score.py      # Score calculation unit tests
+├── test_security.py           # Security analysis (bandit)
+├── test_style_quality.py      # Linting (ruff)
+└── test_type_quality.py       # Static typing (mypy)
+
+scripts/quality/              # Parsers and tools for each quality tool
+├── parse_radon.py             # cc, mi, hal, raw
+├── parse_ruff.py              # linting + format
+├── parse_bandit.py            # security
+├── parse_vulture.py           # dead code
+├── parse_pylint.py            # deep analysis
+├── parse_coverage.py          # coverage XML
+├── parse_mutmut.py            # mutation testing
+├── calculate_quality_score.py # score 0-100 weighted
+└── generate_report.py         # JSON + Markdown generation
+
+reports/quality/              # Generated reports (JSON + Markdown, gitignored)
+├── quality-summary.md         # Human-readable summary (all 15 categories)
+├── quality-summary.json       # Machine-readable JSON with all metrics
+├── complexity-report.json     # Detailed complexity data
+├── maintainability-report.json # Detailed maintainability data
+├── security-report.json       # Bandit security findings
+├── dependency-audit.json      # pip-audit vulnerabilities
+└── architecture-report.json   # import-linter violations
 ```
 
 #### Metrics measured
