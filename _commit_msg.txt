@@ -1,0 +1,17 @@
+docs: fix Mermaid diagrams, broken references, and outdated info in 06-project-management.md
+
+- Fix Mermaid graph LR: Shuffle -> Elasticsearch -> OpenSearch, complete dangling API --> edge
+- Fix Mermaid graph TD: replace invalid & syntax with separate arrows
+- Fix Mermaid gantt: replace invalid dateFormat WW with YYYY-MM-DD, remove colons from task names
+- Fix broken references to inexistent docs/thesis/data_visualizations.md and appendix_a.md
+- Fix broken reference to inexistent CHANGELOG_THESIS_UPDATE.md
+- Fix outdated test count (~1580) -> 2233 collected / 1905 selected / 328 deselected
+- Fix docker pull ...:latest examples -> pinned versions (2.2.1, 3.5.2-1, 3.2.0-1)
+- Fix missing variable name in audit summary ("variables de ," -> "variables de entorno,")
+- Fix typo "Elasticsearch + + MISP" -> "Elasticsearch + OpenSearch + MISP"
+- Fix analyzer names FileInfo/DomainMailSPFRecord -> Hashdd_Status/DShield_lookup
+- Fix duplicate self-reference (3x docs/06-project-management.md on one line)
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
