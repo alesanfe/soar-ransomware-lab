@@ -74,8 +74,6 @@ Plataforma de orquestación de seguridad integral para respuesta ante incidentes
 ### 3.1 Visión general de arquitectura
 
 
-#### Arquitectura general
-
 #### Arquitectura de Código (Python)
 
 El código Python sigue una **arquitectura hexagonal (Ports and Adapters)**. Las dependencias apuntan siempre hacia el
@@ -153,7 +151,7 @@ graph TD
  LabAPI -- HTTP --> MISPInternal[MISP :80]
  LabAPI -- HTTP --> GrafanaInternal[Grafana :3000]
 
- ShuffleBackend -- HTTP --> ES
+ ShuffleBackend -- HTTP --> OS[OpenSearch :9200]
  ShuffleBackend -- HTTP --> Redis
  ShuffleBackend -- HTTP --> Orborus[Orborus :5000]
 
@@ -389,11 +387,12 @@ sequenceDiagram
  participant Backend as Shuffle Backend
  participant TheHive as TheHive API
  participant Cortex as Cortex API
- participant ES as OpenSearch
+ participant OS as OpenSearch
+ participant ES as Elasticsearch
 
  SIEM->>Shuffle: POST /api/v1/hooks/webhook (alert)
  Shuffle->>Backend: Reenvía alerta
- Backend->>ES: Valida y almacena alerta
+ Backend->>OS: Valida y almacena alerta
  Backend->>TheHive: POST /api/case (crear caso)
  TheHive->>ES: Almacena caso
  Backend->>Cortex: POST /api/analyzer/run (analyzers)
@@ -418,7 +417,7 @@ sequenceDiagram
  Cortex-->>Shuffle: Resultados (score, verdict)
  alt Score ≥ 80 o verdict malicioso
  Shuffle->>Scripts: Ejecuta contención simulada
- Scripts->>: Notificación de aislamiento
+ Scripts-->>Shuffle: Notificación de aislamiento
  Shuffle->>TheHive: Marca como "contención activada"
  else Score < 80 y verdict benigno
  Shuffle->>TheHive: Marca como "benigno"
@@ -430,18 +429,18 @@ sequenceDiagram
 
 #### Servicios, Puertos y Redes
 
-| Servicio | Imagen | Puerto host→contenedor | Redes | |--------------------|-------------------------------------------------------|---------------------------------------|-----------------------| | `nginx` | nginx:1.25-alpine | `80:80`, `443:443` | soar_net, logging_net | | `thehive` | thehiveproject/thehive:3.5.2-1 | `${THEHIVE_HTTP_PORT:-8100}:9000` | soar_net | | `cortex` | build `infra/docker/images/cortex/Dockerfile` (FROM `thehiveproject/cortex:3.2.0-1`) | `${CORTEX_HTTP_PORT:-8101}:9001` | soar_net | | `shuffle-backend` | ghcr.io/shuffle/shuffle-backend:2.2.1* | `${SHUFFLE_API_PORT:-5001}:5001` | soar_net | | `shuffle-frontend` | ghcr.io/shuffle/shuffle-frontend:2.2.1* | `${SHUFFLE_UI_PORT:-8081}:80` | soar_net | | `orborus` | build `infra/docker/images/orborus/Dockerfile` (tag `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | — (interno) | soar_net | | `elasticsearch` | docker.elastic.co/elasticsearch/elasticsearch:7.10.2 | `${ELASTICSEARCH_PORT:-8200}:9200` | soar_net, ti_net | | `redis` | redis:7-alpine | `${REDIS_PORT:-6379}:6379` | soar_net, ti_net | | `misp` | ghcr.io/misp/misp-docker/misp-core:v2.5.44* | `${MISP_PORT:-8083}:80` | soar_net | | `misp-db` | mariadb:10.11 | — (interno) | soar_net | | `misp-modules` | ghcr.io/misp/misp-docker/misp-modules:v3.0.9* | — (interno) | soar_net | | `api` | build: apps/api/Dockerfile | `${API_PORT:-8000}:8000` | soar_net, ti_net | | `web-management` | build: apps/web-management/Dockerfile | `8085:80` | soar_net | | `docs-site` | build: apps/docs-site/Dockerfile | `${DOCS_PORT:-8086}:8080` | soar_net | | `loki` | grafana/loki:2.9.10 | — (interno) | logging_net | | `promtail` | grafana/promtail:2.9.9 | — (interno) | logging_net | | `grafana` | grafana/grafana:10.3.4 | `${GRAFANA_PORT:-8084}:3000` | logging_net, soar_net | | `grafana-db` | postgres:14-alpine | — (interno) | logging_net |
+| Servicio | Imagen | Puerto host→contenedor | Redes | |--------------------|-------------------------------------------------------|---------------------------------------|-----------------------| | `nginx` | nginx:1.25-alpine | `80:80`, `443:443` | soar_net, logging_net | | `thehive` | thehiveproject/thehive:3.5.2-1 | `${THEHIVE_HTTP_PORT:-8100}:9000` | soar_net | | `cortex` | build `infra/docker/images/cortex/Dockerfile` (FROM `thehiveproject/cortex:3.2.0-1`) | `${CORTEX_HTTP_PORT:-8101}:9001` | soar_net | | `shuffle-backend` | ghcr.io/shuffle/shuffle-backend:2.2.1 | `${SHUFFLE_API_PORT:-5001}:5001` | soar_net | | `shuffle-frontend` | ghcr.io/shuffle/shuffle-frontend:2.2.1 | `${SHUFFLE_UI_PORT:-8081}:80` | soar_net | | `orborus` | build `infra/docker/images/orborus/Dockerfile` (tag `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | — (interno) | soar_net | | `elasticsearch` | docker.elastic.co/elasticsearch/elasticsearch:7.10.2 | `${ELASTICSEARCH_PORT:-8200}:9200` | soar_net, ti_net | | `opensearch` | opensearchproject/opensearch:2.10.0 | `${OPENSEARCH_PORT:-8201}:9200` | soar_net | | `opensearch-dashboards` | opensearchproject/opensearch-dashboards:2.10.0 | `${OPENSEARCH_DASHBOARDS_PORT:-8202}:5601` | soar_net | | `redis` | redis:7-alpine | `${REDIS_PORT:-6379}:6379` | soar_net, ti_net | | `misp` | ghcr.io/misp/misp-docker/misp-core:v2.5.44 | `${MISP_PORT:-8083}:80` | soar_net | | `misp-db` | mariadb:10.11 | — (interno) | soar_net | | `misp-modules` | ghcr.io/misp/misp-docker/misp-modules:v3.0.9 | — (interno) | soar_net | | `api` | build: apps/api/Dockerfile | `${API_PORT:-8000}:8000` | soar_net, ti_net | | `web-management` | build: apps/web-management/Dockerfile | `8085:80` | soar_net | | `docs-site` | build: apps/docs-site/Dockerfile | `${DOCS_PORT:-8086}:8080` | soar_net | | `loki` | grafana/loki:2.9.10 | — (interno) | logging_net | | `promtail` | grafana/promtail:2.9.9 | — (interno) | logging_net | | `grafana` | grafana/grafana:10.3.4 | `${GRAFANA_PORT:-8084}:3000` | logging_net, soar_net | | `grafana-db` | postgres:14-alpine | — (interno) | logging_net |
 
 #### Redes Docker
 
-| Red | Driver | Subred | Propósito | |---------------|-------------------|-----------------|-----------------------------------------------------------------------------------| | `soar_net` | bridge | `10.100.0.0/16` | Red interna principal — todos los servicios SOAR | | `ti_net` | bridge (internal) | `172.22.0.0/16` | Red de Threat Intelligence — Elasticsearch, Redis, API, MISP (sin acceso externo) | | `logging_net` | bridge | `172.23.0.0/16` | Red de logging — Loki, Promtail, Grafana |
+| Red | Driver | Subred | Propósito | |---------------|-------------------|-----------------|-----------------------------------------------------------------------------------| | `soar_net` | bridge | `10.100.0.0/16` | Red interna principal — todos los servicios SOAR | | `ti_net` | bridge (internal) | `172.22.0.0/16` | Red de Threat Intelligence — Elasticsearch, Redis, API, Shuffle backend/frontend (sin acceso externo) | | `logging_net` | bridge | `172.23.0.0/16` | Red de logging — Loki, Promtail, Grafana |
 
 > ⚠️ **Windows/Hyper-V**: rangos de puertos 55000–55099 y 5600–5699 están excluidos por reservas de Hyper-V. Los puertos
 > del stack están configurados fuera de esos rangos (ver `.env.full`).
 
 #### Volúmenes Persistentes
 
-| Volumen | Servicio | Contenido persistido | |---------------------------|-----------------|------------------------------------------------------------------| | `thehive_files` | thehive | Ficheros adjuntos a casos e incidentes | | `cortex_data` | cortex | Configuración y datos de analyzers | | `es_data` | elasticsearch | Índices y datos de búsqueda (TheHive, Shuffle, métricas del Lab API) | | `redis_data` | redis | Persistencia de sesiones y caché de Shuffle | | `shuffle_apps` | shuffle-backend | Apps y workflows de Shuffle | | `shuffle_files` | shuffle-backend | Ficheros subidos al orquestador | | `misp_files` | misp | Eventos e IoCs de MISP | | `misp_db` | misp-db | Base de datos MariaDB de MISP | | `misp_configs` | misp | Configuración de MISP | | `misp_logs` | misp | Logs de aplicación de MISP | | `nginx_logs` | nginx | Logs de acceso y error del proxy | | `loki_data` | loki | Logs almacenados en Loki | | `grafana_data` | grafana | Configuración y dashboards de Grafana | | `grafana_db_data` | grafana-db | Base de datos PostgreSQL de Grafana |
+| Volumen | Servicio | Contenido persistido | |---------------------------|-----------------|------------------------------------------------------------------| | `thehive_files` | thehive | Ficheros adjuntos a casos e incidentes | | `cortex_data` | cortex | Configuración y datos de analyzers | | `es_data` | elasticsearch | Índices y datos de búsqueda (TheHive, Cortex, métricas del Lab API) | | `opensearch_data` | opensearch | Índices y datos de Shuffle (backend del orquestador) | | `redis_data` | redis | Persistencia de sesiones y caché de Shuffle | | `shuffle_apps` | shuffle-backend | Apps y workflows de Shuffle | | `shuffle_files` | shuffle-backend | Ficheros subidos al orquestador | | `misp_files` | misp | Eventos e IoCs de MISP | | `misp_db` | misp-db | Base de datos MariaDB de MISP | | `misp_configs` | misp | Configuración de MISP | | `misp_logs` | misp | Logs de aplicación de MISP | | `nginx_logs` | nginx | Logs de acceso y error del proxy | | `loki_data` | loki | Logs almacenados en Loki | | `grafana_data` | grafana | Configuración y dashboards de Grafana | | `grafana_db_data` | grafana-db | Base de datos PostgreSQL de Grafana |
 
 #### Stack Tecnológico
 
@@ -486,7 +485,7 @@ principales: DMZ, Aplicación, Datos y Gestión.
 
 #### Matriz de estado funcional por componente
 
-| Componente / Capacidad | Estado | Evidencia / Notas | |------------------------|--------|---------------------| | Nginx (proxy inverso + TLS) | Parcial | Termina TLS en `https://soar.local`; no incluye WAF ni rate limiting avanzado | | Lab API (FastAPI) | Implementado | Endpoints de auth, analytics, backups, tests y proxy SOAR en `src/soar_lab/interfaces/api/main.py` | | Shuffle (workflows + webhook) | Implementado | Contenedores `shuffle-frontend`, `shuffle-backend`, `orborus`; workflow creado por `init_shuffle_webhook.py` | | TheHive | Implementado | Gestión de casos vía API en `soar_thehive:9000`; conexión con Cortex | | Cortex | Implementado | Analyzers ejecutados en contenedor; conexión con TheHive y MISP | | MISP | Implementado | Servicio `misp` en Docker; enriquecimiento de IoCs | | Elasticsearch | Implementado | `elasticsearch:9200`; backend para Shuffle, TheHive, métricas `soar-metrics` | | Redis | Implementado | Sesiones/caché de Shuffle | | Grafana + Loki + Promtail | Implementado | Dashboards en `:8084`; logs centralizados; plugin ES instalado | | Web Management | Implementado | SPA en `:8085` | | Network Watcher | Implementado | Reconecta workers de Shuffle a `soar_net` | | Tenzir Node | Parcial / No verificado | Desplegado en `docker-compose.core.yml` pero pipeline no integrado en playbooks activos | | Autenticación JWT | Implementado | Firma `HS256`; secret en `.env.full`; endpoints `/auth/login` y `/auth/verify` | | Autenticación MFA | Planificado | No hay implementación operativa | | Single Sign-On (SSO/SAML/OIDC) | Planificado | No implementado | | WAF | No verificado / Planificado | Nginx no está configurado como WAF | | DMZ / segmentación de red real | Simulado | Diagramas conceptuales; contenedores comparten Docker networks | | Contención de endpoints | Simulado | Acciones de contención son notificaciones/logs; no aísla endpoints reales sin agente EDR | | Erradicación / recuperación automatizada | Simulado | Backups y métricas reales; la erradicación real no se ejecuta | | Cifrado en tránsito (TLS) | Parcial | TLS en Nginx y ; tráfico interno Docker mayoritariamente HTTP | | Cifrado en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch/ |
+| Componente / Capacidad | Estado | Evidencia / Notas | |------------------------|--------|---------------------| | Nginx (proxy inverso + TLS) | Parcial | Termina TLS en `https://soar.local`; no incluye WAF ni rate limiting avanzado | | Lab API (FastAPI) | Implementado | Endpoints de auth, analytics, backups, tests y proxy SOAR en `src/soar_lab/interfaces/api/main.py` | | Shuffle (workflows + webhook) | Implementado | Contenedores `shuffle-frontend`, `shuffle-backend`, `orborus`; workflow creado por `init_shuffle_webhook.py` | | TheHive | Implementado | Gestión de casos vía API en `soar_thehive:9000`; conexión con Cortex | | Cortex | Implementado | Analyzers ejecutados en contenedor; conexión con TheHive y MISP | | MISP | Implementado | Servicio `misp` en Docker; enriquecimiento de IoCs | | Elasticsearch | Implementado | `elasticsearch:9200`; backend para TheHive, Cortex, métricas `soar-metrics` | | OpenSearch | Implementado | `opensearch:9200`; backend para Shuffle (orquestador) | | Redis | Implementado | Sesiones/caché de Shuffle | | Grafana + Loki + Promtail | Implementado | Dashboards en `:8084`; logs centralizados; plugin ES instalado | | Web Management | Implementado | SPA en `:8085` | | Network Watcher | Implementado | Reconecta workers de Shuffle a `soar_net` | | Tenzir Node | Parcial / No verificado | Desplegado en `docker-compose.core.yml` pero pipeline no integrado en playbooks activos | | Autenticación JWT | Implementado | Firma `HS256`; secret en `.env.full`; endpoints `/auth/login` y `/auth/verify` | | Autenticación MFA | Planificado | No hay implementación operativa | | Single Sign-On (SSO/SAML/OIDC) | Planificado | No implementado | | WAF | No verificado / Planificado | Nginx no está configurado como WAF | | DMZ / segmentación de red real | Simulado | Diagramas conceptuales; contenedores comparten Docker networks | | Contención de endpoints | Simulado | Acciones de contención son notificaciones/logs; no aísla endpoints reales sin agente EDR | | Erradicación / recuperación automatizada | Simulado | Backups y métricas reales; la erradicación real no se ejecuta | | Cifrado en tránsito (TLS) | Parcial | TLS en Nginx y ; tráfico interno Docker mayoritariamente HTTP | | Cifrado en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch/ |
 
 ### 3.2 Aplicaciones y componentes
 
@@ -772,7 +771,7 @@ El `CompositionRoot` realiza las siguientes tareas:
 5. **Servicios de dominio:** Instancia `KPIAnalyzer` y `StatisticalCalculator`.
 6. **Servicios de aplicación:** Crea `AnalyticsService`, `AuthService`, `BackupService` y `TestService`.
 7. **Clientes utilitarios:** Crea `docker_client` y `redis_client`.
-8. **Integración externa:** Inicializa clientes para Shuffle, TheHive, Cortex, MISP, Elasticsearch y .
+8. **Integración externa:** Inicializa clientes para Shuffle, TheHive, Cortex, MISP, Elasticsearch y OpenSearch.
 9. **Aplicación FastAPI:** Construye la API con `create_app` y le inyecta todas las dependencias.
 
 ---
@@ -1219,8 +1218,8 @@ Las evidencias de validación incluyen:
 - **Documentación de Cortex**: https://docs.strangebee.com/cortex/
 - **Documentación de MISP**: https://www.misp-project.org/documentation/
 - **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
-- **Documentación de Arquitectura**: [docs/02-architecture.md](#31-visión-general-de-arquitectura)
-- **Documentación de Seguridad**: [docs/02-architecture.md](#39-seguridad)
+- **Documentación de Arquitectura**: [3.1 Visión general de arquitectura](#31-visión-general-de-arquitectura)
+- **Documentación de Seguridad**: [3.9 Seguridad](#39-seguridad)
 - **Guía de Usuario**: [docs/01-getting-started.md](01-getting-started.md)
 
 
@@ -1478,7 +1477,7 @@ El laboratorio despliega **dos motores de búsqueda simultáneamente**: Elastics
 curl -sf http://localhost:8200/_cluster/health
 
 # OpenSearch
-curl -sf http://localhost:8200/_cluster/health # OpenSearch escucha en 9200 interno, mapeado a 8200 en host según .env.full
+curl -sf http://localhost:8201/_cluster/health # OpenSearch escucha en 9200 interno, mapeado a 8201 en host según .env.full
 ```
 
 Para ver qué servicios usan cada motor, consultar:
@@ -1503,13 +1502,7 @@ El SOAR Ransomware Lab implementa una estrategia de seguridad defensa en profund
 ransomware y garantizar la integridad de las operaciones de seguridad. Este documento describe los controles de
 seguridad, políticas y procedimientos implementados en la plataforma.
 
-**Principios de Seguridad:**
-
-- **Arquitectura Zero Trust**: Nunca confiar, siempre verificar
-- **Principio de Mínimo Privilegio**: Acceso mínimo requerido
-- **Defensa en Profundidad**: Múltiples capas de seguridad
-- **Seguridad por Diseño**: Seguridad integrada en cada componente
-- **Monitoreo Continuo**: Detección de amenazas en tiempo real
+Los principios de seguridad fundamentales se detallan en [3.1 Principios de seguridad](#31-principios-de-seguridad).
 
 #### 2. Alcance
 
@@ -1838,7 +1831,7 @@ docker logs soar_thehive > runtime/forensic/thehive_<timestamp>.log
 cat runtime/logs/notify.log | grep -i ransomware
 
 # 2. Verificar integridad de datos
-bash scripts/
+bash scripts/setup/check_deps.sh
 
 # 3. Ejecutar scripts de contención simulada
 bash scripts/setup/notify.sh
@@ -1948,13 +1941,13 @@ El laboratorio está orientado hacia los siguientes marcos de referencia, pero *
 - Configurar políticas de feed
 - Habilitar logging de auditoría
 
-**:**
+**OpenSearch:**
 
 - Configurar autenticación API
 - Implementar reglas de firewall
 - Configurar políticas de retención
 - Habilitar encriptación de comunicaciones
-- Limitar acceso a puertos (15141-1516)
+- Limitar acceso a puertos (9200)
 
 **Nginx:**
 
@@ -2119,19 +2112,18 @@ Las evidencias de validación incluyen:
 - **Documentación de Seguridad de TheHive**: https://docs.strangebee.com/thehive/admin-guide/security/
 - **Documentación de Seguridad de Cortex**: https://docs.strangebee.com/cortex/admin-guide/security/
 - **Documentación de Seguridad de MISP**: https://www.misp-project.org/guides/admin/
-- **Documentación de Seguridad de Elasticsearch
- **: https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html
+- **Documentación de Seguridad de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html
 - **OWASP Top 10**: https://owasp.org/www-project-top-ten/
 - **Marco de Ciberseguridad NIST**: https://www.nist.gov/cyberframework
 - **Benchmarks CIS**: https://www.cisecurity.org/cis-benchmarks/
-- **Documentación de Arquitectura**: [docs/02-architecture.md](#31-visión-general-de-arquitectura)
+- **Documentación de Arquitectura**: [3.1 Visión general de arquitectura](#31-visión-general-de-arquitectura)
 - **Guía de Usuario**: [docs/01-getting-started.md](01-getting-started.md)
 
 ---
 
 **Mejoras implementadas:**
 
-- Corregidas referencias a docs/core/ a rutas correctas (docs/02-architecture.md, docs/01-getting-started.md)
+- Corregidas referencias a docs/core/ a rutas correctas (docs/01-getting-started.md, etc.)
 - Añadidos procedimientos detallados de hardening para cada componente (Shuffle, TheHive, Cortex, Elasticsearch, MISP, Nginx)
 - Documentados procedimientos específicos de respuesta a ransomware con 3 fases (detección, análisis, recuperación)
 - Añadida matriz de trazabilidad entre controles de seguridad y requisitos regulatorios (GDPR, SOC 2, ISO 27001, NIST
@@ -2172,10 +2164,6 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 
 | Servicio | Imagen | Fuente | |----------|--------|--------| | MISP DB | `mariadb:10.11` | `infra/docker/compose/docker-compose.misp.yml` | | MISP Core | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | `infra/docker/compose/docker-compose.misp.yml` | | MISP Modules | `ghcr.io/misp/misp-docker/misp-modules:v3.0.9` | `infra/docker/compose/docker-compose.misp.yml` |
 
-###
-
-| Servicio | Imagen | Fuente | |----------|--------|--------|
-
 #### CI/CD y runners
 
 | Componente | Versión | Fuente | |------------|---------|--------| | GitHub Actions runner | `ubuntu-latest` | `.github/workflows/ci.yml` | | Python CI | `3.11` | `.github/workflows/ci.yml` | | Node.js CI | `20` | `.github/workflows/ci.yml` | | Trivy | `master` (`aquasecurity/trivy-action`) | `.github/workflows/ci.yml` |
@@ -2186,7 +2174,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 - `apps/docs-site/package.json` declara `node>=18.0`, mientras que CI usa `node-version: '20'`; ambas son compatibles.
 - `tenzir/tenzir:v6.8.1` está fijada a una etiqueta de versión; para mayor reproducibilidad se recomienda fijar a un digest SHA en producción.
 - Las imágenes `misp-core:v2.5.44` y `misp-modules:v3.0.9` están fijadas a etiquetas de versión; para mayor reproducibilidad se recomienda fijar a un digest SHA.
-- Las versiones de Shuffle (`2.2.1`) y TheHive (`3.5.2-1`) coinciden con las variables documentadas en `docs/03-api-and-integrations.md` y `docs/02-architecture.md`.
+- Las versiones de Shuffle (`2.2.1`) y TheHive (`3.5.2-1`) coinciden con las variables documentadas en `docs/03-api-and-integrations.md` y este documento (sección 3.10).
 
 
 ---
@@ -2331,15 +2319,15 @@ Las evidencias de validación incluyen:
 - **Documentación de Docker Compose**: https://docs.docker.com/compose/
 - **Documentación de FastAPI**: https://fastapi.tiangolo.com/
 - **Documentación de Nginx**: https://nginx.org/en/docs/
-- **Documentación de Seguridad**: [docs/02-architecture.md](#39-seguridad)
+- **Documentación de Seguridad**: [3.9 Seguridad](#39-seguridad)
 - **Guía de Usuario**: [docs/01-getting-started.md](01-getting-started.md)
-- **Estrategia de Docker**: [docs/02-architecture.md](#35-arquitectura-docker)
+- **Estrategia de Docker**: [3.5 Arquitectura Docker](#35-arquitectura-docker)
 
 ---
 
 **Mejoras implementadas:**
 
-- Corregidas referencias a docs/core/ a rutas correctas (docs/02-architecture.md)
+- Corregidas referencias a docs/core/ a rutas correctas
 - Documentados procedimientos de backup de volúmenes en sección 5.3
 - Añadidos diagramas de secuencia Mermaid para flujos de integración en sección 3.4
 
@@ -2351,7 +2339,7 @@ Las evidencias de validación incluyen:
 
 Referencia TFM: complementa el Capítulo 4 (Desarrollo específico) y el Capítulo 2 (Estado del arte),
 y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
-`docs/02-architecture.md`, `docs/04-operations.md`, `docs/06-project-management.md`
+este documento, `docs/04-operations.md`, `docs/06-project-management.md`
 y `README.md`. Los diagramas del Anexo de Desarrollo Específico son versiones simplificadas;
 los de este anexo son los completos.
 
@@ -2423,7 +2411,7 @@ graph TD
  MISP[MISP :8083]
  Grafana[Grafana :8084]
  DocsSite[Docs Site :8086]
- OSDashboards[OpenSearch Dashboards :5602]
+ OSDashboards[OpenSearch Dashboards :8202]
  end
 
  subgraph "Docker network: soar_net"
@@ -2478,7 +2466,7 @@ graph TD
  end
 ```
 
-Fuente: `docs/02-architecture.md` línea 169
+Fuente: este documento, línea 169
 
 ---
 
@@ -2545,7 +2533,7 @@ flowchart TD
  KPI -->|StatisticalCalculatorInterface| STAT
 ```
 
-Fuente: `docs/02-architecture.md` línea 1390
+Fuente: este documento, línea 1390
 
 ---
 
@@ -2736,7 +2724,7 @@ sequenceDiagram
  Shuffle->>ES: POST /soar-metrics/_doc/{alert_id}
 ```
 
-Fuente: `docs/02-architecture.md` línea 519
+Fuente: este documento, línea 519
 
 ---
 
@@ -3292,14 +3280,17 @@ Flujo General del Sistema
 ---
 title: Flujo General del Sistema
 ---
-graph TD     A[Generación de Alertas] --> B[Recepción en Shuffle]
+graph TD
+    A[Generación de Alertas] --> B[Recepción en Shuffle]
     B --> C[Validación y Clasificación]
     C --> D[Análisis de Indicadores]
     D --> E[Cálculo de Riesgo]
-    E --> F{Riesgo Alto?}     F -->|Sí| G[Activación de Contención]
+    E --> F{Riesgo Alto?}
+    F -->|Sí| G[Activación de Contención]
     F -->|No| H[Marcar como falso positivo]
     G --> I[Creación de Caso en TheHive]
-    H --> I     I --> J[Registro de Acciones]
+    H --> I
+    I --> J[Registro de Acciones]
     J --> K[Cálculo de KPIs]
     K --> L[Monitoreo y Dashboards]
     L --> M[Análisis de Resultados]
@@ -3789,7 +3780,7 @@ El consumo medido con `docker stats` se mantuvo dentro de los límites configura
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
-El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2233 tests coleccionados, 1905 seleccionados, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 39 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
+El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2233 tests coleccionados, 1905 seleccionados, 328 deselected, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 39 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
 
 Comandos de prueba y calidad disponibles:
 

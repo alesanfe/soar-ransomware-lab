@@ -96,13 +96,13 @@ El laboratorio integra los siguientes componentes principales:
 **Plataformas de orquestación y gestión de casos:**
 
 - **Shuffle SOAR**: plataforma de orquestación de workflows de seguridad (v2.2.1).
-- **TheHive**: plataforma de gestión de casos e incidentes (v3.5.2).
+- **TheHive**: plataforma de gestión de casos e incidentes (v3.5.2-1).
 - **Cortex**: motor de análisis de observables e IOCs (v3.2.0-1).
 
 **Inteligencia de amenazas y SIEM:**
 
 - **MISP**: plataforma de inteligencia de amenazas.
-- **Elasticsearch**: motor de búsqueda y métricas usado por TheHive, Cortex, Shuffle y Grafana.
+- **Elasticsearch**: motor de búsqueda y métricas usado por TheHive, Cortex y Grafana.
 
 **Aplicaciones propias:**
 
@@ -161,7 +161,7 @@ El laboratorio sigue una arquitectura basada en contenedores Docker con las sigu
 **Persistencia y almacenamiento:**
 
 - **Persistencia de datos**: bind mounts bajo `runtime/data/` para mayoría de servicios; volúmenes Docker normales para `misp_db` y dashboard.
-- **Elasticsearch**: motor de búsqueda y métricas usado por TheHive, Cortex, Shuffle y Grafana.
+- **Elasticsearch**: motor de búsqueda y métricas usado por TheHive, Cortex y Grafana.
 - **PostgreSQL**: base de datos de Grafana (`grafana-db`).
 - **MariaDB**: base de datos de MISP (`misp_db`).
 - **Redis**: cache/cola con autenticación por contraseña.
@@ -490,9 +490,9 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 1. Acceder a Shuffle: `http://localhost:8081/`
 2. Iniciar sesión con credenciales de `.env.full` (`SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD`)
 3. El workflow de ransomware se crea automáticamente durante `make up`.
-4. Tras `make reset` y `make up`, Shuffle genera una nueva API key y la almacena en Elasticsearch. `SHUFFLE_DEFAULT_APIKEY` de `.env.full` puede quedar desactualizada.
-   - El `ShuffleClient` se auto-sana (`_fetch_real_apikey`) leyendo la clave real de ES en runtime.
-   - Para evitar warnings, actualiza `SHUFFLE_DEFAULT_APIKEY` con el valor de `reports/validation/results/webhook_info.json` o del campo `apikey` del usuario `admin` en el índice `users_<org>` de Elasticsearch.
+4. Tras `make reset` y `make up`, Shuffle genera una nueva API key y la almacena en OpenSearch. `SHUFFLE_DEFAULT_APIKEY` de `.env.full` puede quedar desactualizada.
+   - El `ShuffleClient` se auto-sana (`_fetch_real_apikey`) leyendo la clave real de OpenSearch en runtime.
+   - Para evitar warnings, actualiza `SHUFFLE_DEFAULT_APIKEY` con el valor de `reports/validation/results/webhook_info.json` o del campo `apikey` del usuario `admin` en el índice `users_<org>` de OpenSearch.
 
 **TheHive:**
 
