@@ -24,7 +24,7 @@
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas-y-consideraciones)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -773,42 +773,7 @@ Tras la refactorización, el código se reorganizó en cuatro capas principales:
 
 #### 2. Visión general de `src/soar_lab`
 
-```
-src/soar_lab/
-├── __init__.py
-├── application/ # Capa de aplicación
-│ ├── ports/ # Definición de puertos (interfaces) de entrada/salida
-│ └── use_cases/ # analytics_service, auth_service, backup_service, etc.
-├── auth/ # Re-export de AuthService (fachada)
-├── common/ # Excepciones y utilidades compartidas
-├── config/ # Configuración, esquemas y logging
-├── data/ # Esquemas y utilidades de datos
-├── domain/ # Capa de dominio
-│ ├── models.py # Entidades: IOC, Alert, Case
-│ ├── ports/ # Protocolos (repositories, integrations, infrastructure)
-│ ├── services/ # kpi_analyzer, ioc_generator
-│ └── statistical_calculator.py # Cálculos estadísticos puros
-├── infrastructure/ # Capa de infraestructura
-│ ├── integrations/ # Clientes externos (Shuffle, TheHive, Cortex, MISP, Elasticsearch)
-│ ├── messaging/ # Envío de alertas
-│ ├── monitoring/ # Health checks, HealthService, SystemMetricsDriver, KPIAlertManager
-│ ├── network_watcher/ # Conectividad dinámica de workers Shuffle
-│ ├── persistence/ # Repositorios (SQLite, InMemory)
-│ ├── scripts/ # Scripts auxiliares de infraestructura
-│ ├── security/ # Hardening (no implementado; escaneo vía Trivy en CI)
-│ ├── templates/ # Plantillas de configuración
-│ ├── jwt_token_provider.py # Generación y validación de tokens JWT
-│ ├── pytest_test_runner.py # Ejecución remota de pruebas
-│ ├── tar_backup_driver.py # Driver de backups en tar
-│ └── validate_credentials.py # Validación de credenciales de servicios
-├── interfaces/ # Capa de interfaces
-│ └── api/ # FastAPI: routes, models, auth, cli, composition
-├── logging/ # StructuredLogger wrapper
-├── resilience/ # Circuit breaker, retry, timeout
-├── security/ # PayloadSanitizer
-├── simulator/ # Simulador de alertas SIEM
-└── validation/ # Validadores
-```
+> El árbol de directorios completo de `src/soar_lab/` está en la [sección 3.1](#31-arquitectura-general).
 
 #### 2.1 Correspondencia puertos → adaptadores
 
@@ -850,9 +815,7 @@ Responsabilidad: Orquestar casos de uso utilizando los puertos del dominio.
 
 Ubicación: `src/soar_lab/infrastructure/`
 
-Responsabilidad: Implementar los puertos del dominio y conectar con sistemas externos.
-
-| Módulo | Propósito | |--------|-----------| | `integrations/` | Clientes HTTP de Elasticsearch, Shuffle, TheHive, Cortex, MISP | | `messaging/` | Transporte de alertas (`send_alert.py`) | | `monitoring/` | Health checks, `HealthService`, `SystemMetricsDriver`, `KPIAlertManager` | | `network_watcher/` | Servicio para conectar workers de Shuffle a `soar_net` | | `persistence/` | Implementaciones de repositorios (`SqliteAlertRepository`) | | `security/` | Hardening (no implementado; escaneo vía Trivy en CI) | | `templates/` | Plantillas de configuración | | `jwt_token_provider.py` | `JWTTokenProvider`: generación y validación de tokens JWT | | `pytest_test_runner.py` | `PytestTestRunner`: ejecución remota de pruebas | | `tar_backup_driver.py` | `TarBackupDriver`: copias de seguridad en tar | | `validate_credentials.py` | Validación de credenciales de servicios externos |
+> El inventario completo de módulos de infraestructura está en [Infrastructure Layer](#infrastructure-layer-srcsoar_labinfrastructure).
 
 ---
 
@@ -999,7 +962,7 @@ Dentro de `CompositionRoot`:
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas-y-consideraciones)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -1336,7 +1299,7 @@ Las evidencias de validación incluyen:
 - Logs de Docker Compose sin errores críticos
 - Resultados de health checks (`docker inspect`)
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 ##### 5.1 Limitaciones
 
@@ -2241,7 +2204,7 @@ Las evidencias de validación incluyen:
 - Documentación de políticas y procedimientos
 - Registros de capacitación de seguridad
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -2366,7 +2329,7 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 
 ---
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -2426,7 +2389,7 @@ Las evidencias de validación incluyen:
 - Resultados de pruebas automatizadas
 - Capturas de pantalla de interfaces web accesibles
 
-## 5. Problemas y consideraciones
+## 5. Problemas
 
 ### 5.1 Limitaciones
 

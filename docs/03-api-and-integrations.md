@@ -22,7 +22,7 @@
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas-y-consideraciones)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -1475,7 +1475,7 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 
 ---
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 ##### 5.1 Limitaciones
 
@@ -1540,7 +1540,7 @@ Las evidencias de validación incluyen:
 - Logs de scripts de simulación (`runtime/logs/soar_lab.log`, `src/soar_lab/simulator/simulate_alerts.py`
  logs)
 
-## 5. Problemas y consideraciones
+## 5. Problemas
 
 ### 5.1 Limitaciones
 

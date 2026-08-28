@@ -29,7 +29,7 @@
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas-y-consideraciones)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -3805,7 +3805,7 @@ Las evidencias de solución exitosa incluyen:
 - Métricas de rendimiento dentro de umbrales
 - Documentación de la solución aplicada
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 ##### 5.1 Validación de servicios Docker (FASE 3)
 
@@ -4425,7 +4425,7 @@ Las evidencias de validación incluyen:
 - Archivo runtime/results/kpis.csv con KPIs calculados
 - Capturas de pantalla de ejecución de tests
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -4639,7 +4639,7 @@ El cálculo se realiza en `src/soar_lab/domain/services/kpi_analyzer.py` y se in
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas-y-consideraciones)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -4894,7 +4894,7 @@ La validación del caso de estudio se realiza mediante el test E2E TC-33, que ve
 
 ---
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -4960,7 +4960,7 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 
 ---
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -5016,7 +5016,7 @@ Las evidencias de configuración exitosa incluyen:
 - Datos indexados en Elasticsearch
 - Webhooks configurados y funcionando
 
-## 5. Problemas y consideraciones
+## 5. Problemas
 
 ### 5.1 Limitaciones
 
@@ -5036,23 +5036,7 @@ Las evidencias de configuración exitosa incluyen:
 
 ### 5.3 Recomendaciones / troubleshooting
 
-**Troubleshooting:**
-
-**Workers no se conectan a soar_net:**
-Si los workers de Shuffle no se conectan a la red Docker correcta, las ejecuciones de workflows fallarán. Verificar que
-el network-watcher esté funcionando correctamente:
-
-```bash
-docker logs soar_network_watcher
-```
-
-**App TheHive no funciona:**
-Si la app de TheHive no funciona en Shuffle, puede ser un problema de autenticación o configuración. Verificar que la
-app esté descargada y autenticada correctamente. Revisar la API Key y URL de TheHive.
-
-**Workflow se queda en "Step is still running":**
-Este error indica que un worker no está ejecutando el paso del workflow. Puede ser un problema de networking o de
-autenticación de apps. Verificar que el worker esté en la red correcta y que las apps estén autenticadas correctamente.
+> El troubleshooting detallado de Docker, Shuffle y TheHive está en la [sección 3.4](#34-troubleshooting).
 
 **Próximos Pasos:**
 
