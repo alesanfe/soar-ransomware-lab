@@ -89,10 +89,8 @@ Obtén un token con el endpoint `POST /auth/login`:
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
-
- -H "Content-Type: application/json" \
-
- -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | jq -r '.token')
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | jq -r '.token')
 ```
 
 Usa el token en siguientes peticiones:
@@ -992,8 +990,8 @@ def create_thehive_case(alert_data):
  json=alert_data,
  timeout=30
  )
- response.raise_for_status
- return response.json
+ response.raise_for_status()
+ return response.json()
  except requests.exceptions.HTTPError as e:
  if response.status_code == 401:
  raise Exception("TheHive API key inválida o expirada")
@@ -1022,8 +1020,8 @@ def run_cortex_analyzer(analyzer_id, data_type, data):
  json={"analyzerId": analyzer_id, "dataType": data_type, "data": data},
  timeout=60
  )
- response.raise_for_status
- return response.json
+ response.raise_for_status()
+ return response.json()
  except requests.exceptions.HTTPError as e:
  if response.status_code == 401:
  raise Exception("Cortex API key inválida")
@@ -1050,8 +1048,8 @@ def send_alert_to_shuffle(alert_data):
  json=alert_data,
  timeout=10
  )
- response.raise_for_status
- return response.json
+ response.raise_for_status()
+ return response.json()
  except requests.exceptions.HTTPError as e:
  if response.status_code == 401:
  raise Exception("Webhook token inválido")
@@ -1088,8 +1086,8 @@ def execute_lab_tests(category):
  json={"category": category},
  timeout=300
  )
- response.raise_for_status
- return response.json
+ response.raise_for_status()
+ return response.json()
  except requests.exceptions.HTTPError as e:
  if response.status_code == 401:
  raise Exception("Credenciales de Lab API inválidas")

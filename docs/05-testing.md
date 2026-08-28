@@ -676,7 +676,7 @@ Las fixtures comunes de pruebas están disponibles en `tests/conftest.py`:
 
 ```python
 @pytest.fixture
-def sample_alert:
+def sample_alert():
  \"\"\"Alerta de ransomware de muestra para pruebas\"\"\"
  return {
  \"alert_id\": \"TEST-001\",
@@ -687,7 +687,7 @@ def sample_alert:
  }
 
 @pytest.fixture
-def mock_thehive_client:
+def mock_thehive_client():
  \"\"\"Mock del cliente API de TheHive\"\"\"
  with patch('scripts.send_alert.TheHiveClient') as mock:
  yield mock
@@ -1099,7 +1099,7 @@ Los fixtures en `tests/conftest.py` también están disponibles:
 #### Test básico
 
 ```python
-def test_function_name:
+def test_function_name():
  """Test description"""
  # Arrange
  input_data = {...}
@@ -1124,7 +1124,7 @@ def test_with_fixture(mock_client):
 #### Test con excepciones
 
 ```python
-def test_exception:
+def test_exception():
  """Test that exception is raised"""
  with pytest.raises(ValueError, match="expected message"):
  function_to_test(invalid_input)
