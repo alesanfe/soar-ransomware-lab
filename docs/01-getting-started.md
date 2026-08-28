@@ -71,8 +71,7 @@ Este documento no cubre:
 
 Este documento depende de:
 
-- `docs/02-architecture.md` — Arquitectura detallada
-- `docs/02-architecture.md` — Arquitectura Docker detallada
+- `docs/02-architecture.md` — Arquitectura detallada y Docker
 - `docs/04-operations.md` — Tabla canónica de puertos y URLs
 
 ---
@@ -98,7 +97,7 @@ El laboratorio integra los siguientes componentes principales:
 
 - **Shuffle SOAR**: plataforma de orquestación de workflows de seguridad (v2.2.1).
 - **TheHive**: plataforma de gestión de casos e incidentes (v3.5.2).
-- **Cortex**: motor de análisis de observables e IOCs (v3.1.4).
+- **Cortex**: motor de análisis de observables e IOCs (v3.2.0-1).
 
 **Inteligencia de amenazas y SIEM:**
 
@@ -743,9 +742,6 @@ Verificación del estado de todos los contenedores Docker del proyecto.
 - **Limitación remanente:** `.env.full` permanece en el historial de Git. Rotar secretos y purgar el historial si se publica el repositorio.
 - **Documentos clave generados:**
   - `docs/06-project-management.md`
-  - `docs/06-project-management.md`
-  - `docs/06-project-management.md`
-  - `docs/06-project-management.md`
 
 ---
 
@@ -786,42 +782,28 @@ Las evidencias de funcionamiento incluyen:
 
 ---
 
-#### 5. Problemas
+## 5. Problemas
 
-##### 5.1 Limitaciones
+### 5.1 Limitaciones
 
-**Limitaciones del entorno:**
+- **Entorno single-host**: Docker Compose desplegado en una sola máquina; no soporta alta disponibilidad nativa.
+- **Recursos mínimos**: 16 GB RAM para stack completo (Elasticsearch + TheHive + Cortex + Shuffle + MISP); 8 GB sin perfiles opcionales (logging, MISP).
+- **Certificados autofirmados**: Nginx usa certificados generados por `scripts/setup/gen_certs.sh`; los navegadores mostrarán advertencias.
+- **Shuffle webhook**: Tras `make reset`, el webhook debe regenerarse con `make init-webhook`.
 
-- **Single-host**: el stack completo se ejecuta en un único nodo Docker; no soporta alta disponibilidad ni clustering.
-- **Recursos limitados**: requiere al menos 16 GB de RAM y 4 cores para el stack completo; con 8 GB se pueden omitir perfiles opcionales.
-- **Respuesta activa simulada**: el aislamiento de red, bloqueo de cuentas y contención de endpoints se simulan mediante workflows; no se ejecutan acciones reales sobre endpoints sin agentes EDR desplegados.
-- **Entorno de laboratorio**: no es apto para producción sin hardening adicional (TLS revalidado, secretos rotados, firewalls, RBAC, etc.).
-- **Asume entorno Windows + Docker Desktop**: la guía no cubre configuración avanzada ni integración con sistemas externos.
+### 5.2 Riesgos o incidencias
 
-##### 5.2 Riesgos o incidencias
+- **Puertos en uso**: Hyper-V en Windows reserva rangos 2976-3075, 5500-55099; verificar con `netstat -ano | findstr :<puerto>`.
+- **Elasticsearch yellow**: Estado `yellow` es normal en single-node (no puede asignar réplicas).
+- **MISP lento en arranque**: MariaDB y `misp-modules` pueden tardar > 3 min en estar healthy.
+- **Bloqueo Cloudflare/LaLiga**: Durante jornadas de fútbol, los ISP españoles pueden bloquear rangos de Cloudflare, impidiendo `docker pull`.
 
-**Riesgos de seguridad:**
+### 5.3 Recomendaciones / troubleshooting
 
-- Uso de contraseñas predeterminadas que deben cambiarse
-- Exposición de servicios en puertos conocidos
-- Necesidad de hardening adicional para producción
-
-**Riesgos de instalación:**
-
-- Dependencia de servicios externos (Docker Hub)
-- Conflictos de puertos con otros servicios
-- Requisitos de recursos no cumplidos
-
-##### 5.3 Recomendaciones / troubleshooting
-
-**Recomendaciones:**
-
-- Cambiar todas las contraseñas predeterminadas
-- Usar en entornos aislados o de prueba
-- No desplegar en producción sin hardening adicional
-- Mantener actualizaciones de seguridad de imágenes Docker
-- Verificar requisitos antes de instalar
-- Leer la documentación oficial de cada herramienta
+- **Verificar servicios**: Usar `make health` y `make ps` tras `make up`.
+- **Logs**: `make logs` o `docker logs <contenedor>` para diagnosticar problemas.
+- **Reset completo**: `make reset` (down + clean + up) si los servicios no responden.
+- **Regenerar API keys**: `python scripts/setup/init_thehive.py` (TheHive) y `python scripts/setup/reset_cortex.py` (Cortex) tras reset.
 
 **Docker daemon not running:**
 
@@ -937,31 +919,6 @@ make init-webhook
 
 ---
 
-## 5. Problemas
-
-### 5.1 Limitaciones
-
-- **Entorno single-host**: Docker Compose desplegado en una sola máquina; no soporta alta disponibilidad nativa.
-- **Recursos mínimos**: 16 GB RAM para stack completo (Elasticsearch + TheHive + Cortex + Shuffle + MISP); 8 GB sin perfiles opcionales (logging, MISP).
-- **Certificados autofirmados**: Nginx usa certificados generados por `scripts/setup/gen_certs.sh`; los navegadores mostrarán advertencias.
-- **Shuffle webhook**: Tras `make reset`, el webhook debe regenerarse con `make init-webhook`.
-
-### 5.2 Riesgos o incidencias
-
-- **Puertos en uso**: Hyper-V en Windows reserva rangos 2976-3075, 5500-55099; verificar con `netstat -ano | findstr :<puerto>`.
-- **Elasticsearch yellow**: Estado `yellow` es normal en single-node (no puede asignar réplicas).
-- **MISP lento en arranque**: MariaDB y `misp-modules` pueden tardar > 3 min en estar healthy.
-- **Bloqueo Cloudflare/LaLiga**: Durante jornadas de fútbol, los ISP españoles pueden bloquear rangos de Cloudflare, impidiendo `docker pull`.
-
-### 5.3 Recomendaciones / troubleshooting
-
-- **Verificar servicios**: Usar `make health` y `make ps` tras `make up`.
-- **Logs**: `make logs` o `docker logs <contenedor>` para diagnosticar problemas.
-- **Reset completo**: `make reset` (down + clean + up) si los servicios no responden.
-- **Regenerar API keys**: `python scripts/setup/init_thehive.py` (TheHive) y `python scripts/setup/reset_cortex.py` (Cortex) tras reset.
-
----
-
 #### Navegación
 
 - [Arquitectura hexagonal, Docker, código, seguridad](02-architecture.md)
@@ -971,6 +928,9 @@ make init-webhook
 - [Objetivos, plan, riesgos, auditorías](06-project-management.md)
 - [Glosario central](glossary.md)
 - [Índice](index.md)
+
+---
+
 ## 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
@@ -979,13 +939,8 @@ make init-webhook
 - **Documentación de Shuffle**: https://shuffler.io/docs
 - **Documentación de TheHive**: https://docs.strangebee.com/thehive/
 - **Documentación de Cortex**: https://docs.strangebee.com/cortex/
-- **API**: `docs/03-api-and-integrations.md`
-- **Integraciones**: `docs/03-api-and-integrations.md`
+- **API e integraciones**: `docs/03-api-and-integrations.md`
 - **Testing**: `docs/05-testing.md`
-- **Operaciones**: `docs/04-operations.md`
-- **Proyecto**: `docs/06-project-management.md`
-- **Riesgos**: `docs/06-project-management.md`
+- **Operaciones y puertos**: `docs/04-operations.md`
+- **Proyecto y riesgos**: `docs/06-project-management.md`
 - **Arquitectura**: `docs/02-architecture.md`
-- **Arquitectura Docker**: `docs/02-architecture.md`
-- **Puertos y URLs**: `docs/04-operations.md`
-- **Coexistencia de motores de búsqueda**: `docs/02-architecture.md`

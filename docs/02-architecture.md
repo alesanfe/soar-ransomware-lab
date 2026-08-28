@@ -74,51 +74,7 @@ Plataforma de orquestación de seguridad integral para respuesta ante incidentes
 ### 3.1 Visión general de arquitectura
 
 
-Este documento describe la arquitectura del sistema, componentes y principios de diseño del SOAR Ransomware Lab. Su
-objetivo es proporcionar una visión integral de la plataforma para comprender su estructura, flujo de datos, seguridad y
-despliegue.
-
-
-El SOAR Ransomware Lab es una plataforma de orquestación de seguridad integral diseñada específicamente para la
-respuesta ante incidentes de ransomware. Integra múltiples herramientas de seguridad (Shuffle, TheHive, Cortex, MISP) en un entorno Docker Compose unificado para proporcionar capacidades de detección, análisis y
-respuesta
-automatizada.
-
-
-Este documento cubre:
-
-- Arquitectura de alto nivel del sistema
-- Componentes principales y sus interacciones
-- Flujo de datos y procesamiento de alertas
-- Arquitectura de seguridad y defensa en profundidad
-- Estrategias de escalabilidad y rendimiento
-- Arquitectura de integración y patrones
-- Configuración de despliegue (Docker Compose)
-- Stack tecnológico y herramientas de desarrollo
-- Consideraciones de arquitectura futura
-
-
-Este documento no cubre:
-
-- Detalles de configuración específicos de cada herramienta (ver documentación individual)
-- Procedimientos operativos paso a paso (ver user_guide.md)
-- Estrategias de pruebas específicas (ver testing/)
-- Planificación del proyecto (ver docs/06-project-management.md)
-- Contratos de API detallados (ver docs/03-api-and-integrations.md)
-
-
-Este documento depende de:
-
-- Documentación oficial de cada componente (Shuffle, TheHive, Cortex, MISP)
-- Archivos de configuración Docker Compose en `infra/docker/compose/`
-- Documentación de seguridad (docs/02-architecture.md)
-- Guía de usuario (docs/01-getting-started.md)
-- Estrategia de Docker (docs/02-architecture.md)
-- Estructura del paquete Python (docs/02-architecture.md)
-- Estructura del código fuente (docs/02-architecture.md)
-
-
-#### 3.1 Arquitectura general
+#### Arquitectura general
 
 #### Arquitectura de Código (Python)
 
@@ -165,7 +121,7 @@ src/soar_lab/
 lugar donde se instancian adaptadores de infraestructura y se inyectan en los servicios de aplicación y dominio.
 Nuevos adaptadores o servicios deben registrarse aquí para mantener la separación de capas.
 
-> **Matrices de referencia**: versiones en [`02-architecture.md`](02-architecture.md) y mapeo de puertos/URLs en
+> **Matrices de referencia**: versiones en [sección 3.10](#310-matriz-de-versiones) y mapeo de puertos/URLs en
 > [`04-operations.md`](04-operations.md).
 
 #### Arquitectura de Despliegue (Docker)
@@ -261,21 +217,21 @@ graph TD
 
 #### Capa de Datos
 
-7. **Elasticsearch** (red Docker interna)
+6. **Elasticsearch** (red Docker interna)
  - `docker.elastic.co/elasticsearch/elasticsearch:7.10.2`
  - Backend para TheHive, Cortex, métricas del Lab API (`soar-metrics`) y datasource de Grafana
  - Agregación de logs y búsqueda full-text
  - Configuración single-node con `xpack.security.enabled=false`; se mantiene un password canónico `ELASTIC_PASSWORD=ElasticLab2024SecurePass` en `.env.full` y en las aplicaciones para compatibilidad con clientes que sí envían credenciales.
  - **No es redundancia**: OpenSearch 2.10.0 se despliega en paralelo porque Shuffle requiere un motor OpenSearch nativo, mientras que TheHive/Cortex dependen de `elastic4play` / ES 7.x (ver [Motores de búsqueda: coexistencia de Elasticsearch y OpenSearch](#38-coexistencia-de-motores-de-búsqueda)).
 
-8. **Redis** (interno)
+7. **Redis** (interno)
  - Almacenamiento de sesiones y caché para Shuffle
  - Cola de mensajes
 
-9. **MariaDB** (interno)
+8. **MariaDB** (interno)
  - Backend de base de datos para MISP
 
-10. **Tenzir** (nodo de desarrollo, opcional)
+9. **Tenzir** (nodo de desarrollo, opcional)
  - Imagen: `tenzir/tenzir:v6.8.1`
  - Puertos host: `15160` → `5160`, `15140` → `1514/udp`
  - Estado: desplegado en `docker-compose.core.yml` pero su pipeline de ingestión no está integrado en los playbooks activos del laboratorio.
@@ -316,7 +272,7 @@ graph TD
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 3.2 Componentes y servicios
+#### Componentes y servicios
 
 #### Estado Actual de la Arquitectura Hexagonal
 
@@ -355,78 +311,7 @@ El proyecto organiza el código en capas con dirección de dependencias hacia el
 - Esto es consistente con el patrón hexagonal
 - Sin embargo, la inyección de dependencias no está completamente implementada en toda la aplicación
 
-#### Servicios SOAR Core
-
-1. **Shuffle** (`:8081` UI host / `:5001` API host)
- - Orquestador SOAR principal
- - Constructor de workflows drag-and-drop
- - Ejecuta playbooks de respuesta automatizada
- - Orborus ejecuta contenedores de apps como workers
-
-2. **TheHive** (`:8100` host → `:9000` container)
- - Plataforma de gestión de casos de incidentes
- - Seguimiento de evidencias y observables
- - Asignación de tareas y línea de tiempo
- - Se integra con Cortex para enriquecimiento
-
-3. **Cortex** (`:8101` host → `:9001` container)
- - Motor de análisis de IoCs
- - Ejecuta analyzers y responders
- - Se integra con MISP, VirusTotal, etc.
- - Soporte para analyzers personalizados en Python
-
-#### SIEM / Detección
-
-4. **OpenSearch Dashboards** (`:8202` host → `:5601` container)
- - Exploración de logs vía Discover
-
-#### Inteligencia de Amenazas
-
-5. **MISP** (`:8083`)
- - Plataforma de inteligencia de amenazas open-source
- - Compartición y gestión de IoCs
- - Integración de feeds
- - Conectado a analyzers de Cortex
-
-#### Capa de Datos
-
-7. **Elasticsearch** (red Docker interna)
- - `docker.elastic.co/elasticsearch/elasticsearch:7.10.2`
- - Backend para TheHive, Cortex, métricas del Lab API (`soar-metrics`) y datasource de Grafana
- - Agregación de logs y búsqueda full-text
- - Configuración single-node con `xpack.security.enabled=false`; se mantiene un password canónico `ELASTIC_PASSWORD=ElasticLab2024SecurePass` en `.env.full` y en las aplicaciones para compatibilidad con clientes que sí envían credenciales.
- - **No es redundancia**: OpenSearch 2.10.0 se despliega en paralelo porque Shuffle requiere un motor OpenSearch nativo, mientras que TheHive/Cortex dependen de `elastic4play` / ES 7.x (ver [Motores de búsqueda: coexistencia de Elasticsearch y OpenSearch](#38-coexistencia-de-motores-de-búsqueda)).
-
-8. **Redis** (interno)
- - Almacenamiento de sesiones y caché para Shuffle
- - Cola de mensajes
-
-9. **MariaDB** (interno)
- - Backend de base de datos para MISP
-
-10. **Tenzir** (nodo de desarrollo, opcional)
- - Imagen: `tenzir/tenzir:v6.8.1`
- - Puertos host: `15160` → `5160`, `15140` → `1514/udp`
- - Estado: desplegado en `docker-compose.core.yml` pero su pipeline de ingestión no está integrado en los playbooks activos del laboratorio.
-
-#### Acceso y Gestión
-
-10. **Nginx** (`:80`, `:443`)
- - Terminación TLS y proxy inverso en `:443`; `:80` redirige a HTTPS
- - Expone `/` → Web Management, `/thehive/` → TheHive, `/cortex/` → Cortex, `/shuffle-api/` → Shuffle Backend
- - Shuffle UI (`:8081`), Web Management (`:8085`), Docs Site (`:8086`) y Grafana (`:8084`) se acceden directamente por sus puertos
-
-11. **Lab API** (`:8000`)
- - Aplicación FastAPI (`src/soar_lab/interfaces/api/main.py`)
- - Endpoints de gestión y automatización del laboratorio
- - Health check en `/health`
- - WebSocket `/api/ws/logs` para streaming de logs en vivo
-
-12. **Docs Site** (`:8086`)
- - Sitio estático Docusaurus
- - Servido directamente en puerto 8086
-
-#### 3.4 Flujos principales
+#### Flujos principales
 
 #### Pipeline de Procesamiento de Alertas
 
@@ -452,7 +337,7 @@ Detección de Alerta → Triage → Investigación → Contención → Erradicac
 
 | Fase | Estado | Evidencia / Notas | |------|--------|-------------------| | Detección | Real | Agentes y manager levantados en Docker; alertas generadas por simulador o agente real | | Ingesta Webhook (Shuffle) | Real | `init_shuffle_webhook.py` crea workflow y webhook en Shuffle | | Triage (Shuffle) | Real | Reglas del workflow evalúan severidad y contexto | | Enriquecimiento (Cortex/MISP) | Real | Analyzers y búsquedas en MISP ejecutados en contenedores | | Creación de caso (TheHive) | Real | Caso, observables y tareas creados por API | | Contención de endpoint | Simulado | `notify.sh` / acciones de contención notifican pero no aíslan la red real; requiere agente EDR real para acción real | | Erradicación/Recuperación | Simulado | Scripts de notificación y métricas; no se eliminan amenazas reales | | Métricas (MTTR/KPIs) | Real | Cálculo e indexación en `soar-metrics` y Grafana |
 
-> Ver también [`docs/02-architecture.md`](#39-seguridad) para la matriz de controles de seguridad.
+> Ver también [sección 3.9 Seguridad](#39-seguridad) para la matriz de controles de seguridad.
 
 #### Integraciones Externas
 
@@ -526,7 +411,6 @@ sequenceDiagram
  participant TheHive as TheHive
  participant Cortex as Cortex
  participant Scripts as Scripts de Contención
- participant as
 
  Shuffle->>TheHive: Consulta caso y observables
  TheHive-->>Shuffle: Datos del caso
@@ -542,7 +426,7 @@ sequenceDiagram
  Shuffle-->>TheHive: Actualización final del caso
 ```
 
-#### 3.3 Redes, puertos y dependencias
+#### Redes, puertos y dependencias
 
 #### Servicios, Puertos y Redes
 
@@ -588,7 +472,7 @@ sequenceDiagram
 - **Pruebas**: pytest (unit, integration, atomic, e2e, contracts, security, performance)
 - **Documentación**: Docusaurus (portal oficial); Swagger/OpenAPI como fuente de contratos HTTP
 
-#### 3.5 Diagramas y tablas de apoyo
+#### Diagramas y tablas de apoyo
 
 #### Diagrama de Arquitectura de Capas
 
