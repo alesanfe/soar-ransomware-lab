@@ -29,6 +29,10 @@
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
+- [Anexo: Diagramas Canónicos de Arquitectura y Flujos](#anexo-diagramas-canónicos-de-arquitectura-y-flujos)
+ - [F.1 a F.12: 12 diagramas Mermaid + caso estudio GMinst4ll](#f1-arquitectura-de-alto-nivel)
+- [Anexo: Desarrollo Específico](#anexo-desarrollo-específico)
+ - [4.1. Desarrollo de software + tablas 3-10](#41-desarrollo-de-software)
 
 ---
 

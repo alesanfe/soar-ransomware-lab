@@ -30,6 +30,16 @@
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
+- [Anexo: Estado del Arte](#anexo-estado-del-arte)
+ - [2.1 a 2.4: Respuesta a incidentes, SOAR, laboratorios open source](#21-respuesta-a-incidentes-y-ransomware-como-dominio-de-aplicación)
+- [Anexo: Objetivos y Metodología](#anexo-objetivos-y-metodología)
+ - [3.1 a 3.3: Objetivo general, específicos, metodología](#31-objetivo-general)
+- [Anexo: Métricas y Visualizaciones Complementarias](#anexo-métricas-y-visualizaciones-complementarias)
+ - [C.1 a C.4: Valores reales n=50, tablas avanzadas, gráficos, logs](#c1-valores-reales-calculados-n50-ejecuciones)
+- [Anexo: Resultados Experimentales y Validación](#anexo-resultados-experimentales-y-validación)
+ - [D.1 a D.5: E2E n=50, Quality Score 92.2, HPR 96.0, resumen ejecutivo](#d1-resultados-experimentales-e2e-n50)
+- [Anexo: Conclusiones y Trabajo Futuro](#anexo-conclusiones-y-trabajo-futuro)
+ - [5.1 a 5.4: Conclusiones, trabajo futuro, recomendaciones, alcance](#51-conclusiones)
 
 ---
 
