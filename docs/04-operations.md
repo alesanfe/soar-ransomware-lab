@@ -1759,7 +1759,7 @@ services:
 - [Arquitectura Docker](02-architecture.md)
 - [Arquitectura general](02-architecture.md)
 - [Guía de usuario](01-getting-started.md)
-- [Manual de configuración](#3-configuración-del-entorno)
+- [Manual de configuración](#31-configuración)
 - [README principal](../README.md)
 
 
@@ -1769,7 +1769,7 @@ services:
 
 Este documento es la fuente de verdad para los puertos, nombres de contenedor y URLs de acceso del laboratorio. Los valores por defecto se definen en `.env.example` y se pueden sobrescribir en `.env.full`.
 
-Dominio local canónico: `soar.local` → `127.0.0.1` (añadir al archivo hosts, ver [installation_guide.md](01-getting-started.md)).
+Dominio local canónico: `soar.local` → `127.0.0.1` (añadir al archivo hosts, ver [Guía de usuario](01-getting-started.md)).
 
 ---
 
@@ -2768,7 +2768,7 @@ make up
 
 - [src/soar_lab/infrastructure/network_watcher/network_watcher.py](../src/soar_lab/infrastructure/network_watcher/network_watcher.py)
 - [docker-compose.core.yml](../infra/docker/compose/docker-compose.core.yml)
-- [Tabla de puertos y URLs](#41-puertos-de-acceso)
+- [Tabla de puertos y URLs](#42-puertos-de-acceso)
 
 
 ### 3.10 Migración a OpenSearch
@@ -3258,7 +3258,7 @@ Esta guía no cubre:
 
 Esta guía depende de:
 
-- [Manual de configuración](#3-configuración-del-entorno) - Manual de configuración completo
+- [Manual de configuración](#31-configuración) - Manual de configuración completo
 - [docker_architecture.md](02-architecture.md) - Arquitectura Docker detallada
 - [01-getting-started.md](01-getting-started.md) - Guía de usuario
 
