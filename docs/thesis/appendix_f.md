@@ -370,16 +370,17 @@ sequenceDiagram
  participant ES as Elasticsearch
 
  Note over Shuffle: calc_decision ya ejecutado<br/>score y verdict disponibles
- alt score ≥ 80 o verdict == malicious
+ alt score >= 80 o verdict == malicious
  Shuffle->>API: POST /api/v1/contain (contención simulada)
  API-->>Shuffle: Contención confirmada (modo simulation)
- Shuffle->>TheHive: update_inprogress (case stays Open, no PATCH status)
+ Shuffle->>Shuffle: update_inprogress (case stays Open, no PATCH)
  Shuffle->>Shuffle: notify_critical (email CRITICAL)
  else score < 80 y verdict != malicious
  Shuffle->>TheHive: PATCH /api/case (status=Resolved, resolutionStatus=FalsePositive)
  Shuffle->>Shuffle: notify_info (email INFO)
  end
- Shuffle->>Shuffle: calc_mttr + build_hive_summary
+ Shuffle->>Shuffle: calc_mttr
+ Shuffle->>Shuffle: build_hive_summary
  Shuffle->>TheHive: PATCH /api/case (enrich: summary + tags)
  Shuffle->>Shuffle: build_metrics_json (mttr_seconds, score, verdict)
  Shuffle->>ES: POST /soar-metrics/_doc/{alert_id}
