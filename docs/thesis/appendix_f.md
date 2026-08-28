@@ -556,14 +556,14 @@ graph TD
  E -->|Reddit| H[Dead drop resolver]
  E -->|Telegram| I[Exfiltración Bot API]
  G --> J[4 Scripts VBS/BAT]
- J --> K[max.vbs - Persistencia<br/>Winlogon UserInit]
+ J --> K[max.vbs - Launcher/watchdog<br/>Exclusiones Defender]
  J --> L[babuchen.bat - Killer AV<br/>14 servicios + 34 suites]
- J --> M[rodendron.vbs - GitHub C2<br/>RunOnceEx loader]
+ J --> M[rodendron.vbs - GitHub C2<br/>Tarea programada]
  J --> N[WinStatChecking.bat - DNS block<br/>hosts: 66 dominios + DNS 8.8.8.8]
  M -->|github.com/boycots563/wlt56| O[Windows Compatibility Agent.exe]
- O --> P[Pulsar RAT v1.6.6.0]
- P --> Q[HVNC, Keylogger, Webcam,<br/>Audio, Clipboard, Remote desktop,<br/>Wallet clipper BTC/LTC/ETH/XMR/SOL]
- P --> R[Anti-VM 14 checks<br/>Anti-debug 10 checks<br/>UAC disable EnableLUA=0]
+ O --> P[Pulsar RAT v1.6.6.0<br/>.NET 4.7.2 ConfuserEx]
+ P --> Q[HVNC, Keylogger, Webcam,<br/>Audio, Clipboard, Remote desktop,<br/>Wallet clipper XMR + 9 inferidas]
+ P --> R[Anti-VM/anti-debug 25+ checks<br/>ConfuserEx obfuscation]
  style A fill:#ff6b6b
  style C fill:#ff6b6b
  style D fill:#ff6b6b
