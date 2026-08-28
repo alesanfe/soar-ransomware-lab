@@ -456,11 +456,23 @@ La suite usa `tests/conftest.py` para fijar unas variables mínimas y delega las
 
 **Variables internas (fijadas por `conftest.py`):**
 
-| Variable | Propósito | Ejemplo / Origen | |----------|-----------|------------------| | `BASE_DIR` | Raíz del repositorio para `Settings` | `<repositorio>` | | `SOAR_SKIP_EAGER_INIT` | Evita la creación temprana de la app FastAPI durante la recogida de tests | `1` |
+| Variable | Propósito | Ejemplo / Origen |
+|----------|-----------|------------------|
+| `BASE_DIR` | Raíz del repositorio para `Settings` | `<repositorio>` |
+| `SOAR_SKIP_EAGER_INIT` | Evita la creación temprana de la app FastAPI durante la recogida de tests | `1` |
 
 **Variables operativas (esperadas en `.env.full` o `docker exec -e`):**
 
-| Variable | Servicio / Uso | Notas | |----------|----------------|-------| | `SHUFFLE_DEFAULT_APIKEY` | Cliente Shuffle API | Obligatorio para tests E2E contra Shuffle | | `SHUFFLE_DEFAULT_PASSWORD` | Autenticación admin Shuffle | Solo necesario si se regeneran credenciales | | `THEHIVE_API_KEY` | Cliente TheHive API | Obligatorio para tests E2E | | `CORTEX_API_KEY` | Cliente Cortex API | Obligatorio para tests E2E | | `MISP_API_KEY` | Cliente MISP API | Obligatorio para tests E2E | | `REDIS_PASSWORD` | Conexión Redis / Shuffle | Se escapa en conexiones `redis://` | | `ELASTIC_PASSWORD` | Elasticsearch + Grafana datasource | También usado por `E2E` para indexar métricas | | `JWT_SECRET_KEY` | Firma/validación de tokens JWT | `>=32` caracteres; el `conftest.py` usa un secreto de prueba si no existe |
+| Variable | Servicio / Uso | Notas |
+|----------|----------------|-------|
+| `SHUFFLE_DEFAULT_APIKEY` | Cliente Shuffle API | Obligatorio para tests E2E contra Shuffle |
+| `SHUFFLE_DEFAULT_PASSWORD` | Autenticación admin Shuffle | Solo necesario si se regeneran credenciales |
+| `THEHIVE_API_KEY` | Cliente TheHive API | Obligatorio para tests E2E |
+| `CORTEX_API_KEY` | Cliente Cortex API | Obligatorio para tests E2E |
+| `MISP_API_KEY` | Cliente MISP API | Obligatorio para tests E2E |
+| `REDIS_PASSWORD` | Conexión Redis / Shuffle | Se escapa en conexiones `redis://` |
+| `ELASTIC_PASSWORD` | Elasticsearch + Grafana datasource | También usado por `E2E` para indexar métricas |
+| `JWT_SECRET_KEY` | Firma/validación de tokens JWT | `>=32` caracteres; el `conftest.py` usa un secreto de prueba si no existe |
 
 > **Seguridad:** No se deben incluir valores reales en este documento. Las credenciales se cargan desde `.env.full` y se tratan como secretos. Para ejecuciones locales se recomienda usar `cp .env.example .env.full` y ejecutar `make generate-secrets` / `soar-lab generate-secrets`.
 
@@ -498,7 +510,18 @@ make test-coverage
 
 **Targets Make disponibles:**
 
-| Target | Requiere Docker | Descripción | |--------|-----------------|-------------| | `make test` (sin alias) | No* | Equivalente a `pytest` base; evitar en flujo operativo | | `make test-unit` | No | Ejecuta `tests/unit/`; no requiere servicios | | `make test-atomic` | No | Ejecuta `tests/atomic/` | | `make test-integration` | Sí | Ejecuta `tests/integration/`; requiere `make up` y `make health` | | `make test-smoke` | Sí | Ejecuta tests marcados `smoke`; validación rápida post-deploy | | `make test-e2e` | Sí | Ejecuta `tests/e2e/`; requiere todos los servicios y el workflow Shuffle | | `make test-performance` | Sí | Ejecuta `tests/performance/` | | `make test-security` | No/Sí* | Ejecuta `tests/security/`; algunos casos escanean dependencias | | `make test-all` | Sí | Ejecuta todas las categorías; requiere stack completo | | `make test-coverage` | Sí (para E2E/integración) | Genera reporte HTML/XML de cobertura en `runtime/coverage/` |
+| Target | Requiere Docker | Descripción |
+|--------|-----------------|-------------|
+| `make test` (sin alias) | No* | Equivalente a `pytest` base; evitar en flujo operativo |
+| `make test-unit` | No | Ejecuta `tests/unit/`; no requiere servicios |
+| `make test-atomic` | No | Ejecuta `tests/atomic/` |
+| `make test-integration` | Sí | Ejecuta `tests/integration/`; requiere `make up` y `make health` |
+| `make test-smoke` | Sí | Ejecuta tests marcados `smoke`; validación rápida post-deploy |
+| `make test-e2e` | Sí | Ejecuta `tests/e2e/`; requiere todos los servicios y el workflow Shuffle |
+| `make test-performance` | Sí | Ejecuta `tests/performance/` |
+| `make test-security` | No/Sí* | Ejecuta `tests/security/`; algunos casos escanean dependencias |
+| `make test-all` | Sí | Ejecuta todas las categorías; requiere stack completo |
+| `make test-coverage` | Sí (para E2E/integración) | Genera reporte HTML/XML de cobertura en `runtime/coverage/` |
 
 > *`make test-security` puede ejecutar análisis estático sin Docker; los tests de seguridad del repositorio requieren el entorno de Python.
 
@@ -679,7 +702,17 @@ Los tests del proveedor JWT y del servicio de autenticación se encuentran en:
 
 **Escenarios cubiertos por `test_jwt_token_provider.py`:**
 
-| Escenario | Entrada esperada | Comportamiento validado | |-----------|------------------|-------------------------| | Creación exitosa | `username`, secret `>= 32` chars, `expiration_minutes=60`, algoritmo `HS256` | Token JWT no vacío y verificable | | Secret corto | secret `short` (menos de 32 chars) | `PyJWT` permite crear el token; la validación de longitud se delega a `AuthService` | | Verificación exitosa | Token creado con el mismo secret | Payload con `user`, `method=jwt` y `exp` | | Token inválido | Cadena aleatoria | `AuthError` con mensaje de credenciales inválidas | | Secret incorrecto | Token firmado con `secret1`, verificado con `secret2` | `AuthError` | | Expiración personalizada | `expiration_minutes=120` | Token verificable y payload correcto | | Algoritmo inválido | `INVALID_ALGORITHM` | `AuthError` "Failed to create authentication token" | | Payload sin `sub` | Token sin claim `sub` | `AuthError` "Invalid token payload" | | Token expirado | `exp` en el pasado | `AuthError` "Invalid authentication credentials" |
+| Escenario | Entrada esperada | Comportamiento validado |
+|-----------|------------------|-------------------------|
+| Creación exitosa | `username`, secret `>= 32` chars, `expiration_minutes=60`, algoritmo `HS256` | Token JWT no vacío y verificable |
+| Secret corto | secret `short` (menos de 32 chars) | `PyJWT` permite crear el token; la validación de longitud se delega a `AuthService` |
+| Verificación exitosa | Token creado con el mismo secret | Payload con `user`, `method=jwt` y `exp` |
+| Token inválido | Cadena aleatoria | `AuthError` con mensaje de credenciales inválidas |
+| Secret incorrecto | Token firmado con `secret1`, verificado con `secret2` | `AuthError` |
+| Expiración personalizada | `expiration_minutes=120` | Token verificable y payload correcto |
+| Algoritmo inválido | `INVALID_ALGORITHM` | `AuthError` "Failed to create authentication token" |
+| Payload sin `sub` | Token sin claim `sub` | `AuthError` "Invalid token payload" |
+| Token expirado | `exp` en el pasado | `AuthError` "Invalid authentication credentials" |
 
 **Algoritmo y expiración canónicos:**
 
@@ -699,7 +732,15 @@ python -m pytest tests/integration/test_authorization.py -v
 
 ##### 3.2.3.1 Objetivos de cobertura
 
-| Categoría de Pruebas | Objetivo de Cobertura | |------------------------|---------------------------------| | Pruebas unitarias | >80% | | Pruebas atómicas | >70% | | Pruebas de integración | >60% | | Pruebas de navegador | >50% | | Pruebas de seguridad | >60% | | Pruebas de rendimiento | N/A (benchmarks de rendimiento) | | Pruebas E2E | >50% |
+| Categoría de Pruebas | Objetivo de Cobertura |
+|------------------------|---------------------------------|
+| Pruebas unitarias | >80% |
+| Pruebas atómicas | >70% |
+| Pruebas de integración | >60% |
+| Pruebas de navegador | >50% |
+| Pruebas de seguridad | >60% |
+| Pruebas de rendimiento | N/A (benchmarks de rendimiento) |
+| Pruebas E2E | >50% |
 
 **Estado Actual del Suite (v1.4.0):**
 
@@ -862,7 +903,15 @@ curl -s -X POST http://localhost:8000/tests/run \
 
 ##### 3.2.5.2 Métricas clave
 
-| Categoría de Pruebas | Objetivo de Cobertura | |------------------------|---------------------------------| | Pruebas unitarias | >80% | | Pruebas atómicas | >70% | | Pruebas de integración | >60% | | Pruebas de navegador | >50% | | Pruebas de seguridad | >60% | | Pruebas de rendimiento | N/A (benchmarks de rendimiento) | | Pruebas E2E | >50% |
+| Categoría de Pruebas | Objetivo de Cobertura |
+|------------------------|---------------------------------|
+| Pruebas unitarias | >80% |
+| Pruebas atómicas | >70% |
+| Pruebas de integración | >60% |
+| Pruebas de navegador | >50% |
+| Pruebas de seguridad | >60% |
+| Pruebas de rendimiento | N/A (benchmarks de rendimiento) |
+| Pruebas E2E | >50% |
 
 ### 3.3 Pruebas unitarias
 
@@ -1444,7 +1493,47 @@ pytest tests/e2e/ -v -s
 
 #### Escenarios funcionales representativos
 
-| Caso | Archivo(s) | Objetivo | Servicios implicados | Artefactos generados | |------|------------|----------|---------------------|----------------------| | TC-00 | `TC-00/test_both_workflows*.py` | Validar comparación entre workflows de ransomware y benigno | Shuffle, TheHive | `webhook_info.json` | | TC-01 | `TC-01/test_malicious.py` | Flujo completo de alerta maliciosa: recepción, caso y contención simulada | Shuffle, TheHive, Elasticsearch | Caso en TheHive, métricas en `soar-metrics` | | TC-02 | `TC-02/test_benign.py` | Flujo de alerta benigna sin contención | Shuffle, TheHive | Caso cerrado/marcado benigno | | TC-03 | `TC-03/test_edge_cases.py` | Manejo de casos límite (campos faltantes, URLs inválidas, concurrencia) | Shuffle, API | Logs de ejecución | | TC-04 | `TC-04/test_performance.py` | Métricas de rendimiento bajo carga controlada | API, Elasticsearch | Métricas de latencia | | TC-05 | `TC-05/test_concurrent_alerts.py` | Procesamiento concurrente de alertas | Shuffle, orborus | Múltiples ejecuciones de workflow | | TC-06 | `TC-06/test_critical_severity.py` | Priorización por severidad crítica | Shuffle, TheHive | Caso crítico con escalación | | TC-07 | `TC-07/test_missing_fields.py` | Robustez ante alertas con campos incompletos | API, Shuffle | Errores controlados | | TC-08 | `TC-08/test_additional_fields.py` | Campos personalizados y extensibilidad de alertas | Shuffle, TheHive | Caso con observables extra | | TC-09 | `TC-09/test_realistic_ransomware.py` | Fidelidad del simulador frente a ransomware real | API, Shuffle (simulado) | Alertas enriquecidas | | TC-10 | `TC-10/test_tenzir_integration.py` | Integración con Tenzir (planificada/parcial) | Tenzir | Logs exportados | | TC-11 | `TC-11/test_network_watcher_integration.py` | Conectividad del Network Watcher con la red de Shuffle | Docker, `soar_net` | Estado de red verificado | | TC-12 | `TC-12/test_redis_integration.py` | Estado compartido y caché vía Redis | Redis | Claves de prueba | | TC-13 | `TC-13/test_loki_integration.py` | Logging centralizado Loki/Promtail/Grafana | Logging stack | Logs consultables en Grafana | | TC-14 | `TC-14/test_complete_soar_integration.py`, `test_traceability.py` | Flujo SOAR completo y trazabilidad de ejecución | Todos | Métricas, casos, logs enlazados | | TC-15 | `TC-15/test_api_latency.py` | Latencia de endpoints críticos | API | Métricas de latencia | | TC-16 | `TC-16/test_error_handling.py`, `test_error_rate.py` | Manejo y tasa de errores | API, Shuffle | Reporte de errores | | TC-17 | `TC-17/test_network_watcher_monitoring.py` | Monitoreo del Network Watcher | Docker, Prometheus | Métricas de red | | TC-18 | `TC-18/test_resilience.py` | Recuperación ante fallos de workflow | Shuffle, orborus | Reintentos exitosos | | TC-19 | `TC-19/test_security.py` | Validación de autenticación y seguridad | API, JWT | Tokens validados | | TC-20 | `TC-20/test_zero_trust.py` | Validación de políticas de acceso | API, Nginx | Políticas aplicadas | | TC-21 | `TC-21/test_forensic.py` | Recolección de evidencia digital | MISP, TheHive | Evidencias adjuntas | | TC-22 | `TC-22/test_persistence.py` | Persistencia de datos tras reinicios | SQLite, Elasticsearch | Datos recuperados | | TC-23 | `TC-23/test_privacy.py` | Anonimización y privacidad de datos | API, Elasticsearch | Datos anonimizados | | TC-24 | `TC-24/test_malware_specific.py` | Detección de comportamiento ransomware | MISP (simulado) | IoCs de malware | | TC-25 | `TC-25/test_behavioral_detection.py` | Detección basada en comportamiento | Shuffle, Cortex (parcial) | Análisis de comportamiento | | TC-26 | `TC-26/test_extreme_load.py` | Carga extrema y estabilidad | Todo el stack | Métricas de saturación | | TC-27 | `TC-27/test_configuration.py` | Validación de configuración del entorno | CLI, `.env.full` | Configuración verificada | | TC-28 | `TC-28/test_ui_e2e.py` | Navegación básica de la Web Management | Selenium (opcional) | Capturas/logs | | TC-29 | `TC-29/test_large_evidence.py` | Manejo de grandes volúmenes de evidencia | TheHive | Evidencias grandes | | TC-30 | `TC-30/test_offline_mode.py` | Modo offline y mocks de servicios | API, mocks | Tests aislados | | TC-31 | `TC-31/test_compliance.py` | Cumplimiento de controles de seguridad | API | Reporte de compliance | | TC-32 | `TC-32/test_golden_thread.py` | Trazabilidad completa del flujo E2E | Todos | Golden thread verificado | | TC-KPI-01 | `TC-KPI-01/test_mttr_calculation.py` | Cálculo de MTTR | Elasticsearch, `soar-metrics` | Valor MTTR | | TC-KPI-02 | `TC-KPI-02/test_kpi_dashboard.py` | Disponibilidad del dashboard Grafana | Grafana, Elasticsearch | Dashboard accesible | | TC-KPI-03 | `TC-KPI-03/test_kpi_alerts.py` | KPIs derivados de alertas | Elasticsearch | Métricas indexadas | | TC-KPI-04 | `TC-KPI-04/test_mttr_percentiles.py` | Percentiles de respuesta | Elasticsearch, `soar-metrics` | P50/P95 | | TC-KPI-05 | `TC-KPI-05/test_service_success_rates.py` | Tasa de éxito de servicios | API, Elasticsearch | Ratios por servicio | | TC-KPI-06 | `TC-KPI-06/test_kpi_data_coherence.py` | Coherencia entre KPIs y datos de origen | Elasticsearch, API | Validación cruzada |
+| Caso | Archivo(s) | Objetivo | Servicios implicados | Artefactos generados |
+|------|------------|----------|---------------------|----------------------|
+| TC-00 | `TC-00/test_both_workflows*.py` | Validar comparación entre workflows de ransomware y benigno | Shuffle, TheHive | `webhook_info.json` |
+| TC-01 | `TC-01/test_malicious.py` | Flujo completo de alerta maliciosa: recepción, caso y contención simulada | Shuffle, TheHive, Elasticsearch | Caso en TheHive, métricas en `soar-metrics` |
+| TC-02 | `TC-02/test_benign.py` | Flujo de alerta benigna sin contención | Shuffle, TheHive | Caso cerrado/marcado benigno |
+| TC-03 | `TC-03/test_edge_cases.py` | Manejo de casos límite (campos faltantes, URLs inválidas, concurrencia) | Shuffle, API | Logs de ejecución |
+| TC-04 | `TC-04/test_performance.py` | Métricas de rendimiento bajo carga controlada | API, Elasticsearch | Métricas de latencia |
+| TC-05 | `TC-05/test_concurrent_alerts.py` | Procesamiento concurrente de alertas | Shuffle, orborus | Múltiples ejecuciones de workflow |
+| TC-06 | `TC-06/test_critical_severity.py` | Priorización por severidad crítica | Shuffle, TheHive | Caso crítico con escalación |
+| TC-07 | `TC-07/test_missing_fields.py` | Robustez ante alertas con campos incompletos | API, Shuffle | Errores controlados |
+| TC-08 | `TC-08/test_additional_fields.py` | Campos personalizados y extensibilidad de alertas | Shuffle, TheHive | Caso con observables extra |
+| TC-09 | `TC-09/test_realistic_ransomware.py` | Fidelidad del simulador frente a ransomware real | API, Shuffle (simulado) | Alertas enriquecidas |
+| TC-10 | `TC-10/test_tenzir_integration.py` | Integración con Tenzir (planificada/parcial) | Tenzir | Logs exportados |
+| TC-11 | `TC-11/test_network_watcher_integration.py` | Conectividad del Network Watcher con la red de Shuffle | Docker, `soar_net` | Estado de red verificado |
+| TC-12 | `TC-12/test_redis_integration.py` | Estado compartido y caché vía Redis | Redis | Claves de prueba |
+| TC-13 | `TC-13/test_loki_integration.py` | Logging centralizado Loki/Promtail/Grafana | Logging stack | Logs consultables en Grafana |
+| TC-14 | `TC-14/test_complete_soar_integration.py`, `test_traceability.py` | Flujo SOAR completo y trazabilidad de ejecución | Todos | Métricas, casos, logs enlazados |
+| TC-15 | `TC-15/test_api_latency.py` | Latencia de endpoints críticos | API | Métricas de latencia |
+| TC-16 | `TC-16/test_error_handling.py`, `test_error_rate.py` | Manejo y tasa de errores | API, Shuffle | Reporte de errores |
+| TC-17 | `TC-17/test_network_watcher_monitoring.py` | Monitoreo del Network Watcher | Docker, Prometheus | Métricas de red |
+| TC-18 | `TC-18/test_resilience.py` | Recuperación ante fallos de workflow | Shuffle, orborus | Reintentos exitosos |
+| TC-19 | `TC-19/test_security.py` | Validación de autenticación y seguridad | API, JWT | Tokens validados |
+| TC-20 | `TC-20/test_zero_trust.py` | Validación de políticas de acceso | API, Nginx | Políticas aplicadas |
+| TC-21 | `TC-21/test_forensic.py` | Recolección de evidencia digital | MISP, TheHive | Evidencias adjuntas |
+| TC-22 | `TC-22/test_persistence.py` | Persistencia de datos tras reinicios | SQLite, Elasticsearch | Datos recuperados |
+| TC-23 | `TC-23/test_privacy.py` | Anonimización y privacidad de datos | API, Elasticsearch | Datos anonimizados |
+| TC-24 | `TC-24/test_malware_specific.py` | Detección de comportamiento ransomware | MISP (simulado) | IoCs de malware |
+| TC-25 | `TC-25/test_behavioral_detection.py` | Detección basada en comportamiento | Shuffle, Cortex (parcial) | Análisis de comportamiento |
+| TC-26 | `TC-26/test_extreme_load.py` | Carga extrema y estabilidad | Todo el stack | Métricas de saturación |
+| TC-27 | `TC-27/test_configuration.py` | Validación de configuración del entorno | CLI, `.env.full` | Configuración verificada |
+| TC-28 | `TC-28/test_ui_e2e.py` | Navegación básica de la Web Management | Selenium (opcional) | Capturas/logs |
+| TC-29 | `TC-29/test_large_evidence.py` | Manejo de grandes volúmenes de evidencia | TheHive | Evidencias grandes |
+| TC-30 | `TC-30/test_offline_mode.py` | Modo offline y mocks de servicios | API, mocks | Tests aislados |
+| TC-31 | `TC-31/test_compliance.py` | Cumplimiento de controles de seguridad | API | Reporte de compliance |
+| TC-32 | `TC-32/test_golden_thread.py` | Trazabilidad completa del flujo E2E | Todos | Golden thread verificado |
+| TC-KPI-01 | `TC-KPI-01/test_mttr_calculation.py` | Cálculo de MTTR | Elasticsearch, `soar-metrics` | Valor MTTR |
+| TC-KPI-02 | `TC-KPI-02/test_kpi_dashboard.py` | Disponibilidad del dashboard Grafana | Grafana, Elasticsearch | Dashboard accesible |
+| TC-KPI-03 | `TC-KPI-03/test_kpi_alerts.py` | KPIs derivados de alertas | Elasticsearch | Métricas indexadas |
+| TC-KPI-04 | `TC-KPI-04/test_mttr_percentiles.py` | Percentiles de respuesta | Elasticsearch, `soar-metrics` | P50/P95 |
+| TC-KPI-05 | `TC-KPI-05/test_service_success_rates.py` | Tasa de éxito de servicios | API, Elasticsearch | Ratios por servicio |
+| TC-KPI-06 | `TC-KPI-06/test_kpi_data_coherence.py` | Coherencia entre KPIs y datos de origen | Elasticsearch, API | Validación cruzada |
 
 #### Targets Make y comandos canónicos
 
@@ -1723,7 +1812,12 @@ make test-all # Ejecuta todo el suite
 
 El proyecto no utiliza el campo `profiles:` de Docker Compose; en su lugar, `Makefile.linux` / `Makefile.win` definen `COMPOSE_FILES` como conjunto de archivos `docker-compose*.yml` y el target `make` selecciona el escenario:
 
-| Escenario | Archivos de compose incluidos | Target make | |-----------|------------------------------|-------------| | Stack completo | `docker-compose.yml`, `docker-compose.core.yml`, `docker-compose.misp.yml`, `docker-compose.opensearch.yml`, `docker-compose.logging.yml` | `make up` | | Tests unitarios | Ninguno | `make test-unit` | | Tests de integración | Stack completo + contenedor `soar_api` | `make test-integration` | | Tests E2E | Stack completo + `soar_api` | `make test-e2e` |
+| Escenario | Archivos de compose incluidos | Target make |
+|-----------|------------------------------|-------------|
+| Stack completo | `docker-compose.yml`, `docker-compose.core.yml`, `docker-compose.misp.yml`, `docker-compose.opensearch.yml`, `docker-compose.logging.yml` | `make up` |
+| Tests unitarios | Ninguno | `make test-unit` |
+| Tests de integración | Stack completo + contenedor `soar_api` | `make test-integration` |
+| Tests E2E | Stack completo + `soar_api` | `make test-e2e` |
 
 > Para escenarios personalizados, sobreescribir `COMPOSE_FILES` o `ENV_FILE`: `make up ENV_FILE=.env.testing`.
 
@@ -1766,11 +1860,22 @@ python -m pytest tests/e2e/TC-14/test_complete_soar_integration.py -v
 
 #### Servicios SOAR Core
 
-| Servicio | Puerto | Configuración | Runtime | Navegador | |---------------------|--------|-------------------------------------|------------------------------------------------|-------------------------------------------| | **Elasticsearch** | 8200 | Imagen, puertos, volúmenes, entorno | Salud del cluster, accesibilidad de API | No aplicable (solo API) | | **TheHive** | 8100 | Imagen, puertos, volúmenes, redes | Salud del contenedor (`/api/status`), endpoints de API | Interfaz de login, UI de gestión de casos | | **Cortex** | 8101 | Imagen, puertos, volúmenes, redes | Container health, analyzer endpoints | Login interface, analyzer management | | **Shuffle** | 8081 | Imagen, puertos, volúmenes, redes | Container health, workflow engine | Login interface, workflow builder | | **OpenSearch Dashboards** | 8202 | Imagen, puertos, volúmenes, redes | Dashboard rendering, OpenSearch integration | Login interface, visualization dashboards | | **Redis** | 6379 | Imagen, puertos, volúmenes, redes | Conectividad, autenticación | No aplicable (solo API) |
+| Servicio | Puerto | Configuración | Runtime | Navegador |
+|---------------------|--------|-------------------------------------|------------------------------------------------|-------------------------------------------|
+| **Elasticsearch** | 8200 | Imagen, puertos, volúmenes, entorno | Salud del cluster, accesibilidad de API | No aplicable (solo API) |
+| **TheHive** | 8100 | Imagen, puertos, volúmenes, redes | Salud del contenedor (`/api/status`), endpoints de API | Interfaz de login, UI de gestión de casos |
+| **Cortex** | 8101 | Imagen, puertos, volúmenes, redes | Container health, analyzer endpoints | Login interface, analyzer management |
+| **Shuffle** | 8081 | Imagen, puertos, volúmenes, redes | Container health, workflow engine | Login interface, workflow builder |
+| **OpenSearch Dashboards** | 8202 | Imagen, puertos, volúmenes, redes | Dashboard rendering, OpenSearch integration | Login interface, visualization dashboards |
+| **Redis** | 6379 | Imagen, puertos, volúmenes, redes | Conectividad, autenticación | No aplicable (solo API) |
 
 #### Threat Intelligence
 
-| Servicio | Configuración | Runtime | Navegador | |-------------|-----------------------------------|------------------------------|-----------------------------------------| | **MISP** | Imagen, puertos, volúmenes, redes | Threat intelligence platform | Login interface, threat data management | | **Redis** | Imagen, puertos, volúmenes, redes | Cache and message broker | No aplicable (data service) | | **MariaDB** | Imagen, puertos, volúmenes, redes | Database for MISP | No aplicable (data service) |
+| Servicio | Configuración | Runtime | Navegador |
+|-------------|-----------------------------------|------------------------------|-----------------------------------------|
+| **MISP** | Imagen, puertos, volúmenes, redes | Threat intelligence platform | Login interface, threat data management |
+| **Redis** | Imagen, puertos, volúmenes, redes | Cache and message broker | No aplicable (data service) |
+| **MariaDB** | Imagen, puertos, volúmenes, redes | Database for MISP | No aplicable (data service) |
 
 ##### 3.6.3.2 Validación de red
 
@@ -1883,7 +1988,12 @@ Las pruebas se integran en GitHub Actions mediante workflows en `.github/workflo
 
 ##### 3.6.5.2 Métricas clave
 
-| Métrica | Objetivo | Método de Medida | |--------------------------------------|----------|-------------------------------| | **Tasa de éxito** | ≥ 95% | Porcentaje de pruebas pasadas | | **Cobertura de código** | ≥ 80% | pytest-cov | | **Tiempo de ejecución** | ≤ 5 min | pytest --durations | | **Tiempo de inicio de contenedores** | ≤ 2 min | docker ps + timestamps |
+| Métrica | Objetivo | Método de Medida |
+|--------------------------------------|----------|-------------------------------|
+| **Tasa de éxito** | ≥ 95% | Porcentaje de pruebas pasadas |
+| **Cobertura de código** | ≥ 80% | pytest-cov |
+| **Tiempo de ejecución** | ≤ 5 min | pytest --durations |
+| **Tiempo de inicio de contenedores** | ≤ 2 min | docker ps + timestamps |
 
 #### 4. Validación
 
@@ -2233,7 +2343,14 @@ curl -s -X POST http://localhost:8000/tests/run \
 
 ##### Objetivos de Cobertura
 
-| Categoría de Pruebas | Objetivo de Cobertura | |------------------------|-----------------------| | Pruebas unitarias | >80% | | Pruebas atómicas | >70% | | Pruebas de integración | >60% | | Pruebas de navegador | >50% | | Pruebas de seguridad | >60% | | Pruebas E2E | >50% |
+| Categoría de Pruebas | Objetivo de Cobertura |
+|------------------------|-----------------------|
+| Pruebas unitarias | >80% |
+| Pruebas atómicas | >70% |
+| Pruebas de integración | >60% |
+| Pruebas de navegador | >50% |
+| Pruebas de seguridad | >60% |
+| Pruebas E2E | >50% |
 
 #### 3.7.4 Ejecución de pruebas
 
@@ -2280,7 +2397,14 @@ make test-coverage
 
 #### Métricas Clave
 
-| Categoría de Pruebas | Objetivo de Cobertura | |------------------------|-----------------------| | Pruebas unitarias | >80% | | Pruebas atómicas | >70% | | Pruebas de integración | >60% | | Pruebas de navegador | >50% | | Pruebas de seguridad | >60% | | Pruebas E2E | >50% |
+| Categoría de Pruebas | Objetivo de Cobertura |
+|------------------------|-----------------------|
+| Pruebas unitarias | >80% |
+| Pruebas atómicas | >70% |
+| Pruebas de integración | >60% |
+| Pruebas de navegador | >50% |
+| Pruebas de seguridad | >60% |
+| Pruebas E2E | >50% |
 
 #### 4. Validación
 
