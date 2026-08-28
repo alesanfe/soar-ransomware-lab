@@ -1085,7 +1085,7 @@ Las evidencias de validación incluyen:
 # Revisar logs de Docker
 docker logs soar_thehive
 docker logs soar_cortex
-docker logs soar_shuffle-backend
+docker logs soar_shuffle_backend
 
 # Consultar docs/02-architecture.md para troubleshooting
 ```

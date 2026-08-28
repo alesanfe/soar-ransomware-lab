@@ -1292,7 +1292,7 @@ Verificar el estado de servicios regularmente:
 docker ps
 docker logs soar_thehive
 docker logs soar_cortex
-docker logs soar_shuffle
+docker logs soar_shuffle_backend
 ```
 
 ### 3.2 Infraestructura
