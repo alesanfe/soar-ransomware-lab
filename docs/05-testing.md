@@ -2124,7 +2124,7 @@ Este documento depende de:
 
 #### Archivos de Documentación
 
-**[test_suite.md](05-testing.md):** Documentación principal de la suite de pruebas que cubre estructura, categorías,
+**[05-testing.md](05-testing.md):** Documentación principal de la suite de pruebas que cubre estructura, categorías,
 ejecución, configuración, entornos y mejores prácticas.
 
 **[docker_testing_strategy.md](05-testing.md):** Estrategia integral de pruebas de Docker con enfoque
@@ -2268,7 +2268,7 @@ make test-coverage
 - **CI/CD**: Ejecución automática en GitHub Actions
 - **Docker**: Ejecución dentro de contenedores
 - **Remoto vía API / Web Management**: a través del endpoint `POST /tests/run` delegado a `PytestTestRunner`
- (`src/soar_lab/infrastructure/pytest_test_runner.py`). Ver [test_suite.md](#343-ejecucion-remota-via-pytesttestrunner).
+ (`src/soar_lab/infrastructure/pytest_test_runner.py`). Ver [sección 3.4.3](#343-ejecución-remota-vía-pytesttestrunner).
 
 #### 3.5 Reportes y métricas
 
