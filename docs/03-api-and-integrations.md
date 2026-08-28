@@ -200,7 +200,7 @@ Ver [sección 3.1](#31-visión-general-de-la-api) para la tabla completa de endp
 
 
 Este documento detalla las APIs utilizadas en el SOAR Ransomware Lab, especificando cuáles son reales (contenedores
-Docker activos) y cuáles son simuladas (scripts/mocks), con endpoints, autenticación por variables de entorno, payloads
+Docker activos) y cuáles son simuladas (`src/soar_lab/simulator/`), con endpoints, autenticación por variables de entorno, payloads
 de ejemplo y límites de uso.
 
 
