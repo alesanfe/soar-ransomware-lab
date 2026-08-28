@@ -4554,7 +4554,7 @@ Webhook (/SIEM)
 | Campo | Detalle |
 |-------------------------|------------------------------------------------------------------------------------------------|
 | **Trigger** | HTTP POST al webhook de Shuffle (`http://localhost:5001/api/v1/hooks/<id>`) |
-| **Autenticación** | `Authorization: Bearer <SHUFFLE_WEBHOOK_TOKEN>` |
+| **Autenticación** | `Authorization: Bearer <SIEM_WEBHOOK_TOKEN>` |
 | **Entrada** | JSON con esquema definido en `src/soar_lab/config/schemas/__init__.py` |
 | **Campos obligatorios** | `alert_id`, `hostname`, `src_ip`, `hash`, `severity`, `source`, `detection_time`, `event_type` |
 | **Salida (OK)** | Objeto alerta normalizado, `execution_id` de Shuffle |
@@ -4764,7 +4764,7 @@ flowchart TD
 
 | Variable | Descripción | Valor por defecto |
 |-------------------------|------------------------------------|----------------------------------|
-| `SHUFFLE_WEBHOOK_TOKEN` | Token de autenticación del webhook | `siem-webhook-token-change-this` |
+| `SIEM_WEBHOOK_TOKEN` | Token de autenticación del webhook | `siem-webhook-token-change-this` |
 | `THEHIVE_API_KEY` | API key de TheHive | en `.env.full` |
 | `CORTEX_API_KEY` | API key de Cortex | en `.env.full` |
 | `SIMULATION_MODE` | Modo simulación de contención | `true` |
