@@ -25,7 +25,7 @@
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas-y-consideraciones)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -561,7 +561,7 @@ Las evidencias de validación incluyen:
 - Métricas de éxito definidas (sección 3.2, validadas por `src/soar_lab/domain/services/kpi_analyzer.py`)
 - Consideraciones éticas documentadas (sección 3.4)
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 ##### 5.1 Limitaciones
 
@@ -966,7 +966,7 @@ Las evidencias de validación incluyen:
 - Checklist de entregables por semana
 - Registro de revisiones y aprobaciones
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -1586,7 +1586,7 @@ Las evidencias de validación incluyen:
 - Registro de backups de configuración (`runtime/backups/`)
 - Documentación de mitigaciones implementadas (este documento)
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -2073,7 +2073,7 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 
 ---
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -2133,7 +2133,7 @@ Las evidencias de validación incluyen:
 - Presentación de defensa TFM
 - Documento de aprobación firmado
 
-## 5. Problemas y consideraciones
+## 5. Problemas
 
 ### 5.1 Limitaciones
 

@@ -21,7 +21,7 @@
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas-y-consideraciones)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -1833,9 +1833,7 @@ python -m pytest tests/integration/test_docker_compose_validation.py -v
 
 **Ejecutar pruebas de runtime directas:**
 
-```bash
-python -m pytest tests/integration/test_docker_runtime_status.py tests/integration/test_docker_partial_failure.py -v
-```
+> Ver comando en [Fase 2: pruebas de runtime](#322-fase-2-pruebas-de-runtime).
 
 **Ejecutar pruebas de navegador directas:**
 
@@ -1960,7 +1958,7 @@ Las evidencias de ejecución de pruebas incluyen:
 - Métricas de rendimiento recopiladas
 - Reportes de seguridad (headers, vulnerabilidades)
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 ##### 5.1 Limitaciones
 
@@ -2311,7 +2309,7 @@ Las evidencias de ejecución de pruebas incluyen:
 - Resultados de pruebas de navegador (capturas de pantalla)
 - Reportes de seguridad y vulnerabilidades
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -2381,7 +2379,7 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 
 ---
 
-#### 5. Problemas y consideraciones
+#### 5. Problemas
 
 #### 5.1 Limitaciones
 
@@ -2427,7 +2425,7 @@ Las evidencias de ejecución de pruebas incluyen:
 - Resultados de pruebas de navegador (capturas de pantalla)
 - Reportes de seguridad y vulnerabilidades
 
-## 5. Problemas y consideraciones
+## 5. Problemas
 
 ### 5.1 Limitaciones
 
