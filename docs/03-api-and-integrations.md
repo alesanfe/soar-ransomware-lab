@@ -1,4 +1,4 @@
-# API e Integraciones — SOAR Ransomware Lab
+﻿# API e Integraciones — SOAR Ransomware Lab
 
 ## Índice
 
@@ -1126,332 +1126,31 @@ Las versiones canónicas de los componentes principales se consultan directament
 > **Nota:** La imagen TheHive `3.5.2-1` es la que se despliega; la documentación de StrangeBee cubre tanto TheHive 3 como TheHive 5. La API y los endpoints principales no cambian para las operaciones usadas en este laboratorio.
 
 
+
 ### 3.6 Integración con Cortex
 
-Este documento ofrece una visión general de las integraciones entre los componentes del SOAR Ransomware Lab.
-
-#### Índice
-
-- [1. Resumen](#1-resumen)
-- [2. Servicios Integrados](#2-servicios-integrados)
-- [3. Flujo de Datos](#3-flujo-de-datos)
-- [4. Contratos de API](#4-contratos-de-api)
-- [5. Credenciales y Autenticación](#5-credenciales-y-autenticación)
-- [6. Referencias](#6-referencias)
-- [7. Versiones verificadas](#7-versiones-verificadas)
-
----
-
-#### 1. Resumen
-
-El laboratorio integra herramientas de orquestación (Shuffle), gestión de casos (TheHive), análisis de IoCs (Cortex),
-inteligencia de amenazas (MISP), detección y observabilidad (Grafana, Loki, Promtail) para automatizar la
-respuesta ante incidentes de ransomware.
-
-#### 2. Servicios Integrados
-
-
-> **Nota:** Los valores por defecto se toman de `.env.example`. En un despliegue real se generan con
-> `soar-lab generate-secrets --env`. La interfaz de Shuffle no se sirve por Nginx porque usa rutas absolutas; el
-> acceso directo por `http://localhost:8081` es obligatorio.
-
-#### 3. Flujo de Datos
-
-1. **Detección**: genera alertas y las envía a un webhook de Shuffle (configurado en
- `scripts/setup/init_shuffle_webhook.py`).
-2. **Orquestación**: Shuffle recibe la alerta, la normaliza y lanza el workflow de respuesta.
-3. **Análisis**: Cortex ejecuta analyzers sobre observables (hash, IP, dominio, etc.). Los analyzers se lanzan en
- contenedores efímeros gestionados por Orborus.
-4. **Inteligencia**: MISP enriquece con IoCs y feeds de amenazas.
-5. **Gestión**: TheHive crea un caso con observables, resultados de analyzers y métricas.
-6. **Contención**: La contención del endpoint se simula en entornos controlados mediante scripts y APIs; la ejecución
- real sobre endpoints de producción queda fuera del alcance del laboratorio.
-7. **Métricas**: Los KPIs (MTTR, etc.) se calculan en Shuffle, se indexan en el índice `soar-metrics` de Elasticsearch y se
- visualizan en el dashboard de Grafana.
-
-> **Real vs. simulado:** TheHive, Cortex, MISP, Shuffle, Elasticsearch y Grafana son servicios reales levantados con
-> Docker. Las acciones de contención sobre endpoints son simuladas salvo que se configuren agentes reales en la red de
-> pruebas.
-
-#### 3.x Workarounds y limitaciones conocidas
-
-#### Cortex y MISP
-
-- **Cortex** puede devolver `400` en workflows que requieren autenticación adicional o analyzers no inicializados. En `tests/e2e/TC-03/` se omite la verificación de Cortex temporalmente (`TODO`).
-- **MISP** puede devolver respuesta vacía por `403` o falta de eventos. El test TC-03 la omite mientras se ajusta la autenticación.
-
-#### Shuffle
-
-- El webhook de Shuffle se crea con `init_shuffle_webhook.py`, que ajusta el workflow y genera `webhook_info.json`.
-- Tras `make reset`, el `SHUFFLE_DEFAULT_APIKEY` cambia. `ShuffleClient` se auto-sana (`_fetch_real_apikey`) leyendo la clave de Elasticsearch.
-
-#### Elasticsearch / Grafana
-
-- El índice de métricas es `soar-metrics` con mapping `mttr_seconds` como `float`.
-- Grafana 10.3.4 incluye el plugin `elasticsearch` nativamente y debe estar en `soar_net` para resolver `elasticsearch:9200`.
-
-###
-
-
-#### 4. Contratos de API
-
-Los contratos detallados, endpoints, ejemplos de payloads y procedimientos de rotación de API keys se encuentran en:
-
-- **[api_contracts.md](03-api-and-integrations.md)**
-
-#### 5. Credenciales y Autenticación
-
-Todas las contraseñas por defecto se definen en `.env.full` y se mantienen sincronizadas con los scripts de
-inicialización:
-
-- `init_thehive.py` genera el usuario y API key de TheHive.
-- `reset_cortex.py` genera el usuario y API key de Cortex.
-- `init_shuffle_webhook.py` configura el workflow y el API key de Shuffle.
-
-Las claves más relevantes de `.env.full` son:
-
-- `THEHIVE_API_KEY`
-- `CORTEX_API_KEY`
-- `SHUFFLE_DEFAULT_APIKEY`
-- `MISP_API_KEY`
-- `ELASTIC_PASSWORD`
-- `REDIS_PASSWORD`
-- `GRAFANA_ADMIN_PASSWORD`
-- `WEB_UI_PASSWORD`
-
-#### 6. Referencias
-
-- [api_contracts.md](03-api-and-integrations.md)
-- [docs/02-architecture.md](02-architecture.md)
-- [docs/04-operations.md](04-operations.md)
-- [docs/02-architecture.md](02-architecture.md)
-
-#### 7. Versiones verificadas
-
-Las versiones canónicas de los componentes principales se consultan directamente en `infra/docker/compose/docker-compose.core.yml` y en [docs/02-architecture.md](02-architecture.md).
-
-| Componente | Versión verificada | Fuente | Documentación oficial | |------------|--------------------|--------|-----------------------| | **Shuffle** | `2.2.1` (`ghcr.io/shuffle/shuffle-frontend/backend/orborus:2.2.1`) | `infra/docker/compose/docker-compose.core.yml` | <https://shuffler.io/docs> | | **TheHive** | `3.5.2-1` (`thehiveproject/thehive:3.5.2-1`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/thehive/> | | **Cortex** | `3.2.0-1` (imagen compatible con TheHive 3.x) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/cortex/> | | **MISP** | `v2.5.44` (`ghcr.io/misp/misp-docker/misp-core:v2.5.44`) | `infra/docker/compose/docker-compose.misp.yml` | <https://www.misp-project.org/documentation/> | | **Elasticsearch** | `7.10.2` | `infra/docker/compose/docker-compose.yml` | <https://www.elastic.co/guide/en/elasticsearch/reference/7.10/index.html> | | **OpenSearch** | `2.10.0` | `infra/docker/compose/docker-compose.opensearch.yml` | <https://opensearch.org/docs/latest/> |
-
-> **Nota:** La imagen TheHive `3.5.2-1` es la que se despliega; la documentación de StrangeBee cubre tanto TheHive 3 como TheHive 5. La API y los endpoints principales no cambian para las operaciones usadas en este laboratorio.
+> Ver [3.5 Integración con TheHive](#35-integración-con-thehive) para la visión general, flujo de datos,
+> workarounds, credenciales y versiones verificadas (común a todos los componentes).
+>
+> Especificidad de Cortex: analyzers configurados (Hashdd_Status, DShield, Mnemonic_pDNS, GoogleDNS, etc.),
+> rotación de API key con `reset_cortex.py`, e integración con TheHive para análisis de observables.
 
 
 ### 3.7 Integración con Shuffle
 
-Este documento ofrece una visión general de las integraciones entre los componentes del SOAR Ransomware Lab.
-
-#### Índice
-
-- [1. Resumen](#1-resumen)
-- [2. Servicios Integrados](#2-servicios-integrados)
-- [3. Flujo de Datos](#3-flujo-de-datos)
-- [4. Contratos de API](#4-contratos-de-api)
-- [5. Credenciales y Autenticación](#5-credenciales-y-autenticación)
-- [6. Referencias](#6-referencias)
-- [7. Versiones verificadas](#7-versiones-verificadas)
-
----
-
-#### 1. Resumen
-
-El laboratorio integra herramientas de orquestación (Shuffle), gestión de casos (TheHive), análisis de IoCs (Cortex),
-inteligencia de amenazas (MISP), detección y observabilidad (Grafana, Loki, Promtail) para automatizar la
-respuesta ante incidentes de ransomware.
-
-#### 2. Servicios Integrados
-
-
-> **Nota:** Los valores por defecto se toman de `.env.example`. En un despliegue real se generan con
-> `soar-lab generate-secrets --env`. La interfaz de Shuffle no se sirve por Nginx porque usa rutas absolutas; el
-> acceso directo por `http://localhost:8081` es obligatorio.
-
-#### 3. Flujo de Datos
-
-1. **Detección**: genera alertas y las envía a un webhook de Shuffle (configurado en
- `scripts/setup/init_shuffle_webhook.py`).
-2. **Orquestación**: Shuffle recibe la alerta, la normaliza y lanza el workflow de respuesta.
-3. **Análisis**: Cortex ejecuta analyzers sobre observables (hash, IP, dominio, etc.). Los analyzers se lanzan en
- contenedores efímeros gestionados por Orborus.
-4. **Inteligencia**: MISP enriquece con IoCs y feeds de amenazas.
-5. **Gestión**: TheHive crea un caso con observables, resultados de analyzers y métricas.
-6. **Contención**: La contención del endpoint se simula en entornos controlados mediante scripts y APIs; la ejecución
- real sobre endpoints de producción queda fuera del alcance del laboratorio.
-7. **Métricas**: Los KPIs (MTTR, etc.) se calculan en Shuffle, se indexan en el índice `soar-metrics` de Elasticsearch y se
- visualizan en el dashboard de Grafana.
-
-> **Real vs. simulado:** TheHive, Cortex, MISP, Shuffle, Elasticsearch y Grafana son servicios reales levantados con
-> Docker. Las acciones de contención sobre endpoints son simuladas salvo que se configuren agentes reales en la red de
-> pruebas.
-
-#### 3.x Workarounds y limitaciones conocidas
-
-#### Cortex y MISP
-
-- **Cortex** puede devolver `400` en workflows que requieren autenticación adicional o analyzers no inicializados. En `tests/e2e/TC-03/` se omite la verificación de Cortex temporalmente (`TODO`).
-- **MISP** puede devolver respuesta vacía por `403` o falta de eventos. El test TC-03 la omite mientras se ajusta la autenticación.
-
-#### Shuffle
-
-- El webhook de Shuffle se crea con `init_shuffle_webhook.py`, que ajusta el workflow y genera `webhook_info.json`.
-- Tras `make reset`, el `SHUFFLE_DEFAULT_APIKEY` cambia. `ShuffleClient` se auto-sana (`_fetch_real_apikey`) leyendo la clave de Elasticsearch.
-
-#### Elasticsearch / Grafana
-
-- El índice de métricas es `soar-metrics` con mapping `mttr_seconds` como `float`.
-- Grafana 10.3.4 incluye el plugin `elasticsearch` nativamente y debe estar en `soar_net` para resolver `elasticsearch:9200`.
-
-###
-
-
-#### 4. Contratos de API
-
-Los contratos detallados, endpoints, ejemplos de payloads y procedimientos de rotación de API keys se encuentran en:
-
-- **[api_contracts.md](03-api-and-integrations.md)**
-
-#### 5. Credenciales y Autenticación
-
-Todas las contraseñas por defecto se definen en `.env.full` y se mantienen sincronizadas con los scripts de
-inicialización:
-
-- `init_thehive.py` genera el usuario y API key de TheHive.
-- `reset_cortex.py` genera el usuario y API key de Cortex.
-- `init_shuffle_webhook.py` configura el workflow y el API key de Shuffle.
-
-Las claves más relevantes de `.env.full` son:
-
-- `THEHIVE_API_KEY`
-- `CORTEX_API_KEY`
-- `SHUFFLE_DEFAULT_APIKEY`
-- `MISP_API_KEY`
-- `ELASTIC_PASSWORD`
-- `REDIS_PASSWORD`
-- `GRAFANA_ADMIN_PASSWORD`
-- `WEB_UI_PASSWORD`
-
-#### 6. Referencias
-
-- [api_contracts.md](03-api-and-integrations.md)
-- [docs/02-architecture.md](02-architecture.md)
-- [docs/04-operations.md](04-operations.md)
-- [docs/02-architecture.md](02-architecture.md)
-
-#### 7. Versiones verificadas
-
-Las versiones canónicas de los componentes principales se consultan directamente en `infra/docker/compose/docker-compose.core.yml` y en [docs/02-architecture.md](02-architecture.md).
-
-| Componente | Versión verificada | Fuente | Documentación oficial | |------------|--------------------|--------|-----------------------| | **Shuffle** | `2.2.1` (`ghcr.io/shuffle/shuffle-frontend/backend/orborus:2.2.1`) | `infra/docker/compose/docker-compose.core.yml` | <https://shuffler.io/docs> | | **TheHive** | `3.5.2-1` (`thehiveproject/thehive:3.5.2-1`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/thehive/> | | **Cortex** | `3.2.0-1` (imagen compatible con TheHive 3.x) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/cortex/> | | **MISP** | `v2.5.44` (`ghcr.io/misp/misp-docker/misp-core:v2.5.44`) | `infra/docker/compose/docker-compose.misp.yml` | <https://www.misp-project.org/documentation/> | | **Elasticsearch** | `7.10.2` | `infra/docker/compose/docker-compose.yml` | <https://www.elastic.co/guide/en/elasticsearch/reference/7.10/index.html> | | **OpenSearch** | `2.10.0` | `infra/docker/compose/docker-compose.opensearch.yml` | <https://opensearch.org/docs/latest/> |
-
-> **Nota:** La imagen TheHive `3.5.2-1` es la que se despliega; la documentación de StrangeBee cubre tanto TheHive 3 como TheHive 5. La API y los endpoints principales no cambian para las operaciones usadas en este laboratorio.
+> La visión general de integraciones y flujo de datos común a todos los componentes está en
+> [3.5 Integración con TheHive](#35-integración-con-thehive).
+>
+> Especificidad de Shuffle: webhook creado con `init_shuffle_webhook.py`, auto-sana de API key
+> (`_fetch_real_apikey`), orquestación de workflows con 46 nodos y 61 ramas (ver Anexo B en 04-operations).
 
 
 ### 3.8 Referencias técnicas
 
-Este documento ofrece una visión general de las integraciones entre los componentes del SOAR Ransomware Lab.
-
-#### Índice
-
-- [1. Resumen](#1-resumen)
-- [2. Servicios Integrados](#2-servicios-integrados)
-- [3. Flujo de Datos](#3-flujo-de-datos)
-- [4. Contratos de API](#4-contratos-de-api)
-- [5. Credenciales y Autenticación](#5-credenciales-y-autenticación)
-- [6. Referencias](#6-referencias)
-- [7. Versiones verificadas](#7-versiones-verificadas)
-
----
-
-#### 1. Resumen
-
-El laboratorio integra herramientas de orquestación (Shuffle), gestión de casos (TheHive), análisis de IoCs (Cortex),
-inteligencia de amenazas (MISP), detección y observabilidad (Grafana, Loki, Promtail) para automatizar la
-respuesta ante incidentes de ransomware.
-
-#### 2. Servicios Integrados
-
-
-> **Nota:** Los valores por defecto se toman de `.env.example`. En un despliegue real se generan con
-> `soar-lab generate-secrets --env`. La interfaz de Shuffle no se sirve por Nginx porque usa rutas absolutas; el
-> acceso directo por `http://localhost:8081` es obligatorio.
-
-#### 3. Flujo de Datos
-
-1. **Detección**: genera alertas y las envía a un webhook de Shuffle (configurado en
- `scripts/setup/init_shuffle_webhook.py`).
-2. **Orquestación**: Shuffle recibe la alerta, la normaliza y lanza el workflow de respuesta.
-3. **Análisis**: Cortex ejecuta analyzers sobre observables (hash, IP, dominio, etc.). Los analyzers se lanzan en
- contenedores efímeros gestionados por Orborus.
-4. **Inteligencia**: MISP enriquece con IoCs y feeds de amenazas.
-5. **Gestión**: TheHive crea un caso con observables, resultados de analyzers y métricas.
-6. **Contención**: La contención del endpoint se simula en entornos controlados mediante scripts y APIs; la ejecución
- real sobre endpoints de producción queda fuera del alcance del laboratorio.
-7. **Métricas**: Los KPIs (MTTR, etc.) se calculan en Shuffle, se indexan en el índice `soar-metrics` de Elasticsearch y se
- visualizan en el dashboard de Grafana.
-
-> **Real vs. simulado:** TheHive, Cortex, MISP, Shuffle, Elasticsearch y Grafana son servicios reales levantados con
-> Docker. Las acciones de contención sobre endpoints son simuladas salvo que se configuren agentes reales en la red de
-> pruebas.
-
-#### 3.x Workarounds y limitaciones conocidas
-
-#### Cortex y MISP
-
-- **Cortex** puede devolver `400` en workflows que requieren autenticación adicional o analyzers no inicializados. En `tests/e2e/TC-03/` se omite la verificación de Cortex temporalmente (`TODO`).
-- **MISP** puede devolver respuesta vacía por `403` o falta de eventos. El test TC-03 la omite mientras se ajusta la autenticación.
-
-#### Shuffle
-
-- El webhook de Shuffle se crea con `init_shuffle_webhook.py`, que ajusta el workflow y genera `webhook_info.json`.
-- Tras `make reset`, el `SHUFFLE_DEFAULT_APIKEY` cambia. `ShuffleClient` se auto-sana (`_fetch_real_apikey`) leyendo la clave de Elasticsearch.
-
-#### Elasticsearch / Grafana
-
-- El índice de métricas es `soar-metrics` con mapping `mttr_seconds` como `float`.
-- Grafana 10.3.4 incluye el plugin `elasticsearch` nativamente y debe estar en `soar_net` para resolver `elasticsearch:9200`.
-
-###
-
-
-#### 4. Contratos de API
-
-Los contratos detallados, endpoints, ejemplos de payloads y procedimientos de rotación de API keys se encuentran en:
-
-- **[api_contracts.md](03-api-and-integrations.md)**
-
-#### 5. Credenciales y Autenticación
-
-Todas las contraseñas por defecto se definen en `.env.full` y se mantienen sincronizadas con los scripts de
-inicialización:
-
-- `init_thehive.py` genera el usuario y API key de TheHive.
-- `reset_cortex.py` genera el usuario y API key de Cortex.
-- `init_shuffle_webhook.py` configura el workflow y el API key de Shuffle.
-
-Las claves más relevantes de `.env.full` son:
-
-- `THEHIVE_API_KEY`
-- `CORTEX_API_KEY`
-- `SHUFFLE_DEFAULT_APIKEY`
-- `MISP_API_KEY`
-- `ELASTIC_PASSWORD`
-- `REDIS_PASSWORD`
-- `GRAFANA_ADMIN_PASSWORD`
-- `WEB_UI_PASSWORD`
-
-#### 6. Referencias
-
-- [api_contracts.md](03-api-and-integrations.md)
-- [docs/02-architecture.md](02-architecture.md)
-- [docs/04-operations.md](04-operations.md)
-- [docs/02-architecture.md](02-architecture.md)
-
-#### 7. Versiones verificadas
-
-Las versiones canónicas de los componentes principales se consultan directamente en `infra/docker/compose/docker-compose.core.yml` y en [docs/02-architecture.md](02-architecture.md).
-
-| Componente | Versión verificada | Fuente | Documentación oficial | |------------|--------------------|--------|-----------------------| | **Shuffle** | `2.2.1` (`ghcr.io/shuffle/shuffle-frontend/backend/orborus:2.2.1`) | `infra/docker/compose/docker-compose.core.yml` | <https://shuffler.io/docs> | | **TheHive** | `3.5.2-1` (`thehiveproject/thehive:3.5.2-1`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/thehive/> | | **Cortex** | `3.2.0-1` (imagen compatible con TheHive 3.x) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/cortex/> | | **MISP** | `v2.5.44` (`ghcr.io/misp/misp-docker/misp-core:v2.5.44`) | `infra/docker/compose/docker-compose.misp.yml` | <https://www.misp-project.org/documentation/> | | **Elasticsearch** | `7.10.2` | `infra/docker/compose/docker-compose.yml` | <https://www.elastic.co/guide/en/elasticsearch/reference/7.10/index.html> | | **OpenSearch** | `2.10.0` | `infra/docker/compose/docker-compose.opensearch.yml` | <https://opensearch.org/docs/latest/> |
-
-> **Nota:** La imagen TheHive `3.5.2-1` es la que se despliega; la documentación de StrangeBee cubre tanto TheHive 3 como TheHive 5. La API y los endpoints principales no cambian para las operaciones usadas en este laboratorio.
-
+> Credenciales, versiones verificadas y workarounds comunes están en
+> [3.5 Integración con TheHive](#35-integración-con-thehive).
+>
+> Detalle de endpoints, modelos de datos y contratos: en [Autenticación y autorización (detalle)](#autenticación-y-autorización-detalle).
 
 ---
 
@@ -1676,11 +1375,8 @@ para los campos que llegan a `init_shuffle_webhook.py` y a la API.
 
 ### Autenticación y autorización (detalle)
 
-#### 1. Resumen
-
-El laboratorio integra herramientas de orquestación (Shuffle), gestión de casos (TheHive), análisis de IoCs (Cortex),
-inteligencia de amenazas (MISP) y observabilidad (Grafana, Loki, Promtail) para automatizar la
-respuesta ante incidentes de ransomware.
+> El flujo de datos general y la visión de integraciones están en [3.5 Integración con TheHive](#35-integración-con-thehive).
+> Esta sección detalla credenciales, endpoints, modelos de datos y workarounds específicos.
 
 > **Fuente canónica:** Los puertos, mapeos de contenedor, URLs y variables de entorno se mantienen únicamente en
 > `docs/04-operations.md`.
@@ -1691,25 +1387,9 @@ respuesta ante incidentes de ransomware.
 
 | Servicio | Rol | Estado | Credenciales / Auth | |----------|-----|--------|---------------------| | **Web Management** | Panel de control centralizado | Implementado | `WEB_UI_USER` / `WEB_UI_PASSWORD` | | **SOAR API** | Gestión y métricas del lab | Implementado | JWT Bearer (`admin` / `WEB_UI_PASSWORD`) | | **Shuffle UI** | Orquestación de workflows | Implementado | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` | | **Shuffle API** | API del motor de Shuffle | Implementado | `SHUFFLE_DEFAULT_APIKEY` (incluye Orborus) | | **TheHive** | Gestión de casos | Implementado | admin / `THEHIVE_ADMIN_PASSWORD` | | **Cortex** | Análisis de observables | Implementado | `CORTEX_ADMIN_USER` / `CORTEX_ADMIN_PASSWORD` | | **MISP** | Inteligencia de amenazas | Implementado | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD` | | **Elasticsearch** | Búsqueda y almacenamiento | Implementado | Auth deshabilitada por defecto (`ELASTIC_SECURITY_ENABLED=false`) | | **OpenSearch Dashboards** | Visualización de OpenSearch | Implementado | `admin` / `OPENSEARCH_PASSWORD` | | **Redis** | Caché y colas | Implementado | `REDIS_PASSWORD` | | **Grafana** | Observabilidad y KPIs | Implementado | admin / `GRAFANA_ADMIN_PASSWORD` | | **docs-site** | Documentación web | Implementado | - |
 
-> **Nota:** Los valores por defecto se toman de `.env.example`. En un despliegue real se generan con
-> `soar-lab generate-secrets --env`.
-
 ---
 
-#### 3. Flujo de datos
-
-1. **Detección**: El simulador de alertas SIEM (`src/soar_lab/simulator/simulate_alerts.py`) genera alertas y las envía al webhook de Shuffle creado por `scripts/setup/init_shuffle_webhook.py`.
-2. **Orquestación**: Shuffle recibe la alerta, la normaliza y lanza el workflow de respuesta.
-3. **Análisis**: Cortex ejecuta analyzers sobre observables (hash, IP, dominio, etc.).
-4. **Inteligencia**: MISP enriquece con IoCs y feeds de amenazas.
-5. **Gestión**: TheHive crea un caso con observables, resultados de analyzers y métricas.
-6. **Contención**: La contención del endpoint se simula en entornos controlados; la ejecución real sobre endpoints de
- producción queda fuera del alcance.
-7. **Métricas**: Los KPIs (MTTR, etc.) se calculan en Shuffle, se indexan en `soar-metrics` de Elasticsearch y se
- visualizan en Grafana.
-
-> **Real vs. simulado:** TheHive, Cortex, MISP, Shuffle, Elasticsearch y Grafana son servicios reales levantados
-> con Docker. Las acciones de contención sobre endpoints son simuladas salvo que se configuren agentes reales.
+#### 4. APIs y contratos
 
 ---
 
@@ -1848,7 +1528,7 @@ Modelo canónico: `RansomwareAlert` en `src/soar_lab/config/schemas/__init__.py`
 Las versiones canónicas se consultan en `infra/docker/compose/docker-compose.core.yml` y
 `docs/02-architecture.md`.
 
-| Componente | Versión verificada | |------------|--------------------| | **Shuffle** | `2.2.1` | | **TheHive** | `3.5.2-1` | | **Cortex** | `3.2.0-1` | | **MISP** | `latest` | | **Elasticsearch** | `7.10.2` | | **OpenSearch** | `2.10.0` |
+> Ver tabla de versiones verificadas en [3.5 Integración con TheHive](#35-integración-con-thehive).
 
 ---
 
