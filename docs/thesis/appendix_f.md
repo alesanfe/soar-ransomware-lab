@@ -545,10 +545,15 @@ InfoStealer/Loader), analizado forensemente entre el 11-13 de junio de 2026 en u
 sandbox aislado (Ubuntu 20.04 + Windows Server 2016 con Vagrant, red aislada, Sysmon).
 El caso de estudio valida el laboratorio SOAR con IoCs reales: 4 hashes SHA256, 7 URLs
 C2, 9 IPs, 1 clave de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK. El
-actor identificado es `boycots563` (GitHub, 251 commits), con origen probable en
-Eslovaquia (archivo subido a MediaFire el 2026-06-10 23:57:07); el repositorio C2
-`github.com/boycots563/wlt56` fue eliminado tras la detección. El operador de Telegram
-es @KJL4999S (Chat ID: 6820575341, bot `buchstys4_bot` ID 7675556882).
+actor identificado es `boycots563` (GitHub user ID 193230682, 1 repositorio, 0 stars, 1
+watcher), con origen probable en Eslovaquia (archivo subido a MediaFire el 2026-06-10
+23:57:07). El repositorio C2 `github.com/boycots563/wlt56` permanece **público y activo**
+con 253 commits (verificado en agosto 2026), contiene 9 archivos (PROMOTIO.BAT, README.md,
+Windows Compatibility Agent.exe, Windows Compatibility Agent Host.exe, appy.exe, beket.rar,
+kamzat.exe, maximusz.bat, postevak.exe) y un README con un disclaimer falso de "PoC
+educativo" añadido el 2 de agosto de 2026 tras la publicación del análisis forense. El
+operador de Telegram es @KJL4999S (Chat ID: 6820575341, bot `buchstys4_bot` ID
+7675556882).
 
 ```mermaid
 graph TD
@@ -565,7 +570,7 @@ graph TD
  J --> L[babuchen.bat - Killer AV<br/>14 servicios + 34 suites + WU destroy]
  J --> M[rodendron.vbs - GitHub C2<br/>Tarea programada recurrente]
  J --> N[WinStatChecking.bat - DNS block<br/>hosts: 66 dominios AV + DNS 8.8.8.8]
- M -->|github.com/boycots563/wlt56<br/>251 commits, eliminado tras deteccion| O[Windows Compatibility Agent.exe<br/>Python 3.13, 12.4 MB]
+ M -->|github.com/boycots563/wlt56<br/>253 commits, publico y activo| O[Windows Compatibility Agent.exe<br/>Python 3.13, 12.4 MB]
  O --> P[Pulsar RAT v1.6.6.0<br/>.NET 4.7.2 ConfuserEx<br/>beket.rar pw: sin doc]
  P --> Q[HVNC SharpDX DirectX<br/>Keylogger MouseKeyHook v5.7<br/>Webcam AForge.Video.DirectShow<br/>Audio NAudio Core/Wasapi/WinMM<br/>Clipboard manager<br/>Remote desktop<br/>Wallet clipper XMR + 9 inferidas regex<br/>protobuf-net serializacion]
  P --> R[Anti-VM/anti-debug 25+ checks<br/>BeingDebugged IsDebuggerPresent<br/>KernelDebuggerEnabled WMI_VM_Detect<br/>ConfuserEx obfuscation<br/>2 blobs AES-GCM 1808 bytes entropia 7.92<br/>Config C2 NO recuperable estaticamente]
@@ -592,16 +597,23 @@ SystemSP.rar (4 KB, contraseña "zoroz") contiene cuatro scripts VBS/BAT para
 persistencia y evasión. `max.vbs` actúa como launcher/watchdog con exclusiones de
 Windows Defender para `appy.exe`. `babuchen.bat` detiene 14 servicios AV, destruye 34
 suites de seguridad y elimina Windows Update. `rodendron.vbs` descarga
-`Windows Compatibility Agent.exe` desde `github.com/boycots563/wlt56` (251 commits,
-eliminado tras la detección) y crea una tarea programada recurrente.
+`Windows Compatibility Agent.exe` desde `github.com/boycots563/wlt56` (253 commits,
+público y activo en agosto 2026) y crea una tarea programada recurrente.
 `WinStatChecking.bat` bloquea 66 dominios AV en el fichero hosts y fuerza DNS a 8.8.8.8.
 
-El repositorio GitHub C2 contiene cuatro ejecutables Python: `Windows Compatibility
-Agent.exe` (12.4 MB, Python 3.13), `Windows_Compatibility_Agent_Host.exe` (8.5 MB,
-Python 3.14), `kamzat.exe` (12.4 MB, Python 3.13, PyCryptodome completo: AES, SHA,
-HMAC, BLAKE2, keccak + asyncio + multiprocesamiento) y `postevak.exe` (7.9 MB, Python
-3.13, HTTP básico sin criptografía avanzada). Todos comparten imports (USER32,
-KERNEL32, ADVAPI32, GDI32), funciones de token (OpenProcessToken,
+El repositorio GitHub C2 (`github.com/boycots563/wlt56`, público y activo, 253 commits
+entre octubre 2025 y agosto 2026) contiene nueve archivos: cuatro ejecutables Python
+(`Windows Compatibility Agent.exe` 12.4 MB Python 3.13, `Windows Compatibility Agent
+Host.exe` 8.5 MB Python 3.14, `kamzat.exe` 12.4 MB Python 3.13 con PyCryptodome completo:
+AES, SHA, HMAC, BLAKE2, keccak + asyncio + multiprocesamiento, `postevak.exe` 7.9 MB
+Python 3.13 con HTTP básico sin criptografía avanzada), dos scripts batch
+(`PROMOTIO.BAT` actualizado el 3-nov-2025, `maximusz.bat` actualizado 3 veces el
+17-oct-2025), `beket.rar` (Pulsar RAT), `appy.exe` (launcher Rust) y un `README.md`
+con disclaimer falso de "PoC educativo" añadido el 2-ago-2026 tras la publicación del
+análisis forense. El patrón de commits revela ciclos repetidos de "Add files via upload"
++ "Delete appy.exe"/"Delete kamzat.exe" (oct-nov 2025, dic 2025, abr 2026), indicando
+rotación de payloads para evadir detección. Todos los ejecutables Python comparten
+imports (USER32, KERNEL32, ADVAPI32, GDI32), funciones de token (OpenProcessToken,
 GetTokenInformation) y packer MachO_File_pyinstaller, sin URLs/IPs directas en strings.
 
 El Pulsar RAT v1.6.6.0 (.NET 4.7.2, ConfuserEx) se distribuye en `beket.rar` y debe
@@ -630,16 +642,20 @@ VirtualBox no funcional).
 | Ruta instalación | `%PROGRAMDATA%\SystemSP\SystemSP\` (max.vbs, archive.rar) |
 | Registry | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\UserInit` |
 
-La campaña presenta una timeline que abarca desde 2025-03-04 (creación del archivo
-PASSWORD, metadata RAR) hasta 2026-06-13 (consolidación de IoCs: 39 archivos .txt de
-strings/hashes/PE y 14 archivos de análisis detallado). Las hipótesis de atribución
-indican una campaña activa desde 2025 (múltiples variantes: versiones 2.03, 4.11,
-4.52.3), un operador rusohablante (cirílico "асьминог" en YouTube, nombres temáticos
-eslavos: babuchen, rodendron, kamzat, postevak) y monetización múltiple (robo de
-wallets, venta de credenciales en foros, ingresos por sub4unlock.io CPA). El nivel de
-sofisticación es medio-alto (empaquetado RAR anidado, camuflaje temático GMiner, uso
-de servicios legítimos para C2, ConfuserEx). El análisis forense completo comprende
-15 fases (11 completadas, 4 pendientes/bloqueadas).
+La campaña presenta una timeline que abarca desde octubre 2025 (primer commit en
+GitHub C2: actualización de `maximusz.bat` el 17-oct-2025) hasta agosto 2026 (creación
+del README.md con disclaimer falso el 2-ago-2026). La metadata RAR interna fecha la
+creación del archivo PASSWORD el 2025-03-04 y la subida a MediaFire desde Eslovaquia el
+2026-06-10 23:57:07. La consolidación de IoCs se completó el 2026-06-13 (39 archivos
+.txt de strings/hashes/PE y 14 archivos de análisis detallado). Las hipótesis de
+atribución indican una campaña activa desde 2025 (múltiples variantes: versiones 2.03,
+4.11, 4.52.3, rotación de payloads en GitHub mediante ciclos Add/Delete), un operador
+rusohablante (cirílico "асьминог" en YouTube, nombres temáticos eslavos: babuchen,
+rodendron, kamzat, postevak, maximusz) y monetización múltiple (robo de wallets, venta
+de credenciales en foros, ingresos por sub4unlock.io CPA). El nivel de sofisticación es
+medio-alto (empaquetado RAR anidado, camuflaje temático GMiner, uso de servicios
+legítimos para C2, ConfuserEx, disclaimer falso post-detección). El análisis forense
+completo comprende 15 fases (11 completadas, 4 pendientes/bloqueadas).
 
 Fuente: `github.com/alesanfe/gminst4ll-forensics` (README.md, 01_INFORME_PRINCIPAL,
 02_BITACORA_FASES, 03_IOCS_Y_DETECCION, 04_OSINT_Y_CAMPANA, 05_PENDIENTES_Y_PLAN,
