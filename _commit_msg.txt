@@ -1,0 +1,38 @@
+docs: fix duplication, numbering, and outdated info in 02-architecture and 03-api-and-integrations
+
+02-architecture.md:
+- Remove empty headings (Arquitectura general, empty ###)
+- Fix incomplete lines (Elasticsearch y . -> OpenSearch, bash scripts/ -> check_deps.sh, **:** -> OpenSearch)
+- Fix Mermaid diagrams: Scripts->> without target, Shuffle->ES->OpenSearch, OSDashboards port 5602->8202
+- Fix OpenSearch host port 8200->8201 in health check
+- Add opensearch/opensearch-dashboards to services table and volumes
+- Fix ti_net description (remove MISP, add shuffle-backend/frontend)
+- Remove incorrect asterisks in image versions
+- Fix es_data volume attribution (Shuffle uses opensearch_data)
+- Fix Elasticsearch as Shuffle backend -> OpenSearch
+- Replace 12 self-references to docs/02-architecture.md with anchors
+- Fix broken multiline Elasticsearch security link
+- Deduplicate Principios de Seguridad list
+- Fix Mermaid Flujo General with multiple statements on same lines
+- Add 328 deselected to test count in conclusion
+
+03-api-and-integrations.md:
+- Remove 90-line duplicate section 3.2 (was copy of 3.1)
+- Remove 170-line duplicate Autenticacion y autorizacion (detalle) section at end
+- Remove duplicate sections 4/5/6 (incorrectly nested as ####)
+- Fix 4 self-references to docs/03-api-and-integrations.md
+- Renumber conflicting headings: 3.5 Ejemplos de uso -> 3.4.4, 3.1/3.2/3.3 inside 3.3 -> 3.3.x
+- Renumber 3.5 Integracion con TheHive internal sections 1-7 -> 3.5.1-3.5.7
+- Fix FileInfo_8_0 analyzer -> Hashdd_Status_2_0 with correct active analyzers table
+- Fix .access_token -> .token (matches LoginResponse model)
+- Fix Shuffle reads from Elasticsearch -> OpenSearch
+- Remove empty ### heading
+- Fix api_contracts.md references (inexistent) -> section anchors
+- Remove duplicate 02-architecture.md reference
+- Fix Mermaid participant Sim as Simulador / (trailing slash)
+- Replace duplicate env vars table (3.4.2) with cross-reference
+- Add OpenSearch to services table
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

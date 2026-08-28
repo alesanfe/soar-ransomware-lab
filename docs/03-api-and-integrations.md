@@ -71,7 +71,7 @@ La API FastAPI expone endpoints para gestión de alertas, casos, métricas y tes
 La fuente de verdad de los contratos de la API es el archivo `openapi.json`
 generado automáticamente por FastAPI.
 
-- **OpenAPI**: [`docs/03-api-and-integrations.md`](assets/references/openapi.json)
+- **OpenAPI**: [`docs/assets/references/openapi.json`](assets/references/openapi.json)
 - **Swagger UI** (en ejecución): `http://localhost:8000/docs` o `https://soar.local/api/docs`
 - **ReDoc** (en ejecución): `http://localhost:8000/redoc`
 
@@ -156,7 +156,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/health
 
 La API del laboratorio actúa como fachada sobre servicios desplegados en Docker:
 
-| Servicio | Contenedor (red `soar_net`) | |-----------------|-----------------------------| | TheHive | `thehive:9000` | | Cortex | `cortex:9001` | | MISP | `misp:80` | | Shuffle Backend | `shuffle-backend:5001` | | Elasticsearch | `elasticsearch:9200` | | Grafana | `grafana:3000` |
+| Servicio | Contenedor (red `soar_net`) | |-----------------|-----------------------------| | TheHive | `thehive:9000` | | Cortex | `cortex:9001` | | MISP | `misp:80` | | Shuffle Backend | `shuffle-backend:5001` | | Elasticsearch | `elasticsearch:9200` (métricas `soar-metrics`) | | OpenSearch | `opensearch:9200` (backend de Shuffle) | | Grafana | `grafana:3000` |
 
 Para la configuración de Nginx, DNS local y certificados, ver
 [`docs/04-operations.md`](04-operations.md) y
@@ -165,14 +165,14 @@ Para la configuración de Nginx, DNS local y certificados, ver
 #### Alcance
 
 - **Cubre**: endpoints REST de la API SOAR Lab, autenticación JWT, integraciones con servicios externos.
-- **Límites**: no cubre la configuración de infraestructura (ver `docs/04-operations.md`), ni los flujos internos de cada integración (ver `docs/03-api-and-integrations.md`).
+- **Límites**: no cubre la configuración de infraestructura (ver `docs/04-operations.md`), ni los flujos internos de cada integración (ver secciones 3.3 y siguientes de este documento).
 - **Dependencias**: FastAPI, Pydantic v2, JWT, servicios Docker (TheHive, Cortex, MISP, Shuffle, Elasticsearch).
 
 #### Validación
 
 - **Verificación**: ejecutar `make health` para verificar que todos los servicios están activos.
 - **Criterios de aceptación**: la API responde en `/health` con status 200, todos los endpoints documentados en `openapi.json` responden.
-- **Evidencias**: el archivo `docs/03-api-and-integrations.md` es generado automáticamente por FastAPI y contiene la especificación completa.
+- **Evidencias**: el archivo `docs/assets/references/openapi.json` es generado automáticamente por FastAPI y contiene la especificación completa.
 
 #### Referencias
 
@@ -184,92 +184,7 @@ Para la configuración de Nginx, DNS local y certificados, ver
 
 ### 3.2 Endpoints principales
 
-La fuente de verdad de los contratos de la API es el archivo `docs/03-api-and-integrations.md`
-generado automáticamente por FastAPI.
-
-- **OpenAPI**: `docs/03-api-and-integrations.md`
-- **Swagger UI** (en ejecución): `http://localhost:8000/docs` o `https://soar.local/api/docs`
-- **ReDoc** (en ejecución): `http://localhost:8000/redoc`
-
-#### Información general
-
-- **Título**: SOAR Lab Management API
-- **Versión**: 1.0.0
-- **Descripción**: REST API for SOAR Ransomware Lab Management
-- **Base URL**: `http://localhost:8000` / `https://soar.local/api/`
-- **Autenticación**: JWT Bearer (`Authorization: Bearer <token>`)
-
-#### Autenticación
-
-Obtén un token con el endpoint `POST /auth/login`:
-
-```bash
-TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
-
- -H "Content-Type: application/json" \
-
- -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | jq -r '.access_token')
-```
-
-Usa el token en siguientes peticiones:
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/health
-```
-
-#### Endpoints
-
-| Método | Ruta | Resumen | Tags | |--------|------|---------|------| | `GET` | `/` | Root | |
-| `GET` | `/health` | Health | |
-| `POST` | `/auth/login` | Login | |
-| `POST` | `/auth/verify` | Verify Auth | |
-| `GET` | `/analytics/metrics` | Get Metrics | |
-| `GET` | `/analytics/kpis` | Get Kpis | |
-| `POST` | `/backup/create` | Create Backup | |
-| `GET` | `/backup/list` | List Backups | |
-| `POST` | `/backup/restore` | Restore Backup | |
-| `POST` | `/tests/run` | Run Tests | |
-| `GET` | `/services/status` | Get Services Status | |
-| `GET` | `/soar/thehive/cases` | Thehive List Cases | |
-| `GET` | `/soar/thehive/cases/{case_id}` | Thehive Get Case | |
-| `GET` | `/soar/thehive/cases/{case_id}/observables` | Thehive Get Observables | |
-| `GET` | `/soar/thehive/cases/{case_id}/tasks` | Thehive Get Tasks | |
-| `GET` | `/soar/thehive/health` | Thehive Health | |
-| `GET` | `/soar/cortex/analyzers` | Cortex List Analyzers | |
-| `GET` | `/soar/cortex/jobs` | Cortex List Jobs | |
-| `GET` | `/soar/cortex/jobs/{job_id}` | Cortex Get Job | |
-| `GET` | `/soar/cortex/jobs/{job_id}/report` | Cortex Get Job Report | |
-| `GET` | `/soar/cortex/health` | Cortex Health | |
-| `GET` | `/soar/misp/attributes` | Misp Search Attributes | |
-| `GET` | `/soar/misp/events` | Misp List Events | |
-| `GET` | `/soar/misp/events/{event_id}` | Misp Get Event | |
-| `GET` | `/soar/misp/health` | Misp Health | |
-| `GET` | `/soar/shuffle/workflows` | Shuffle List Workflows | |
-| `GET` | `/soar/shuffle/workflows/{workflow_id}` | Shuffle Get Workflow | |
-| `GET` | `/soar/shuffle/workflows/{workflow_id}/executions` | Shuffle Get Executions | |
-| `GET` | `/soar/shuffle/workflows/{workflow_id}/executions/{execution_id}` | Shuffle Get Execution | |
-| `GET` | `/soar/shuffle/health` | Shuffle Health | |
-| `GET` | `/soar/elasticsearch/count` | Es Count | |
-| `GET` | `/soar/elasticsearch/latest` | Es Latest | |
-| `GET` | `/soar/elasticsearch/health` | Es Health | |
-| `GET` | `/soar/status` | Soar Status | |
-
-#### Notas
-
-- Todos los endpoints protegidos requieren `Authorization: Bearer <token>`.
-- Las respuestas de error usan el esquema HTTP estándar de FastAPI.
-- Para detalles de esquemas de petición/respuesta, consulta `docs/03-api-and-integrations.md` o Swagger UI.
-
-#### Servicios externos
-
-La API del laboratorio actúa como fachada sobre servicios desplegados en Docker:
-
-| Servicio | Puerto host | Contenedor (red `soar_net`) | |----------|-------------|-----------------------------| | TheHive | 8100 | `thehive:9000` | | Cortex | 8101 | `cortex:9001` | | MISP | 8083 | `misp:80` | | Shuffle Backend | 5001 | `shuffle-backend:5001` | | Elasticsearch | 8200 | `elasticsearch:9200` | | Grafana | 8084 | `grafana:3000` |
-
-Para la configuración de Nginx, DNS local y certificados, ver
-[docs/04-operations.md](04-operations.md#33-puertos-y-urls) y
-[docs/01-getting-started.md](01-getting-started.md).
-
+Ver [sección 3.1](#31-visión-general-de-la-api) para la tabla completa de endpoints, autenticación y servicios externos.
 
 ### 3.3 Contratos de integración
 
@@ -312,9 +227,9 @@ Este documento depende de:
 - Archivo de configuración .env.full
 
 
-#### 3.1 Especificación de APIs
+#### 3.3.1 Especificación de APIs
 
-#### 3.1.1 Clasificación de APIs
+##### 3.3.1.1 Clasificación de APIs
 
 | API | Tipo | Servicio | Puerto host / Proxy | |-----------------------------|--------------|---------------------------------------|----------------------------------| | **TheHive** | ✅ Real | Gestión de casos e incidentes | `8100` / `/thehive/` | | **Cortex** | ✅ Real | Análisis de IoCs (analyzers) | `8101` / `/cortex/` | | **Shuffle UI** | ✅ Real | Interfaz del orquestador SOAR | `8081` (directo, no Nginx) | | **Shuffle Backend API** | ✅ Real | API del motor de Shuffle (y webhooks) | `5001` / `/shuffle-api/` | | **Lab API** | ✅ Real | FastAPI de gestión del laboratorio | `8000` / `/api/` | | **MISP** | ✅ Real | Inteligencia de amenazas | `8083` (directo, no Nginx) | | **Elasticsearch** | ✅ Real | Motor de búsqueda / métricas | `8200` (no expuesto) | | **EDR / Contención** | ⚙️ Simulado* | Contención de endpoints vía scripts | — | | **Firewall** | 🔲 Simulado | Bloqueo de IPs vía scripts | — |
 
@@ -322,7 +237,7 @@ Este documento depende de:
 laboratorio. El sistema rastrea estados (`pending`, `executed`, `failed`) pero no ejecuta acciones destructivas reales.
 La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simulate_alerts.py`.
 
-#### 3.1.2 APIs reales
+##### 3.3.1.2 APIs reales
 
 **TheHive API:**
 
@@ -352,7 +267,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 - Endpoints para health checks, métricas, tests y backups
 - WebSocket para streaming de logs
 
-#### 3.1.3 APIs simuladas
+##### 3.3.1.3 APIs simuladas
 
 **SIEM Simulado :**
 
@@ -372,9 +287,9 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 - Integrado en el módulo de contención
 - Registro en logs del sistema
 
-#### Endpoints principales (detalle)
+##### 3.3.2 Endpoints principales (detalle)
 
-#### 3.2.1 TheHive API
+###### 3.3.2.1 TheHive API
 
 **Base URL**: `http://localhost:${THEHIVE_HTTP_PORT:-8100}`
 **Autenticación**: `Authorization: Bearer ${THEHIVE_API_KEY}`
@@ -415,7 +330,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 | Parámetro | Valor | |------------------------|-------------------------------| | Timeout por petición | 30 s | | Reintentos automáticos | 3 (backoff 5 s) | | Severidad válida | 1 (Low), 2 (Medium), 3 (High) | | TLP válido | 0–3 |
 
-#### 3.2.2 Cortex API
+###### 3.3.2.2 Cortex API
 
 **Base URL**: `http://localhost:${CORTEX_HTTP_PORT:-8101}`
 **Autenticación**: `Authorization: Bearer ${CORTEX_API_KEY}`
@@ -429,21 +344,21 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 ```json
 {
- "analyzerId": "FileInfo_8_0",
+ "analyzerId": "Hashdd_Status_2_0",
  "dataType": "hash",
  "data": "44d88612fea8a8f36de82e1278abb02f"
 }
 ```
 
-**Analyzers activos en el lab:**
+**Analyzers activos en el lab** (ver `scripts/setup/shuffle_workflow/cortex_setup.py`):
 
-| Analyzer ID | Tipo | Modo | Requiere API key externa | |----------------------------|-----------|---------|---------------------------| | `FileInfo_8_0` | hash | offline | No | | `DomainMailSPFRecord_2_1` | domain/ip | offline | No | | `VirusTotal_GetReport_3_1` | hash | online | Sí (`VIRUSTOTAL_API_KEY`) |
+| Analyzer ID | Tipo | Modo | Requiere API key externa | |----------------------------|-----------|---------|---------------------------| | `Hashdd_Status_2_0` | hash | offline | No | | `IP-API_1_1` | ip | offline | No | | `DShield_lookup_1_0` | ip | online | No | | `Mnemonic_pDNS_Public_3_0` | ip | online | No | | `GoogleDNS_resolve_1_0_0` | ip/domain | offline | No | | `ValidateObservable_1_0` | genérico | offline | No | | `DomainMailSPFDMARC_1_2` | domain | offline | No |
 
 **Límites de uso:**
 
 | Parámetro | Valor | |----------------------------|----------------------------------| | `MAX_CONCURRENT_ANALYZERS` | `3` (`.env.full`) | | `ANALYZER_TIMEOUT` | `30` s (`.env.full`) | | `ANALYZER_RETRIES` | `1` (`.env.full`) | | Timeout por job | 60 s (configurable en Cortex UI) |
 
-#### 3.2.3 Shuffle webhook
+###### 3.3.2.3 Shuffle webhook
 
 **Base URL**: `http://localhost:${SHUFFLE_API_PORT:-5001}/api/v1/hooks/webhook_{trigger_id}` (URL devuelta por `init_shuffle_webhook.py`)
 **Autenticación**: Token de ruta (`trigger_id`); el `Authorization` Bearer no es requerido por el endpoint de hooks.
@@ -475,9 +390,9 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 | Parámetro | Valor | |----------------------------|-----------------------------------| | `WEBHOOK_RATE_LIMIT` | 60 req/min (`.env.full`) | | `WEBHOOK_PAYLOAD_MAX_SIZE` | 65536 bytes / 64 KB (`.env.full`) | | Timeout cliente | 3 s (tests E2E) |
 
-#### 3.2.4 Lab API — FastAPI
+###### 3.3.2.4 Lab API — FastAPI
 
-> **Fuente de verdad**: el contrato de la API del laboratorio se encuentra en `docs/03-api-and-integrations.md` y `docs/assets/references/openapi.json` (generado automáticamente por FastAPI). Los modelos de datos de entrada/salida se definen en `src/soar_lab/config/schemas/__init__.py` (validaciones Pydantic) y `src/soar_lab/interfaces/api/models.py` (modelos de dominio del API). Puede explorarse en vivo en `http://localhost:8000/docs` / `https://soar.local/api/docs`. En caso de discrepancia entre este documento, `openapi.json` y el código, prevalecen el esquema Pydantic y el `openapi.json` actual.
+> **Fuente de verdad**: el contrato de la API del laboratorio se encuentra en `docs/assets/references/openapi.json` (generado automáticamente por FastAPI). Los modelos de datos de entrada/salida se definen en `src/soar_lab/config/schemas/__init__.py` (validaciones Pydantic) y `src/soar_lab/interfaces/api/models.py` (modelos de dominio del API). Puede explorarse en vivo en `http://localhost:8000/docs` / `https://soar.local/api/docs`. En caso de discrepancia entre este documento, `openapi.json` y el código, prevalecen el esquema Pydantic y el `openapi.json` actual.
 
 **Base URL**: `http://localhost:${API_PORT:-8000}` (directo) / `https://soar.local/api` (vía Nginx)
 **Autenticación**: JWT Bearer token (obtenido vía `POST /auth/login`)
@@ -546,13 +461,13 @@ Valores válidos para `category`: `unit`, `integration`, `e2e`, `atomic`, `perfo
 }
 ```
 
-#### 3.2.5 Resumen de variables de entorno por API
+##### 3.3.3 Resumen de variables de entorno por API
 
 | Variable | API | Descripción | |----------------------------|-------------------|--------------------------------------------| | `THEHIVE_API_KEY` | TheHive | API key de autenticación | | `THEHIVE_HTTP_PORT` | TheHive | Puerto host (default 8100) | | `CORTEX_API_KEY` | Cortex | API key de autenticación | | `CORTEX_HTTP_PORT` | Cortex | Puerto host (default 8101) | | `SHUFFLE_API_PORT` | Shuffle | Puerto del backend (default 5001, expuesto 8081) | | `SHUFFLE_UI_PORT` | Shuffle UI | Puerto host (default 8081) | | `SIEM_WEBHOOK_TOKEN` | Shuffle webhook | Token Bearer del webhook | | `API_PORT` | Lab API | Puerto del servidor FastAPI (default 8000) | | `JWT_SECRET_KEY` | Lab API | Secreto preferente de firma JWT (>=32 chars) | | `JWT_ALGORITHM` | Lab API | Algoritmo de firma JWT (default `HS256`) | | `JWT_EXPIRATION_MINUTES` | Lab API | Tiempo de expiración del token (default 60) | | `API_AUTH_SECRET` | Lab API | Secreto legacy de firma JWT (fallback) | | `WEB_UI_USER` | Lab API | Usuario para `/auth/login` | | `WEB_UI_PASSWORD` | Lab API | Contraseña para `/auth/login` | | `CORS_ORIGINS` | Lab API | Orígenes permitidos para CORS | | `EDR_SIM_TOKEN` | EDR simulado | Token reservado (simulado) | | `FIREWALL_SIM_TOKEN` | Firewall simulado | Token reservado (simulado) | | `MAX_CONCURRENT_ANALYZERS` | Cortex | Máx. analyzers en paralelo | | `ANALYZER_TIMEOUT` | Cortex | Timeout por job (segundos) | | `WEBHOOK_RATE_LIMIT` | Shuffle | Máx. peticiones/min al webhook | | `WEBHOOK_PAYLOAD_MAX_SIZE` | Shuffle | Tamaño máximo del payload (bytes) | | `DECISION_SCORE_THRESHOLD` | Playbook | Umbral de contención (default 80) |
 
-#### 3.3 Modelos de datos
+##### 3.3.4 Modelos de datos
 
-#### 3.3.1 Payload de alerta
+###### 3.3.4.1 Payload de alerta
 
 Modelo canónico: `RansomwareAlert` en `src/soar_lab/config/schemas/__init__.py`. Todos los campos deben cumplir las validaciones Pydantic del esquema.
 
@@ -598,7 +513,7 @@ Modelo canónico: `RansomwareAlert` en `src/soar_lab/config/schemas/__init__.py`
 
 > **Nota:** `severity` es un string del enum `"0"` (Low), `"1"` (Medium), `"2"` (High), `"3"` (Critical). `alert_id` debe cumplir `^ALERT-\d{10}-\d{4}$`. `hash.sha256` es obligatorio y debe ser 64 caracteres hexadecimales. Valores extra como `confidence` o `process_name` no están en `RansomwareAlert`; si se envían al webhook de Shuffle, deben colocarse en `metadata` del `WebhookPayload` para no violar el esquema.
 
-#### 3.3.2 Payload de caso
+###### 3.3.4.2 Payload de caso
 
 ```json
 {
@@ -611,17 +526,17 @@ Modelo canónico: `RansomwareAlert` en `src/soar_lab/config/schemas/__init__.py`
 }
 ```
 
-#### 3.3.3 Payload de analyzer
+###### 3.3.4.3 Payload de analyzer
 
 ```json
 {
- "analyzerId": "FileInfo_8_0",
+ "analyzerId": "Hashdd_Status_2_0",
  "dataType": "hash",
  "data": "44d88612fea8a8f36de82e1278abb02f"
 }
 ```
 
-#### 3.3.4 Modelos Pydantic de Lab API
+###### 3.3.4.4 Modelos Pydantic de Lab API
 
 **`LoginRequest`**
 
@@ -687,7 +602,7 @@ Validación: no permite `..`, `/`, `\` y requiere extensión `.tar.gz`.
 }
 ```
 
-#### 3.3.5 Modelos avanzados: contención, KPIs y seguridad
+###### 3.3.4.5 Modelos avanzados: contención, KPIs y seguridad
 
 Los modelos definidos en `src/soar_lab/config/schemas/__init__.py` extienden las validaciones de payloads y son la fuente de verdad
 para los campos que llegan a `init_shuffle_webhook.py` y a la API.
@@ -741,7 +656,7 @@ Todas las APIs requieren configuración de autenticación vía variables de ento
 
 #### 3.4.2 Resumen de variables de entorno por API
 
-| Variable | API | Descripción | |----------------------------|-------------------|--------------------------------------------| | `THEHIVE_API_KEY` | TheHive | API key de autenticación | | `THEHIVE_HTTP_PORT` | TheHive | Puerto host (default 8100) | | `CORTEX_API_KEY` | Cortex | API key de autenticación | | `CORTEX_HTTP_PORT` | Cortex | Puerto host (default 8101) | | `SHUFFLE_API_PORT` | Shuffle | Puerto del backend (default 5001, expuesto 8081) | | `SHUFFLE_UI_PORT` | Shuffle UI | Puerto host (default 8081) | | `SIEM_WEBHOOK_TOKEN` | Shuffle webhook | Token Bearer del webhook | | `API_PORT` | Lab API | Puerto del servidor FastAPI (default 8000) | | `JWT_SECRET_KEY` | Lab API | Secreto preferente de firma JWT (>=32 chars) | | `JWT_ALGORITHM` | Lab API | Algoritmo de firma JWT (default `HS256`) | | `JWT_EXPIRATION_MINUTES` | Lab API | Tiempo de expiración del token (default 60) | | `API_AUTH_SECRET` | Lab API | Secreto legacy de firma JWT (fallback) | | `WEB_UI_USER` | Lab API | Usuario para `/auth/login` | | `WEB_UI_PASSWORD` | Lab API | Contraseña para `/auth/login` | | `CORS_ORIGINS` | Lab API | Orígenes permitidos para CORS | | `EDR_SIM_TOKEN` | EDR simulado | Token reservado (simulado) | | `FIREWALL_SIM_TOKEN` | Firewall simulado | Token reservado (simulado) |
+Ver tabla completa en [3.3.3 Resumen de variables de entorno por API](#333-resumen-de-variables-de-entorno-por-api).
 
 #### 3.4.3 Detalle de autenticación JWT de Lab API
 
@@ -771,15 +686,15 @@ Todas las APIs requieren configuración de autenticación vía variables de ento
 
 > **Nota**: El token JWT contiene claims `sub` (usuario), `iat`, `exp` y `scope: access`. Tras rotar `JWT_SECRET_KEY` o `API_AUTH_SECRET`, los tokens emitidos previamente quedan inválidos; los clientes deben renovarlos llamando de nuevo a `/auth/login`.
 
-#### 3.5 Ejemplos de uso
+#### 3.4.4 Ejemplos de uso
 
-#### 3.5.1 Flujo de integración de APIs
+##### 3.4.4.1 Flujo de integración de APIs
 
 **Diagrama de Flujo de Integración de APIs:**
 
 ```mermaid
 sequenceDiagram
- participant Sim as Simulador /
+ participant Sim as Simulador
  participant Shuffle as Shuffle Webhook
  participant Backend as Shuffle Backend
  participant TheHive as TheHive API
@@ -815,7 +730,7 @@ sequenceDiagram
 6. **Contención**: El playbook registra acciones de contención simuladas con estados `pending`, `executed` o `failed`.
 7. **Observabilidad**: Lab API expone métricas, KPIs y estado de integraciones vía REST y WebSocket `/ws/logs`.
 
-#### 3.5.2 Procedimientos Específicos de Rotación de API Keys
+##### 3.4.4.2 Procedimientos Específicos de Rotación de API Keys
 
 **Rotación de API Keys para TheHive:**
 
@@ -897,7 +812,7 @@ docker compose restart api
 curl -X POST http://localhost:8000/auth/login -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}'
 ```
 
-#### 3.5.3 Ejemplo completo de autenticación JWT
+##### 3.4.4.3 Ejemplo completo de autenticación JWT
 
 **Swagger / OpenAPI:** La interfaz interactiva de documentación se encuentra en:
 
@@ -929,7 +844,7 @@ curl -X GET http://localhost:8000/<endpoint-protegido> \
 - El algoritmo por defecto es `HS256` y el secreto se lee de `JWT_SECRET_KEY` (preferente) o `API_AUTH_SECRET` (fallback).
 - Tras rotar el secreto, los tokens emitidos previamente quedan inválidos.
 
-#### 3.5.4 Ejemplos de Error Handling para Cada API
+##### 3.4.4.4 Ejemplos de Error Handling para Cada API
 
 **Error Handling para TheHive API:**
 
@@ -1062,30 +977,30 @@ Este documento ofrece una visión general de las integraciones entre los compone
 
 #### Índice
 
-- [1. Resumen](#1-resumen)
-- [2. Servicios Integrados](#2-servicios-integrados)
-- [3. Flujo de Datos](#3-flujo-de-datos)
-- [4. Contratos de API](#4-contratos-de-api)
-- [5. Credenciales y Autenticación](#5-credenciales-y-autenticación)
-- [6. Referencias](#6-referencias)
-- [7. Versiones verificadas](#7-versiones-verificadas)
+- [3.5.1 Resumen](#351-resumen)
+- [3.5.2 Servicios Integrados](#352-servicios-integrados)
+- [3.5.3 Flujo de Datos](#353-flujo-de-datos)
+- [3.5.4 Contratos de API](#354-contratos-de-api)
+- [3.5.5 Credenciales y Autenticación](#355-credenciales-y-autenticación)
+- [3.5.6 Referencias](#356-referencias)
+- [3.5.7 Versiones verificadas](#357-versiones-verificadas)
 
 ---
 
-#### 1. Resumen
+#### 3.5.1 Resumen
 
 El laboratorio integra herramientas de orquestación (Shuffle), gestión de casos (TheHive), análisis de IoCs (Cortex),
 inteligencia de amenazas (MISP), detección y observabilidad (Grafana, Loki, Promtail) para automatizar la
 respuesta ante incidentes de ransomware.
 
-#### 2. Servicios Integrados
+#### 3.5.2 Servicios Integrados
 
 
 > **Nota:** Los valores por defecto se toman de `.env.example`. En un despliegue real se generan con
 > `soar-lab generate-secrets --env`. La interfaz de Shuffle no se sirve por Nginx porque usa rutas absolutas; el
 > acceso directo por `http://localhost:8081` es obligatorio.
 
-#### 3. Flujo de Datos
+#### 3.5.3 Flujo de Datos
 
 1. **Detección**: genera alertas y las envía a un webhook de Shuffle (configurado en
  `scripts/setup/init_shuffle_webhook.py`).
@@ -1103,7 +1018,7 @@ respuesta ante incidentes de ransomware.
 > Docker. Las acciones de contención sobre endpoints son simuladas salvo que se configuren agentes reales en la red de
 > pruebas.
 
-#### 3.x Workarounds y limitaciones conocidas
+#### 3.5.3.x Workarounds y limitaciones conocidas
 
 #### Cortex y MISP
 
@@ -1113,23 +1028,18 @@ respuesta ante incidentes de ransomware.
 #### Shuffle
 
 - El webhook de Shuffle se crea con `init_shuffle_webhook.py`, que ajusta el workflow y genera `webhook_info.json`.
-- Tras `make reset`, el `SHUFFLE_DEFAULT_APIKEY` cambia. `ShuffleClient` se auto-sana (`_fetch_real_apikey`) leyendo la clave de Elasticsearch.
+- Tras `make reset`, el `SHUFFLE_DEFAULT_APIKEY` cambia. `ShuffleClient` se auto-sana (`_fetch_real_apikey`) leyendo la clave de OpenSearch.
 
 #### Elasticsearch / Grafana
 
 - El índice de métricas es `soar-metrics` con mapping `mttr_seconds` como `float`.
 - Grafana 10.3.4 incluye el plugin `elasticsearch` nativamente y debe estar en `soar_net` para resolver `elasticsearch:9200`.
 
-###
+#### 3.5.4 Contratos de API
 
+Los contratos detallados, endpoints, ejemplos de payloads y procedimientos de rotación de API keys se encuentran en la [sección 3.3 Contratos de integración](#33-contratos-de-integración) de este documento.
 
-#### 4. Contratos de API
-
-Los contratos detallados, endpoints, ejemplos de payloads y procedimientos de rotación de API keys se encuentran en:
-
-- **[api_contracts.md](03-api-and-integrations.md)**
-
-#### 5. Credenciales y Autenticación
+#### 3.5.5 Credenciales y Autenticación
 
 Todas las contraseñas por defecto se definen en `.env.full` y se mantienen sincronizadas con los scripts de
 inicialización:
@@ -1149,14 +1059,12 @@ Las claves más relevantes de `.env.full` son:
 - `GRAFANA_ADMIN_PASSWORD`
 - `WEB_UI_PASSWORD`
 
-#### 6. Referencias
+#### 3.5.6 Referencias
 
-- [api_contracts.md](03-api-and-integrations.md)
 - [docs/02-architecture.md](02-architecture.md)
 - [docs/04-operations.md](04-operations.md)
-- [docs/02-architecture.md](02-architecture.md)
 
-#### 7. Versiones verificadas
+#### 3.5.7 Versiones verificadas
 
 Las versiones canónicas de los componentes principales se consultan directamente en `infra/docker/compose/docker-compose.core.yml` y en [docs/02-architecture.md](02-architecture.md).
 
@@ -1189,56 +1097,9 @@ Las versiones canónicas de los componentes principales se consultan directament
 > Credenciales, versiones verificadas y workarounds comunes están en
 > [3.5 Integración con TheHive](#35-integración-con-thehive).
 >
-> Detalle de endpoints, modelos de datos y contratos: en [Autenticación y autorización (detalle)](#autenticación-y-autorización-detalle).
+> Detalle de endpoints, modelos de datos y contratos: en [3.3 Contratos de integración](#33-contratos-de-integración) y [3.4 Autenticación y autorización](#34-autenticación-y-autorización).
 
 ---
-
-#### 4. Validación
-
-##### 4.1 Verificación
-
-La validación se realiza mediante tests automatizados, health checks y verificación manual del stack.
-
-#### 4.2 Criterios de aceptación
-
-- Todos los servicios críticos responden a health checks
-- Los tests unitarios y de integración pasan sin errores
-- El composition root cablea correctamente las dependencias
-
-#### 4.3 Evidencias
-
-- Resultados de `pytest` en CI
-- `docker ps` mostrando servicios healthy
-- Reportes de cobertura en `runtime/coverage/`
-
----
-
-#### 5. Problemas
-
-##### 5.1 Limitaciones
-
-- Algunos componentes requieren Docker-in-Docker para funcionar completamente
-- Elasticsearch single-node: estado `yellow` es normal
-
-#### 5.2 Riesgos o incidencias
-
-- Dependencia de imágenes Docker externas para servicios core
-- Fragmentación de configuración entre múltiples archivos Compose
-
-#### 5.3 Recomendaciones / troubleshooting
-
-- Usar `make health` tras `make up` para verificar el stack
-- Revisar `make logs` si un servicio no responde
-- Consultar [04-operations.md](04-operations.md) para troubleshooting detallado
-
----
-
-#### 6. Referencias
-
-- [02-architecture.md](02-architecture.md)
-- [04-operations.md](04-operations.md)
-- [glossary.md](glossary.md)
-- `docs/assets/references/openapi.json`
 
 ## 4. Validación
 
@@ -1372,172 +1233,3 @@ cat runtime/logs/soar_lab.log
 - **Arquitectura y seguridad**: [docs/02-architecture.md](02-architecture.md)
 
 > ⚠️ **Nunca commitear valores reales** de API keys al repositorio. Usar `.env.full` (incluido en `.gitignore`).
-
----
-
-
-### Autenticación y autorización (detalle)
-
-> El flujo de datos general y la visión de integraciones están en [3.5 Integración con TheHive](#35-integración-con-thehive).
-> Esta sección detalla credenciales, endpoints, modelos de datos y workarounds específicos.
-
-> **Fuente canónica:** Los puertos, mapeos de contenedor, URLs y variables de entorno se mantienen únicamente en
-> `docs/04-operations.md`.
-
----
-
-#### 2. Servicios integrados
-
-| Servicio | Rol | Estado | Credenciales / Auth | |----------|-----|--------|---------------------| | **Web Management** | Panel de control centralizado | Implementado | `WEB_UI_USER` / `WEB_UI_PASSWORD` | | **SOAR API** | Gestión y métricas del lab | Implementado | JWT Bearer (`admin` / `WEB_UI_PASSWORD`) | | **Shuffle UI** | Orquestación de workflows | Implementado | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` | | **Shuffle API** | API del motor de Shuffle | Implementado | `SHUFFLE_DEFAULT_APIKEY` (incluye Orborus) | | **TheHive** | Gestión de casos | Implementado | admin / `THEHIVE_ADMIN_PASSWORD` | | **Cortex** | Análisis de observables | Implementado | `CORTEX_ADMIN_USER` / `CORTEX_ADMIN_PASSWORD` | | **MISP** | Inteligencia de amenazas | Implementado | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD` | | **Elasticsearch** | Búsqueda y almacenamiento | Implementado | Auth deshabilitada por defecto (`ELASTIC_SECURITY_ENABLED=false`) | | **OpenSearch Dashboards** | Visualización de OpenSearch | Implementado | `admin` / `OPENSEARCH_PASSWORD` | | **Redis** | Caché y colas | Implementado | `REDIS_PASSWORD` | | **Grafana** | Observabilidad y KPIs | Implementado | admin / `GRAFANA_ADMIN_PASSWORD` | | **docs-site** | Documentación web | Implementado | - |
-
----
-
-#### 4. APIs y contratos
-
-> **Fuente de verdad técnica:** Los contratos completos se encuentran en este documento (resumen humano) y
-> en `/openapi.json` expuesto por la propia API (especificación OpenAPI generada automáticamente).
-
-#### 4.1 Clasificación de APIs
-
-| API | Tipo | Servicio | |-----|------|----------| | **TheHive** | Real | Gestión de casos | | **Cortex** | Real | Análisis de IoCs (analyzers) | | **Shuffle UI / API** | Real | Orquestador SOAR | | **Lab API** | Real | FastAPI de gestión del laboratorio | | **MISP** | Real | Inteligencia de amenazas | | **Elasticsearch** | Real | Búsqueda / métricas | | **EDR / Contención** | Simulado | Contención de endpoints vía scripts | | **Firewall** | Simulado | Bloqueo de IPs vía scripts |
-
-#### 4.2 Endpoints principales
-
-**TheHive API:**
-
-- Base URL: `http://localhost:${THEHIVE_HTTP_PORT:-8100}`
-- Auth: `Authorization: Bearer ${THEHIVE_API_KEY}`
-- Endpoints: `GET /api/status`, `POST /api/case`, `GET /api/case/{id}`, `POST /api/case/{id}/artifact`
-
-**Cortex API:**
-
-- Base URL: `http://localhost:${CORTEX_HTTP_PORT:-8101}`
-- Auth: `Authorization: Bearer ${CORTEX_API_KEY}`
-- Endpoints: `GET /api/analyzer`, `POST /api/analyzer/run`, `GET /api/job/{id}`
-
-**Shuffle Webhook:**
-
-- Base URL: `http://localhost:${SHUFFLE_API_PORT:-5001}/api/v1/hooks/webhook_{trigger_id}`
-- Auth: `Authorization: Bearer ${SIEM_WEBHOOK_TOKEN}`
-- Endpoints: `GET /health`, `POST /api/v1/hooks/webhook_{trigger_id}`
-
-**Lab API (FastAPI):**
-
-- Base URL: `http://localhost:${API_PORT:-8000}`
-- Auth: JWT Bearer (obtenido vía `POST /auth/login`)
-- Swagger UI: `http://localhost:8000/docs`
-- Endpoints principales: `/health`, `/tests/run`, `/backup/*`, `/analytics/*`, `/soar/*/health`
-
----
-
-#### 5. Autenticación y variables de entorno
-
-Las claves más relevantes de `.env.full` son:
-
-| Variable | API / Uso | |----------|-----------| | `THEHIVE_API_KEY` | TheHive | | `CORTEX_API_KEY` | Cortex | | `SHUFFLE_DEFAULT_APIKEY` | Shuffle API / Orborus | | `SIEM_WEBHOOK_TOKEN` | Shuffle webhook | | `MISP_API_KEY` | MISP | | `ELASTIC_PASSWORD` | Elasticsearch | | `REDIS_PASSWORD` | Redis | | `JWT_SECRET_KEY` | Lab API (firma JWT, >=32 chars) | | `JWT_ALGORITHM` | Lab API (default `HS256`) | | `JWT_EXPIRATION_MINUTES` | Lab API (default 60) | | `WEB_UI_USER` / `WEB_UI_PASSWORD` | Lab API login |
-
----
-
-#### 6. Modelos de datos
-
-#### 6.1 Payload de alerta
-
-Modelo canónico: `RansomwareAlert` en `src/soar_lab/config/schemas/__init__.py`.
-
-```json
-{
- "alert_id": "ALERT-2025050318-0001",
- "hostname": "WIN-001",
- "src_ip": "185.220.101.182",
- "hash": {
- "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
- "md5": "d41d8cd98f00b204e9800998ecf8427e",
- "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
- },
- "severity": "3",
- "source": "siem-ransomware-detection",
- "detection_time": "2025-05-03T18:42:15Z",
- "event_type": "ransomware_detection",
- "description": "Ransomware activity detected on WIN-001",
- "mitre_tactics": ["TA0010"],
- "mitre_techniques": ["T1486"]
-}
-```
-
-> `severity` es un string del enum `"0"`, `"1"`, `"2"`, `"3"`. `alert_id` debe cumplir
-> `^ALERT-\d{10}-\d{4}$`.
-
-#### 6.2 Payload de caso (TheHive)
-
-```json
-{
- "title": "Ransomware detectado en WIN-001 [ALERT-2025-001234]",
- "description": "Ransomware activity detected on WIN-001",
- "severity": 3,
- "tlp": 2,
- "tags": ["ransomware", "soar-lab"],
- "status": "Open"
-}
-```
-
-#### 6.3 Payload de analyzer (Cortex)
-
-```json
-{
- "analyzerId": "Hashdd_Status",
- "dataType": "hash",
- "data": "44d88612fea8a8f36de82e1278abb02f"
-}
-```
-
-**Analyzers activos:**
-
-| Analyzer | Tipo | Modo | Requiere API key externa | |----------|------|------|--------------------------| | `Hashdd_Status` | hash | offline | No | | `IP-API` | ip | offline | No | | `Virusshare` | hash | online | No | | `Urlscan.io_Search` | hash/ip | online | No | | `DShield_lookup_1_0` | ip | online | No | | `Mnemonic_pDNS_Public_3_0` | ip | online | No | | `GoogleDNS_resolve` | ip | offline | No |
-
----
-
-#### 7. Workarounds y limitaciones
-
-#### Cortex
-
-- Puede devolver `400` en workflows que requieren autenticación adicional o analyzers no inicializados.
-- Limitar a 3-5 analyzers activos; configurar `timeout` y reintentos.
-
-#### MISP
-
-- Puede devolver respuesta vacía por `403` o falta de eventos.
-- En tests E2E se omite temporalmente (`TODO`) mientras se ajusta la autenticación.
-
-#### Shuffle
-
-- Tras `make reset`, el `SHUFFLE_DEFAULT_APIKEY` cambia. `ShuffleClient._fetch_real_apikey` lo lee de
- OpenSearch.
-- El webhook se crea con `scripts/setup/init_shuffle_webhook.py`, que genera `webhook_info.json`.
-
-#### Elasticsearch / Grafana
-
-- El índice de métricas es `soar-metrics`.
-- Grafana 10.3.4 incluye el plugin `elasticsearch` nativamente y debe estar en `soar_net` para resolver
- `elasticsearch:9200`.
-
----
-
-#### 8. Versiones verificadas
-
-Las versiones canónicas se consultan en `infra/docker/compose/docker-compose.core.yml` y
-`docs/02-architecture.md`.
-
-> Ver tabla de versiones verificadas en [3.5 Integración con TheHive](#35-integración-con-thehive).
-
----
-
-#### 9. Referencias
-
-- **OpenAPI / Lab API**: `/openapi.json` expuesto por la API en runtime
-- **Arquitectura**: [`docs/02-architecture.md`](02-architecture.md)
-- **Operaciones**: [`docs/04-operations.md`](04-operations.md)
-- **Testing**: [`docs/05-testing.md`](05-testing.md)
-- **Documentación oficial de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación oficial de Cortex**: https://docs.strangebee.com/cortex/
-- **Documentación oficial de Shuffle**: https://shuffler.io/docs
-- **Documentación oficial de MISP**: https://www.misp-project.org/documentation/
