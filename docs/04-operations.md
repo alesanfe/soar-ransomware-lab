@@ -1076,7 +1076,7 @@ make test-coverage
 
 - En Windows ejecutar E2E e integración con Docker Desktop activo y el repo disponible (sin WSL bind mounts problemáticos).
 - Algunos tests de Docker se saltan si no se detecta `/var/run/docker.sock` o si se ejecutan dentro del contenedor `soar_api` sin acceso al repo.
-- Los conteos exactos dependen del entorno y del estado de `baseline/tests_inventory.json`.
+- Los conteos exactos dependen del entorno y del estado de `tests/baseline/tests_inventory.json`.
 
 #### 3.3.6 Checklist de verificación post-`make up`
 
