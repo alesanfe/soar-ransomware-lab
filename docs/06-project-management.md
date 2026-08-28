@@ -1288,8 +1288,7 @@ git rev-parse HEAD
 
 | Campo | Valor |
 |-------|-------|
-| Fecha/hora |
-|  |
+| Fecha/hora | |
 | Comando | |
 | Entorno | |
 | Salida relevante | |

@@ -105,8 +105,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/health
 
 | Método | Ruta | Resumen | Tags |
 |--------|-------------------------------------------------------------------|-------------------------|------|
-| `GET` | `/` | Root |
-|  |
+| `GET` | `/` | Root | |
 | `GET` | `/health` | Health | |
 | `POST` | `/auth/login` | Login | |
 | `POST` | `/auth/verify` | Verify Auth | |
