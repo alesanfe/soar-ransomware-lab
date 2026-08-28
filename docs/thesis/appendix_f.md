@@ -472,13 +472,64 @@ Fuente: `docs/thesis/objectives_and_methodology.md` líneas 90-116 (Gantt 18 sem
 Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e impacto.
 
 ```mermaid
-graph TD
- A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V Sí) & R2(Recursos RAM Parcial) & R11(LaLiga/Cloudflare Parcial) & R18(Docs-site desactualizado Parcial) & R21(Credenciales estáticas Sí)
- B[Alta Prob / Bajo Impacto] --> R6(MISP arranque lento Sí)
- C[Media Prob / Alto Impacto] --> R3(Analyzers timeout Parcial) & R4(Integración tokens Parcial) & R7(Umbrales MTTR Parcial) & R12(API no disponible Parcial) & R13(Certificados SSL Parcial) & R16(CI/CD failures Parcial) & R22(Seguridad ES/OS Parcial) & R24(Network Watcher Parcial)
- D[Media Prob / Medio Impacto] --> R5(ES compat Sí) & R8(APIs externas Parcial) & R14(Validación esquemas Parcial) & R15(Cobertura pruebas Parcial) & R19(Web-management UX Parcial) & R23(Mappings métricas Sí)
- E[Baja Prob / Alto Impacto] --> R9(Pérdida config Parcial)
- F[Baja Prob / Medio Impacto] --> R10(Deriva alcance Sí) & R17(CLI inusable Parcial) & R20(Analytics fallan Parcial)
+flowchart TD
+    classDef mitigado fill:#d4edda,stroke:#28a745,color:#155724,stroke-width:2px
+    classDef activo fill:#fff3cd,stroke:#ffc107,color:#856404,stroke-width:2px
+    classDef critico fill:#f8d7da,stroke:#dc3545,color:#721c24,stroke-width:2px
+
+    subgraph Row1["Alta Probabilidad"]
+        direction LR
+        subgraph AA["Alto Impacto — CRITICOS (5)"]
+            direction TB
+            R1["R1: Puertos Hyper-V — Mitigado"]:::mitigado
+            R2["R2: Recursos RAM — Activo"]:::critico
+            R11["R11: LaLiga/Cloudflare — Activo"]:::critico
+            R18["R18: Docs desactualizado — Activo"]:::critico
+            R21["R21: Credenciales estaticas — Mitigado"]:::mitigado
+        end
+        subgraph AB["Bajo Impacto (1)"]
+            R6["R6: MISP arranque lento — Conocido"]:::mitigado
+        end
+    end
+
+    subgraph Row2["Media Probabilidad"]
+        direction LR
+        subgraph MA["Alto Impacto (8)"]
+            direction TB
+            R3["R3: Analyzers timeout — Activo"]:::activo
+            R4["R4: Integracion tokens — Activo"]:::activo
+            R7["R7: Umbrales MTTR — Activo"]:::activo
+            R12["R12: API no disponible — Activo"]:::activo
+            R13["R13: Certificados SSL — Activo"]:::activo
+            R16["R16: CI/CD failures — Activo"]:::activo
+            R22["R22: Seguridad ES/OS — Activo"]:::activo
+            R24["R24: Network Watcher — Activo"]:::activo
+        end
+        subgraph MM["Medio Impacto (6)"]
+            direction TB
+            R5["R5: ES compat — Mitigado"]:::mitigado
+            R8["R8: APIs externas — Activo"]:::activo
+            R14["R14: Validacion esquemas — Activo"]:::activo
+            R15["R15: Cobertura pruebas — Activo"]:::activo
+            R19["R19: Web-management UX — Activo"]:::activo
+            R23["R23: Mappings metricas — Mitigado"]:::mitigado
+        end
+    end
+
+    subgraph Row3["Baja Probabilidad"]
+        direction LR
+        subgraph BA["Alto Impacto (1)"]
+            R9["R9: Perdida config — Activo"]:::activo
+        end
+        subgraph BM["Medio Impacto (3)"]
+            direction TB
+            R10["R10: Deriva alcance — Mitigado"]:::mitigado
+            R17["R17: CLI inusable — Activo"]:::activo
+            R20["R20: Analytics fallan — Activo"]:::activo
+        end
+    end
+
+    Row1 --> Row2 --> Row3
 ```
 
 Leyenda: Sí Mitigado o Conocido · Parcial En seguimiento / Activo
