@@ -1,4 +1,4 @@
-# Testing — SOAR Ransomware Lab
+﻿# Testing — SOAR Ransomware Lab
 
 ## Índice
 
@@ -2686,7 +2686,7 @@ Datos extraídos de `docs/05-testing.md`, `reports/test-review/`, `reports/quali
 
 ---
 
-## E.1. Visión General
+### E.1. Visión General
 
 El laboratorio SOAR implementa una estrategia de testing exhaustiva basada en la pirámide
 de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistemas independientes:
@@ -2699,7 +2699,7 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 
 ---
 
-## E.2. Inventario de Tests
+### E.2. Inventario de Tests
 
 ### Estadísticas Generales
 
@@ -2744,7 +2744,7 @@ La diferencia (192 tests) corresponde a tests añadidos tras la generación del 
 
 ---
 
-## E.3. Cobertura de Código
+### E.3. Cobertura de Código
 
 | Métrica | Valor |
 |---------|-------|
@@ -2760,7 +2760,7 @@ Archivos con 100% cobertura: `sqlite_alert_repository.py` (143 líneas), `routes
 
 ---
 
-## E.4. Marcadores de pytest
+### E.4. Marcadores de pytest
 
 El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests/conftest.py`):
 
@@ -2785,7 +2785,7 @@ anotar cada archivo. Adicionalmente, `test_smoke.py` usa sub-marcadores
 
 ---
 
-## E.5. Tests E2E (48 archivos, 281 tests)
+### E.5. Tests E2E (48 archivos, 281 tests)
 
 Catálogo completo de Test Cases E2E (39 TCs en `tests/e2e/TC-*/`):
 
@@ -2840,7 +2840,7 @@ Total de tests largos (>50 líneas): **169** (8.3% del total).
 
 ---
 
-## E.6. Salud y Aislamiento
+### E.6. Salud y Aislamiento
 
 | Métrica | Valor |
 |---------|-------|
@@ -2854,7 +2854,7 @@ Total de tests largos (>50 líneas): **169** (8.3% del total).
 
 ---
 
-## E.7. Complejidad y Duplicación
+### E.7. Complejidad y Duplicación
 
 | Métrica | Valor | Score |
 |---------|-------|-------|
@@ -2870,7 +2870,7 @@ desde diferentes niveles (unit + integration), lo cual es esperado en una pirám
 
 ---
 
-## E.8. Mutation Testing
+### E.8. Mutation Testing
 
 | Métrica | Valor |
 |---------|-------|
@@ -2899,7 +2899,7 @@ Reproducción: `make mutation` (60-180 min, reporte en `reports/mutmut/mutation_
 
 ---
 
-## E.9. Requisitos de Cobertura
+### E.9. Requisitos de Cobertura
 
 | Tipo | Umbral | Actual |
 |------|--------|--------|
@@ -2911,7 +2911,7 @@ Reproducción: `make mutation` (60-180 min, reporte en `reports/mutmut/mutation_
 
 ---
 
-## E.10. Flujo de Ejecución Canónico
+### E.10. Flujo de Ejecución Canónico
 
 ```bash
 # 1. Generar secretos y configuración
@@ -2930,7 +2930,7 @@ make reset && make health
 
 ---
 
-## E.11. Prerrequisitos por Categoría
+### E.11. Prerrequisitos por Categoría
 
 | Categoría | Python | Docker | .env.full | Stack Up | Shuffle Init |
 |-----------|--------|--------|-----------|----------|--------------|
@@ -2943,7 +2943,7 @@ make reset && make health
 
 ---
 
-## E.12. Quality Gates
+### E.12. Quality Gates
 
 | Tool | Issues | Score |
 |------|--------|-------|
@@ -2959,7 +2959,7 @@ Documentación: docstrings 94.6% (964/1019 funciones), dead code 18 items (todos
 
 ---
 
-## E.13. Resumen de Validación
+### E.13. Resumen de Validación
 
 | Aspecto | Score | Estado |
 |---------|-------|--------|

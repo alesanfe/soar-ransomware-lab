@@ -1,4 +1,4 @@
-# Gestión del Proyecto — SOAR Ransomware Lab
+﻿# Gestión del Proyecto — SOAR Ransomware Lab
 
 ## Índice
 
@@ -170,7 +170,7 @@ TFM académico riguroso.
 
 #### 3.3 Métricas de éxito
 
-#### Tabla de Objetivos SMART y Ubicación de Evidencias
+##### Tabla de Objetivos SMART y Ubicación de Evidencias
 
 | Nº | Objetivo | Descripción | Métrica | Umbral | Método de Medida | Evidencia | |----|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|------------------------------------|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------| | 1 | Implementación del Laboratorio | Desplegar entorno reproducible con TheHive, Cortex y Shuffle mediante Docker Compose (`infra/docker/compose/docker-compose.yml`, `infra/docker/compose/docker-compose.core.yml`). | Servicios activos | 100% contenedores funcionando | Verificación con `docker ps` y `make up` | Implementado | | 2 | Desarrollo del Playbook E2E | Crear flujo automatizado desde alerta hasta contención simulada en Shuffle (`docs/04-operations.md`). | Ejecución completa | 2 escenarios (malicioso y benigno) | Logs del SOAR y casos en TheHive | Implementado | | 3 | Validación de Métricas MTTR | Medir tiempo de respuesta desde alerta hasta contención mediante timestamps en logs. | Percentiles p50 y p90 | p50 ≤ 120 s; p90 ≤ 180 s | Timestamps y cálculo estadístico con `src/soar_lab/domain/services/kpi_analyzer.py` | Implementado | | 4 | Documentación Técnica | Generar documentación completa (arquitectura, configuración, resultados, API, docs-site, CLI, analytics). | Documento final | 100% apartados completados | Checklist y revisión | En progreso | | 5 | Integración SIEM Simulada | Configurar SIEM simulado para generar alertas mediante `src/soar_lab/simulator/simulate_alerts.py`. | Alertas procesadas | 100% sin errores | Logs en Shuffle y casos en TheHive | Simulado | | 6 | Contención Simulada | Implementar contención simulada en el playbook E2E (`docs/04-operations.md`). | Acciones ejecutadas | 100% completadas | Logs del servicio y confirmación en flujo | Simulado | | 7 | Seguridad del Entorno | Garantizar uso exclusivo de muestras inertes, gestión de certificados SSL (`scripts/setup/gen_certs.sh`) y validación de esquemas (`src/soar_lab/config/schemas/__init__.py`). | Incidentes | 0 incidentes | Revisión del contenido y validación | Parcial | | 8 | Automatización Integral | Implementar despliegue con Makefiles, Docker Compose, CI/CD (`.github/workflows/`), testing automatizado (`tests/`, `scripts/maintenance/`), backup/restore (`src/soar_lab/application/use_cases/backup_service.py`) . | Despliegue automático | 100% servicios levantados | Ejecución de scripts y verificación | Parcial | | 9 | Pruebas Atómicas | Ejecutar pruebas atómicas de componentes individuales (`tests/atomic/`: alertas, IoCs, KPIs, esquemas, secrets). | Casos probados | 90% pruebas pasan | `pytest tests/atomic/ -v` | Parcial | | 10 | Pruebas de Integración | Ejecutar pruebas de integración entre TheHive, Cortex, Shuffle, API y otros componentes (`tests/integration/`). | Casos probados | 85% pruebas pasan | `pytest tests/integration/ -v` | Parcial | | 11 | Pruebas de Seguridad | Ejecutar pruebas de seguridad para validar autenticación, autorización, validación de entrada y controles de acceso (`tests/security/`). | Casos probados | 100% pruebas pasan | `pytest tests/security/ -v` | Parcial | | 12 | Pruebas de Rendimiento | Ejecutar pruebas de rendimiento para validar tiempos de respuesta de API, analyzers y componentes críticos (`tests/performance/`). | Tiempos de respuesta | ≤ umbrales definidos | `pytest tests/performance/ -v` | Parcial | | 13 | Pruebas de Producción | Ejecutar smoke tests para validación rápida de despliegues en producción (`tests/e2e/`). | Casos probados | 100% pruebas pasan | `pytest tests/e2e/ -v` | Parcial | | 14 | KPIs y Análisis | Calcular KPIs, analytics de TFM (`docs/thesis/data_visualizations.md`) y métricas de servicios (`src/soar_lab/application/use_cases/analytics_service.py`). | KPIs calculados | Informe con gráficos | Análisis estadístico y visualización | Implementado | | 15 | Preparación Defensa TFM | Crear presentación, resumen ejecutivo y analytics para evidencia académica (`docs/thesis/data_visualizations.md`). | Presentación lista | 100% diapositivas completadas | Validación y ensayo | Pendiente | | 16 | Evidencia de Aprobación | Obtener validación formal del alcance y objetivos. | Archivo firmado | Documento archivado | Confirmación por correo y almacenamiento | Pendiente | | 17 | API del Laboratorio | Implementar y desplegar la API REST del laboratorio con FastAPI para gestión de servicios, health checks, métricas, tests y backups (`src/soar_lab/interfaces/api/`). | Endpoints funcionales | Cobertura ≥ 80% | Tests de integración, `/docs` | Implementado | | 18 | CLI del Laboratorio | Implementar CLI para gestión del laboratorio con comandos para alertas, configuración, validación y operaciones comunes (`src/soar_lab/interfaces/api/cli.py`). | Comandos funcionales | 100% comandos ejecutan | Tests unitarios, `--help` | Implementado | | 19 | Sitio de Documentación | Desplegar sitio de documentación Docusaurus con documentación completa del laboratorio, getting started y guías de uso (`apps/docs-site/`). | Sitio funcional | 100% páginas renderizan | Tests de navegador, revisión enlaces | Implementado | | 20 | Interfaz Web de Gestión | Desplegar interfaz web de gestión para monitoreo del laboratorio, visualización de servicios y operaciones básicas (`apps/web-management/`). | UI funcional | Dashboard muestra estado real | Tests de navegador, pruebas manuales | Implementado |
 
@@ -2232,7 +2232,7 @@ Para modelar el comportamiento del adversario y conectar detecciones con accione
 
 La progresión del ransomware a través de generaciones muestra una tendencia clara hacia sofisticación creciente y demandas de rescate exponencialmente mayores (Razaulla et al., 2023). Como se observa en la **Tabla 1**, los rescates promedio han aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, representando un incremento de más de tres órdenes de magnitud que justifica la inversión en capacidades SOAR para mitigar el coste financiero de estos incidentes (CrowdStrike, 2024; Sophos, 2024).
 
-## Tabla 1: Progresión de Ransomware por Generación
+### Tabla 1: Progresión de Ransomware por Generación
 
 | Generación | Período       | Características Principales            | Técnicas de Distribución         | Rescate Promedio | Ejemplos Notables            |
 |------------|---------------|----------------------------------------|----------------------------------|------------------|------------------------------|
@@ -2253,7 +2253,7 @@ Islam et al. ofrecen la revisión sistemática más completa del área: su multi
 
 Para contextualizar esta elección, la **Tabla 2** compara las plataformas SOAR open source seleccionadas en este TFM con soluciones comerciales representativas según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad.
 
-## Tabla 2: Comparativa Detallada de Plataformas SOAR
+### Tabla 2: Comparativa Detallada de Plataformas SOAR
 
 Comparación de plataformas SOAR open source (TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024), Shuffle (Shuffle Tools, 2024)) versus comerciales (Palo Alto XSOAR, IBM
 Resilient) según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad. Las herramientas open source
@@ -2312,11 +2312,11 @@ El **Anexo F** (sección F.1) recopila 12 diagramas Mermaid canónicos que ilust
 
 ---
 
-## Índice de Figuras del Capítulo 2
+### Índice de Figuras del Capítulo 2
 
 Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados se encuentran en el Anexo F.
 
-## Índice de Tablas del Capítulo 2
+### Índice de Tablas del Capítulo 2
 
 | Tabla   | Título                                      |
 |---------|---------------------------------------------|
@@ -2361,7 +2361,7 @@ Documentar exhaustivamente el proceso para permitir la reproducción por tercero
 
 La **Tabla 3** resume los cuatro objetivos estratégicos con sus métricas de éxito, valor objetivo y evidencia requerida.
 
-## Tabla 3: Resumen de Objetivos Estratégicos y Métricas de Éxito
+### Tabla 3: Resumen de Objetivos Estratégicos y Métricas de Éxito
 
 | ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
 |----------|----------------------------|------------------------|----------------|-----------------------------|
@@ -2468,13 +2468,13 @@ La reproducción por terceros consiste en clonar el repositorio, levantar el ent
 
 ---
 
-## Índice de Figuras del Capítulo 3
+### Índice de Figuras del Capítulo 3
 
 | Figura    | Título                          | Archivo          |
 |-----------|---------------------------------|------------------|
 | Figura 2 | Cronograma Gantt del proyecto | Mermaid (inline) |
 
-## Índice de Tablas del Capítulo 3
+### Índice de Tablas del Capítulo 3
 
 | Tabla   | Título                                          |
 |---------|-------------------------------------------------|
@@ -2500,7 +2500,7 @@ Nota importante: la lógica de cálculo de KPIs existe en el código fuente en:
 
 Los valores mostrados en los gráficos se han calculado usando estos métodos programáticamente.
 
-## C.1. Valores Reales Calculados (n=50 ejecuciones)
+### C.1. Valores Reales Calculados (n=50 ejecuciones)
 
 - Total alerts: 50
 - MTTR mean: 277.15 seconds (4.62 minutes)
@@ -2516,9 +2516,9 @@ Los valores mostrados en los gráficos se han calculado usando estos métodos pr
 - Casos TheHive: 50 (46 Open, 4 Resolved)
 - Reducción MTTR vs baseline manual (3600s): 92.3% (277.15s vs 3600s)
 
-## C.2. Tablas de Métricas Avanzadas
+### C.2. Tablas de Métricas Avanzadas
 
-### Tabla 14: Métricas de Rendimiento por Componente
+#### Tabla 14: Métricas de Rendimiento por Componente
 
 | Componente        | Métrica               | Manual         | SOAR           | Mejora   | Unidad       |
 |-------------------|-----------------------|----------------|----------------|----------|--------------|
@@ -2541,7 +2541,7 @@ Los valores mostrados en los gráficos se han calculado usando estos métodos pr
 *\* Las fases de análisis y creación de caso se ejecutan en paralelo dentro del workflow.
 El MTTR medio total (277.15s) es menor que la suma de fases porque estas se solapan.*
 
-### Tabla 15: Análisis de Carga del Sistema
+#### Tabla 15: Análisis de Carga del Sistema
 
 | Métrica               | Condición Ligera | Condición Media | Condición Pesada | Límite Sistema |
 |-----------------------|------------------|-----------------|------------------|----------------|
@@ -2559,7 +2559,7 @@ durante la simulación de 50 alertas. Un test de carga formal con herramientas c
 o k6 proporcionaría mediciones precisas. El MTTR medido (P50=193s, P90=622s) no cumple
 los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
 
-### Tabla 16: Métricas de Calidad del Software
+#### Tabla 16: Métricas de Calidad del Software
 
 | Métrica                     | Valor Objetivo | Valor Logrado   | Estado   | Herramienta  |
 |-----------------------------|----------------|-----------------|----------|--------------|
@@ -2575,7 +2575,7 @@ los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
 Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
 Mutation testing (51.8%) por debajo del umbral ambicioso del 80% — ver §4.1.3.5.
 
-### Tabla 17: KPIs de Negocio por Organización
+#### Tabla 17: KPIs de Negocio por Organización
 
 | KPI                       | PYME   | Mediana | Grande  | Enterprise |
 |---------------------------|--------|---------|---------|------------|
@@ -2590,7 +2590,7 @@ Mutation testing (51.8%) por debajo del umbral ambicioso del 80% — ver §4.1.3
 Nota: Los valores de esta tabla son objetivos referenciales por tamaño de organización.
 El laboratorio midió MTTR real de 277.15s (n=50), adecuado para PYME/Mediana según estos umbrales.
 
-## C.3. Visualizaciones Generadas
+### C.3. Visualizaciones Generadas
 
 Las siguientes figuras se generan automáticamente desde los resultados experimentales y los dashboards de Grafana.
 
@@ -2685,7 +2685,7 @@ cuatro fases del proyecto, mostrando la mejora progresiva tras cada iteración d
 Figura 29: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
 extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
 
-## C.4. Visualizaciones de Logs
+### C.4. Visualizaciones de Logs
 
 El stack de observabilidad (Loki, Grafana Labs, 2024b; Promtail, Grafana Labs, 2024c; Grafana, Grafana Labs, 2024) permite visualizar logs de todos los contenedores desde Grafana (`http://localhost:8084`). Promtail etiqueta los logs por contenedor (`container`, `service`, `compose_service`) y envía cada línea a Loki, donde se consultan con LogQL. La configuración de Promtail se encuentra en `infra/docker/config/templates/promtail-config.yml.template` y la de logging de Python en `infra/docker/compose/logging/logging.yaml`. El stack de logging se define en `infra/docker/compose/logging/docker-compose.logging.yml`.
 
@@ -2711,7 +2711,7 @@ Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
 
 ---
 
-## D.1. Resultados Experimentales E2E (n=50)
+### D.1. Resultados Experimentales E2E (n=50)
 
 ### Cumplimiento de Objetivos TFM
 
@@ -2762,7 +2762,7 @@ Cumplimiento: 3/5 objetivos.
 
 ---
 
-## D.2. Métricas de Calidad Consolidadas
+### D.2. Métricas de Calidad Consolidadas
 
 | Radar | Score Global | Estado | Fuente |
 |-------|-------------|--------|--------|
@@ -2821,7 +2821,7 @@ Cumplimiento: 3/5 objetivos.
 
 ---
 
-## D.3. Infraestructura y API
+### D.3. Infraestructura y API
 
 | Aspecto | Valor |
 |---------|-------|
@@ -2844,7 +2844,7 @@ Requisitos hardware: 8 GB RAM (16 GB+ recomendado), 2 cores (4+), 50 GB SSD, Doc
 
 ---
 
-## D.4. Gestión del Proyecto
+### D.4. Gestión del Proyecto
 
 - **20 objetivos SMART** en 4 fases (18 semanas, 27 abr - 31 ago 2026)
 - Fase 1 Investigación (3 sem), Fase 2 Diseño (3 sem), Fase 3 Desarrollo (6 sem), Fase 4 Validación (6 sem)
@@ -2855,7 +2855,7 @@ Detalle del cronograma y objetivos en el Anexo de Objetivos y Metodología (este
 
 ---
 
-## D.5. Resumen Ejecutivo de Validación
+### D.5. Resumen Ejecutivo de Validación
 
 | Aspecto | Resultado | Evidencia |
 |---------|-----------|-----------|
@@ -2892,7 +2892,7 @@ La contribución teórica principal es evidencia cuantitativa complementaria a l
 
 En el plano práctico, el laboratorio es desplegable con `make up` y accesible desde navegador sin configuración adicional. Al usar exclusivamente software open source elimina los costos de licenciamiento que en soluciones propietarias equivalentes oscilan entre $200 000 y $500 000 anuales (IBM Security, 2024), lo que hace accesibles estas capacidades a pymes, universidades y CSIRTs en formación. La **Tabla 11** presenta el análisis costo-beneficio comparativo entre la respuesta manual, la solución SOAR open source de este TFM, una solución comercial y una solución híbrida.
 
-## Tabla 11: Análisis Costo-Beneficio SOAR
+### Tabla 11: Análisis Costo-Beneficio SOAR
 
 | Solución             | Costo Anual | MTTR Promedio | Tasa Éxito | ROI 3 años | Implementación |
 |----------------------|-------------|---------------|------------|------------|----------------|
@@ -2939,7 +2939,7 @@ Como métricas de referencia: reducción de MTTR del 50 % en los primeros 6 mese
 
 En rendimiento operativo: MTTR < 120 s para incidentes simples, throughput > 100 incidentes/hora, disponibilidad > 99.5 % y tasa de clasificación correcta > 95 %. En madurez del proceso: cobertura de automatización superior al 80 % de las tareas repetitivas identificadas (CIS, 2024), como referencia orientativa derivada de los controles CIS v8.1 aplicados a la gestión de incidentes. El marco CIS Controls (CIS, 2024) ofrece una base para priorizar estas tareas según riesgo. La **Tabla 12** recopila los KPIs recomendados escalados al tamaño y recursos de cada tipo de organización.
 
-## Tabla 12: KPIs Recomendados por Tipo de Organización
+### Tabla 12: KPIs Recomendados por Tipo de Organización
 
 | Tipo Org       | MTTR Objetivo | Throughput | Success Rate | Presupuesto SOAR |
 |----------------|---------------|------------|--------------|------------------|
@@ -2968,13 +2968,13 @@ El uso exclusivo de software open source elimina los costos de licenciamiento as
 
 ---
 
-## Índice de Figuras del Capítulo 5
+### Índice de Figuras del Capítulo 5
 
 | Figura    | Título                                          | Archivo                              |
 |-----------|-------------------------------------------------|--------------------------------------|
 | Figura 11 | Análisis coste-beneficio SOAR open source vs comercial | `figures/Fig5_5_cost_benefit.png` |
 
-## Índice de Tablas del Capítulo 5
+### Índice de Tablas del Capítulo 5
 
 | Tabla    | Título                                          |
 |----------|-------------------------------------------------|

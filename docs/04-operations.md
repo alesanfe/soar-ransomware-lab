@@ -1,4 +1,4 @@
-# Operaciones — SOAR Ransomware Lab
+﻿# Operaciones — SOAR Ransomware Lab
 
 ## Índice
 
@@ -5326,19 +5326,19 @@ En caso de discrepancia, prevalecen los archivos Compose del repositorio.
 Este anexo contiene la configuración técnica y código fuente de los componentes principales del laboratorio SOAR para
 reproducir el sistema.
 
-## A.1. Configuración Completa de Docker Compose
+### A.1. Configuración Completa de Docker Compose
 
 La configuración Docker Compose define los servicios, redes, volúmenes y dependencias del laboratorio SOAR. La
 arquitectura modular permite despliegues desde configuraciones mínimas hasta entornos completos, separando
 responsabilidades entre componentes.
 
-### A.1.1. Archivo docker-compose.yml (orquestador principal)
+#### A.1.1. Archivo docker-compose.yml (orquestador principal)
 
 El archivo `docker-compose.yml` es el orquestador principal: define las redes Docker (`soar_net` 10.100.0.0/16, `ti_net` 172.22.0.0/16 internal, `logging_net` 172.23.0.0/16), los volúmenes bind-mount centralizados en `runtime/` y el servicio Elasticsearch. Los servicios de aplicación (TheHive, Cortex, Shuffle, Nginx, etc.) se definen en `docker-compose.core.yml` y los restantes compose files (ver §A.6.1). `make up` combina automáticamente todos los archivos.
 
 Nota. Los servicios de aplicación (TheHive, Cortex, Shuffle, Orborus, Redis, Nginx, etc.) se definen en `docker-compose.core.yml` y `docker-compose.api.yml`. El contenido completo de cada compose file está en `infra/docker/compose/`. La sección A.6 proporciona el inventario completo.
 
-### A.1.2. Archivo .env.full
+#### A.1.2. Archivo .env.full
 
 El archivo de entorno `.env.full` contiene todas las variables de configuración necesarias para el despliegue del laboratorio
 SOAR. Este archivo permite la personalización del sistema según las necesidades específicas de cada entorno, facilitando
@@ -5392,7 +5392,7 @@ OUTER_HOSTNAME=localhost
 
 La **Tabla 13** resume las variables de entorno Docker más relevantes para la personalización del despliegue.
 
-## Tabla 13: Variables de Entorno Docker
+### Tabla 13: Variables de Entorno Docker
 
 | Variable               | Valor por Defecto | Descripción              | Requerido |
 |------------------------|-------------------|--------------------------|-----------|
@@ -5413,7 +5413,7 @@ La **Tabla 13** resume las variables de entorno Docker más relevantes para la p
 | `MISP_PORT`            | 8083              | Puerto MISP              | No        |
 | `GRAFANA_PORT`         | 8084              | Puerto Grafana           | No        |
 
-## A.2. Scripts de Automatización
+### A.2. Scripts de Automatización
 
 Los scripts de automatización desarrollados para el laboratorio SOAR ofrecen las capacidades operativas necesarias para
 la simulación de incidentes, el cálculo de métricas y la ejecución de acciones de respuesta. Estos scripts representan
@@ -5421,7 +5421,7 @@ la materialización práctica de la automatización SOAR, permitiendo la validac
 controladas y ofreciendo las herramientas necesarias para el análisis de rendimiento. Cada script sigue buenas prácticas
 de desarrollo software, incluyendo manejo de errores, logging estructurado y documentación completa.
 
-### A.2.1. Alert Sender CLI (send_alert.py)
+#### A.2.1. Alert Sender CLI (send_alert.py)
 
 El script `send_alert.py` es el CLI que genera y envía alertas de ransomware con datos realistas al webhook de Shuffle
 para su procesamiento. El simulador E2E (`src/soar_lab/simulator/simulate_alerts.py`) usa este mismo mecanismo para
@@ -5437,7 +5437,7 @@ Métodos principales:
 | `_default_webhook_url(base_dir)` | Resuelve la URL del webhook desde `webhook_info.json` o variable de entorno |
 | `main()` | Punto de entrada: parsea argumentos, genera alertas y las envía al webhook |
 
-### A.2.2. AnalyticsService (KPI Calculator)
+#### A.2.2. AnalyticsService (KPI Calculator)
 
 El `AnalyticsService` es el servicio de aplicación responsable de calcular métricas MTTR y KPIs desde logs de ejecución del sistema. Sigue la arquitectura hexagonal del proyecto: recibe sus dependencias por inyección (repositories, log_parser, statistical_calculator, kpi_formatter, kpi_analyzer) y delega los cálculos puros a colaboradores especializados. Este componente es la base para la validación cuantitativa de los beneficios de SOAR, permitiendo el análisis estadístico de tiempos de respuesta, el cálculo de percentiles (p50, p90), la exportación de resultados a CSV y la generación de informes de rendimiento.
 
@@ -5455,11 +5455,11 @@ Métodos principales:
 
 El servicio se compone en `src/soar_lab/interfaces/api/composition.py` con sus dependencias concretas (`SqliteAlertRepository`, `SystemMetricsDriver`, `FilesystemStorage`, `ExecutionLogParser`, `StatisticalCalculator`, `CSVKPIFormatter`, `KPIAnalyzer`). El cálculo estadístico puro (percentiles, media, desviación estándar, coeficiente de variación) se delega a `StatisticalCalculator` (puerto `StatisticalCalculatorInterface`), lo que mantiene el dominio independiente de la infraestructura.
 
-## A.3. Configuración de TheHive
+### A.3. Configuración de TheHive
 
 La integración con TheHive se realiza mediante el script `scripts/setup/init_thehive.py`, que crea el índice Elasticsearch con el mapping correcto para TheHive 3.5.2 (join field + keyword fix), configura el usuario administrador y genera la API key que se almacena en `.env.full` como `THEHIVE_API_KEY`. Los casos se crean automáticamente desde el workflow de Shuffle durante la ejecución del playbook E2E.
 
-### A.3.1. Index Template para TheHive (init_thehive.py)
+#### A.3.1. Index Template para TheHive (init_thehive.py)
 
 TheHive 3.5.2 requiere un mapping Elasticsearch específico para el campo `relations` (join field) y para evitar conflictos con campos `text` vs `keyword`. El script `init_thehive.py` pre-crea el index template antes del arranque de TheHive. El template define:
 
@@ -5470,7 +5470,7 @@ TheHive 3.5.2 requiere un mapping Elasticsearch específico para el campo `relat
 
 Este template se aplica con `PUT _template/thehive_template` antes de que TheHive arranque, evitando el error `mapper_parsing_exception` que ocurre cuando Elasticsearch infiere automáticamente el tipo `text` para campos que TheHive espera como `keyword`.
 
-### A.3.2. Creación de casos desde el workflow
+#### A.3.2. Creación de casos desde el workflow
 
 El workflow E2E de Shuffle crea casos en TheHive mediante la app `TheHive_app` con los siguientes campos:
 
@@ -5482,15 +5482,15 @@ El workflow E2E de Shuffle crea casos en TheHive mediante la app `TheHive_app` c
 
 Los observables (IoCs) se añaden al caso como artifacts con `dataType` (`ip`, `domain`, `hash`, `url`) y `message` con el valor del IoC. El estado del caso permanece `Open` durante la contención simulada (TheHive 3.5.2 solo soporta `Open`/`Resolved`/`Deleted`; el script `update_inprogress.py` confirma que el caso se mantiene `Open` en la rama maliciosa). En la rama benigna, el caso se marca como `Resolved` con `resolutionStatus: FalsePositive` vía `mark_false_positive.py`.
 
-## A.4. Configuración de Monitoreo
+### A.4. Configuración de Monitoreo
 
 El laboratorio usa un stack de observabilidad basado en **Loki + Promtail + Grafana** (no Prometheus). Los logs de los contenedores se recogen con Promtail, se agregan en Loki y se visualizan en Grafana mediante el dashboard KPI definido en `infra/docker/compose/logging/kpi-dashboard.json`.
 
-### A.4.1. Stack de Logging (Loki + Promtail + Grafana)
+#### A.4.1. Stack de Logging (Loki + Promtail + Grafana)
 
 El servicio `loki` (imagen `grafana/loki:2.9.10`) agrega logs de todos los contenedores. `promtail` (`grafana/promtail:2.9.9`) los recoge vía Docker API y los envía a Loki con labels por servicio. `grafana` (`grafana/grafana:10.3.4`) visualiza los datos y `grafana-renderer` (`grafana/grafana-image-renderer:3.10.4`) renderiza paneles para alertas. `grafana-db` (`postgres:14-alpine`) persiste dashboards y usuarios.
 
-### A.4.2. Dashboard KPI de Grafana (kpi-dashboard.json)
+#### A.4.2. Dashboard KPI de Grafana (kpi-dashboard.json)
 
 El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.json` y consulta el índice `soar-metrics` de Elasticsearch (datasource `Elasticsearch`, uid `${DS_ELASTICSEARCH}`). Contiene 15 paneles:
 
@@ -5514,13 +5514,13 @@ El dashboard KPI principal está en `infra/docker/compose/logging/kpi-dashboard.
 
 Las consultas usan Lucene/Elasticsearch Query DSL sobre el índice `soar-metrics`, que se pobla desde el workflow de Shuffle tras cada ejecución del playbook. El campo `mttr_seconds` (float) almacena el MTTR por ejecución, `verdict.keyword` el veredicto (malicious/suspicious) y `decision.keyword` la decisión (contain/observe).
 
-### A.4.3. Configuración de Promtail
+#### A.4.3. Configuración de Promtail
 
 Promtail recoge logs de todos los contenedores Docker vía el socket `/var/run/docker.sock` y los envía a Loki. La configuración se define en `infra/docker/config/templates/promtail-config.yml.template` y etiqueta cada línea de log con `container` (nombre del contenedor), `container_id` (ID del contenedor), `service` (nombre del servicio sin sufijo de réplica), `network` (nombre de la red Docker), `compose_service` (label Docker Compose) y `compose_project` (nombre del proyecto), permitiendo filtrar en Grafana por servicio, red o proyecto.
 
-## A.5. Troubleshooting Común
+### A.5. Troubleshooting Común
 
-### A.5.1. Problemas Frecuentes
+#### A.5.1. Problemas Frecuentes
 
 A continuación se recogen los problemas más frecuentes detectados durante el despliegue y operación del laboratorio, junto con pasos operativos concretos, criterios de verificación y casos de error asociados.
 
@@ -5778,14 +5778,14 @@ Criterio de verificación.
 
 ---
 
-## A.6. Inventario Completo de Archivos Docker Compose
+### A.6. Inventario Completo de Archivos Docker Compose
 
 El laboratorio SOAR usa **6 archivos Docker Compose** principales
 que se combinan automáticamente con `make up`, totalizando 23 servicios.
 La sección A.1.1 muestra el archivo principal (`docker-compose.yml`); los restantes se documentan aquí
 como referencia. La versión canónica está en `infra/docker/compose/`.
 
-### A.6.1. Mapa de Archivos Compose
+#### A.6.1. Mapa de Archivos Compose
 
 | Archivo | Ubicación | Servicios | Propósito |
 |---------|-----------|-----------|-----------|
@@ -5796,7 +5796,7 @@ como referencia. La versión canónica está en `infra/docker/compose/`.
 | `docker-compose.opensearch.yml` | `infra/docker/compose/` | opensearch, opensearch-dashboards | OpenSearch para Shuffle |
 | `docker-compose.logging.yml` | `infra/docker/compose/logging/` | loki, promtail, grafana, grafana-db, grafana-renderer | Observabilidad (subdirectorio) |
 
-### A.6.2. Servicios Adicionales (no en A.1.1)
+#### A.6.2. Servicios Adicionales (no en A.1.1)
 
 Los siguientes servicios se definen en los compose files adicionales y no aparecen en la
 sección A.1.1:
@@ -5826,7 +5826,7 @@ sección A.1.1:
 | `grafana-db` | `postgres:14-alpine` | logging | BD Grafana |
 | `grafana-renderer` | `grafana/grafana-image-renderer:3.10.4` | logging | Renderizado de imágenes para alertas |
 
-### A.6.3. Redes Docker
+#### A.6.3. Redes Docker
 
 | Red | CIDR | Tipo | Propósito |
 |-----|------|------|-----------|
@@ -5835,7 +5835,7 @@ sección A.1.1:
 | `logging_net` | `172.23.0.0/16` | bridge | Observabilidad (Loki, Grafana) |
 | `bridge` | — | external | Red por defecto Docker (compatibilidad) |
 
-### A.6.4. Resumen del Stack Completo
+#### A.6.4. Resumen del Stack Completo
 
 | Métrica | Valor |
 |---------|-------|
@@ -5862,7 +5862,7 @@ En caso de discrepancia, prevalece el código del repositorio.
 
 ---
 
-## B.1. Visión General del Workflow
+### B.1. Visión General del Workflow
 
 El workflow SOAR se ejecuta en Shuffle 2.2.1 (Shuffle Tools, 2024) y orquesta la respuesta completa ante alertas
 de ransomware. Recibe alertas vía webhook, las enriquece con TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024), MISP (MISP Project, 2024) y fuentes
@@ -5881,7 +5881,7 @@ y registra métricas MTTR en Elasticsearch (Elastic, 2024).
 
 ---
 
-## B.2. Arquitectura del Workflow
+### B.2. Arquitectura del Workflow
 
 El workflow sigue un patrón fan-out/fan-in: tras la creación del caso en TheHive, 10 ramas paralelas ejecutan enriquecimiento (Cortex, MISP, Tenzir, Network Watcher, Redis, Loki, ES index) y registro de observables (hash, IP, tarea). Todas las señales convergen en `act_calc_decision`, que calcula el score y dispatcha a contención (score ≥ 80 OR verdict=malicious) o falso positivo (score < 80). El flujo cierra con cálculo de MTTR, enriquecimiento del caso y indexación de métricas en `soar-metrics`.
 
@@ -5889,11 +5889,11 @@ El diagrama canónico del flujo end-to-end está en el Anexo F, sección F.5 (Fl
 
 ---
 
-## B.3. Catálogo de Nodos del Workflow
+### B.3. Catálogo de Nodos del Workflow
 
 El workflow tiene 46 nodos definidos (45 acciones + 1 trigger). Se agrupan por tipo:
 
-### B.3.1. Nodos HTTP (integraciones externas)
+#### B.3.1. Nodos HTTP (integraciones externas)
 
 | ID | Nombre | Tipo | Descripción |
 |----|--------|------|-------------|
@@ -5927,7 +5927,7 @@ instalado no listado arriba se cablea dinámicamente como `act_cortex_dyn_*` (ej
 experimental). `Virusshare_2_0` está en `_SKIP_DYNAMIC_NAMES` (fallo persistente) y no
 se cablea.
 
-### B.3.2. Nodos Python (lógica embebida)
+#### B.3.2. Nodos Python (lógica embebida)
 
 | ID | Nombre | Descripción |
 |----|--------|-------------|
@@ -5960,12 +5960,12 @@ Los 25 scripts Python embebidos viven como archivos `.py` independientes en `scr
 
 ---
 
-## B.4. Modelo de Scoring (calc_decision)
+### B.4. Modelo de Scoring (calc_decision)
 
 El nodo `calc_decision` es el núcleo del workflow. Calcula un score de 0 a 100 y un verdict
 (malicious, suspicious, safe, unknown) agregando señales de todas las fuentes de enriquecimiento.
 
-### B.4.1. Componentes del Score
+#### B.4.1. Componentes del Score
 
 | Fuente | Contribución | Descripción |
 |--------|-------------|-------------|
@@ -5980,7 +5980,7 @@ El nodo `calc_decision` es el núcleo del workflow. Calcula un score de 0 a 100 
 | **Network Watcher** | +5 a +20 | Conexiones sospechosas detectadas |
 | **Loki** | +3 a +30 | Indicadores de ransomware en logs (fórmula: `min(30, matches*3 + critical*10)`) |
 
-### B.4.2. Umbral de Decisión
+#### B.4.2. Umbral de Decisión
 
 | Condición | Verdict | Decision | Acción |
 |-----------|---------|----------|--------|
@@ -5990,7 +5990,7 @@ El nodo `calc_decision` es el núcleo del workflow. Calcula un score de 0 a 100 
 Nota: La condición de contención es `score >= 80 OR verdict == "malicious"`, no solo `score >= 80`.
 Esto permite que un verdict "malicious" de Cortex (independientemente del score) dispare contención.
 
-### B.4.3. Técnicas MITRE de Alto Riesgo
+#### B.4.3. Técnicas MITRE de Alto Riesgo
 
 Las técnicas de alto riesgo se basan en el framework MITRE ATT&CK (MITRE, 2025):
 
@@ -6012,7 +6012,7 @@ Cada técnica de alto riesgo detectada suma **+10 puntos** al score.
 
 ---
 
-## B.5. Ramas (Edges) del Workflow
+### B.5. Ramas (Edges) del Workflow
 
 El workflow tiene **61 ramas** (59 base + 2 dinámicas) que conectan los nodos en un patrón fan-out/fan-in:
 
@@ -6029,7 +6029,7 @@ su lógica solo si el verdict corresponde.
 
 ---
 
-## B.6. Resultados Experimentales del Workflow
+### B.6. Resultados Experimentales del Workflow
 
 Datos medidos en ejecución experimental (n=50 alertas, 2026-08-24, fuente: `docs/thesis/reports/e2e_report.json`):
 
