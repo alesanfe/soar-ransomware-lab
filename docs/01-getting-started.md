@@ -937,7 +937,7 @@ make init-webhook
 
 ---
 
-## 5. Problemas y consideraciones
+## 5. Problemas
 
 ### 5.1 Limitaciones
 

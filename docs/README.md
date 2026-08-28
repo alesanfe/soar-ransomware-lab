@@ -19,7 +19,7 @@
     - [4.1 Verificación](#41-verificación)
     - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
     - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas y consideraciones](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas)
     - [5.1 Limitaciones](#51-limitaciones)
     - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
     - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
@@ -183,8 +183,8 @@ contención simulada.
 La propuesta se valida mediante escenarios benigno y malicioso, midiendo el tiempo desde la alerta hasta la contención
 simulada usando percentiles p50 y p90. El trabajo genera evidencias verificables como logs y métricas. Con un alcance
 académico y educativo, el estudio aporta evidencia de que la automatización mejora la consistencia, la trazabilidad y
-la eficiencia operativa en un entorno controlado. La suite de pruebas contiene 2041 tests (9 marcadores pytest,
-coverage 84.6 %, 39 TCs E2E) y 281 tests E2E del playbook ejecutados correctamente.
+la eficiencia operativa en un entorno controlado. La suite de pruebas contiene 2233 tests coleccionados (1905 seleccionados,
+9 marcadores pytest, coverage 84.6 %, 39 TCs E2E) y 281 tests E2E del playbook ejecutados correctamente.
 
 **Palabras clave:** SOAR, ransomware, automatización, playbook, MTTR
 
@@ -295,7 +295,7 @@ sugerencias para entornos que deseen aplicar capacidades SOAR similares.
 - Anexo C: métricas y visualizaciones complementarias (26 figuras generadas desde resultados experimentales y
   dashboards de Grafana).
 - Anexo D: validación experimental consolidada (Quality Score 92.2/100, HPR 96.0/100).
-- Anexo E: estrategia de testing (2041 tests, pirámide, quality gates).
+- Anexo E: estrategia de testing (2233 tests coleccionados, pirámide, quality gates).
 - Anexo F: diagramas canónicos de arquitectura y flujos (12 diagramas Mermaid).
 
 ---

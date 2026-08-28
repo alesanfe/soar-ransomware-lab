@@ -24,7 +24,7 @@
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -962,7 +962,7 @@ Dentro de `CompositionRoot`:
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -2470,7 +2470,7 @@ Las evidencias de validación incluyen:
 Referencia TFM: complementa el Capítulo 4 (Desarrollo específico) y el Capítulo 2 (Estado del arte),
 y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
 `docs/02-architecture.md`, `docs/04-operations.md`, `docs/06-project-management.md`
-y `README.md`. Los diagramas de `specific_development.md` son versiones simplificadas;
+y `README.md`. Los diagramas del Anexo de Desarrollo Específico son versiones simplificadas;
 los de este anexo son los completos.
 
 ---
@@ -2894,7 +2894,7 @@ gantt
  Objetivo 16 - Evidencia aprobación :obj16, after obj15, 14d
 ```
 
-Fuente: `docs/thesis/objectives_and_methodology.md` líneas 86-116 (cronograma 18 semanas 2026), `docs/06-project-management.md` líneas 171-203 (objetivos SMART)
+Fuente: `docs/06-project-management.md` (Anexo: Objetivos y Metodología, cronograma 18 semanas 2026, objetivos SMART)
 
 ---
 
@@ -2928,9 +2928,9 @@ la fase de diseño (integración de Cortex con analyzers externos y stack de
 monitoreo no contemplados inicialmente). La ejecución real se extendió a
 18 semanas (27 abr - 31 ago 2026, 3+3+6+6) debido a la ampliación de la
 suite de tests (2233 tests coleccionados, 1905 seleccionados) y la ejecución del experimento (n=50).
-Ver `objectives_and_methodology.md` para el cronograma real.
+Ver `docs/06-project-management.md` (Anexo: Objetivos y Metodología) para el cronograma real.
 
-Fuente: `docs/thesis/objectives_and_methodology.md` líneas 90-116 (Gantt 18 semanas 2026)
+Fuente: `docs/06-project-management.md` (Anexo: Objetivos y Metodología, Gantt 18 semanas 2026)
 
 ---
 
@@ -3322,7 +3322,7 @@ Los requisitos no funcionales fijan los criterios de calidad del sistema:
 - RNF-03: Seguridad. Aislamiento de red entre componentes, secretos gestionados mediante variables de entorno,
   autenticación JWT para la API, sanitización de payloads de entrada y certificados TLS autofirmados para el tráfico
   externo.
-- RNF-04: Calidad del software. Suite de tests automatizada con pytest (2041 tests) y despliegue verificable con
+- RNF-04: Calidad del software. Suite de tests automatizada con pytest (2233 tests coleccionados) y despliegue verificable con
   `make test-e2e`.
 - RNF-05: Resiliencia. Circuit breaker y reintentos con backoff exponencial en las integraciones entre componentes
   para manejar fallos transitorios sin perder la alerta.
@@ -3360,7 +3360,7 @@ La matriz de trazabilidad conecta cada requisito con su componente implementador
 | RNF-01 | Rendimiento        | Sistema    | Alta      | Benchmark de MTTR (n=50 por escenario)           |
 | RNF-02 | Reproducibilidad   | Docker     | Alta      | `make up` + `pytest tests/e2e/`                  |
 | RNF-03 | Seguridad          | Docker/Nginx/FastAPI | Media | Revisión de config, JWT, sanitización    |
-| RNF-04 | Calidad            | pytest     | Media     | Suite de tests (2041 tests)                      |
+| RNF-04 | Calidad            | pytest     | Media     | Suite de tests (2233 tests coleccionados)        |
 | RNF-05 | Resiliencia        | Python/resilience | Media | Prueba unit de circuit breaker             |
 | RNF-06 | Observabilidad     | Loki/Grafana | Media   | Health checks y dashboards                       |
 | RI-01  | TheHive ↔ Cortex   | TheHive/Cortex | Alta  | Prueba de integración de observables             |
@@ -3386,7 +3386,7 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 | RNF-01 | **NF** | Reducción MTTR ≥ 50%          | 92.3% (n=50)             | Cumplido           |
 | RNF-02 | **NF** | Reproducibilidad              | `make up` + tests E2E    | Cumplido           |
 | RNF-03 | **NF** | Seguridad                     | Aislamiento, JWT, sanitización | Cumplido     |
-| RNF-04 | **NF** | Calidad                       | 2041 tests automatizados | Cumplido           |
+| RNF-04 | **NF** | Calidad                       | 2233 tests automatizados | Cumplido           |
 | RNF-05 | **NF** | Resiliencia                   | Circuit breaker + retry  | Cumplido           |
 | RNF-06 | **NF** | Observabilidad                | Health checks + Loki     | Cumplido           |
 | RI-01  | **I**  | TheHive ↔ Cortex              | Observables enriquecidos | Cumplido           |
@@ -3557,9 +3557,9 @@ La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) para TheHi
 
 La infraestructura se define con varios archivos Docker Compose (Docker Inc., 2024) que se combinan para desplegar el sistema completo. El archivo principal `docker-compose.yml` define cuatro redes (perimetral bridge, interna soar_net, inteligencia ti_net, monitoreo logging_net) y los volúmenes persistentes, e incluye Elasticsearch. El archivo `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle, Orborus, Network Watcher y Tenzir, con verificaciones de salud, límites de recursos y dependencias. Los archivos complementarios añaden: `docker-compose.api.yml` (API FastAPI, docs-site, web-management y Nginx), `docker-compose.misp.yml` (MISP, misp-db y misp-modules) (MISP Project, 2024), `docker-compose.opensearch.yml` (OpenSearch y OpenSearch Dashboards) (OpenSearch Project, 2024) y `docker-compose.logging.yml` (Loki, Promtail, Grafana, PostgreSQL y Grafana Renderer).
 
-La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging (Grafana, Loki y Promtail conectan además a soar_net para recoger datos de los servicios). Esta separación limita el movimiento lateral en caso de compromiso. Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio; los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 6** detalla la configuración de recursos.
+La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging (Grafana, Loki y Promtail conectan además a soar_net para recoger datos de los servicios). Esta separación limita el movimiento lateral en caso de compromiso. Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio; los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 5** detalla la configuración de recursos.
 
-## Tabla 6: Configuración de Recursos Docker
+## Tabla 5: Configuración de Recursos Docker
 
 | Servicio             | CPU Límite | Memoria Límite | CPU Reserva | Memoria Reserva | Health Check |
 |----------------------|------------|----------------|-------------|-----------------|--------------|
@@ -3627,9 +3627,9 @@ graph TD
 
 TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024) con plantillas especializadas para ransomware, asignación de tareas y registro de acciones. Su integración con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
 
-Cortex (v3.2.0) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: Hashdd_Status (hashes), IP-API y DShield (IPs), GoogleDNS y DomainMailSPFDMARC (dominios), Mnemonic pDNS (passive DNS) y ValidateObservable (validación). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 5** lista los analyzers con su tipo y uso en el playbook.
+Cortex (v3.2.0) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: Hashdd_Status (hashes), IP-API y DShield (IPs), GoogleDNS y DomainMailSPFDMARC (dominios), Mnemonic pDNS (passive DNS) y ValidateObservable (validación). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 6** lista los analyzers con su tipo y uso en el playbook.
 
-## Tabla 5: Analyzers Cortex Configurados
+## Tabla 6: Analyzers Cortex Configurados
 
 | Analyzer              | Tipo     | API Key | Uso en Playbook   |
 |-----------------------|----------|---------|-------------------|
@@ -3814,7 +3814,7 @@ Comandos de ejecución:
 - `make test-e2e-tc01` (escenario malicioso, 11 subtests)
 - `make test-e2e-tc02` (escenario benigno / falso positivo, 5 subtests)
 - `make test-e2e-tc03` (casos de borde E2E)
-- `make test-e2e` (suite completa: 33 casos de test + 5 tests de KPI)
+- `make test-e2e` (suite completa: 39 TCs E2E + 5 tests de KPI)
 - `make simulate-batch N=50` (envío de lote de 50 alertas para experimentos)
 - `make metrics` (cálculo de KPIs y exportación a CSV)
 
@@ -3824,7 +3824,7 @@ Los resultados experimentales se almacenan en `reports/e2e/` y `reports/validati
 
 El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, todas con alertas maliciosas (45 ransomware, 2 RAT, 2 troyano, 1 infostealer). La **Figura 6** muestra la comparación visual del MTTR manual vs automatizado, donde se aprecia la drástica reducción de 3600 s a 277.15 s (92.3 %). El cumplimiento de objetivos resume los umbrales definidos frente a los valores medidos:
 
-## Tabla 10: Cumplimiento de Objetivos del Experimento
+## Tabla 8: Cumplimiento de Objetivos del Experimento
 
 | Objetivo | Umbral | Valor medido | Cumple |
 |----------|--------|--------------|--------|
@@ -3834,9 +3834,9 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 | Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
 | Reducción MTTR vs manual | ≥ 50 % | 92.3 % | Sí |
 
-**Cumplimiento global: 3 de 5 objetivos.** La **Tabla 8** presenta los resultados detallados contrastando la respuesta manual estimada con la SOAR automatizada.
+**Cumplimiento global: 3 de 5 objetivos.** La **Tabla 9** presenta los resultados detallados contrastando la respuesta manual estimada con la SOAR automatizada.
 
-## Tabla 8: Resultados Experimentales Detallados
+## Tabla 9: Resultados Experimentales Detallados
 
 | Métrica                 | Manual (estimado) | SOAR (n=50)  | Reducción |
 |-------------------------|-------------------|--------------|-----------|
@@ -3848,7 +3848,7 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 
 Las métricas siguientes son específicas del sistema SOAR automatizado, sin equivalente en la respuesta manual:
 
-## Tabla 8b: Métricas Específicas del Sistema SOAR
+## Tabla 9b: Métricas Específicas del Sistema SOAR
 
 | Métrica                 | SOAR (n=50)  |
 |-------------------------|--------------|
@@ -3861,7 +3861,7 @@ Las métricas siguientes son específicas del sistema SOAR automatizado, sin equ
 
 La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025). El tiempo mínimo fue 65.38 s.
 
-La **Figura 7** muestra los tiempos medios por componente del workflow y las tasas de éxito por tipo de alerta. En los tiempos por fase se aprecia que la creación de caso (2773.48 s) y el análisis de IoCs (2393.46 s) dominan el tiempo acumulado, mientras que la contención (422.0 s) y el triaje (103.92 s) son relativamente rápidos. En las tasas de éxito, el sistema mantiene 100 % en todos los tipos procesados (ransomware, RAT, troyano, infostealer). La **Tabla 9** detalla estas fases:
+La **Figura 7** muestra los tiempos medios por componente del workflow y las tasas de éxito por tipo de alerta. En los tiempos por fase se aprecia que la creación de caso (2773.48 s) y el análisis de IoCs (2393.46 s) dominan el tiempo acumulado, mientras que la contención (422.0 s) y el triaje (103.92 s) son relativamente rápidos. En las tasas de éxito, el sistema mantiene 100 % en todos los tipos procesados (ransomware, RAT, troyano, infostealer). La **Tabla 10** detalla estas fases:
 
 ![Figura 7a: Tiempos por componente del workflow](figures/mttr_by_phase.png)
 
@@ -3871,7 +3871,7 @@ La **Figura 7** muestra los tiempos medios por componente del workflow y las tas
 
 **Figura 7b**: Tasas de éxito por tipo de alerta durante las 50 ejecuciones E2E, mostrando 100 % de éxito en todos los tipos procesados.
 
-## Tabla 9: Análisis por Componente de Tiempo
+## Tabla 10: Análisis por Componente de Tiempo
 
 | Componente             | SOAR (n=50) | % del total |
 |------------------------|-------------|-------------|
@@ -3907,7 +3907,7 @@ El consumo medido con `docker stats` se mantuvo dentro de los límites configura
 
 #### 4.1.3.4. Evaluación de Calidad del Sistema
 
-El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2041 tests, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 39 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
+El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2233 tests coleccionados, 1905 seleccionados, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 39 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
 
 Comandos de prueba y calidad disponibles:
 
@@ -3972,11 +3972,11 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 |----------|-------------------------------------------------|
 | Tabla 3  | Matriz de Trazabilidad de Requisitos            |
 | Tabla 4  | Estado de Cumplimiento de Requisitos            |
-| Tabla 5  | Analyzers Cortex Configurados                   |
-| Tabla 6  | Configuración de Recursos Docker                |
+| Tabla 5  | Configuración de Recursos Docker                |
+| Tabla 6  | Analyzers Cortex Configurados                   |
 | Tabla 7  | Métricas del Dashboard de Grafana               |
-| Tabla 8  | Resultados Experimentales Detallados            |
-| Tabla 8b | Métricas Específicas del Sistema SOAR           |
-| Tabla 9  | Análisis por Componente de Tiempo               |
-| Tabla 10 | Cumplimiento de Objetivos del Experimento       |
+| Tabla 8  | Cumplimiento de Objetivos del Experimento       |
+| Tabla 9  | Resultados Experimentales Detallados            |
+| Tabla 9b | Métricas Específicas del Sistema SOAR           |
+| Tabla 10 | Análisis por Componente de Tiempo               |
 

@@ -1,4 +1,4 @@
-﻿# Gestión del Proyecto — SOAR Ransomware Lab
+# Gestión del Proyecto — SOAR Ransomware Lab
 
 ## Índice
 
@@ -25,7 +25,7 @@
  - [4.1 Verificación](#41-verificación)
  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
  - [4.3 Evidencias](#43-evidencias)
-- [5. Problemas](#5-problemas-y-consideraciones)
+- [5. Problemas](#5-problemas)
  - [5.1 Limitaciones](#51-limitaciones)
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
@@ -844,7 +844,7 @@ La ruta crítica del proyecto es:
 
 - **Fase 1: Infraestructura** (4 semanas): Laboratorio, automatización, API, CLI ✅ Finalizada
 - **Fase 2: Desarrollo** (5 semanas): Playbook E2E, integración SIEM, scripts, docs-site, web-management ✅ Finalizada
-- **Fase 3: Validación** (4 semanas): Métricas MTTR, pruebas especializadas, KPIs ✅ Finalizada (KPIs operativos, E2E 49 test files en 41 test cases)
+- **Fase 3: Validación** (4 semanas): Métricas MTTR, pruebas especializadas, KPIs ✅ Finalizada (KPIs operativos, E2E 48 test files en 39 TCs)
 - **Fase 4: Cierre** (2 semanas): Documentación, analytics, aprobación 🔄 En cierre (remediación documental completada; pendientes: defensa TFM y aprobación formal)
 
 #### 3.2 Fases y cronograma
@@ -1146,7 +1146,7 @@ sha256: <hash>
 fecha: 2026-07-19T20:00:00+02:00
 entorno: Windows 11 + Docker Desktop 4.x + WSL2
 comando: pytest tests/e2e/ -m e2e
-resultado: 49 test files (41 test cases) PASSED
+resultado: 48 test files (39 TCs) PASSED
 ```
 
 #### 2.2 Convención de nombres y retención (N008)
@@ -1262,8 +1262,8 @@ Control manual/automatizado: todo párrafo que afirme "funciona", "está configu
 
 #### 10. Tesis, resultados y reproducibilidad académica (FASE 63)
 
-- Secciones clave: `introduction.md` 1.2, `appendix_a.md` A.6.1, `CHANGELOG_THESIS_UPDATE.md`.
-- Resultados: E2E 49 test files (41 test cases) PASSED, MTTR medible en Grafana, arquitectura validada.
+- Secciones clave: `docs/README.md` (Contexto Académico), `docs/04-operations.md` (Anexo A.6.1).
+- Resultados: E2E 48 test files (39 TCs) PASSED, MTTR medible en Grafana, arquitectura validada.
 - Reproducibilidad: entorno fijado con Docker, Compose y `.env.example`.
 
 #### 11. Cierre y mantenimiento continuo (FASE 64)
@@ -2231,9 +2231,9 @@ En ransomware, el impacto principal es la pérdida de disponibilidad por cifrado
 
 Para modelar el comportamiento del adversario y conectar detecciones con acciones, MITRE ATT&CK (MITRE Corporation, 2024; MITRE ATT&CK, n.d.) es una referencia habitual en el sector. La técnica T1486 (Data Encrypted for Impact) describe el cifrado de datos para interrumpir la disponibilidad y extorsionar, e incluye detalles sobre propagación y entornos afectados que orientan la definición de observables e IoCs relevantes (MITRE, 2025).
 
-La progresión del ransomware a través de generaciones muestra una tendencia clara hacia sofisticación creciente y demandas de rescate exponencialmente mayores (Razaulla et al., 2023). Como se observa en la **Tabla 2**, los rescates promedio han aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, representando un incremento de más de tres órdenes de magnitud que justifica la inversión en capacidades SOAR para mitigar el coste financiero de estos incidentes (CrowdStrike, 2024; Sophos, 2024).
+La progresión del ransomware a través de generaciones muestra una tendencia clara hacia sofisticación creciente y demandas de rescate exponencialmente mayores (Razaulla et al., 2023). Como se observa en la **Tabla 1**, los rescates promedio han aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, representando un incremento de más de tres órdenes de magnitud que justifica la inversión en capacidades SOAR para mitigar el coste financiero de estos incidentes (CrowdStrike, 2024; Sophos, 2024).
 
-## Tabla 2: Progresión de Ransomware por Generación
+## Tabla 1: Progresión de Ransomware por Generación
 
 | Generación | Período       | Características Principales            | Técnicas de Distribución         | Rescate Promedio | Ejemplos Notables            |
 |------------|---------------|----------------------------------------|----------------------------------|------------------|------------------------------|
@@ -2252,9 +2252,9 @@ La proliferación de herramientas con representaciones de datos dispares obliga 
 SIEM y SOAR son complementarios. El SIEM centraliza eventos y genera alertas, y SOAR orquesta las integraciones y ejecuta respuestas automatizadas en las fases de contención y recuperación (Kinyua & Awuah, 2021).
 Islam et al. ofrecen la revisión sistemática más completa del área: su multi-vocal literature review clasifica las funcionalidades de las plataformas de orquestación en unificación, orquestación y automatización, e identifica los componentes core, los drivers técnicos y socio-técnicos, y una taxonomía basada en entorno de ejecución, estrategia de automatización y tipo de despliegue (Islam et al., 2019). Esta taxonomía respalda la elección de un despliegue on-premise con orquestación basada en playbooks, como el que se evalúa en este TFM.
 
-Para contextualizar esta elección, la **Tabla 1** compara las plataformas SOAR open source seleccionadas en este TFM con soluciones comerciales representativas según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad.
+Para contextualizar esta elección, la **Tabla 2** compara las plataformas SOAR open source seleccionadas en este TFM con soluciones comerciales representativas según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad.
 
-## Tabla 1: Comparativa Detallada de Plataformas SOAR
+## Tabla 2: Comparativa Detallada de Plataformas SOAR
 
 Comparación de plataformas SOAR open source (TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024), Shuffle (Shuffle Tools, 2024)) versus comerciales (Palo Alto XSOAR, IBM
 Resilient) según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad. Las herramientas open source
@@ -2321,8 +2321,8 @@ Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados 
 
 | Tabla   | Título                                      |
 |---------|---------------------------------------------|
-| Tabla 1 | Comparativa Detallada de Plataformas SOAR   |
-| Tabla 2 | Progresión de Ransomware por Generación     |
+| Tabla 1 | Progresión de Ransomware por Generación     |
+| Tabla 2 | Comparativa Detallada de Plataformas SOAR   |
 
 
 ## Anexo: Objetivos y Metodolog�a
@@ -2852,7 +2852,7 @@ Requisitos hardware: 8 GB RAM (16 GB+ recomendado), 2 cores (4+), 50 GB SSD, Doc
 - Estimación inicial 12 sem → 15 sem → 18 sem real (ampliación tests + experimento n=50)
 - Consideraciones éticas: muestras inertes, no exposición de datos reales, entorno aislado
 
-Detalle del cronograma y objetivos en `objectives_and_methodology.md` y Anexo F (F.8, F.9).
+Detalle del cronograma y objetivos en el Anexo de Objetivos y Metodología (este documento) y Anexo F (F.8, F.9) en `docs/02-architecture.md`.
 
 ---
 
