@@ -103,7 +103,10 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/health
 
 #### Endpoints
 
-| Método | Ruta | Resumen | Tags | |--------|-------------------------------------------------------------------|-------------------------|------| | `GET` | `/` | Root | |
+| Método | Ruta | Resumen | Tags |
+|--------|-------------------------------------------------------------------|-------------------------|------|
+| `GET` | `/` | Root |
+|  |
 | `GET` | `/health` | Health | |
 | `POST` | `/auth/login` | Login | |
 | `POST` | `/auth/verify` | Verify Auth | |
@@ -156,7 +159,15 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/health
 
 La API del laboratorio actúa como fachada sobre servicios desplegados en Docker:
 
-| Servicio | Contenedor (red `soar_net`) | |-----------------|-----------------------------| | TheHive | `thehive:9000` | | Cortex | `cortex:9001` | | MISP | `misp:80` | | Shuffle Backend | `shuffle-backend:5001` | | Elasticsearch | `elasticsearch:9200` (métricas `soar-metrics`) | | OpenSearch | `opensearch:9200` (backend de Shuffle) | | Grafana | `grafana:3000` |
+| Servicio | Contenedor (red `soar_net`) |
+|-----------------|-----------------------------|
+| TheHive | `thehive:9000` |
+| Cortex | `cortex:9001` |
+| MISP | `misp:80` |
+| Shuffle Backend | `shuffle-backend:5001` |
+| Elasticsearch | `elasticsearch:9200` (métricas `soar-metrics`) |
+| OpenSearch | `opensearch:9200` (backend de Shuffle) |
+| Grafana | `grafana:3000` |
 
 Para la configuración de Nginx, DNS local y certificados, ver
 [`docs/04-operations.md`](04-operations.md) y
@@ -231,7 +242,17 @@ Este documento depende de:
 
 ##### 3.3.1.1 Clasificación de APIs
 
-| API | Tipo | Servicio | Puerto host / Proxy | |-----------------------------|--------------|---------------------------------------|----------------------------------| | **TheHive** | ✅ Real | Gestión de casos e incidentes | `8100` / `/thehive/` | | **Cortex** | ✅ Real | Análisis de IoCs (analyzers) | `8101` / `/cortex/` | | **Shuffle UI** | ✅ Real | Interfaz del orquestador SOAR | `8081` (directo, no Nginx) | | **Shuffle Backend API** | ✅ Real | API del motor de Shuffle (y webhooks) | `5001` / `/shuffle-api/` | | **Lab API** | ✅ Real | FastAPI de gestión del laboratorio | `8000` / `/api/` | | **MISP** | ✅ Real | Inteligencia de amenazas | `8083` (directo, no Nginx) | | **Elasticsearch** | ✅ Real | Motor de búsqueda / métricas | `8200` (no expuesto) | | **EDR / Contención** | ⚙️ Simulado* | Contención de endpoints vía scripts | — | | **Firewall** | 🔲 Simulado | Bloqueo de IPs vía scripts | — |
+| API | Tipo | Servicio | Puerto host / Proxy |
+|-----------------------------|--------------|---------------------------------------|----------------------------------|
+| **TheHive** | ✅ Real | Gestión de casos e incidentes | `8100` / `/thehive/` |
+| **Cortex** | ✅ Real | Análisis de IoCs (analyzers) | `8101` / `/cortex/` |
+| **Shuffle UI** | ✅ Real | Interfaz del orquestador SOAR | `8081` (directo, no Nginx) |
+| **Shuffle Backend API** | ✅ Real | API del motor de Shuffle (y webhooks) | `5001` / `/shuffle-api/` |
+| **Lab API** | ✅ Real | FastAPI de gestión del laboratorio | `8000` / `/api/` |
+| **MISP** | ✅ Real | Inteligencia de amenazas | `8083` (directo, no Nginx) |
+| **Elasticsearch** | ✅ Real | Motor de búsqueda / métricas | `8200` (no expuesto) |
+| **EDR / Contención** | ⚙️ Simulado* | Contención de endpoints vía scripts | — |
+| **Firewall** | 🔲 Simulado | Bloqueo de IPs vía scripts | — |
 
 > *La contención de endpoints (aislamiento de red, bloqueo de cuentas, terminación de procesos) se simula en el
 laboratorio. El sistema rastrea estados (`pending`, `executed`, `failed`) pero no ejecuta acciones destructivas reales.
@@ -297,7 +318,16 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 **Endpoints utilizados:**
 
-| Método | Endpoint | Descripción | |---------|----------------------------------|-------------------------------------------| | `GET` | `/api/status` | Health check del servicio | | `GET` | `/api/case` | Listar todos los casos | | `POST` | `/api/case` | Crear nuevo caso | | `GET` | `/api/case/{case_id}` | Obtener caso por ID | | `PATCH` | `/api/case/{case_id}` | Actualizar estado del caso | | `POST` | `/api/case/{case_id}/artifact` | Añadir observable a un caso | | `GET` | `/api/case/{case_id}/observable` | Listar observables de un caso | | `POST` | `/api/alert` | Crear alerta (alternativa a caso directo) |
+| Método | Endpoint | Descripción |
+|---------|----------------------------------|-------------------------------------------|
+| `GET` | `/api/status` | Health check del servicio |
+| `GET` | `/api/case` | Listar todos los casos |
+| `POST` | `/api/case` | Crear nuevo caso |
+| `GET` | `/api/case/{case_id}` | Obtener caso por ID |
+| `PATCH` | `/api/case/{case_id}` | Actualizar estado del caso |
+| `POST` | `/api/case/{case_id}/artifact` | Añadir observable a un caso |
+| `GET` | `/api/case/{case_id}/observable` | Listar observables de un caso |
+| `POST` | `/api/alert` | Crear alerta (alternativa a caso directo) |
 
 **Payload — Crear caso (`POST /api/case`):**
 
@@ -328,7 +358,12 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 **Límites de uso:**
 
-| Parámetro | Valor | |------------------------|-------------------------------| | Timeout por petición | 30 s | | Reintentos automáticos | 3 (backoff 5 s) | | Severidad válida | 1 (Low), 2 (Medium), 3 (High) | | TLP válido | 0–3 |
+| Parámetro | Valor |
+|------------------------|-------------------------------|
+| Timeout por petición | 30 s |
+| Reintentos automáticos | 3 (backoff 5 s) |
+| Severidad válida | 1 (Low), 2 (Medium), 3 (High) |
+| TLP válido | 0–3 |
 
 ###### 3.3.2.2 Cortex API
 
@@ -338,7 +373,13 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 **Endpoints utilizados:**
 
-| Método | Endpoint | Descripción | |--------|----------------------------|---------------------------------------| | `GET` | `/` | Health check (HTTP 200 = disponible) | | `GET` | `/api/analyzer` | Listar analyzers disponibles | | `POST` | `/api/analyzer/run` | Ejecutar analyzer sobre un observable | | `GET` | `/api/job/{job_id}` | Estado de un job de análisis | | `GET` | `/api/job/{job_id}/report` | Resultado completo del job |
+| Método | Endpoint | Descripción |
+|--------|----------------------------|---------------------------------------|
+| `GET` | `/` | Health check (HTTP 200 = disponible) |
+| `GET` | `/api/analyzer` | Listar analyzers disponibles |
+| `POST` | `/api/analyzer/run` | Ejecutar analyzer sobre un observable |
+| `GET` | `/api/job/{job_id}` | Estado de un job de análisis |
+| `GET` | `/api/job/{job_id}/report` | Resultado completo del job |
 
 **Payload — Ejecutar analyzer (`POST /api/analyzer/run`):**
 
@@ -352,11 +393,24 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 **Analyzers activos en el lab** (ver `scripts/setup/shuffle_workflow/cortex_setup.py`):
 
-| Analyzer ID | Tipo | Modo | Requiere API key externa | |----------------------------|-----------|---------|---------------------------| | `Hashdd_Status_2_0` | hash | offline | No | | `IP-API_1_1` | ip | offline | No | | `DShield_lookup_1_0` | ip | online | No | | `Mnemonic_pDNS_Public_3_0` | ip | online | No | | `GoogleDNS_resolve_1_0_0` | ip/domain | offline | No | | `ValidateObservable_1_0` | genérico | offline | No | | `DomainMailSPFDMARC_1_2` | domain | offline | No |
+| Analyzer ID | Tipo | Modo | Requiere API key externa |
+|----------------------------|-----------|---------|---------------------------|
+| `Hashdd_Status_2_0` | hash | offline | No |
+| `IP-API_1_1` | ip | offline | No |
+| `DShield_lookup_1_0` | ip | online | No |
+| `Mnemonic_pDNS_Public_3_0` | ip | online | No |
+| `GoogleDNS_resolve_1_0_0` | ip/domain | offline | No |
+| `ValidateObservable_1_0` | genérico | offline | No |
+| `DomainMailSPFDMARC_1_2` | domain | offline | No |
 
 **Límites de uso:**
 
-| Parámetro | Valor | |----------------------------|----------------------------------| | `MAX_CONCURRENT_ANALYZERS` | `3` (`.env.full`) | | `ANALYZER_TIMEOUT` | `30` s (`.env.full`) | | `ANALYZER_RETRIES` | `1` (`.env.full`) | | Timeout por job | 60 s (configurable en Cortex UI) |
+| Parámetro | Valor |
+|----------------------------|----------------------------------|
+| `MAX_CONCURRENT_ANALYZERS` | `3` (`.env.full`) |
+| `ANALYZER_TIMEOUT` | `30` s (`.env.full`) |
+| `ANALYZER_RETRIES` | `1` (`.env.full`) |
+| Timeout por job | 60 s (configurable en Cortex UI) |
 
 ###### 3.3.2.3 Shuffle webhook
 
@@ -366,7 +420,10 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 **Endpoints utilizados:**
 
-| Método | Endpoint | Descripción | |--------|--------------------------|-----------------------------------------| | `GET` | `/health` | Health check del backend | | `POST` | `/api/v1/hooks/{workflow_id}` | Disparar workflow con payload de alerta |
+| Método | Endpoint | Descripción |
+|--------|--------------------------|-----------------------------------------|
+| `GET` | `/health` | Health check del backend |
+| `POST` | `/api/v1/hooks/{workflow_id}` | Disparar workflow con payload de alerta |
 
 **Payload — Webhook de alerta (`POST /api/v1/hooks/{workflow_id}`):**
 
@@ -388,7 +445,11 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 **Límites de uso:**
 
-| Parámetro | Valor | |----------------------------|-----------------------------------| | `WEBHOOK_RATE_LIMIT` | 60 req/min (`.env.full`) | | `WEBHOOK_PAYLOAD_MAX_SIZE` | 65536 bytes / 64 KB (`.env.full`) | | Timeout cliente | 3 s (tests E2E) |
+| Parámetro | Valor |
+|----------------------------|-----------------------------------|
+| `WEBHOOK_RATE_LIMIT` | 60 req/min (`.env.full`) |
+| `WEBHOOK_PAYLOAD_MAX_SIZE` | 65536 bytes / 64 KB (`.env.full`) |
+| Timeout cliente | 3 s (tests E2E) |
 
 ###### 3.3.2.4 Lab API — FastAPI
 
@@ -402,7 +463,48 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 **Endpoints:**
 
-| Método | Endpoint | Auth | Descripción | |--------|----------------------|------|--------------------------------------| | `GET` | `/health` | No | Health check | | `GET` | `/` | No | Documentación HTML | | `POST` | `/auth/login` | No | Obtener JWT token | | `POST` | `/auth/verify` | JWT | Verificar token | | `GET` | `/analytics/metrics` | No | CPU, memoria y disco del host | | `GET` | `/analytics/kpis` | No | KPIs calculados (MTTR, detecciones…) | | `GET` | `/analytics/kpis/aggregated` | No | KPIs agregados desde Elasticsearch | | `GET` | `/analytics/node-timings` | No | Timings de nodos del workflow | | `GET` | `/services/status` | No | Estado de todos los contenedores | | `POST` | `/api/v1/contain` | No | Contención simulada de endpoints | | `POST` | `/api/v1/cache/ioc` | No | Cachear IoCs en Redis | | `POST` | `/tests/run` | No | Ejecutar suite de tests | | `POST` | `/backup/create` | No | Crear backup | | `GET` | `/backup/list` | No | Listar backups disponibles | | `POST` | `/backup/restore` | No | Restaurar backup | | `WS` | `/ws/logs` | No | Stream de logs en tiempo real | | `GET` | `/soar/status` | No | Health agregado de todas las integraciones| | `GET` | `/soar/thehive/cases` | No | Listar casos de TheHive | | `GET` | `/soar/thehive/cases/{case_id}` | No | Obtener caso de TheHive | | `GET` | `/soar/thehive/cases/{case_id}/observables` | No | Observables de un caso | | `GET` | `/soar/thehive/cases/{case_id}/tasks` | No | Tareas de un caso | | `GET` | `/soar/thehive/health` | No | Health check de TheHive | | `GET` | `/soar/cortex/analyzers` | No | Listar analyzers de Cortex | | `GET` | `/soar/cortex/jobs` | No | Listar jobs de Cortex | | `GET` | `/soar/cortex/jobs/{job_id}` | No | Estado de un job de Cortex | | `GET` | `/soar/cortex/jobs/{job_id}/report` | No | Reporte de un job de Cortex | | `GET` | `/soar/cortex/health` | No | Health check de Cortex | | `GET` | `/soar/misp/attributes` | No | Buscar atributos en MISP | | `GET` | `/soar/misp/events` | No | Listar eventos de MISP | | `GET` | `/soar/misp/events/{event_id}` | No | Obtener evento de MISP | | `GET` | `/soar/misp/health` | No | Health check de MISP | | `GET` | `/soar/shuffle/workflows` | No | Listar workflows de Shuffle | | `GET` | `/soar/shuffle/workflows/{workflow_id}` | No | Obtener workflow de Shuffle | | `GET` | `/soar/shuffle/workflows/{workflow_id}/executions` | No | Ejecuciones de un workflow | | `GET` | `/soar/shuffle/workflows/{workflow_id}/executions/{execution_id}` | No | Ejecución específica | | `GET` | `/soar/shuffle/health` | No | Health check de Shuffle | | `GET` | `/soar/elasticsearch/count` | No | Contar documentos en un índice | | `GET` | `/soar/elasticsearch/latest` | No | Documentos recientes de un índice | | `GET` | `/soar/elasticsearch/health` | No | Health de Elasticsearch | | `GET` | `/soar//agents/{agent_id}/vulnerabilities` | No | CVEs de un agente |
+| Método | Endpoint | Auth | Descripción |
+|--------|----------------------|------|--------------------------------------|
+| `GET` | `/health` | No | Health check |
+| `GET` | `/` | No | Documentación HTML |
+| `POST` | `/auth/login` | No | Obtener JWT token |
+| `POST` | `/auth/verify` | JWT | Verificar token |
+| `GET` | `/analytics/metrics` | No | CPU, memoria y disco del host |
+| `GET` | `/analytics/kpis` | No | KPIs calculados (MTTR, detecciones…) |
+| `GET` | `/analytics/kpis/aggregated` | No | KPIs agregados desde Elasticsearch |
+| `GET` | `/analytics/node-timings` | No | Timings de nodos del workflow |
+| `GET` | `/services/status` | No | Estado de todos los contenedores |
+| `POST` | `/api/v1/contain` | No | Contención simulada de endpoints |
+| `POST` | `/api/v1/cache/ioc` | No | Cachear IoCs en Redis |
+| `POST` | `/tests/run` | No | Ejecutar suite de tests |
+| `POST` | `/backup/create` | No | Crear backup |
+| `GET` | `/backup/list` | No | Listar backups disponibles |
+| `POST` | `/backup/restore` | No | Restaurar backup |
+| `WS` | `/ws/logs` | No | Stream de logs en tiempo real |
+| `GET` | `/soar/status` | No | Health agregado de todas las integraciones |
+| `GET` | `/soar/thehive/cases` | No | Listar casos de TheHive |
+| `GET` | `/soar/thehive/cases/{case_id}` | No | Obtener caso de TheHive |
+| `GET` | `/soar/thehive/cases/{case_id}/observables` | No | Observables de un caso |
+| `GET` | `/soar/thehive/cases/{case_id}/tasks` | No | Tareas de un caso |
+| `GET` | `/soar/thehive/health` | No | Health check de TheHive |
+| `GET` | `/soar/cortex/analyzers` | No | Listar analyzers de Cortex |
+| `GET` | `/soar/cortex/jobs` | No | Listar jobs de Cortex |
+| `GET` | `/soar/cortex/jobs/{job_id}` | No | Estado de un job de Cortex |
+| `GET` | `/soar/cortex/jobs/{job_id}/report` | No | Reporte de un job de Cortex |
+| `GET` | `/soar/cortex/health` | No | Health check de Cortex |
+| `GET` | `/soar/misp/attributes` | No | Buscar atributos en MISP |
+| `GET` | `/soar/misp/events` | No | Listar eventos de MISP |
+| `GET` | `/soar/misp/events/{event_id}` | No | Obtener evento de MISP |
+| `GET` | `/soar/misp/health` | No | Health check de MISP |
+| `GET` | `/soar/shuffle/workflows` | No | Listar workflows de Shuffle |
+| `GET` | `/soar/shuffle/workflows/{workflow_id}` | No | Obtener workflow de Shuffle |
+| `GET` | `/soar/shuffle/workflows/{workflow_id}/executions` | No | Ejecuciones de un workflow |
+| `GET` | `/soar/shuffle/workflows/{workflow_id}/executions/{execution_id}` | No | Ejecución específica |
+| `GET` | `/soar/shuffle/health` | No | Health check de Shuffle |
+| `GET` | `/soar/elasticsearch/count` | No | Contar documentos en un índice |
+| `GET` | `/soar/elasticsearch/latest` | No | Documentos recientes de un índice |
+| `GET` | `/soar/elasticsearch/health` | No | Health de Elasticsearch |
+| `GET` | `/soar//agents/{agent_id}/vulnerabilities` | No | CVEs de un agente |
 
 **Payload — Login (`POST /auth/login`):**
 
@@ -463,7 +565,30 @@ Valores válidos para `category`: `unit`, `integration`, `e2e`, `atomic`, `perfo
 
 ##### 3.3.3 Resumen de variables de entorno por API
 
-| Variable | API | Descripción | |----------------------------|-------------------|--------------------------------------------| | `THEHIVE_API_KEY` | TheHive | API key de autenticación | | `THEHIVE_HTTP_PORT` | TheHive | Puerto host (default 8100) | | `CORTEX_API_KEY` | Cortex | API key de autenticación | | `CORTEX_HTTP_PORT` | Cortex | Puerto host (default 8101) | | `SHUFFLE_API_PORT` | Shuffle | Puerto del backend (default 5001, expuesto 8081) | | `SHUFFLE_UI_PORT` | Shuffle UI | Puerto host (default 8081) | | `SIEM_WEBHOOK_TOKEN` | Shuffle webhook | Token Bearer del webhook | | `API_PORT` | Lab API | Puerto del servidor FastAPI (default 8000) | | `JWT_SECRET_KEY` | Lab API | Secreto preferente de firma JWT (>=32 chars) | | `JWT_ALGORITHM` | Lab API | Algoritmo de firma JWT (default `HS256`) | | `JWT_EXPIRATION_MINUTES` | Lab API | Tiempo de expiración del token (default 60) | | `API_AUTH_SECRET` | Lab API | Secreto legacy de firma JWT (fallback) | | `WEB_UI_USER` | Lab API | Usuario para `/auth/login` | | `WEB_UI_PASSWORD` | Lab API | Contraseña para `/auth/login` | | `CORS_ORIGINS` | Lab API | Orígenes permitidos para CORS | | `EDR_SIM_TOKEN` | EDR simulado | Token reservado (simulado) | | `FIREWALL_SIM_TOKEN` | Firewall simulado | Token reservado (simulado) | | `MAX_CONCURRENT_ANALYZERS` | Cortex | Máx. analyzers en paralelo | | `ANALYZER_TIMEOUT` | Cortex | Timeout por job (segundos) | | `WEBHOOK_RATE_LIMIT` | Shuffle | Máx. peticiones/min al webhook | | `WEBHOOK_PAYLOAD_MAX_SIZE` | Shuffle | Tamaño máximo del payload (bytes) | | `DECISION_SCORE_THRESHOLD` | Playbook | Umbral de contención (default 80) |
+| Variable | API | Descripción |
+|----------------------------|-------------------|--------------------------------------------|
+| `THEHIVE_API_KEY` | TheHive | API key de autenticación |
+| `THEHIVE_HTTP_PORT` | TheHive | Puerto host (default 8100) |
+| `CORTEX_API_KEY` | Cortex | API key de autenticación |
+| `CORTEX_HTTP_PORT` | Cortex | Puerto host (default 8101) |
+| `SHUFFLE_API_PORT` | Shuffle | Puerto del backend (default 5001, expuesto 8081) |
+| `SHUFFLE_UI_PORT` | Shuffle UI | Puerto host (default 8081) |
+| `SIEM_WEBHOOK_TOKEN` | Shuffle webhook | Token Bearer del webhook |
+| `API_PORT` | Lab API | Puerto del servidor FastAPI (default 8000) |
+| `JWT_SECRET_KEY` | Lab API | Secreto preferente de firma JWT (>=32 chars) |
+| `JWT_ALGORITHM` | Lab API | Algoritmo de firma JWT (default `HS256`) |
+| `JWT_EXPIRATION_MINUTES` | Lab API | Tiempo de expiración del token (default 60) |
+| `API_AUTH_SECRET` | Lab API | Secreto legacy de firma JWT (fallback) |
+| `WEB_UI_USER` | Lab API | Usuario para `/auth/login` |
+| `WEB_UI_PASSWORD` | Lab API | Contraseña para `/auth/login` |
+| `CORS_ORIGINS` | Lab API | Orígenes permitidos para CORS |
+| `EDR_SIM_TOKEN` | EDR simulado | Token reservado (simulado) |
+| `FIREWALL_SIM_TOKEN` | Firewall simulado | Token reservado (simulado) |
+| `MAX_CONCURRENT_ANALYZERS` | Cortex | Máx. analyzers en paralelo |
+| `ANALYZER_TIMEOUT` | Cortex | Timeout por job (segundos) |
+| `WEBHOOK_RATE_LIMIT` | Shuffle | Máx. peticiones/min al webhook |
+| `WEBHOOK_PAYLOAD_MAX_SIZE` | Shuffle | Tamaño máximo del payload (bytes) |
+| `DECISION_SCORE_THRESHOLD` | Playbook | Umbral de contención (default 80) |
 
 ##### 3.3.4 Modelos de datos
 
@@ -1076,7 +1201,14 @@ Las claves más relevantes de `.env.full` son:
 
 Las versiones canónicas de los componentes principales se consultan directamente en `infra/docker/compose/docker-compose.core.yml` y en [docs/02-architecture.md](02-architecture.md).
 
-| Componente | Versión verificada | Fuente | Documentación oficial | |------------|--------------------|--------|-----------------------| | **Shuffle** | `2.2.1` (`ghcr.io/shuffle/shuffle-frontend/backend/orborus:2.2.1`) | `infra/docker/compose/docker-compose.core.yml` | <https://shuffler.io/docs> | | **TheHive** | `3.5.2-1` (`thehiveproject/thehive:3.5.2-1`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/thehive/> | | **Cortex** | `3.2.0-1` (imagen compatible con TheHive 3.x) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/cortex/> | | **MISP** | `v2.5.44` (`ghcr.io/misp/misp-docker/misp-core:v2.5.44`) | `infra/docker/compose/docker-compose.misp.yml` | <https://www.misp-project.org/documentation/> | | **Elasticsearch** | `7.10.2` | `infra/docker/compose/docker-compose.yml` | <https://www.elastic.co/guide/en/elasticsearch/reference/7.10/index.html> | | **OpenSearch** | `2.10.0` | `infra/docker/compose/docker-compose.opensearch.yml` | <https://opensearch.org/docs/latest/> |
+| Componente | Versión verificada | Fuente | Documentación oficial |
+|------------|--------------------|--------|-----------------------|
+| **Shuffle** | `2.2.1` (`ghcr.io/shuffle/shuffle-frontend/backend/orborus:2.2.1`) | `infra/docker/compose/docker-compose.core.yml` | <https://shuffler.io/docs> |
+| **TheHive** | `3.5.2-1` (`thehiveproject/thehive:3.5.2-1`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/thehive/> |
+| **Cortex** | `3.2.0-1` (imagen compatible con TheHive 3.x) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/cortex/> |
+| **MISP** | `v2.5.44` (`ghcr.io/misp/misp-docker/misp-core:v2.5.44`) | `infra/docker/compose/docker-compose.misp.yml` | <https://www.misp-project.org/documentation/> |
+| **Elasticsearch** | `7.10.2` | `infra/docker/compose/docker-compose.yml` | <https://www.elastic.co/guide/en/elasticsearch/reference/7.10/index.html> |
+| **OpenSearch** | `2.10.0` | `infra/docker/compose/docker-compose.opensearch.yml` | <https://opensearch.org/docs/latest/> |
 
 > **Nota:** La imagen TheHive `3.5.2-1` es la que se despliega; la documentación de StrangeBee cubre tanto TheHive 3 como TheHive 5. La API y los endpoints principales no cambian para las operaciones usadas en este laboratorio.
 

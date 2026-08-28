@@ -231,56 +231,160 @@ A continuación se listan las variables del archivo `.env.full` (catálogo deriv
 
 ##### Proyecto y puertos
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `COMPOSE_PROJECT_NAME` | Nombre del proyecto Docker Compose | Sí (default: `soar`) | `soar` | Docker Compose | | `THEHIVE_HTTP_PORT` | Puerto HTTP de TheHive | Sí (default: 8100) | `8100` | Docker Compose / TheHive | | `CORTEX_HTTP_PORT` | Puerto HTTP de Cortex | Sí (default: 8101) | `8101` | Docker Compose / Cortex | | `SHUFFLE_UI_PORT` | Puerto del frontend de Shuffle | Sí (default: 8081) | `8081` | Docker Compose / Shuffle | | `SHUFFLE_API_PORT` | Puerto del backend de Shuffle | Sí (default: 5001) | `5001` | Docker Compose / Shuffle | | `ELASTICSEARCH_PORT` | Puerto de Elasticsearch | Sí (default: 8200) | `8200` | Docker Compose / Elasticsearch | | `OPENSEARCH_PORT` | Puerto de OpenSearch (migración) | Sí (default: 8201) | `8201` | Docker Compose / OpenSearch | | `OPENSEARCH_DASHBOARDS_PORT` | Puerto de OpenSearch Dashboards | Sí (default: 8202) | `8202` | Docker Compose / OpenSearch | | `REDIS_PORT` | Puerto de Redis | Sí (default: 6379) | `6379` | Docker Compose / Redis | | `HTTP_PORT` | Puerto HTTP de Nginx | Sí (default: 80) | `80` | Docker Compose / Nginx | | `WEB_UI_PORT` | Puerto del Web Management | Sí (default: 8085) | `8085` | Docker Compose / Web Management | | `API_PORT` | Puerto de la Lab API | Sí (default: 8000) | `8000` | Docker Compose / Lab API | | `DOCS_PORT` | Puerto del docs-site de Docusaurus | Sí (default: 8086) | `8086` | Docker Compose / Docs site | | `MISP_PORT` | Puerto de MISP | Sí (default: 8083) | `8083` | Docker Compose / MISP | | `GRAFANA_PORT` | Puerto de Grafana | Sí (default: 8084) | `8084` | Docker Compose / Grafana |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `COMPOSE_PROJECT_NAME` | Nombre del proyecto Docker Compose | Sí (default: `soar`) | `soar` | Docker Compose |
+| `THEHIVE_HTTP_PORT` | Puerto HTTP de TheHive | Sí (default: 8100) | `8100` | Docker Compose / TheHive |
+| `CORTEX_HTTP_PORT` | Puerto HTTP de Cortex | Sí (default: 8101) | `8101` | Docker Compose / Cortex |
+| `SHUFFLE_UI_PORT` | Puerto del frontend de Shuffle | Sí (default: 8081) | `8081` | Docker Compose / Shuffle |
+| `SHUFFLE_API_PORT` | Puerto del backend de Shuffle | Sí (default: 5001) | `5001` | Docker Compose / Shuffle |
+| `ELASTICSEARCH_PORT` | Puerto de Elasticsearch | Sí (default: 8200) | `8200` | Docker Compose / Elasticsearch |
+| `OPENSEARCH_PORT` | Puerto de OpenSearch (migración) | Sí (default: 8201) | `8201` | Docker Compose / OpenSearch |
+| `OPENSEARCH_DASHBOARDS_PORT` | Puerto de OpenSearch Dashboards | Sí (default: 8202) | `8202` | Docker Compose / OpenSearch |
+| `REDIS_PORT` | Puerto de Redis | Sí (default: 6379) | `6379` | Docker Compose / Redis |
+| `HTTP_PORT` | Puerto HTTP de Nginx | Sí (default: 80) | `80` | Docker Compose / Nginx |
+| `WEB_UI_PORT` | Puerto del Web Management | Sí (default: 8085) | `8085` | Docker Compose / Web Management |
+| `API_PORT` | Puerto de la Lab API | Sí (default: 8000) | `8000` | Docker Compose / Lab API |
+| `DOCS_PORT` | Puerto del docs-site de Docusaurus | Sí (default: 8086) | `8086` | Docker Compose / Docs site |
+| `MISP_PORT` | Puerto de MISP | Sí (default: 8083) | `8083` | Docker Compose / MISP |
+| `GRAFANA_PORT` | Puerto de Grafana | Sí (default: 8084) | `8084` | Docker Compose / Grafana |
 
 ##### Elasticsearch y OpenSearch
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `ELASTIC_USERNAME` | Usuario de Elasticsearch | Sí (default: `elastic`) | `elastic` | Elasticsearch | | `ELASTIC_PASSWORD` | Contraseña de Elasticsearch | Sí (generado) | `<ELASTIC_PASSWORD>` | Elasticsearch | | `ELASTIC_SECURITY_ENABLED` | Habilitar seguridad de Elasticsearch | Sí (default: `false`) | `false` | Elasticsearch | | `ES_JAVA_OPTS` | Opciones de memoria de la JVM de Elasticsearch | Sí (default: `-Xms2g -Xmx2g`) | `-Xms2g -Xmx2g` | Elasticsearch | | `OPENSEARCH_USERNAME` | Usuario de OpenSearch | Sí (default: `admin`) | `admin` | OpenSearch | | `OPENSEARCH_PASSWORD` | Contraseña de OpenSearch | Sí (generado) | `<OPENSEARCH_PASSWORD>` | OpenSearch | | `OPENSEARCH_SECURITY_ENABLED` | Habilitar seguridad de OpenSearch | Sí (default: `false`) | `false` | OpenSearch |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `ELASTIC_USERNAME` | Usuario de Elasticsearch | Sí (default: `elastic`) | `elastic` | Elasticsearch |
+| `ELASTIC_PASSWORD` | Contraseña de Elasticsearch | Sí (generado) | `<ELASTIC_PASSWORD>` | Elasticsearch |
+| `ELASTIC_SECURITY_ENABLED` | Habilitar seguridad de Elasticsearch | Sí (default: `false`) | `false` | Elasticsearch |
+| `ES_JAVA_OPTS` | Opciones de memoria de la JVM de Elasticsearch | Sí (default: `-Xms2g -Xmx2g`) | `-Xms2g -Xmx2g` | Elasticsearch |
+| `OPENSEARCH_USERNAME` | Usuario de OpenSearch | Sí (default: `admin`) | `admin` | OpenSearch |
+| `OPENSEARCH_PASSWORD` | Contraseña de OpenSearch | Sí (generado) | `<OPENSEARCH_PASSWORD>` | OpenSearch |
+| `OPENSEARCH_SECURITY_ENABLED` | Habilitar seguridad de OpenSearch | Sí (default: `false`) | `false` | OpenSearch |
 
 ##### TheHive y Cortex
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `THEHIVE_SECRET` | Secret de TheHive | Sí (generado) | `<THEHIVE_SECRET>` | TheHive | | `THEHIVE_API_KEY` | API key de TheHive | Sí (generado) | `<THEHIVE_API_KEY>` | TheHive / Lab API | | `CORTEX_SECRET` | Secret de Cortex | Sí (generado) | `<CORTEX_SECRET>` | Cortex | | `CORTEX_API_KEY` | API key de Cortex | Sí (generado) | `<CORTEX_API_KEY>` | Cortex / Lab API |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `THEHIVE_SECRET` | Secret de TheHive | Sí (generado) | `<THEHIVE_SECRET>` | TheHive |
+| `THEHIVE_API_KEY` | API key de TheHive | Sí (generado) | `<THEHIVE_API_KEY>` | TheHive / Lab API |
+| `CORTEX_SECRET` | Secret de Cortex | Sí (generado) | `<CORTEX_SECRET>` | Cortex |
+| `CORTEX_API_KEY` | API key de Cortex | Sí (generado) | `<CORTEX_API_KEY>` | Cortex / Lab API |
 
 ##### Shuffle
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `SHUFFLE_DEFAULT_USERNAME` | Usuario administrador de Shuffle | Sí (default: `admin`) | `admin` | Shuffle | | `SHUFFLE_DEFAULT_PASSWORD` | Contraseña admin de Shuffle | Sí (generado) | `<SHUFFLE_DEFAULT_PASSWORD>` | Shuffle | | `SHUFFLE_DEFAULT_APIKEY` | API key por defecto de Shuffle | Sí (generado; rota en cada despliegue) | `<SHUFFLE_DEFAULT_APIKEY>` | Shuffle / Lab API | | `SHUFFLE_ORG_ID` | Identificador de organización de Shuffle | Sí (default: `soar-lab-org-default`) | `soar-lab-org-default` | Shuffle | | `SHUFFLE_ENV_NAME` | Nombre del entorno de Shuffle | Sí (default: `Shuffle`) | `Shuffle` | Shuffle | | `DOCKER_API_VERSION` | Versión de la API de Docker para Orborus | Sí (default: `1.45`) | `1.45` | Shuffle / Orborus |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `SHUFFLE_DEFAULT_USERNAME` | Usuario administrador de Shuffle | Sí (default: `admin`) | `admin` | Shuffle |
+| `SHUFFLE_DEFAULT_PASSWORD` | Contraseña admin de Shuffle | Sí (generado) | `<SHUFFLE_DEFAULT_PASSWORD>` | Shuffle |
+| `SHUFFLE_DEFAULT_APIKEY` | API key por defecto de Shuffle | Sí (generado; rota en cada despliegue) | `<SHUFFLE_DEFAULT_APIKEY>` | Shuffle / Lab API |
+| `SHUFFLE_ORG_ID` | Identificador de organización de Shuffle | Sí (default: `soar-lab-org-default`) | `soar-lab-org-default` | Shuffle |
+| `SHUFFLE_ENV_NAME` | Nombre del entorno de Shuffle | Sí (default: `Shuffle`) | `Shuffle` | Shuffle |
+| `DOCKER_API_VERSION` | Versión de la API de Docker para Orborus | Sí (default: `1.45`) | `1.45` | Shuffle / Orborus |
 
 ##### Bases de datos y caché
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `POSTGRES_USER` | Usuario de PostgreSQL (TheHive DB) | Sí (default: `thehive`) | `thehive` | PostgreSQL | | `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | Sí (generado) | `<POSTGRES_PASSWORD>` | PostgreSQL | | `POSTGRES_DB` | Base de datos de PostgreSQL | Sí (default: `thehive`) | `thehive` | PostgreSQL | | `REDIS_PASSWORD` | Contraseña de Redis | Sí (generado) | `<REDIS_PASSWORD>` | Redis |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `POSTGRES_USER` | Usuario de PostgreSQL (TheHive DB) | Sí (default: `thehive`) | `thehive` | PostgreSQL |
+| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | Sí (generado) | `<POSTGRES_PASSWORD>` | PostgreSQL |
+| `POSTGRES_DB` | Base de datos de PostgreSQL | Sí (default: `thehive`) | `thehive` | PostgreSQL |
+| `REDIS_PASSWORD` | Contraseña de Redis | Sí (generado) | `<REDIS_PASSWORD>` | Redis |
 
 ##### MISP
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `MISP_HOSTNAME` | Hostname de MISP | Sí (default: `localhost`) | `localhost` | MISP | | `MISP_DB_ROOT_PASSWORD` | Contraseña root de MariaDB de MISP | Sí (generado) | `<MISP_DB_ROOT_PASSWORD>` | MISP DB | | `MISP_DB_NAME` | Nombre de la BD de MISP | Sí (default: `misp`) | `misp` | MISP DB | | `MISP_DB_USER` | Usuario de la BD de MISP | Sí (default: `misp`) | `misp` | MISP DB | | `MISP_DB_PASSWORD` | Contraseña de la BD de MISP | Sí (generado) | `<MISP_DB_PASSWORD>` | MISP DB | | `MISP_ADMIN_EMAIL` | Email del admin de MISP | Sí (default: `admin@soar.local`) | `admin@soar.local` | MISP | | `MISP_ADMIN_PASSWORD` | Contraseña del admin de MISP | Sí (generado) | `<MISP_ADMIN_PASSWORD>` | MISP | | `MISP_ADMIN_ORG` | Organización admin de MISP | Sí (default: `SOAR Lab`) | `SOAR Lab` | MISP | | `MISP_EMAIL` | Email de contacto de MISP | Sí (default: `noreply@soar.local`) | `noreply@soar.local` | MISP | | `MISP_CONTACT` | Email de contacto del administrador | Sí (default: `admin@soar.local`) | `admin@soar.local` | MISP | | `MISP_ENCRYPTION_KEY` | Clave de cifrado de MISP | Sí (generado) | `<MISP_ENCRYPTION_KEY>` | MISP | | `MISP_SALT` | Salt de MISP | Sí (generado) | `<MISP_SALT>` | MISP | | `MISP_API_KEY` | API key de MISP | Sí (generado) | `<MISP_API_KEY>` | MISP / Lab API |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `MISP_HOSTNAME` | Hostname de MISP | Sí (default: `localhost`) | `localhost` | MISP |
+| `MISP_DB_ROOT_PASSWORD` | Contraseña root de MariaDB de MISP | Sí (generado) | `<MISP_DB_ROOT_PASSWORD>` | MISP DB |
+| `MISP_DB_NAME` | Nombre de la BD de MISP | Sí (default: `misp`) | `misp` | MISP DB |
+| `MISP_DB_USER` | Usuario de la BD de MISP | Sí (default: `misp`) | `misp` | MISP DB |
+| `MISP_DB_PASSWORD` | Contraseña de la BD de MISP | Sí (generado) | `<MISP_DB_PASSWORD>` | MISP DB |
+| `MISP_ADMIN_EMAIL` | Email del admin de MISP | Sí (default: `admin@soar.local`) | `admin@soar.local` | MISP |
+| `MISP_ADMIN_PASSWORD` | Contraseña del admin de MISP | Sí (generado) | `<MISP_ADMIN_PASSWORD>` | MISP |
+| `MISP_ADMIN_ORG` | Organización admin de MISP | Sí (default: `SOAR Lab`) | `SOAR Lab` | MISP |
+| `MISP_EMAIL` | Email de contacto de MISP | Sí (default: `noreply@soar.local`) | `noreply@soar.local` | MISP |
+| `MISP_CONTACT` | Email de contacto del administrador | Sí (default: `admin@soar.local`) | `admin@soar.local` | MISP |
+| `MISP_ENCRYPTION_KEY` | Clave de cifrado de MISP | Sí (generado) | `<MISP_ENCRYPTION_KEY>` | MISP |
+| `MISP_SALT` | Salt de MISP | Sí (generado) | `<MISP_SALT>` | MISP |
+| `MISP_API_KEY` | API key de MISP | Sí (generado) | `<MISP_API_KEY>` | MISP / Lab API |
 
 ##### Grafana
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `GRAFANA_ADMIN_USER` | Usuario administrador de Grafana | Sí (default: `admin`) | `admin` | Grafana | | `GRAFANA_ADMIN_PASSWORD` | Contraseña admin de Grafana | Sí (generado) | `<GRAFANA_ADMIN_PASSWORD>` | Grafana | | `GRAFANA_DATABASE_HOST` | Host de la BD de Grafana | Sí (default: `grafana-db`) | `grafana-db` | Grafana | | `GRAFANA_DATABASE_NAME` | Nombre de la BD de Grafana | Sí (default: `grafana`) | `grafana` | Grafana | | `GRAFANA_DATABASE_USER` | Usuario de la BD de Grafana | Sí (default: `grafana`) | `grafana` | Grafana | | `GRAFANA_DATABASE_PASSWORD` | Contraseña de la BD de Grafana | Sí (generado) | `<GRAFANA_DATABASE_PASSWORD>` | Grafana |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `GRAFANA_ADMIN_USER` | Usuario administrador de Grafana | Sí (default: `admin`) | `admin` | Grafana |
+| `GRAFANA_ADMIN_PASSWORD` | Contraseña admin de Grafana | Sí (generado) | `<GRAFANA_ADMIN_PASSWORD>` | Grafana |
+| `GRAFANA_DATABASE_HOST` | Host de la BD de Grafana | Sí (default: `grafana-db`) | `grafana-db` | Grafana |
+| `GRAFANA_DATABASE_NAME` | Nombre de la BD de Grafana | Sí (default: `grafana`) | `grafana` | Grafana |
+| `GRAFANA_DATABASE_USER` | Usuario de la BD de Grafana | Sí (default: `grafana`) | `grafana` | Grafana |
+| `GRAFANA_DATABASE_PASSWORD` | Contraseña de la BD de Grafana | Sí (generado) | `<GRAFANA_DATABASE_PASSWORD>` | Grafana |
 
 ##### Web Management y Lab API
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `WEB_UI_USER` | Usuario del Web Management | Sí (default: `admin`) | `admin` | Web Management | | `WEB_UI_PASSWORD` | Contraseña del Web Management | Sí (generado) | `<WEB_UI_PASSWORD>` | Web Management | | `API_LOG_LEVEL` | Nivel de log de la Lab API | Sí (default: `INFO`) | `INFO` | Lab API | | `API_AUTH_SECRET` | Secreto legacy de firma de tokens | Sí (generado; **legacy**) | `<API_AUTH_SECRET>` | Lab API (fallback) | | `JWT_SECRET_KEY` | Secreto preferente de firma de tokens JWT | Sí (generado) | `<JWT_SECRET_KEY>` | Lab API | | `JWT_EXPIRATION_MINUTES` | Tiempo de expiración del token JWT | Sí (default: 60) | `60` | Lab API | | `JWT_ALGORITHM` | Algoritmo de firma JWT | Sí (default: `HS256`) | `HS256` | Lab API | | `CORS_ORIGINS` | Orígenes permitidos para CORS | Sí (default: lista de localhost) | `http://localhost:8085,...` | Lab API |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `WEB_UI_USER` | Usuario del Web Management | Sí (default: `admin`) | `admin` | Web Management |
+| `WEB_UI_PASSWORD` | Contraseña del Web Management | Sí (generado) | `<WEB_UI_PASSWORD>` | Web Management |
+| `API_LOG_LEVEL` | Nivel de log de la Lab API | Sí (default: `INFO`) | `INFO` | Lab API |
+| `API_AUTH_SECRET` | Secreto legacy de firma de tokens | Sí (generado; **legacy**) | `<API_AUTH_SECRET>` | Lab API (fallback) |
+| `JWT_SECRET_KEY` | Secreto preferente de firma de tokens JWT | Sí (generado) | `<JWT_SECRET_KEY>` | Lab API |
+| `JWT_EXPIRATION_MINUTES` | Tiempo de expiración del token JWT | Sí (default: 60) | `60` | Lab API |
+| `JWT_ALGORITHM` | Algoritmo de firma JWT | Sí (default: `HS256`) | `HS256` | Lab API |
+| `CORS_ORIGINS` | Orígenes permitidos para CORS | Sí (default: lista de localhost) | `http://localhost:8085,...` | Lab API |
 
 > **Resolución de nombres duplicados:** La Lab API prioriza `JWT_SECRET_KEY`; `API_AUTH_SECRET` actúa como fallback legacy. No se usan `JWT_SECRET` ni `AUTH_SECRET_KEY`; si aparecen en documentación antigua, deben sustituirse por `JWT_SECRET_KEY` y `API_AUTH_SECRET` respectivamente.
 
 ##### Tokens de simulación y notificaciones
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `SIEM_WEBHOOK_TOKEN` | Token para el webhook de simulación SIEM | Sí (generado) | `<SIEM_WEBHOOK_TOKEN>` | Simulación / Shuffle | | `EDR_SIM_TOKEN` | Token de simulación EDR | Sí (generado) | `<EDR_SIM_TOKEN>` | Simulación / Lab API | | `FIREWALL_SIM_TOKEN` | Token de simulación de firewall | Sí (generado) | `<FIREWALL_SIM_TOKEN>` | Simulación / Lab API | | `SMTP_HOST` | Servidor SMTP para notificaciones | No (default: `localhost`) | `localhost` | Lab API (notificaciones) | | `SMTP_PORT` | Puerto SMTP | No (default: 25) | `25` | Lab API (notificaciones) | | `SMTP_USER` | Usuario SMTP | No (default: vacío) | *(vacío)* | Lab API (notificaciones) | | `SMTP_PASSWORD` | Contraseña SMTP | No (default: vacío) | *(vacío)* | Lab API (notificaciones) |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `SIEM_WEBHOOK_TOKEN` | Token para el webhook de simulación SIEM | Sí (generado) | `<SIEM_WEBHOOK_TOKEN>` | Simulación / Shuffle |
+| `EDR_SIM_TOKEN` | Token de simulación EDR | Sí (generado) | `<EDR_SIM_TOKEN>` | Simulación / Lab API |
+| `FIREWALL_SIM_TOKEN` | Token de simulación de firewall | Sí (generado) | `<FIREWALL_SIM_TOKEN>` | Simulación / Lab API |
+| `SMTP_HOST` | Servidor SMTP para notificaciones | No (default: `localhost`) | `localhost` | Lab API (notificaciones) |
+| `SMTP_PORT` | Puerto SMTP | No (default: 25) | `25` | Lab API (notificaciones) |
+| `SMTP_USER` | Usuario SMTP | No (default: vacío) | *(vacío)* | Lab API (notificaciones) |
+| `SMTP_PASSWORD` | Contraseña SMTP | No (default: vacío) | *(vacío)* | Lab API (notificaciones) |
 
 ##### Playbook, analyzers y rate limiting
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `DECISION_SCORE_THRESHOLD` | Umbral de puntuación para decisiones del playbook | Sí (default: 80) | `80` | Lab API / Playbook | | `WEBHOOK_RATE_LIMIT` | Límite de peticiones por minuto al webhook | Sí (default: 60) | `60` | Lab API / Shuffle | | `WEBHOOK_PAYLOAD_MAX_SIZE` | Tamaño máximo del payload del webhook | Sí (default: 65536) | `65536` | Lab API / Shuffle | | `MAX_CONCURRENT_ANALYZERS` | Analizadores concurrentes de Cortex | Sí (default: 3) | `3` | Cortex / Lab API | | `ANALYZER_TIMEOUT` | Timeout de analizadores Cortex | Sí (default: 30) | `30` | Cortex | | `ANALYZER_RETRIES` | Reintentos de analizadores Cortex | Sí (default: 1) | `1` | Cortex |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `DECISION_SCORE_THRESHOLD` | Umbral de puntuación para decisiones del playbook | Sí (default: 80) | `80` | Lab API / Playbook |
+| `WEBHOOK_RATE_LIMIT` | Límite de peticiones por minuto al webhook | Sí (default: 60) | `60` | Lab API / Shuffle |
+| `WEBHOOK_PAYLOAD_MAX_SIZE` | Tamaño máximo del payload del webhook | Sí (default: 65536) | `65536` | Lab API / Shuffle |
+| `MAX_CONCURRENT_ANALYZERS` | Analizadores concurrentes de Cortex | Sí (default: 3) | `3` | Cortex / Lab API |
+| `ANALYZER_TIMEOUT` | Timeout de analizadores Cortex | Sí (default: 30) | `30` | Cortex |
+| `ANALYZER_RETRIES` | Reintentos de analizadores Cortex | Sí (default: 1) | `1` | Cortex |
 
 ##### Logging, backups y opciones de desarrollo
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `LOG_LEVEL` | Nivel de log global | Sí (default: `INFO`) | `INFO` | Logging | | `LOG_FORMAT` | Formato de log (`json` o `text`) | Sí (default: `json`) | `json` | Logging | | `LOG_DIR` | Directorio de logs; vacío = consola | No (default: vacío) | *(vacío)* | Logging | | `BACKUP_ENABLED` | Habilitar backups automáticos | Sí (default: `true`) | `true` | Backup | | `BACKUP_SCHEDULE` | Cron de backups | Sí (default: `0 2 * * *`) | `0 2 * * *` | Backup | | `BACKUP_RETENTION_DAYS` | Días de retención de backups | Sí (default: 30) | `30` | Backup | | `BACKUP_ENCRYPTION` | Cifrar backups | Sí (default: `true`) | `true` | Backup | | `BACKUP_COMPRESSION` | Comprimir backups | Sí (default: `true`) | `true` | Backup | | `DEBUG_MODE` | Modo debug de la Lab API | No (default: `false`) | `false` | Lab API | | `VERBOSE_LOGGING` | Logging verbose | No (default: `false`) | `false` | Logging | | `HOT_RELOAD` | Recarga en caliente de la Lab API | No (default: `false`) | `false` | Lab API |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `LOG_LEVEL` | Nivel de log global | Sí (default: `INFO`) | `INFO` | Logging |
+| `LOG_FORMAT` | Formato de log (`json` o `text`) | Sí (default: `json`) | `json` | Logging |
+| `LOG_DIR` | Directorio de logs; vacío = consola | No (default: vacío) | *(vacío)* | Logging |
+| `BACKUP_ENABLED` | Habilitar backups automáticos | Sí (default: `true`) | `true` | Backup |
+| `BACKUP_SCHEDULE` | Cron de backups | Sí (default: `0 2 * * *`) | `0 2 * * *` | Backup |
+| `BACKUP_RETENTION_DAYS` | Días de retención de backups | Sí (default: 30) | `30` | Backup |
+| `BACKUP_ENCRYPTION` | Cifrar backups | Sí (default: `true`) | `true` | Backup |
+| `BACKUP_COMPRESSION` | Comprimir backups | Sí (default: `true`) | `true` | Backup |
+| `DEBUG_MODE` | Modo debug de la Lab API | No (default: `false`) | `false` | Lab API |
+| `VERBOSE_LOGGING` | Logging verbose | No (default: `false`) | `false` | Logging |
+| `HOT_RELOAD` | Recarga en caliente de la Lab API | No (default: `false`) | `false` | Lab API |
 
 ##### Límites de recursos de Docker
 
 
 ##### Imágenes y URLs externas
 
-| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor | |----------|-----------|----------------|-----------------------------|------------| | `SHUFFLE_FRONTEND_IMAGE` | Imagen del frontend de Shuffle | Sí (default: `ghcr.io/shuffle/shuffle-frontend:2.2.1`) | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | Docker Compose / Shuffle | | `SHUFFLE_BACKEND_IMAGE` | Imagen del backend de Shuffle | Sí (default: `ghcr.io/shuffle/shuffle-backend:2.2.1`) | `ghcr.io/shuffle/shuffle-backend:2.2.1` | Docker Compose / Shuffle | | `ORBORUS_IMAGE` | Imagen de Orborus | Sí (default: `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched` | Docker Compose / Orborus | | `OUTER_HOSTNAME` | Hostname externo para URLs | Sí (default: `localhost`) | `localhost` | Lab API / Shuffle | | `SHUFFLE_APP_DOWNLOAD_LOCATION` | URL de descarga de apps de Shuffle | Sí (default: URL GitHub) | `https://github.com/shuffle/python-apps` | Shuffle |
+| Variable | Propósito | Obligatoriedad | Ejemplo / Valor por defecto | Consumidor |
+|----------|-----------|----------------|-----------------------------|------------|
+| `SHUFFLE_FRONTEND_IMAGE` | Imagen del frontend de Shuffle | Sí (default: `ghcr.io/shuffle/shuffle-frontend:2.2.1`) | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | Docker Compose / Shuffle |
+| `SHUFFLE_BACKEND_IMAGE` | Imagen del backend de Shuffle | Sí (default: `ghcr.io/shuffle/shuffle-backend:2.2.1`) | `ghcr.io/shuffle/shuffle-backend:2.2.1` | Docker Compose / Shuffle |
+| `ORBORUS_IMAGE` | Imagen de Orborus | Sí (default: `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched` | Docker Compose / Orborus |
+| `OUTER_HOSTNAME` | Hostname externo para URLs | Sí (default: `localhost`) | `localhost` | Lab API / Shuffle |
+| `SHUFFLE_APP_DOWNLOAD_LOCATION` | URL de descarga de apps de Shuffle | Sí (default: URL GitHub) | `https://github.com/shuffle/python-apps` | Shuffle |
 
 > **Nota:** `SOAR_LOCAL_HOST` no aparece en `.env.example`; el host canónico por defecto es `soar.local` y se configura en `infra/docker/config/nginx/nginx.conf`. Si se desea cambiar, edita dicho archivo y el `hosts` del sistema.
 
@@ -813,14 +917,31 @@ específicas y credenciales.
 
 **Web Management UI**: `http://localhost:8085` (acceso directo) o `https://soar.local` a través de Nginx.
 
-| Servicio | URL directa | Vía Nginx `https://soar.local` | Credenciales | Notas | |----------|-------------|-------------------------------|--------------|-------| | **Web Management** | `http://localhost:8085/` | `/` | `WEB_UI_USER` / `WEB_UI_PASSWORD` | SPA principal del panel de operación | | **SOAR API** | `http://localhost:8000/` | `/api/` | JWT Bearer (`/auth/login`) | `/docs` y `/openapi.json` | | **Shuffle UI** | `http://localhost:8081/` | No soportado | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` | SPA con rutas absolutas; acceso directo obligatorio | | **Shuffle API** | `http://localhost:5001/` | `/shuffle-api/` | `SHUFFLE_DEFAULT_APIKEY` | Base URL interna: `http://shuffle-backend:5001` | | **TheHive** | `http://localhost:8100/` | `/thehive/` | admin / contraseña generada por `init_thehive.py` (ver logs) | API key: `THEHIVE_API_KEY` | | **Cortex** | `http://localhost:8101/` | `/cortex/` | admin / contraseña generada por `reset_cortex.py` (ver logs) | API key: `CORTEX_API_KEY` | | **MISP** | `http://localhost:8083/` | No soportado | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD` | Acceso directo obligatorio | | **Grafana** | `http://localhost:8084/` | No soportado | admin / `GRAFANA_ADMIN_PASSWORD` | Datasource Elasticsearch en `soar-metrics` | | **Docs Site** | `http://localhost:8086/` | No soportado | - | Docusaurus / docs-site | | **Elasticsearch** | `http://localhost:8200/` | No expuesto | `elastic` / `ELASTIC_PASSWORD` | Interno `http://elasticsearch:9200` | | **Nginx Health** | - | `/nginx-health` | - | Healthcheck del proxy |
+| Servicio | URL directa | Vía Nginx `https://soar.local` | Credenciales | Notas |
+|----------|-------------|-------------------------------|--------------|-------|
+| **Web Management** | `http://localhost:8085/` | `/` | `WEB_UI_USER` / `WEB_UI_PASSWORD` | SPA principal del panel de operación |
+| **SOAR API** | `http://localhost:8000/` | `/api/` | JWT Bearer (`/auth/login`) | `/docs` y `/openapi.json` |
+| **Shuffle UI** | `http://localhost:8081/` | No soportado | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` | SPA con rutas absolutas; acceso directo obligatorio |
+| **Shuffle API** | `http://localhost:5001/` | `/shuffle-api/` | `SHUFFLE_DEFAULT_APIKEY` | Base URL interna: `http://shuffle-backend:5001` |
+| **TheHive** | `http://localhost:8100/` | `/thehive/` | admin / contraseña generada por `init_thehive.py` (ver logs) | API key: `THEHIVE_API_KEY` |
+| **Cortex** | `http://localhost:8101/` | `/cortex/` | admin / contraseña generada por `reset_cortex.py` (ver logs) | API key: `CORTEX_API_KEY` |
+| **MISP** | `http://localhost:8083/` | No soportado | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD` | Acceso directo obligatorio |
+| **Grafana** | `http://localhost:8084/` | No soportado | admin / `GRAFANA_ADMIN_PASSWORD` | Datasource Elasticsearch en `soar-metrics` |
+| **Docs Site** | `http://localhost:8086/` | No soportado | - | Docusaurus / docs-site |
+| **Elasticsearch** | `http://localhost:8200/` | No expuesto | `elastic` / `ELASTIC_PASSWORD` | Interno `http://elasticsearch:9200` |
+| **Nginx Health** | - | `/nginx-health` | - | Healthcheck del proxy |
 
 > Los valores `admin`, `elastic` y los nombres de servicio se toman de `.env.example`. Todos los secretos se generan ejecutando
 > `make generate-secrets` (`scripts/setup/generate_env.py`). Revisar `.env.full` para las credenciales vigentes.
 
 #### 3.3.2 Archivos de entorno y sincronía de credenciales
 
-| Archivo | Propósito | ¿Se versiona? | Notas | |---------|-----------|---------------|-------| | `.env.example` | Plantilla con marcadores y valores por defecto saneados | Sí | No contiene secretos reales; se usa como base para `make generate-secrets`. | | `.env.full` | Archivo efectivo de configuración del stack | No (`.gitignore`) | Generado con `make generate-secrets`. Los comandos `docker compose` manuales lo cargan con `--env-file .env.full`. | | `.env` | Copia local generada por `make up` desde `.env.full` | No (`.gitignore`) | El Makefile usa `--env-file .env` (no `.env.full` directamente). Se genera en el paso [3/19] del `make up` con paths absolutos resueltos. | | `docker/.env` | **No se usa** en el proyecto | Depende | Si existiera, podría ser leído por `docker compose` al ejecutarse sin `--env-file`. Los ejemplos manuales incluyen siempre `--env-file .env.full` para evitar confusiones. |
+| Archivo | Propósito | ¿Se versiona? | Notas |
+|---------|-----------|---------------|-------|
+| `.env.example` | Plantilla con marcadores y valores por defecto saneados | Sí | No contiene secretos reales; se usa como base para `make generate-secrets`. |
+| `.env.full` | Archivo efectivo de configuración del stack | No (`.gitignore`) | Generado con `make generate-secrets`. Los comandos `docker compose` manuales lo cargan con `--env-file .env.full`. |
+| `.env` | Copia local generada por `make up` desde `.env.full` | No (`.gitignore`) | El Makefile usa `--env-file .env` (no `.env.full` directamente). Se genera en el paso [3/19] del `make up` con paths absolutos resueltos. |
+| `docker/.env` | **No se usa** en el proyecto | Depende | Si existiera, podría ser leído por `docker compose` al ejecutarse sin `--env-file`. Los ejemplos manuales incluyen siempre `--env-file .env.full` para evitar confusiones. |
 
 **Sincronía de la API key de Shuffle:**
 
@@ -1277,7 +1398,20 @@ Grafana se conecta a `logging_net` y `soar_net` para poder consultar `elasticsea
 
 ##### 4.2 Puertos de acceso
 
-| Servicio | Puerto host | Acceso directo | Vía Nginx (`https://soar.local`) | |----------|-------------|----------------|-----------------------------------| | Nginx HTTP→HTTPS | 80 | `http://localhost` | — | | Nginx HTTPS | 443 | `https://localhost` | — | | Web Management | 8085 | `http://localhost:8085` | `/` | | SOAR API | 8000 | `http://localhost:8000` (Swagger en `http://localhost:8000/docs`) | `/api/` — Swagger vía Nginx: `https://soar.local/api/docs` y `https://soar.local/api/openapi.json`. No usar `https://soar.local:8000/docs` (Nginx no escucha en 8000). | | Shuffle UI | 8081 | `http://localhost:8081` | No soportado (SPA con rutas absolutas) | | MISP | 8083 | `http://localhost:8083` | No soportado | | Grafana | 8084 | `http://localhost:8084` | No soportado | | Docs Site | 8086 | `http://localhost:8086` | No soportado | | TheHive | 8100 | `http://localhost:8100` | `/thehive/` | | Cortex | 8101 | `http://localhost:8101` | `/cortex/` | | Elasticsearch | 8200 | `http://localhost:8200` | No expuesto | | OpenSearch Dashboards | 8202 | `https://localhost:8202` | No soportado |
+| Servicio | Puerto host | Acceso directo | Vía Nginx (`https://soar.local`) |
+|----------|-------------|----------------|-----------------------------------|
+| Nginx HTTP→HTTPS | 80 | `http://localhost` | — |
+| Nginx HTTPS | 443 | `https://localhost` | — |
+| Web Management | 8085 | `http://localhost:8085` | `/` |
+| SOAR API | 8000 | `http://localhost:8000` (Swagger en `http://localhost:8000/docs`) | `/api/` — Swagger vía Nginx: `https://soar.local/api/docs` y `https://soar.local/api/openapi.json`. No usar `https://soar.local:8000/docs` (Nginx no escucha en 8000). |
+| Shuffle UI | 8081 | `http://localhost:8081` | No soportado (SPA con rutas absolutas) |
+| MISP | 8083 | `http://localhost:8083` | No soportado |
+| Grafana | 8084 | `http://localhost:8084` | No soportado |
+| Docs Site | 8086 | `http://localhost:8086` | No soportado |
+| TheHive | 8100 | `http://localhost:8100` | `/thehive/` |
+| Cortex | 8101 | `http://localhost:8101` | `/cortex/` |
+| Elasticsearch | 8200 | `http://localhost:8200` | No expuesto |
+| OpenSearch Dashboards | 8202 | `https://localhost:8202` | No soportado |
 
 ##### 4.3 Nginx como gateway SSL
 
@@ -1450,7 +1584,21 @@ sequenceDiagram
 
 El stack usa una combinación de **volúmenes nombrados de Docker** y **bind mounts** bajo `${ARTIFACTS_DIR:-../../../artifacts}`. Los principales son:
 
-| Volumen (named) | Ruta en contenedor | Servicio principal | Notas | |-----------------|--------------------|--------------------|-------| | `es_data` | `/usr/share/elasticsearch/data` | `elasticsearch` | Bind mount por defecto | | `thehive_files` | `/opt/thp/thehive/files` | `thehive` | — | | `cortex_data` | `/var/lib/cortex` | `cortex` | — | | `shuffle_apps` | `/shuffle-apps` | `shuffle-backend` | Apps descargadas de la App Exchange | | `shuffle_files` | `/shuffle-files` | `shuffle-backend` | — | | `redis_data` | `/data` | `redis` | — | | `nginx_logs` | `/var/log/nginx` | `nginx` | — | | `misp_db` | `/var/lib/mysql` | `misp-db` | **Volumen Docker normal** (sin bind mount) para evitar `Permission denied` en Windows | | `misp_files` | `/var/www/MISP/app/files` | `misp` | — | | `misp_logs` | `/var/www/MISP/app/tmp/logs` | `misp` | — | | `grafana_db_data` | `/var/lib/postgresql/data` | `grafana-db` | — | | `grafana_data` | `/var/lib/grafana` | `grafana` | — | | `loki_data` | `/var/lib/loki` | `loki` | — |
+| Volumen (named) | Ruta en contenedor | Servicio principal | Notas |
+|-----------------|--------------------|--------------------|-------|
+| `es_data` | `/usr/share/elasticsearch/data` | `elasticsearch` | Bind mount por defecto |
+| `thehive_files` | `/opt/thp/thehive/files` | `thehive` | — |
+| `cortex_data` | `/var/lib/cortex` | `cortex` | — |
+| `shuffle_apps` | `/shuffle-apps` | `shuffle-backend` | Apps descargadas de la App Exchange |
+| `shuffle_files` | `/shuffle-files` | `shuffle-backend` | — |
+| `redis_data` | `/data` | `redis` | — |
+| `nginx_logs` | `/var/log/nginx` | `nginx` | — |
+| `misp_db` | `/var/lib/mysql` | `misp-db` | **Volumen Docker normal** (sin bind mount) para evitar `Permission denied` en Windows |
+| `misp_files` | `/var/www/MISP/app/files` | `misp` | — |
+| `misp_logs` | `/var/www/MISP/app/tmp/logs` | `misp` | — |
+| `grafana_db_data` | `/var/lib/postgresql/data` | `grafana-db` | — |
+| `grafana_data` | `/var/lib/grafana` | `grafana` | — |
+| `loki_data` | `/var/lib/loki` | `loki` | — |
 
 > `docker compose down -v` elimina los volúmenes Docker normales, **pero no** borra los archivos de un bind mount local. Para una limpieza completa en Windows con `misp_db` antiguo como bind mount, revisar manualmente `runtime/data/misp/db/`.
 
@@ -1627,7 +1775,28 @@ Dominio local canónico: `soar.local` → `127.0.0.1` (añadir al archivo hosts,
 
 #### 2. Tabla de servicios
 
-| Servicio | Host / Puerto por defecto | Puerto contenedor | Protocolo | URL canónica | Acceso vía Nginx | Nombre de contenedor (`COMPOSE_PROJECT_NAME=soar`) | Notas | |---------------------------|----------------------------|-------------------|-----------|-------------------------------------------|------------------|----------------------------------------------------|-------| | Nginx (proxy inverso) | `80` / `443` | `80` / `443` | HTTP/HTTPS| `https://soar.local` | — | `soar_nginx` | Redirige 80→443. Termina TLS con `soar.local.crt`. | | Web Management | `${WEB_UI_PORT:-8085}` | `80` | HTTP | `http://localhost:8085` | `/` | `soar_web_management` | SPA servida también en raíz por Nginx. | | Docs Site (Docusaurus) | `${DOCS_PORT:-8086}` | `8080` | HTTP | `http://localhost:8086` | No | `soar_docs_site` | SPA con rutas absolutas; acceso directo. | | Lab API (FastAPI) | `${API_PORT:-8000}` | `8000` | HTTP | `http://localhost:8000` / `https://soar.local/api/` | `/api/` | `soar_api` | También accesible directo; Nginx añade headers CORS. | | Shuffle UI | `${SHUFFLE_UI_PORT:-8081}` | `80` | HTTP | `http://localhost:8081` | No | `soar_shuffle_frontend` | React SPA; no soporta subpath. | | Shuffle Backend | `${SHUFFLE_API_PORT:-5001}`| `5001` | HTTP | `http://localhost:5001` | `/shuffle-api/` | `soar_shuffle_backend` | Webhook de Shuffle apunta al contenedor `shuffle-backend:5001`. | | Orborus | — | `5000` | HTTP | — | No | `soar_orborus` | Sin puerto host; ejecuta workers dentro de Docker. | | Network Watcher | `${NETWORK_WATCHER_PORT:-15130}` | `8080` | HTTP | `http://localhost:15130` | No | `soar_network_watcher` | Conecta workers de Shuffle a `soar_net`. | | Tenzir Node | `15160` / `15140` | `5160` / `1514` | HTTP/Syslog | `http://localhost:15160` | No | `soar_tenzir_node` | `15160` API, `15140` ingest syslog. | | TheHive | `${THEHIVE_HTTP_PORT:-8100}` | `9000` | HTTP | `http://localhost:8100` | `/thehive/` | `soar_thehive` | Acceso directo recomendado para validación inicial. | | Cortex | `${CORTEX_HTTP_PORT:-8101}` | `9001` | HTTP | `http://localhost:8101` | `/cortex/` | `soar_cortex` | `/cortex/analyzers` desde Nginx. | | Elasticsearch | `${ELASTICSEARCH_PORT:-8200}` | `9200` | HTTP | `http://localhost:8200` | No | `soar_elasticsearch` | Usado por TheHive, Cortex, Shuffle, Grafana y . | | OpenSearch (alternativo) | `${OPENSEARCH_PORT:-8201}` | `9200` | HTTP | `http://localhost:8201` | No | `soar_opensearch` | Compose `docker-compose.opensearch.yml`; no se despliega por defecto. | | MISP | `${MISP_PORT:-8083}` | `80` | HTTP/HTTPS| `http://localhost:8083` | No | `soar_misp` | MISP no soporta subpath proxy. | | MISP DB | — | `3306` | SQL | — | No | `soar_misp_db` | MariaDB 10.11; solo red interna. | | Redis | `${REDIS_PORT:-6379}` | `6379` | Redis | `redis://localhost:6379` | No | `soar_redis` | Requiere `REDIS_PASSWORD` si está configurada. | | Grafana | `${GRAFANA_PORT:-8084}` | `3000` | HTTP | `http://localhost:8084` | No | `soar_grafana` | Data source Elasticsearch configurado vía provisioning. | | Grafana DB (PostgreSQL) | — | `5432` | SQL | — | No | `soar_grafana_db` | Solo `logging_net`. | | Loki | — | `3100` | HTTP | — | No | `soar_loki` | Solo red interna (`logging_net`). | | Promtail | — | — | HTTP | — | No | `soar_promtail` | Descubre contenedores por socket Docker. |
+| Servicio | Host / Puerto por defecto | Puerto contenedor | Protocolo | URL canónica | Acceso vía Nginx | Nombre de contenedor (`COMPOSE_PROJECT_NAME=soar`) | Notas |
+|---------------------------|----------------------------|-------------------|-----------|-------------------------------------------|------------------|----------------------------------------------------|-------|
+| Nginx (proxy inverso) | `80` / `443` | `80` / `443` | HTTP/HTTPS| `https://soar.local` | — | `soar_nginx` | Redirige 80→443. Termina TLS con `soar.local.crt`. |
+| Web Management | `${WEB_UI_PORT:-8085}` | `80` | HTTP | `http://localhost:8085` | `/` | `soar_web_management` | SPA servida también en raíz por Nginx. |
+| Docs Site (Docusaurus) | `${DOCS_PORT:-8086}` | `8080` | HTTP | `http://localhost:8086` | No | `soar_docs_site` | SPA con rutas absolutas; acceso directo. |
+| Lab API (FastAPI) | `${API_PORT:-8000}` | `8000` | HTTP | `http://localhost:8000` / `https://soar.local/api/` | `/api/` | `soar_api` | También accesible directo; Nginx añade headers CORS. |
+| Shuffle UI | `${SHUFFLE_UI_PORT:-8081}` | `80` | HTTP | `http://localhost:8081` | No | `soar_shuffle_frontend` | React SPA; no soporta subpath. |
+| Shuffle Backend | `${SHUFFLE_API_PORT:-5001}`| `5001` | HTTP | `http://localhost:5001` | `/shuffle-api/` | `soar_shuffle_backend` | Webhook de Shuffle apunta al contenedor `shuffle-backend:5001`. |
+| Orborus | — | `5000` | HTTP | — | No | `soar_orborus` | Sin puerto host; ejecuta workers dentro de Docker. |
+| Network Watcher | `${NETWORK_WATCHER_PORT:-15130}` | `8080` | HTTP | `http://localhost:15130` | No | `soar_network_watcher` | Conecta workers de Shuffle a `soar_net`. |
+| Tenzir Node | `15160` / `15140` | `5160` / `1514` | HTTP/Syslog | `http://localhost:15160` | No | `soar_tenzir_node` | `15160` API, `15140` ingest syslog. |
+| TheHive | `${THEHIVE_HTTP_PORT:-8100}` | `9000` | HTTP | `http://localhost:8100` | `/thehive/` | `soar_thehive` | Acceso directo recomendado para validación inicial. |
+| Cortex | `${CORTEX_HTTP_PORT:-8101}` | `9001` | HTTP | `http://localhost:8101` | `/cortex/` | `soar_cortex` | `/cortex/analyzers` desde Nginx. |
+| Elasticsearch | `${ELASTICSEARCH_PORT:-8200}` | `9200` | HTTP | `http://localhost:8200` | No | `soar_elasticsearch` | Usado por TheHive, Cortex, Shuffle, Grafana y . |
+| OpenSearch (alternativo) | `${OPENSEARCH_PORT:-8201}` | `9200` | HTTP | `http://localhost:8201` | No | `soar_opensearch` | Compose `docker-compose.opensearch.yml`; no se despliega por defecto. |
+| MISP | `${MISP_PORT:-8083}` | `80` | HTTP/HTTPS| `http://localhost:8083` | No | `soar_misp` | MISP no soporta subpath proxy. |
+| MISP DB | — | `3306` | SQL | — | No | `soar_misp_db` | MariaDB 10.11; solo red interna. |
+| Redis | `${REDIS_PORT:-6379}` | `6379` | Redis | `redis://localhost:6379` | No | `soar_redis` | Requiere `REDIS_PASSWORD` si está configurada. |
+| Grafana | `${GRAFANA_PORT:-8084}` | `3000` | HTTP | `http://localhost:8084` | No | `soar_grafana` | Data source Elasticsearch configurado vía provisioning. |
+| Grafana DB (PostgreSQL) | — | `5432` | SQL | — | No | `soar_grafana_db` | Solo `logging_net`. |
+| Loki | — | `3100` | HTTP | — | No | `soar_loki` | Solo red interna (`logging_net`). |
+| Promtail | — | — | HTTP | — | No | `soar_promtail` | Descubre contenedores por socket Docker. |
 
 ---
 
@@ -1635,7 +1804,25 @@ Dominio local canónico: `soar.local` → `127.0.0.1` (añadir al archivo hosts,
 
 La API FastAPI expone los siguientes puertos de entrada principales. Todos se acceden bajo `http://localhost:8000` (directo) o `https://soar.local/api/` (vía Nginx), salvo indicación contraria.
 
-| Método | Ruta | Descripción | Dependencias | |--------|------|-------------|--------------| | `POST` | `/auth/login` | Login y generación de JWT | `JWT_SECRET_KEY` | | `POST` | `/auth/verify` | Verificación de token JWT | `JWT_SECRET_KEY` | | `GET` | `/health` | Healthcheck de la API | `config_provider` | | `GET` | `/analytics/metrics` | Métricas del sistema | `SystemMetricsDriver` | | `GET` | `/analytics/kpis` | KPIs calculados (MTTR, etc.) | `AnalyticsService` / ES | | `GET` | `/analytics/kpis/aggregated` | KPIs agregados de `soar-metrics` | Elasticsearch | | `POST` | `/backup/create` | Crear backup `.tar.gz` | `BackupService`, `TarBackupDriver` | | `POST` | `/backup/restore` | Restaurar backup | `BackupService`, `TarBackupDriver` | | `GET` | `/backup/list` | Listar backups disponibles | `BackupService` | | `POST` | `/tests/run` | Ejecutar suite de tests vía `PytestTestRunner` | `pytest`, `.env.full` | | `GET` | `/services/status` | Estado de todos los servicios SOAR | `HealthService` | | `GET` | `/soar/thehive/cases` | Listar casos de TheHive | `TheHiveClient` | | `GET` | `/soar/thehive/health` | Healthcheck de TheHive | `TheHiveClient` | | `GET` | `/soar/cortex/analyzers` | Listar analyzers de Cortex | `CortexClient` | | `GET` | `/soar/cortex/health` | Healthcheck de Cortex | `CortexClient` | | `GET` | `/soar/misp/attributes` | Buscar atributos en MISP | `MISPClient` | | `GET` | `/soar/misp/health` | Healthcheck de MISP | `MISPClient` |
+| Método | Ruta | Descripción | Dependencias |
+|--------|------|-------------|--------------|
+| `POST` | `/auth/login` | Login y generación de JWT | `JWT_SECRET_KEY` |
+| `POST` | `/auth/verify` | Verificación de token JWT | `JWT_SECRET_KEY` |
+| `GET` | `/health` | Healthcheck de la API | `config_provider` |
+| `GET` | `/analytics/metrics` | Métricas del sistema | `SystemMetricsDriver` |
+| `GET` | `/analytics/kpis` | KPIs calculados (MTTR, etc.) | `AnalyticsService` / ES |
+| `GET` | `/analytics/kpis/aggregated` | KPIs agregados de `soar-metrics` | Elasticsearch |
+| `POST` | `/backup/create` | Crear backup `.tar.gz` | `BackupService`, `TarBackupDriver` |
+| `POST` | `/backup/restore` | Restaurar backup | `BackupService`, `TarBackupDriver` |
+| `GET` | `/backup/list` | Listar backups disponibles | `BackupService` |
+| `POST` | `/tests/run` | Ejecutar suite de tests vía `PytestTestRunner` | `pytest`, `.env.full` |
+| `GET` | `/services/status` | Estado de todos los servicios SOAR | `HealthService` |
+| `GET` | `/soar/thehive/cases` | Listar casos de TheHive | `TheHiveClient` |
+| `GET` | `/soar/thehive/health` | Healthcheck de TheHive | `TheHiveClient` |
+| `GET` | `/soar/cortex/analyzers` | Listar analyzers de Cortex | `CortexClient` |
+| `GET` | `/soar/cortex/health` | Healthcheck de Cortex | `CortexClient` |
+| `GET` | `/soar/misp/attributes` | Buscar atributos en MISP | `MISPClient` |
+| `GET` | `/soar/misp/health` | Healthcheck de MISP | `MISPClient` |
 
 > **Nota:** La ingestión real de alertas no pasa por la Lab API, sino por el webhook de Shuffle creado por `init_shuffle_webhook.py`.
 
@@ -1986,7 +2173,12 @@ La funcionalidad de backup crea un archivo comprimido `.tar.gz` del directorio b
 
 #### 2. Arquitectura del backup
 
-| Componente | Archivo | Responsabilidad | |------------|---------|-----------------| | Endpoint REST | `src/soar_lab/interfaces/api/main.py` | Recibe peticiones en `/backup/create`, `/backup/list` y `/backup/restore` | | Servicio de aplicación | `src/soar_lab/application/use_cases/backup_service.py` | Orquesta creación, listado y restauración | | Adaptador de infraestructura | `src/soar_lab/infrastructure/tar_backup_driver.py` | Ejecuta `tar`, encapsula los flags y valida exclusiones | | Almacenamiento | `src/soar_lab/infrastructure/filesystem_storage.py` | Persiste metadatos (`backup_metadata.json`), resuelve rutas (`get_backup_directory`) y gestiona listado de backups |
+| Componente | Archivo | Responsabilidad |
+|------------|---------|-----------------|
+| Endpoint REST | `src/soar_lab/interfaces/api/main.py` | Recibe peticiones en `/backup/create`, `/backup/list` y `/backup/restore` |
+| Servicio de aplicación | `src/soar_lab/application/use_cases/backup_service.py` | Orquesta creación, listado y restauración |
+| Adaptador de infraestructura | `src/soar_lab/infrastructure/tar_backup_driver.py` | Ejecuta `tar`, encapsula los flags y valida exclusiones |
+| Almacenamiento | `src/soar_lab/infrastructure/filesystem_storage.py` | Persiste metadatos (`backup_metadata.json`), resuelve rutas (`get_backup_directory`) y gestiona listado de backups |
 
 ---
 
@@ -2139,7 +2331,11 @@ El laboratorio utiliza certificados autofirmados para Nginx (`soar.local`), serv
 
 #### Certificados gestionados
 
-| Certificado | Uso | Ubicación por defecto | Generador | |-------------|-----|----------------------|-----------| | `soar.local.crt` / `soar.local.key` | Terminación TLS en Nginx para `https://soar.local` | `infra/docker/config/nginx/ssl/` | `make certs` / `scripts/setup/gen_certs.sh` | | `misp.crt` / `misp.key` (si aplica) | Servicio MISP con TLS interno | `infra/docker/config/nginx/ssl/` | `gen_certs.sh` con `--host misp` | | CA local (`ca.crt` / `ca.key`) | Firma de certificados de servicio | `infra/docker/config/nginx/ssl/` | `gen_certs.sh` |
+| Certificado | Uso | Ubicación por defecto | Generador |
+|-------------|-----|----------------------|-----------|
+| `soar.local.crt` / `soar.local.key` | Terminación TLS en Nginx para `https://soar.local` | `infra/docker/config/nginx/ssl/` | `make certs` / `scripts/setup/gen_certs.sh` |
+| `misp.crt` / `misp.key` (si aplica) | Servicio MISP con TLS interno | `infra/docker/config/nginx/ssl/` | `gen_certs.sh` con `--host misp` |
+| CA local (`ca.crt` / `ca.key`) | Firma de certificados de servicio | `infra/docker/config/nginx/ssl/` | `gen_certs.sh` |
 
 #### Permisos y montajes Docker
 
@@ -2271,7 +2467,12 @@ El laboratorio centraliza logs de todos los contenedores Docker en **Loki** medi
 
 Servicios definidos en `infra/docker/compose/logging/docker-compose.logging.yml`:
 
-| Servicio | Imagen | Puerto host | Redes | Función | |----------|--------|-------------|-------|---------| | Promtail | `grafana/promtail:2.9.9` | — | `soar_net`, `logging_net` | Descubre contenedores Docker y envía logs a Loki | | Loki | `grafana/loki:2.9.10` | — | `logging_net` | Almacena y consulta logs | | Grafana | `grafana/grafana:10.3.4` | `${GRAFANA_PORT:-8084}:3000` | `logging_net`, `soar_net` | Visualización de logs y KPIs | | Grafana DB | `postgres:14-alpine` | — | `logging_net` | Base de datos de Grafana |
+| Servicio | Imagen | Puerto host | Redes | Función |
+|----------|--------|-------------|-------|---------|
+| Promtail | `grafana/promtail:2.9.9` | — | `soar_net`, `logging_net` | Descubre contenedores Docker y envía logs a Loki |
+| Loki | `grafana/loki:2.9.10` | — | `logging_net` | Almacena y consulta logs |
+| Grafana | `grafana/grafana:10.3.4` | `${GRAFANA_PORT:-8084}:3000` | `logging_net`, `soar_net` | Visualización de logs y KPIs |
+| Grafana DB | `postgres:14-alpine` | — | `logging_net` | Base de datos de Grafana |
 
 Levantar el stack:
 
@@ -2411,7 +2612,12 @@ El archivo `runtime/results/kpis.csv` se regenera al ejecutar tests de rendimien
 
 #### 8. Diagnóstico
 
-| Síntoma | Causa probable | Solución | |---------|----------------|----------| | Grafana no muestra datos de Elasticsearch | Contraseña del data source no coincide con `ELASTIC_PASSWORD` | Revisar `ELASTIC_PASSWORD` en `.env.full`, regenerar con `make generate-secrets` y reiniciar Grafana | | Grafana no resuelve `elasticsearch` | Grafana solo está en `logging_net` | Verifica que `docker-compose.logging.yml` incluya `soar_net` en el servicio `grafana` | | Promtail no envía logs | No puede leer el socket Docker | Verifica que el volumen `/var/run/docker.sock` esté montado y Promtail tenga permisos | | WebSocket se desconecta inmediatamente | `connection_manager` no inyectado en el app state | Reinicia el contenedor `soar_api` |
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| Grafana no muestra datos de Elasticsearch | Contraseña del data source no coincide con `ELASTIC_PASSWORD` | Revisar `ELASTIC_PASSWORD` en `.env.full`, regenerar con `make generate-secrets` y reiniciar Grafana |
+| Grafana no resuelve `elasticsearch` | Grafana solo está en `logging_net` | Verifica que `docker-compose.logging.yml` incluya `soar_net` en el servicio `grafana` |
+| Promtail no envía logs | No puede leer el socket Docker | Verifica que el volumen `/var/run/docker.sock` esté montado y Promtail tenga permisos |
+| WebSocket se desconecta inmediatamente | `connection_manager` no inyectado en el app state | Reinicia el contenedor `soar_api` |
 
 Comandos útiles:
 
@@ -2458,7 +2664,13 @@ Código fuente: `src/soar_lab/infrastructure/network_watcher/network_watcher.py`
 
 Definición en Compose: `infra/docker/compose/docker-compose.core.yml`
 
-| Parámetro | Valor por defecto | Descripción | |-----------|-------------------|-------------| | Puerto host | `${NETWORK_WATCHER_PORT:-15130}` | Mapeado a `8080` del contenedor | | Red | `soar_net` | Red objetivo a la que conectar workers | | `INJECT_HOSTS` | `shuffle-backend,elasticsearch,thehive,misp` | Hosts inyectados en `/etc/hosts` | | `DOCKER_PROXY_HOST` | `host.docker.internal` | Destino del forward del socket Docker | | `DOCKER_PROXY_PORT` | `2375` | Puerto del proxy TCP Docker |
+| Parámetro | Valor por defecto | Descripción |
+|-----------|-------------------|-------------|
+| Puerto host | `${NETWORK_WATCHER_PORT:-15130}` | Mapeado a `8080` del contenedor |
+| Red | `soar_net` | Red objetivo a la que conectar workers |
+| `INJECT_HOSTS` | `shuffle-backend,elasticsearch,thehive,misp` | Hosts inyectados en `/etc/hosts` |
+| `DOCKER_PROXY_HOST` | `host.docker.internal` | Destino del forward del socket Docker |
+| `DOCKER_PROXY_PORT` | `2375` | Puerto del proxy TCP Docker |
 
 ---
 
@@ -2596,11 +2808,24 @@ Shuffle ya usa OpenSearch; el objetivo es consolidar el resto de servicios que p
 > TheHive 3.5.2 y Cortex 3.2.0 permanecen en Elasticsearch 7.10.2 (librería `elastic4play` incompatible con OpenSearch 2.x).
 > La API del laboratorio y las métricas `soar-metrics` también usan Elasticsearch 7.10.2.
 
-| Servicio | Imagen actual | Estado | |---------------|--------------------------------------------------------|-------------------------------------------------------------------------------------------------------------| | Elasticsearch | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | Activo para TheHive, Cortex, API y `soar-metrics`; Shuffle ya migrado a OpenSearch | | Dashboard heredado de Elasticsearch | Imagen original del dashboard de Elasticsearch 7.10.2 (consultar histórico) | No desplegado en el stack actual; dependiente de ES si se usara | | TheHive | `thehiveproject/thehive:3.5.2-1` | NO compatible con OpenSearch 2.x | | Shuffle | `ghcr.io/shuffle/shuffle-backend:2.2.1` | Compatible con OpenSearch; ya apunta a OpenSearch 2.10.0 (`SHUFFLE_OPENSEARCH_URL`) | | MISP | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | No depende de ES |
+| Servicio | Imagen actual | Estado |
+|---------------|--------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| Elasticsearch | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | Activo para TheHive, Cortex, API y `soar-metrics`; Shuffle ya migrado a OpenSearch |
+| Dashboard heredado de Elasticsearch | Imagen original del dashboard de Elasticsearch 7.10.2 (consultar histórico) | No desplegado en el stack actual; dependiente de ES si se usara |
+| TheHive | `thehiveproject/thehive:3.5.2-1` | NO compatible con OpenSearch 2.x |
+| Shuffle | `ghcr.io/shuffle/shuffle-backend:2.2.1` | Compatible con OpenSearch; ya apunta a OpenSearch 2.10.0 (`SHUFFLE_OPENSEARCH_URL`) |
+| MISP | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | No depende de ES |
 
 #### Arquitectura objetivo
 
-| Servicio | Imagen objetivo | Notas | |-----------------------|-----------------------------------------------------------|------------------------------------------| | OpenSearch | `opensearchproject/opensearch:2.10.0` | Reemplaza Elasticsearch | | OpenSearch Dashboards | `opensearchproject/opensearch-dashboards:2.10.0` | Reemplaza el dashboard heredado de Elasticsearch | | TheHive | `strangebee/thehive:5.4.0` o `thehiveproject/thehive:4.1` | TheHive 4/5 es compatible con OpenSearch | | Cortex | `strangebee/cortex:3.1.7` | Necesita TheHive 4/5 | | Shuffle | Se mantiene | Apunta a OpenSearch | | MISP | Se mantiene | - |
+| Servicio | Imagen objetivo | Notas |
+|-----------------------|-----------------------------------------------------------|------------------------------------------|
+| OpenSearch | `opensearchproject/opensearch:2.10.0` | Reemplaza Elasticsearch |
+| OpenSearch Dashboards | `opensearchproject/opensearch-dashboards:2.10.0` | Reemplaza el dashboard heredado de Elasticsearch |
+| TheHive | `strangebee/thehive:5.4.0` o `thehiveproject/thehive:4.1` | TheHive 4/5 es compatible con OpenSearch |
+| Cortex | `strangebee/cortex:3.1.7` | Necesita TheHive 4/5 |
+| Shuffle | Se mantiene | Apunta a OpenSearch |
+| MISP | Se mantiene | - |
 
 #### Pasos de migración
 
@@ -2662,7 +2887,12 @@ Opción C - Fresh deploy (para lab nuevo):
 
 #### Riesgos identificados
 
-| Riesgo | Impacto | Mitigación | |-----------------------------------------------------------------------------------------|---------|----------------------------------| | TheHive 3.5.2 → 4/5 requiere migración de base de datos | Alto | Backup + test en staging | | Cortex con OpenSearch 2.x puede requerir `compatibility.override_main_response_version` | Medio | Probar con TheHive 4/5 | | Los dashboards heredados no migran automáticamente | Medio | Recrear en OpenSearch Dashboards | | Elasticsearch 7.10.2 → OpenSearch 2.10.0 snapshot puede fallar | Medio | Usar reindexación como fallback |
+| Riesgo | Impacto | Mitigación |
+|-----------------------------------------------------------------------------------------|---------|----------------------------------|
+| TheHive 3.5.2 → 4/5 requiere migración de base de datos | Alto | Backup + test en staging |
+| Cortex con OpenSearch 2.x puede requerir `compatibility.override_main_response_version` | Medio | Probar con TheHive 4/5 |
+| Los dashboards heredados no migran automáticamente | Medio | Recrear en OpenSearch Dashboards |
+| Elasticsearch 7.10.2 → OpenSearch 2.10.0 snapshot puede fallar | Medio | Usar reindexación como fallback |
 
 #### Decisión pendiente
 
@@ -2687,7 +2917,14 @@ Realizar una migración por fases, empezando por un entorno de staging donde:
 
 #### Plan de rollback
 
-| Paso | Acción | Comando / Referencia | |------|-----------------------------------------------------------------------------------|-------------------------------------------------------------------------| | 1 | Detener stack migrado | `docker compose -f infra/docker/compose/docker-compose.yml -f ... down` | | 2 | Restaurar volúmenes desde backup (`es_data`, `thehive_files`, `cortex_data`) | `docker volume rm ...` y recrear desde snapshot o `tar` | | 3 | Restaurar `.env.full` y compose files originales | `git checkout -- .env.full infra/docker/compose/*.yml` | | 4 | Levantar stack original con Elasticsearch 7.10.2 y TheHive 3.5.2-1 | `make up` | | 5 | Verificar healthchecks (`GET /_cluster/health`, TheHive `/api/status`, `/health`) | `curl` / `docker ps` | | 6 | Re-ejecutar `pytest tests/e2e/` y `tests/integration/test_shuffle_integration.py` | `pytest` |
+| Paso | Acción | Comando / Referencia |
+|------|-----------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| 1 | Detener stack migrado | `docker compose -f infra/docker/compose/docker-compose.yml -f ... down` |
+| 2 | Restaurar volúmenes desde backup (`es_data`, `thehive_files`, `cortex_data`) | `docker volume rm ...` y recrear desde snapshot o `tar` |
+| 3 | Restaurar `.env.full` y compose files originales | `git checkout -- .env.full infra/docker/compose/*.yml` |
+| 4 | Levantar stack original con Elasticsearch 7.10.2 y TheHive 3.5.2-1 | `make up` |
+| 5 | Verificar healthchecks (`GET /_cluster/health`, TheHive `/api/status`, `/health`) | `curl` / `docker ps` |
+| 6 | Re-ejecutar `pytest tests/e2e/` y `tests/integration/test_shuffle_integration.py` | `pytest` |
 
 > **Nota:** Conservar siempre los backups de volúmenes y snapshots antes de iniciar la migración. El rollback completo
 > es viable si los volúmenes originales no se eliminaron (`docker compose down -v` sin backup implica pérdida de datos).
@@ -2814,7 +3051,23 @@ quality/
 
 #### Metrics measured
 
-| Category | Tool | What it measures | Scored? | |----------|------|-----------------|---------| | Complexity | radon cc | Cyclomatic complexity per function/file/project | Yes (15%) | | Maintainability | radon mi | Maintainability Index per file | Yes (20%) | | Coverage | coverage.py | Line and branch coverage | Yes (20%) | | Linting | ruff | Style, imports, bug prevention | Yes (15%) | | Typing | mypy | Static type errors | Yes (10%) | | Security | bandit | Security issues in source code | Yes (10%) | | Documentation | interrogate | Docstring coverage | Yes (5%) | | Architecture | import-linter + AST | Layer violations, circular deps | Yes (5%) | | Halstead | radon hal | Volume, difficulty, effort, estimated bugs | No | | Raw metrics | radon raw | LOC, LLOC, SLOC, comment ratio | No | | Mutation | mutmut | Mutation score (test quality) | No | | Deep analysis | pylint | Code smells, refactors, conventions | No | | Dead code | vulture | Unused code, unreachable code | No | | Dependencies | pip-audit | Vulnerable dependencies | No | | Secrets | detect-secrets | Hardcoded secrets/credentials | No |
+| Category | Tool | What it measures | Scored? |
+|----------|------|-----------------|---------|
+| Complexity | radon cc | Cyclomatic complexity per function/file/project | Yes (15%) |
+| Maintainability | radon mi | Maintainability Index per file | Yes (20%) |
+| Coverage | coverage.py | Line and branch coverage | Yes (20%) |
+| Linting | ruff | Style, imports, bug prevention | Yes (15%) |
+| Typing | mypy | Static type errors | Yes (10%) |
+| Security | bandit | Security issues in source code | Yes (10%) |
+| Documentation | interrogate | Docstring coverage | Yes (5%) |
+| Architecture | import-linter + AST | Layer violations, circular deps | Yes (5%) |
+| Halstead | radon hal | Volume, difficulty, effort, estimated bugs | No |
+| Raw metrics | radon raw | LOC, LLOC, SLOC, comment ratio | No |
+| Mutation | mutmut | Mutation score (test quality) | No |
+| Deep analysis | pylint | Code smells, refactors, conventions | No |
+| Dead code | vulture | Unused code, unreachable code | No |
+| Dependencies | pip-audit | Vulnerable dependencies | No |
+| Secrets | detect-secrets | Hardcoded secrets/credentials | No |
 
 > **Note on mutation testing**: mutmut requires Linux (uses `fork`). On Windows,
 > run it inside the Docker container with `make mutation` (requires `make up` first).
@@ -2828,11 +3081,27 @@ are measured and reported but do not contribute to the weighted score.
 
 The weighting of the 8 scored categories:
 
-| Category | Weight | |----------|--------| | Maintainability | 20% | | Coverage | 20% | | Complexity | 15% | | Linting | 15% | | Typing | 10% | | Security | 10% | | Documentation | 5% | | Architecture | 5% |
+| Category | Weight |
+|----------|--------|
+| Maintainability | 20% |
+| Coverage | 20% |
+| Complexity | 15% |
+| Linting | 15% |
+| Typing | 10% |
+| Security | 10% |
+| Documentation | 5% |
+| Architecture | 5% |
 
 Classification:
 
-| Score | Status | |-------|--------| | 90-100 | Excellent | | 80-89 | Good | | 70-79 | Acceptable | | 60-69 | Medium risk | | 50-59 | High risk | | 0-49 | Critical |
+| Score | Status |
+|-------|--------|
+| 90-100 | Excellent |
+| 80-89 | Good |
+| 70-79 | Acceptable |
+| 60-69 | Medium risk |
+| 50-59 | High risk |
+| 0-49 | Critical |
 
 #### Running checks as pytest tests
 
@@ -2855,13 +3124,35 @@ pytest quality/checks/test_security.py::TestSecurity -v
 
 #### Test descriptions
 
-| Test file | Tests | What it checks | |-----------|-------|---------------| | `test_architecture_rules.py` | 1 | Domain layer must not import infrastructure/interfaces | | `test_complexity_project.py` | 6 | No function > max complexity, no D/E/F grades, avg below threshold, top 10, per-file avg | | `test_coverage_quality.py` | 4 | XML exists, global coverage >= threshold, worst files, files below 75% | | `test_dead_code.py` | 2 | No high-confidence dead code, report all items | | `test_dependencies.py` | 6 | import-linter, domain→infra, domain→interfaces, app→interfaces, app→infra, circular imports | | `test_dependency_security.py` | 4 | No critical vulns, grouped by package, fix availability, count below threshold | | `test_docstring_coverage.py` | 3 | Coverage >= 80%, missing docstrings reported, valid summary | | `test_halstead_metrics.py` | 3 | Metrics collected, totals positive, top 10 by effort | | `test_maintainability.py` | 3 | Files above min MI, avg above threshold, worst 10 | | `test_mutation_quality.py` | 4 | mutmut installed, configured, score >= threshold, status report | | `test_quality_score.py` | 3 | Score with good/bad metrics, weights sum to 1.0 | | `test_security.py` | 3 | No HIGH severity, issues reported, B105 hardcoded passwords | | `test_style_quality.py` | 6 | No ruff errors, by rule, by file, format check, no unused imports, no undefined names | | `test_type_quality.py` | 4 | mypy count below threshold, by type, by file, undefined names |
+| Test file | Tests | What it checks |
+|-----------|-------|---------------|
+| `test_architecture_rules.py` | 1 | Domain layer must not import infrastructure/interfaces |
+| `test_complexity_project.py` | 6 | No function > max complexity, no D/E/F grades, avg below threshold, top 10, per-file avg |
+| `test_coverage_quality.py` | 4 | XML exists, global coverage >= threshold, worst files, files below 75% |
+| `test_dead_code.py` | 2 | No high-confidence dead code, report all items |
+| `test_dependencies.py` | 6 | import-linter, domain→infra, domain→interfaces, app→interfaces, app→infra, circular imports |
+| `test_dependency_security.py` | 4 | No critical vulns, grouped by package, fix availability, count below threshold |
+| `test_docstring_coverage.py` | 3 | Coverage >= 80%, missing docstrings reported, valid summary |
+| `test_halstead_metrics.py` | 3 | Metrics collected, totals positive, top 10 by effort |
+| `test_maintainability.py` | 3 | Files above min MI, avg above threshold, worst 10 |
+| `test_mutation_quality.py` | 4 | mutmut installed, configured, score >= threshold, status report |
+| `test_quality_score.py` | 3 | Score with good/bad metrics, weights sum to 1.0 |
+| `test_security.py` | 3 | No HIGH severity, issues reported, B105 hardcoded passwords |
+| `test_style_quality.py` | 6 | No ruff errors, by rule, by file, format check, no unused imports, no undefined names |
+| `test_type_quality.py` | 4 | mypy count below threshold, by type, by file, undefined names |
 
 #### Thresholds
 
 Thresholds are configurable via YAML files in `quality/thresholds/`:
 
-| File | Key thresholds | |------|---------------| | `complexity_thresholds.yaml` | max_complexity_per_function: 20, fail_grades: [D,E,F] | | `coverage_thresholds.yaml` | min_global_coverage: 85, min_file_coverage: 75, min_critical_module_coverage: 90 | | `maintainability_thresholds.yaml` | min_mi_per_file: 50, min_mi_global: 65 | | `mutation_thresholds.yaml` | min_mutation_score_global: 70, min_mutation_score_critical: 80 | | `security_thresholds.yaml` | fail_bandit_severity: [HIGH], fail_on_secrets: true, allowed_bandit_skips: [B404, B603] | | `documentation_thresholds.yaml` | min_docstring_coverage_global: 80, min_docstring_coverage_public: 90 |
+| File | Key thresholds |
+|------|---------------|
+| `complexity_thresholds.yaml` | max_complexity_per_function: 20, fail_grades: [D,E,F] |
+| `coverage_thresholds.yaml` | min_global_coverage: 85, min_file_coverage: 75, min_critical_module_coverage: 90 |
+| `maintainability_thresholds.yaml` | min_mi_per_file: 50, min_mi_global: 65 |
+| `mutation_thresholds.yaml` | min_mutation_score_global: 70, min_mutation_score_critical: 80 |
+| `security_thresholds.yaml` | fail_bandit_severity: [HIGH], fail_on_secrets: true, allowed_bandit_skips: [B404, B603] |
+| `documentation_thresholds.yaml` | min_docstring_coverage_global: 80, min_docstring_coverage_public: 90 |
 
 To tighten or relax a threshold, edit the corresponding YAML file.
 
@@ -2869,7 +3160,15 @@ To tighten or relax a threshold, edit the corresponding YAML file.
 
 After running `run_quality_checks.py`, reports are generated in `reports/quality/`:
 
-| Report | Format | Content | |--------|--------|---------| | `quality-summary.md` | Markdown | Human-readable summary with all 15 categories, tables, and recommendations | | `quality-summary.json` | JSON | Machine-readable with all metrics and score | | `complexity-report.json` | JSON | Grade distribution, hotspots, per-file data | | `maintainability-report.json` | JSON | MI per file, worst files, aggregate stats | | `security-report.json` | JSON | Bandit issues with severity, confidence, location | | `dependency-audit.json` | JSON | pip-audit vulnerabilities with fix versions | | `architecture-report.json` | JSON | import-linter violations and output |
+| Report | Format | Content |
+|--------|--------|---------|
+| `quality-summary.md` | Markdown | Human-readable summary with all 15 categories, tables, and recommendations |
+| `quality-summary.json` | JSON | Machine-readable with all metrics and score |
+| `complexity-report.json` | JSON | Grade distribution, hotspots, per-file data |
+| `maintainability-report.json` | JSON | MI per file, worst files, aggregate stats |
+| `security-report.json` | JSON | Bandit issues with severity, confidence, location |
+| `dependency-audit.json` | JSON | pip-audit vulnerabilities with fix versions |
+| `architecture-report.json` | JSON | import-linter violations and output |
 
 The Markdown report includes:
 - Global score with status per category (Excellent/Good/Acceptable/Critical)
@@ -2905,7 +3204,20 @@ For fast checks only (no coverage, mypy, pylint, mutation):
 
 #### Tools used
 
-| Tool | Purpose | |------|---------| | [radon](https://radon.readthedocs.io/) | Complexity, MI, Halstead, raw metrics | | [ruff](https://docs.astral.sh/ruff/) | Linting and formatting | | [pylint](https://pylint.readthedocs.io/) | Deep code analysis | | [mypy](https://mypy.readthedocs.io/) | Static type checking | | [coverage.py](https://coverage.readthedocs.io/) | Test coverage | | [mutmut](https://mutmut.readthedocs.io/) | Mutation testing | | [interrogate](https://interrogate.readthedocs.io/) | Docstring coverage | | [vulture](https://github.com/jendrikseipp/vulture) | Dead code detection | | [bandit](https://bandit.readthedocs.io/) | Security analysis | | [pip-audit](https://github.com/pypa/pip-audit) | Dependency vulnerabilities | | [import-linter](https://import-linter.readthedocs.io/) | Architecture rules | | [detect-secrets](https://github.com/Yelp/detect-secrets) | Secret detection |
+| Tool | Purpose |
+|------|---------|
+| [radon](https://radon.readthedocs.io/) | Complexity, MI, Halstead, raw metrics |
+| [ruff](https://docs.astral.sh/ruff/) | Linting and formatting |
+| [pylint](https://pylint.readthedocs.io/) | Deep code analysis |
+| [mypy](https://mypy.readthedocs.io/) | Static type checking |
+| [coverage.py](https://coverage.readthedocs.io/) | Test coverage |
+| [mutmut](https://mutmut.readthedocs.io/) | Mutation testing |
+| [interrogate](https://interrogate.readthedocs.io/) | Docstring coverage |
+| [vulture](https://github.com/jendrikseipp/vulture) | Dead code detection |
+| [bandit](https://bandit.readthedocs.io/) | Security analysis |
+| [pip-audit](https://github.com/pypa/pip-audit) | Dependency vulnerabilities |
+| [import-linter](https://import-linter.readthedocs.io/) | Architecture rules |
+| [detect-secrets](https://github.com/Yelp/detect-secrets) | Secret detection |
 
 
 ### 3.12 Troubleshooting
@@ -4239,7 +4551,15 @@ Webhook (/SIEM)
 
 #### 3.3.1 N1 — recepción y validación de alerta \[REAL\]
 
-| Campo | Detalle | |-------------------------|------------------------------------------------------------------------------------------------| | **Trigger** | HTTP POST al webhook de Shuffle (`http://localhost:5001/api/v1/hooks/<id>`) | | **Autenticación** | `Authorization: Bearer <SHUFFLE_WEBHOOK_TOKEN>` | | **Entrada** | JSON con esquema definido en `src/soar_lab/config/schemas/__init__.py` | | **Campos obligatorios** | `alert_id`, `hostname`, `src_ip`, `hash`, `severity`, `source`, `detection_time`, `event_type` | | **Salida (OK)** | Objeto alerta normalizado, `execution_id` de Shuffle | | **Salida (Error)** | HTTP 400 si schema inválido; HTTP 401 si token incorrecto | | **Ruta de error** | Abortar ejecución + log en Shuffle; no se crea caso en TheHive |
+| Campo | Detalle |
+|-------------------------|------------------------------------------------------------------------------------------------|
+| **Trigger** | HTTP POST al webhook de Shuffle (`http://localhost:5001/api/v1/hooks/<id>`) |
+| **Autenticación** | `Authorization: Bearer <SHUFFLE_WEBHOOK_TOKEN>` |
+| **Entrada** | JSON con esquema definido en `src/soar_lab/config/schemas/__init__.py` |
+| **Campos obligatorios** | `alert_id`, `hostname`, `src_ip`, `hash`, `severity`, `source`, `detection_time`, `event_type` |
+| **Salida (OK)** | Objeto alerta normalizado, `execution_id` de Shuffle |
+| **Salida (Error)** | HTTP 400 si schema inválido; HTTP 401 si token incorrecto |
+| **Ruta de error** | Abortar ejecución + log en Shuffle; no se crea caso en TheHive |
 
 **Payload de ejemplo (TC-01 malicioso):**
 
@@ -4276,31 +4596,69 @@ Webhook (/SIEM)
 
 #### 3.3.2 N2 — normalización y extracción de IoCs \[REAL\]
 
-| Campo | Detalle | |--------------------|----------------------------------------------------------------------------------------------------------------| | **Entrada** | Objeto alerta validado de N1 | | **Operaciones** | Extraer `hash` (MD5/SHA256), `src_ip`, `hostname`; mapear `severity` a nivel TheHive (1→Low, 2→Medium, 3→High) | | **Salida (OK)** | Lista de IoCs `[{type: "hash", value: "..."}, {type: "ip", value: "..."}, ...]` | | **Salida (Error)** | Si `hash` o `src_ip` ausentes → continuar sin ese IoC (no abortar) | | **Ruta de error** | Log de advertencia en Shuffle; continuar con IoCs disponibles |
+| Campo | Detalle |
+|--------------------|----------------------------------------------------------------------------------------------------------------|
+| **Entrada** | Objeto alerta validado de N1 |
+| **Operaciones** | Extraer `hash` (MD5/SHA256), `src_ip`, `hostname`; mapear `severity` a nivel TheHive (1→Low, 2→Medium, 3→High) |
+| **Salida (OK)** | Lista de IoCs `[{type: "hash", value: "..."}, {type: "ip", value: "..."}, ...]` |
+| **Salida (Error)** | Si `hash` o `src_ip` ausentes → continuar sin ese IoC (no abortar) |
+| **Ruta de error** | Log de advertencia en Shuffle; continuar con IoCs disponibles |
 
 ---
 
 #### 3.3.3 N3 — creación de caso en TheHive \[REAL\]
 
-| Campo | Detalle | |---------------------------|----------------------------------------------------------------------------------------| | **Servicio** | TheHive API `http://thehive:9000/api/case` | | **Autenticación** | `Authorization: Bearer <THEHIVE_API_KEY>` | | **Entrada** | IoCs de N2 + campos de alerta original | | **Cuerpo de la petición** | `title`, `description`, `severity` (1–3), `tags: ["ransomware", "soar-lab"]`, `tlp: 2` | | **Salida (OK)** | `case_id` (ej. `~123456789`), `case_number`, timestamp de creación | | **Salida (Error)** | HTTP 4xx/5xx de TheHive | | **Ruta de error** | Reintentar 3 veces con backoff de 5 s; si persiste → abortar y notificar error crítico | | **Timeout** | 30 s por intento |
+| Campo | Detalle |
+|---------------------------|----------------------------------------------------------------------------------------|
+| **Servicio** | TheHive API `http://thehive:9000/api/case` |
+| **Autenticación** | `Authorization: Bearer <THEHIVE_API_KEY>` |
+| **Entrada** | IoCs de N2 + campos de alerta original |
+| **Cuerpo de la petición** | `title`, `description`, `severity` (1–3), `tags: ["ransomware", "soar-lab"]`, `tlp: 2` |
+| **Salida (OK)** | `case_id` (ej. `~123456789`), `case_number`, timestamp de creación |
+| **Salida (Error)** | HTTP 4xx/5xx de TheHive |
+| **Ruta de error** | Reintentar 3 veces con backoff de 5 s; si persiste → abortar y notificar error crítico |
+| **Timeout** | 30 s por intento |
 
 ---
 
 #### 3.3.4 N4 — adjuntar observables al caso \[REAL\]
 
-| Campo | Detalle | |-------------------------|------------------------------------------------------------------------------------------| | **Servicio** | TheHive API `POST /api/case/<case_id>/artifact` | | **Entrada** | `case_id` de N3 + lista de IoCs de N2 | | **Tipos de observable** | `hash` (MD5/SHA256), `ip` (src_ip), `fqdn` (hostname) | | **Salida (OK)** | Lista de `observable_id` creados en TheHive | | **Salida (Error)** | Observable duplicado (HTTP 400) → ignorar y continuar; error de red → reintentar 2 veces | | **Ruta de error** | Continuar al N5 aunque algún observable falle; registrar en log |
+| Campo | Detalle |
+|-------------------------|------------------------------------------------------------------------------------------|
+| **Servicio** | TheHive API `POST /api/case/<case_id>/artifact` |
+| **Entrada** | `case_id` de N3 + lista de IoCs de N2 |
+| **Tipos de observable** | `hash` (MD5/SHA256), `ip` (src_ip), `fqdn` (hostname) |
+| **Salida (OK)** | Lista de `observable_id` creados en TheHive |
+| **Salida (Error)** | Observable duplicado (HTTP 400) → ignorar y continuar; error de red → reintentar 2 veces |
+| **Ruta de error** | Continuar al N5 aunque algún observable falle; registrar en log |
 
 ---
 
 #### 3.3.5 N5 — ejecución de analyzers en Cortex \[PARCIAL\]
 
-| Campo | Detalle | |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------| | **Servicio** | Cortex API `POST /api/analyzer/<analyzer_id>/run` | | **Autenticación** | `Authorization: Bearer <CORTEX_API_KEY>` | | **Entrada** | `observable_id` + `observable_value` + `observable_type` de N4 | | **Analyzers activos** | `DShield_lookup_1_0` (IP reputation, offline), `Mnemonic_pDNS_Public_3_0` (passive DNS, offline), `Hashdd_Status_1_0` (hash lookup, offline) | | **Salida (OK)** | `job_id` por analyzer; resultado con `summary.taxonomies[].level` (info/safe/suspicious/malicious) y `summary.taxonomies[].value` (score numérico) | | **Salida (Error)** | Analyzer no disponible → skip ese analyzer; job timeout → marcar como inconcluso | | **Ruta de error** | Si todos los analyzers fallan → continuar con `score = 0`, `verdict = "unknown"` | | **Timeout por job** | 60 s (configurable en Cortex) |
+| Campo | Detalle |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Servicio** | Cortex API `POST /api/analyzer/<analyzer_id>/run` |
+| **Autenticación** | `Authorization: Bearer <CORTEX_API_KEY>` |
+| **Entrada** | `observable_id` + `observable_value` + `observable_type` de N4 |
+| **Analyzers activos** | `DShield_lookup_1_0` (IP reputation, offline), `Mnemonic_pDNS_Public_3_0` (passive DNS, offline), `Hashdd_Status_1_0` (hash lookup, offline) |
+| **Salida (OK)** | `job_id` por analyzer; resultado con `summary.taxonomies[].level` (info/safe/suspicious/malicious) y `summary.taxonomies[].value` (score numérico) |
+| **Salida (Error)** | Analyzer no disponible → skip ese analyzer; job timeout → marcar como inconcluso |
+| **Ruta de error** | Si todos los analyzers fallan → continuar con `score = 0`, `verdict = "unknown"` |
+| **Timeout por job** | 60 s (configurable en Cortex) |
 
 ---
 
 #### 3.3.6 N6 — decisión: ¿contención? \[REAL\]
 
-| Campo | Detalle | |--------------------------|------------------------------------------------------------------------------------------------------------------------------| | **Entrada** | Resultados de analyzers de N5 | | **Lógica de decisión** | Calcular `score_max = max(taxonomy.value for all taxonomies)` y `verdict = "malicious" if any taxonomy.level == "malicious"` | | **Umbral de contención** | **`score_max ≥ 80`** O **`verdict == "malicious"`** → rama MALICIOSO | | **Umbral benigno** | `score_max < 80` Y `verdict != "malicious"` → rama BENIGNO | | **Caso borde** | `verdict == "unknown"` (todos los analyzers fallaron) → tratar como BENIGNO con alerta manual | | **Salida** | `decision: "contain"` o `decision: "observe"` + `score_max` + `verdict` |
+| Campo | Detalle |
+|--------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| **Entrada** | Resultados de analyzers de N5 |
+| **Lógica de decisión** | Calcular `score_max = max(taxonomy.value for all taxonomies)` y `verdict = "malicious" if any taxonomy.level == "malicious"` |
+| **Umbral de contención** | **`score_max ≥ 80`** O **`verdict == "malicious"`** → rama MALICIOSO |
+| **Umbral benigno** | `score_max < 80` Y `verdict != "malicious"` → rama BENIGNO |
+| **Caso borde** | `verdict == "unknown"` (todos los analyzers fallaron) → tratar como BENIGNO con alerta manual |
+| **Salida** | `decision: "contain"` o `decision: "observe"` + `score_max` + `verdict` |
 
 ```
 score_max ≥ 80 OR verdict == "malicious"
@@ -4314,29 +4672,59 @@ score_max < 80 AND verdict != "malicious"
 
 #### 3.3.7 N7 — contención simulada \[SIMULADO\]
 
-| Campo | Detalle | |------------------------|---------------------------------------------------------------------------------------------------------------------------| | **Script** | Simulado en código Python (módulo de contención) | | **Modo** | `SIMULATION_MODE=true` (por defecto en lab) | | **Entrada** | `hostname` y `case_id` de N3 | | **Acciones simuladas** | Aislamiento de red (iptables DROP), terminación de procesos, bloqueo de cuentas, protección de filesystem, backup forense | | **Salida (OK)** | `runtime/backups/<case_id>_<hostname>_<ts>/` + reporte JSON + entrada en `runtime/logs/containment.log` | | **Salida (Error)** | Exit code ≠ 0 del script → log de error; continuar al N8 con flag `containment_failed=true` | | **Ruta de error** | Notificar operador manualmente; registrar en caso TheHive |
+| Campo | Detalle |
+|------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| **Script** | Simulado en código Python (módulo de contención) |
+| **Modo** | `SIMULATION_MODE=true` (por defecto en lab) |
+| **Entrada** | `hostname` y `case_id` de N3 |
+| **Acciones simuladas** | Aislamiento de red (iptables DROP), terminación de procesos, bloqueo de cuentas, protección de filesystem, backup forense |
+| **Salida (OK)** | `runtime/backups/<case_id>_<hostname>_<ts>/` + reporte JSON + entrada en `runtime/logs/containment.log` |
+| **Salida (Error)** | Exit code ≠ 0 del script → log de error; continuar al N8 con flag `containment_failed=true` |
+| **Ruta de error** | Notificar operador manualmente; registrar en caso TheHive |
 
 #### 3.3.8 N7b — marcar como benigno \[REAL\]
 
-| Campo | Detalle | |--------------------|---------------------------------------------------------------------------------------------------| | **Entrada** | `case_id` + `decision = "observe"` | | **Operación** | `PATCH /api/case/<case_id>` con `{status: "FalsePositive", resolutionStatus: "FalsePositive"}` | | **Salida (OK)** | Caso TheHive actualizado; ninguna acción de contención ejecutada | | **Salida (Error)** | Error de API → log; caso queda en estado `Open` para revisión manual |
+| Campo | Detalle |
+|--------------------|---------------------------------------------------------------------------------------------------|
+| **Entrada** | `case_id` + `decision = "observe"` |
+| **Operación** | `PATCH /api/case/<case_id>` con `{status: "FalsePositive", resolutionStatus: "FalsePositive"}` |
+| **Salida (OK)** | Caso TheHive actualizado; ninguna acción de contención ejecutada |
+| **Salida (Error)** | Error de API → log; caso queda en estado `Open` para revisión manual |
 
 ---
 
 #### 3.3.9 N8/N8b — actualización del caso \[REAL\]
 
-| Campo | Detalle | |-------------------------|---------------------------------------------------------------------------------------------| | **Servicio** | TheHive API `PATCH /api/case/<case_id>` | | **Rama malicioso (N8)** | `{status: "InProgress", customFields: {containment_executed: true, mttr_end: <timestamp>}}` | | **Rama benigno (N8b)** | `{status: "Resolved", resolutionStatus: "FalsePositive"}` | | **Salida (OK)** | Caso actualizado con timestamps y resultado | | **Ruta de error** | Log de advertencia; no bloquea la notificación |
+| Campo | Detalle |
+|-------------------------|---------------------------------------------------------------------------------------------|
+| **Servicio** | TheHive API `PATCH /api/case/<case_id>` |
+| **Rama malicioso (N8)** | `{status: "InProgress", customFields: {containment_executed: true, mttr_end: <timestamp>}}` |
+| **Rama benigno (N8b)** | `{status: "Resolved", resolutionStatus: "FalsePositive"}` |
+| **Salida (OK)** | Caso actualizado con timestamps y resultado |
+| **Ruta de error** | Log de advertencia; no bloquea la notificación |
 
 ---
 
 #### 3.3.10 N9/N9b — notificación \[SIMULADO\]
 
-| Campo | Detalle | |-------------------------|---------------------------------------------------------------------------------------------------------------------| | **Canal** | Email (SMTP) y/o webhook de notificación externo | | **Rama malicioso (N9)** | Asunto: `[CRITICAL] Ransomware detected – <hostname> contained`; cuerpo con `case_id`, `score`, acciones ejecutadas | | **Rama benigno (N9b)** | Asunto: `[INFO] Alert resolved as FalsePositive – <hostname>`; cuerpo con justificación | | **Salida (OK)** | Entrada `Notification sent` en `runtime/logs/notify.log` | | **Ruta de error** | Error SMTP → reintentar 1 vez; si falla → log de error, no abortar el flujo |
+| Campo | Detalle |
+|-------------------------|---------------------------------------------------------------------------------------------------------------------|
+| **Canal** | Email (SMTP) y/o webhook de notificación externo |
+| **Rama malicioso (N9)** | Asunto: `[CRITICAL] Ransomware detected – <hostname> contained`; cuerpo con `case_id`, `score`, acciones ejecutadas |
+| **Rama benigno (N9b)** | Asunto: `[INFO] Alert resolved as FalsePositive – <hostname>`; cuerpo con justificación |
+| **Salida (OK)** | Entrada `Notification sent` en `runtime/logs/notify.log` |
+| **Ruta de error** | Error SMTP → reintentar 1 vez; si falla → log de error, no abortar el flujo |
 
 ---
 
 #### 3.3.11 N10/N10b — registro MTTR \[REAL\]
 
-| Campo | Detalle | |-----------------------|-----------------------------------------------------------------------------------------------------------------------------------| | **Entrada** | `t_alert = detection_time` del payload; `t_contain = timestamp` de N7/N7b | | **Cálculo** | `MTTR = t_contain - t_alert` (segundos) | | **Salida** | Entrada en `runtime/logs/notify.log`; actualización de `runtime/results/kpis.csv` vía `src/soar_lab/domain/services/kpi_analyzer.py` | | **Umbrales objetivo** | p50 ≤ 120 s; p90 ≤ 180 s |
+| Campo | Detalle |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| **Entrada** | `t_alert = detection_time` del payload; `t_contain = timestamp` de N7/N7b |
+| **Cálculo** | `MTTR = t_contain - t_alert` (segundos) |
+| **Salida** | Entrada en `runtime/logs/notify.log`; actualización de `runtime/results/kpis.csv` vía `src/soar_lab/domain/services/kpi_analyzer.py` |
+| **Umbrales objetivo** | p50 ≤ 120 s; p90 ≤ 180 s |
 
 #### 3.3.12 Diagrama de decisión
 
@@ -4366,11 +4754,21 @@ flowchart TD
 
 #### 3.3.13 Casos de prueba E2E
 
-| Test | Payload | `confidence` | Decisión esperada | Resultado esperado | |-------|----------------------|--------------|-------------------|------------------------------------------------------| | TC-01 | `tests/e2e/TC-01/test_malicious.py` | 95 | CONTAIN | Caso TheHive `InProgress`, `containment.log` escrito | | TC-02 | `tests/e2e/TC-02/` | 20 | OBSERVE | Caso TheHive `FalsePositive`, sin `containment.log` | | TC-03 | `tests/e2e/TC-03/` | varios | Varios | Sistema estable, sin excepciones no controladas |
+| Test | Payload | `confidence` | Decisión esperada | Resultado esperado |
+|-------|----------------------|--------------|-------------------|------------------------------------------------------|
+| TC-01 | `tests/e2e/TC-01/test_malicious.py` | 95 | CONTAIN | Caso TheHive `InProgress`, `containment.log` escrito |
+| TC-02 | `tests/e2e/TC-02/` | 20 | OBSERVE | Caso TheHive `FalsePositive`, sin `containment.log` |
+| TC-03 | `tests/e2e/TC-03/` | varios | Varios | Sistema estable, sin excepciones no controladas |
 
 #### 3.3.14 Configuración requerida
 
-| Variable | Descripción | Valor por defecto | |-------------------------|------------------------------------|----------------------------------| | `SHUFFLE_WEBHOOK_TOKEN` | Token de autenticación del webhook | `siem-webhook-token-change-this` | | `THEHIVE_API_KEY` | API key de TheHive | en `.env.full` | | `CORTEX_API_KEY` | API key de Cortex | en `.env.full` | | `SIMULATION_MODE` | Modo simulación de contención | `true` | | `LOG_FILE` | Ruta del log de contención | `runtime/logs/containment.log` |
+| Variable | Descripción | Valor por defecto |
+|-------------------------|------------------------------------|----------------------------------|
+| `SHUFFLE_WEBHOOK_TOKEN` | Token de autenticación del webhook | `siem-webhook-token-change-this` |
+| `THEHIVE_API_KEY` | API key de TheHive | en `.env.full` |
+| `CORTEX_API_KEY` | API key de Cortex | en `.env.full` |
+| `SIMULATION_MODE` | Modo simulación de contención | `true` |
+| `LOG_FILE` | Ruta del log de contención | `runtime/logs/containment.log` |
 
 #### 3.4 Casos de prueba
 
@@ -4414,7 +4812,13 @@ flowchart TD
 
 #### 3.5.1 Métricas de éxito
 
-| Métrica | Umbral | Método de Medida | |--------------------------------|---------|----------------------------------| | **MTTR p50** | ≤ 120 s | Timestamps y cálculo estadístico | | **MTTR p90** | ≤ 180 s | Timestamps y cálculo estadístico | | **Tasa de éxito playbook** | 100% | Logs de Shuffle | | **Tasa de éxito contención** | 100% | Logs de script de contención | | **Precisión de clasificación** | ≥ 90% | Comparación con casos esperados |
+| Métrica | Umbral | Método de Medida |
+|--------------------------------|---------|----------------------------------|
+| **MTTR p50** | ≤ 120 s | Timestamps y cálculo estadístico |
+| **MTTR p90** | ≤ 180 s | Timestamps y cálculo estadístico |
+| **Tasa de éxito playbook** | 100% | Logs de Shuffle |
+| **Tasa de éxito contención** | 100% | Logs de script de contención |
+| **Precisión de clasificación** | ≥ 90% | Comparación con casos esperados |
 
 #### 3.5.2 KPIs calculados
 
@@ -4615,7 +5019,20 @@ Respuesta típica (JSON con `status`):
 
 La plantilla de caso de TheHive incluye campos personalizados relevantes para la trazabilidad forense:
 
-| Campo | Tipo | Propósito | |-------|------|-----------| | `hostname` | string | Endpoint afectado | | `username` | string | Cuenta de usuario involucrada | | `file_hash` | string | Hash SHA256 del archivo sospechoso | | `src_ip` | ip | IP origen del actor de amenaza | | `detection_time` | date | Timestamp de detección | | `shuffle_workflow_id` | string | ID de ejecución del workflow en Shuffle | | `misp_event_id` | string | ID del evento MISP correlacionado | | `containment_status` | string | Estado de la contención (`pending` / `in_progress` / `completed`) | | `containment_action_id` | string | Identificador de la acción de contención ejecutada (ej. `network_isolation_001`) | | `containment_status_history` | string | Historial de transiciones de estado, separado por comas | | `mitre_tactic_id` | string | Táctica MITRE ATT&CK principal asociada (ej. `TA0040`) | | `analyzer_score` | number | Puntuación de amenaza de los analyzers de Cortex (0-100) |
+| Campo | Tipo | Propósito |
+|-------|------|-----------|
+| `hostname` | string | Endpoint afectado |
+| `username` | string | Cuenta de usuario involucrada |
+| `file_hash` | string | Hash SHA256 del archivo sospechoso |
+| `src_ip` | ip | IP origen del actor de amenaza |
+| `detection_time` | date | Timestamp de detección |
+| `shuffle_workflow_id` | string | ID de ejecución del workflow en Shuffle |
+| `misp_event_id` | string | ID del evento MISP correlacionado |
+| `containment_status` | string | Estado de la contención (`pending` / `in_progress` / `completed`) |
+| `containment_action_id` | string | Identificador de la acción de contención ejecutada (ej. `network_isolation_001`) |
+| `containment_status_history` | string | Historial de transiciones de estado, separado por comas |
+| `mitre_tactic_id` | string | Táctica MITRE ATT&CK principal asociada (ej. `TA0040`) |
+| `analyzer_score` | number | Puntuación de amenaza de los analyzers de Cortex (0-100) |
 
 #### 3.1 Simulación vs contención real
 
@@ -4637,7 +5054,10 @@ La plantilla de caso de TheHive incluye campos personalizados relevantes para la
 
 Umbrales definidos en el alcance del proyecto:
 
-| Métrica | Objetivo | Estado | |---------|----------|--------| | P50 | ≤ 120 s | Operativo | | P90 | ≤ 180 s | Operativo |
+| Métrica | Objetivo | Estado |
+|---------|----------|--------|
+| P50 | ≤ 120 s | Operativo |
+| P90 | ≤ 180 s | Operativo |
 
 El cálculo se realiza en `src/soar_lab/domain/services/kpi_analyzer.py` y se indexa en `soar-metrics` con el campo `mttr_seconds` (`float`) y `@timestamp` (`date`) para consultas en Grafana.
 
@@ -4742,7 +5162,15 @@ completo, los IoCs y las reglas de detección.
 
 #### 3.1.1 Clasificación
 
-| Atributo | Valor | |----------|-------| | **Familia** | GMinst4ll / Pulsar RAT | | **Tipo** | InfoStealer / Loader / RAT | | **Sistemas objetivo** | Windows x64 | | **Nivel de riesgo** | Alto | | **Sofisticación** | Media-alta | | **Fecha de análisis** | 11-13 de junio de 2026 | | **Fuente forense** | [gminst4ll-forensics](https://github.com/alesanfe/gminst4ll-forensics) |
+| Atributo | Valor |
+|----------|-------|
+| **Familia** | GMinst4ll / Pulsar RAT |
+| **Tipo** | InfoStealer / Loader / RAT |
+| **Sistemas objetivo** | Windows x64 |
+| **Nivel de riesgo** | Alto |
+| **Sofisticación** | Media-alta |
+| **Fecha de análisis** | 11-13 de junio de 2026 |
+| **Fuente forense** | [gminst4ll-forensics](https://github.com/alesanfe/gminst4ll-forensics) |
 
 #### 3.1.2 Vector de infección
 
@@ -4800,39 +5228,94 @@ graph TD
 
 #### 3.2.3 Pulsar RAT v1.6.6.0
 
-| Capacidad | Librería / Implementación | |-----------|--------------------------| | HVNC (Hidden Virtual Desktop) | SharpDX DirectX | | Keylogger | Gma.System.MouseKeyHook | | Webcam access | AForge.Video.DirectShow | | Audio capture | NAudio (Core, Wasapi, WinMM) | | Clipboard hijacker | — | | Remote desktop | — | | Wallet clipper | BTC, LTC, ETH, XMR, SOL, DASH, XRP, TRX, BCH | | Anti-VM | 14 checks (AnyRun, Triage, Qemu, Parallels, Sandboxie, Cuckoo, etc.) | | Anti-debug | 10 checks (IsDebuggerPresent, NtGlobalFlag, hardware breakpoints, etc.) |
+| Capacidad | Librería / Implementación |
+|-----------|--------------------------|
+| HVNC (Hidden Virtual Desktop) | SharpDX DirectX |
+| Keylogger | Gma.System.MouseKeyHook |
+| Webcam access | AForge.Video.DirectShow |
+| Audio capture | NAudio (Core, Wasapi, WinMM) |
+| Clipboard hijacker | — |
+| Remote desktop | — |
+| Wallet clipper | BTC, LTC, ETH, XMR, SOL, DASH, XRP, TRX, BCH |
+| Anti-VM | 14 checks (AnyRun, Triage, Qemu, Parallels, Sandboxie, Cuckoo, etc.) |
+| Anti-debug | 10 checks (IsDebuggerPresent, NtGlobalFlag, hardware breakpoints, etc.) |
 
 #### 3.3 Mapeo MITRE ATT&CK
 
-| Táctica | Técnica | Descripción | |---------|---------|-------------| | Initial Access | T1566.002 | Spearphishing Link (YouTube/Tumblr/MediaFire) | | Execution | T1059.001 | Command and Scripting Interpreter (PowerShell) | | Persistence | T1547.001 | Modify System Binary (Winlogon UserInit) | | Defense Evasion | T1562.001 | Impair Defenses (Killer AV) | | Credential Access | T1056.001 | Input Capture (Keylogger) | | Command and Control | T1102 | Web Service (Pastebin, Reddit, Telegram, Dropbox, GitHub) | | Exfiltration | T1567.002 | Exfiltration Over Web Service (Telegram) |
+| Táctica | Técnica | Descripción |
+|---------|---------|-------------|
+| Initial Access | T1566.002 | Spearphishing Link (YouTube/Tumblr/MediaFire) |
+| Execution | T1059.001 | Command and Scripting Interpreter (PowerShell) |
+| Persistence | T1547.001 | Modify System Binary (Winlogon UserInit) |
+| Defense Evasion | T1562.001 | Impair Defenses (Killer AV) |
+| Credential Access | T1056.001 | Input Capture (Keylogger) |
+| Command and Control | T1102 | Web Service (Pastebin, Reddit, Telegram, Dropbox, GitHub) |
+| Exfiltration | T1567.002 | Exfiltration Over Web Service (Telegram) |
 
 #### 3.4 IoCs principales
 
 #### 3.4.1 Hashes SHA256
 
-| Archivo | SHA256 | Descripción | |---------|--------|-------------| | GMinst4ll 2.03.rar | `d70c31b02f88ad239507c47c9fbde3353b5b93b6892e48bf5ba25322aa667e77` | Loader principal (844 MiB) | | TREZ_cor 4.52.3.exe | `a75def5353a7d9cb08949f144bebcdb894650ff75c941d9713eb40433c9d580a` | Ejecutable Rust (~835 MB) | | SystemSP.rar | `a50e078598a08faa5ec554c36e58cf201f167e5f272b39f5107fffc6c44369f8` | Payload secundario C2 | | appy.exe (Pulsar RAT) | `5b20cb36abbacc69ee5d0c7008f1ad081db2767625659b4bb8eba6ecc511bd2a` | Pulsar RAT v1.6.6.0 (.NET) | | max.vbs | `4edbc0f24b9c11875bcbc9dfc628dd47c3f9eea9807750487602d00cdac15707` | Script persistencia | | babuchen.bat | `e861568c8c88b45ed8f969e31da8fbf0cc6cc4a8466e255ef21c446178463875` | Killer AV | | rodendron.vbs | `493b1137f016c03f7d0037fa5e190a01aca7dcd05074d36518499b98f706bed4` | Descargador GitHub C2 |
+| Archivo | SHA256 | Descripción |
+|---------|--------|-------------|
+| GMinst4ll 2.03.rar | `d70c31b02f88ad239507c47c9fbde3353b5b93b6892e48bf5ba25322aa667e77` | Loader principal (844 MiB) |
+| TREZ_cor 4.52.3.exe | `a75def5353a7d9cb08949f144bebcdb894650ff75c941d9713eb40433c9d580a` | Ejecutable Rust (~835 MB) |
+| SystemSP.rar | `a50e078598a08faa5ec554c36e58cf201f167e5f272b39f5107fffc6c44369f8` | Payload secundario C2 |
+| appy.exe (Pulsar RAT) | `5b20cb36abbacc69ee5d0c7008f1ad081db2767625659b4bb8eba6ecc511bd2a` | Pulsar RAT v1.6.6.0 (.NET) |
+| max.vbs | `4edbc0f24b9c11875bcbc9dfc628dd47c3f9eea9807750487602d00cdac15707` | Script persistencia |
+| babuchen.bat | `e861568c8c88b45ed8f969e31da8fbf0cc6cc4a8466e255ef21c446178463875` | Killer AV |
+| rodendron.vbs | `493b1137f016c03f7d0037fa5e190a01aca7dcd05074d36518499b98f706bed4` | Descargador GitHub C2 |
 
 > Lista completa en `tests/e2e/fixtures/gminst4ll_iocs.json`
 
 #### 3.4.2 URLs C2
 
-| URL | Servicio | Propósito | |-----|----------|-----------| | `https://pastebin.com/raw/FgUMQ9vE` | Pastebin | Token Telegram + Chat ID | | `https://pastebin.com/raw/E3s5iTTz` | Pastebin | URL descarga SystemSP.rar | | `https://www.dropbox.com/scl/fi/5awp2xpk4r65t6dz0bmcu/SystemSP.rar` | Dropbox | Payload secundario | | `https://www.reddit.com/user/Over_Media6257/comments/1s5bjdo/miks/.json` | Reddit | Dead drop resolver | | `https://github.com/boycots563/wlt56/raw/main/Windows%20Compatibility%20Agent.exe` | GitHub | Payload Python C2 | | `https://api.telegram.org/bot7675556882:[TOKEN]/sendDocument` | Telegram | Exfiltración |
+| URL | Servicio | Propósito |
+|-----|----------|-----------|
+| `https://pastebin.com/raw/FgUMQ9vE` | Pastebin | Token Telegram + Chat ID |
+| `https://pastebin.com/raw/E3s5iTTz` | Pastebin | URL descarga SystemSP.rar |
+| `https://www.dropbox.com/scl/fi/5awp2xpk4r65t6dz0bmcu/SystemSP.rar` | Dropbox | Payload secundario |
+| `https://www.reddit.com/user/Over_Media6257/comments/1s5bjdo/miks/.json` | Reddit | Dead drop resolver |
+| `https://github.com/boycots563/wlt56/raw/main/Windows%20Compatibility%20Agent.exe` | GitHub | Payload Python C2 |
+| `https://api.telegram.org/bot7675556882:[TOKEN]/sendDocument` | Telegram | Exfiltración |
 
 #### 3.4.3 IPs C2
 
-| IP | Servicio | |----|----------| | 172.66.171.73 | Pastebin | | 104.20.29.150 | Pastebin | | 162.125.248.18 | Dropbox | | 151.101.129.140 | Reddit | | 149.154.166.110 | Telegram API |
+| IP | Servicio |
+|----|----------|
+| 172.66.171.73 | Pastebin |
+| 104.20.29.150 | Pastebin |
+| 162.125.248.18 | Dropbox |
+| 151.101.129.140 | Reddit |
+| 149.154.166.110 | Telegram API |
 
 #### 3.4.4 Telegram (Exfiltración)
 
-| Campo | Valor | |-------|-------| | Bot ID | `7675556882` | | Bot username | `buchstys4_bot` | | Chat ID exfiltración | `6820575341` | | Operador | `@KJL4999S` |
+| Campo | Valor |
+|-------|-------|
+| Bot ID | `7675556882` |
+| Bot username | `buchstys4_bot` |
+| Chat ID exfiltración | `6820575341` |
+| Operador | `@KJL4999S` |
 
 #### 3.4.5 Persistencia (Registry)
 
-| Clave | Valor malicioso | Técnica | |-------|-----------------|---------| | `HKLM\...\Winlogon\UserInit` | `,wscript.exe "...\max.vbs"` | T1547.001 | | `HKLM\...\Policies\System\EnableLUA` | `0` (desactiva UAC) | T1548.002 | | `HKLM\...\RunOnceEx\0001\RodendronLoader` | `wscript.exe "...\rodendron.vbs"` | T1547.001 |
+| Clave | Valor malicioso | Técnica |
+|-------|-----------------|---------|
+| `HKLM\...\Winlogon\UserInit` | `,wscript.exe "...\max.vbs"` | T1547.001 |
+| `HKLM\...\Policies\System\EnableLUA` | `0` (desactiva UAC) | T1548.002 |
+| `HKLM\...\RunOnceEx\0001\RodendronLoader` | `wscript.exe "...\rodendron.vbs"` | T1547.001 |
 
 #### 3.5 Actor de amenaza
 
-| Atributo | Valor | |----------|-------| | Usuario GitHub | `boycots563` | | Repositorio C2 | `boycots563/wlt56` (251 commits, activo hasta 2026-06-11) | | Telegram operador | `@KJL4999S` | | Chat ID | `6820575341` | | Origen probable | Eslovaquia (subida a MediaFire el 2026-06-10) | | Plataformas distribución | YouTube, Tumblr, MediaFire, Discord |
+| Atributo | Valor |
+|----------|-------|
+| Usuario GitHub | `boycots563` |
+| Repositorio C2 | `boycots563/wlt56` (251 commits, activo hasta 2026-06-11) |
+| Telegram operador | `@KJL4999S` |
+| Chat ID | `6820575341` |
+| Origen probable | Eslovaquia (subida a MediaFire el 2026-06-10) |
+| Plataformas distribución | YouTube, Tumblr, MediaFire, Discord |
 
 #### 3.6 Validación en el laboratorio SOAR
 
@@ -4841,7 +5324,18 @@ graph TD
 El test `tests/e2e/TC-33/test_gminst4ll_real_iocs.py` valida el pipeline SOAR con los IoCs
 reales del GMinst4ll. Consta de 10 subtests:
 
-| Subtest | Descripción | IoCs enviados | |---------|-------------|---------------| | TC-33-01 | Descarga de **8 muestras** reales, verificación SHA256, borrado | 8 archivos binarios | | TC-33-02 | Hash IoC del loader principal (TREZ_cor) | 1 hash SHA256 | | TC-33-03 | Hash IoC de Pulsar RAT | 1 hash SHA256 | | TC-33-04 | URLs C2 (Pastebin, Dropbox, GitHub) | 7 URLs | | TC-33-05 | Dominios C2 | 6 dominios | | TC-33-06 | IPs C2 | 6 IPs | | TC-33-07 | Telegram exfiltration IoC | Bot ID + Chat ID | | TC-33-08 | Registry persistence IoCs | 3 claves | | TC-33-09 | MITRE ATT&CK mapping | 7 técnicas | | TC-33-10 | Multi-IoC (todos en una ejecución) | Todos los IoCs |
+| Subtest | Descripción | IoCs enviados |
+|---------|-------------|---------------|
+| TC-33-01 | Descarga de **8 muestras** reales, verificación SHA256, borrado | 8 archivos binarios |
+| TC-33-02 | Hash IoC del loader principal (TREZ_cor) | 1 hash SHA256 |
+| TC-33-03 | Hash IoC de Pulsar RAT | 1 hash SHA256 |
+| TC-33-04 | URLs C2 (Pastebin, Dropbox, GitHub) | 7 URLs |
+| TC-33-05 | Dominios C2 | 6 dominios |
+| TC-33-06 | IPs C2 | 6 IPs |
+| TC-33-07 | Telegram exfiltration IoC | Bot ID + Chat ID |
+| TC-33-08 | Registry persistence IoCs | 3 claves |
+| TC-33-09 | MITRE ATT&CK mapping | 7 técnicas |
+| TC-33-10 | Multi-IoC (todos en una ejecución) | Todos los IoCs |
 
 #### 3.6.2 Flujo SOAR para IoCs del GMinst4ll
 
@@ -5251,7 +5745,11 @@ Los acrónimos técnicos (MTTR, KPI, E2E, CORS, JWT, SSO, MFA, WAF, IaC, etc.) s
 - **Objetivo**: valor deseado para la mejora continua del laboratorio.
 - **Umbral (`threshold_p50`, `threshold_p90`)**: límite que una métrica observada no debería superar.
 
-| Métrica | Definición | Umbral actual | Procedimiento de verificación | |---------|------------|---------------|-------------------------------| | **MTTR** | Tiempo medio desde la detección de la alerta hasta la finalización del workflow (segundos) | P50 ≤ 120 s, P90 ≤ 180 s | Ver `soar-metrics` en Elasticsearch o el dashboard de Grafana | | **P50** | Percentil 50 de los tiempos de respuesta observados | ≤ 120 s | Consulta ES `percentiles` sobre `mttr_seconds` | | **P90** | Percentil 90 de los tiempos de respuesta observados | ≤ 180 s | Consulta ES `percentiles` sobre `mttr_seconds` |
+| Métrica | Definición | Umbral actual | Procedimiento de verificación |
+|---------|------------|---------------|-------------------------------|
+| **MTTR** | Tiempo medio desde la detección de la alerta hasta la finalización del workflow (segundos) | P50 ≤ 120 s, P90 ≤ 180 s | Ver `soar-metrics` en Elasticsearch o el dashboard de Grafana |
+| **P50** | Percentil 50 de los tiempos de respuesta observados | ≤ 120 s | Consulta ES `percentiles` sobre `mttr_seconds` |
+| **P90** | Percentil 90 de los tiempos de respuesta observados | ≤ 180 s | Consulta ES `percentiles` sobre `mttr_seconds` |
 
 **Comandos reproducibles para MTTR / percentiles:**
 
@@ -5288,7 +5786,16 @@ curl -s -u "elastic:${ELASTIC_PASSWORD}" \
 
 El `CompositionRoot` en `src/soar_lab/interfaces/api/composition.py` ensambla los adaptadores de infraestructura con los puertos del dominio. Los elementos principales son:
 
-| Instancia | Puerto / Rol | Implementación | Uso típico | |-----------|--------------|----------------|------------| | `config_provider` | Configuración centralizada | `InfrastructureConfigProvider` (`src/soar_lab/infrastructure/config_provider.py`) | Lee `Settings` y `.env.full`; resuelve JWT secret, CORS, URLs de servicios | | `storage` | Almacenamiento de archivos | `FilesystemStorage` (`src/soar_lab/infrastructure/filesystem_storage.py`) | Guarda resultados CSV, backups temporales, artefactos | | `alert_repository` | Repositorio de alertas | `SqliteAlertRepository` / `InMemoryAlertRepository` (`src/soar_lab/infrastructure/persistence/` y `src/soar_lab/infrastructure/`) | Persistencia de alertas durante la ejecución del workflow | | `http_client` | Cliente HTTP genérico | `AioHTTPClient` (`src/soar_lab/infrastructure/http_client.py`) | Peticiones a TheHive, Cortex, Shuffle, MISP | | `backup_driver` | Backup comprimido | `TarBackupDriver` (`src/soar_lab/infrastructure/tar_backup_driver.py`) | Genera `soar_backup_*.tar.gz` | | `test_runner` | Ejecutor de tests | `PytestTestRunner` (`src/soar_lab/infrastructure/pytest_test_runner.py`) | Lanza `pytest` con los marcadores adecuados | | `health_checker` | Chequeos de salud | `HTTPHealthCheckAdapter` + `HealthService` (`src/soar_lab/infrastructure/monitoring/`) | Verifica servicios externos y expone `/health` | | `websocket_manager` | WebSocket `/ws/logs` | `ConnectionManager` (`src/soar_lab/infrastructure/websocket_manager.py`) | Streaming de logs a clientes conectados |
+| Instancia | Puerto / Rol | Implementación | Uso típico |
+|-----------|--------------|----------------|------------|
+| `config_provider` | Configuración centralizada | `InfrastructureConfigProvider` (`src/soar_lab/infrastructure/config_provider.py`) | Lee `Settings` y `.env.full`; resuelve JWT secret, CORS, URLs de servicios |
+| `storage` | Almacenamiento de archivos | `FilesystemStorage` (`src/soar_lab/infrastructure/filesystem_storage.py`) | Guarda resultados CSV, backups temporales, artefactos |
+| `alert_repository` | Repositorio de alertas | `SqliteAlertRepository` / `InMemoryAlertRepository` (`src/soar_lab/infrastructure/persistence/` y `src/soar_lab/infrastructure/`) | Persistencia de alertas durante la ejecución del workflow |
+| `http_client` | Cliente HTTP genérico | `AioHTTPClient` (`src/soar_lab/infrastructure/http_client.py`) | Peticiones a TheHive, Cortex, Shuffle, MISP |
+| `backup_driver` | Backup comprimido | `TarBackupDriver` (`src/soar_lab/infrastructure/tar_backup_driver.py`) | Genera `soar_backup_*.tar.gz` |
+| `test_runner` | Ejecutor de tests | `PytestTestRunner` (`src/soar_lab/infrastructure/pytest_test_runner.py`) | Lanza `pytest` con los marcadores adecuados |
+| `health_checker` | Chequeos de salud | `HTTPHealthCheckAdapter` + `HealthService` (`src/soar_lab/infrastructure/monitoring/`) | Verifica servicios externos y expone `/health` |
+| `websocket_manager` | WebSocket `/ws/logs` | `ConnectionManager` (`src/soar_lab/infrastructure/websocket_manager.py`) | Streaming de logs a clientes conectados |
 
 Las dependencias se inyectan en `src/soar_lab/interfaces/api/main.py` a través de `lifespan` o de `get_*` helpers definidos en el propio `main.py` y en `src/soar_lab/interfaces/api/route_helpers.py`.
 
@@ -5310,7 +5817,10 @@ Ver detalles en:
 
 #### 7.5 Distinción entre Elasticsearch, OpenSearch y
 
-| Componente | Rol en el laboratorio | Imagen / versión | Puerto host | Notas | |------------|-----------------------|------------------|-------------|-------| | **Elasticsearch** | Motor de búsqueda para TheHive, Cortex y métricas SOAR (índices `soar-alerts`, `soar-metrics`) | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `8200` | Usado por TheHive, Cortex, Grafana, KPIs y Lab API | | **OpenSearch** | Backend interno de Shuffle (almacenamiento de workflows y ejecuciones) | `opensearchproject/opensearch:2.10.0` | `8201` (por defecto en `.env.example`) | Motor principal actual de Shuffle; no es una migración futura |
+| Componente | Rol en el laboratorio | Imagen / versión | Puerto host | Notas |
+|------------|-----------------------|------------------|-------------|-------|
+| **Elasticsearch** | Motor de búsqueda para TheHive, Cortex y métricas SOAR (índices `soar-alerts`, `soar-metrics`) | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `8200` | Usado por TheHive, Cortex, Grafana, KPIs y Lab API |
+| **OpenSearch** | Backend interno de Shuffle (almacenamiento de workflows y ejecuciones) | `opensearchproject/opensearch:2.10.0` | `8201` (por defecto en `.env.example`) | Motor principal actual de Shuffle; no es una migración futura |
 
 La documentación operativa debe referirse al nombre completo del servicio (`elasticsearch` para el core del laboratorio, `.indexer` para ) para evitar ambigüedades. No se usa Kibana; Grafana es la herramienta de visualización central.
 
@@ -5318,7 +5828,19 @@ La documentación operativa debe referirse al nombre completo del servicio (`ela
 
 Esta tabla complementa la matriz de integraciones de la sección 4. Los estados se extraen del código y de los tests; en caso de discrepancia prevalece el comportamiento verificable.
 
-| Capacidad | Estado | Notas | |-----------|--------|-------| | Webhook → Shuffle | Implementado | `scripts/setup/init_shuffle_webhook.py` | | Creación/actualización de casos en TheHive | Implementado | Cliente y tests de integración | | Ejecución de analyzers en Cortex | Implementado | Requiere API key y apps descargadas | | Enriquecimiento MISP y correlación de IoCs | Implementado | Sincronización bidireccional puede requerir ajuste manual | | Cálculo e indexado de KPIs (MTTR) | Implementado | Índice `soar-metrics` | | Dashboard de Grafana | Implementado | Datasource y `kpi-dashboard.json` | | Contención real de endpoints | Simulado | `notify.sh` / `api/v1/contain` registran la acción; no modifican hosts reales sin agente EDR | | MFA / SSO | Planificado / No verificado | Autenticación actual basada en JWT `HS256` | | WAF / mTLS avanzado | Planificado / No verificado | Nginx actúa como proxy inverso con certificado autofirmado | | Alta disponibilidad | Planificado | Despliegue single-host actual | | Notificaciones por SMS / ticket externo | No implementado | Puede añadirse como workflow futuro |
+| Capacidad | Estado | Notas |
+|-----------|--------|-------|
+| Webhook → Shuffle | Implementado | `scripts/setup/init_shuffle_webhook.py` |
+| Creación/actualización de casos en TheHive | Implementado | Cliente y tests de integración |
+| Ejecución de analyzers en Cortex | Implementado | Requiere API key y apps descargadas |
+| Enriquecimiento MISP y correlación de IoCs | Implementado | Sincronización bidireccional puede requerir ajuste manual |
+| Cálculo e indexado de KPIs (MTTR) | Implementado | Índice `soar-metrics` |
+| Dashboard de Grafana | Implementado | Datasource y `kpi-dashboard.json` |
+| Contención real de endpoints | Simulado | `notify.sh` / `api/v1/contain` registran la acción; no modifican hosts reales sin agente EDR |
+| MFA / SSO | Planificado / No verificado | Autenticación actual basada en JWT `HS256` |
+| WAF / mTLS avanzado | Planificado / No verificado | Nginx actúa como proxy inverso con certificado autofirmado |
+| Alta disponibilidad | Planificado | Despliegue single-host actual |
+| Notificaciones por SMS / ticket externo | No implementado | Puede añadirse como workflow futuro |
 
 #### 7.7 Trabajo futuro y límites del alcance
 

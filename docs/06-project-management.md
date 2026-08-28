@@ -172,7 +172,28 @@ TFM académico riguroso.
 
 ##### Tabla de Objetivos SMART y Ubicación de Evidencias
 
-| Nº | Objetivo | Descripción | Métrica | Umbral | Método de Medida | Evidencia | |----|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|------------------------------------|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------| | 1 | Implementación del Laboratorio | Desplegar entorno reproducible con TheHive, Cortex y Shuffle mediante Docker Compose (`infra/docker/compose/docker-compose.yml`, `infra/docker/compose/docker-compose.core.yml`). | Servicios activos | 100% contenedores funcionando | Verificación con `docker ps` y `make up` | Implementado | | 2 | Desarrollo del Playbook E2E | Crear flujo automatizado desde alerta hasta contención simulada en Shuffle (`docs/04-operations.md`). | Ejecución completa | 2 escenarios (malicioso y benigno) | Logs del SOAR y casos en TheHive | Implementado | | 3 | Validación de Métricas MTTR | Medir tiempo de respuesta desde alerta hasta contención mediante timestamps en logs. | Percentiles p50 y p90 | p50 ≤ 120 s; p90 ≤ 180 s | Timestamps y cálculo estadístico con `src/soar_lab/domain/services/kpi_analyzer.py` | Implementado | | 4 | Documentación Técnica | Generar documentación completa (arquitectura, configuración, resultados, API, docs-site, CLI, analytics). | Documento final | 100% apartados completados | Checklist y revisión | En progreso | | 5 | Integración SIEM Simulada | Configurar SIEM simulado para generar alertas mediante `src/soar_lab/simulator/simulate_alerts.py`. | Alertas procesadas | 100% sin errores | Logs en Shuffle y casos en TheHive | Simulado | | 6 | Contención Simulada | Implementar contención simulada en el playbook E2E (`docs/04-operations.md`). | Acciones ejecutadas | 100% completadas | Logs del servicio y confirmación en flujo | Simulado | | 7 | Seguridad del Entorno | Garantizar uso exclusivo de muestras inertes, gestión de certificados SSL (`scripts/setup/gen_certs.sh`) y validación de esquemas (`src/soar_lab/config/schemas/__init__.py`). | Incidentes | 0 incidentes | Revisión del contenido y validación | Parcial | | 8 | Automatización Integral | Implementar despliegue con Makefiles, Docker Compose, CI/CD (`.github/workflows/`), testing automatizado (`tests/`, `scripts/maintenance/`), backup/restore (`src/soar_lab/application/use_cases/backup_service.py`) . | Despliegue automático | 100% servicios levantados | Ejecución de scripts y verificación | Parcial | | 9 | Pruebas Atómicas | Ejecutar pruebas atómicas de componentes individuales (`tests/atomic/`: alertas, IoCs, KPIs, esquemas, secrets). | Casos probados | 90% pruebas pasan | `pytest tests/atomic/ -v` | Parcial | | 10 | Pruebas de Integración | Ejecutar pruebas de integración entre TheHive, Cortex, Shuffle, API y otros componentes (`tests/integration/`). | Casos probados | 85% pruebas pasan | `pytest tests/integration/ -v` | Parcial | | 11 | Pruebas de Seguridad | Ejecutar pruebas de seguridad para validar autenticación, autorización, validación de entrada y controles de acceso (`tests/security/`). | Casos probados | 100% pruebas pasan | `pytest tests/security/ -v` | Parcial | | 12 | Pruebas de Rendimiento | Ejecutar pruebas de rendimiento para validar tiempos de respuesta de API, analyzers y componentes críticos (`tests/performance/`). | Tiempos de respuesta | ≤ umbrales definidos | `pytest tests/performance/ -v` | Parcial | | 13 | Pruebas de Producción | Ejecutar smoke tests para validación rápida de despliegues en producción (`tests/e2e/`). | Casos probados | 100% pruebas pasan | `pytest tests/e2e/ -v` | Parcial | | 14 | KPIs y Análisis | Calcular KPIs, analytics de TFM (`docs/thesis/`) y métricas de servicios (`src/soar_lab/application/use_cases/analytics_service.py`). | KPIs calculados | Informe con gráficos | Análisis estadístico y visualización | Implementado | | 15 | Preparación Defensa TFM | Crear presentación, resumen ejecutivo y analytics para evidencia académica (`docs/thesis/`). | Presentación lista | 100% diapositivas completadas | Validación y ensayo | Pendiente | | 16 | Evidencia de Aprobación | Obtener validación formal del alcance y objetivos. | Archivo firmado | Documento archivado | Confirmación por correo y almacenamiento | Pendiente | | 17 | API del Laboratorio | Implementar y desplegar la API REST del laboratorio con FastAPI para gestión de servicios, health checks, métricas, tests y backups (`src/soar_lab/interfaces/api/`). | Endpoints funcionales | Cobertura ≥ 80% | Tests de integración, `/docs` | Implementado | | 18 | CLI del Laboratorio | Implementar CLI para gestión del laboratorio con comandos para alertas, configuración, validación y operaciones comunes (`src/soar_lab/interfaces/api/cli.py`). | Comandos funcionales | 100% comandos ejecutan | Tests unitarios, `--help` | Implementado | | 19 | Sitio de Documentación | Desplegar sitio de documentación Docusaurus con documentación completa del laboratorio, getting started y guías de uso (`apps/docs-site/`). | Sitio funcional | 100% páginas renderizan | Tests de navegador, revisión enlaces | Implementado | | 20 | Interfaz Web de Gestión | Desplegar interfaz web de gestión para monitoreo del laboratorio, visualización de servicios y operaciones básicas (`apps/web-management/`). | UI funcional | Dashboard muestra estado real | Tests de navegador, pruebas manuales | Implementado |
+| Nº | Objetivo | Descripción | Métrica | Umbral | Método de Medida | Evidencia |
+|----|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|------------------------------------|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| 1 | Implementación del Laboratorio | Desplegar entorno reproducible con TheHive, Cortex y Shuffle mediante Docker Compose (`infra/docker/compose/docker-compose.yml`, `infra/docker/compose/docker-compose.core.yml`). | Servicios activos | 100% contenedores funcionando | Verificación con `docker ps` y `make up` | Implementado |
+| 2 | Desarrollo del Playbook E2E | Crear flujo automatizado desde alerta hasta contención simulada en Shuffle (`docs/04-operations.md`). | Ejecución completa | 2 escenarios (malicioso y benigno) | Logs del SOAR y casos en TheHive | Implementado |
+| 3 | Validación de Métricas MTTR | Medir tiempo de respuesta desde alerta hasta contención mediante timestamps en logs. | Percentiles p50 y p90 | p50 ≤ 120 s; p90 ≤ 180 s | Timestamps y cálculo estadístico con `src/soar_lab/domain/services/kpi_analyzer.py` | Implementado |
+| 4 | Documentación Técnica | Generar documentación completa (arquitectura, configuración, resultados, API, docs-site, CLI, analytics). | Documento final | 100% apartados completados | Checklist y revisión | En progreso |
+| 5 | Integración SIEM Simulada | Configurar SIEM simulado para generar alertas mediante `src/soar_lab/simulator/simulate_alerts.py`. | Alertas procesadas | 100% sin errores | Logs en Shuffle y casos en TheHive | Simulado |
+| 6 | Contención Simulada | Implementar contención simulada en el playbook E2E (`docs/04-operations.md`). | Acciones ejecutadas | 100% completadas | Logs del servicio y confirmación en flujo | Simulado |
+| 7 | Seguridad del Entorno | Garantizar uso exclusivo de muestras inertes, gestión de certificados SSL (`scripts/setup/gen_certs.sh`) y validación de esquemas (`src/soar_lab/config/schemas/__init__.py`). | Incidentes | 0 incidentes | Revisión del contenido y validación | Parcial |
+| 8 | Automatización Integral | Implementar despliegue con Makefiles, Docker Compose, CI/CD (`.github/workflows/`), testing automatizado (`tests/`, `scripts/maintenance/`), backup/restore (`src/soar_lab/application/use_cases/backup_service.py`) . | Despliegue automático | 100% servicios levantados | Ejecución de scripts y verificación | Parcial |
+| 9 | Pruebas Atómicas | Ejecutar pruebas atómicas de componentes individuales (`tests/atomic/`: alertas, IoCs, KPIs, esquemas, secrets). | Casos probados | 90% pruebas pasan | `pytest tests/atomic/ -v` | Parcial |
+| 10 | Pruebas de Integración | Ejecutar pruebas de integración entre TheHive, Cortex, Shuffle, API y otros componentes (`tests/integration/`). | Casos probados | 85% pruebas pasan | `pytest tests/integration/ -v` | Parcial |
+| 11 | Pruebas de Seguridad | Ejecutar pruebas de seguridad para validar autenticación, autorización, validación de entrada y controles de acceso (`tests/security/`). | Casos probados | 100% pruebas pasan | `pytest tests/security/ -v` | Parcial |
+| 12 | Pruebas de Rendimiento | Ejecutar pruebas de rendimiento para validar tiempos de respuesta de API, analyzers y componentes críticos (`tests/performance/`). | Tiempos de respuesta | ≤ umbrales definidos | `pytest tests/performance/ -v` | Parcial |
+| 13 | Pruebas de Producción | Ejecutar smoke tests para validación rápida de despliegues en producción (`tests/e2e/`). | Casos probados | 100% pruebas pasan | `pytest tests/e2e/ -v` | Parcial |
+| 14 | KPIs y Análisis | Calcular KPIs, analytics de TFM (`docs/thesis/`) y métricas de servicios (`src/soar_lab/application/use_cases/analytics_service.py`). | KPIs calculados | Informe con gráficos | Análisis estadístico y visualización | Implementado |
+| 15 | Preparación Defensa TFM | Crear presentación, resumen ejecutivo y analytics para evidencia académica (`docs/thesis/`). | Presentación lista | 100% diapositivas completadas | Validación y ensayo | Pendiente |
+| 16 | Evidencia de Aprobación | Obtener validación formal del alcance y objetivos. | Archivo firmado | Documento archivado | Confirmación por correo y almacenamiento | Pendiente |
+| 17 | API del Laboratorio | Implementar y desplegar la API REST del laboratorio con FastAPI para gestión de servicios, health checks, métricas, tests y backups (`src/soar_lab/interfaces/api/`). | Endpoints funcionales | Cobertura ≥ 80% | Tests de integración, `/docs` | Implementado |
+| 18 | CLI del Laboratorio | Implementar CLI para gestión del laboratorio con comandos para alertas, configuración, validación y operaciones comunes (`src/soar_lab/interfaces/api/cli.py`). | Comandos funcionales | 100% comandos ejecutan | Tests unitarios, `--help` | Implementado |
+| 19 | Sitio de Documentación | Desplegar sitio de documentación Docusaurus con documentación completa del laboratorio, getting started y guías de uso (`apps/docs-site/`). | Sitio funcional | 100% páginas renderizan | Tests de navegador, revisión enlaces | Implementado |
+| 20 | Interfaz Web de Gestión | Desplegar interfaz web de gestión para monitoreo del laboratorio, visualización de servicios y operaciones básicas (`apps/web-management/`). | UI funcional | Dashboard muestra estado real | Tests de navegador, pruebas manuales | Implementado |
 
 #### 3.4 Cronograma
 
@@ -209,13 +230,39 @@ gantt
 
 #### Fases del Proyecto
 
-| Fase | Duración | Objetivos | Entregables | |-----------------------------|-----------|--------------------------|--------------------------------------------------------------------| | **Fase 1: Infraestructura** | 4 semanas | 1, 8, 17, 18 | Laboratorio desplegado, automatización, API, CLI | | **Fase 2: Desarrollo** | 5 semanas | 2, 5, 6, 19, 20 | Playbook E2E, integración SIEM, scripts, docs-site, web-management | | **Fase 3: Validación** | 4 semanas | 3, 9, 10, 11, 12, 13, 14 | Métricas MTTR, pruebas especializadas, KPIs | | **Fase 4: Cierre** | 2 semanas | 4, 15, 16 | Documentación técnica, presentación, aprobación |
+| Fase | Duración | Objetivos | Entregables |
+|-----------------------------|-----------|--------------------------|--------------------------------------------------------------------|
+| **Fase 1: Infraestructura** | 4 semanas | 1, 8, 17, 18 | Laboratorio desplegado, automatización, API, CLI |
+| **Fase 2: Desarrollo** | 5 semanas | 2, 5, 6, 19, 20 | Playbook E2E, integración SIEM, scripts, docs-site, web-management |
+| **Fase 3: Validación** | 4 semanas | 3, 9, 10, 11, 12, 13, 14 | Métricas MTTR, pruebas especializadas, KPIs |
+| **Fase 4: Cierre** | 2 semanas | 4, 15, 16 | Documentación técnica, presentación, aprobación |
 
 #### 3.5 Hitos
 
 #### Matriz de Trazabilidad: Objetivos vs Entregables
 
-| Objetivo | Entregable Principal | Entregable Secundario | Ubicación en Repositorio | EDT Relacionada | Estado | |----------|-------------------------------------|--------------------------------------|-----------------------------------------------------------------------------|-----------------|-----------| | 1 | Laboratorio SOAR desplegado | Capturas de servicios | `docs/04-operations.md` | EDT 4.1 | Implementado | | 2 | Playbook E2E implementado | Logs de ejecución | `tests/e2e/TC-01/test_malicious.py`, `tests/e2e/TC-02/` | EDT 5.1 | Implementado | | 3 | Métricas MTTR validadas | Archivo KPIs | `runtime/results/kpis.csv` | EDT 7.1 | Implementado | | 4 | Documentación técnica completa | Revisión | `docs/02-architecture.md`, `docs/03-api-and-integrations.md`, `apps/docs-site/` | EDT 8.1 | En progreso | | 5 | Integración SIEM simulada | Script de alertas | `src/soar_lab/simulator/simulate_alerts.py` | EDT 5.2 | Simulado | | 6 | Scripts de contención | Logs de ejecución | `docs/04-operations.md` | EDT 6.1 | Simulado | | 7 | Seguridad validada | Documento de seguridad, certificados | `docs/02-architecture.md`, `infra/docker/config/nginx/ssl/` | EDT 4.2 | Parcial | | 8 | Automatización integral configurada | Scripts CI/CD, backup | `Makefile`, `.github/workflows/`, `scripts/`, `infra/docker/` | EDT 4.3 | Parcial | | 9 | Pruebas atómicas completadas | Informe de pruebas | `tests/atomic/`, `reports/test_results/atomic_tests.json` | EDT 7.2 | Parcial | | 10 | Pruebas de integración completadas | Informe de pruebas | `tests/integration/`, `reports/test_results/integration_tests.json` | EDT 7.2 | Parcial | | 11 | Pruebas de seguridad completadas | Informe de pruebas | `tests/security/`, `reports/test_results/security_tests.json` | EDT 7.2 | Parcial | | 12 | Pruebas de rendimiento completadas | Informe de pruebas | `tests/performance/`, `reports/test_results/performance_tests.json` | EDT 7.2 | Parcial | | 13 | Pruebas de producción completadas | Informe de pruebas | `tests/e2e/`, `runtime/results/smoke_tests.json` | EDT 7.2 | Parcial | | 14 | KPIs calculados y analizados | Gráficos y análisis | `runtime/results/kpis.csv`, `docs/thesis/`, `src/soar_lab/application/use_cases/analytics_service.py` | EDT 7.3 | Implementado | | 15 | Presentación TFM preparada | Diapositivas, analytics | este documento, `runtime/data/` | EDT 8.2 | Pendiente | | 16 | Evidencia de aprobación | Documento firmado | este documento (scope.md, objectives.md, plan.md) | EDT 8.3 | Pendiente | | 17 | API del Laboratorio desplegada | API funcional | `src/soar_lab/interfaces/api/`, `docs/03-api-and-integrations.md` | EDT 4.1 | Implementado | | 18 | CLI del Laboratorio implementada | CLI funcional | `src/soar_lab/interfaces/api/cli.py`, `docs/04-operations.md` | EDT 4.1 | Implementado | | 19 | Sitio de Documentación desplegado | Sitio funcional | `apps/docs-site/`, capturas de pantalla | EDT 8.1 | Implementado | | 20 | Interfaz Web de Gestión desplegada | UI funcional | `apps/web-management/`, capturas de pantalla | EDT 4.1 | Implementado |
+| Objetivo | Entregable Principal | Entregable Secundario | Ubicación en Repositorio | EDT Relacionada | Estado |
+|----------|-------------------------------------|--------------------------------------|-----------------------------------------------------------------------------|-----------------|-----------|
+| 1 | Laboratorio SOAR desplegado | Capturas de servicios | `docs/04-operations.md` | EDT 4.1 | Implementado |
+| 2 | Playbook E2E implementado | Logs de ejecución | `tests/e2e/TC-01/test_malicious.py`, `tests/e2e/TC-02/` | EDT 5.1 | Implementado |
+| 3 | Métricas MTTR validadas | Archivo KPIs | `runtime/results/kpis.csv` | EDT 7.1 | Implementado |
+| 4 | Documentación técnica completa | Revisión | `docs/02-architecture.md`, `docs/03-api-and-integrations.md`, `apps/docs-site/` | EDT 8.1 | En progreso |
+| 5 | Integración SIEM simulada | Script de alertas | `src/soar_lab/simulator/simulate_alerts.py` | EDT 5.2 | Simulado |
+| 6 | Scripts de contención | Logs de ejecución | `docs/04-operations.md` | EDT 6.1 | Simulado |
+| 7 | Seguridad validada | Documento de seguridad, certificados | `docs/02-architecture.md`, `infra/docker/config/nginx/ssl/` | EDT 4.2 | Parcial |
+| 8 | Automatización integral configurada | Scripts CI/CD, backup | `Makefile`, `.github/workflows/`, `scripts/`, `infra/docker/` | EDT 4.3 | Parcial |
+| 9 | Pruebas atómicas completadas | Informe de pruebas | `tests/atomic/`, `reports/test_results/atomic_tests.json` | EDT 7.2 | Parcial |
+| 10 | Pruebas de integración completadas | Informe de pruebas | `tests/integration/`, `reports/test_results/integration_tests.json` | EDT 7.2 | Parcial |
+| 11 | Pruebas de seguridad completadas | Informe de pruebas | `tests/security/`, `reports/test_results/security_tests.json` | EDT 7.2 | Parcial |
+| 12 | Pruebas de rendimiento completadas | Informe de pruebas | `tests/performance/`, `reports/test_results/performance_tests.json` | EDT 7.2 | Parcial |
+| 13 | Pruebas de producción completadas | Informe de pruebas | `tests/e2e/`, `runtime/results/smoke_tests.json` | EDT 7.2 | Parcial |
+| 14 | KPIs calculados y analizados | Gráficos y análisis | `runtime/results/kpis.csv`, `docs/thesis/`, `src/soar_lab/application/use_cases/analytics_service.py` | EDT 7.3 | Implementado |
+| 15 | Presentación TFM preparada | Diapositivas, analytics | este documento, `runtime/data/` | EDT 8.2 | Pendiente |
+| 16 | Evidencia de aprobación | Documento firmado | este documento (scope.md, objectives.md, plan.md) | EDT 8.3 | Pendiente |
+| 17 | API del Laboratorio desplegada | API funcional | `src/soar_lab/interfaces/api/`, `docs/03-api-and-integrations.md` | EDT 4.1 | Implementado |
+| 18 | CLI del Laboratorio implementada | CLI funcional | `src/soar_lab/interfaces/api/cli.py`, `docs/04-operations.md` | EDT 4.1 | Implementado |
+| 19 | Sitio de Documentación desplegado | Sitio funcional | `apps/docs-site/`, capturas de pantalla | EDT 8.1 | Implementado |
+| 20 | Interfaz Web de Gestión desplegada | UI funcional | `apps/web-management/`, capturas de pantalla | EDT 4.1 | Implementado |
 
 **Leyenda de EDT:**
 
@@ -387,7 +434,16 @@ Este proyecto cumple con las siguientes consideraciones éticas:
 
 #### Matriz de Alcance
 
-| Categoría | Incluido | Excluido | Justificación | |---------------------|-------------------------------------------------------------------------|--------------------------|------------------------------------| | **Playbooks** | 1 flujo E2E completo | Múltiples playbooks E2E | Enfoque en profundidad vs amplitud | | **Integraciones** | SIEM simulado, contención simulada, API, CLI, docs-site, web-management | APIs comerciales reales | Viabilidad técnica y económica | | **Seguridad** | Muestras inertes, certificados SSL, validación de esquemas | Malware funcional | Seguridad del entorno académico | | **Infraestructura** | Single-host con Docker Compose, Nginx, CI/CD, backup/restore | Alta disponibilidad (HA) | Simplicidad y reproducibilidad | | **Documentación** | Completa y académica (API, CLI, analytics, docs-site) | Superficial o incompleta | Rigor académico requerido | | **Validación** | Pruebas atómicas, integración, seguridad, rendimiento, producción | Pruebas limitadas | Evidencia verificable necesaria | | **Automatización** | CI/CD, testing automatizado, backup/restore | Automatización manual | Eficiencia y calidad | | **Analytics** | Módulos para evidencia académica y visualización | Análisis superficial | Rigor académico requerido |
+| Categoría | Incluido | Excluido | Justificación |
+|---------------------|-------------------------------------------------------------------------|--------------------------|------------------------------------|
+| **Playbooks** | 1 flujo E2E completo | Múltiples playbooks E2E | Enfoque en profundidad vs amplitud |
+| **Integraciones** | SIEM simulado, contención simulada, API, CLI, docs-site, web-management | APIs comerciales reales | Viabilidad técnica y económica |
+| **Seguridad** | Muestras inertes, certificados SSL, validación de esquemas | Malware funcional | Seguridad del entorno académico |
+| **Infraestructura** | Single-host con Docker Compose, Nginx, CI/CD, backup/restore | Alta disponibilidad (HA) | Simplicidad y reproducibilidad |
+| **Documentación** | Completa y académica (API, CLI, analytics, docs-site) | Superficial o incompleta | Rigor académico requerido |
+| **Validación** | Pruebas atómicas, integración, seguridad, rendimiento, producción | Pruebas limitadas | Evidencia verificable necesaria |
+| **Automatización** | CI/CD, testing automatizado, backup/restore | Automatización manual | Eficiencia y calidad |
+| **Analytics** | Módulos para evidencia académica y visualización | Análisis superficial | Rigor académico requerido |
 
 #### Diagrama del Flujo del Playbook
 
@@ -441,7 +497,11 @@ graph LR
 La infraestructura se diseña para ser segura y fácil de desplegar, evitando complejidad innecesaria y asegurando
 compatibilidad con entornos académicos.
 
-| Componente | Descripción | Requisitos Mínimos | Referencias | |------------------|---------------------------------------------------------------------------------------------------------------------------------------------|----------------------|-----------------------------------------------------------------------| | **VM Windows** | Simulación de endpoint víctima, agente EDR | 4GB RAM, 50GB SSD | Playbook E2E de contención: `docs/04-operations.md` | | **VM Linux** | Host principal con Docker, herramientas, CI/CD | 8GB RAM, 50GB SSD | `Makefile`, `infra/docker/compose/`, `.github/workflows/` | | **Contenedores** | TheHive, Cortex, Shuffle, MISP, Elasticsearch, PostgreSQL, Redis, MariaDB, Nginx, Grafana, Loki, Promtail, docs-site, web-management | Docker Engine 20.10+ | `infra/docker/compose/docker-compose*.yml` |
+| Componente | Descripción | Requisitos Mínimos | Referencias |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------|----------------------|-----------------------------------------------------------------------|
+| **VM Windows** | Simulación de endpoint víctima, agente EDR | 4GB RAM, 50GB SSD | Playbook E2E de contención: `docs/04-operations.md` |
+| **VM Linux** | Host principal con Docker, herramientas, CI/CD | 8GB RAM, 50GB SSD | `Makefile`, `infra/docker/compose/`, `.github/workflows/` |
+| **Contenedores** | TheHive, Cortex, Shuffle, MISP, Elasticsearch, PostgreSQL, Redis, MariaDB, Nginx, Grafana, Loki, Promtail, docs-site, web-management | Docker Engine 20.10+ | `infra/docker/compose/docker-compose*.yml` |
 
 #### Métricas de Éxito
 
@@ -455,7 +515,20 @@ compatibilidad con entornos académicos.
 
 #### Matriz de Trazabilidad: Componentes vs Objetivos SMART
 
-| Componente | Objetivo SMART 1 | Objetivo SMART 2 | Objetivo SMART 3 | Objetivo SMART 4 | Objetivo SMART 5 | Objetivo SMART 6 | Objetivo SMART 7 | Objetivo SMART 8 | Objetivo SMART 9 | Objetivo SMART 10 | Objetivo SMART 11 | Objetivo SMART 12 | |------------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|-------------------|-------------------|-------------------| | **Playbook E2E** | - | ✓ | ✓ | ✓ | - | ✓ | - | - | ✓ | ✓ | ✓ | - | | **TheHive** | ✓ | ✓ | - | ✓ | - | - | - | - | - | - | - | - | | **Cortex** | ✓ | ✓ | - | - | - | - | - | - | - | - | - | - | | **Shuffle** | ✓ | ✓ | ✓ | - | ✓ | - | - | - | - | - | - | - | | **SIEM Simulado** | - | ✓ | ✓ | - | ✓ | - | - | - | - | - | - | - | | **Scripts Contención** | - | ✓ | - | - | - | ✓ | - | - | - | - | - | - | | **Docker Compose** | ✓ | - | - | - | - | - | - | ✓ | - | - | - | - | | **Documentación** | - | - | - | ✓ | - | - | - | - | - | ✓ | ✓ | ✓ | | **Pruebas E2E** | - | - | ✓ | - | - | - | - | - | ✓ | ✓ | - | - | | **KPIs** | - | - | ✓ | - | - | - | - | - | - | ✓ | - | - | | **Muestras Inertes** | - | - | - | - | - | - | ✓ | - | - | - | - | - | | **Makefile** | - | - | - | - | - | - | - | ✓ | - | - | - | - |
+| Componente | Objetivo SMART 1 | Objetivo SMART 2 | Objetivo SMART 3 | Objetivo SMART 4 | Objetivo SMART 5 | Objetivo SMART 6 | Objetivo SMART 7 | Objetivo SMART 8 | Objetivo SMART 9 | Objetivo SMART 10 | Objetivo SMART 11 | Objetivo SMART 12 |
+|------------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|-------------------|-------------------|-------------------|
+| **Playbook E2E** | - | ✓ | ✓ | ✓ | - | ✓ | - | - | ✓ | ✓ | ✓ | - |
+| **TheHive** | ✓ | ✓ | - | ✓ | - | - | - | - | - | - | - | - |
+| **Cortex** | ✓ | ✓ | - | - | - | - | - | - | - | - | - | - |
+| **Shuffle** | ✓ | ✓ | ✓ | - | ✓ | - | - | - | - | - | - | - |
+| **SIEM Simulado** | - | ✓ | ✓ | - | ✓ | - | - | - | - | - | - | - |
+| **Scripts Contención** | - | ✓ | - | - | - | ✓ | - | - | - | - | - | - |
+| **Docker Compose** | ✓ | - | - | - | - | - | - | ✓ | - | - | - | - |
+| **Documentación** | - | - | - | ✓ | - | - | - | - | - | ✓ | ✓ | ✓ |
+| **Pruebas E2E** | - | - | ✓ | - | - | - | - | - | ✓ | ✓ | - | - |
+| **KPIs** | - | - | ✓ | - | - | - | - | - | - | ✓ | - | - |
+| **Muestras Inertes** | - | - | - | - | - | - | ✓ | - | - | - | - | - |
+| **Makefile** | - | - | - | - | - | - | - | ✓ | - | - | - | - |
 
 **Leyenda:**
 
@@ -864,7 +937,12 @@ marcadas en los diagramas Gantt como `:crit` para identificar la ruta crítica.
 
 #### Plan por semanas
 
-| Semana | Fase / Hito | Objetivo principal | Entregables / Evidencias | Hitos de Validación Intermedia | |---------|-------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------| | S1-S4 | Fase 1: Infraestructura | Laboratorio, automatización, API, CLI (Objetivos 1, 8, 17, 18) | infra/docker/compose/, Makefile, src/soar_lab/interfaces/api/, src/soar_lab/interfaces/api/cli.py, .github/workflows/ | Validación: servicios funcionando, API y CLI operativos (Semana 4) | | S5-S9 | Fase 2: Desarrollo | Playbook E2E, integración SIEM, scripts, docs-site, web-management (Objetivos 2, 5, 6, 19, 20) | docs/04-operations.md, src/soar_lab/simulator/simulate_alerts.py, apps/docs-site/, apps/web-management/ | Validación: playbook ejecuta, apps desplegadas (Semana 9) | | S10-S13 | Fase 3: Validación | Métricas MTTR, pruebas especializadas, KPIs (Objetivos 3, 9, 10, 11, 12, 13, 14) | tests/atomic/, tests/integration/, tests/security/, tests/performance/, tests/e2e/, runtime/results/kpis.csv, docs/thesis/ | Validación: pruebas pasan, KPIs cumplen umbrales (Semana 13) | | S14-S15 | Fase 4: Cierre | Documentación, analytics, aprobación (Objetivos 4, 15, 16) | docs/, docs/thesis/, este documento | Validación: documentación aprobada (Semana 15) |
+| Semana | Fase / Hito | Objetivo principal | Entregables / Evidencias | Hitos de Validación Intermedia |
+|---------|-------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| S1-S4 | Fase 1: Infraestructura | Laboratorio, automatización, API, CLI (Objetivos 1, 8, 17, 18) | infra/docker/compose/, Makefile, src/soar_lab/interfaces/api/, src/soar_lab/interfaces/api/cli.py, .github/workflows/ | Validación: servicios funcionando, API y CLI operativos (Semana 4) |
+| S5-S9 | Fase 2: Desarrollo | Playbook E2E, integración SIEM, scripts, docs-site, web-management (Objetivos 2, 5, 6, 19, 20) | docs/04-operations.md, src/soar_lab/simulator/simulate_alerts.py, apps/docs-site/, apps/web-management/ | Validación: playbook ejecuta, apps desplegadas (Semana 9) |
+| S10-S13 | Fase 3: Validación | Métricas MTTR, pruebas especializadas, KPIs (Objetivos 3, 9, 10, 11, 12, 13, 14) | tests/atomic/, tests/integration/, tests/security/, tests/performance/, tests/e2e/, runtime/results/kpis.csv, docs/thesis/ | Validación: pruebas pasan, KPIs cumplen umbrales (Semana 13) |
+| S14-S15 | Fase 4: Cierre | Documentación, analytics, aprobación (Objetivos 4, 15, 16) | docs/, docs/thesis/, este documento | Validación: documentación aprobada (Semana 15) |
 
 #### Diagrama Gantt por semanas
 
@@ -882,7 +960,16 @@ Fase 4 Cierre :crit, f4, after f3, 2w
 
 #### Plan por tareas de la EDT
 
-| Tarea EDT | Descripción | Entregables | |-------------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------| | 2.1 Plan/roadmap | Crear roadmap visual (Gantt), definir ruta crítica y dependencias | este documento, diagrama Gantt | | 2.2 Riesgos | Identificar riesgos y mitigaciones | este documento | | 3.x Arquitectura | Diseñar arquitectura single-host y flujo del playbook | docs/02-architecture.md | | 4.x Entorno | Configurar Docker Compose, seguridad básica | infra/docker/compose/docker-compose.yml, .env.full | | 5.x Integraciones | Conectar TheHive, Cortex, Shuffle y SIEM simulado | este documento, src/soar_lab/simulator/simulate_alerts.py | | 6.x Playbook | Construir flujo E2E con decisiones y contención simulada | docs/04-operations.md | | 7.x Pruebas | Ejecutar pruebas E2E y calcular KPIs | tests/e2e/*, runtime/results/kpis.csv | | 8.x Documentación | Redactar informe técnico, manual y cierre | docs/04-operations.md, docs/04-operations.md, este documento |
+| Tarea EDT | Descripción | Entregables |
+|-------------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| 2.1 Plan/roadmap | Crear roadmap visual (Gantt), definir ruta crítica y dependencias | este documento, diagrama Gantt |
+| 2.2 Riesgos | Identificar riesgos y mitigaciones | este documento |
+| 3.x Arquitectura | Diseñar arquitectura single-host y flujo del playbook | docs/02-architecture.md |
+| 4.x Entorno | Configurar Docker Compose, seguridad básica | infra/docker/compose/docker-compose.yml, .env.full |
+| 5.x Integraciones | Conectar TheHive, Cortex, Shuffle y SIEM simulado | este documento, src/soar_lab/simulator/simulate_alerts.py |
+| 6.x Playbook | Construir flujo E2E con decisiones y contención simulada | docs/04-operations.md |
+| 7.x Pruebas | Ejecutar pruebas E2E y calcular KPIs | tests/e2e/*, runtime/results/kpis.csv |
+| 8.x Documentación | Redactar informe técnico, manual y cierre | docs/04-operations.md, docs/04-operations.md, este documento |
 
 #### Diagrama Gantt por tareas EDT
 
@@ -1093,13 +1180,27 @@ Documento consolidado para las FASEs 54–65 del plan de remediación documental
 
 #### 1.1 Matriz de trazabilidad requisito → tarea → evidencia → documento → commit (N001)
 
-| Requisito | Tarea | Evidencia | Documento actualizado | Estado | |-----------|-------|-----------|----------------------|--------| | Hardcoded secrets removidos | FASE 46, FASE 52 | Diff de Compose/script | este documento | ✅ | | MISP DB bind mount arreglado | FASE 48, FASE 52 | `docker-compose.misp.yml` sin bind; `docker inspect` tipo `volume` | `docs/04-operations.md`, `docs/04-operations.md` | ✅ | | Grafana funcional | FASE 50, FASE 60 | E2E KPI pasado, datos en `soar-metrics` | `docs/04-operations.md`, `docs/01-getting-started.md` | ✅ | | Nginx/SSL OK | FASE 47 | `nginx -t`, certificado válido | `docs/04-operations.md` | ✅ | | Arquitectura hexagonal validada | FASE 56 | `tests/architecture/test_hexagonal_imports.py` | `docs/02-architecture.md` | ✅ | | Backlog de fases 1022-2760 | Esta sesión | TODOS y documentos generados | este documento | En curso |
+| Requisito | Tarea | Evidencia | Documento actualizado | Estado |
+|-----------|-------|-----------|----------------------|--------|
+| Hardcoded secrets removidos | FASE 46, FASE 52 | Diff de Compose/script | este documento | ✅ |
+| MISP DB bind mount arreglado | FASE 48, FASE 52 | `docker-compose.misp.yml` sin bind; `docker inspect` tipo `volume` | `docs/04-operations.md`, `docs/04-operations.md` | ✅ |
+| Grafana funcional | FASE 50, FASE 60 | E2E KPI pasado, datos en `soar-metrics` | `docs/04-operations.md`, `docs/01-getting-started.md` | ✅ |
+| Nginx/SSL OK | FASE 47 | `nginx -t`, certificado válido | `docs/04-operations.md` | ✅ |
+| Arquitectura hexagonal validada | FASE 56 | `tests/architecture/test_hexagonal_imports.py` | `docs/02-architecture.md` | ✅ |
+| Backlog de fases 1022-2760 | Esta sesión | TODOS y documentos generados | este documento | En curso |
 
 > **Responsabilidad:** cada tarea crítica debe tener un responsable, evidencia y estado antes de cerrarse.
 
 #### 1.2 Tipificación de cambios (N002)
 
-| Tipo | Ejemplo | Documento predominante | |------|---------|--------------------------| | Código | Nuevo test de arquitectura | `tests/architecture/`, `pytest.ini` | | Infraestructura | Ajuste de Compose, volúmenes | `infra/docker/compose/`, `docs/04-operations.md` | | Seguridad | Eliminación de secretos hardcodeados | este documento | | Documentación | Expansión de A.6.1 | `docs/thesis/` | | Pruebas | E2E, unit, smoke | `docs/05-testing.md`, `pytest.ini` | | Académico | Secciones de la tesis | `docs/thesis/` |
+| Tipo | Ejemplo | Documento predominante |
+|------|---------|--------------------------|
+| Código | Nuevo test de arquitectura | `tests/architecture/`, `pytest.ini` |
+| Infraestructura | Ajuste de Compose, volúmenes | `infra/docker/compose/`, `docs/04-operations.md` |
+| Seguridad | Eliminación de secretos hardcodeados | este documento |
+| Documentación | Expansión de A.6.1 | `docs/thesis/` |
+| Pruebas | E2E, unit, smoke | `docs/05-testing.md`, `pytest.ini` |
+| Académico | Secciones de la tesis | `docs/thesis/` |
 
 #### 1.3 Dependencias y orden de ejecución (N003)
 
@@ -1151,7 +1252,12 @@ resultado: 48 test files (39 TCs) PASSED
 
 #### 2.2 Convención de nombres y retención (N008)
 
-| Artefacto | Patrón | Retención | |-----------|--------|-----------| | Logs E2E | `e2e_<fecha>_<commit>.log` | 30 días | | Cobertura | `coverage_<fecha>.xml` | 90 días | | Backups | `backup_<timestamp>_<tipo>.tar.gz` | según política (default 7 días) | | Capturas | `screenshot_<TC>_<fecha>.png` | 30 días |
+| Artefacto | Patrón | Retención |
+|-----------|--------|-----------|
+| Logs E2E | `e2e_<fecha>_<commit>.log` | 30 días |
+| Cobertura | `coverage_<fecha>.xml` | 90 días |
+| Backups | `backup_<timestamp>_<tipo>.tar.gz` | según política (default 7 días) |
+| Capturas | `screenshot_<TC>_<fecha>.png` | 30 días |
 
 #### 2.3 Prueba de entorno limpio reset → up (N009)
 
@@ -1180,7 +1286,10 @@ git rev-parse HEAD
 
 #### 2.5 Plantilla de registro de comandos fallidos (N011)
 
-| Campo | Valor | |-------|-------| | Fecha/hora | |
+| Campo | Valor |
+|-------|-------|
+| Fecha/hora |
+|  |
 | Comando | |
 | Entorno | |
 | Salida relevante | |
@@ -1204,7 +1313,12 @@ Control manual/automatizado: todo párrafo que afirme "funciona", "está configu
 
 #### 3.2 Catálogo puerto → adaptador → implementación (N014)
 
-| Puerto (domain/ports) | Adaptador | Implementación | Consumidor | |-----------------------|-----------|----------------|------------| | AlertRepository | SqliteAlertRepository | `src/soar_lab/infrastructure/persistence/sqlite_alert_repository.py` | Casos de uso API | | BackupDriver | TarBackupDriver | `src/soar_lab/infrastructure/tar_backup_driver.py` | BackupService | | TokenProviderInterface | JWTTokenProvider | `src/soar_lab/infrastructure/jwt_token_provider.py` | AuthService | | SystemMetricsInterface | HTTPClient | `src/soar_lab/infrastructure/http_client.py` | AnalyticsService |
+| Puerto (domain/ports) | Adaptador | Implementación | Consumidor |
+|-----------------------|-----------|----------------|------------|
+| AlertRepository | SqliteAlertRepository | `src/soar_lab/infrastructure/persistence/sqlite_alert_repository.py` | Casos de uso API |
+| BackupDriver | TarBackupDriver | `src/soar_lab/infrastructure/tar_backup_driver.py` | BackupService |
+| TokenProviderInterface | JWTTokenProvider | `src/soar_lab/infrastructure/jwt_token_provider.py` | AuthService |
+| SystemMetricsInterface | HTTPClient | `src/soar_lab/infrastructure/http_client.py` | AnalyticsService |
 
 > El catálogo se mantiene automáticamente inspeccionando `src/soar_lab/domain/ports/` e `src/soar_lab/infrastructure/**/adapters/`.
 
@@ -1388,12 +1502,39 @@ Los riesgos activos de mayor prioridad son **R11** (bloqueo LaLiga/Cloudflare), 
 
 #### Matriz de Riesgos
 
-| # | Riesgo | Categoría | Prob | Impacto | Estado | Mitigación | |-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|:-----:|:-------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| | R1 | **Puertos bloqueados por Hyper-V en Windows** — rangos 55000–55099, 5600–5699, 2976–3075 excluidos | Infraestructura | Alta | Alto | ✅ Mitigado | Puertos reubicados: API → 8000, Elasticsearch → 8200, Cortex → 8101, TheHive → 8100, Docs site → 8086, Shuffle UI → 8081, Web Management → 8085, Grafana → 8084, MISP → 8083; sin binding de host donde no es necesario | | R2 | **Recursos insuficientes** — stack completo requiere ≥ 16 GB RAM (Elasticsearch + OpenSearch + MISP son intensivos) | Infraestructura | Alta | Alto | ⚠️ Activo | Requisitos mínimos documentados en `README.md`; `deploy.resources.limits` configurados en todos los servicios | | R3 | **Analyzers de Cortex lentos o sin respuesta** — timeouts del playbook superan p90 = 180 s | Rendimiento | Media | Alto | ⚠️ Activo | Limitar a 3–5 analyzers activos; configurar `timeout` y reintentos; priorizar `Hashdd_Status` y `DShield_lookup` offline | | R4 | **Integración Shuffle → TheHive → Cortex rota** — tokens inválidos, esquemas incorrectos o endpoints cambiados | Integración | Media | Alto | ⚠️ Activo | Tests de contrato en `tests/integration/`; validar con `src/soar_lab/config/schemas/__init__.py`; healthchecks en todos los servicios del compose | | R5 | ** incompatible con Elasticsearch puro** — requiere OpenSearch con TLS para algunas funciones avanzadas | Compatibilidad | Media | Medio | ✅ Mitigado | 4.14.0 (OpenSearch Dashboards) sustituye Kibana puro; funcionalidad básica de SIEM preservada vía + Elasticsearch | | R6 | **MISP lento en arranque** — MariaDB y misp-modules tardan > 3 min en estar healthy | Infraestructura | Alta | Bajo | ✅ Conocido | `depends_on: condition: service_healthy` configurado; `make up` espera healthchecks; documentado en `README.md` | | R7 | **Tiempo de respuesta supera umbrales** (p50 > 120 s / p90 > 180 s) en el playbook E2E | Rendimiento | Media | Alto | ⚠️ Activo | Monitorizar timestamps en cada paso; ejecutar primero con escenario malicioso offline; calcular KPIs con `make metrics` | | R8 | **APIs externas no disponibles** (VirusTotal, URLHaus) durante pruebas E2E | Dependencia | Media | Medio | ⚠️ Activo | Analyzers externos marcados opcionales; modo offline con `DShield_lookup_1_0` y `Mnemonic_pDNS_Public_3_0`; tests e2e hacen skip si servicios no responden | | R9 | **Pérdida o corrupción de configuración** — compose files fragmentados aumentan riesgo de inconsistencias | Operacional | Baja | Alto | ⚠️ Activo | Todo versionado en Git; `make backup` antes de cambios destructivos; `.env.full` con valores completos documentados | | R10 | **Deriva de alcance** — stack más complejo de lo planeado (MISP añadidos) | Tiempo | Baja | Medio | ✅ Controlado | Alcance fijado en este documento; servicios adicionales son opcionales para el playbook E2E principal | | R11 | **Bloqueo de IPs de Cloudflare por orden judicial de LaLiga** — durante jornadas de fútbol, los ISP mayoritarios españoles bloquean rangos de IPs de Cloudflare CDN por resolución judicial. Docker Hub, GitHub Container Registry (`ghcr.io`) y otras dependencias del stack usan Cloudflare, lo que impide `docker pull` y la descarga de imágenes durante el bloqueo | Externo / Regulatorio | Alta | Alto | ⚠️ Activo | Verificar estado del bloqueo antes de ejecutar `make up` o pulls en [hayahora.futbol](https://hayahora.futbol/); programar descargas fuera de jornadas de LaLiga; alternativas: usar VPN o cambiar a una red no afectada; pre-descargar todas las imágenes con `docker pull` cuando no hay partido y almacenarlas en caché local | | R12 | **API del Laboratorio no disponible** — API FastAPI (`src/soar_lab/interfaces/api/`) no responde o tiene errores de autenticación/autorización | Seguridad | Media | Alto | ⚠️ Activo | Tests de integración en `tests/integration/test_api_*.py`; health checks en `/health`; validar JWT tokens en `.env.full`; logs en `docker logs soar_api` | | R13 | **Certificados SSL expirados** — Certificados generados por `scripts/setup/gen_certs.sh` expiran y causan errores de HTTPS en Nginx y servicios | Seguridad | Media | Alto | ⚠️ Activo | Monitorear fechas de expiración (`openssl x509 -in cert.pem -noout -dates`); regenerar certificados antes de expiración; automatizar regeneración en CI/CD | | R14 | **Validación de esquemas falla** — Esquemas en `src/soar_lab/config/schemas/__init__.py` no validan correctamente datos de alertas, causando rechazo de payloads | Seguridad | Media | Medio | ⚠️ Activo | Tests de validación en `tests/atomic/test_schema_validation.py`; actualizar esquemas según cambios en payloads; logs de validación en `src/soar_lab/validation/` | | R15 | **Cobertura de pruebas insuficiente** — Testing especializado (atomic, integration, security, performance, production) no alcanza umbrales de cobertura | Testing | Media | Medio | ⚠️ Activo | Ejecutar `pytest --cov=src/soar_lab`; configurar quality gates en CI/CD; priorizar pruebas de componentes críticos | | R16 | **CI/CD pipeline failures** — Workflows en `.github/workflows/` fallan, bloqueando validaciones automáticas y despliegues | Automatización | Media | Alto | ⚠️ Activo | Logs de CI/CD en `.github/workflows/`; retries automáticos; rollback automático en caso de fallo; alertas en caso de fallos críticos | | R17 | **CLI del Laboratorio inusable** — CLI (`src/soar_lab/interfaces/api/cli.py`) tiene errores de usabilidad o compatibilidad entre plataformas | Operacional | Baja | Medio | ⚠️ Activo | Tests unitarios de CLI; documentación de comandos (`--help`); validación en Windows y Linux | | R18 | **Documentación operativa desincronizada** — Rutas, puertos, URLs, credenciales y contratos en `docs/` difieren del código o de Compose; se mantienen archivos duplicados o históricos sin marcar | Documentación | Alta | Alto | ⚠️ Activo | Plan de remediación documental; generar OpenAPI, tabla canónica de puertos y catálogos de tests automáticamente; marcar `legacy/` como histórico; revisar enlaces y secretos periódicamente | | R21 | **Credenciales y tokens estáticos en repositorio o documentación** — Ejemplos con contraseñas `2024` o tokens operativos pueden confundirse con secretos vigentes o filtrarse en historial Git | Seguridad | Alta | Alto | ✅ Mitigado | Auditar variables de token SIEM, `.env.example` y `grafana-datasources.yml`; usar placeholders (`<...>`) y `<SIEM_TOKEN>` en documentación; generar secretos con `soar-lab generate-secrets`; revisar historial Git | | R22 | **Seguridad interna deshabilitada en Elasticsearch / OpenSearch / ** — Certificados autofirmados sin CA importada reducen la postura de seguridad; `xpack.security.enabled` se parametriza con `ELASTIC_SECURITY_ENABLED` (por defecto `true`) | Seguridad | Media | Alto | ⚠️ Aceptado | Documentar claramente como riesgo aceptado del laboratorio; no prometer producción; planificar hardening en ruta crítica | | R23 | **Mappings de métricas (`soar-metrics`) inconsistentes** — Cambios en `mttr_seconds` o `@timestamp` sin reindexación rompen dashboards de Grafana | Operacional | Media | Medio | ✅ Mitigado | `init_shuffle_webhook.py` crea/actualiza mapping correcto; documentar procedimiento de reindexación | | R24 | **Dependencia crítica de Network Watcher** — Si `soar_network_watcher` no conecta workers de Shuffle a `soar_net` o falla al inyectar hosts, los playbooks no resuelven servicios | Operacional | Media | Alto | ⚠️ Activo | Healthcheck `/health`; logs en `docker logs soar_network_watcher`; reinicio manual; documentar en `docs/04-operations.md` |
+| # | Riesgo | Categoría | Prob | Impacto | Estado | Mitigación |
+|-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|:-----:|:-------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| R1 | **Puertos bloqueados por Hyper-V en Windows** — rangos 55000–55099, 5600–5699, 2976–3075 excluidos | Infraestructura | Alta | Alto | ✅ Mitigado | Puertos reubicados: API → 8000, Elasticsearch → 8200, Cortex → 8101, TheHive → 8100, Docs site → 8086, Shuffle UI → 8081, Web Management → 8085, Grafana → 8084, MISP → 8083; sin binding de host donde no es necesario |
+| R2 | **Recursos insuficientes** — stack completo requiere ≥ 16 GB RAM (Elasticsearch + OpenSearch + MISP son intensivos) | Infraestructura | Alta | Alto | ⚠️ Activo | Requisitos mínimos documentados en `README.md`; `deploy.resources.limits` configurados en todos los servicios |
+| R3 | **Analyzers de Cortex lentos o sin respuesta** — timeouts del playbook superan p90 = 180 s | Rendimiento | Media | Alto | ⚠️ Activo | Limitar a 3–5 analyzers activos; configurar `timeout` y reintentos; priorizar `Hashdd_Status` y `DShield_lookup` offline |
+| R4 | **Integración Shuffle → TheHive → Cortex rota** — tokens inválidos, esquemas incorrectos o endpoints cambiados | Integración | Media | Alto | ⚠️ Activo | Tests de contrato en `tests/integration/`; validar con `src/soar_lab/config/schemas/__init__.py`; healthchecks en todos los servicios del compose |
+| R5 | ** incompatible con Elasticsearch puro** — requiere OpenSearch con TLS para algunas funciones avanzadas | Compatibilidad | Media | Medio | ✅ Mitigado | 4.14.0 (OpenSearch Dashboards) sustituye Kibana puro; funcionalidad básica de SIEM preservada vía + Elasticsearch |
+| R6 | **MISP lento en arranque** — MariaDB y misp-modules tardan > 3 min en estar healthy | Infraestructura | Alta | Bajo | ✅ Conocido | `depends_on: condition: service_healthy` configurado; `make up` espera healthchecks; documentado en `README.md` |
+| R7 | **Tiempo de respuesta supera umbrales** (p50 > 120 s / p90 > 180 s) en el playbook E2E | Rendimiento | Media | Alto | ⚠️ Activo | Monitorizar timestamps en cada paso; ejecutar primero con escenario malicioso offline; calcular KPIs con `make metrics` |
+| R8 | **APIs externas no disponibles** (VirusTotal, URLHaus) durante pruebas E2E | Dependencia | Media | Medio | ⚠️ Activo | Analyzers externos marcados opcionales; modo offline con `DShield_lookup_1_0` y `Mnemonic_pDNS_Public_3_0`; tests e2e hacen skip si servicios no responden |
+| R9 | **Pérdida o corrupción de configuración** — compose files fragmentados aumentan riesgo de inconsistencias | Operacional | Baja | Alto | ⚠️ Activo | Todo versionado en Git; `make backup` antes de cambios destructivos; `.env.full` con valores completos documentados |
+| R10 | **Deriva de alcance** — stack más complejo de lo planeado (MISP añadidos) | Tiempo | Baja | Medio | ✅ Controlado | Alcance fijado en este documento; servicios adicionales son opcionales para el playbook E2E principal |
+| R11 | **Bloqueo de IPs de Cloudflare por orden judicial de LaLiga** — durante jornadas de fútbol, los ISP mayoritarios españoles bloquean rangos de IPs de Cloudflare CDN por resolución judicial. Docker Hub, GitHub Container Registry (`ghcr.io`) y otras dependencias del stack usan Cloudflare, lo que impide `docker pull` y la descarga de imágenes durante el bloqueo | Externo / Regulatorio | Alta | Alto | ⚠️ Activo | Verificar estado del bloqueo antes de ejecutar `make up` o pulls en [hayahora.futbol](https://hayahora.futbol/); programar descargas fuera de jornadas de LaLiga; alternativas: usar VPN o cambiar a una red no afectada; pre-descargar todas las imágenes con `docker pull` cuando no hay partido y almacenarlas en caché local |
+| R12 | **API del Laboratorio no disponible** — API FastAPI (`src/soar_lab/interfaces/api/`) no responde o tiene errores de autenticación/autorización | Seguridad | Media | Alto | ⚠️ Activo | Tests de integración en `tests/integration/test_api_*.py`; health checks en `/health`; validar JWT tokens en `.env.full`; logs en `docker logs soar_api` |
+| R13 | **Certificados SSL expirados** — Certificados generados por `scripts/setup/gen_certs.sh` expiran y causan errores de HTTPS en Nginx y servicios | Seguridad | Media | Alto | ⚠️ Activo | Monitorear fechas de expiración (`openssl x509 -in cert.pem -noout -dates`); regenerar certificados antes de expiración; automatizar regeneración en CI/CD |
+| R14 | **Validación de esquemas falla** — Esquemas en `src/soar_lab/config/schemas/__init__.py` no validan correctamente datos de alertas, causando rechazo de payloads | Seguridad | Media | Medio | ⚠️ Activo | Tests de validación en `tests/atomic/test_schema_validation.py`; actualizar esquemas según cambios en payloads; logs de validación en `src/soar_lab/validation/` |
+| R15 | **Cobertura de pruebas insuficiente** — Testing especializado (atomic, integration, security, performance, production) no alcanza umbrales de cobertura | Testing | Media | Medio | ⚠️ Activo | Ejecutar `pytest --cov=src/soar_lab`; configurar quality gates en CI/CD; priorizar pruebas de componentes críticos |
+| R16 | **CI/CD pipeline failures** — Workflows en `.github/workflows/` fallan, bloqueando validaciones automáticas y despliegues | Automatización | Media | Alto | ⚠️ Activo | Logs de CI/CD en `.github/workflows/`; retries automáticos; rollback automático en caso de fallo; alertas en caso de fallos críticos |
+| R17 | **CLI del Laboratorio inusable** — CLI (`src/soar_lab/interfaces/api/cli.py`) tiene errores de usabilidad o compatibilidad entre plataformas | Operacional | Baja | Medio | ⚠️ Activo | Tests unitarios de CLI; documentación de comandos (`--help`); validación en Windows y Linux |
+| R18 | **Documentación operativa desincronizada** — Rutas, puertos, URLs, credenciales y contratos en `docs/` difieren del código o de Compose; se mantienen archivos duplicados o históricos sin marcar | Documentación | Alta | Alto | ⚠️ Activo | Plan de remediación documental; generar OpenAPI, tabla canónica de puertos y catálogos de tests automáticamente; marcar `legacy/` como histórico; revisar enlaces y secretos periódicamente |
+| R21 | **Credenciales y tokens estáticos en repositorio o documentación** — Ejemplos con contraseñas `2024` o tokens operativos pueden confundirse con secretos vigentes o filtrarse en historial Git | Seguridad | Alta | Alto | ✅ Mitigado | Auditar variables de token SIEM, `.env.example` y `grafana-datasources.yml`; usar placeholders (`<...>`) y `<SIEM_TOKEN>` en documentación; generar secretos con `soar-lab generate-secrets`; revisar historial Git |
+| R22 | **Seguridad interna deshabilitada en Elasticsearch / OpenSearch / ** — Certificados autofirmados sin CA importada reducen la postura de seguridad; `xpack.security.enabled` se parametriza con `ELASTIC_SECURITY_ENABLED` (por defecto `true`) | Seguridad | Media | Alto | ⚠️ Aceptado | Documentar claramente como riesgo aceptado del laboratorio; no prometer producción; planificar hardening en ruta crítica |
+| R23 | **Mappings de métricas (`soar-metrics`) inconsistentes** — Cambios en `mttr_seconds` o `@timestamp` sin reindexación rompen dashboards de Grafana | Operacional | Media | Medio | ✅ Mitigado | `init_shuffle_webhook.py` crea/actualiza mapping correcto; documentar procedimiento de reindexación |
+| R24 | **Dependencia crítica de Network Watcher** — Si `soar_network_watcher` no conecta workers de Shuffle a `soar_net` o falla al inyectar hosts, los playbooks no resuelven servicios | Operacional | Media | Alto | ⚠️ Activo | Healthcheck `/health`; logs en `docker logs soar_network_watcher`; reinicio manual; documentar en `docs/04-operations.md` |
 | R19 | **Interfaz web de gestión no funcional** — Web-management (`apps/web-management/`) tiene errores de UX o no muestra estado real de servicios | Operacional | Media | Medio | ⚠️ Activo | Tests de navegador en `tests/e2e/`; validación de datos en tiempo real; logs de errores en consola del navegador | | R20 | **Analytics de TFM fallan** — Módulos en `src/soar_lab/application/use_cases/analytics_service.py` no procesan datos correctamente o generan visualizaciones erróneas | Operacional | Baja | Medio | ⚠️ Activo | Tests de analytics; validación de datos de entrada; revisión de visualizaciones generadas |
 
 #### Leyenda
 
-| Valor | Probabilidad | Impacto | Estado | |-----------|--------------|-------------------------------|---------------------------------------------| | **Alta** | > 50 % | Bloquea entregable crítico | ✅ Mitigado — controlado o resuelto | | **Media** | 20–50 % | Retraso o degradación parcial | ⚠️ Activo — requiere vigilancia | | **Baja** | < 20 % | Impacto menor o recuperable | ✅ Conocido — documentado sin acción urgente |
+| Valor | Probabilidad | Impacto | Estado |
+|-----------|--------------|-------------------------------|---------------------------------------------|
+| **Alta** | > 50 % | Bloquea entregable crítico | ✅ Mitigado — controlado o resuelto |
+| **Media** | 20–50 % | Retraso o degradación parcial | ⚠️ Activo — requiere vigilancia |
+| **Baja** | < 20 % | Impacto menor o recuperable | ✅ Conocido — documentado sin acción urgente |
 
 #### Matriz de Prioridad (Impacto vs Probabilidad)
 
@@ -1423,7 +1564,28 @@ graph TD
 
 #### Matriz de Seguimiento de Riesgos con Fechas de Revisión
 
-| # | Riesgo | Última Revisión | Próxima Revisión | Responsable | Acción Requerida | Estado Seguimiento | |-----|----------------------------------------------|-----------------|---------------------------|-------------|------------------------------|----------------------| | R1 | Puertos bloqueados por Hyper-V | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (mitigado) | ✅ Estable | | R2 | Recursos insuficientes | 2025-05-01 | 2025-05-08 | Estudiante | Monitorear uso RAM | ⚠️ Vigilancia | | R3 | Analyzers lentos o sin respuesta | 2025-05-01 | 2025-05-08 | Estudiante | Limitar analyzers activos | ⚠️ Vigilancia | | R4 | Integración Shuffle → TheHive → Cortex rota | 2025-05-01 | 2025-05-08 | Estudiante | Validar tokens | ⚠️ Vigilancia | | R5 | incompatible con Elasticsearch | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (mitigado) | ✅ Estable | | R6 | MISP lento en arranque | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (conocido) | ✅ Estable | | R7 | Tiempo de respuesta supera umbrales | 2025-05-01 | 2025-05-08 | Estudiante | Calcular KPIs | ⚠️ Vigilancia | | R8 | APIs externas no disponibles | 2025-05-01 | 2025-05-08 | Estudiante | Verificar antes de pruebas | ⚠️ Vigilancia | | R9 | Pérdida o corrupción de configuración | 2025-05-01 | 2025-05-15 | Estudiante | Ejecutar backup | ⚠️ Vigilancia | | R10 | Deriva de alcance | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (controlado) | ✅ Estable | | R11 | Bloqueo LaLiga/Cloudflare | 2025-05-01 | 2025-05-04 (cada jornada) | Estudiante | Verificar hayahora.futbol | ⚠️ Vigilancia activa | | R12 | API del Laboratorio no disponible | 2025-05-19 | 2025-05-26 | Estudiante | Validar health checks | ⚠️ Vigilancia | | R13 | Certificados SSL expirados | 2025-05-19 | 2025-05-26 | Estudiante | Verificar fechas expiración | ⚠️ Vigilancia | | R14 | Validación de esquemas falla | 2025-05-19 | 2025-05-26 | Estudiante | Ejecutar tests de validación | ⚠️ Vigilancia | | R15 | Cobertura de pruebas insuficiente | 2025-05-19 | 2025-05-26 | Estudiante | Ejecutar pytest --cov | ⚠️ Vigilancia | | R16 | CI/CD pipeline failures | 2025-05-19 | 2025-05-22 | Estudiante | Revisar logs CI/CD | ⚠️ Vigilancia activa | | R17 | CLI del Laboratorio inusable | 2025-05-19 | 2025-05-26 | Estudiante | Validar comandos CLI | ⚠️ Vigilancia | | R18 | Sitio de documentación desactualizado | 2025-05-19 | 2025-05-26 | Estudiante | Revisar contenido docs-site | ⚠️ Vigilancia | | R19 | Interfaz web de gestión no funcional | 2025-05-19 | 2025-05-26 | Estudiante | Tests de navegador | ⚠️ Vigilancia | | R20 | Analytics de TFM fallan | 2025-05-19 | 2025-05-26 | Estudiante | Validar módulos analytics | ⚠️ Vigilancia |
+| # | Riesgo | Última Revisión | Próxima Revisión | Responsable | Acción Requerida | Estado Seguimiento |
+|-----|----------------------------------------------|-----------------|---------------------------|-------------|------------------------------|----------------------|
+| R1 | Puertos bloqueados por Hyper-V | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (mitigado) | ✅ Estable |
+| R2 | Recursos insuficientes | 2025-05-01 | 2025-05-08 | Estudiante | Monitorear uso RAM | ⚠️ Vigilancia |
+| R3 | Analyzers lentos o sin respuesta | 2025-05-01 | 2025-05-08 | Estudiante | Limitar analyzers activos | ⚠️ Vigilancia |
+| R4 | Integración Shuffle → TheHive → Cortex rota | 2025-05-01 | 2025-05-08 | Estudiante | Validar tokens | ⚠️ Vigilancia |
+| R5 | incompatible con Elasticsearch | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (mitigado) | ✅ Estable |
+| R6 | MISP lento en arranque | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (conocido) | ✅ Estable |
+| R7 | Tiempo de respuesta supera umbrales | 2025-05-01 | 2025-05-08 | Estudiante | Calcular KPIs | ⚠️ Vigilancia |
+| R8 | APIs externas no disponibles | 2025-05-01 | 2025-05-08 | Estudiante | Verificar antes de pruebas | ⚠️ Vigilancia |
+| R9 | Pérdida o corrupción de configuración | 2025-05-01 | 2025-05-15 | Estudiante | Ejecutar backup | ⚠️ Vigilancia |
+| R10 | Deriva de alcance | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (controlado) | ✅ Estable |
+| R11 | Bloqueo LaLiga/Cloudflare | 2025-05-01 | 2025-05-04 (cada jornada) | Estudiante | Verificar hayahora.futbol | ⚠️ Vigilancia activa |
+| R12 | API del Laboratorio no disponible | 2025-05-19 | 2025-05-26 | Estudiante | Validar health checks | ⚠️ Vigilancia |
+| R13 | Certificados SSL expirados | 2025-05-19 | 2025-05-26 | Estudiante | Verificar fechas expiración | ⚠️ Vigilancia |
+| R14 | Validación de esquemas falla | 2025-05-19 | 2025-05-26 | Estudiante | Ejecutar tests de validación | ⚠️ Vigilancia |
+| R15 | Cobertura de pruebas insuficiente | 2025-05-19 | 2025-05-26 | Estudiante | Ejecutar pytest --cov | ⚠️ Vigilancia |
+| R16 | CI/CD pipeline failures | 2025-05-19 | 2025-05-22 | Estudiante | Revisar logs CI/CD | ⚠️ Vigilancia activa |
+| R17 | CLI del Laboratorio inusable | 2025-05-19 | 2025-05-26 | Estudiante | Validar comandos CLI | ⚠️ Vigilancia |
+| R18 | Sitio de documentación desactualizado | 2025-05-19 | 2025-05-26 | Estudiante | Revisar contenido docs-site | ⚠️ Vigilancia |
+| R19 | Interfaz web de gestión no funcional | 2025-05-19 | 2025-05-26 | Estudiante | Tests de navegador | ⚠️ Vigilancia |
+| R20 | Analytics de TFM fallan | 2025-05-19 | 2025-05-26 | Estudiante | Validar módulos analytics | ⚠️ Vigilancia |
 
 **Frecuencia de Revisión por Categoría de Riesgo:**
 
@@ -1534,7 +1696,16 @@ graph TD
 
 #### Métricas Cuantitativas para Seguimiento de Riesgos Activos
 
-| Riesgo | Métrica | Umbral | Valor Actual | Estado | Frecuencia Medición | |--------|------------------------------|--------------|--------------|-----------|---------------------| | R2 | Uso de RAM total | ≤ 16 GB | 14.2 GB | ✅ OK | Diaria | | R3 | Tiempo promedio analyzer | ≤ 60 s | 45 s | ✅ OK | Cada ejecución | | R4 | Tasa de éxito integración | ≥ 95% | 98% | ✅ OK | Cada ejecución | | R7 | MTTR p50 | ≤ 120 s | 115 s | ✅ OK | Cada ejecución | | R7 | MTTR p90 | ≤ 180 s | 165 s | ✅ OK | Cada ejecución | | R8 | Disponibilidad APIs externas | ≥ 90% | 85% | ⚠️ Alerta | Diaria | | R9 | Días desde último backup | ≤ 7 días | 2 días | ✅ OK | Diaria | | R11 | Bloqueo LaLiga/Cloudflare | No bloqueado | No bloqueado | ✅ OK | Diaria (jornadas) |
+| Riesgo | Métrica | Umbral | Valor Actual | Estado | Frecuencia Medición |
+|--------|------------------------------|--------------|--------------|-----------|---------------------|
+| R2 | Uso de RAM total | ≤ 16 GB | 14.2 GB | ✅ OK | Diaria |
+| R3 | Tiempo promedio analyzer | ≤ 60 s | 45 s | ✅ OK | Cada ejecución |
+| R4 | Tasa de éxito integración | ≥ 95% | 98% | ✅ OK | Cada ejecución |
+| R7 | MTTR p50 | ≤ 120 s | 115 s | ✅ OK | Cada ejecución |
+| R7 | MTTR p90 | ≤ 180 s | 165 s | ✅ OK | Cada ejecución |
+| R8 | Disponibilidad APIs externas | ≥ 90% | 85% | ⚠️ Alerta | Diaria |
+| R9 | Días desde último backup | ≤ 7 días | 2 días | ✅ OK | Diaria |
+| R11 | Bloqueo LaLiga/Cloudflare | No bloqueado | No bloqueado | ✅ OK | Diaria (jornadas) |
 
 **Cálculo de Métricas:**
 
@@ -1639,7 +1810,13 @@ Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:3
 **Solución implementada:**
 Reasignación completa de puertos a valores fuera de los rangos reservados:
 
-| Servicio | Puerto anterior | Puerto nuevo | Motivo | |-------------------|-----------------|--------------|------------------------------------------------------| | Docs site | 3000 | 8086 | Fuera rango 2976–3075, conflicto Docker Desktop 8080 | | Shuffle UI | 3001 | 8081 | Fuera rango 2976–3075 | | Web Management UI | 3002 | 8085 | Fuera rango 2976–3075 | | MISP | 8082 | 8083 | Mantenido en rango 8080-8089 | | Grafana | 3000 | 8084 | Fuera rango 2976–3075 |
+| Servicio | Puerto anterior | Puerto nuevo | Motivo |
+|-------------------|-----------------|--------------|------------------------------------------------------|
+| Docs site | 3000 | 8086 | Fuera rango 2976–3075, conflicto Docker Desktop 8080 |
+| Shuffle UI | 3001 | 8081 | Fuera rango 2976–3075 |
+| Web Management UI | 3002 | 8085 | Fuera rango 2976–3075 |
+| MISP | 8082 | 8083 | Mantenido en rango 8080-8089 |
+| Grafana | 3000 | 8084 | Fuera rango 2976–3075 |
 
 **Archivos actualizados:**
 
@@ -1803,7 +1980,11 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 
 #### Comentarios de deuda encontrados
 
-| Tipo | Ubicación | Línea | Descripción | Impacto | Estado | |------|-----------|-------|-------------|---------|--------| | TODO | `tests/e2e/TC-03/` | 288 | Fix Cortex API authentication issue | Medio | Pendiente | | TODO | `tests/e2e/TC-03/` | 293 | Fix MISP API response issue | Medio | Pendiente | | TODO | `tests/e2e/TC-03/` | 434 | Fix MISP API response issue (teardown) | Medio | Pendiente |
+| Tipo | Ubicación | Línea | Descripción | Impacto | Estado |
+|------|-----------|-------|-------------|---------|--------|
+| TODO | `tests/e2e/TC-03/` | 288 | Fix Cortex API authentication issue | Medio | Pendiente |
+| TODO | `tests/e2e/TC-03/` | 293 | Fix MISP API response issue | Medio | Pendiente |
+| TODO | `tests/e2e/TC-03/` | 434 | Fix MISP API response issue (teardown) | Medio | Pendiente |
 
 > Los valores de placeholder (`XXX`, `FIXME`, `TODO`) en `src/soar_lab/infrastructure/validate_credentials.py` no son deuda funcional; son entradas del validador.
 
@@ -1821,11 +2002,22 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 
 #### Decisiones de diseño con notas técnicas
 
-| Decisión | Motivo | Riesgo / Nota | |----------|--------|---------------| | `xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-false}` en Elasticsearch | Seguridad deshabilitada por defecto (necesario para TheHive/Cortex con `elastic4play`); se mantiene `ELASTIC_PASSWORD` canónico para clientes que envían credenciales | Verificar que `ELASTIC_PASSWORD` y credenciales de servicios estén en `.env.full`; no usar en producción contraseñas del laboratorio | | SQLite para almacenamiento de estado leve | Facilita despliegue sin DB externa | Escalabilidad limitada; documentar migración a PostgreSQL si crece | | Polling periódico en `script.js` | Las WebSockets requieren gestión de conexión y autenticación | Aumenta carga en API; intervalos configurables | | WebSocket de logs sin autenticación explícita | Simplifica frontend; protegido por red/nginx | Evaluar autenticación por token en hardening | | `make reset` respalda/restaura `.env.full` | Preservar credenciales entre despliegues | Verificar que `ELASTIC_PASSWORD` coincida con Grafana datasource |
+| Decisión | Motivo | Riesgo / Nota |
+|----------|--------|---------------|
+| `xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-false}` en Elasticsearch | Seguridad deshabilitada por defecto (necesario para TheHive/Cortex con `elastic4play`); se mantiene `ELASTIC_PASSWORD` canónico para clientes que envían credenciales | Verificar que `ELASTIC_PASSWORD` y credenciales de servicios estén en `.env.full`; no usar en producción contraseñas del laboratorio |
+| SQLite para almacenamiento de estado leve | Facilita despliegue sin DB externa | Escalabilidad limitada; documentar migración a PostgreSQL si crece |
+| Polling periódico en `script.js` | Las WebSockets requieren gestión de conexión y autenticación | Aumenta carga en API; intervalos configurables |
+| WebSocket de logs sin autenticación explícita | Simplifica frontend; protegido por red/nginx | Evaluar autenticación por token en hardening |
+| `make reset` respalda/restaura `.env.full` | Preservar credenciales entre despliegues | Verificar que `ELASTIC_PASSWORD` coincida con Grafana datasource |
 
 #### Targets Make experimentales o deshabilitados
 
-| Target | Archivo | Estado | Notas | |--------|---------|--------|-------| | `make test-atomic` | `Makefile.linux` | Funcional pero requiere `tests/atomic/` | Ejecuta `pytest tests/atomic -v`; validar que la carpeta y fixtures existan. | | `make test-security` | `Makefile.linux` | Funcional pero requiere `tests/security/` | Ejecuta `pytest tests/security -v`; validar cobertura real. | | `make test-performance` | `Makefile.linux` | Funcional pero requiere `tests/performance/` | Ejecuta `pytest tests/performance -v`; no ejecutar en CI sin recursos dedicados. | | `make test-docker-runtime` | `Makefile.linux` | Funcional | Ejecuta tests de runtime Docker con daemon. |
+| Target | Archivo | Estado | Notas |
+|--------|---------|--------|-------|
+| `make test-atomic` | `Makefile.linux` | Funcional pero requiere `tests/atomic/` | Ejecuta `pytest tests/atomic -v`; validar que la carpeta y fixtures existan. |
+| `make test-security` | `Makefile.linux` | Funcional pero requiere `tests/security/` | Ejecuta `pytest tests/security -v`; validar cobertura real. |
+| `make test-performance` | `Makefile.linux` | Funcional pero requiere `tests/performance/` | Ejecuta `pytest tests/performance -v`; no ejecutar en CI sin recursos dedicados. |
+| `make test-docker-runtime` | `Makefile.linux` | Funcional | Ejecuta tests de runtime Docker con daemon. |
 
 #### Referencias
 
@@ -1895,7 +2087,21 @@ Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomwa
 
 #### Alcance
 
-| Fase | Ámbito | Estado | |------|--------|--------| | AUDIT-F1 | Inspección inicial del repo, Makefiles y Docker Compose | Completada | | AUDIT-F2 | Validación y ajuste de `docs/01-getting-started.md` | Completada | | AUDIT-F3 (y sub-tareas 3.1-3.12) | `Makefile.win`, build context, hashes autenticación ES, contraseñas TheHive/Cortex, coexistencia OpenSearch Dashboard health | Completada | | AUDIT-F4 | Validación Docker: build, contenedores, healthchecks, puertos | Completada | | AUDIT-F4.1 | Contenedor `soar_promtail` en bucle de reinicio (exit code 139) | Completada | | AUDIT-F5 | Validación Vagrant/VirtualBox | Obsoleto (Vagrant eliminado) | | AUDIT-F6 | Validación Nginx + SSL | Completada | | AUDIT-F7 (y sub-tareas 7.1-7.4) | Tests unitarios, integración, E2E, cobertura >80 % | Completada | | AUDIT-F8 | Métricas, KPIs, dashboards y gráficas | Completada | | AUDIT-F9 | Análisis de archivos obsoletos/temporales/debug | Completada | | AUDIT-F10 | Auditoría de incongruencias y contradicciones | Completada | | AUDIT-F11 | Actualización de documentación (user_guide, README, etc.) | Completada | | AUDIT-F12 | Informe final exhaustivo con evidencias | En entrega |
+| Fase | Ámbito | Estado |
+|------|--------|--------|
+| AUDIT-F1 | Inspección inicial del repo, Makefiles y Docker Compose | Completada |
+| AUDIT-F2 | Validación y ajuste de `docs/01-getting-started.md` | Completada |
+| AUDIT-F3 (y sub-tareas 3.1-3.12) | `Makefile.win`, build context, hashes autenticación ES, contraseñas TheHive/Cortex, coexistencia OpenSearch Dashboard health | Completada |
+| AUDIT-F4 | Validación Docker: build, contenedores, healthchecks, puertos | Completada |
+| AUDIT-F4.1 | Contenedor `soar_promtail` en bucle de reinicio (exit code 139) | Completada |
+| AUDIT-F5 | Validación Vagrant/VirtualBox | Obsoleto (Vagrant eliminado) |
+| AUDIT-F6 | Validación Nginx + SSL | Completada |
+| AUDIT-F7 (y sub-tareas 7.1-7.4) | Tests unitarios, integración, E2E, cobertura >80 % | Completada |
+| AUDIT-F8 | Métricas, KPIs, dashboards y gráficas | Completada |
+| AUDIT-F9 | Análisis de archivos obsoletos/temporales/debug | Completada |
+| AUDIT-F10 | Auditoría de incongruencias y contradicciones | Completada |
+| AUDIT-F11 | Actualización de documentación (user_guide, README, etc.) | Completada |
+| AUDIT-F12 | Informe final exhaustivo con evidencias | En entrega |
 
 - Componentes críticos revisados: scripts de setup, clientes de integración, Docker Compose, Nginx, certificados, `.gitignore`, tests, documentación y matriz de inconsistencias.
 
@@ -1940,7 +2146,16 @@ Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomwa
 
 #### Evidencia de validación
 
-| Verificación | Comando / Método | Resultado | |--------------|------------------|-----------| | `make health` | `make -f Makefile.win health` | TheHive, Cortex, Shuffle, Elasticsearch, API, Web Management, MISP, Grafana, Redis, Nginx, Tenzir: **OK** | | Contenedores activos | `docker ps --filter name=soar_` | Todos los servicios esenciales `Up`; `soar_promtail` estable con imagen `2.9.9` | | Tests unitarios | `docker exec soar_api pytest tests/unit -q --cov=src/soar_lab --cov-config=/app/.coveragerc --cov-fail-under=80` | **1030 passed**, cobertura **83,62 %** | | Métricas/KPIs | `make -f Makefile.win metrics` | `kpis.csv` generado correctamente (1 MTTR value, 1 alerta ransomware, TheHive success) | | Simulación de alerta | `make -f Makefile.win simulate-malicious` | Alerta enviada correctamente, **exit code 0** tras corregir `__init__.py` | | Nginx config | `docker run --rm -v "$PWD/infra/docker/config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" -v "$PWD/infra/docker/config/nginx/ssl:/etc/nginx/ssl:ro" nginx:latest nginx -t` | OK | | Certificado | `python -c "import ssl; print(ssl._ssl._test_decode_cert('infra/docker/config/nginx/ssl/soar.local.crt'))"` | CN=soar.local, válido hasta 2027-05-18 | | Promtail segfault | `docker run --rm --entrypoint /usr/bin/promtail grafana/promtail:2.9.9 --version` y `2.9.9 --version` | 2.9.10 falla con `Segmentation fault`; 2.9.9 arranca correctamente |
+| Verificación | Comando / Método | Resultado |
+|--------------|------------------|-----------|
+| `make health` | `make -f Makefile.win health` | TheHive, Cortex, Shuffle, Elasticsearch, API, Web Management, MISP, Grafana, Redis, Nginx, Tenzir: **OK** |
+| Contenedores activos | `docker ps --filter name=soar_` | Todos los servicios esenciales `Up`; `soar_promtail` estable con imagen `2.9.9` |
+| Tests unitarios | `docker exec soar_api pytest tests/unit -q --cov=src/soar_lab --cov-config=/app/.coveragerc --cov-fail-under=80` | **1030 passed**, cobertura **83,62 %** |
+| Métricas/KPIs | `make -f Makefile.win metrics` | `kpis.csv` generado correctamente (1 MTTR value, 1 alerta ransomware, TheHive success) |
+| Simulación de alerta | `make -f Makefile.win simulate-malicious` | Alerta enviada correctamente, **exit code 0** tras corregir `__init__.py` |
+| Nginx config | `docker run --rm -v "$PWD/infra/docker/config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" -v "$PWD/infra/docker/config/nginx/ssl:/etc/nginx/ssl:ro" nginx:latest nginx -t` | OK |
+| Certificado | `python -c "import ssl; print(ssl._ssl._test_decode_cert('infra/docker/config/nginx/ssl/soar.local.crt'))"` | CN=soar.local, válido hasta 2027-05-18 |
+| Promtail segfault | `docker run --rm --entrypoint /usr/bin/promtail grafana/promtail:2.9.9 --version` y `2.9.9 --version` | 2.9.10 falla con `Segmentation fault`; 2.9.9 arranca correctamente |
 
 #### Riesgos y limitaciones remanentes
 
