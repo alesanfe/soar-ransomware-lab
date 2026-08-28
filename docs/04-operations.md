@@ -5466,7 +5466,7 @@ La validación del caso de estudio se realiza mediante el test E2E TC-33, que ve
 
 ---
 
-*Ãsltima actualización: junio 2026*
+*Última actualización: junio 2026*
 
 
 ---
