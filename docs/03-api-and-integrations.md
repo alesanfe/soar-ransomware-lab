@@ -1270,7 +1270,7 @@ Las evidencias de validación incluyen:
 
 - Resultados de health checks de cada API (output de `curl` commands)
 - Logs de autenticación exitosa (`docker logs soar_thehive`, `docker logs soar_cortex`,
- `docker logs soar_shuffle-backend`)
+ `docker logs soar_shuffle_backend`)
 - Respuestas HTTP de endpoints de prueba (capturas en `tests/integration/`)
 - Resultados de tests de integración (`pytest tests/integration/ -v` output)
 - Logs de scripts de simulación (`runtime/logs/soar_lab.log`, `src/soar_lab/simulator/simulate_alerts.py`
@@ -1306,7 +1306,7 @@ curl http://localhost:8000/health # Lab API
 # Verificar logs de contenedor
 docker logs soar_thehive
 docker logs soar_cortex
-docker logs soar_shuffle-backend
+docker logs soar_shuffle_backend
 docker logs soar_api
 ```
 

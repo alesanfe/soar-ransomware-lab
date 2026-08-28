@@ -154,7 +154,7 @@ El laboratorio sigue una arquitectura basada en contenedores Docker con las sigu
 
 **Redes y comunicación:**
 
-- **Redes Docker**: Múltiples redes aisladas (`soar_net`, `logging_net`, `ti_net`, `misp_net`) para comunicación entre servicios
+- **Redes Docker**: Múltiples redes aisladas (`soar_net`, `logging_net`, `ti_net`) para comunicación entre servicios
 - **Health checks**: Verificación de salud de servicios
 - **Reverse proxy**: Nginx para acceso centralizado a servicios web
 
@@ -735,7 +735,7 @@ Verificación del estado de todos los contenedores Docker del proyecto.
 
 - **Credenciales:** Todos los scripts de setup e integración leen de `.env.full`; no hay contraseñas hardcodeadas en los archivos revisados.
 - **Nginx / SSL:** Configuración validada con `nginx -t`; certificado `soar.local.crt` válido hasta 2027-05-18.
-- **Redes Docker:** `soar_net`, `logging_net`, `ti_net` y `misp_net` correctamente definidas; `nginx` en `soar_net` y `logging_net`.
+- **Redes Docker:** `soar_net`, `logging_net`, `ti_net` correctamente definidas; `nginx` en `soar_net` y `logging_net`.
 - **Logging stack:** Grafana accede a Elasticsearch `soar-metrics` y Loki recoge logs de todos los contenedores; plugin ES incluido en `docker-compose.logging.yml`.
 - **Tests E2E:** Última ejecución documentada: 16/16 passed (con credenciales de `.env.full`).
 - **Limpieza de archivos:** `.gitignore` ignora `runtime/data/`, scripts temporales de remediación y artefactos de pruebas; `git status` reducido de ~600 a ~520 entradas.
