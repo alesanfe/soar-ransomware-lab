@@ -392,14 +392,23 @@ Diagrama Gantt simplificado del roadmap semanal con ruta crítica marcada.
 
 ```mermaid
 gantt
-title Roadmap por Semanas
-dateFormat WW
-axisFormat "S%V"
-section Fases
-Fase 1: Investigación :active, f1, 01, 3w
-Fase 2: Diseño :crit, f2, after f1, 3w
-Fase 3: Desarrollo :crit, f3, after f2, 6w
-Fase 4: Validación :crit, f4, after f3, 6w
+title Roadmap por Semanas - SOAR Ransomware Lab
+dateFormat YYYY-MM-DD
+axisFormat %d/%m
+section Inicio
+Inicio del proyecto :milestone, m1, 2026-04-27, 0d
+section Fase 1: Investigación
+Literatura y requisitos :active, a1, 2026-04-27, 3w
+section Fase 2: Diseño
+Arquitectura y contratos :a2, after a1, 3w
+section Fase 3: Desarrollo
+Playbook, integraciones y API :crit, a3, after a2, 6w
+Versión funcional :milestone, m2, after a3, 0d
+section Fase 4: Validación
+Pruebas E2E :a4, after a3, 2w
+Experimentos :a5, after a4, 3w
+Análisis estadístico :a6, after a5, 1w
+Cierre del proyecto :milestone, m3, after a6, 0d
 ```
 
 Nota: La planificación inicial era de 12 semanas, aumentada a 15 tras
