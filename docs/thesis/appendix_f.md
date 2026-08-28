@@ -543,7 +543,7 @@ Fuente: `docs/06-project-management.md` línea 1381 (tabla detallada R1-R24, fue
 Diagrama del flujo completo de infección del malware **GMinst4ll 2.03.rar** (884 MB,
 InfoStealer/Loader), analizado forensemente entre el 11-13 de junio de 2026 en un
 sandbox aislado (Ubuntu 20.04 + Windows Server 2016 con Vagrant). El caso de estudio
-valida el laboratorio SOAR con IoCs reales: 4 hashes SHA256, 7 URLs C2, 7 IPs, 5 claves
+valida el laboratorio SOAR con IoCs reales: 4 hashes SHA256, 7 URLs C2, 9 IPs, 1 clave
 de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK.
 
 **Actor identificado:** `boycots563` (GitHub, 251 commits), origen probable Eslovaquia
@@ -555,7 +555,7 @@ de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK.
 graph TD
  A[YouTube/Tumblr/Discord<br/>canal: асьминог] -->|Engaño| B[MediaFire]
  B -->|Descarga RAR pw: 4204| C[GMinst4ll 2.03.rar<br/>884 MB RAR5 anidado]
- C -->|Ejecución| D[TREZ_cor 4.52.3.exe<br/>835 MB + 13 DLLs Qt5]
+ C -->|Ejecución| D[TREZ_cor 4.52.3.exe<br/>835 MB + 13 DLLs motor gráfico]
  D -->|C2 Check| E{C2 Check}
  E -->|Pastebin raw/FgUMQ9vE| F[Config dinamica<br/>Token Telegram + Chat ID 6820575341]
  E -->|Dropbox| G[SystemSP.rar pw: zoroz<br/>4 KB, 4 scripts]
@@ -650,9 +650,10 @@ Entorno: Ubuntu 20.04 LTS + Windows Server 2016 (Vagrant, red aislada, Sysmon).
 Diagrama del pipeline SOAR procesando IoCs reales extraídos del análisis forense de
 GMinst4ll (`github.com/alesanfe/gminst4ll-forensics`) a través de Cortex, MISP, TheHive
 y Elasticsearch. Validado con **TC-33** (10 subtests): hashes SHA256 (GMinst4ll, TREZ_cor,
-SystemSP, appy_patched), URLs C2 (Pastebin, Dropbox, Reddit, Telegram, GitHub), dominios
-(pastebin.com, dropbox.com, reddit.com, telegram.org), IPs (172.66.171.73, 162.125.248.18,
-151.101.129.140, 149.154.166.110), Telegram (Bot ID 7675556882, Chat ID 6820575341),
+SystemSP, appy_patched), URLs C2 (Pastebin, Dropbox, Reddit, Telegram, GitHub, MediaFire),
+dominios (pastebin.com, dropbox.com, reddit.com, telegram.org, github.com, mediafire.com),
+IPs (172.66.171.73, 104.20.29.150, 162.125.248.18, 151.101.129.140, 151.101.65.140,
+149.154.166.110, 149.154.167.99), Telegram (Bot ID 7675556882, Chat ID 6820575341),
 claves de registro (HKLM Winlogon UserInit), MITRE ATT&CK (7 técnicas: T1566.002,
 T1059.001, T1547.001, T1562.001, T1056.001, T1102, T1567.002).
 
@@ -693,8 +694,8 @@ MITRE ATT&CK mapeadas desde análisis estático confirmado.
 |------|----------|----------|
 | Hashes SHA256 | 4 | GMinst4ll `d70c31b0...`, TREZ_cor `a75def53...`, SystemSP `a50e0785...`, appy_patched `eabe4c16...` |
 | URLs C2 | 7 | `pastebin.com/raw/FgUMQ9vE`, `pastebin.com/raw/E3s5iTTz`, `dropbox.com/scl/fi/.../SystemSP.rar`, `reddit.com/user/Over_Media6257/...`, `api.telegram.org/bot7675556882/...`, `github.com/boycots563/wlt56/`, `mediafire.com/.../GMinstall_4.11.rar` |
-| Dominios | 4 | pastebin.com, dropbox.com, reddit.com, telegram.org |
-| IPs | 7 | 172.66.171.73, 104.20.29.150 (Pastebin), 162.125.248.18 (Dropbox), 151.101.129.140, 151.101.65.140 (Reddit), 149.154.166.110 (Telegram) |
+| Dominios | 6 | pastebin.com, dropbox.com, reddit.com, telegram.org, github.com, mediafire.com |
+| IPs | 9 | 172.66.171.73, 104.20.29.150 (Pastebin), 162.125.248.18 (Dropbox), 151.101.129.140, 151.101.65.140, 151.101.193.140, 151.101.1.140 (Reddit), 149.154.166.110, 149.154.167.99 (Telegram) |
 | Telegram | 2 | Bot ID 7675556882 (buchstys4_bot), Chat ID 6820575341 |
 | Registry | 1 | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\UserInit` |
 | MITRE ATT&CK | 7 | T1566.002, T1059.001, T1547.001, T1562.001, T1056.001, T1102, T1567.002 |
