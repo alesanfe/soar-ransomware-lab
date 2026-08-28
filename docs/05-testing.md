@@ -204,7 +204,7 @@ pytest tests/ -m live -v
 pytest tests/ -m offline -v
 ```
 
-#### Marcadores de Pytest
+#### Marcadores de pytest
 
 - `unit`: Tests unitarios (sin dependencias externas)
 - `integration`: Tests de integración (requieren servicios externos)
@@ -2183,7 +2183,7 @@ La estrategia de pruebas se integra con GitHub Actions mediante tres jobs:
 - **Project Repository**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
 - **Docker Documentation**: https://docs.docker.com/
 - **Docker Compose Documentation**: https://docs.docker.com/compose/
-- **Pytest Documentation**: https://docs.pytest.org/
+- **pytest Documentation**: https://docs.pytest.org/
 - **Playwright Documentation**: https://playwright.dev/
 - **GitHub Actions Documentation**: https://docs.github.com/en/actions
 - **Shuffle Documentation**: https://shuffler.io/docs
@@ -2472,7 +2472,7 @@ No hay riesgos o incidencias conocidas actualmente. Todas las pruebas han sido c
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
 - **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
 - **README Principal**: [/README.md](../README.md)
-- **Documentación de Pytest**: https://docs.pytest.org/
+- **Documentación de pytest**: https://docs.pytest.org/
 - **Documentación de Playwright**: https://playwright.dev/
 - **Documentación de Docker**: https://docs.docker.com/
 - **Guía de Pruebas de Shuffle**: https://shuffler.io/docs/testing
@@ -2768,7 +2768,7 @@ Los puntos principales son:
 #### 8. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Pytest**: https://docs.pytest.org/
+- **Documentación de pytest**: https://docs.pytest.org/
 - **Documentación de Playwright**: https://playwright.dev/
 - **Documentación de Docker**: https://docs.docker.com/
 - **Guía de Pruebas de Shuffle**: https://shuffler.io/docs/testing
