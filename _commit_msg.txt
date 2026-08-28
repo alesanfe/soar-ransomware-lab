@@ -1,0 +1,14 @@
+docs: fix self-references, numbering, and outdated info in 04-operations.md
+
+- Replace 9 self-references to docs/04-operations.md with internal anchors
+- Fix Robtex -> DShield/Mnemonic_pDNS in Mermaid diagram
+- Fix Shuffle indexing in Elasticsearch -> OpenSearch (API key sync)
+- Fix Paso 10/11 numbering -> Paso 9/10 (missing Paso 9)
+- Fix 3.3.x placeholder heading -> 3.3.2 and renumber subsequent 3.3.x sections
+- Fix 4.2 Puertos de acceso -> 4.1 (no 4.1 existed)
+- Fix empty service name in ports table -> OpenSearch Dashboards
+- Fix 7. Referencias -> 9. Referencias (out of order numbering)
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

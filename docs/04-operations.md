@@ -108,7 +108,7 @@ Este manual no cubre:
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
 - Planificación del proyecto (ver docs/06-project-management.md)
 - Gestión de riesgos (ver docs/06-project-management.md)
-- Detalle del playbook E2E (ver docs/04-operations.md)
+- Detalle del playbook E2E (ver [3.13 Playbook ransomware E2E](#313-playbook-ransomware-e2e))
 
 
 Este manual depende de:
@@ -119,10 +119,10 @@ Este manual depende de:
 - Documentación de Docker (`docs/02-architecture.md`)
 - Guía de usuario (`docs/01-getting-started.md`)
 - Especificación de APIs (`docs/03-api-and-integrations.md`)
-- Tabla canónica de puertos y URLs (`docs/04-operations.md`)
-- Manual de la CLI (`docs/04-operations.md`)
-- Manual del Network Watcher (`docs/04-operations.md`)
-- Guía de infraestructura (`docs/04-operations.md`)
+- Tabla canónica de puertos y URLs ([3.3 Puertos y URLs](#33-puertos-y-urls))
+- Manual de la CLI ([3.5 Manual CLI](#35-manual-cli))
+- Manual del Network Watcher ([3.9 Network watcher](#39-network-watcher))
+- Guía de infraestructura ([3.2 Infraestructura](#32-infraestructura))
 - Suite de pruebas (`docs/05-testing.md`)
 - Tests unitarios (`docs/05-testing.md`)
 - Tests E2E (`docs/05-testing.md`)
@@ -716,7 +716,7 @@ La Webhook URL es necesaria para que sistemas externos (como ) puedan enviar ale
 
 **CAPTURA:** Screenshot mostrando la Webhook URL del trigger.
 
-#### 3.2.9 Paso 10: configuración de MISP
+#### 3.2.9 Paso 9: configuración de MISP
 
 **Sitio Oficial**: [MISP Project](https://www.misp-project.org/)
 **Documentación**: [MISP Documentation](https://www.misp-project.org/documentation/)
@@ -750,7 +750,7 @@ eventos. Esta clave debe guardarse de forma segura.
 
 **CAPTURA:** Screenshot de la sección de Auth Keys en MISP.
 
-#### 3.2.10 Paso 11: pruebas end-to-end
+#### 3.2.10 Paso 10: pruebas end-to-end
 
 Esta sección verifica que toda la integración del laboratorio SOAR esté funcionando correctamente. Se realizan pruebas
 para asegurar que los workflows se ejecuten y que los servicios se comuniquen adecuadamente.
@@ -817,21 +817,21 @@ específicas y credenciales.
 > Los valores `admin`, `elastic` y los nombres de servicio se toman de `.env.example`. Todos los secretos se generan ejecutando
 > `make generate-secrets` (`scripts/setup/generate_env.py`). Revisar `.env.full` para las credenciales vigentes.
 
-#### 3.3.x Archivos de entorno y sincronía de credenciales
+#### 3.3.2 Archivos de entorno y sincronía de credenciales
 
 | Archivo | Propósito | ¿Se versiona? | Notas | |---------|-----------|---------------|-------| | `.env.example` | Plantilla con marcadores y valores por defecto saneados | Sí | No contiene secretos reales; se usa como base para `make generate-secrets`. | | `.env.full` | Archivo efectivo de configuración del stack | No (`.gitignore`) | Generado con `make generate-secrets`. Los comandos `docker compose` manuales lo cargan con `--env-file .env.full`. | | `.env` | Copia local generada por `make up` desde `.env.full` | No (`.gitignore`) | El Makefile usa `--env-file .env` (no `.env.full` directamente). Se genera en el paso [3/19] del `make up` con paths absolutos resueltos. | | `docker/.env` | **No se usa** en el proyecto | Depende | Si existiera, podría ser leído por `docker compose` al ejecutarse sin `--env-file`. Los ejemplos manuales incluyen siempre `--env-file .env.full` para evitar confusiones. |
 
 **Sincronía de la API key de Shuffle:**
 
-- `init_shuffle_webhook.py` crea el usuario admin y la API key de Shuffle y la indexa en Elasticsearch (`users_<org>`).
+- `init_shuffle_webhook.py` crea el usuario admin y la API key de Shuffle y la indexa en OpenSearch (`users_<org>`).
 - Tras `make reset` se genera una nueva API key, por lo que `SHUFFLE_DEFAULT_APIKEY` de `.env.full` puede quedar desactualizada.
-- El `ShuffleClient` implementa `_fetch_real_apikey` para leer la clave actual desde Elasticsearch en runtime (self-heal).
+- El `ShuffleClient` implementa `_fetch_real_apikey` para leer la clave actual desde OpenSearch en runtime (self-heal).
 - Para evitar inconsistencias, se recomienda actualizar `SHUFFLE_DEFAULT_APIKEY` en `.env.full` tras cada `make reset` (o verificar que los tests usan el self-heal).
 - El archivo `reports/validation/results/webhook_info.json` generado por `init_shuffle_webhook.py` contiene:
  - `webhook_url`: URL interna Docker (`http://shuffle-backend:5001/api/v1/hooks/...`) para uso desde contenedores.
  - `webhook_url_host`: URL accesible desde el host (`http://localhost:5001/api/v1/hooks/...`) para pruebas manuales externas.
 
-#### 3.3.2 Scripts de automatización
+#### 3.3.3 Scripts de automatización
 
 Los scripts de inicialización y workflow están en:
 
@@ -850,7 +850,7 @@ Scripts principales:
 > Muchos scripts de inicialización se ejecutan automáticamente durante `make up`; solo es necesario ejecutarlos manualmente
 > para recuperación o diagnóstico.
 
-#### 3.3.3 Arquitectura de integraciones
+#### 3.3.4 Arquitectura de integraciones
 
 **Flujo de Trabajo Típico:**
 
@@ -896,7 +896,7 @@ Scripts principales:
 | Integración | Componentes | Modo | Estado | Notas | |---|---|---|---|---| | Shuffle → TheHive | Shuffle workflow, TheHive API | Creación/actualización de casos | **Implementada** | `THEHIVE_API_KEY` en `.env.full`; app descargada en Shuffle | | Shuffle → Cortex | Shuffle workflow, Cortex API | Ejecución de analyzers | **Implementada** | `CORTEX_API_KEY`; analyzers con API key externa son opcionales | | Shuffle → MISP | Shuffle workflow, MISP API | Enriquecimiento y registro de IoCs | **Implementada** | `MISP_API_KEY`; sincronización bidireccional puede requerir ajuste manual | | Shuffle → Elasticsearch | Shuffle workflow, ES API | Indexado de métricas e incidentes | **Implementada** | Índice `soar-metrics`  | | TheHive → Shuffle | TheHive webhook a Shuffle | Notificación de eventos de caso | **Implementada** | Configurar webhook en `application.conf` / UI | | Lab API → Elasticsearch / TheHive / Cortex / MISP / | API endpoints, clientes Python | Consulta de estado y KPIs | **Implementada** | Clientes en `src/soar_lab/infrastructure/integrations/` | | Contención de endpoints | Shuffle workflow, scripts `notify.sh` | Simulada | **Simulada** | No hay agente EDR real; se registran notificaciones y métricas | | MFA / SSO | — | No operativo | **Planificado** | Autenticación actual: JWT HS256 | | WAF / mTLS / segmentación real | Nginx | No operativo | **Planificado / No verificado** | Nginx es proxy inverso con certificado autofirmado | | Alta disponibilidad | Docker Compose | No operativo | **Planificado** | Despliegue single-host |
 
 
-#### 3.3.4 Validación de tests
+#### 3.3.5 Validación de tests
 
 **Requisitos:**
 
@@ -945,7 +945,7 @@ make test-coverage
 - Algunos tests de Docker se saltan si no se detecta `/var/run/docker.sock` o si se ejecutan dentro del contenedor `soar_api` sin acceso al repo.
 - Los conteos exactos dependen del entorno y del estado de `baseline/tests_inventory.json`.
 
-#### 3.3.5 Checklist de verificación post-`make up`
+#### 3.3.6 Checklist de verificación post-`make up`
 
 Tras ejecutar `make up` (o el equivalente `docker compose -f ... up -d`), desde la raíz del repositorio:
 
@@ -999,7 +999,7 @@ Tras ejecutar `make up` (o el equivalente `docker compose -f ... up -d`), desde 
  ```
  (requiere Docker y los servicios levantados).
 
-#### 3.3.6 Directorio de trabajo y contexto Docker
+#### 3.3.7 Directorio de trabajo y contexto Docker
 
 - **Raíz del repositorio**: `make up`, `make generate-secrets`, `make test-all` y `docker compose ...` deben ejecutarse desde la raíz del repositorio, donde se encuentran `.env.full`, `Makefile`, `pyproject.toml` y `infra/docker/compose/`.
 - **Rutas relativas**: los `Dockerfile` y `docker-compose*.yml` usan rutas relativas a la raíz (por ejemplo `../../../artifacts`, `../config`, `runtime/config/promtail-config.yml`). Si se ejecutan desde otro directorio, los volúmenes y bind mounts fallarán.
@@ -1010,7 +1010,7 @@ Tras ejecutar `make up` (o el equivalente `docker compose -f ... up -d`), desde 
  -f infra/docker/compose/docker-compose.core.yml config | less
  ```
 
-#### 3.3.7 Herramientas de calidad y CI
+#### 3.3.8 Herramientas de calidad y CI
 
 El entorno de desarrollo usa **Python 3.11+**. Las herramientas y sus versiones se declaran en `pyproject.toml` y se ejecutan en `.github/workflows/ci.yml`:
 
@@ -1251,9 +1251,9 @@ Grafana se conecta a `logging_net` y `soar_net` para poder consultar `elasticsea
 > **Nota sobre `ti_net`:** al ser `internal: true`, los contenedores en esta red no tienen salida a Internet. Solo se comunican entre sí y con `soar_net` a través de contenedores que están en ambas.
 > **Nota sobre `logging_net`:** `docker-compose.logging.yml` la declara como `external: true` para permitir ejecuciones parciales, pero en un despliegue completo con `make up` la red se crea en el compose base (`docker-compose.yml`).
 
-#### 4.2 Puertos de acceso
+#### 4.1 Puertos de acceso
 
-| Servicio | Puerto host | Acceso directo | Vía Nginx (`https://soar.local`) | |----------|-------------|----------------|-----------------------------------| | Nginx HTTP→HTTPS | 80 | `http://localhost` | — | | Nginx HTTPS | 443 | `https://localhost` | — | | Web Management | 8085 | `http://localhost:8085` | `/` | | SOAR API | 8000 | `http://localhost:8000` (Swagger en `http://localhost:8000/docs`) | `/api/` — Swagger vía Nginx: `https://soar.local/api/docs` y `https://soar.local/api/openapi.json`. No usar `https://soar.local:8000/docs` (Nginx no escucha en 8000). | | Shuffle UI | 8081 | `http://localhost:8081` | No soportado (SPA con rutas absolutas) | | MISP | 8083 | `http://localhost:8083` | No soportado | | Grafana | 8084 | `http://localhost:8084` | No soportado | | Docs Site | 8086 | `http://localhost:8086` | No soportado | | TheHive | 8100 | `http://localhost:8100` | `/thehive/` | | Cortex | 8101 | `http://localhost:8101` | `/cortex/` | | Elasticsearch | 8200 | `http://localhost:8200` | No expuesto | | | 8202 | `https://localhost:8202` | No soportado |
+| Servicio | Puerto host | Acceso directo | Vía Nginx (`https://soar.local`) | |----------|-------------|----------------|-----------------------------------| | Nginx HTTP→HTTPS | 80 | `http://localhost` | — | | Nginx HTTPS | 443 | `https://localhost` | — | | Web Management | 8085 | `http://localhost:8085` | `/` | | SOAR API | 8000 | `http://localhost:8000` (Swagger en `http://localhost:8000/docs`) | `/api/` — Swagger vía Nginx: `https://soar.local/api/docs` y `https://soar.local/api/openapi.json`. No usar `https://soar.local:8000/docs` (Nginx no escucha en 8000). | | Shuffle UI | 8081 | `http://localhost:8081` | No soportado (SPA con rutas absolutas) | | MISP | 8083 | `http://localhost:8083` | No soportado | | Grafana | 8084 | `http://localhost:8084` | No soportado | | Docs Site | 8086 | `http://localhost:8086` | No soportado | | TheHive | 8100 | `http://localhost:8100` | `/thehive/` | | Cortex | 8101 | `http://localhost:8101` | `/cortex/` | | Elasticsearch | 8200 | `http://localhost:8200` | No expuesto | | OpenSearch Dashboards | 8202 | `https://localhost:8202` | No soportado |
 
 #### 4.3 Nginx como gateway SSL
 
@@ -2218,7 +2218,7 @@ Para evitar certificados expirados en despliegues automatizados, se recomienda:
 
 - `scripts/setup/gen_certs.sh`
 - `docs/01-getting-started.md`
-- `docs/04-operations.md`
+- [3.7 Ciclo de vida de certificados](#37-ciclo-de-vida-de-certificados)
 
 
 ### 3.8 Logging y observabilidad
@@ -2390,7 +2390,7 @@ docker compose -f infra/docker/compose/logging/docker-compose.logging.yml ps
 
 ---
 
-#### 7. Referencias
+#### 9. Referencias
 
 - [infra/docker/compose/logging/docker-compose.logging.yml](../infra/docker/compose/logging/docker-compose.logging.yml)
 - [infra/docker/config/templates/promtail-config.yml.template](../infra/docker/config/templates/promtail-config.yml.template) (template; renderizado a `runtime/config/promtail-config.yml` por `scripts/setup/render_configs.py`)
@@ -2679,7 +2679,6 @@ Realizar una migración por fases, empezando por un entorno de staging donde:
 - `infra/docker/compose/docker-compose.yml` — Definición del stack principal (Elasticsearch/OpenSearch).
 - `infra/docker/compose/docker-compose.core.yml` — Definición de TheHive y Cortex.
 - `infra/docker/compose/logging/kpi-dashboard.json` — Dashboard de KPIs de Grafana.
-- `docs/04-operations.md` — Otros documentos operativos del laboratorio.
 - [Elasticsearch to OpenSearch Migration Guide](https://opensearch.org/docs/latest/migrate-data/index/) — Guía
  oficial de migración de Elasticsearch a OpenSearch.
 
@@ -3512,7 +3511,7 @@ Comprobar en la matriz canónica de puertos la URL y el acceso vía Nginx para e
 Algunas UIs (Shuffle, MISP, Grafana, Docs Site Dashboard) no soportan subpath y deben accederse directamente por puerto; otras (Web Management, Lab API, TheHive, Cortex, Shuffle Backend) están proxyadas por Nginx bajo `/`, `/api/`, `/thehive/`, `/cortex/` y `/shuffle-api/`.
 
 **Solución:**
-Consultar la tabla canónica en `docs/04-operations.md` (fuente de verdad) y las variables de entorno en `docs/04-operations.md` y `.env.full`. Usar:
+Consultar la tabla canónica en [3.3 Puertos y URLs](#33-puertos-y-urls) (fuente de verdad) y las variables de entorno en `.env.full`. Usar:
 - `https://soar.local` para Web Management y subpaths proxyados.
 - `http://localhost:<puerto>` para servicios que no soportan subpath o para diagnóstico directo.
 - Para comunicación entre contenedores, usar el nombre del servicio (`api`, `thehive`, `cortex`, `shuffle-backend`, `elasticsearch`, etc.) en `soar_net`.
@@ -4815,7 +4814,7 @@ graph LR
  B --> D[MISP: búsqueda IoCs]
  B --> E[TheHive: caso + observables]
  B --> F[Elasticsearch: indexación]
- C --> G[Enriquecimiento VT/Robtex]
+ C --> G[Enriquecimiento DShield/Mnemonic_pDNS]
  D --> H[Correlación amenazas]
  E --> I[Tareas IR: aislar, bloquear, preservar]
  style A fill:#2196F3
@@ -5683,7 +5682,7 @@ docker network inspect soar_net
 # 3. Verificar mapping del índice
 curl http://localhost:8200/soar-metrics/_mapping -u elastic:$ELASTIC_PASSWORD
 
-# 4. Reindexar si es necesario (ver docs/04-operations.md sección logging)
+# 4. Reindexar si es necesario (ver sección 3.8 Logging y observabilidad)
 ```
 
 Criterio de verificación.
