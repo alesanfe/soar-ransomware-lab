@@ -612,8 +612,9 @@ crear eventos en MISP.
 **Referencia**: [MISP Documentation](https://www.misp-project.org/documentation/)
 
 **5. Registrar App Elasticsearch:**
-Elasticsearch se utiliza para indexar datos de incidentes y ejecuciones. Registrar esta app permite a Shuffle almacenar
-y consultar datos en Elasticsearch.
+Elasticsearch se utiliza para indexar datos de incidentes y ejecuciones (índices `soar-alerts` y `soar-metrics`).
+Registrar esta app permite a Shuffle indexar alertas y métricas en Elasticsearch. El backend interno de Shuffle
+utiliza OpenSearch, no Elasticsearch.
 
 1. Ir a **Apps**
 2. Buscar **Elasticsearch**
@@ -1580,7 +1581,7 @@ services:
 - [Arquitectura Docker](02-architecture.md)
 - [Arquitectura general](02-architecture.md)
 - [Guía de usuario](01-getting-started.md)
-- [Manual de configuración](04-operations.md)
+- [Manual de configuración](#3-configuración-del-entorno)
 - [README principal](../README.md)
 
 
@@ -2518,7 +2519,7 @@ make up
 
 - [src/soar_lab/infrastructure/network_watcher/network_watcher.py](../src/soar_lab/infrastructure/network_watcher/network_watcher.py)
 - [docker-compose.core.yml](../infra/docker/compose/docker-compose.core.yml)
-- [Tabla de puertos y URLs](04-operations.md)
+- [Tabla de puertos y URLs](#41-puertos-de-acceso)
 
 
 ### 3.10 Migración a OpenSearch
@@ -2908,7 +2909,7 @@ Esta guía no cubre:
 
 Esta guía depende de:
 
-- [configuration_manual.md](04-operations.md) - Manual de configuración completo
+- [Manual de configuración](#3-configuración-del-entorno) - Manual de configuración completo
 - [docker_architecture.md](02-architecture.md) - Arquitectura Docker detallada
 - [01-getting-started.md](01-getting-started.md) - Guía de usuario
 
@@ -3405,7 +3406,7 @@ Demasiados analyzers activos, analyzers lentos/online, recursos insuficientes o 
 
 **Solución:**
 - Reducir número de analyzers activos.
-- Priorizar analyzers offline (FileInfo, DomainMailSPFRecord).
+- Priorizar analyzers offline (DShield_lookup_1_0, Mnemonic_pDNS_Public_3_0).
 - Aumentar timeout en configuración de Cortex.
 - Verificar uso de recursos del host.
 
@@ -4256,7 +4257,7 @@ Webhook (/SIEM)
 
 #### 3.3.5 N5 — ejecución de analyzers en Cortex \[PARCIAL\]
 
-| Campo | Detalle | |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------| | **Servicio** | Cortex API `POST /api/analyzer/<analyzer_id>/run` | | **Autenticación** | `Authorization: Bearer <CORTEX_API_KEY>` | | **Entrada** | `observable_id` + `observable_value` + `observable_type` de N4 | | **Analyzers activos** | `FileInfo_8_0` (hash offline), `DomainMailSPFRecord_2_1` (IP/dominio offline), `VirusTotal_GetReport_3_1` (hash, requiere API key) | | **Salida (OK)** | `job_id` por analyzer; resultado con `summary.taxonomies[].level` (info/safe/suspicious/malicious) y `summary.taxonomies[].value` (score numérico) | | **Salida (Error)** | Analyzer no disponible → skip ese analyzer; job timeout → marcar como inconcluso | | **Ruta de error** | Si todos los analyzers fallan → continuar con `score = 0`, `verdict = "unknown"` | | **Timeout por job** | 60 s (configurable en Cortex) |
+| Campo | Detalle | |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------| | **Servicio** | Cortex API `POST /api/analyzer/<analyzer_id>/run` | | **Autenticación** | `Authorization: Bearer <CORTEX_API_KEY>` | | **Entrada** | `observable_id` + `observable_value` + `observable_type` de N4 | | **Analyzers activos** | `DShield_lookup_1_0` (IP reputation, offline), `Mnemonic_pDNS_Public_3_0` (passive DNS, offline), `Hashdd_Status_1_0` (hash lookup, offline) | | **Salida (OK)** | `job_id` por analyzer; resultado con `summary.taxonomies[].level` (info/safe/suspicious/malicious) y `summary.taxonomies[].value` (score numérico) | | **Salida (Error)** | Analyzer no disponible → skip ese analyzer; job timeout → marcar como inconcluso | | **Ruta de error** | Si todos los analyzers fallan → continuar con `score = 0`, `verdict = "unknown"` | | **Timeout por job** | 60 s (configurable en Cortex) |
 
 ---
 
@@ -4975,7 +4976,7 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 
 - Usar `make health` tras `make up` para verificar el stack
 - Revisar `make logs` si un servicio no responde
-- Consultar [04-operations.md](04-operations.md) para troubleshooting detallado
+- Consultar [la sección de troubleshooting](#8-diagnóstico) para troubleshooting detallado
 
 ---
 
@@ -5269,11 +5270,10 @@ Ver detalles en:
 
 - `docs/02-architecture.md`
 - `docs/02-architecture.md`
-- `docs/02-architecture.md`
 
 #### 7.5 Distinción entre Elasticsearch, OpenSearch y
 
-| Componente | Rol en el laboratorio | Imagen / versión | Puerto host | Notas | |------------|-----------------------|------------------|-------------|-------| | **Elasticsearch** | Motor de búsqueda y persistencia principal (SOAR metrics, Shuffle indices) | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `8200` | Usado por Shuffle, Grafana, KPIs y Lab API | | **OpenSearch** | Motor de búsqueda alternativo / migración futura | `opensearchproject/opensearch:2.10.0` | `8201` (por defecto en `.env.example`) | No es el motor principal actual; compite como target de migración |
+| Componente | Rol en el laboratorio | Imagen / versión | Puerto host | Notas | |------------|-----------------------|------------------|-------------|-------| | **Elasticsearch** | Motor de búsqueda para TheHive, Cortex y métricas SOAR (índices `soar-alerts`, `soar-metrics`) | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `8200` | Usado por TheHive, Cortex, Grafana, KPIs y Lab API | | **OpenSearch** | Backend interno de Shuffle (almacenamiento de workflows y ejecuciones) | `opensearchproject/opensearch:2.10.0` | `8201` (por defecto en `.env.example`) | Motor principal actual de Shuffle; no es una migración futura |
 
 La documentación operativa debe referirse al nombre completo del servicio (`elasticsearch` para el core del laboratorio, `.indexer` para ) para evitar ambigüedades. No se usa Kibana; Grafana es la herramienta de visualización central.
 
