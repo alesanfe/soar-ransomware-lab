@@ -1383,7 +1383,7 @@ Control manual/automatizado: todo párrafo que afirme "funciona", "está configu
 - Checklist de cierre:
  1. Todos los tests pasan.
  2. Documentación enlazada y libre de secretos.
- 3. Informes hist�ricos eliminados.
+ 3. Informes históricos eliminados.
  4. este documento refleja estado actual.
  5. este documento cerrado.
 - Mantenimiento: revisión mensual de secretos, volúmenes, versiones de imagen.
@@ -2559,7 +2559,7 @@ Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados 
 | Tabla 2 | Comparativa Detallada de Plataformas SOAR   |
 
 
-## Anexo: Objetivos y Metodolog�a
+## Anexo: Objetivos y Metodología
 
 
 Este capítulo define qué se quiere demostrar y cómo se organiza el desarrollo. El resultado esperado es un laboratorio SOAR mínimo viable que ejecute un playbook E2E en escenarios malicioso y benigno y produzca métricas para la evaluación. La presentación de resultados (§4.1.3.3) se centra en el escenario malicioso (n=50), pero el repositorio incluye el escenario benigno y 39 test cases E2E adicionales listos para ejecutar con `make test-e2e`.
@@ -2715,7 +2715,7 @@ La reproducción por terceros consiste en clonar el repositorio, levantar el ent
 | Tabla 3 | Objetivos Específicos con Métricas de Éxito     |
 
 
-## Anexo: M�tricas y Visualizaciones Complementarias
+## Anexo: Métricas y Visualizaciones Complementarias
 
 
 Este anexo presenta visualizaciones de datos y gráficos complementarios que ilustran los resultados experimentales y el
@@ -2936,7 +2936,7 @@ El stack de observabilidad (Loki, Grafana Labs, 2024b; Promtail, Grafana Labs, 2
 - **Métricas de KPI**: datasource Elasticsearch con índice `soar-metrics` (`mttr_seconds`, `@timestamp`).
 
 
-## Anexo: Resultados Experimentales y Validaci�n
+## Anexo: Resultados Experimentales y Validación
 
 
 Referencia TFM: complementa el Capítulo 4 (Desarrollo Específico) y el Anexo C (Métricas y Visualizaciones).
