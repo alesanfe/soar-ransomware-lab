@@ -34,6 +34,10 @@
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
+- [Anexo: Configuración Técnica del Laboratorio](#anexo-configuración-técnica-del-laboratorio)
+ - [A.1 a A.6: Docker Compose, scripts, TheHive, monitoreo, troubleshooting](#a1-configuración-completa-de-docker-compose)
+- [Anexo: Workflow SOAR Completo](#anexo-workflow-soar-completo)
+ - [B.1 a B.6: 46 nodos, 61 ramas, 25 scripts Python, modelo de scoring](#b1-visión-general-del-workflow)
 
 ---
 

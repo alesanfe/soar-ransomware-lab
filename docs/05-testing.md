@@ -26,6 +26,8 @@
  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
+- [Anexo: Estrategia de Testing Consolidada](#anexo-estrategia-de-testing-consolidada)
+ - [E.1 a E.13: 2233 tests, pirámide, quality gates, mutation testing](#e1-visión-general)
 
 ---
 
