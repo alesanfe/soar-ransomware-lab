@@ -1252,11 +1252,11 @@ Grafana se conecta a `logging_net` y `soar_net` para poder consultar `elasticsea
 > **Nota sobre `ti_net`:** al ser `internal: true`, los contenedores en esta red no tienen salida a Internet. Solo se comunican entre sí y con `soar_net` a través de contenedores que están en ambas.
 > **Nota sobre `logging_net`:** `docker-compose.logging.yml` la declara como `external: true` para permitir ejecuciones parciales, pero en un despliegue completo con `make up` la red se crea en el compose base (`docker-compose.yml`).
 
-#### 4.1 Puertos de acceso
+##### 4.2 Puertos de acceso
 
 | Servicio | Puerto host | Acceso directo | Vía Nginx (`https://soar.local`) | |----------|-------------|----------------|-----------------------------------| | Nginx HTTP→HTTPS | 80 | `http://localhost` | — | | Nginx HTTPS | 443 | `https://localhost` | — | | Web Management | 8085 | `http://localhost:8085` | `/` | | SOAR API | 8000 | `http://localhost:8000` (Swagger en `http://localhost:8000/docs`) | `/api/` — Swagger vía Nginx: `https://soar.local/api/docs` y `https://soar.local/api/openapi.json`. No usar `https://soar.local:8000/docs` (Nginx no escucha en 8000). | | Shuffle UI | 8081 | `http://localhost:8081` | No soportado (SPA con rutas absolutas) | | MISP | 8083 | `http://localhost:8083` | No soportado | | Grafana | 8084 | `http://localhost:8084` | No soportado | | Docs Site | 8086 | `http://localhost:8086` | No soportado | | TheHive | 8100 | `http://localhost:8100` | `/thehive/` | | Cortex | 8101 | `http://localhost:8101` | `/cortex/` | | Elasticsearch | 8200 | `http://localhost:8200` | No expuesto | | OpenSearch Dashboards | 8202 | `https://localhost:8202` | No soportado |
 
-#### 4.3 Nginx como gateway SSL
+##### 4.3 Nginx como gateway SSL
 
 Nginx escucha en `80` y `443` y actúa como proxy inverso. Los certificados SSL se encuentran en
 `infra/docker/config/nginx/ssl/`:
@@ -2132,8 +2132,6 @@ scripts/setup/gen_certs.sh
 2. Genera una CA local RSA 4096 bits y certificado autofirmado válido 10 años.
 3. Genera claves RSA 2048 bits y certificados firmados por la CA para cada hostname solicitado (`soar.local` por defecto).
 4. Verifica la cadena con `openssl verify`.
-
-###
 
 En un despliegue nuevo o tras regenerar certificados :
 
