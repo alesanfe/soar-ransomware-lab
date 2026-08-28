@@ -662,7 +662,7 @@ T1059.001, T1547.001, T1562.001, T1056.001, T1102, T1567.002).
 ```mermaid
 graph LR
  A[Webhook Shuffle<br/>TC-33: 10 subtests<br/>IoCs GMinst4ll reales] --> B[Workflow SOAR]
- B --> C[Cortex: análisis hash/IP<br/>Hashdd + VirusShare + DShield<br/>+ Mnemonic pDNS + IP-API + GoogleDNS]
+ B --> C[Cortex: analisis hash/IP<br/>Hashdd + VirusShare + DShield<br/>+ Mnemonic pDNS + IP-API + GoogleDNS]
  B --> D[MISP: crear evento hash+IP<br/>+ buscar hash en DB]
  B --> E[TheHive: caso + observables<br/>hash + IP + URL + tarea IR]
  B --> F[Elasticsearch: soar-alerts + soar-metrics]
