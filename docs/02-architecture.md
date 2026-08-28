@@ -1,4 +1,4 @@
-# Arquitectura — SOAR Ransomware Lab
+﻿# Arquitectura — SOAR Ransomware Lab
 
 ## Índice
 
@@ -946,7 +946,7 @@ docker compose --env-file .env -f infra/docker/compose/docker-compose.yml -f inf
 
 #### 3.2 Servicios y composición
 
-#### Tabla canónica de servicios
+##### Tabla canónica de servicios
 
 | Servicio | Imagen / build | Contenedor (por defecto) | Puerto host → contenedor | Redes | Healthcheck | Propósito | |---|---|---|---|---|---|---| | elasticsearch | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `soar_elasticsearch` | `${ELASTICSEARCH_PORT:-8200}` → 9200 | `soar_net`, `ti_net` | `GET /_cluster/health` | Motor de búsqueda y métricas | | redis | `redis:7-alpine` | `soar_redis` | 6379 → 6379 | `ti_net`, `soar_net` | `nc -z 127.0.0.1 6379` | Cache/cola con autenticación | | thehive | `thehiveproject/thehive:3.5.2-1` | `soar_thehive` | `${THEHIVE_HTTP_PORT:-8100}` → 9000 | `soar_net` | `GET /api/status` | Gestión de casos | | cortex | build `infra/docker/images/cortex/Dockerfile` | `soar_cortex` | `${CORTEX_HTTP_PORT:-8101}` → 9001 | `soar_net` | HTTP 2xx/3xx en `:9001/` | Motor de analizadores; monta `/var/run/docker.sock` | | shuffle-frontend | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | `soar_shuffle_frontend` | `${SHUFFLE_UI_PORT:-8081}` → 80 | `soar_net`, `ti_net` | `GET http://localhost:80` | UI de workflows | | shuffle-backend | `ghcr.io/shuffle/shuffle-backend:2.2.1` | `soar_shuffle_backend` | `${SHUFFLE_API_PORT:-5001}` → 5001 | `soar_net`, `ti_net` | deshabilitado | Motor de workflows | | orborus | build `infra/docker/images/orborus/Dockerfile` (tag `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | `soar_orborus` | — | `soar_net` | `nc -z shuffle-backend 5001` | Ejecutor de contenedores de analizadores | | network-watcher | build `src/soar_lab/infrastructure/network_watcher` | `soar_network_watcher` | `${NETWORK_WATCHER_PORT:-15130}` → 8080 | `soar_net` | `GET /health` en `:8080` | Diagnóstico/recuperación de red (sincroniza `/etc/hosts` de workers) | | tenzir-node | `tenzir/tenzir:v6.8.1` | `soar_tenzir_node` | 15160 → 5160, 15140 → 1514 | `soar_net` | `tenzir 'api "/ping"'` | Nodo Tenzir (modo dev) | | misp-db | `mariadb:10.11` | `soar_misp_db` | — | `soar_net` | `mysqladmin ping` | BD MISP (volumen Docker, no bind) | | misp-modules | `ghcr.io/misp/misp-docker/misp-modules:v3.0.9` | `soar_misp_modules` | — | `soar_net` | socket `localhost:6666` | Módulos MISP | | misp | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | `soar_misp` | `${MISP_PORT:-8083}` → 80 | `soar_net` | `GET /users/heartbeat` | Plataforma de inteligencia de amenazas | | api | build `apps/api/Dockerfile` (contexto raíz) | `soar_api` | `${API_PORT:-8000}` → 8000 | `soar_net`, `ti_net`, `logging_net` | `GET /health` | API FastAPI | | docs-site | build `apps/docs-site/Dockerfile` (contexto raíz) | `soar_docs_site` | `${DOCS_PORT:-8086}` → 8080 | `soar_net` | deshabilitado | Portal Docusaurus | | web-management | build `apps/web-management/Dockerfile` | `soar_web_management` | 8085 → 80 | `soar_net` | `pgrep nginx` | SPA web de operación | | nginx | `nginx:1.25-alpine` | `soar_nginx` | 80 → 80, 443 → 443 | `soar_net`, `logging_net` | `GET /nginx-health` | Proxy inverso y TLS | | grafana-db | `postgres:14-alpine` | `soar_grafana_db` | — | `logging_net` | `pg_isready -U grafana` | BD Grafana | | grafana | `grafana/grafana:10.3.4` | `soar_grafana` | `${GRAFANA_PORT:-8084}` → 3000 | `logging_net`, `soar_net` | `GET /api/health` | Visualización KPIs/logs | | loki | `grafana/loki:2.9.10` | `soar_loki` | — | `logging_net` | — (imagen sin shell) | Agregación de logs | | promtail | `grafana/promtail:2.9.9` | `soar_promtail` | — | `logging_net`, `soar_net` | — | Envío de logs Docker a Loki |
 
@@ -2357,7 +2357,7 @@ los de este anexo son los completos.
 
 ---
 
-## F.1. Arquitectura de Alto Nivel
+### F.1. Arquitectura de Alto Nivel
 
 Diagrama de componentes principales y flujo de datos del sistema SOAR. Muestra
 los 23 contenedores Docker del laboratorio más el simulador SIEM (script Python,
@@ -2402,7 +2402,7 @@ Fuente: `README.md` e `infra/docker/compose/docker-compose*.yml`
 
 ---
 
-## F.2. Arquitectura de Despliegue Docker
+### F.2. Arquitectura de Despliegue Docker
 
 Diagrama completo de la topología Docker: Nginx proxy, redes (soar_net, ti_net,
 logging_net) y conexiones entre los 23 servicios.
@@ -2482,7 +2482,7 @@ Fuente: `docs/02-architecture.md` línea 169
 
 ---
 
-## F.3. Arquitectura Hexagonal (Ports & Adapters)
+### F.3. Arquitectura Hexagonal (Ports & Adapters)
 
 Diagrama de la arquitectura hexagonal del código Python: capas de dominio, aplicación,
 infraestructura e interfaces, con sus puertos y adaptadores.
@@ -2549,7 +2549,7 @@ Fuente: `docs/02-architecture.md` línea 1390
 
 ---
 
-## F.4. Diagrama de Contexto C4
+### F.4. Diagrama de Contexto C4
 
 Modelo C4 de contexto mostrando los límites del sistema y las integraciones externas.
 
@@ -2589,7 +2589,7 @@ Fuente: `docs/04-operations.md` línea 1296
 
 ---
 
-## F.5. Flujo End-to-End de Alertas (Sequence Diagram)
+### F.5. Flujo End-to-End de Alertas (Sequence Diagram)
 
 Diagrama de secuencia completo del flujo de una alerta desde el simulador SIEM hasta
 la indexación de métricas en Elasticsearch, pasando por Shuffle, TheHive, Cortex y MISP.
@@ -2660,7 +2660,7 @@ Fuente: `docs/04-operations.md` línea 1380
 
 ---
 
-## F.6. Árbol de Decisión del Playbook
+### F.6. Árbol de Decisión del Playbook
 
 Flowchart del playbook SOAR mostrando la lógica de decisión: validación, creación de caso,
 análisis con Cortex, y branching entre contención (malicioso) y falso positivo (benigno).
@@ -2705,7 +2705,7 @@ Fuente: `docs/04-operations.md` línea 4302
 
 ---
 
-## F.7. Respuesta Automatizada (Sequence Diagram)
+### F.7. Respuesta Automatizada (Sequence Diagram)
 
 Diagrama de secuencia del zoom sobre la rama de decisión del playbook: tras
 `calc_decision`, el workflow ejecuta contención (malicioso) o marca falso positivo
@@ -2740,7 +2740,7 @@ Fuente: `docs/02-architecture.md` línea 519
 
 ---
 
-## F.8. Cronograma de Objetivos SMART (Gantt)
+### F.8. Cronograma de Objetivos SMART (Gantt)
 
 Diagrama Gantt del cronograma de los 20 objetivos SMART distribuidos en 4 fases
 (planificación inicial 12 semanas, aumentada a 15 tras diseño, ejecución real 18 semanas,
@@ -2780,7 +2780,7 @@ Fuente: `docs/06-project-management.md` (Anexo: Objetivos y Metodología, cronog
 
 ---
 
-## F.9. Roadmap Semanal (Gantt)
+### F.9. Roadmap Semanal (Gantt)
 
 Diagrama Gantt simplificado del roadmap semanal con ruta crítica marcada.
 
@@ -2816,7 +2816,7 @@ Fuente: `docs/06-project-management.md` (Anexo: Objetivos y Metodología, Gantt 
 
 ---
 
-## F.10. Matriz de Priorización de Riesgos
+### F.10. Matriz de Priorización de Riesgos
 
 Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e impacto.
 
@@ -2887,7 +2887,7 @@ Fuente: `docs/06-project-management.md` línea 1381 (tabla detallada R1-R24, fue
 
 ---
 
-## F.11. Caso de Estudio: GMinst4ll (Flujo de Infección)
+### F.11. Caso de Estudio: GMinst4ll (Flujo de Infección)
 
 Diagrama del flujo completo de infección del malware **GMinst4ll 2.03.rar** (884 MB,
 InfoStealer/Loader), analizado forensemente entre el 11-13 de junio de 2026 en un
@@ -3051,7 +3051,7 @@ Fuente: `github.com/alesanfe/gminst4ll-forensics` (README.md, 01_INFORME_PRINCIP
 
 ---
 
-## F.12. Pipeline SOAR para IoCs de GMinst4ll
+### F.12. Pipeline SOAR para IoCs de GMinst4ll
 
 Diagrama del flujo concreto de los IoCs de GMinst4ll a través del pipeline SOAR,
 mostrando qué analyzers procesan cada tipo de IoC, qué resultados devuelven y cómo se
@@ -3224,7 +3224,7 @@ Los requisitos de integración especifican las conexiones entre componentes del 
 - RI-04: Integración opcional con MISP. Intercambio de indicadores de amenazas con MISP para enriquecimiento
   adicional, sin ser requisito para la ejecución del playbook E2E.
 
-## Tabla 3: Matriz de Trazabilidad de Requisitos
+### Tabla 3: Matriz de Trazabilidad de Requisitos
 
 La matriz de trazabilidad conecta cada requisito con su componente implementador, prioridad y método de verificación:
 
@@ -3252,7 +3252,7 @@ La matriz de trazabilidad conecta cada requisito con su componente implementador
 
 La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 
-## Tabla 4: Estado de Cumplimiento de Requisitos
+### Tabla 4: Estado de Cumplimiento de Requisitos
 
 | ID     | Tipo   | Requisito                     | Métrica de Verificación  | Estado             |
 |--------|--------|-------------------------------|--------------------------|--------------------|
@@ -3441,7 +3441,7 @@ La infraestructura se define con varios archivos Docker Compose (Docker Inc., 20
 
 La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging (Grafana, Loki y Promtail conectan además a soar_net para recoger datos de los servicios). Esta separación limita el movimiento lateral en caso de compromiso. Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio; los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 5** detalla la configuración de recursos.
 
-## Tabla 5: Configuración de Recursos Docker
+### Tabla 5: Configuración de Recursos Docker
 
 | Servicio             | CPU Límite | Memoria Límite | CPU Reserva | Memoria Reserva | Health Check |
 |----------------------|------------|----------------|-------------|-----------------|--------------|
@@ -3511,7 +3511,7 @@ TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024) 
 
 Cortex (v3.2.0) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: Hashdd_Status (hashes), IP-API y DShield (IPs), GoogleDNS y DomainMailSPFDMARC (dominios), Mnemonic pDNS (passive DNS) y ValidateObservable (validación). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 6** lista los analyzers con su tipo y uso en el playbook.
 
-## Tabla 6: Analyzers Cortex Configurados
+### Tabla 6: Analyzers Cortex Configurados
 
 | Analyzer              | Tipo     | API Key | Uso en Playbook   |
 |-----------------------|----------|---------|-------------------|
@@ -3654,7 +3654,7 @@ El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Gra
 
 El dashboard de Grafana (`SOAR KPI Dashboard`) implementa 15 paneles con las métricas reales del proyecto: MTTR (medio, P50, P90, max/min, rango, percentiles P50/P75/P90/P95), total de alertas procesadas, alertas críticas (severity=3), tasa de éxito por tipo de alerta, tasa de éxito por servicio (TheHive/Cortex/MISP), tasa de éxito por severidad, alertas por severidad, throughput por hora, evolución temporal de MTTR, evolución de alertas por tipo y comparación de MTTR por tipo de alerta. La **Tabla 7** resume las métricas con sus umbrales.
 
-## Tabla 7: Métricas del Dashboard de Grafana
+### Tabla 7: Métricas del Dashboard de Grafana
 
 | Categoría          | Métrica              | Objetivo       | Panel |
 |--------------------|----------------------|----------------|-------|
@@ -3706,7 +3706,7 @@ Los resultados experimentales se almacenan en `reports/e2e/` y `reports/validati
 
 El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, todas con alertas maliciosas (45 ransomware, 2 RAT, 2 troyano, 1 infostealer). La **Figura 6** muestra la comparación visual del MTTR manual vs automatizado, donde se aprecia la drástica reducción de 3600 s a 277.15 s (92.3 %). El cumplimiento de objetivos resume los umbrales definidos frente a los valores medidos:
 
-## Tabla 8: Cumplimiento de Objetivos del Experimento
+### Tabla 8: Cumplimiento de Objetivos del Experimento
 
 | Objetivo | Umbral | Valor medido | Cumple |
 |----------|--------|--------------|--------|
@@ -3718,7 +3718,7 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 
 **Cumplimiento global: 3 de 5 objetivos.** La **Tabla 9** presenta los resultados detallados contrastando la respuesta manual estimada con la SOAR automatizada.
 
-## Tabla 9: Resultados Experimentales Detallados
+### Tabla 9: Resultados Experimentales Detallados
 
 | Métrica                 | Manual (estimado) | SOAR (n=50)  | Reducción |
 |-------------------------|-------------------|--------------|-----------|
@@ -3730,7 +3730,7 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 
 Las métricas siguientes son específicas del sistema SOAR automatizado, sin equivalente en la respuesta manual:
 
-## Tabla 9b: Métricas Específicas del Sistema SOAR
+### Tabla 9b: Métricas Específicas del Sistema SOAR
 
 | Métrica                 | SOAR (n=50)  |
 |-------------------------|--------------|
@@ -3753,7 +3753,7 @@ La **Figura 7** muestra los tiempos medios por componente del workflow y las tas
 
 **Figura 7b**: Tasas de éxito por tipo de alerta durante las 50 ejecuciones E2E, mostrando 100 % de éxito en todos los tipos procesados.
 
-## Tabla 10: Análisis por Componente de Tiempo
+### Tabla 10: Análisis por Componente de Tiempo
 
 | Componente             | SOAR (n=50) | % del total |
 |------------------------|-------------|-------------|
@@ -3833,7 +3833,7 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 
 ---
 
-## Índice de Figuras del Capítulo 4
+### Índice de Figuras del Capítulo 4
 
 | Figura    | Título                                          | Archivo                                    |
 |-----------|-------------------------------------------------|--------------------------------------------|
@@ -3848,7 +3848,7 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 | Figura 9 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
 | Figura 10 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
 
-## Índice de Tablas del Capítulo 4
+### Índice de Tablas del Capítulo 4
 
 | Tabla    | Título                                          |
 |----------|-------------------------------------------------|
