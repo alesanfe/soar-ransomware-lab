@@ -143,8 +143,8 @@ flowchart TD
  end
 
  subgraph Dominio["Capa de dominio"]
- PORTS[Puertos: AlertRepository<br/>BackupDriver, TokenProvider<br/>SystemMetricsInterface...]
- ALERT[Alert / IOC]
+ PORTS[Puertos: AlertRepository<br/>BackupDriver, TokenProviderInterface<br/>SystemMetricsInterface<br/>StatisticalCalculatorInterface...]
+ ALERT[AlertGenerator]
  KPI[KPIAnalyzer]
  IOC[SimulatedIOCGenerator]
  end
@@ -154,18 +154,21 @@ flowchart TD
  TAR[TarBackupDriver]
  JWT[JWTTokenProvider]
  HTTP[HTTPClient -> Shuffle/TheHive/Cortex/MISP/ES]
+ SMETRICS[SystemMetricsDriver]
+ STAT[StatisticalCalculator]
  end
 
  F -->|/auth/login| AS
  F -->|/backup/create| BS
  F -->|/analytics/kpis| ANS
- C --> AS
+ C -->|generate-iocs| IOC
  W --> F
  AS -->|TokenProviderInterface| JWT
  BS -->|BackupDriver| TAR
  ANS -->|AlertRepository| SQLITE
- ANS -->|SystemMetricsInterface| HTTP
- KPI -->|StatisticalCalculatorInterface| STAT[StatisticalCalculator]
+ ANS -->|SystemMetricsInterface| SMETRICS
+ ANS -->|StatisticalCalculatorInterface| STAT
+ KPI -->|StatisticalCalculatorInterface| STAT
 ```
 
 Fuente: `docs/02-architecture.md` línea 1390
