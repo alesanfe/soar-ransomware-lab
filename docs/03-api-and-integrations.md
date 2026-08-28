@@ -687,6 +687,45 @@ Validación: no permite `..`, `/`, `\` y requiere extensión `.tar.gz`.
 }
 ```
 
+#### 3.3.5 Modelos avanzados: contención, KPIs y seguridad
+
+Los modelos definidos en `src/soar_lab/config/schemas/__init__.py` extienden las validaciones de payloads y son la fuente de verdad
+para los campos que llegan a `init_shuffle_webhook.py` y a la API.
+
+| Modelo | Campos principales | Validaciones | |---|---|---| | `RansomwareAlert` | `alert_id`, `hostname`, `src_ip`, `hash`, `severity`, `source`, `detection_time`, `event_type`, `description`, `affected_files`, `mitre_tactics`, `mitre_techniques`, `network_events` | `alert_id`: `^ALERT-\d{10}-\d{4}$`; `hostname`: `[a-zA-Z0-9\-]{1,255}`; `detection_time` no futuro; `hash.sha256` 64 hex. | | `MITREInfo` | `tactics`, `techniques`, `sub_techniques` | Tácticas limitadas a `TA0001`–`TA0011`, `TA0040`–`TA0043`. | | `ContainmentAction` | `action_id`, `alert_id`, `hostname`, `action_type`, `status`, `execution_time`, `details`, `error_message` | `action_id`: `^ACTION-\d{10}-\d{4}$`; `action_type` ∈ `{network_isolation, process_termination, account_lockdown}`; `status` ∈ `{pending, executed, failed, completed}`. | | `KPIReport` | `total_executions`, `mean_mttr`, `median_mttr`, `p50_mttr`, `p90_mttr`, `min_mttr`, `max_mttr`, `std_deviation`, `threshold_p50` (120 s), `threshold_p90` (180 s) | Valores `>= 0`; `p50_within_threshold = p50_mttr <= threshold_p50`; `p90_within_threshold = p90_mttr <= threshold_p90`. | | `HealthCheck` | `service_name`, `status`, `timestamp`, `response_time_ms`, `error_message`, `metadata` | `status` ∈ `{healthy, unhealthy, degraded}`; `response_time_ms <= 30000`. | | `BackupReport` | `backup_id`, `timestamp`, `backup_type`, `components`, `total_size_mb`, `compression_ratio`, `success`, `retention_days` | `backup_id`: `^BACKUP-\d{8}_\d{6}$`; `backup_type` ∈ `{manual, scheduled, auto}`; `retention_days >= 1`. | | `SecurityScan` | `scan_id`, `timestamp`, `scanner`, `target`, `vulnerabilities`, `total_vulnerabilities`, `scan_duration_seconds`, `success`, `recommendations` | `scan_id`: `^SCAN-\d{8}_\d{6}$`; severidades válidas: `critical`, `high`, `medium`, `low`, `info`; counts `>= 0`. |
+
+**Ejemplo `ContainmentAction`:**
+
+```json
+{
+ "action_id": "ACTION-2025071812-0001",
+ "alert_id": "ALERT-2025071812-0001",
+ "hostname": "WIN-001",
+ "action_type": "network_isolation",
+ "status": "executed",
+ "execution_time": "2025-07-18T12:05:00Z",
+ "details": {"isolated_by": "soar-lab", "rule_id": "drop-ransomware-001"}
+}
+```
+
+**Ejemplo `KPIReport`:**
+
+```json
+{
+ "total_executions": 16,
+ "mean_mttr": 45.2,
+ "median_mttr": 42.0,
+ "p50_mttr": 41.0,
+ "p90_mttr": 78.5,
+ "threshold_p50": 120.0,
+ "threshold_p90": 180.0,
+ "p50_within_threshold": true,
+ "p90_within_threshold": true
+}
+```
+
+---
+
 ### 3.4 Autenticación y autorización
 
 #### 3.4.1 Configuración de autenticación
@@ -1308,43 +1347,6 @@ PYTHONPATH=src python3 -m soar_lab.simulator.simulate_alerts --count 5 --delay 1
 cat runtime/logs/soar_lab.log
 ```
 
-#### 3.3.5 Modelos avanzados: contención, KPIs y seguridad
-
-Los modelos definidos en `src/soar_lab/config/schemas/__init__.py` extienden las validaciones de payloads y son la fuente de verdad
-para los campos que llegan a `init_shuffle_webhook.py` y a la API.
-
-| Modelo | Campos principales | Validaciones | |---|---|---| | `RansomwareAlert` | `alert_id`, `hostname`, `src_ip`, `hash`, `severity`, `source`, `detection_time`, `event_type`, `description`, `affected_files`, `mitre_tactics`, `mitre_techniques`, `network_events` | `alert_id`: `^ALERT-\d{10}-\d{4}$`; `hostname`: `[a-zA-Z0-9\-]{1,255}`; `detection_time` no futuro; `hash.sha256` 64 hex. | | `MITREInfo` | `tactics`, `techniques`, `sub_techniques` | Tácticas limitadas a `TA0001`–`TA0011`, `TA0040`–`TA0043`. | | `ContainmentAction` | `action_id`, `alert_id`, `hostname`, `action_type`, `status`, `execution_time`, `details`, `error_message` | `action_id`: `^ACTION-\d{10}-\d{4}$`; `action_type` ∈ `{network_isolation, process_termination, account_lockdown}`; `status` ∈ `{pending, executed, failed, completed}`. | | `KPIReport` | `total_executions`, `mean_mttr`, `median_mttr`, `p50_mttr`, `p90_mttr`, `min_mttr`, `max_mttr`, `std_deviation`, `threshold_p50` (120 s), `threshold_p90` (180 s) | Valores `>= 0`; `p50_within_threshold = p50_mttr <= threshold_p50`; `p90_within_threshold = p90_mttr <= threshold_p90`. | | `HealthCheck` | `service_name`, `status`, `timestamp`, `response_time_ms`, `error_message`, `metadata` | `status` ∈ `{healthy, unhealthy, degraded}`; `response_time_ms <= 30000`. | | `BackupReport` | `backup_id`, `timestamp`, `backup_type`, `components`, `total_size_mb`, `compression_ratio`, `success`, `retention_days` | `backup_id`: `^BACKUP-\d{8}_\d{6}$`; `backup_type` ∈ `{manual, scheduled, auto}`; `retention_days >= 1`. | | `SecurityScan` | `scan_id`, `timestamp`, `scanner`, `target`, `vulnerabilities`, `total_vulnerabilities`, `scan_duration_seconds`, `success`, `recommendations` | `scan_id`: `^SCAN-\d{8}_\d{6}$`; severidades válidas: `critical`, `high`, `medium`, `low`, `info`; counts `>= 0`. |
-
-**Ejemplo `ContainmentAction`:**
-
-```json
-{
- "action_id": "ACTION-2025071812-0001",
- "alert_id": "ALERT-2025071812-0001",
- "hostname": "WIN-001",
- "action_type": "network_isolation",
- "status": "executed",
- "execution_time": "2025-07-18T12:05:00Z",
- "details": {"isolated_by": "soar-lab", "rule_id": "drop-ransomware-001"}
-}
-```
-
-**Ejemplo `KPIReport`:**
-
-```json
-{
- "total_executions": 16,
- "mean_mttr": 45.2,
- "median_mttr": 42.0,
- "p50_mttr": 41.0,
- "p90_mttr": 78.5,
- "threshold_p50": 120.0,
- "threshold_p90": 180.0,
- "p50_within_threshold": true,
- "p90_within_threshold": true
-}
-```
-
 ---
 
 #### Navegación
@@ -1356,6 +1358,9 @@ para los campos que llegan a `init_shuffle_webhook.py` y a la API.
 - [Objetivos, plan, riesgos, auditorías](06-project-management.md)
 - [Glosario central](glossary.md)
 - [Índice](index.md)
+
+---
+
 ## 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
@@ -1364,9 +1369,7 @@ para los campos que llegan a `init_shuffle_webhook.py` y a la API.
 - **Documentación de Shuffle API**: https://shuffler.io/docs/api
 - **Documentación de FastAPI**: https://fastapi.tiangolo.com/
 - **Documentación de MISP API**: https://www.misp-project.org/api/
-- **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
-- **Documentación de Seguridad**: [docs/02-architecture.md](02-architecture.md)
-- **Estrategia de Docker**: [docs/02-architecture.md](02-architecture.md)
+- **Arquitectura y seguridad**: [docs/02-architecture.md](02-architecture.md)
 
 > ⚠️ **Nunca commitear valores reales** de API keys al repositorio. Usar `.env.full` (incluido en `.gitignore`).
 
@@ -1391,12 +1394,8 @@ para los campos que llegan a `init_shuffle_webhook.py` y a la API.
 
 #### 4. APIs y contratos
 
----
-
-#### 4. APIs y contratos
-
-> **Fuente de verdad técnica:** Los contratos completos se encuentran en `docs/03-api-and-integrations.md` (resumen humano) y
-> `docs/03-api-and-integrations.md` (especificación OpenAPI generada automáticamente).
+> **Fuente de verdad técnica:** Los contratos completos se encuentran en este documento (resumen humano) y
+> en `/openapi.json` expuesto por la propia API (especificación OpenAPI generada automáticamente).
 
 #### 4.1 Clasificación de APIs
 
@@ -1493,7 +1492,7 @@ Modelo canónico: `RansomwareAlert` en `src/soar_lab/config/schemas/__init__.py`
 
 **Analyzers activos:**
 
-| Analyzer | Tipo | Modo | Requiere API key externa | |----------|------|------|--------------------------| | `Hashdd_Status` | hash | offline | No | | `IP-API` | ip | offline | No | | `Virusshare` | hash | online | No | | `Urlscan.io_Search` | hash/ip | online | No | | `Robtex_IP_Query` | ip | online | No | | `Robtex_Reverse_PDNS_Query` | ip | online | No | | `GoogleDNS_resolve` | ip | offline | No |
+| Analyzer | Tipo | Modo | Requiere API key externa | |----------|------|------|--------------------------| | `Hashdd_Status` | hash | offline | No | | `IP-API` | ip | offline | No | | `Virusshare` | hash | online | No | | `Urlscan.io_Search` | hash/ip | online | No | | `DShield_lookup_1_0` | ip | online | No | | `Mnemonic_pDNS_Public_3_0` | ip | online | No | | `GoogleDNS_resolve` | ip | offline | No |
 
 ---
 
@@ -1534,7 +1533,7 @@ Las versiones canónicas se consultan en `infra/docker/compose/docker-compose.co
 
 #### 9. Referencias
 
-- **OpenAPI / Lab API**: [`docs/03-api-and-integrations.md`](03-api-and-integrations.md) y [`docs/03-api-and-integrations.md`](assets/references/openapi.json)
+- **OpenAPI / Lab API**: `/openapi.json` expuesto por la API en runtime
 - **Arquitectura**: [`docs/02-architecture.md`](02-architecture.md)
 - **Operaciones**: [`docs/04-operations.md`](04-operations.md)
 - **Testing**: [`docs/05-testing.md`](05-testing.md)

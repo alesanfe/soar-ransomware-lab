@@ -5081,17 +5081,15 @@ Para problemas o preguntas:
 **TheHive + Shuffle + MISP:**
 
 - **Descripción**: Integración real-time entre TheHive, Shuffle y MISP para automatización de IoCs
-- **Referencia
- **: [Real-time executions and IoC's with Shuffle, TheHive and MISP - Medium](https://medium.com/shuffle-automation/indicators-and-webhooks-with-thehive-cortex-and-misp-open-source-soar-part-4-f70cde942e59)
+- **Referencia**: [Real-time executions and IoC's with Shuffle, TheHive and MISP - Medium](https://medium.com/shuffle-automation/indicators-and-webhooks-with-thehive-cortex-and-misp-open-source-soar-part-4-f70cde942e59)
 - **Webhook Config**: TheHive envía alertas a Shuffle vía webhook, Shuffle procesa y consulta MISP
 - **Caso de uso**: Detección de IoCs desde texto, análisis con MISP, creación de casos en TheHive
 
-** + Shuffle + TheHive:**
+**SIEM + Shuffle + TheHive:**
 
 - **Descripción**: SOC automation project integrando SIEM con Shuffle y TheHive
-- **Referencia
- **: [TheHive, and Shuffle — SOC Automation Project - Medium](https://medium.com/@jblemard/-thehive-and-shuffle-soc-automation-project-08ff58e0a4c9)
-- **Webhook Config**: envía alertas a Shuffle, Shuffle crea casos en TheHive, analiza con VirusTotal
+- **Referencia**: [SIEM, TheHive, and Shuffle — SOC Automation Project - Medium](https://medium.com/@jblemard/-thehive-and-shuffle-soc-automation-project-08ff58e0a4c9)
+- **Webhook Config**: SIEM envía alertas a Shuffle, Shuffle crea casos en TheHive, analiza con VirusTotal
 
 **Shuffle + VirusTotal + TheHive:**
 
@@ -5128,46 +5126,36 @@ Para problemas o preguntas:
 - **Automate Everything with Shuffle!** - [Video Tutorial](https://www.youtube.com/watch?v=_riaZjLnoXo)
 - **Host Your Own SOAR - Shuffle Install** - [Video Tutorial](https://www.youtube.com/watch?v=YDUKZojg0vk)
 - **Shuffle: Automated Workflows** - [Video Tutorial](https://www.youtube.com/watch?v=toqzkIN1urA)
-- **SOC Open Source, Build own SOAR with Shuffle, ELK-TheHive-Cortex-MISP
- ** - [Video Tutorial](https://www.youtube.com/watch?v=Nb9_ahZMC5U)
-- **Shuffle SOAR Home-Lab | Free Security Automation Tool
- ** - [Video Tutorial](https://www.youtube.com/watch?v=i2rRDB2N2w8)
+- **SOC Open Source, Build own SOAR with Shuffle, ELK-TheHive-Cortex-MISP** - [Video Tutorial](https://www.youtube.com/watch?v=Nb9_ahZMC5U)
+- **Shuffle SOAR Home-Lab | Free Security Automation Tool** - [Video Tutorial](https://www.youtube.com/watch?v=i2rRDB2N2w8)
 
 **TheHive Tutorials:**
 
 - **Installing TheHive 4.1.x in 12 minutes** - [Video Tutorial](https://www.youtube.com/watch?v=V_toQk19PuE)
-- **TheHive - Build Your Own Security Operations Center (SOC)
- ** - [Video Tutorial](https://www.youtube.com/watch?v=VqIuP0AOCBg)
-- **SOC Open Source, ELK- TheHive- Cortex- MISP Complete Setup Guide
- ** - [Video Tutorial](https://www.youtube.com/watch?v=t6PqjLIVgdA)
-- **#1 Cyber-SOC - Configurer TheHive et Cortex pour un SOC avec
- ** - [Video Tutorial](https://www.youtube.com/watch?v=OiuTbNhMw1A)
+- **TheHive - Build Your Own Security Operations Center (SOC)** - [Video Tutorial](https://www.youtube.com/watch?v=VqIuP0AOCBg)
+- **SOC Open Source, ELK- TheHive- Cortex- MISP Complete Setup Guide** - [Video Tutorial](https://www.youtube.com/watch?v=t6PqjLIVgdA)
+- **#1 Cyber-SOC - Configurer TheHive et Cortex pour un SOC avec Shuffle** - [Video Tutorial](https://www.youtube.com/watch?v=OiuTbNhMw1A)
 
 **Cortex Tutorials:**
 
 - **How to enable Cortex analyzers** - [Video Tutorial](https://www.youtube.com/watch?v=YuMn02vTe5k)
-- **CORTEX - Analyze Observables (IPs, domains, etc.) at Scale!
- ** - [Video Tutorial](https://www.youtube.com/watch?v=qz6xtINwK3I)
+- **CORTEX - Analyze Observables (IPs, domains, etc.) at Scale!** - [Video Tutorial](https://www.youtube.com/watch?v=qz6xtINwK3I)
 - **TheHive and Cortex Integration** - [Video Tutorial](https://www.youtube.com/watch?v=lzsTSDJhAOw)
 - **Leveraging TheHive & Cortex for automated IR** - [Video Tutorial](https://www.youtube.com/watch?v=K6K1fNpbf9w)
 
 **MISP Tutorials:**
 
 - **How to Build Your First MISP Instance From Scratch** - [Video Tutorial](https://www.youtube.com/watch?v=fP28LXD8IU8)
-- **Cómo Instalar MISP: Configuración Rápida y Sencilla
- ** - [Video Tutorial](https://www.youtube.com/watch?v=koCj1waK9RM)
+- **Cómo Instalar MISP: Configuración Rápida y Sencilla** - [Video Tutorial](https://www.youtube.com/watch?v=koCj1waK9RM)
 - **MISP General Usage Training - Part 1 of 2** - [Video Tutorial](https://www.youtube.com/watch?v=-NuODyh1YJE)
-- **How to Create MISP Events and Add Threat Intelligence
- ** - [Video Tutorial](https://www.youtube.com/watch?v=sWOa4Ld4CQM)
+- **How to Create MISP Events and Add Threat Intelligence** - [Video Tutorial](https://www.youtube.com/watch?v=sWOa4Ld4CQM)
 - **MISP Install and Intro** - [Video Tutorial](https://www.youtube.com/watch?v=nZcTc60YsIs)
 
-** Tutorials:**
+**Shuffle Tutorials:**
 
- ** - [Video Tutorial](https://www.youtube.com/watch?v=p2LCsizVMNI)
-- **Deploy Your Open Source SOAR Platform in One Command
- ** - [Video Tutorial](https://www.youtube.com/watch?v=NtBy9u1b7MM)
-- **Shuffle + + TheHIVE + Cortex = Automation Bliss
- ** - [Video Tutorial](https://www.youtube.com/watch?v=FBISHA7V15c)
+- **Shuffle SOAR Tutorial** - [Video Tutorial](https://www.youtube.com/watch?v=p2LCsizVMNI)
+- **Deploy Your Open Source SOAR Platform in One Command** - [Video Tutorial](https://www.youtube.com/watch?v=NtBy9u1b7MM)
+- **Shuffle + SIEM + TheHIVE + Cortex = Automation Bliss** - [Video Tutorial](https://www.youtube.com/watch?v=FBISHA7V15c)
 
 **Issues y Discussions Relevantes:**
 
@@ -5178,8 +5166,8 @@ Para problemas o preguntas:
 
 **TheHive + Shuffle Integration:**
 
-- **Issue #1502**: [Unable to integrate Shuffle with TheHive and ](https://github.com/Shuffle/Shuffle/issues/1502)
-- **Descripción**: Problemas de integración entre Shuffle, TheHive y
+- **Issue #1502**: [Unable to integrate Shuffle with TheHive and Cortex](https://github.com/Shuffle/Shuffle/issues/1502)
+- **Descripción**: Problemas de integración entre Shuffle, TheHive y Cortex
 
 **Documentación Oficial de APIs:**
 
@@ -5212,7 +5200,7 @@ Para problemas o preguntas:
 - **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
 - **Documentación de Docker Compose**: https://docs.docker.com/compose/
 
-### 7. Métricas, versiones, trazabilidad y glosario
+### Anexo: Métricas, versiones, trazabilidad y glosario
 
 Este apéndice consolida la información necesaria para reproducir las métricas del proyecto, identificar versiones verificadas, entender la trazabilidad del código y enlazar con el glosario de acrónimos.
 

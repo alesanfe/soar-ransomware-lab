@@ -2211,10 +2211,9 @@ pytest tests/e2e/ --generate-kpis
 - **Documentación de Cortex**: https://docs.strangebee.com/cortex/
 - **Documentación de MISP**: https://www.misp-project.org/documentation/
 - **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
-- **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
-- **Documentación de Seguridad**: [docs/02-architecture.md](02-architecture.md)
-- **Plan del Proyecto**: [docs/06-project-management.md](#33-plan-de-trabajo)
-- **Alcance del Proyecto**: [docs/06-project-management.md](#32-alcance)
+- **Arquitectura y seguridad**: [docs/02-architecture.md](02-architecture.md)
+- **Plan del Proyecto**: [sección 3.3 Plan de trabajo](#33-plan-de-trabajo)
+- **Alcance del Proyecto**: [sección 3.2 Alcance](#32-alcance)
 
 ---
 
@@ -2223,7 +2222,7 @@ pytest tests/e2e/ --generate-kpis
 
 Este capítulo revisa la literatura sobre respuesta a incidentes, automatización y orquestación en SOC, con especial atención al ransomware y al uso de playbooks. Los equipos de seguridad operan con ecosistemas de herramientas fragmentados y datos heterogéneos, lo que incrementa la intervención manual e introduce variabilidad difícil de cuantificar y controlar. Las plataformas SOAR actúan como capa de integración que complementa al SIEM, permitiendo operacionalizar procedimientos mediante playbooks sin suprimir la supervisión humana en las decisiones críticas (Kinyua & Awuah, 2021).
 
-## 2.1. Respuesta a incidentes y ransomware como dominio de aplicación
+### 2.1. Respuesta a incidentes y ransomware como dominio de aplicación
 
 La respuesta a incidentes se describe habitualmente como un proceso estructurado en fases de preparación, detección y análisis, contención, erradicación y recuperación (NIST, 2023). La norma ISO/IEC 27035 (ISO/IEC, 2016) recoge una estructura equivalente a nivel internacional. NIST ha sistematizado estas fases y las revisa de forma periódica: en abril de 2025, NIST SP 800-61r2 fue retirada y sustituida por NIST SP 800-61r3, documento que refleja la tendencia a incorporar la respuesta a incidentes en el marco más amplio de gestión del riesgo de ciberseguridad (NIST, 2025).
 
@@ -2246,7 +2245,7 @@ La primera generación se caracterizaba por encriptación básica y demandas de 
 
 Como muestra de la complejidad que alcanzan las amenazas actuales, el **Anexo F** (secciones F.11 y F.12) documenta el caso real del malware GMinst4ll, un RAT que ilustra varias técnicas propias de la cuarta generación: distribución mediante ingeniería social en plataformas legítimas (YouTube, Tumblr), uso de dead drops (Pastebin, Reddit, Telegram, Dropbox) para la configuración del C2, persistencia mediante scripts VBS y anti-forenses (killer de antivirus, bloqueo DNS), y exfiltración a través de Telegram. El pipeline SOAR diseñado en este TFM procesa los IoCs extraídos de este caso real a través de Cortex, MISP y TheHive (Anexo F, sección F.12).
 
-## 2.2. Automatización, SOAR y playbooks en operaciones de seguridad
+### 2.2. Automatización, SOAR y playbooks en operaciones de seguridad
 
 La proliferación de herramientas con representaciones de datos dispares obliga al analista a saltar entre sistemas durante una misma investigación, lo que eleva el tiempo de respuesta y dificulta cualquier intento de estandarización.
 SIEM y SOAR son complementarios. El SIEM centraliza eventos y genera alertas, y SOAR orquesta las integraciones y ejecuta respuestas automatizadas en las fases de contención y recuperación (Kinyua & Awuah, 2021).
@@ -2293,7 +2292,7 @@ En el terreno específico del ransomware, Kok et al. presentan un framework deta
 En cuanto a estandarización, OASIS CACAO 2.0 (noviembre de 2023) define un esquema y taxonomía para describir playbooks de ciberseguridad desde la detección hasta la remediación (OASIS, 2023). Microsoft y el Automation SIG de FIRST complementan este marco con guías prácticas e intercambio de experiencias entre CSIRT (Microsoft, 2024; FIRST, n.d.). La coexistencia de iniciativas paralelas en este campo refleja que el sector aún no ha alcanzado convergencia en torno a un estándar único (OASIS, 2023; Schlette et al., 2024), lo que justifica la necesidad de ajustar cualquier playbook al contexto operativo concreto en que va a desplegarse. Sigma (Sigma Project, n.d.)
 representa un esfuerzo complementario para estandarizar reglas de detección, y Shuffle (Shuffle Tools, 2024; Shuffle Tools, n.d.) implementa un motor de orquestación open source que materializa estos conceptos en flujos ejecutables.
 
-## 2.3. Laboratorios reproducibles, herramientas open source y evaluación
+### 2.3. Laboratorios reproducibles, herramientas open source y evaluación
 
 Para investigación aplicada, la reproducibilidad condiciona la validez. Si el entorno cambia entre ejecuciones, las diferencias en resultados no son atribuibles al factor estudiado. Núñez Fernández desarrolla una plataforma SIRP reproducible con Docker Compose para pymes, con un stack similar al de este TFM (TheHive Project, 2024; Cortex Project, 2024; MISP Project, 2024) y un motor de workflows con monitoreo por contenedores, lo que valida la viabilidad tecnológica de la solución (Núñez Fernández, 2023). La compartición de información de amenazas entre organizaciones, estandarizada por NIST SP 800-150 (NIST, 2024b), es un habilitador clave para que plataformas como MISP y Cortex aporten valor en la respuesta a incidentes.
 
@@ -2301,7 +2300,7 @@ Quintero Tamayo et al. plantean playbooks como base de conocimiento para CSIRT, 
 
 La literatura de SOAR y la de playbooks coinciden en un punto. Las métricas temporales son necesarias, pero no suficientes para evaluar la eficacia operativa. La claridad del trigger y el nivel de detalle del flujo condicionan la ejecución real en la misma medida que el tiempo de respuesta (Stevens et al., 2022). Esta consideración respalda el uso de percentiles p50 y p90 como indicadores primarios, complementados con logs y artefactos del caso para permitir la verificación y el análisis post-hoc (Kinyua & Awuah, 2021; Stevens et al., 2022).
 
-## 2.4. Síntesis y relación con el TFM
+### 2.4. Síntesis y relación con el TFM
 
 La literatura revisada converge en tres ideas. Primera: el tiempo de reacción condiciona el daño en ransomware, lo que convierte la automatización en una necesidad operativa (CrowdStrike, 2024; Sophos, 2024). Segunda: la efectividad de SOAR depende del detalle del playbook y su adaptación al contexto, no solo de su existencia (Islam et al., 2019; Kinyua & Awuah, 2021). Tercera: un laboratorio reproducible con herramientas open source es viable para generar evidencias contrastables (Núñez Fernández, 2023; CISA, 2023).
 
@@ -2330,17 +2329,17 @@ Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados 
 
 Este capítulo define qué se quiere demostrar y cómo se organiza el desarrollo. El resultado esperado es un laboratorio SOAR mínimo viable que ejecute un playbook E2E en escenarios malicioso y benigno y produzca métricas para la evaluación. La presentación de resultados (§4.1.3.3) se centra en el escenario malicioso (n=50), pero el repositorio incluye el escenario benigno y 39 test cases E2E adicionales listos para ejecutar con `make test-e2e`.
 
-## 3.1. Objetivo general
+### 3.1. Objetivo general
 
 Demostrar que un playbook SOAR automatizado reduce el tiempo de respuesta y mejora la consistencia y trazabilidad en la gestión de alertas de ransomware. El entorno debe ser reproducible, usar herramientas open source y generar evidencias verificables.
 
 El objetivo se alcanza cuando el laboratorio ejecuta el flujo completo en los escenarios malicioso y benigno, cumple los umbrales de rendimiento (reducción de MTTR ≥ 50 % respecto al baseline manual) y genera evidencias completas (logs, capturas y métricas). La evaluación experimental presentada en este trabajo se centra en el escenario malicioso (n=50 ejecuciones); el escenario benigno y el resto de test cases están implementados y disponibles en el repositorio para ejecución con `make test-e2e`.
 
-## 3.2. Objetivos específicos
+### 3.2. Objetivos específicos
 
 Para alcanzar el objetivo general, el trabajo se divide en objetivos específicos:
 
-### 3.2.1. Objetivos Estratégicos
+#### 3.2.1. Objetivos Estratégicos
 
 Los objetivos estratégicos se agrupan en cuatro áreas: diseño arquitectónico, implementación funcional, validación empírica y documentación reproducible.
 
@@ -2373,7 +2372,7 @@ La **Tabla 3** resume los cuatro objetivos estratégicos con sus métricas de é
 
 El cumplimiento de cada objetivo se reporta en el Capítulo 4 (Resultados) y se discute en el Capítulo 6 (Conclusiones).
 
-### 3.2.2. Objetivos Operativos
+#### 3.2.2. Objetivos Operativos
 
 Los objetivos operativos detallan los pasos de implementación:
 
@@ -2409,7 +2408,7 @@ Los objetivos operativos detallan los pasos de implementación:
 **Criterios de cumplimiento**: el objetivo general se alcanza cuando el laboratorio ejecuta el flujo completo en dos
 escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
 
-## 3.3. Metodología del trabajo
+### 3.3. Metodología del trabajo
 
 La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre el 27 de abril y el 31 de agosto de 2026 (18 semanas) y se estructura en cuatro fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
 
@@ -2877,7 +2876,7 @@ Detalle del cronograma y objetivos en el Anexo de Objetivos y Metodología (este
 ## Anexo: Conclusiones y Trabajo Futuro
 
 
-## 5.1. Conclusiones
+### 5.1. Conclusiones
 
 La pregunta de investigación planteada en la §1.2 fue: *¿En qué medida un playbook SOAR automatizado, desplegado en un laboratorio reproducible basado en herramientas open source, reduce el MTTR y mejora la consistencia de la respuesta a alertas de ransomware respecto a la respuesta manual?*
 
@@ -2914,7 +2913,7 @@ En el plano técnico, la dependencia de APIs externas (DShield, Mnemonic pDNS, G
 
 En calidad de tests, el mutation testing con mutmut (mutmut, 2024) sobre `src/soar_lab/` generó 13 969 mutantes, de los cuales 5603 fueron killed y 5322 sobrevivieron, resultando en un mutation score de 51.8 % sobre los 11 050 mutantes con cobertura. Este valor, inferior al umbral del 70 % definido en los quality gates, indica que existen ramificaciones lógicas (operadores, comparaciones, constantes) que los tests actuales no verifican, especialmente en los módulos `infrastructure.integrations` (1132 sobrevivientes) e `interfaces.api` (614 sobrevivientes). Esta limitación se documenta como área de mejora prioritaria para iteraciones futuras.
 
-## 5.2. Trabajo futuro
+### 5.2. Trabajo futuro
 
 Las mejoras más directas afectan al rendimiento. El escalado horizontal del worker de Cortex reduciría los tiempos de análisis, y la migración a Elasticsearch 8.x junto con Kubernetes habilitaría el escalado horizontal.
 
@@ -2930,7 +2929,7 @@ El laboratorio puede extenderse a otros vectores de amenaza sin rediseñar la ba
 
 Los sistemas SOAR desplazan parte del trabajo hacia la máquina, pero no eliminan la intervención humana. Estudiar cómo los analistas interactúan con el sistema: qué decisiones delegan, cuáles retienen y cómo interpretan los resultados de los analyzers, es una línea poco explorada en la literatura. La explicabilidad de las decisiones automatizadas es un aspecto concreto. Si el sistema activa la contención, el analista necesita entender por qué. Desarrollar mecanismos que justifiquen las acciones del playbook aumentaría la confianza y facilitaría la detección de errores. Otra línea relacionada es la gestión de carga cognitiva. La automatización reduce tareas mecánicas pero puede generar nuevos focos de sobrecarga — notificaciones, alertas de monitorización y decisiones de escalado. Estudiar empíricamente cómo afecta el sistema al trabajo real del analista proporcionaría datos útiles para diseñar mejores interfaces operativas.
 
-## 5.3. Recomendaciones para organizaciones
+### 5.3. Recomendaciones para organizaciones
 
 La implementación se organiza en cuatro fases. La **Fase 1** (2-4 semanas) cubre la evaluación de las capacidades actuales, identificación de brechas, definición de casos de uso y KPIs, y selección de stack (open source o comercial). La **Fase 2** (4-6 semanas) corresponde al despliegue en entorno aislado con `make up`, configuración de playbooks y variables de entorno (`.env.full`), integración con 2-3 fuentes de datos y validación E2E. La **Fase 3** (6-8 semanas) abarca la ampliación de integraciones, desarrollo de playbooks especializados, formación del equipo e implantación de métricas de monitoreo. La **Fase 4** (continua) es la migración gradual a producción con validaciones, optimización basada en métricas y escalado horizontal.
 
@@ -2953,7 +2952,7 @@ Los KPIs recomendados por tipo de organización ofrecen objetivos realistas esca
 
 El mantenimiento operativo requiere parches de seguridad regulares, copias de seguridad diarias con pruebas de restauración y actualización continua de la documentación. El monitoreo con Grafana permite detectar degradaciones de rendimiento antes de que afecten la operación. El mantenimiento del sistema puede seguir un ritmo trimestral — revisar capacidades y rendimiento, evaluar herramientas emergentes, incorporar el feedback del equipo y comparar las prácticas actuales con estándares del sector. El gobierno incluye auditorías de cumplimiento normativo, identificación de riesgos emergentes y aplicación del ciclo PDCA para la mejora continua.
 
-## 5.4. Alcance del trabajo
+### 5.4. Alcance del trabajo
 
 Los resultados indican que la automatización mediante SOAR reduce de forma consistente el tiempo de respuesta ante incidentes de ransomware. La reducción observada en MTTR (de 3600 a 277.15 segundos) con 50 ejecuciones ofrece evidencia cuantitativa de que los playbooks automatizados acortan los tiempos de reacción frente a los procesos manuales. Ese dato interesa a equipos que operan bajo restricciones temporales estrictas.
 
