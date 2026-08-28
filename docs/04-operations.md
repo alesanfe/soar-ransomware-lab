@@ -472,7 +472,7 @@ vi /etc/thehive/application.conf
 
 2. Agregar configuración de webhook:
 
-```python
+```hocon
 webhook {
  url = "http://shuffle-backend:5001/api/v1/hooks/<workflow_id>"
 }
@@ -3314,7 +3314,7 @@ El comando inline de PowerShell en `Makefile.win` tiene problemas de escaping de
 **Solución:**
 Reemplazar el comando inline por una llamada al script Python `configure_es.py`:
 
-```makefile
+```bash
 # Antes (inline PowerShell con problemas de escaping)
 docker exec soar_elasticsearch bash -c "curl -X PUT ..."
 
@@ -4252,7 +4252,7 @@ Los endpoints protegidos de requieren un JWT válido en el header `Authorization
 
 **Solución:**
 Obtener token JWT:
-```bash
+```text
  -u -wui:
 ```
 Usar el token en requests posteriores con header: `Authorization: Bearer <token>`.
