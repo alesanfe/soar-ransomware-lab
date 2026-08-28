@@ -3208,7 +3208,7 @@ El uso exclusivo de software open source elimina los costos de licenciamiento as
 
 | Figura    | Título                                          | Archivo                              |
 |-----------|-------------------------------------------------|--------------------------------------|
-| Figura 11 | Análisis coste-beneficio SOAR open source vs comercial | `figures/Fig5_5_cost_benefit.png` |
+| Figura 11 | Análisis coste-beneficio SOAR open source vs comercial | `thesis/figures/Fig5_5_cost_benefit.png` |
 
 ### Índice de Tablas del Capítulo 5
 
