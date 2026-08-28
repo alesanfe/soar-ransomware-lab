@@ -544,36 +544,46 @@ Diagrama del flujo completo de infección del malware **GMinst4ll 2.03.rar** (88
 InfoStealer/Loader), analizado forensemente entre el 11-13 de junio de 2026 en un
 sandbox aislado (Ubuntu 20.04 + Windows Server 2016 con Vagrant, red aislada, Sysmon).
 El caso de estudio valida el laboratorio SOAR con IoCs reales: 4 hashes SHA256, 7 URLs
-C2, 9 IPs, 1 clave de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK. El
-actor identificado es `boycots563` (GitHub user ID 193230682, 1 repositorio, 0 stars, 1
-watcher), con origen probable en Eslovaquia (archivo subido a MediaFire el 2026-06-10
-23:57:07). El repositorio C2 `github.com/boycots563/wlt56` permanece **público y activo**
-con 253 commits (verificado en agosto 2026), contiene 9 archivos (PROMOTIO.BAT, README.md,
-Windows Compatibility Agent.exe, Windows Compatibility Agent Host.exe, appy.exe, beket.rar,
-kamzat.exe, maximusz.bat, postevak.exe) y un README con un disclaimer falso de "PoC
-educativo" añadido el 2 de agosto de 2026 tras la publicación del análisis forense. El
-operador de Telegram es @KJL4999S (Chat ID: 6820575341, bot `buchstys4_bot` ID
-7675556882).
+C2, 9 IPs, 1 clave de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK.
+
+| Atributo | Valor |
+|----------|-------|
+| Actor | `boycots563` (GitHub user ID 193230682, 1 repo, 0 stars, 1 watcher) |
+| Origen | Eslovaquia (subida a MediaFire 2026-06-10 23:57:07) |
+| Repo C2 | `github.com/boycots563/wlt56` — público y activo, 253 commits (ago 2026) |
+| Operador Telegram | @KJL4999S (Chat ID 6820575341, bot `buchstys4_bot` ID 7675556882) |
+| Sofisticación | Media-alta (RAR anidado, ConfuserEx, servicios legítimos para C2) |
+| Análisis forense | 15 fases (11 completadas, 4 pendientes), 39 archivos .txt, 14 análisis |
 
 ```mermaid
 graph TD
- A[YouTube/Tumblr/Discord<br/>canal: асьминог] -->|Engaño| B[MediaFire]
- B -->|Descarga RAR pw: 4204| C[GMinst4ll 2.03.rar<br/>884 MB RAR5 anidado]
- C -->|Ejecución| D[TREZ_cor 4.52.3.exe<br/>835 MB + 13 DLLs motor gráfico]
- D -->|C2 Check| E{C2 Check}
- E -->|Pastebin raw/FgUMQ9vE| F[Config dinamica<br/>Token Telegram + Chat ID 6820575341]
- E -->|Dropbox| G[SystemSP.rar pw: zoroz<br/>4 KB, 4 scripts]
- E -->|Reddit user Over_Media6257| H[Dead drop resolver<br/>403 Forbidden]
- E -->|Telegram Bot 7675556882| I[Exfiltracion Bot API<br/>sendDocument]
- G --> J[4 Scripts VBS/BAT]
- J --> K[max.vbs - Launcher/watchdog<br/>Exclusiones Defender appy.exe]
- J --> L[babuchen.bat - Killer AV<br/>14 servicios + 34 suites + WU destroy]
- J --> M[rodendron.vbs - GitHub C2<br/>Tarea programada recurrente]
- J --> N[WinStatChecking.bat - DNS block<br/>hosts: 66 dominios AV + DNS 8.8.8.8]
- M -->|github.com/boycots563/wlt56<br/>253 commits, publico y activo| O[Windows Compatibility Agent.exe<br/>Python 3.13, 12.4 MB]
- O --> P[Pulsar RAT v1.6.6.0<br/>.NET 4.7.2 ConfuserEx<br/>beket.rar pw: sin doc]
- P --> Q[HVNC SharpDX DirectX<br/>Keylogger MouseKeyHook v5.7<br/>Webcam AForge.Video.DirectShow<br/>Audio NAudio Core/Wasapi/WinMM<br/>Clipboard manager<br/>Remote desktop<br/>Wallet clipper XMR + 9 inferidas regex<br/>protobuf-net serializacion]
- P --> R[Anti-VM/anti-debug 25+ checks<br/>BeingDebugged IsDebuggerPresent<br/>KernelDebuggerEnabled WMI_VM_Detect<br/>ConfuserEx obfuscation<br/>2 blobs AES-GCM 1808 bytes entropia 7.92<br/>Config C2 NO recuperable estaticamente]
+ subgraph Distrib["Distribucion"]
+   A[YouTube/Tumblr/Discord<br/>canal: асьминог] -->|Engaño| B[MediaFire]
+ end
+ subgraph Payload["Payload principal"]
+   B -->|RAR pw: 4204| C[GMinst4ll 2.03.rar<br/>884 MB RAR5 anidado]
+   C -->|Ejecucion| D[TREZ_cor 4.52.3.exe<br/>835 MB + 13 DLLs motor grafico]
+ end
+ subgraph C2["C2 - servicios legitimos abusados"]
+   D --> E{C2 Check}
+   E -->|Pastebin raw/FgUMQ9vE| F[Config dinamica<br/>Token TG + Chat ID 6820575341]
+   E -->|Dropbox| G[SystemSP.rar pw: zoroz<br/>4 KB, 4 scripts]
+   E -->|Reddit Over_Media6257| H[Dead drop resolver<br/>403 Forbidden]
+   E -->|Telegram Bot 7675556882| I[Exfiltracion Bot API<br/>sendDocument]
+ end
+ subgraph Persist["Persistencia y evasion"]
+   G --> J[4 Scripts VBS/BAT]
+   J --> K[max.vbs - Launcher/watchdog<br/>Exclusiones Defender appy.exe]
+   J --> L[babuchen.bat - Killer AV<br/>14 srv + 34 suites + WU destroy]
+   J --> M[rodendron.vbs - GitHub C2<br/>Tarea programada recurrente]
+   J --> N[WinStatChecking.bat - DNS block<br/>66 dominios AV + DNS 8.8.8.8]
+ end
+ subgraph RAT["Pulsar RAT v1.6.6.0"]
+   M -->|github.com/boycots563/wlt56<br/>253 commits, publico y activo| O[Win Compatibility Agent.exe<br/>Python 3.13, 12.4 MB]
+   O --> P[appy_patched.exe .NET 4.7.2<br/>ConfuserEx - beket.rar]
+   P --> Q[Capacidades:<br/>HVNC SharpDX / Keylogger MouseKeyHook v5.7<br/>Webcam AForge / Audio NAudio<br/>Clipboard / Remote desktop<br/>Wallet clipper XMR + 9 inferidas]
+   P --> R[Evasion:<br/>25+ checks anti-VM/anti-debug<br/>2 blobs AES-GCM 1808 bytes entropia 7.92<br/>Config C2 NO recuperable estaticamente]
+ end
  style A fill:#ff6b6b
  style C fill:#ff6b6b
  style D fill:#ff6b6b
@@ -582,50 +592,64 @@ graph TD
  style R fill:#ff6b6b
 ```
 
-El malware se distribuye mediante engaño social en YouTube (canal "асьминог", octopus
-en ruso, vídeo `okNhSxfa__U` reciclado posteriormente para distribuir "RPG Maker MZ"),
-Tumblr (`@tutorialsfrommax`, tutoriales falsos de minería), MediaFire
-(`GMinstall_4.11.rar`, variante 4.11 vs 2.03) y Discord (`sub4unlock.io/ajLvu`, trust
-score 10/100, scam CPA). El ejecutable principal `TREZ_cor 4.52.3.exe` (835 MB) incluye
-13 DLLs de motor gráfico (core_init, physics_core, mesh_processor, renderer, etc.) y
-realiza un C2 check contra cuatro servicios legítimos abusados: Pastebin
-(`raw/FgUMQ9vE` para configuración dinámica con token Telegram y Chat ID), Dropbox
-(payload SystemSP.rar), Reddit (user `Over_Media6257`, dead drop resolver, 403
-Forbidden) y Telegram Bot API (exfiltración vía `sendDocument`).
+El malware se distribuye mediante engaño social en cuatro plataformas: YouTube (canal
+"асьминог", octopus en ruso, vídeo `okNhSxfa__U` reciclado posteriormente para
+distribuir "RPG Maker MZ"), Tumblr (`@tutorialsfrommax`, tutoriales falsos de minería),
+MediaFire (`GMinstall_4.11.rar`, variante 4.11 vs 2.03) y Discord (`sub4unlock.io/ajLvu`,
+trust score 10/100, scam CPA). El ejecutable principal `TREZ_cor 4.52.3.exe` (835 MB)
+incluye 13 DLLs de motor gráfico (core_init, physics_core, mesh_processor, renderer,
+etc.) y realiza un C2 check contra cuatro servicios legítimos abusados: Pastebin
+(configuración dinámica con token Telegram y Chat ID), Dropbox (payload SystemSP.rar),
+Reddit (user `Over_Media6257`, dead drop resolver, 403 Forbidden) y Telegram Bot API
+(exfiltración vía `sendDocument`).
 
 SystemSP.rar (4 KB, contraseña "zoroz") contiene cuatro scripts VBS/BAT para
-persistencia y evasión. `max.vbs` actúa como launcher/watchdog con exclusiones de
-Windows Defender para `appy.exe`. `babuchen.bat` detiene 14 servicios AV, destruye 34
-suites de seguridad y elimina Windows Update. `rodendron.vbs` descarga
-`Windows Compatibility Agent.exe` desde `github.com/boycots563/wlt56` (253 commits,
-público y activo en agosto 2026) y crea una tarea programada recurrente.
-`WinStatChecking.bat` bloquea 66 dominios AV en el fichero hosts y fuerza DNS a 8.8.8.8.
+persistencia y evasión:
+
+| Script | Tipo | Función |
+|--------|------|---------|
+| `max.vbs` | VBScript | Launcher/watchdog, exclusiones de Windows Defender para `appy.exe` |
+| `babuchen.bat` | Batch | Killer AV: detiene 14 servicios, destruye 34 suites, elimina Windows Update |
+| `rodendron.vbs` | VBScript | Descarga `Windows Compatibility Agent.exe` desde GitHub C2, tarea programada recurrente |
+| `WinStatChecking.bat` | Batch | Bloquea 66 dominios AV en hosts, fuerza DNS a 8.8.8.8 |
 
 El repositorio GitHub C2 (`github.com/boycots563/wlt56`, público y activo, 253 commits
-entre octubre 2025 y agosto 2026) contiene nueve archivos: cuatro ejecutables Python
-(`Windows Compatibility Agent.exe` 12.4 MB Python 3.13, `Windows Compatibility Agent
-Host.exe` 8.5 MB Python 3.14, `kamzat.exe` 12.4 MB Python 3.13 con PyCryptodome completo:
-AES, SHA, HMAC, BLAKE2, keccak + asyncio + multiprocesamiento, `postevak.exe` 7.9 MB
-Python 3.13 con HTTP básico sin criptografía avanzada), dos scripts batch
-(`PROMOTIO.BAT` actualizado el 3-nov-2025, `maximusz.bat` actualizado 3 veces el
-17-oct-2025), `beket.rar` (Pulsar RAT), `appy.exe` (launcher Rust) y un `README.md`
-con disclaimer falso de "PoC educativo" añadido el 2-ago-2026 tras la publicación del
-análisis forense. El patrón de commits revela ciclos repetidos de "Add files via upload"
-+ "Delete appy.exe"/"Delete kamzat.exe" (oct-nov 2025, dic 2025, abr 2026), indicando
-rotación de payloads para evadir detección. Todos los ejecutables Python comparten
-imports (USER32, KERNEL32, ADVAPI32, GDI32), funciones de token (OpenProcessToken,
-GetTokenInformation) y packer MachO_File_pyinstaller, sin URLs/IPs directas en strings.
+entre octubre 2025 y agosto 2026) contiene nueve archivos:
 
-El Pulsar RAT v1.6.6.0 (.NET 4.7.2, ConfuserEx) se distribuye en `beket.rar` y debe
-distinguirse de `appy.exe` (Rust, 719 KB, launcher con imports ntdll.dll:
-NtWriteFile, NtCreateNamedPipeFile). El RAT real es `appy_patched.exe` (.NET, 1.86 MB,
-import mscoree.dll). Sus capacidades incluyen HVNC (SharpDX DirectX), keylogger
-(Gma.System.MouseKeyHook v5.7), webcam (AForge.Video.DirectShow), captura de audio
-(NAudio Core/Wasapi/WinMM), clipboard manager, remote desktop y wallet clipper (XMR
-detectado estáticamente, 9 criptomonedas inferidas de regex, serialización
-protobuf-net). La evasión incluye 25+ checks anti-VM/anti-debug (BeingDebugged,
-IsDebuggerPresent, KernelDebuggerEnabled, WMI_VM_Detect) y ConfuserEx. La
-configuración C2 está cifrada en 2 blobs AES-GCM de 1808 bytes con entropía 7.92 y
+| Archivo | Tipo | Tamaño | Notas |
+|---------|------|--------|-------|
+| `Windows Compatibility Agent.exe` | Python 3.13 | 12.4 MB | Imports USER32/KERNEL32/ADVAPI32, packer MachO_File_pyinstaller |
+| `Windows Compatibility Agent Host.exe` | Python 3.14 | 8.5 MB | Mismos imports + OpenProcessToken/GetTokenInformation |
+| `kamzat.exe` | Python 3.13 | 12.4 MB | PyCryptodome completo (AES, SHA, HMAC, BLAKE2, keccak) + asyncio |
+| `postevak.exe` | Python 3.13 | 7.9 MB | HTTP básico, sin criptografía avanzada |
+| `appy.exe` | Rust | 719 KB | Launcher, imports ntdll.dll (NtWriteFile, NtCreateNamedPipeFile) |
+| `beket.rar` | RAR | — | Contiene `appy_patched.exe` (Pulsar RAT .NET 1.86 MB) |
+| `PROMOTIO.BAT` | Batch | — | Actualizado 3-nov-2025 |
+| `maximusz.bat` | Batch | — | Actualizado 3 veces el 17-oct-2025 |
+| `README.md` | Markdown | — | Disclaimer falso "PoC educativo" añadido 2-ago-2026 |
+
+El patrón de commits revela ciclos repetidos de "Add files via upload" + "Delete
+appy.exe"/"Delete kamzat.exe" (oct-nov 2025, dic 2025, abr 2026), indicando rotación de
+payloads para evadir detección. Ningún ejecutable Python contiene URLs/IPs directas en
+strings — la configuración C2 está probablemente cifrada.
+
+El Pulsar RAT v1.6.6.0 (.NET 4.7.2, ConfuserEx) se distribuye en `beket.rar` como
+`appy_patched.exe` (.NET, 1.86 MB, import mscoree.dll) y debe distinguirse de
+`appy.exe` (Rust, 719 KB, launcher). Sus capacidades y librerías detectadas:
+
+| Capacidad | Librería .NET | Funciones |
+|-----------|---------------|-----------|
+| HVNC | SharpDX DirectX | StartHVNCProcess, DoHVNCInput, CreateDesktop, SetThreadDesktop |
+| Keylogger | Gma.System.MouseKeyHook v5.7 | KeyboardHook, IKeyboardEvents, GetKeyloggerLogsDirectory |
+| Webcam | AForge.Video.DirectShow v2.2.5 | VideoCaptureDevice, StartWebcamStreaming |
+| Audio | NAudio.Core v2.2.1 | Wasapi, WinMM, GetMicrophone, EnumerateAudioEndPoints |
+| Clipboard | Win32 API | SendClipboardData, AddClipboardFormatListener, get/set_ClipboardText |
+| Remote desktop | Pulsar.Common.Messages | RemoteDesktop, RemoteShell, RemoteAddress, RemotePort |
+| Wallet clipper | Regex + protobuf-net | XMR detectado, 9 criptomonedas inferidas (BTC/LTC/ETH/SOL no confirmadas) |
+
+La evasión incluye 25+ checks anti-VM/anti-debug (BeingDebugged, IsDebuggerPresent,
+KernelDebuggerEnabled, WMI_VM_Detect, SystemVmGenerationCountInformation) y ConfuserEx.
+La configuración C2 está cifrada en 2 blobs AES-GCM de 1808 bytes con entropía 7.92 y
 nonces de 12 bytes; no fue recuperable estáticamente (Fase 14 descartada: GUI
 VirtualBox no funcional).
 
@@ -642,24 +666,30 @@ VirtualBox no funcional).
 | Ruta instalación | `%PROGRAMDATA%\SystemSP\SystemSP\` (max.vbs, archive.rar) |
 | Registry | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\UserInit` |
 
-La campaña presenta una timeline que abarca desde octubre 2025 (primer commit en
-GitHub C2: actualización de `maximusz.bat` el 17-oct-2025) hasta agosto 2026 (creación
-del README.md con disclaimer falso el 2-ago-2026). La metadata RAR interna fecha la
-creación del archivo PASSWORD el 2025-03-04 y la subida a MediaFire desde Eslovaquia el
-2026-06-10 23:57:07. La consolidación de IoCs se completó el 2026-06-13 (39 archivos
-.txt de strings/hashes/PE y 14 archivos de análisis detallado). Las hipótesis de
-atribución indican una campaña activa desde 2025 (múltiples variantes: versiones 2.03,
-4.11, 4.52.3, rotación de payloads en GitHub mediante ciclos Add/Delete), un operador
-rusohablante (cirílico "асьминог" en YouTube, nombres temáticos eslavos: babuchen,
-rodendron, kamzat, postevak, maximusz) y monetización múltiple (robo de wallets, venta
-de credenciales en foros, ingresos por sub4unlock.io CPA). El nivel de sofisticación es
-medio-alto (empaquetado RAR anidado, camuflaje temático GMiner, uso de servicios
-legítimos para C2, ConfuserEx, disclaimer falso post-detección). El análisis forense
-completo comprende 15 fases (11 completadas, 4 pendientes/bloqueadas).
+La timeline de la campaña abarca desde marzo 2025 hasta agosto 2026:
+
+| Fecha | Evento |
+|-------|--------|
+| 2025-03-04 | Creación archivo PASSWORD (metadata RAR interna) |
+| 2025-10-17 | Primer commit GitHub C2 (actualización `maximusz.bat`) |
+| 2025-11-02 a 04 | Ciclos Add/Delete `appy.exe` + `PROMOTIO.BAT` |
+| 2025-12-25 a 27 | Ciclos Add/Delete `appy.exe` |
+| 2026-04-19 a 25 | Ciclos Add/Delete `Windows Compatibility Agent Host.exe` |
+| 2026-05-13 | Add files via upload |
+| 2026-06-10 23:57 | Subida a MediaFire desde Eslovaquia |
+| 2026-06-11 a 13 | Análisis forense (15 fases, 39 archivos .txt, 14 análisis detallados) |
+| 2026-08-02 | README.md con disclaimer falso "PoC educativo" |
+
+Las hipótesis de atribución indican una campaña activa desde 2025 (múltiples variantes:
+versiones 2.03, 4.11, 4.52.3, rotación de payloads en GitHub mediante ciclos
+Add/Delete), un operador rusohablante (cirílico "асьминог" en YouTube, nombres temáticos
+eslavos: babuchen, rodendron, kamzat, postevak, maximusz) y monetización múltiple (robo
+de wallets, venta de credenciales en foros, ingresos por sub4unlock.io CPA).
 
 Fuente: `github.com/alesanfe/gminst4ll-forensics` (README.md, 01_INFORME_PRINCIPAL,
 02_BITACORA_FASES, 03_IOCS_Y_DETECCION, 04_OSINT_Y_CAMPANA, 05_PENDIENTES_Y_PLAN,
-06_METADATOS_ANALISIS).
+06_METADATOS_ANALISIS). Estado del repo C2 verificado directamente en
+`github.com/boycots563/wlt56` (agosto 2026).
 
 ---
 
