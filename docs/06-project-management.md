@@ -1699,8 +1699,8 @@ graph TD
 | R2 | Uso de RAM total | ≤ 16 GB | 14.2 GB | ✅ OK | Diaria |
 | R3 | Tiempo promedio analyzer | ≤ 60 s | 45 s | ✅ OK | Cada ejecución |
 | R4 | Tasa de éxito integración | ≥ 95% | 98% | ✅ OK | Cada ejecución |
-| R7 | MTTR p50 | ≤ 120 s | 115 s | ✅ OK | Cada ejecución |
-| R7 | MTTR p90 | ≤ 180 s | 165 s | ✅ OK | Cada ejecución |
+| R7 | MTTR p50 | ≤ 120 s | 193.19 s | ⚠️ No cumple | Cada ejecución |
+| R7 | MTTR p90 | ≤ 180 s | 621.83 s | ⚠️ No cumple | Cada ejecución |
 | R8 | Disponibilidad APIs externas | ≥ 90% | 85% | ⚠️ Alerta | Diaria |
 | R9 | Días desde último backup | ≤ 7 días | 2 días | ✅ OK | Diaria |
 | R11 | Bloqueo LaLiga/Cloudflare | No bloqueado | No bloqueado | ✅ OK | Diaria (jornadas) |
@@ -2803,7 +2803,7 @@ los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
 | **Vulnerabilidades**        | 0              | 0               | Cumplido | pip-audit    |
 | **Type checking**           | 0 errors       | 0 errors        | Cumplido | mypy         |
 | **Mutation Testing**        | ≥80%           | 51.8%           | Parcial  | mutmut       |
-| **Tests totales**           | —              | 2233 coleccionados (1905 seleccionados, 11 markers)| —        | pytest       |
+| **Tests totales**           | —              | 2233 coleccionados (1905 seleccionados, 328 deselected)| —        | pytest       |
 | **Quality Score**           | —              | 92.2/100        | —        | holistic     |
 
 Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
