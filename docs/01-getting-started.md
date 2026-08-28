@@ -617,7 +617,7 @@ Endpoints principales:
 - `POST /backup/create` — Creación de backups.
 - `GET /backup/list` — Listado de backups disponibles.
 - `POST /backup/restore` — Restauración de backups.
-- `POST /tests/run` — Ejecución remota de tests Pytest (requiere token).
+- `POST /tests/run` — Ejecución remota de tests pytest (requiere token).
 - `GET /docs` / `GET /openapi.json` — Documentación Swagger/OpenAPI.
 
 > Fuente de verdad de contratos: `/openapi.json` expuesto por la propia API.
