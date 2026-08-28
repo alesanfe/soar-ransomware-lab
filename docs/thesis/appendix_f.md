@@ -32,7 +32,7 @@ flowchart LR
   Shuffle -- Tráfico red --> Tenzir[Tenzir Node]
   TheHive <--> Elasticsearch
   Shuffle <--> OpenSearch[OpenSearch]
-  Shuffle -- Metrics --> Elasticsearch
+  API -- Metrics --> Elasticsearch
   Shuffle -- Log search --> Loki[Loki]
   Promtail[Promtail] --> Loki
   Loki --> Grafana[Grafana]
@@ -76,9 +76,8 @@ graph TD
  LabAPI -- HTTP --> MISPInternal[MISP :80]
  LabAPI -- HTTP --> GrafanaInternal[Grafana :3000]
 
- ShuffleBackend -- HTTP --> ES
- ShuffleBackend -- HTTP --> Redis
  ShuffleBackend -- HTTP --> Orborus[Orborus :5000]
+ Orborus -- HTTP --> ShuffleBackend
  ShuffleBackend -- HTTP --> OpenSearch
  ShuffleBackend -- HTTP --> MISPInternal
  ShuffleBackend -- HTTP --> NetworkWatcher[Network Watcher :8080]
@@ -116,6 +115,8 @@ graph TD
  GrafanaInternal
  GrafanaRenderer
  GrafanaDB
+ LabAPI
+ Nginx
  end
 ```
 
@@ -147,15 +148,15 @@ flowchart TD
  ALERT[AlertGenerator]
  KPI[KPIAnalyzer]
  IOC[SimulatedIOCGenerator]
+ STAT[StatisticalCalculator]
  end
 
  subgraph Salida["Adaptadores de salida"]
  SQLITE[SqliteAlertRepository]
  TAR[TarBackupDriver]
  JWT[JWTTokenProvider]
- HTTP[HTTPClient -> Shuffle/TheHive/Cortex/MISP/ES]
+ HTTP[AioHTTPClient -> Shuffle/TheHive/Cortex/MISP/ES]
  SMETRICS[SystemMetricsDriver]
- STAT[StatisticalCalculator]
  end
 
  F -->|/auth/login| AS
@@ -190,6 +191,7 @@ C4Context
  System_Ext(misp, "MISP", "Inteligencia de amenazas")
  System_Ext(shuffle, "Shuffle", "Workflows SOAR")
  System_Ext(es, "Elasticsearch", "Almacén de eventos y métricas")
+ System_Ext(opensearch, "OpenSearch", "Datastore de ejecuciones de Shuffle")
  System_Ext(redis, "Redis", "Caché de IoCs")
  System_Ext(grafana, "Grafana / Loki", "Observabilidad")
 
@@ -201,8 +203,9 @@ C4Context
  Rel(soar, shuffle, "Dispara workflows y responde a contención", "HTTP/REST")
  Rel(shuffle, soar, "Contención + caché IoCs", "HTTP/REST")
  Rel(soar, es, "Lee / escribe eventos y KPIs", "HTTP/REST")
+ Rel(shuffle, opensearch, "Almacena ejecuciones de workflows", "HTTP/REST")
  Rel(soar, redis, "Caché IoCs", "RESP")
- Rel(operador, grafana, "Consulta dashboards", "HTTPS")
+ Rel(operador, grafana, "Consulta dashboards", "HTTP")
 ```
 
 Fuente: `docs/04-operations.md` línea 1296
@@ -428,7 +431,7 @@ Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e i
 
 ```mermaid
 graph TD
- A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V Sí) & R2(Recursos RAM Parcial) & R11(LaLiga/Cloudflare Parcial) & R18(Docs desincronizada Parcial) & R21(Credenciales estáticas Sí)
+ A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V Sí) & R2(Recursos RAM Parcial) & R11(LaLiga/Cloudflare Parcial) & R18(Docs-site desactualizado Parcial) & R21(Credenciales estáticas Sí)
  B[Alta Prob / Bajo Impacto] --> R6(MISP arranque lento Sí)
  C[Media Prob / Alto Impacto] --> R3(Analyzers timeout Parcial) & R4(Integración tokens Parcial) & R7(Umbrales MTTR Parcial) & R12(API no disponible Parcial) & R13(Certificados SSL Parcial) & R16(CI/CD failures Parcial) & R22(Seguridad ES/OS Parcial) & R24(Network Watcher Parcial)
  D[Media Prob / Medio Impacto] --> R5(ES compat Sí) & R8(APIs externas Parcial) & R14(Validación esquemas Parcial) & R15(Cobertura pruebas Parcial) & R19(Web-management UX Parcial) & R23(Mappings métricas Sí)
