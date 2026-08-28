@@ -4,19 +4,34 @@
 
 | Abreviatura | Término Completo                                |
 |-------------|-------------------------------------------------|
+| **AES**     | Advanced Encryption Standard (Estándar de Cifrado Avanzado) — cifrado simétrico usado en blobs C2 de Pulsar RAT |
 | **API**     | Application Programming Interface               |
+| **AV**      | Antivirus                                       |
+| **CACAO**   | Collaborative Automated Course of Action Operations (estándar OASIS para playbooks de seguridad) |
 | **CI/CD**   | Continuous Integration / Continuous Deployment  |
+| **CIS**     | Center for Internet Security (Centro para la Seguridad de Internet) — benchmarks y controles CIS |
+| **CLI**     | Command Line Interface (Interfaz de Línea de Comandos) |
 | **CPU**     | Central Processing Unit                         |
 | **CSV**     | Comma-Separated Values                          |
+| **DLL**     | Dynamic-Link Library (Biblioteca de Enlace Dinámico) — componentes Windows cargados por TREZ_cor |
+| **DNS**     | Domain Name System (Sistema de Nombres de Dominio) |
 | **Docker**  | Plataforma de contenerización                   |
 | **E2E**     | End-to-End (Extremo a Extremo) — pruebas sobre el flujo completo de alerta |
 | **EDR**     | Endpoint Detection and Response                 |
+| **ENISA**   | European Union Agency for Cybersecurity (Agencia de Ciberseguridad de la UE) |
+| **ES**      | Elasticsearch — motor de búsqueda y análisis; índices `soar-alerts` y `soar-metrics` |
+| **GCM**     | Galois/Counter Mode (modo de cifrado autenticado AES-GCM usado en config C2 de Pulsar RAT) |
 | **HTTP**    | Hypertext Transfer Protocol                     |
 | **HTTPS**   | Hypertext Transfer Protocol Secure              |
+| **HVNC**    | Hidden Virtual Network Computing (escritorio virtual oculto usado por Pulsar RAT) |
 | **IaaS**    | Infrastructure as a Service                     |
+| **IEC**     | International Electrotechnical Commission (Comisión Electrotécnica Internacional) — coautora de ISO/IEC 27001 |
+| **IETF**    | Internet Engineering Task Force — organización que publica RFCs |
 | **IoC**     | Indicator of Compromise (Indicador de Compromiso) — hashes, IPs, dominios analizados por Cortex/MISP |
 | **IP**      | Internet Protocol                               |
+| **IR**      | Incident Response (Respuesta a Incidentes)      |
 | **JSON**    | JavaScript Object Notation                      |
+| **KB**      | Kilobyte                                        |
 | **KPI**     | Key Performance Indicator (Indicador Clave de Rendimiento), p. ej. MTTR |
 | **MB**      | Megabyte                                        |
 | **MTTR**    | Mean Time to Respond (Tiempo Medio de Respuesta) |
@@ -25,10 +40,19 @@
 | **PYME**    | Pequeña y Mediana Empresa                       |
 | **RAM**     | Random Access Memory                            |
 | **RaaS**    | Ransomware as a Service                         |
+| **RAR**     | Roshal Archive (formato de compresión usado por GMinst4ll para empaquetado anidado) |
 | **REST**    | Representational State Transfer                 |
+| **RF**      | Requisito Funcional (Functional Requirement)    |
+| **RFC**     | Request for Comments (estándares técnicos publicados por IETF) |
+| **RNF**     | Requisito No Funcional (Non-Functional Requirement) |
 | **ROI**     | Return on Investment                            |
+| **SANS**    | SysAdmin, Audit, Network, Security — instituto de investigación de ciberseguridad (DShield) |
+| **SHA256**  | Secure Hash Algorithm 256-bit (algoritmo de hash usado para fingerprints de malware) |
+| **Sigma**   | Formato genérico de reglas de detección para SIEM |
+| **SIRP**    | Security Incident Response Playbook (playbook de respuesta a incidentes) |
 | **SIEM**    | Security Information and Event Management       |
 | **SLA**     | Service Level Agreement                         |
+| **SMART**   | Specific, Measurable, Achievable, Relevant, Time-bound (criterios para objetivos) |
 | **SOAR**    | Security Orchestration, Automation and Response |
 | **SQL**     | Structured Query Language                       |
 | **SSD**     | Solid State Drive                               |
@@ -38,8 +62,10 @@
 | **TFM**     | Trabajo Fin de Máster                           |
 | **UI**      | User Interface                                  |
 | **URL**     | Uniform Resource Locator                        |
+| **VBS**     | Visual Basic Script (VBScript) — scripts de persistencia usados por GMinst4ll |
 | **VM**      | Virtual Machine                                 |
 | **XDR**     | Extended Detection and Response                 |
+| **YARA**    | Yet Another Ridiculous Acronym — lenguaje de reglas para identificación de malware |
 | **JWT**     | JSON Web Token (Token Web JSON) — autenticación HS256 en la API |
 | **SOC**     | Security Operations Center (Centro de Operaciones de Seguridad) |
 | **CSIRT**   | Computer Security Incident Response Team (Equipo de Respuesta a Incidentes) |
