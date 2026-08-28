@@ -704,61 +704,97 @@ Fuente: `github.com/alesanfe/gminst4ll-forensics` (README.md, 01_INFORME_PRINCIP
 
 ## F.12. Pipeline SOAR para IoCs de GMinst4ll
 
-Diagrama del pipeline SOAR procesando IoCs reales extraídos del análisis forense de
-GMinst4ll (`github.com/alesanfe/gminst4ll-forensics`) a través de Cortex, MISP, TheHive
-y Elasticsearch. Validado con **TC-33** (10 subtests): hashes SHA256 (GMinst4ll, TREZ_cor,
-SystemSP, appy_patched), URLs C2 (Pastebin, Dropbox, Reddit, Telegram, GitHub, MediaFire),
-dominios (pastebin.com, dropbox.com, reddit.com, telegram.org, github.com, mediafire.com),
-IPs (172.66.171.73, 104.20.29.150, 162.125.248.18, 151.101.129.140, 151.101.65.140,
-149.154.166.110, 149.154.167.99), Telegram (Bot ID 7675556882, Chat ID 6820575341),
-claves de registro (HKLM Winlogon UserInit), MITRE ATT&CK (7 técnicas: T1566.002,
-T1059.001, T1547.001, T1562.001, T1056.001, T1102, T1567.002).
+Diagrama del flujo concreto de los IoCs de GMinst4ll a través del pipeline SOAR,
+mostrando qué analyzers procesan cada tipo de IoC, qué resultados devuelven y cómo se
+construye el score de `calc_decision` paso a paso desde el valor base (60) hasta el
+umbral de contención (>=80). A diferencia de F.5 (flujo genérico end-to-end), F.6
+(árbol de decisión del playbook) y F.7 (zoom sobre la rama de decisión), este diagrama
+muestra la **instanciación específica** con los IoCs reales de GMinst4ll validados en
+TC-33 (10 subtests).
 
 ```mermaid
-graph LR
- A[Webhook Shuffle<br/>TC-33: 10 subtests<br/>IoCs GMinst4ll reales] --> B[Workflow SOAR]
- B --> C[Cortex: analisis hash/IP<br/>Hashdd + VirusShare + DShield<br/>+ Mnemonic pDNS + IP-API + GoogleDNS]
- B --> D[MISP: crear evento hash+IP<br/>+ buscar hash en DB]
- B --> E[TheHive: caso + observables<br/>hash + IP + URL + tarea IR]
- B --> F[Elasticsearch: soar-alerts + soar-metrics]
- B --> M[Network Watcher + Tenzir<br/>+ Loki + Redis]
- C --> G[Resultados: reputation<br/>hash hits + IP geo + PDNS]
- D --> H[Correlacion amenazas<br/>eventos MISP existentes]
- E --> I[Tareas IR: severity >=3 aislar<br/>severity <3 investigar + preservar]
- E --> J{calc_decision<br/>score >= 80 o malicious?}
- G -.->|enriquece score| J
- H -.->|enriquece score| J
- J -->|Si| K[POST /api/v1/contain<br/>modo simulation]
- J -->|No| L[PATCH /api/case<br/>Resolved/FalsePositive]
- K --> N[calc_mttr + build_hive_summary<br/>+ enrich_case + soar-metrics]
- L --> N
- N -.->|indexa| F
+graph TD
+ subgraph Ingesta["Ingesta TC-33"]
+   A[4 hashes SHA256<br/>d70c31b0 / a75def53<br/>a50e0785 / eabe4c16] --> B[Webhook Shuffle]
+   A2[7 URLs C2<br/>Pastebin / Dropbox / Reddit<br/>Telegram / GitHub / MediaFire] --> B
+   A3[9 IPs<br/>172.66 / 104.20 / 162.125<br/>151.101 x4 / 149.154 x2] --> B
+   A4[2 Telegram<br/>Bot 7675556882<br/>Chat 6820575341] --> B
+   A5[1 Registry<br/>HKLM Winlogon UserInit] --> B
+   A6[7 MITRE ATT&CK<br/>T1566.002 / T1059.001<br/>T1547.001 / T1562.001<br/>T1056.001 / T1102 / T1567.002] --> B
+ end
+ subgraph Cortex["Cortex - analyzers por tipo de IoC"]
+   B --> C1[Hashdd + VirusShare<br/>hashes SHA256]
+   B --> C2[DShield lookup<br/>IPs reputation]
+   B --> C3[Mnemonic pDNS<br/>reverse DNS IPs]
+   B --> C4[IP-API + GoogleDNS<br/>geo + resolve dominios]
+   C1 --> R1[Resultados:<br/>hash hits en VirusShare<br/>reputation maliciosa]
+   C2 --> R2[Resultados:<br/>IPs limpias<br/>servicios legitimos]
+   C3 --> R3[Resultados:<br/>PDNS Pastebin/Dropbox<br/>Reddit/Telegram/GitHub]
+   C4 --> R4[Resultados:<br/>geo Cloudflare/Fastly<br/>CDN legitimo]
+ end
+ subgraph MISP["MISP - correlacion"]
+   B --> D1[Crear evento<br/>hash + IP + URL + MITRE]
+   B --> D2[Buscar hash en DB<br/>restSearch attributes]
+   D2 --> R5[Resultado:<br/>sin eventos previos<br/>primera deteccion]
+ end
+ subgraph Hive["TheHive - caso IR"]
+   B --> E1[Crear caso<br/>severity 3]
+   B --> E2[Observables:<br/>hash + IP + URL + registry]
+   B --> E3[Tarea IR:<br/>aislar host]
+ end
+ subgraph Score["calc_decision - construccion del score"]
+   R1 --> S1[+60 base severity=3]
+   R2 --> S2[+0 IPs limpias]
+   R3 --> S3[+10 PDNS C2 confirmado]
+   R4 --> S4[+0 CDN legitimo]
+   R5 --> S5[+0 sin correlacion MISP]
+   S1 --> S6{Score total}
+   S2 --> S6
+   S3 --> S6
+   S4 --> S6
+   S5 --> S6
+   S6 -->|70 < 80| O[Veredicto: suspicious<br/>Decision: observe<br/>PATCH case Open]
+   S6 -->|>= 80 con Cortex hits| K[Veredicto: malicious<br/>POST /api/v1/contain<br/>modo simulation]
+ end
+ O --> N[calc_mttr + build_hive_summary<br/>+ enrich_case + soar-metrics]
+ K --> N
+ N -.->|indexa| F[Elasticsearch<br/>soar-alerts + soar-metrics]
  style A fill:#2196F3
- style E fill:#4CAF50
- style I fill:#ff6b6b
+ style A2 fill:#2196F3
+ style A3 fill:#2196F3
+ style A4 fill:#2196F3
+ style A5 fill:#2196F3
+ style A6 fill:#2196F3
+ style R1 fill:#ff6b6b
+ style S3 fill:#ff9800
  style K fill:#ff6b6b
+ style O fill:#fff3cd
 ```
 
-Nota: Para IoCs de GMinst4ll sin enriquecimiento previo de Cortex/MISP, el score
-base de `calc_decision` es 60 (severity=3 → +60), veredicto `suspicious`, decisión
-`observe`. La contención se activa cuando los analyzers de Cortex (Hashdd/VirusShare
-encuentran el hash) o la correlación de MISP (evento existente para la IP) elevan el
-score a >=80 o el veredicto a `malicious`. Los IoCs de GMinst4ll son especialmente
-valiosos para validación porque incluyen hashes reales con reputation en VirusShare,
-IPs de servicios legítimos abusados (Pastebin, Dropbox, Reddit, Telegram) y técnicas
-MITRE ATT&CK mapeadas desde análisis estático confirmado.
+El score base de `calc_decision` es 60 (severity=3 → +60) con veredicto `suspicious` y
+decisión `observe`. Para los IoCs de GMinst4ll, los analyzers de Cortex devuelven
+resultados mixtos: los hashes SHA256 obtienen reputation maliciosa en VirusShare
+(Hashdd confirma hits), pero las IPs corresponden a servicios legítimos (Pastebin,
+Dropbox, Reddit, Telegram) con reputation limpia en DShield. El passive DNS de
+Mnemonic confirma que las IPs resuelven dominios C2 conocidos, sumando +10 al score.
+MISP no encuentra eventos previos (primera detección). El score total de 70 (< 80)
+produce veredicto `suspicious` y decisión `observe` — el caso permanece abierto para
+investigación. Si los analyzers de Cortex elevaran el veredicto a `malicious` (hash con
+reputation confirmada en múltiples fuentes), el score superaría 80 y se activaría la
+contención simulada vía `POST /api/v1/contain`.
 
-Los IoCs validados en TC-33 (10 subtests) se distribuyen por tipo como sigue:
-
-| Tipo | Cantidad | Ejemplos |
-|------|----------|----------|
-| Hashes SHA256 | 4 | GMinst4ll `d70c31b0...`, TREZ_cor `a75def53...`, SystemSP `a50e0785...`, appy_patched `eabe4c16...` |
-| URLs C2 | 7 | `pastebin.com/raw/FgUMQ9vE`, `pastebin.com/raw/E3s5iTTz`, `dropbox.com/scl/fi/.../SystemSP.rar`, `reddit.com/user/Over_Media6257/...`, `api.telegram.org/bot7675556882/...`, `github.com/boycots563/wlt56/`, `mediafire.com/.../GMinstall_4.11.rar` |
-| Dominios | 6 | pastebin.com, dropbox.com, reddit.com, telegram.org, github.com, mediafire.com |
-| IPs | 9 | 172.66.171.73, 104.20.29.150 (Pastebin), 162.125.248.18 (Dropbox), 151.101.129.140, 151.101.65.140, 151.101.193.140, 151.101.1.140 (Reddit), 149.154.166.110, 149.154.167.99 (Telegram) |
-| Telegram | 2 | Bot ID 7675556882 (buchstys4_bot), Chat ID 6820575341 |
-| Registry | 1 | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\UserInit` |
-| MITRE ATT&CK | 7 | T1566.002, T1059.001, T1547.001, T1562.001, T1056.001, T1102, T1567.002 |
+| Subtest TC-33 | Tipo IoC | Analyzer Cortex | Resultado esperado | Impacto score |
+|---------------|----------|-----------------|--------------------|---------------|
+| TC-33.01 | Hash SHA256 GMinst4ll | Hashdd + VirusShare | Reputation maliciosa | +base |
+| TC-33.02 | Hash SHA256 TREZ_cor | Hashdd + VirusShare | Sin reputation | +base |
+| TC-33.03 | Hash SHA256 SystemSP | Hashdd + VirusShare | Sin reputation | +base |
+| TC-33.04 | Hash SHA256 appy_patched | Hashdd + VirusShare | Reputation maliciosa | +base |
+| TC-33.05 | URLs C2 (7) | — (no analyzer) | Indexadas en ES | +base |
+| TC-33.06 | Dominios (6) | GoogleDNS resolve | CDN legitimo | +0 |
+| TC-33.07 | IPs (9) | DShield + Mnemonic pDNS | IP limpia + PDNS C2 | +10 |
+| TC-33.08 | Telegram (Bot + Chat) | — (no analyzer) | Indexado en ES | +base |
+| TC-33.09 | Registry UserInit | — (no analyzer) | Indexado en ES | +base |
+| TC-33.10 | MITRE ATT&CK (7) | — (no analyzer) | Tags en TheHive | +base |
 
 Las consultas SIEM para hunting incluyen `pastebin.com` (o URLs específicas
 `/raw/FgUMQ9vE`, `/raw/E3s5iTTz`), `dropbox.com/scl/fi/` (path SystemSP.rar),
