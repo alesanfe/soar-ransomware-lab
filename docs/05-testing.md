@@ -75,7 +75,7 @@ Este directorio contiene la suite completa de tests para el proyecto SOAR Ransom
 
 - **Python soportado**: `>=3.11` (declarado en `pyproject.toml`).
 - **Comando canónico**: `python -m pytest --collect-only -q`
-- **Inventario detallado**: [`tests/baseline/tests_inventory.json`](../tests/tests/baseline/tests_inventory.json)
+- **Inventario detallado**: [`tests/baseline/tests_inventory.json`](../tests/baseline/tests_inventory.json)
 - **Generación de recuentos**: ejecutar `python -m pytest --collect-only -q` para obtener el recuento actual. Último resultado: `collected 2233 items / 328 deselected / 1905 selected`.
 
 #### Pirámide de calidad

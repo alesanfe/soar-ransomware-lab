@@ -4190,14 +4190,14 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 |-----------|-------------------------------------------------|--------------------------------------------|
 | Figura 3 | Arquitectura General del Laboratorio SOAR      | Anexo F (F.2)                              |
 | Figura 4 | Diagrama de Despliegue Docker Compose          | Anexo F (F.3)                              |
-| Figura 5 | Estado de jobs de Cortex                       | `figures/cortex_job_status.png`            |
-| Figura 6 | Resultados de MTTR (manual vs automatizado)    | `figures/Fig5_1_mttr_results.png`          |
-| Figura 7a | Tiempos por componente del workflow           | `figures/mttr_by_phase.png`                |
-| Figura 7b | Tasas de éxito por tipo de alerta             | `figures/GE3_success_rates.png`            |
-| Figura 8a | Análisis de percentiles MTTR                  | `figures/GE2_percentiles.png`              |
-| Figura 8b | Cumplimiento de umbrales                      | `figures/threshold_compliance.png`         |
-| Figura 9 | Distribución de decisiones del playbook        | `figures/decision_distribution.png`        |
-| Figura 10 | Distribución de mejoras por categoría          | `figures/Fig5_2_improvements_category.png` |
+| Figura 5 | Estado de jobs de Cortex                       | `thesis/figures/cortex_job_status.png`            |
+| Figura 6 | Resultados de MTTR (manual vs automatizado)    | `thesis/figures/Fig5_1_mttr_results.png`          |
+| Figura 7a | Tiempos por componente del workflow           | `thesis/figures/mttr_by_phase.png`                |
+| Figura 7b | Tasas de éxito por tipo de alerta             | `thesis/figures/GE3_success_rates.png`            |
+| Figura 8a | Análisis de percentiles MTTR                  | `thesis/figures/GE2_percentiles.png`              |
+| Figura 8b | Cumplimiento de umbrales                      | `thesis/figures/threshold_compliance.png`         |
+| Figura 9 | Distribución de decisiones del playbook        | `thesis/figures/decision_distribution.png`        |
+| Figura 10 | Distribución de mejoras por categoría          | `thesis/figures/Fig5_2_improvements_category.png` |
 
 ### Índice de Tablas del Capítulo 4
 
