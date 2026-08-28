@@ -3482,16 +3482,16 @@ contención simulada vía `POST /api/v1/contain`.
 
 | Subtest TC-33 | Tipo IoC | Analyzer Cortex | Resultado esperado | Impacto score |
 |---------------|----------|-----------------|--------------------|---------------|
-| TC-33.01 | Hash SHA256 GMinst4ll | Hashdd + VirusShare | Reputation maliciosa | +base |
-| TC-33.02 | Hash SHA256 TREZ_cor | Hashdd + VirusShare | Sin reputation | +base |
-| TC-33.03 | Hash SHA256 SystemSP | Hashdd + VirusShare | Sin reputation | +base |
-| TC-33.04 | Hash SHA256 appy_patched | Hashdd + VirusShare | Reputation maliciosa | +base |
-| TC-33.05 | URLs C2 (7) | — (no analyzer) | Indexadas en ES | +base |
-| TC-33.06 | Dominios (6) | GoogleDNS resolve | CDN legitimo | +0 |
-| TC-33.07 | IPs (9) | DShield + Mnemonic pDNS | IP limpia + PDNS C2 | +10 |
-| TC-33.08 | Telegram (Bot + Chat) | — (no analyzer) | Indexado en ES | +base |
-| TC-33.09 | Registry UserInit | — (no analyzer) | Indexado en ES | +base |
-| TC-33.10 | MITRE ATT&CK (7) | — (no analyzer) | Tags en TheHive | +base |
+| TC-33-01 | Hash SHA256 GMinst4ll | Hashdd + VirusShare | Reputation maliciosa | +base |
+| TC-33-02 | Hash SHA256 TREZ_cor | Hashdd + VirusShare | Sin reputation | +base |
+| TC-33-03 | Hash SHA256 SystemSP | Hashdd + VirusShare | Sin reputation | +base |
+| TC-33-04 | Hash SHA256 appy_patched | Hashdd + VirusShare | Reputation maliciosa | +base |
+| TC-33-05 | URLs C2 (7) | — (no analyzer) | Indexadas en ES | +base |
+| TC-33-06 | Dominios (6) | GoogleDNS resolve | CDN legitimo | +0 |
+| TC-33-07 | IPs (9) | DShield + Mnemonic pDNS | IP limpia + PDNS C2 | +10 |
+| TC-33-08 | Telegram (Bot + Chat) | — (no analyzer) | Indexado en ES | +base |
+| TC-33-09 | Registry UserInit | — (no analyzer) | Indexado en ES | +base |
+| TC-33-10 | MITRE ATT&CK (7) | — (no analyzer) | Tags en TheHive | +base |
 
 Las consultas SIEM para hunting incluyen `pastebin.com` (o URLs específicas
 `/raw/FgUMQ9vE`, `/raw/E3s5iTTz`), `dropbox.com/scl/fi/` (path SystemSP.rar),
