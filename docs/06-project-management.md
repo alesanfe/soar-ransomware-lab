@@ -533,8 +533,7 @@ compatibilidad con entornos académicos.
 **Leyenda:**
 
 - ✓ = Componente contribuye directamente al objetivo
--
- - = Componente no contribuye al objetivo
+- (vacío) = Componente no contribuye al objetivo
 
 **Objetivos SMART Resumidos:**
 
