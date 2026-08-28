@@ -2261,9 +2261,9 @@ make test-coverage
 - **Remoto vía API / Web Management**: a través del endpoint `POST /tests/run` delegado a `PytestTestRunner`
  (`src/soar_lab/infrastructure/pytest_test_runner.py`). Ver [sección 3.4.3](#343-ejecución-remota-vía-pytesttestrunner).
 
-#### 3.5 Reportes y métricas
+#### 3.7.5 Reportes y métricas
 
-#### Reportes Generados
+##### Reportes Generados
 
 - **Reportes pytest**: Resultados de ejecución de pruebas
 - **Cobertura de código**: Porcentaje de código cubierto por pruebas

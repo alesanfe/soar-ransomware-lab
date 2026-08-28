@@ -1909,7 +1909,7 @@ Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomwa
 - **Corregido:** `send_alert.py` resuelve `BASE_DIR` correctamente a la raíz del repositorio.
 - **Corregido:** `src/soar_lab/infrastructure/messaging/__init__.py` ya no importa `*` desde `send_alert`, evitando el `RuntimeWarning` que provocaba `exit code 1` en `make simulate-malicious`.
 
-#### 3. y observabilidad
+#### 3. Logs y observabilidad
 
 - **Corregido:** `Makefile.win` target `metrics`/`data-generate` usa sintaxis PowerShell `$env:` para evitar problemas de espacios en variables.
 - **Corregido:** `grafana-datasources.yml` y `kpi-dashboard.json` adaptados a Grafana 10.3.4; `soar_net` añadido a Grafana para resolver `elasticsearch:9200`.
