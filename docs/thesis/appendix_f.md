@@ -429,6 +429,10 @@ gantt
 
 Fuente: `docs/thesis/objectives_and_methodology.md` líneas 86-116 (cronograma 18 semanas 2026), `docs/06-project-management.md` líneas 171-203 (objetivos SMART)
 
+---
+
+## F.9. Roadmap Semanal (Gantt)
+
 Diagrama Gantt simplificado del roadmap semanal con ruta crítica marcada.
 
 ```mermaid
@@ -460,6 +464,10 @@ suite de tests (2233 tests coleccionados, 1905 seleccionados) y la ejecución de
 Ver `objectives_and_methodology.md` para el cronograma real.
 
 Fuente: `docs/thesis/objectives_and_methodology.md` líneas 90-116 (Gantt 18 semanas 2026)
+
+---
+
+## F.10. Matriz de Priorización de Riesgos
 
 Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e impacto.
 
