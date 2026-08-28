@@ -91,6 +91,9 @@ graph TD
  Cortex -- HTTP --> ES
 
  MISPInternal -- SQL --> MariaDB[MariaDB :3306]
+ MISPInternal -- HTTP --> MISPModules[MISP Modules :6666]
+
+ OpenSearch -- HTTP --> OSDashboards[OpenSearch Dashboards :5601]
 
  GrafanaInternal -- HTTP --> ES
  GrafanaInternal -- HTTP --> Loki
