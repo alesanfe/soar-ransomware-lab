@@ -484,16 +484,21 @@ Cortex, MISP, TheHive y Elasticsearch.
 ```mermaid
 graph LR
  A[Webhook Shuffle] --> B[Workflow SOAR]
- B --> C[Cortex: análisis hash/IP/domain]
- B --> D[MISP: búsqueda IoCs]
- B --> E[TheHive: caso + observables]
- B --> F[Elasticsearch: indexación]
- C --> G[Analyzers: Hashdd,<br/>DShield, Mnemonic pDNS,<br/>IP-API, GoogleDNS]
+ B --> C[Cortex: análisis hash/IP]
+ B --> D[MISP: crear evento + buscar IoCs]
+ B --> E[TheHive: caso + observables + tareas IR]
+ B --> F[Elasticsearch: soar-alerts + soar-metrics]
+ B --> M[Network Watcher + Tenzir + Loki + Redis]
+ C --> G[Analyzers: Hashdd, VirusShare,<br/>DShield, Mnemonic pDNS,<br/>IP-API, GoogleDNS]
  D --> H[Correlación amenazas]
- E --> I[Tareas IR: aislar, investigar, preservar]
+ E --> I[Tareas IR: severity ≥3 aislar<br/>severity <3 investigar + preservar]
+ E --> J{calc_decision<br/>score ≥ 80 o malicious?}
+ J -->|Sí| K[POST /api/v1/contain]
+ J -->|No| L[PATCH /api/case<br/>Resolved/FalsePositive]
  style A fill:#2196F3
  style E fill:#4CAF50
  style I fill:#ff6b6b
+ style K fill:#ff6b6b
 ```
 
 Fuente: `docs/04-operations.md` línea 4807
