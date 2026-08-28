@@ -662,7 +662,30 @@ Tras la refactorización, el código se reorganizó en cuatro capas principales:
 
 Tabla one-to-one entre los protocolos del dominio y sus implementaciones concretas en infraestructura. Cada fila muestra el contrato (puerto), el adaptador que lo materializa y el archivo principal.
 
-| Puerto (Protocol) | Definición | Adaptador / Implementación | Archivo principal | |---|---|---|---| | `AlertRepository` | `domain/ports/repositories.py` | `SqliteAlertRepository`, `InMemoryAlertRepository` | `infrastructure/persistence/sqlite_alert_repository.py`, `infrastructure/in_memory_alert_repository.py` | | `BackupDriver` | `domain/ports/infrastructure.py` | `TarBackupDriver` | `infrastructure/tar_backup_driver.py` | | `StorageProvider` | `domain/ports/infrastructure.py` | `FilesystemStorage` | `infrastructure/filesystem_storage.py` | | `TestRunner` | `domain/ports/infrastructure.py` | `PytestTestRunner` | `infrastructure/pytest_test_runner.py` | | `TestResultParserInterface` | `domain/ports/infrastructure.py` | `PytestOutputParser` | `infrastructure/pytest_output_parser.py` | | `ConfigProvider` | `domain/ports/infrastructure.py` | `InfrastructureConfigProvider` | `infrastructure/config_provider.py` | | `TokenProviderInterface` | `domain/ports/infrastructure.py` | `JWTTokenProvider` | `infrastructure/jwt_token_provider.py` | | `HTTPClient` | `domain/ports/infrastructure.py` | `AioHTTPClient` | `infrastructure/http_client.py` | | `SyncHTTPClient` | `domain/ports/infrastructure.py` | `BaseHTTPClient` | `infrastructure/integrations/base_client.py` | | `WebSocketManager` | `domain/ports/infrastructure.py` | `ConnectionManager` | `infrastructure/websocket_manager.py` | | `SystemMetricsInterface` | `domain/ports/infrastructure.py` | `SystemMetricsDriver` | `infrastructure/monitoring/system_metrics_driver.py` | | `HealthCheckInterface` | `domain/ports/infrastructure.py` | `HTTPHealthCheckAdapter`, `HealthService` | `infrastructure/monitoring/health_check_adapter.py`, `infrastructure/monitoring/health_service.py` | | `SubprocessRunner` | `domain/ports/infrastructure.py` | `SubprocessRunner` | `infrastructure/subprocess_runner.py` | | `LogReader` | `domain/ports/infrastructure.py` | `FileLogReader` | `infrastructure/file_log_reader.py` | | `LogParser` | `domain/ports/infrastructure.py` | `LogParser` | `infrastructure/log_parser.py` | | `KPIFormatter` | `domain/ports/infrastructure.py` | `CSVKPIFormatter` | `infrastructure/kpi_formatter.py` | | `ChecksumService` | `domain/ports/infrastructure.py` | `ChecksumService` | _no implementado_ | | `CacheInterface` | `domain/ports/infrastructure.py` | `Redis` client wrapper | `infrastructure/clients.py` | | `PathProviderInterface` | `domain/ports/infrastructure.py` | *(sin adaptador — puerto sin implementación)* | — | | `FileSystemInterface` | `domain/ports/infrastructure.py` | `FilesystemStorage` | `infrastructure/filesystem_storage.py` | | `IOCGenerator` | `domain/ports/integrations.py` | `IOCGenerator` | `domain/services/ioc_generator.py` | | `AlertTransporter` | `domain/ports/integrations.py` | `HTTPAlertSender` | `infrastructure/http_alert_sender.py` |
+| Puerto (Protocol) | Definición | Adaptador / Implementación | Archivo principal |
+|---|---|---|---|
+| `AlertRepository` | `domain/ports/repositories.py` | `SqliteAlertRepository`, `InMemoryAlertRepository` | `infrastructure/persistence/sqlite_alert_repository.py`, `infrastructure/in_memory_alert_repository.py` |
+| `BackupDriver` | `domain/ports/infrastructure.py` | `TarBackupDriver` | `infrastructure/tar_backup_driver.py` |
+| `StorageProvider` | `domain/ports/infrastructure.py` | `FilesystemStorage` | `infrastructure/filesystem_storage.py` |
+| `TestRunner` | `domain/ports/infrastructure.py` | `PytestTestRunner` | `infrastructure/pytest_test_runner.py` |
+| `TestResultParserInterface` | `domain/ports/infrastructure.py` | `PytestOutputParser` | `infrastructure/pytest_output_parser.py` |
+| `ConfigProvider` | `domain/ports/infrastructure.py` | `InfrastructureConfigProvider` | `infrastructure/config_provider.py` |
+| `TokenProviderInterface` | `domain/ports/infrastructure.py` | `JWTTokenProvider` | `infrastructure/jwt_token_provider.py` |
+| `HTTPClient` | `domain/ports/infrastructure.py` | `AioHTTPClient` | `infrastructure/http_client.py` |
+| `SyncHTTPClient` | `domain/ports/infrastructure.py` | `BaseHTTPClient` | `infrastructure/integrations/base_client.py` |
+| `WebSocketManager` | `domain/ports/infrastructure.py` | `ConnectionManager` | `infrastructure/websocket_manager.py` |
+| `SystemMetricsInterface` | `domain/ports/infrastructure.py` | `SystemMetricsDriver` | `infrastructure/monitoring/system_metrics_driver.py` |
+| `HealthCheckInterface` | `domain/ports/infrastructure.py` | `HTTPHealthCheckAdapter`, `HealthService` | `infrastructure/monitoring/health_check_adapter.py`, `infrastructure/monitoring/health_service.py` |
+| `SubprocessRunner` | `domain/ports/infrastructure.py` | `SubprocessRunner` | `infrastructure/subprocess_runner.py` |
+| `LogReader` | `domain/ports/infrastructure.py` | `FileLogReader` | `infrastructure/file_log_reader.py` |
+| `LogParser` | `domain/ports/infrastructure.py` | `LogParser` | `infrastructure/log_parser.py` |
+| `KPIFormatter` | `domain/ports/infrastructure.py` | `CSVKPIFormatter` | `infrastructure/kpi_formatter.py` |
+| `ChecksumService` | `domain/ports/infrastructure.py` | `ChecksumService` | _no implementado_ |
+| `CacheInterface` | `domain/ports/infrastructure.py` | `Redis` client wrapper | `infrastructure/clients.py` |
+| `PathProviderInterface` | `domain/ports/infrastructure.py` | *(sin adaptador — puerto sin implementación)* | — |
+| `FileSystemInterface` | `domain/ports/infrastructure.py` | `FilesystemStorage` | `infrastructure/filesystem_storage.py` |
+| `IOCGenerator` | `domain/ports/integrations.py` | `IOCGenerator` | `domain/services/ioc_generator.py` |
+| `AlertTransporter` | `domain/ports/integrations.py` | `HTTPAlertSender` | `infrastructure/http_alert_sender.py` |
 
 > Nota: el dominio depende únicamente de los protocolos (`Protocol`). El `CompositionRoot` (`src/soar_lab/interfaces/api/composition.py`) es el único lugar donde se inyectan las implementaciones reales, manteniendo la independencia de capas.
 
@@ -670,7 +693,17 @@ Tabla one-to-one entre los protocolos del dominio y sus implementaciones concret
 
 Además de las cuatro capas hexagonales, el código fuente contiene paquetes de conveniencia y soporte:
 
-| Paquete | Contenido destacado | Responsabilidad | |---|---|---| | `auth/` | `models.py` | Modelos de autenticación/RBAC (`Permission`, `Role`, `User`). `AuthService` vive en `application/use_cases/auth_service.py`. | | `common/` | `exceptions.py` | Excepciones base compartidas por todas las capas. | | `config/` | `settings.py`, `schemas/`, `logging.py` | Configuración central, Pydantic settings y logging. | | `data/` | `generate_iocs.py`, `calc_kpis.py` | Esquemas de datos y helpers de transformación. | | `db/` | `transaction.py` | Inicialización y gestión de transacciones de BD. | | `logging/` | `structured.py` | `StructuredLogger` wrapper sobre `logging`. | | `resilience/` | `circuit_breaker.py`, `retry.py`, `timeout.py` | Patrones de tolerancia a fallos (reintentos, circuit breaker, timeouts). | | `security/` | `sanitization.py` | `PayloadSanitizer` para saneamiento básico de entradas. | | `validation/` | `validators.py` | Validadores centralizados (IP, hash, rutas, alertas). |
+| Paquete | Contenido destacado | Responsabilidad |
+|---|---|---|
+| `auth/` | `models.py` | Modelos de autenticación/RBAC (`Permission`, `Role`, `User`). `AuthService` vive en `application/use_cases/auth_service.py`. |
+| `common/` | `exceptions.py` | Excepciones base compartidas por todas las capas. |
+| `config/` | `settings.py`, `schemas/`, `logging.py` | Configuración central, Pydantic settings y logging. |
+| `data/` | `generate_iocs.py`, `calc_kpis.py` | Esquemas de datos y helpers de transformación. |
+| `db/` | `transaction.py` | Inicialización y gestión de transacciones de BD. |
+| `logging/` | `structured.py` | `StructuredLogger` wrapper sobre `logging`. |
+| `resilience/` | `circuit_breaker.py`, `retry.py`, `timeout.py` | Patrones de tolerancia a fallos (reintentos, circuit breaker, timeouts). |
+| `security/` | `sanitization.py` | `PayloadSanitizer` para saneamiento básico de entradas. |
+| `validation/` | `validators.py` | Validadores centralizados (IP, hash, rutas, alertas). |
 
 ---
 
@@ -906,7 +939,13 @@ Este documento depende de:
 
 La orquestación se divide en varios archivos `docker-compose*.yml` bajo `infra/docker/compose/` para facilitar perfiles y arranque selectivo:
 
-| Archivo | Propósito | Servicios principales | |---|---|---| | `infra/docker/compose/docker-compose.yml` | Redes, volúmenes globales y `elasticsearch` | `elasticsearch` | | `infra/docker/compose/docker-compose.core.yml` | Core SOAR | `redis`, `thehive`, `cortex`, `shuffle-frontend`, `shuffle-backend`, `orborus`, `network-watcher`, `tenzir-node` | | `infra/docker/compose/docker-compose.misp.yml` | Inteligencia de amenazas | `misp-db`, `misp-modules`, `misp` | | `infra/docker/compose/docker-compose.api.yml` | API, portal y proxy | `api`, `docs-site`, `web-management`, `nginx` | | `infra/docker/compose/logging/docker-compose.logging.yml` | Observabilidad | `grafana-db`, `grafana`, `loki`, `promtail` |
+| Archivo | Propósito | Servicios principales |
+|---|---|---|
+| `infra/docker/compose/docker-compose.yml` | Redes, volúmenes globales y `elasticsearch` | `elasticsearch` |
+| `infra/docker/compose/docker-compose.core.yml` | Core SOAR | `redis`, `thehive`, `cortex`, `shuffle-frontend`, `shuffle-backend`, `orborus`, `network-watcher`, `tenzir-node` |
+| `infra/docker/compose/docker-compose.misp.yml` | Inteligencia de amenazas | `misp-db`, `misp-modules`, `misp` |
+| `infra/docker/compose/docker-compose.api.yml` | API, portal y proxy | `api`, `docs-site`, `web-management`, `nginx` |
+| `infra/docker/compose/logging/docker-compose.logging.yml` | Observabilidad | `grafana-db`, `grafana`, `loki`, `promtail` |
 
 > Nota: Todos los comandos se ejecutan desde la raíz del repositorio, salvo indicación expresa.
 
@@ -947,7 +986,28 @@ docker compose --env-file .env -f infra/docker/compose/docker-compose.yml -f inf
 
 ##### Tabla canónica de servicios
 
-| Servicio | Imagen / build | Contenedor (por defecto) | Puerto host → contenedor | Redes | Healthcheck | Propósito | |---|---|---|---|---|---|---| | elasticsearch | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `soar_elasticsearch` | `${ELASTICSEARCH_PORT:-8200}` → 9200 | `soar_net`, `ti_net` | `GET /_cluster/health` | Motor de búsqueda y métricas | | redis | `redis:7-alpine` | `soar_redis` | 6379 → 6379 | `ti_net`, `soar_net` | `nc -z 127.0.0.1 6379` | Cache/cola con autenticación | | thehive | `thehiveproject/thehive:3.5.2-1` | `soar_thehive` | `${THEHIVE_HTTP_PORT:-8100}` → 9000 | `soar_net` | `GET /api/status` | Gestión de casos | | cortex | build `infra/docker/images/cortex/Dockerfile` | `soar_cortex` | `${CORTEX_HTTP_PORT:-8101}` → 9001 | `soar_net` | HTTP 2xx/3xx en `:9001/` | Motor de analizadores; monta `/var/run/docker.sock` | | shuffle-frontend | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | `soar_shuffle_frontend` | `${SHUFFLE_UI_PORT:-8081}` → 80 | `soar_net`, `ti_net` | `GET http://localhost:80` | UI de workflows | | shuffle-backend | `ghcr.io/shuffle/shuffle-backend:2.2.1` | `soar_shuffle_backend` | `${SHUFFLE_API_PORT:-5001}` → 5001 | `soar_net`, `ti_net` | deshabilitado | Motor de workflows | | orborus | build `infra/docker/images/orborus/Dockerfile` (tag `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | `soar_orborus` | — | `soar_net` | `nc -z shuffle-backend 5001` | Ejecutor de contenedores de analizadores | | network-watcher | build `src/soar_lab/infrastructure/network_watcher` | `soar_network_watcher` | `${NETWORK_WATCHER_PORT:-15130}` → 8080 | `soar_net` | `GET /health` en `:8080` | Diagnóstico/recuperación de red (sincroniza `/etc/hosts` de workers) | | tenzir-node | `tenzir/tenzir:v6.8.1` | `soar_tenzir_node` | 15160 → 5160, 15140 → 1514 | `soar_net` | `tenzir 'api "/ping"'` | Nodo Tenzir (modo dev) | | misp-db | `mariadb:10.11` | `soar_misp_db` | — | `soar_net` | `mysqladmin ping` | BD MISP (volumen Docker, no bind) | | misp-modules | `ghcr.io/misp/misp-docker/misp-modules:v3.0.9` | `soar_misp_modules` | — | `soar_net` | socket `localhost:6666` | Módulos MISP | | misp | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | `soar_misp` | `${MISP_PORT:-8083}` → 80 | `soar_net` | `GET /users/heartbeat` | Plataforma de inteligencia de amenazas | | api | build `apps/api/Dockerfile` (contexto raíz) | `soar_api` | `${API_PORT:-8000}` → 8000 | `soar_net`, `ti_net`, `logging_net` | `GET /health` | API FastAPI | | docs-site | build `apps/docs-site/Dockerfile` (contexto raíz) | `soar_docs_site` | `${DOCS_PORT:-8086}` → 8080 | `soar_net` | deshabilitado | Portal Docusaurus | | web-management | build `apps/web-management/Dockerfile` | `soar_web_management` | 8085 → 80 | `soar_net` | `pgrep nginx` | SPA web de operación | | nginx | `nginx:1.25-alpine` | `soar_nginx` | 80 → 80, 443 → 443 | `soar_net`, `logging_net` | `GET /nginx-health` | Proxy inverso y TLS | | grafana-db | `postgres:14-alpine` | `soar_grafana_db` | — | `logging_net` | `pg_isready -U grafana` | BD Grafana | | grafana | `grafana/grafana:10.3.4` | `soar_grafana` | `${GRAFANA_PORT:-8084}` → 3000 | `logging_net`, `soar_net` | `GET /api/health` | Visualización KPIs/logs | | loki | `grafana/loki:2.9.10` | `soar_loki` | — | `logging_net` | — (imagen sin shell) | Agregación de logs | | promtail | `grafana/promtail:2.9.9` | `soar_promtail` | — | `logging_net`, `soar_net` | — | Envío de logs Docker a Loki |
+| Servicio | Imagen / build | Contenedor (por defecto) | Puerto host → contenedor | Redes | Healthcheck | Propósito |
+|---|---|---|---|---|---|---|
+| elasticsearch | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `soar_elasticsearch` | `${ELASTICSEARCH_PORT:-8200}` → 9200 | `soar_net`, `ti_net` | `GET /_cluster/health` | Motor de búsqueda y métricas |
+| redis | `redis:7-alpine` | `soar_redis` | 6379 → 6379 | `ti_net`, `soar_net` | `nc -z 127.0.0.1 6379` | Cache/cola con autenticación |
+| thehive | `thehiveproject/thehive:3.5.2-1` | `soar_thehive` | `${THEHIVE_HTTP_PORT:-8100}` → 9000 | `soar_net` | `GET /api/status` | Gestión de casos |
+| cortex | build `infra/docker/images/cortex/Dockerfile` | `soar_cortex` | `${CORTEX_HTTP_PORT:-8101}` → 9001 | `soar_net` | HTTP 2xx/3xx en `:9001/` | Motor de analizadores; monta `/var/run/docker.sock` |
+| shuffle-frontend | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | `soar_shuffle_frontend` | `${SHUFFLE_UI_PORT:-8081}` → 80 | `soar_net`, `ti_net` | `GET http://localhost:80` | UI de workflows |
+| shuffle-backend | `ghcr.io/shuffle/shuffle-backend:2.2.1` | `soar_shuffle_backend` | `${SHUFFLE_API_PORT:-5001}` → 5001 | `soar_net`, `ti_net` | deshabilitado | Motor de workflows |
+| orborus | build `infra/docker/images/orborus/Dockerfile` (tag `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | `soar_orborus` | — | `soar_net` | `nc -z shuffle-backend 5001` | Ejecutor de contenedores de analizadores |
+| network-watcher | build `src/soar_lab/infrastructure/network_watcher` | `soar_network_watcher` | `${NETWORK_WATCHER_PORT:-15130}` → 8080 | `soar_net` | `GET /health` en `:8080` | Diagnóstico/recuperación de red (sincroniza `/etc/hosts` de workers) |
+| tenzir-node | `tenzir/tenzir:v6.8.1` | `soar_tenzir_node` | 15160 → 5160, 15140 → 1514 | `soar_net` | `tenzir 'api "/ping"'` | Nodo Tenzir (modo dev) |
+| misp-db | `mariadb:10.11` | `soar_misp_db` | — | `soar_net` | `mysqladmin ping` | BD MISP (volumen Docker, no bind) |
+| misp-modules | `ghcr.io/misp/misp-docker/misp-modules:v3.0.9` | `soar_misp_modules` | — | `soar_net` | socket `localhost:6666` | Módulos MISP |
+| misp | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | `soar_misp` | `${MISP_PORT:-8083}` → 80 | `soar_net` | `GET /users/heartbeat` | Plataforma de inteligencia de amenazas |
+| api | build `apps/api/Dockerfile` (contexto raíz) | `soar_api` | `${API_PORT:-8000}` → 8000 | `soar_net`, `ti_net`, `logging_net` | `GET /health` | API FastAPI |
+| docs-site | build `apps/docs-site/Dockerfile` (contexto raíz) | `soar_docs_site` | `${DOCS_PORT:-8086}` → 8080 | `soar_net` | deshabilitado | Portal Docusaurus |
+| web-management | build `apps/web-management/Dockerfile` | `soar_web_management` | 8085 → 80 | `soar_net` | `pgrep nginx` | SPA web de operación |
+| nginx | `nginx:1.25-alpine` | `soar_nginx` | 80 → 80, 443 → 443 | `soar_net`, `logging_net` | `GET /nginx-health` | Proxy inverso y TLS |
+| grafana-db | `postgres:14-alpine` | `soar_grafana_db` | — | `logging_net` | `pg_isready -U grafana` | BD Grafana |
+| grafana | `grafana/grafana:10.3.4` | `soar_grafana` | `${GRAFANA_PORT:-8084}` → 3000 | `logging_net`, `soar_net` | `GET /api/health` | Visualización KPIs/logs |
+| loki | `grafana/loki:2.9.10` | `soar_loki` | — | `logging_net` | — (imagen sin shell) | Agregación de logs |
+| promtail | `grafana/promtail:2.9.9` | `soar_promtail` | — | `logging_net`, `soar_net` | — | Envío de logs Docker a Loki |
 
 **Notas de nomenclatura**:
 - Los nombres de contenedor usan el prefijo `${COMPOSE_PROJECT_NAME:-soar}_` y `_` como separador (ej. `soar_api`).
@@ -964,13 +1024,22 @@ docker compose --env-file .env -f infra/docker/compose/docker-compose.yml -f inf
 
 Valores extraídos de los archivos Compose; pueden ajustarse en `.env.full` o directamente en `deploy.resources`:
 
-| Grupo | Servicios | CPU límite / reserva | Memoria límite / reserva | |---|---|---|---| | Grandes | `elasticsearch`, `thehive`, `cortex`, `shuffle-backend`, `misp` | 2.0 / 1.0 cores | 4GB / 2GB | | Medianos | `redis`, `shuffle-frontend`, `orborus`, `.manager`, `.indexer`, `grafana`, `api` | 1.0 / 0.5 cores | 1-2GB / 0.5-1GB | | Pequeños | `docs-site`, `web-management`, `promtail` | 0.5 / 0.25 cores | 256-512MB / 128-256MB |
+| Grupo | Servicios | CPU límite / reserva | Memoria límite / reserva |
+|---|---|---|---|
+| Grandes | `elasticsearch`, `thehive`, `cortex`, `shuffle-backend`, `misp` | 2.0 / 1.0 cores | 4GB / 2GB |
+| Medianos | `redis`, `shuffle-frontend`, `orborus`, `.manager`, `.indexer`, `grafana`, `api` | 1.0 / 0.5 cores | 1-2GB / 0.5-1GB |
+| Pequeños | `docs-site`, `web-management`, `promtail` | 0.5 / 0.25 cores | 256-512MB / 128-256MB |
 
 #### 3.3 Redes y volúmenes
 
 #### Topología de red
 
-| Red | CIDR | Tipo | Servicios | Propósito | |---|---|---|---|---| | `bridge` | — | `external: true` | Ninguno directamente | Red por defecto de Docker; declarada por compatibilidad | | `soar_net` | `10.100.0.0/16` | bridge | `elasticsearch`, `redis`, `thehive`, `cortex`, `shuffle-*`, `orborus`, `network-watcher`, `tenzir-node`, `misp*`, `.*`, `api`, `web-management`, `nginx`, `grafana`, `promtail` | Red principal del laboratorio | | `ti_net` | `172.22.0.0/16` | `internal: true` | `elasticsearch`, `redis`, `api` | Aislada del exterior; tráfico de inteligencia de amenazas | | `logging_net` | `172.23.0.0/16` | bridge | `grafana-db`, `grafana`, `loki`, `promtail`, `nginx` | Tráfico de observabilidad |
+| Red | CIDR | Tipo | Servicios | Propósito |
+|---|---|---|---|---|
+| `bridge` | — | `external: true` | Ninguno directamente | Red por defecto de Docker; declarada por compatibilidad |
+| `soar_net` | `10.100.0.0/16` | bridge | `elasticsearch`, `redis`, `thehive`, `cortex`, `shuffle-*`, `orborus`, `network-watcher`, `tenzir-node`, `misp*`, `.*`, `api`, `web-management`, `nginx`, `grafana`, `promtail` | Red principal del laboratorio |
+| `ti_net` | `172.22.0.0/16` | `internal: true` | `elasticsearch`, `redis`, `api` | Aislada del exterior; tráfico de inteligencia de amenazas |
+| `logging_net` | `172.23.0.0/16` | bridge | `grafana-db`, `grafana`, `loki`, `promtail`, `nginx` | Tráfico de observabilidad |
 
 > **Importante:** El acceso externo se controla mediante mapeos de puertos del host; no se usa una red edge dedicada.
 
@@ -1420,7 +1489,12 @@ Responsabilidad: implementar los puertos del dominio y conectar con sistemas ext
 
 El laboratorio despliega **dos motores de búsqueda simultáneamente**: Elasticsearch 7.10.2 y OpenSearch 2.10.0. Esta no es una redundancia accidental, sino una decisión técnica forzada por las incompatibilidades de las dependencias de cada servicio.
 
-| Servicio | Motor de búsqueda | Motivo | |---|---|---| | TheHive 3.5.2 | Elasticsearch 7.10.2 | `elastic4play` no envía credenciales REST de forma fiable con `xpack.security.enabled=true` y presenta problemas de mapeo (`include_type_name`) con ES 8.x/OpenSearch 2.x. | | Cortex 3.2.0 | Elasticsearch 7.10.2 | Misma librería subyacente que TheHive (`elastic4play` / `elastic4s`). Requiere API 7.x. | | Lab API / KPI / Grafana | Elasticsearch 7.10.2 | Los datasources de Grafana y los índices de KPI (`soar-metrics`, `soar-alerts`) se crean sobre Elasticsearch. | | Shuffle 2.2.1 | OpenSearch 2.10.0 | El backend y `orborus` de Shuffle usan el cliente de OpenSearch y no funcionan correctamente con Elasticsearch 8.x. |
+| Servicio | Motor de búsqueda | Motivo |
+|---|---|---|
+| TheHive 3.5.2 | Elasticsearch 7.10.2 | `elastic4play` no envía credenciales REST de forma fiable con `xpack.security.enabled=true` y presenta problemas de mapeo (`include_type_name`) con ES 8.x/OpenSearch 2.x. |
+| Cortex 3.2.0 | Elasticsearch 7.10.2 | Misma librería subyacente que TheHive (`elastic4play` / `elastic4s`). Requiere API 7.x. |
+| Lab API / KPI / Grafana | Elasticsearch 7.10.2 | Los datasources de Grafana y los índices de KPI (`soar-metrics`, `soar-alerts`) se crean sobre Elasticsearch. |
+| Shuffle 2.2.1 | OpenSearch 2.10.0 | El backend y `orborus` de Shuffle usan el cliente de OpenSearch y no funcionan correctamente con Elasticsearch 8.x. |
 
 #### Por qué no se consolidó en un único motor
 
