@@ -370,19 +370,20 @@ sequenceDiagram
  participant ES as Elasticsearch
 
  Note over Shuffle: calc_decision ya ejecutado<br/>score y verdict disponibles
+ Note over Shuffle: Shuffle no soporta alt nativo ambas ramas se ejecutan<br/>y los scripts Python deciden segun decision
  alt score >= 80 o verdict == malicious
  Shuffle->>API: POST /api/v1/contain (contención simulada)
  API-->>Shuffle: Contención confirmada (modo simulation)
  Shuffle->>Shuffle: update_inprogress (case stays Open, no PATCH)
- Shuffle->>Shuffle: notify_critical (email CRITICAL)
+ Shuffle->>Shuffle: notify_critical (JSON channel=email severity=CRITICAL)
  else score < 80 y verdict != malicious
  Shuffle->>TheHive: PATCH /api/case (status=Resolved, resolutionStatus=FalsePositive)
- Shuffle->>Shuffle: notify_info (email INFO)
+ Shuffle->>Shuffle: notify_info (JSON channel=email severity=INFO)
  end
  Shuffle->>Shuffle: calc_mttr
- Shuffle->>Shuffle: build_hive_summary
- Shuffle->>TheHive: PATCH /api/case (enrich: summary + tags)
- Shuffle->>Shuffle: build_metrics_json (mttr_seconds, score, verdict)
+ Shuffle->>Shuffle: build_hive_summary (Markdown)
+ Shuffle->>TheHive: PATCH /api/case (enrich: description + tags)
+ Shuffle->>Shuffle: build_metrics_json (mttr_seconds, score, verdict + 17 campos)
  Shuffle->>ES: POST /soar-metrics/_doc/{alert_id}
 ```
 
