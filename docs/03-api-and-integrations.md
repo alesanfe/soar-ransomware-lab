@@ -454,7 +454,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 > **Fuente de verdad**: el contrato de la API del laboratorio se encuentra en `docs/assets/references/openapi.json` (generado automáticamente por FastAPI). Los modelos de datos de entrada/salida se definen en `src/soar_lab/config/schemas/__init__.py` (validaciones Pydantic) y `src/soar_lab/interfaces/api/models.py` (modelos de dominio del API). Puede explorarse en vivo en `http://localhost:8000/docs` / `https://soar.local/api/docs`. En caso de discrepancia entre este documento, `openapi.json` y el código, prevalecen el esquema Pydantic y el `openapi.json` actual.
 
-**Base URL**: `http://localhost:${API_PORT:-8000}` (directo) / `https://soar.local/api` (vía Nginx)
+**Base URL**: `http://localhost:${API_PORT:-8000}` (directo) / `https://soar.local/api/` (vía Nginx)
 **Autenticación**: JWT Bearer token (obtenido vía `POST /auth/login`)
 **Variables .env**: `JWT_SECRET_KEY` (preferente, leído por `AuthService`) o `API_AUTH_SECRET` (legacy fallback) para firmar/validar tokens; `JWT_EXPIRATION_MINUTES` (default 60).
 **Swagger UI**: `https://soar.local/api/docs` (Nginx) o `http://localhost:8000/docs` (directo)

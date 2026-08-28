@@ -1947,7 +1947,7 @@ La aplicación web (`apps/web-management/script.js`) implementa un SPA que se au
 #### 5. Requisitos previos
 
 - Todos los servicios levantados con `make up`.
-- La API en `http://localhost:8000` (o por Nginx `https://soar.local/api`) debe estar saludable.
+- La API en `http://localhost:8000` (o por Nginx `https://soar.local/api/`) debe estar saludable.
 - Variables `API_AUTH_SECRET`, `WEB_UI_USER` y `WEB_UI_PASSWORD` en `.env.full`.
 
 #### 6. Solución de problemas
