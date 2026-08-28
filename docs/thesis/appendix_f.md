@@ -540,30 +540,36 @@ Fuente: `docs/06-project-management.md` línea 1381 (tabla detallada R1-R24, fue
 
 ## F.11. Caso de Estudio: GMinst4ll (Flujo de Infección)
 
-Diagrama del flujo completo de infección del malware GMinst4ll, desde la distribución
-hasta el despliegue del RAT, usado como caso de estudio real para validar el laboratorio.
-Incluye vectores de distribución, C2 (Pastebin, Dropbox, Reddit, Telegram), persistencia,
-evasión y capacidades del Pulsar RAT.
+Diagrama del flujo completo de infección del malware **GMinst4ll 2.03.rar** (884 MB,
+InfoStealer/Loader), analizado forensemente entre el 11-13 de junio de 2026 en un
+sandbox aislado (Ubuntu 20.04 + Windows Server 2016 con Vagrant). El caso de estudio
+valida el laboratorio SOAR con IoCs reales: 4 hashes SHA256, 7 URLs C2, 7 IPs, 5 claves
+de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK.
+
+**Actor identificado:** `boycots563` (GitHub, 251 commits), origen probable Eslovaquia
+(archivo subido a MediaFire el 2026-06-10 23:57:07). Repositorio C2
+`github.com/boycots563/wlt56` eliminado tras la detección. Operador Telegram:
+@KJL4999S (Chat ID: 6820575341).
 
 ```mermaid
 graph TD
- A[YouTube/Tumblr/Discord] -->|Engaño| B[MediaFire]
- B -->|Descarga RAR pw: 4204| C[GMinst4ll 2.03.rar]
- C -->|Ejecución| D[TREZ_cor 4.52.3.exe]
+ A[YouTube/Tumblr/Discord<br/>canal: асьминог] -->|Engaño| B[MediaFire]
+ B -->|Descarga RAR pw: 4204| C[GMinst4ll 2.03.rar<br/>884 MB RAR5 anidado]
+ C -->|Ejecución| D[TREZ_cor 4.52.3.exe<br/>835 MB + 13 DLLs Qt5]
  D -->|C2 Check| E{C2 Check}
- E -->|Pastebin| F[Configuración dinámica<br/>Token Telegram + Chat ID]
- E -->|Dropbox| G[SystemSP.rar pw: zoroz]
- E -->|Reddit| H[Dead drop resolver]
- E -->|Telegram| I[Exfiltración Bot API]
+ E -->|Pastebin raw/FgUMQ9vE| F[Config dinamica<br/>Token Telegram + Chat ID 6820575341]
+ E -->|Dropbox| G[SystemSP.rar pw: zoroz<br/>4 KB, 4 scripts]
+ E -->|Reddit user Over_Media6257| H[Dead drop resolver<br/>403 Forbidden]
+ E -->|Telegram Bot 7675556882| I[Exfiltracion Bot API<br/>sendDocument]
  G --> J[4 Scripts VBS/BAT]
- J --> K[max.vbs - Launcher/watchdog<br/>Exclusiones Defender]
- J --> L[babuchen.bat - Killer AV<br/>14 servicios + 34 suites]
- J --> M[rodendron.vbs - GitHub C2<br/>Tarea programada]
- J --> N[WinStatChecking.bat - DNS block<br/>hosts: 66 dominios + DNS 8.8.8.8]
- M -->|github.com/boycots563/wlt56| O[Windows Compatibility Agent.exe]
- O --> P[Pulsar RAT v1.6.6.0<br/>.NET 4.7.2 ConfuserEx]
- P --> Q[HVNC, Keylogger, Webcam,<br/>Audio, Clipboard, Remote desktop,<br/>Wallet clipper XMR + 9 inferidas]
- P --> R[Anti-VM/anti-debug 25+ checks<br/>ConfuserEx obfuscation]
+ J --> K[max.vbs - Launcher/watchdog<br/>Exclusiones Defender appy.exe]
+ J --> L[babuchen.bat - Killer AV<br/>14 servicios + 34 suites + WU destroy]
+ J --> M[rodendron.vbs - GitHub C2<br/>Tarea programada recurrente]
+ J --> N[WinStatChecking.bat - DNS block<br/>hosts: 66 dominios AV + DNS 8.8.8.8]
+ M -->|github.com/boycots563/wlt56<br/>251 commits, eliminado tras deteccion| O[Windows Compatibility Agent.exe<br/>Python 3.13, 12.4 MB]
+ O --> P[Pulsar RAT v1.6.6.0<br/>.NET 4.7.2 ConfuserEx<br/>beket.rar pw: sin doc]
+ P --> Q[HVNC SharpDX DirectX<br/>Keylogger MouseKeyHook v5.7<br/>Webcam AForge.Video.DirectShow<br/>Audio NAudio Core/Wasapi/WinMM<br/>Clipboard manager<br/>Remote desktop<br/>Wallet clipper XMR + 9 inferidas regex<br/>protobuf-net serializacion]
+ P --> R[Anti-VM/anti-debug 25+ checks<br/>BeingDebugged IsDebuggerPresent<br/>KernelDebuggerEnabled WMI_VM_Detect<br/>ConfuserEx obfuscation<br/>2 blobs AES-GCM 1808 bytes entropia 7.92<br/>Config C2 NO recuperable estaticamente]
  style A fill:#ff6b6b
  style C fill:#ff6b6b
  style D fill:#ff6b6b
@@ -572,29 +578,48 @@ graph TD
  style R fill:#ff6b6b
 ```
 
-Fuente: `docs/04-operations.md` línea 4720
+**Mapeo MITRE ATT&CK (7 técnicas):** T1566.002 Spearphishing Link (YouTube/Tumblr),
+T1059.001 Command and Scripting Interpreter (PowerShell -Verb RunAs), T1547.001 Modify
+System Binary (Winlogon UserInit), T1562.001 Impair Defenses (Killer AV + exclusiones
+Defender), T1056.001 Input Capture (Keylogger), T1102 Web Service (Pastebin, Dropbox,
+Reddit, Telegram, GitHub), T1567.002 Exfiltration Over Web Service (Telegram Bot API).
+
+**IoCs principales:** SHA256 GMinst4ll `d70c31b0...`, TREZ_cor `a75def53...`,
+SystemSP.rar `a50e0785...`, appy_patched.exe `eabe4c16...`. Mutex `Global\{TOKEN-EX-}`.
+PDF señuelo `IF IT DOESN'T WORK.pdf` (autor: "David Thompson"). Reglas YARA:
+`GMinst4ll_Stealer`, `PulsarRAT_AES_GCM_Config`, `PulsarRAT_Deobfuscated_Strings`.
+
+Fuente: `github.com/alesanfe/gminst4ll-forensics` (README.md, 01_INFORME_PRINCIPAL,
+02_BITACORA_FASES, 03_IOCS_Y_DETECCION, 04_OSINT_Y_CAMPANA, 05_PENDIENTES_Y_PLAN,
+06_METADATOS_ANALISIS). Análisis forense completo: 39 archivos .txt de strings/hashes/PE,
+14 archivos de análisis detallado, 15 fases (11 completadas, 4 pendientes/bloqueadas).
 
 ---
 
 ## F.12. Pipeline SOAR para IoCs de GMinst4ll
 
-Diagrama del pipeline SOAR procesando IoCs reales del caso GMinst4ll a través de
-Cortex, MISP, TheHive y Elasticsearch. Validado con TC-33 (10 subtests: hashes,
-URLs, dominios, IPs, Telegram, claves de registro, MITRE ATT&CK).
+Diagrama del pipeline SOAR procesando IoCs reales extraídos del análisis forense de
+GMinst4ll (`github.com/alesanfe/gminst4ll-forensics`) a través de Cortex, MISP, TheHive
+y Elasticsearch. Validado con **TC-33** (10 subtests): hashes SHA256 (GMinst4ll, TREZ_cor,
+SystemSP, appy_patched), URLs C2 (Pastebin, Dropbox, Reddit, Telegram, GitHub), dominios
+(pastebin.com, dropbox.com, reddit.com, telegram.org), IPs (172.66.171.73, 162.125.248.18,
+151.101.129.140, 149.154.166.110), Telegram (Bot ID 7675556882, Chat ID 6820575341),
+claves de registro (HKLM Winlogon UserInit), MITRE ATT&CK (7 técnicas: T1566.002,
+T1059.001, T1547.001, T1562.001, T1056.001, T1102, T1567.002).
 
 ```mermaid
 graph LR
- A[Webhook Shuffle<br/>TC-33: 10 subtests] --> B[Workflow SOAR]
- B --> C[Cortex: análisis hash/IP]
- B --> D[MISP: crear evento hash+IP<br/>+ buscar hash]
- B --> E[TheHive: caso + observables<br/>hash + IP + tarea IR]
+ A[Webhook Shuffle<br/>TC-33: 10 subtests<br/>IoCs GMinst4ll reales] --> B[Workflow SOAR]
+ B --> C[Cortex: análisis hash/IP<br/>Hashdd + VirusShare + DShield<br/>+ Mnemonic pDNS + IP-API + GoogleDNS]
+ B --> D[MISP: crear evento hash+IP<br/>+ buscar hash en DB]
+ B --> E[TheHive: caso + observables<br/>hash + IP + URL + tarea IR]
  B --> F[Elasticsearch: soar-alerts + soar-metrics]
  B --> M[Network Watcher + Tenzir<br/>+ Loki + Redis]
- C --> G[Analyzers: Hashdd, VirusShare,<br/>DShield, Mnemonic pDNS,<br/>IP-API, GoogleDNS]
- D --> H[Correlación amenazas]
- E --> I[Tareas IR: severity ≥3 aislar<br/>severity <3 investigar + preservar]
- E --> J{calc_decision<br/>score ≥ 80 o malicious?}
- J -->|Sí| K[POST /api/v1/contain<br/>modo simulation]
+ C --> G[Resultados: reputation<br/>hash hits + IP geo + PDNS]
+ D --> H[Correlacion amenazas<br/>eventos MISP existentes]
+ E --> I[Tareas IR: severity >=3 aislar<br/>severity <3 investigar + preservar]
+ E --> J{calc_decision<br/>score >= 80 o malicious?}
+ J -->|Si| K[POST /api/v1/contain<br/>modo simulation]
  J -->|No| L[PATCH /api/case<br/>Resolved/FalsePositive]
  K --> N[calc_mttr + build_hive_summary<br/>+ enrich_case + soar-metrics]
  L --> N
@@ -606,8 +631,14 @@ graph LR
 
 Nota: Para IoCs de GMinst4ll sin enriquecimiento previo de Cortex/MISP, el score
 base de `calc_decision` es 60 (severity=3 → +60), veredicto `suspicious`, decisión
-`observe`. La contención se activa cuando los analyzers de Cortex o la correlación
-de MISP elevan el score a ≥80 o el veredicto a `malicious`.
+`observe`. La contención se activa cuando los analyzers de Cortex (Hashdd/VirusShare
+encuentran el hash) o la correlación de MISP (evento existente para la IP) elevan el
+score a >=80 o el veredicto a `malicious`. Los IoCs de GMinst4ll son especialmente
+valiosos para validación porque incluyen hashes reales con reputation en VirusShare,
+IPs de servicios legítimos abusados (Pastebin, Dropbox, Reddit, Telegram) y técnicas
+MITRE ATT&CK mapeadas desde análisis estático confirmado.
 
-Fuente: `docs/04-operations.md` línea 4807
+Fuente: `github.com/alesanfe/gminst4ll-forensics` (03_IOCS_Y_DETECCION_GMINST4LL.md —
+Apéndice A con origen exacto de cada IoC: archivo fuente + línea). Pipeline SOAR:
+`docs/04-operations.md` línea 4807, TC-33: `tests/e2e/TC-33/`.
 
