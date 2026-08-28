@@ -552,8 +552,8 @@ C2, 9 IPs, 1 clave de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&C
 | Origen | Eslovaquia (subida a MediaFire 2026-06-10 23:57:07) |
 | Repo C2 | `github.com/boycots563/wlt56` — público y activo, 253 commits (ago 2026) |
 | Operador Telegram | @KJL4999S (Chat ID 6820575341, bot `buchstys4_bot` ID 7675556882) |
-| Sofisticación | Media-alta (RAR anidado, ConfuserEx, servicios legítimos para C2) |
-| Análisis forense | 15 fases (11 completadas, 4 pendientes), 39 archivos .txt, 14 análisis |
+| Sofisticación | RAR anidado, ConfuserEx, servicios legítimos para C2 |
+
 
 ```mermaid
 graph TD
@@ -568,8 +568,9 @@ graph TD
    D --> E{C2 Check}
    E -->|Pastebin raw/FgUMQ9vE| F[Config dinamica<br/>Token TG + Chat ID 6820575341]
    E -->|Dropbox| G[SystemSP.rar pw: zoroz<br/>4 KB, 4 scripts]
-   E -->|Reddit Over_Media6257| H[Dead drop resolver<br/>403 Forbidden]
+   E -->|Reddit Over_Media6257| H[Dead drop resolver<br/>403 Forbidden en analisis]
    E -->|Telegram Bot 7675556882| I[Exfiltracion Bot API<br/>sendDocument]
+   F -.->|Token + Chat ID| I
  end
  subgraph Persist["Persistencia y evasion"]
    G --> J[4 Scripts VBS/BAT]
@@ -580,7 +581,7 @@ graph TD
  end
  subgraph RAT["Pulsar RAT v1.6.6.0"]
    M -->|github.com/boycots563/wlt56<br/>253 commits, publico y activo| O[Win Compatibility Agent.exe<br/>Python 3.13, 12.4 MB]
-   O --> P[appy_patched.exe .NET 4.7.2<br/>ConfuserEx - beket.rar]
+   O -->|beket.rar contiene| P[appy_patched.exe .NET 4.7.2<br/>ConfuserEx - 1.86 MB]
    P --> Q[Capacidades:<br/>HVNC SharpDX / Keylogger MouseKeyHook v5.7<br/>Webcam AForge / Audio NAudio<br/>Clipboard / Remote desktop<br/>Wallet clipper XMR + 9 inferidas]
    P --> R[Evasion:<br/>25+ checks anti-VM/anti-debug<br/>2 blobs AES-GCM 1808 bytes entropia 7.92<br/>Config C2 NO recuperable estaticamente]
  end
