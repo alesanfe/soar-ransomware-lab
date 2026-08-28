@@ -1,0 +1,23 @@
+docs: Round 2 fixes - self-references, analyzer names, ES vs OpenSearch, test counts
+
+04-operations.md:
+- Fix 4 remaining self-references to 04-operations.md with internal anchors
+- Fix analyzer names FileInfo/DomainMailSPFRecord -> DShield_lookup/Mnemonic_pDNS
+- Fix ES vs OpenSearch table: OpenSearch is Shuffle's current backend, not "future migration"
+- Remove duplicate docs/02-architecture.md reference
+
+05-testing.md:
+- Fix outdated test count ~2092 -> ~2233
+
+01-getting-started.md:
+- Fix outdated test count ~2092 -> ~2233
+
+06-project-management.md:
+- Replace all 80 self-references to docs/06-project-management.md with "este documento"
+- Fix analyzer names FileInfo/DomainMailSPFRecord -> DShield_lookup/Mnemonic_pDNS
+- Fix broken references to inexistent docs/thesis/data_visualizations.md -> docs/thesis/
+- Add OpenSearch to storage layer description (was only listing Elasticsearch)
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
