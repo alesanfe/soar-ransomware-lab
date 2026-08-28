@@ -859,7 +859,7 @@ Tras `make reset`, `SHUFFLE_DEFAULT_APIKEY` puede cambiar. `ShuffleClient._fetch
 - **Solución**: Asegúrate de que `CORS_ORIGINS` en `.env.full` incluya todos los orígenes desde los que se accede, separados por comas. Ejemplo:
 
   ```text
-  CORS_ORIGINS=https://soar.local,http://localhost:8085,http://localhost:3000
+  CORS_ORIGINS=https://soar.local,http://localhost:8085,http://localhost:8081
   ```
 
   Reinicia el contenedor `soar_api` para que tome la nueva variable:
