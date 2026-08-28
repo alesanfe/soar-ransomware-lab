@@ -757,7 +757,7 @@ Tabla one-to-one entre los protocolos del dominio y sus implementaciones concret
 | `LogReader` | `domain/ports/infrastructure.py` | `FileLogReader` | `infrastructure/file_log_reader.py` |
 | `LogParser` | `domain/ports/infrastructure.py` | `LogParser` | `infrastructure/log_parser.py` |
 | `KPIFormatter` | `domain/ports/infrastructure.py` | `CSVKPIFormatter` | `infrastructure/kpi_formatter.py` |
-| `ChecksumService` | `domain/ports/infrastructure.py` | `ChecksumService` | _no implementado_ |
+| `ChecksumService` | `domain/ports/infrastructure.py` | `ChecksumService` | *no implementado* |
 | `CacheInterface` | `domain/ports/infrastructure.py` | `Redis` client wrapper | `infrastructure/clients.py` |
 | `PathProviderInterface` | `domain/ports/infrastructure.py` | *(sin adaptador — puerto sin implementación)* | — |
 | `FileSystemInterface` | `domain/ports/infrastructure.py` | `FilesystemStorage` | `infrastructure/filesystem_storage.py` |
