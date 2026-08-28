@@ -55,3 +55,7 @@ apps/docs-site/build/
 
 # Stale duplicate of tests/ (artifacts from backup restore or pytest cache)
 tests/tests/
+
+# Word temp files
+~$*.docx
+~*.tmp
