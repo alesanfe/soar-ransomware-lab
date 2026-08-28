@@ -729,7 +729,7 @@ Verificación del estado de todos los contenedores Docker del proyecto.
 - El test de disk watermark de Elasticsearch salta (`skip`) cuando el porcentaje reportado proviene del disco del host (>90%) en lugar del volumen del contenedor, ya que `_cat/allocation` puede reflejar el filesystem del host en Docker Desktop.
 - El test `test_concurrent_execution_with_new_features` se salta si el entorno no puede ejecutar webhooks concurrentes bajo carga; no indica una falla funcional del workflow.
 - Para ejecutar la suite completa: `make test-all`
-- Última recolección: **2233 items / 328 deselected / 1905 seleccionados** (184 archivos `test_*.py`, ~2233 funciones definidas). Ver `docs/05-testing.md` y `baseline/tests_inventory.json`.
+- Última recolección: **2233 items / 328 deselected / 1905 seleccionados** (184 archivos `test_*.py`, ~2233 funciones definidas). Ver `docs/05-testing.md` y `tests/baseline/tests_inventory.json`.
 
 #### 3.6.4 Estado operativo final (FASE 50)
 

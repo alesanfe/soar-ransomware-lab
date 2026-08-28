@@ -733,7 +733,7 @@ Tras la refactorización, el código se reorganizó en cuatro capas principales:
 
 #### 2. Visión general de `src/soar_lab`
 
-> El árbol de directorios completo de `src/soar_lab/` está en la [sección 3.1](#31-arquitectura-general).
+> El árbol de directorios completo de `src/soar_lab/` está en la [sección 3.1](#31-visión-general-de-arquitectura).
 
 #### 2.1 Correspondencia puertos → adaptadores
 
@@ -4096,11 +4096,11 @@ La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score
 
 La **Figura 7** muestra los tiempos medios por componente del workflow y las tasas de éxito por tipo de alerta. En los tiempos por fase se aprecia que la creación de caso (2773.48 s) y el análisis de IoCs (2393.46 s) dominan el tiempo acumulado, mientras que la contención (422.0 s) y el triaje (103.92 s) son relativamente rápidos. En las tasas de éxito, el sistema mantiene 100 % en todos los tipos procesados (ransomware, RAT, troyano, infostealer). La **Tabla 10** detalla estas fases:
 
-![Figura 7a: Tiempos por componente del workflow](figures/mttr_by_phase.png)
+![Figura 7a: Tiempos por componente del workflow](thesis/figures/mttr_by_phase.png)
 
 **Figura 7a**: Tiempos medios por componente del workflow E2E (ingesta, triage, análisis de IoCs, creación de caso, contención y cierre).
 
-![Figura 7b: Tasas de éxito por tipo de alerta](figures/GE3_success_rates.png)
+![Figura 7b: Tasas de éxito por tipo de alerta](thesis/figures/GE3_success_rates.png)
 
 **Figura 7b**: Tasas de éxito por tipo de alerta durante las 50 ejecuciones E2E, mostrando 100 % de éxito en todos los tipos procesados.
 
@@ -4116,23 +4116,23 @@ La **Figura 7** muestra los tiempos medios por componente del workflow y las tas
 
 Los tiempos por fase son acumulativos con solapamiento entre nodos paralelos, por lo que su suma excede el MTTR wall-clock de 277.15 s. Esto identifica oportunidades de mejora en caché de resultados y ejecución concurrente de analyzers. La **Figura 8** muestra la distribución de percentiles MTTR y el cumplimiento de los umbrales definidos: el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles P50 (193.19 s) y P90 (621.83 s) no alcanzan los objetivos (≤ 120 s y ≤ 180 s), reflejando la cola larga introducida por los analyzers de Cortex con tiempos de respuesta heterogéneos.
 
-![Figura 8a: Análisis de percentiles MTTR](figures/GE2_percentiles.png)
+![Figura 8a: Análisis de percentiles MTTR](thesis/figures/GE2_percentiles.png)
 
 **Figura 8a**: Distribución de percentiles MTTR (P50, P75, P90, P95) del experimento con n=50 ejecuciones.
 
-![Figura 8b: Cumplimiento de umbrales](figures/threshold_compliance.png)
+![Figura 8b: Cumplimiento de umbrales](thesis/figures/threshold_compliance.png)
 
 **Figura 8b**: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los valores medidos.
 
 El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (score medio 95.8). La **Figura 9** muestra la distribución de decisiones del workflow: 46 alertas (92 %) se clasificaron como *contain* (score >= 80, activando contención automática) y 4 (8 %) como *observe* (score < 80). Ninguna alerta fue clasificada como *benign*: el motor de scoring asignó puntuaciones altas a todas las alertas maliciosas. Los 4 casos *observe* constituyen falsos negativos (8.0 %), mejorando el promedio reportado por SANS 2024 (64 % de organizaciones identifican los falsos positivos como problema mayor). La precisión del motor de scoring fue del 92.0 %.
 
-![Figura 9: Distribución de decisiones del playbook](figures/decision_distribution.png)
+![Figura 9: Distribución de decisiones del playbook](thesis/figures/decision_distribution.png)
 
 **Figura 9**: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones. El verdict subyacente fue *malicious* en 13 casos y *suspicious* en 37.
 
 La **Figura 5** muestra el estado de los jobs de Cortex: 255 de 257 jobs se completaron correctamente (99.2 %), con 2 fallos atribuibles a timeouts puntuales en analyzers externos. Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones, completándose 50/50 workflows y 50/50 casos en TheHive. El workflow incluye 46 nodos (25 ejecutados en las 50 runs) y la automatización fue del 100 %, sin intervención humana.
 
-![Figura 5: Estado de jobs de Cortex](figures/cortex_job_status.png)
+![Figura 5: Estado de jobs de Cortex](thesis/figures/cortex_job_status.png)
 
 **Figura 5**: Estado de los jobs de Cortex (255/257 completados, 99.2 % de éxito).
 

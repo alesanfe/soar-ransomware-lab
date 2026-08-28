@@ -75,7 +75,7 @@ Este directorio contiene la suite completa de tests para el proyecto SOAR Ransom
 
 - **Python soportado**: `>=3.11` (declarado en `pyproject.toml`).
 - **Comando canónico**: `python -m pytest --collect-only -q`
-- **Inventario detallado**: [`baseline/tests_inventory.json`](../tests/baseline/tests_inventory.json)
+- **Inventario detallado**: [`tests/baseline/tests_inventory.json`](../tests/tests/baseline/tests_inventory.json)
 - **Generación de recuentos**: ejecutar `python -m pytest --collect-only -q` para obtener el recuento actual. Último resultado: `collected 2233 items / 328 deselected / 1905 selected`.
 
 #### Pirámide de calidad
@@ -128,7 +128,7 @@ tests/
 └── runners/ # Scripts de ejecución de tests
 ```
 
-> Para recuentos reales, consultar `baseline/tests_inventory.json` o ejecutar `python -m pytest --collect-only -q`.
+> Para recuentos reales, consultar `tests/baseline/tests_inventory.json` o ejecutar `python -m pytest --collect-only -q`.
 
 #### Ejecución de Tests
 
@@ -435,7 +435,7 @@ Shuffle, TheHive, Cortex, MISP y ; las pruebas de integración verifican adaptad
 
 ##### 3.2.1.3 Recuento de casos recogidos
 
-El recuento exacto depende de la versión actual del código. El inventario detallado se encuentra en `baseline/tests_inventory.json`. Para obtener el recuento reproducible en cualquier entorno:
+El recuento exacto depende de la versión actual del código. El inventario detallado se encuentra en `tests/baseline/tests_inventory.json`. Para obtener el recuento reproducible en cualquier entorno:
 
 ```bash
 python -m pytest --collect-only -q
@@ -448,7 +448,7 @@ python -m pytest --collect-only -q
 - `selected`: casos que finalmente se ejecutarían.
 - `skipped`: casos que se omiten en runtime por dependencias no disponibles.
 
-> Para actualizar el inventario o validar el recuento, ejecutar el comando anterior y comparar con `baseline/tests_inventory.json`.
+> Para actualizar el inventario o validar el recuento, ejecutar el comando anterior y comparar con `tests/baseline/tests_inventory.json`.
 
 ##### 3.2.1.4 Variables de entorno requeridas
 
@@ -746,13 +746,13 @@ python -m pytest tests/integration/test_authorization.py -v
 
 - **Python soportado**: `>=3.11` (declarado en `pyproject.toml`; CI y entorno de desarrollo usan 3.11.x).
 - **Objetivo mínimo global**: ≥ 80% de cobertura.
-- **Inventario de tests**: `baseline/tests_inventory.json` (actualizado mediante `pytest --collect-only`); para el recuento real ejecutar:
+- **Inventario de tests**: `tests/baseline/tests_inventory.json` (actualizado mediante `pytest --collect-only`); para el recuento real ejecutar:
 
  ```bash
  python -m pytest --collect-only -q
  ```
 
- > El recuento exacto depende de la versión actual del código, parametrizaciones y entorno. Los conteos detallados por directorio se encuentran en `baseline/tests_inventory.json`.
+ > El recuento exacto depende de la versión actual del código, parametrizaciones y entorno. Los conteos detallados por directorio se encuentran en `tests/baseline/tests_inventory.json`.
 
 - **Ejecución real (`pytest -q`)**: el número de `passed`/`failed`/`skipped`/`error` depende del entorno. Con los servicios levantados la mayoría de E2E e integración pasan; sin servicios externos se observan `skipped` en tests marcados con `requires_external` o `requires_docker`.
 
@@ -1752,8 +1752,8 @@ Este documento no cubre:
 
 - Estrategias de seguridad avanzadas del proyecto (ver docs/02-architecture.md)
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
-- Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#33-casos-de-prueba))
-- Guía de usuario para ejecutar pruebas (ver [3.4 Ejecución de pruebas](#34-ejecución-de-pruebas))
+- Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#323-casos-de-prueba))
+- Guía de usuario para ejecutar pruebas (ver [3.4 Ejecución de pruebas](#324-ejecución-de-pruebas))
 
 #### 2.3 Dependencias
 
@@ -1944,7 +1944,7 @@ python -m pytest tests/integration/test_docker_compose_validation.py -v
 
 **Ejecutar pruebas de runtime directas:**
 
-> Ver comando en [Fase 2: pruebas de runtime](#322-fase-2-pruebas-de-runtime).
+> Ver comando en [Fase 2: pruebas de runtime](#3622-fase-2-pruebas-de-runtime).
 
 **Ejecutar pruebas de navegador directas:**
 
@@ -2220,7 +2220,7 @@ Este documento cubre:
 
 Este documento no cubre:
 
-- Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#33-casos-de-prueba))
+- Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#323-casos-de-prueba))
 - Estrategia detallada de pruebas de Docker (ver [3.6 Pruebas con Docker](#36-pruebas-con-docker))
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
 
@@ -2295,7 +2295,7 @@ python -m pytest --collect-only -q
 collected 2233 items / 328 deselected / 1905 selected
 ```
 
-> Todos los errores previos de recolección (`ModuleNotFoundError`, `NameError`, `SyntaxError`) están resueltos. La fuente de verdad para conteos detallados es `baseline/tests_inventory.json`.
+> Todos los errores previos de recolección (`ModuleNotFoundError`, `NameError`, `SyntaxError`) están resueltos. La fuente de verdad para conteos detallados es `tests/baseline/tests_inventory.json`.
 
 **Objetivo de Cobertura:**
 
@@ -2384,7 +2384,7 @@ make test-coverage
 - **CI/CD**: Ejecución automática en GitHub Actions
 - **Docker**: Ejecución dentro de contenedores
 - **Remoto vía API / Web Management**: a través del endpoint `POST /tests/run` delegado a `PytestTestRunner`
- (`src/soar_lab/infrastructure/pytest_test_runner.py`). Ver [sección 3.4.3](#343-ejecución-remota-vía-pytesttestrunner).
+ (`src/soar_lab/infrastructure/pytest_test_runner.py`). Ver [sección 3.4.3](#3243-ejecución-remota-vía-pytesttestrunner).
 
 #### 3.7.5 Reportes y métricas
 
@@ -2463,7 +2463,7 @@ No hay riesgos o incidencias conocidas actualmente. Todas las pruebas han sido c
 
 **Troubleshooting:**
 
-- Para problemas de ejecución de pruebas, revisar [3.4 Ejecución de pruebas](#34-ejecución-de-pruebas)
+- Para problemas de ejecución de pruebas, revisar [3.4 Ejecución de pruebas](#324-ejecución-de-pruebas)
 - Para problemas de pruebas de Docker, revisar [3.6 Pruebas con Docker](#36-pruebas-con-docker)
 - Para problemas de configuración del entorno, revisar docs/02-architecture.md
 
@@ -2524,7 +2524,7 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 
 ### 4.1 Verificación
 
-La suite ha sido depurada de referencias a módulos heredados y errores de sintaxis. `pytest --collect-only` finaliza sin errores de importación (`0 errors`). Los conteos se actualizan de forma reproducible con `baseline/tests_inventory.json`.
+La suite ha sido depurada de referencias a módulos heredados y errores de sintaxis. `pytest --collect-only` finaliza sin errores de importación (`0 errors`). Los conteos se actualizan de forma reproducible con `tests/baseline/tests_inventory.json`.
 
 ### 4.2 Criterios de Aceptación
 

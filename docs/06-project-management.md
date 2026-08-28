@@ -2832,91 +2832,91 @@ Las siguientes figuras se generan automáticamente desde los resultados experime
 
 ### Figuras de Resultados E2E
 
-![Distribución de alertas por severidad](figures/severity_distribution.png)
+![Distribución de alertas por severidad](thesis/figures/severity_distribution.png)
 
 Figura 12: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
 
-![Distribución de alertas por tipo](figures/alert_distribution.png)
+![Distribución de alertas por tipo](thesis/figures/alert_distribution.png)
 
 Figura 13: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
 
-![MTTR por fase del workflow](figures/mttr_by_phase.png)
+![MTTR por fase del workflow](thesis/figures/mttr_by_phase.png)
 
 Figura 14: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
 
-![MTTR por severidad (boxplot)](figures/mttr_severity_boxplot.png)
+![MTTR por severidad (boxplot)](thesis/figures/mttr_severity_boxplot.png)
 
 Figura 15: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
 
-![Percentiles MTTR](figures/GE2_percentiles.png)
+![Percentiles MTTR](thesis/figures/GE2_percentiles.png)
 
 Figura 16: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
 
-![Tasas de éxito](figures/GE3_success_rates.png)
+![Tasas de éxito](thesis/figures/GE3_success_rates.png)
 
 Figura 17: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
 
 ### Dashboards de Grafana
 
-![Mejoras por categoría](figures/GE5_improvements.png)
+![Mejoras por categoría](thesis/figures/GE5_improvements.png)
 
 Figura 18: Análisis de mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
 
-![Alertas procesadas por hora (throughput)](figures/workflow_durations.png)
+![Alertas procesadas por hora (throughput)](thesis/figures/workflow_durations.png)
 
 Figura 19: Distribución de duraciones de los 50 workflows ejecutados, mostrando el throughput del sistema.
 
-![MTTR por tipo de alerta](figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
+![MTTR por tipo de alerta](thesis/figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
 
 Figura 20: MTTR por tipo de alerta desde el dashboard de Grafana.
 
 ### Estado de Servicios
 
-![Resultados de MTTR](figures/Fig5_1_mttr_results.png)
+![Resultados de MTTR](thesis/figures/Fig5_1_mttr_results.png)
 
 Figura 21: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
 
-![Estado de casos en TheHive](figures/thehive_case_status.png)
+![Estado de casos en TheHive](thesis/figures/thehive_case_status.png)
 
 Figura 22: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
 
 ### Monitoreo de Logs
 
-![Volumen de logs en Loki](figures/loki_log_volume.png)
+![Volumen de logs en Loki](thesis/figures/loki_log_volume.png)
 
 Figura 23: Volumen de logs agregados en Loki durante las ejecuciones E2E.
 
 ### Cumplimiento de Umbrales y Notificaciones
 
-![Cumplimiento de umbrales](figures/threshold_compliance.png)
+![Cumplimiento de umbrales](thesis/figures/threshold_compliance.png)
 
 Figura 24: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
 valores medidos. Se aprecia que el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles
 P50 y P90 no los alcanzan en el conjunto completo.
 
-![Análisis coste-beneficio](figures/Fig5_5_cost_benefit.png)
+![Análisis coste-beneficio](thesis/figures/Fig5_5_cost_benefit.png)
 
 Figura 25: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
 
 ### Dashboards Complementarios de Grafana
 
-![Distribución de decisiones del workflow](figures/decision_distribution.png)
+![Distribución de decisiones del workflow](thesis/figures/decision_distribution.png)
 
 Figura 26: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
 
 ### Análisis Estadístico Adicional
 
-![Correlación entre métricas](figures/correlation_heatmap.png)
+![Correlación entre métricas](thesis/figures/correlation_heatmap.png)
 
 Figura 27: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
 Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del playbook y el tiempo de respuesta.
 
-![Evolución de métricas durante el proyecto](figures/GE4_metrics_evolution.png)
+![Evolución de métricas durante el proyecto](thesis/figures/GE4_metrics_evolution.png)
 
 Figura 28: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
 cuatro fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
 
-![Análisis coste-beneficio (versión extendida)](figures/GE6_cost_benefit.png)
+![Análisis coste-beneficio (versión extendida)](thesis/figures/GE6_cost_benefit.png)
 
 Figura 29: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
 extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
@@ -3198,7 +3198,7 @@ La combinación de desarrollo tecnológico y validación experimental mediante a
 
 El uso exclusivo de software open source elimina los costos de licenciamiento asociados a soluciones comerciales equivalentes, cuyo rango de coste anual ha sido estimado en la literatura entre $200 000 y $500 000 (IBM Security, 2024). Ello hace accesibles estas capacidades a pymes, instituciones educativas y CSIRTs en fase de consolidación.
 
-![Figura 11: Análisis coste-beneficio SOAR open source vs comercial](figures/Fig5_5_cost_benefit.png)
+![Figura 11: Análisis coste-beneficio SOAR open source vs comercial](thesis/figures/Fig5_5_cost_benefit.png)
 
 **Figura 11**: Análisis coste-beneficio comparativo entre SOAR open source (este laboratorio) y soluciones comerciales equivalentes.
 
