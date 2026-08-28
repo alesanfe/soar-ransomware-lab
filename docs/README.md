@@ -22,7 +22,7 @@
 - [5. Problemas](#5-problemas)
     - [5.1 Limitaciones](#51-limitaciones)
     - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-    - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
+    - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -127,7 +127,7 @@ La documentación se mantiene como parte del pipeline CI/CD del proyecto.
 
 ---
 
-## 5. Problemas y consideraciones
+## 5. Problemas
 
 ### 5.1 Limitaciones
 
