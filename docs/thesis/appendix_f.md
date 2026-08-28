@@ -278,7 +278,7 @@ análisis con Cortex, y branching entre contención (malicioso) y falso positivo
 
 ```mermaid
 flowchart TD
- A([Webhook POST /webhook_{trigger_id}]) --> B[N1: normalize_inputs<br/>validar esquema + extraer IoCs]
+ A(["Webhook POST /webhook_{trigger_id}"]) --> B["N1: normalize_inputs<br/>validar esquema + extraer IoCs"]
  B -->|schema inválido| ERR1([Abort + log error])
  B -->|OK| B2[N1b: build_case_json]
  B2 --> D[N2: Crear caso TheHive<br/>POST /api/case]
@@ -294,8 +294,8 @@ flowchart TD
  H --> J
  I --> J
 
- J -->|SÍ| K[N9: POST /api/v1/contain<br/>(contención Lab API)]
- K --> L[N10: Case stays Open<br/>(no PATCH)]
+ J -->|SÍ| K["N9: POST /api/v1/contain<br/>(contención Lab API)"]
+ K --> L["N10: Case stays Open<br/>(no PATCH)"]
  L --> M[N11: Notificación CRITICAL email]
  M --> N[N12: calc_mttr + build_summary]
  N --> O[N13: enrich_case<br/>PATCH /api/case summary+tags]
@@ -356,30 +356,30 @@ Diagrama Gantt del cronograma de los 20 objetivos SMART distribuidos en 4 fases
 gantt
  title Cronograma de Objetivos SMART - SOAR Ransomware Lab
  dateFormat YYYY-MM-DD
- section Fase 1: Investigación
- Objetivo 1: Laboratorio desplegado :active, obj1, 2026-04-27, 7d
- Objetivo 7: Seguridad del Entorno :obj7, after obj1, 4d
- Objetivo 8: Automatización configurada :obj8, after obj7, 4d
- Objetivo 17: API del Laboratorio :obj17, after obj8, 3d
- Objetivo 18: CLI del Laboratorio :obj18, after obj17, 3d
- section Fase 2: Diseño
- Objetivo 2: Playbook E2E :obj2, 2026-05-18, 7d
- Objetivo 5: Integración SIEM :obj5, after obj2, 4d
- Objetivo 6: Contención simulada :obj6, after obj5, 4d
- Objetivo 19: Sitio de Documentación :obj19, after obj6, 3d
- Objetivo 20: Interfaz Web de Gestión :obj20, after obj19, 3d
- section Fase 3: Desarrollo
- Objetivo 3: Métricas MTTR :obj3, 2026-06-08, 7d
- Objetivo 9: Pruebas Atómicas :obj9, after obj3, 5d
- Objetivo 10: Pruebas de Integración :obj10, after obj9, 7d
- Objetivo 11: Pruebas de Seguridad :obj11, after obj10, 5d
- Objetivo 12: Pruebas de Rendimiento :obj12, after obj11, 5d
- Objetivo 13: Pruebas de Producción :obj13, after obj12, 5d
- Objetivo 14: KPIs y Análisis :obj14, after obj13, 8d
- section Fase 4: Validación
- Objetivo 4: Documentación técnica :obj4, 2026-07-20, 14d
- Objetivo 15: Preparación defensa TFM :obj15, after obj4, 14d
- Objetivo 16: Evidencia aprobación :obj16, after obj15, 14d
+ section Fase 1 - Investigación
+ Objetivo 1 - Laboratorio desplegado :active, obj1, 2026-04-27, 7d
+ Objetivo 7 - Seguridad del Entorno :obj7, after obj1, 4d
+ Objetivo 8 - Automatización configurada :obj8, after obj7, 4d
+ Objetivo 17 - API del Laboratorio :obj17, after obj8, 3d
+ Objetivo 18 - CLI del Laboratorio :obj18, after obj17, 3d
+ section Fase 2 - Diseño
+ Objetivo 2 - Playbook E2E :obj2, 2026-05-18, 7d
+ Objetivo 5 - Integración SIEM :obj5, after obj2, 4d
+ Objetivo 6 - Contención simulada :obj6, after obj5, 4d
+ Objetivo 19 - Sitio de Documentación :obj19, after obj6, 3d
+ Objetivo 20 - Interfaz Web de Gestión :obj20, after obj19, 3d
+ section Fase 3 - Desarrollo
+ Objetivo 3 - Métricas MTTR :obj3, 2026-06-08, 7d
+ Objetivo 9 - Pruebas Atómicas :obj9, after obj3, 5d
+ Objetivo 10 - Pruebas de Integración :obj10, after obj9, 7d
+ Objetivo 11 - Pruebas de Seguridad :obj11, after obj10, 5d
+ Objetivo 12 - Pruebas de Rendimiento :obj12, after obj11, 5d
+ Objetivo 13 - Pruebas de Producción :obj13, after obj12, 5d
+ Objetivo 14 - KPIs y Análisis :obj14, after obj13, 8d
+ section Fase 4 - Validación
+ Objetivo 4 - Documentación técnica :obj4, 2026-07-20, 14d
+ Objetivo 15 - Preparación defensa TFM :obj15, after obj4, 14d
+ Objetivo 16 - Evidencia aprobación :obj16, after obj15, 14d
 ```
 
 Fuente: `docs/06-project-management.md` línea 171
