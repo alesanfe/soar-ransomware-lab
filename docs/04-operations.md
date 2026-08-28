@@ -1480,7 +1480,7 @@ docker inspect --format='{{.State.Health.Status}}' soar_<servicio>
  1. Conectar workers de Shuffle a `soar_net`.
  2. Inyectar `/etc/hosts` con IPs reales de `shuffle-backend`, `elasticsearch`, `thehive`, `misp`.
  3. Reescribir `/etc/resolv.conf` a `127.0.0.11`.
-- Operación, logs y recuperación manual en [docs/04-operations.md](#39-network-watcher).
+- Operación, logs y recuperación manual en [sección 3.9 Network watcher](#39-network-watcher).
 
 #### 4.7 Verificación post-arranque
 
@@ -5036,7 +5036,7 @@ Las evidencias de configuración exitosa incluyen:
 
 ### 5.3 Recomendaciones / troubleshooting
 
-> El troubleshooting detallado de Docker, Shuffle y TheHive está en la [sección 3.4](#34-troubleshooting).
+> El troubleshooting detallado de Docker, Shuffle y TheHive está en la [sección 3.12](#312-troubleshooting).
 
 **Próximos Pasos:**
 
