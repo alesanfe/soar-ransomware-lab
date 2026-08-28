@@ -222,24 +222,45 @@ sequenceDiagram
  participant TheHive as TheHive
  participant Cortex as Cortex
  participant MISP as MISP
- participant ES as Elasticsearch
+ participant NW as Network Watcher
+ participant Tenzir as Tenzir Node
+ participant Loki as Loki
  participant API as Lab API
+ participant Redis as Redis
+ participant ES as Elasticsearch
 
- Sim->>Shuffle: POST /api/v1/hooks/{workflow_id}
+ Sim->>Shuffle: POST /api/v1/hooks/webhook_{trigger_id}
  Shuffle->>Backend: Reenvía payload de alerta
+ Backend->>Backend: normalize_inputs + build_case_json
  Backend->>TheHive: POST /api/case
  TheHive-->>Backend: caseId
- Backend->>Cortex: POST /api/analyzer/run
- Cortex-->>Backend: resultados (score/veredicto)
- Backend->>MISP: POST /events (IoC)
- MISP-->>Backend: eventId
- alt score >= 80 OR verdict == "malicious"
- Backend->>Backend: POST /api/v1/contain (contención Lab API)
- Backend->>TheHive: Case stays Open (no PATCH)
- else score < 80 y verdict != malicious
- Backend->>TheHive: PATCH /api/case (marcar Resolved/FalsePositive)
+ par En paralelo
+   Backend->>TheHive: POST observables (hash, IP)
+   Backend->>TheHive: POST task (tareas IR)
+   Backend->>Cortex: POST /api/analyzer/{id}/run (hash)
+   Backend->>Cortex: POST /api/analyzer/{id}/run (IP)
+   Backend->>MISP: POST /events (crear evento)
+   Backend->>MISP: POST /attributes/restSearch (buscar IoCs)
+   Backend->>NW: GET /api/connections?ip={src_ip}
+   Backend->>Tenzir: POST /api/v0/pipeline/create
+   Backend->>API: POST /api/v1/cache/ioc (caché Redis)
+   API->>Redis: SET ioc:{hash} {alert_id} TTL 3600
+   Backend->>Loki: GET /loki/api/v1/query_range
+   Backend->>ES: POST /soar-alerts/_doc/{alert_id}
  end
- Backend->>ES: Indexa métricas KPI (@timestamp, mttr_seconds, ...)
+ Backend->>Backend: calc_decision (score + verdict)
+ alt score >= 80 OR verdict == "malicious"
+   Backend->>API: POST /api/v1/contain (contención)
+   API-->>Backend: Contención confirmada
+   Backend->>TheHive: Case stays Open (no PATCH)
+   Backend->>Backend: notify_critical (email)
+ else score < 80 y verdict != malicious
+   Backend->>TheHive: PATCH /api/case (Resolved/FalsePositive)
+   Backend->>Backend: notify_info (email)
+ end
+ Backend->>Backend: calc_mttr + build_hive_summary
+ Backend->>TheHive: PATCH /api/case (enrich: summary + tags)
+ Backend->>ES: POST /soar-metrics/_doc/{alert_id} (mttr_seconds, ...)
  API->>ES: GET /analytics/kpis/aggregated
  API->>TheHive: GET /soar/thehive/cases
  API->>Cortex: GET /soar/cortex/jobs
