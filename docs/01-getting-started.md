@@ -300,7 +300,7 @@ El laboratorio usa `soar.local` como dominio interno y Nginx termina TLS con cer
    - **Windows** (PowerShell como Administrador):
 
      ```powershell
-     Import-Certificate -FilePath "infra\docker\config\root-ca.pem" -CertStoreLocation Cert:\LocalMachine\Root
+     Import-Certificate -FilePath "infra\docker\config\nginx\ssl\soar.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
      ```
 
    - **Linux** (Debian/Ubuntu):
