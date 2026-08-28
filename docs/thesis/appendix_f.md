@@ -318,28 +318,32 @@ análisis con Cortex, y branching entre contención (malicioso) y falso positivo
 
 ```mermaid
 flowchart TD
- A(["Webhook POST /webhook_{trigger_id}"]) --> B["N1: normalize_inputs<br/>validar esquema + extraer IoCs"]
- B -->|schema inválido| ERR1([Abort + log error])
+ A(["Webhook POST /webhook_{trigger_id}"]) --> B["N1: normalize_inputs<br/>validar severity + extraer IoCs<br/>+ DNS warmup"]
+ B -->|fallo| ERR1([Workflow aborta])
  B -->|OK| B2[N1b: build_case_json]
  B2 --> D[N2: Crear caso TheHive<br/>POST /api/case]
- D -->|API error| ERR2([Abort + notificar crítico])
- D -->|OK case_id| E[N3: Adjuntar observables<br/>hash + IP + task IR]
- D --> F[N4: Ejecutar analyzers Cortex<br/>hash + IP + dinámicos]
- D --> G[N5: MISP crear evento + buscar IoCs]
+ D -->|fallo| ERR2([Workflow aborta])
+ D -->|OK case_id| E[N3: Adjuntar observables<br/>hash + IP]
+ D --> E2[N3b: calc_task_title<br/>severity >= 3 aislar<br/>severity < 3 investigar]
+ E2 --> E3[N3c: POST task IR<br/>titulo calculado]
+ D --> F[N4: Ejecutar analyzers Cortex<br/>hash Hashdd + VirusShare<br/>IP DShield + Mnemonic pDNS<br/>+ IP-API + GoogleDNS]
+ D --> G[N5: MISP crear evento<br/>+ buscar hash]
  D --> H[N6: build_es_json + ES indexar<br/>POST /soar-alerts]
  D --> I[N7: Network Watcher + Tenzir<br/>pipeline/create + serve<br/>+ Loki + Redis]
 
- E --> J{N8: calc_decision<br/>score ≥ 80 o verdict == malicious?}
+ E --> J{N8: calc_decision<br/>score >= 80 o verdict == malicious?}
+ E3 --> J
  F --> J
  G --> J
  H --> J
  I --> J
 
- J -->|SÍ| K["N9: POST /api/v1/contain<br/>(contención Lab API)"]
- K --> L["N10: Case stays Open<br/>(no PATCH)"]
+ J -->|SÍ| K["N9: POST /api/v1/contain<br/>(contención simulada Lab API)"]
+ K --> L["N10: update_inprogress<br/>case stays Open sin PATCH"]
  L --> M[N11: Notificación CRITICAL email]
- M --> N[N12: calc_mttr + build_hive_summary]
- N --> O[N13: enrich_case<br/>PATCH /api/case summary+tags]
+ M --> N[N12: calc_mttr]
+ N --> N2[N12b: build_hive_summary]
+ N2 --> O[N13: enrich_case<br/>PATCH /api/case summary+tags]
  O --> P[N14: build_metrics_json + Indexar ES<br/>POST /soar-metrics]
  P --> Z([FIN — caso contenido])
 
