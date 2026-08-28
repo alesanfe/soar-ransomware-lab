@@ -331,12 +331,15 @@ sequenceDiagram
  alt Score ≥ 80 o verdict malicioso
  Shuffle->>API: POST /api/v1/contain (Lab API)
  API-->>Shuffle: Contención confirmada
- Shuffle->>TheHive: Case stays Open (no PATCH)
- Shuffle->>ES: Indexa métricas (soar-metrics)
+ Shuffle->>Shuffle: update_inprogress (case stays Open)
+ Shuffle->>Shuffle: notify_critical (email CRITICAL)
  else Score < 80 y verdict benigno
  Shuffle->>TheHive: PATCH /api/case (Resolved/FalsePositive)
+ Shuffle->>Shuffle: notify_info (email INFO)
  end
- Shuffle-->>TheHive: Actualización final del caso
+ Shuffle->>Shuffle: calc_mttr + build_hive_summary
+ Shuffle->>TheHive: PATCH /api/case (enrich: summary + tags)
+ Shuffle->>ES: POST /soar-metrics/_doc/{alert_id}
 ```
 
 Fuente: `docs/02-architecture.md` línea 519
