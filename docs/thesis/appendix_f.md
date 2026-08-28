@@ -428,12 +428,12 @@ Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e i
 
 ```mermaid
 graph TD
- A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V Sí) & R2(Recursos RAM Parcial) & R11(LaLiga/Cloudflare Parcial)
+ A[Alta Prob / Alto Impacto] -->|Críticos| R1(Puertos Hyper-V Sí) & R2(Recursos RAM Parcial) & R11(LaLiga/Cloudflare Parcial) & R18(Docs desincronizada Parcial) & R21(Credenciales estáticas Sí)
  B[Alta Prob / Bajo Impacto] --> R6(MISP arranque lento Sí)
- C[Media Prob / Alto Impacto] --> R3(Analyzers timeout Parcial) & R4(Integración tokens Parcial) & R7(Umbrales MTTR Parcial) & R12(API no disponible Parcial) & R13(Certificados SSL Parcial) & R16(CI/CD failures Parcial)
- D[Media Prob / Medio Impacto] --> R5(ES compat Sí) & R8(APIs externas Parcial) & R14(Validación esquemas Parcial) & R15(Cobertura pruebas Parcial) & R19(Web-management UX Parcial) & R20(Analytics fallan Parcial)
+ C[Media Prob / Alto Impacto] --> R3(Analyzers timeout Parcial) & R4(Integración tokens Parcial) & R7(Umbrales MTTR Parcial) & R12(API no disponible Parcial) & R13(Certificados SSL Parcial) & R16(CI/CD failures Parcial) & R22(Seguridad ES/OS Parcial) & R24(Network Watcher Parcial)
+ D[Media Prob / Medio Impacto] --> R5(ES compat Sí) & R8(APIs externas Parcial) & R14(Validación esquemas Parcial) & R15(Cobertura pruebas Parcial) & R19(Web-management UX Parcial) & R23(Mappings métricas Sí)
  E[Baja Prob / Alto Impacto] --> R9(Pérdida config Parcial)
- F[Baja Prob / Medio Impacto] --> R10(Deriva alcance Sí) & R17(CLI inusable Parcial) & R18(Docs-site desactualizado Parcial)
+ F[Baja Prob / Medio Impacto] --> R10(Deriva alcance Sí) & R17(CLI inusable Parcial) & R20(Analytics fallan Parcial)
 ```
 
 Leyenda: Sí Mitigado · Parcial En seguimiento
