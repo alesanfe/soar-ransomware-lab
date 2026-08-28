@@ -1,0 +1,14 @@
+docs: fix self-references, numbering conflicts, and outdated info in 05-testing.md
+
+- Replace 19 self-references to docs/05-testing.md with internal anchors
+- Fix .access_token -> .token (matches LoginResponse model)
+- Remove reference to inexistent TEST_ELIMINATIONS.md
+- Remove reference to inexistent docker_testing_strategy.md
+- Renumber conflicting #### 3.x headings inside ### 3.2 to #### 3.2.x
+- Renumber conflicting #### 3.x headings inside ### 3.6 to #### 3.6.x
+- Renumber conflicting #### 3.x headings inside ### 3.7 to #### 3.7.x
+- Fix empty 3.3 Herramientas heading inside 3.7
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

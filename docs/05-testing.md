@@ -363,22 +363,22 @@ Este documento cubre:
 
 Este documento no cubre:
 
-- Estrategia detallada de pruebas de Docker (ver docs/05-testing.md)
+- Estrategia detallada de pruebas de Docker (ver [3.6 Pruebas con Docker](#36-pruebas-con-docker))
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
 - Planificación del proyecto (ver docs/06-project-management.md)
 
 
 Este documento depende de:
 
-- Estrategia de pruebas de Docker (docs/05-testing.md)
+- Estrategia de pruebas de Docker ([3.6 Pruebas con Docker](#36-pruebas-con-docker))
 - Documentación de arquitectura (docs/02-architecture.md)
 - Documentación de Docker (docs/02-architecture.md)
 - Guía de usuario (docs/01-getting-started.md)
 
 
-#### 3.1 Estructura de pruebas
+#### 3.2.1 Estructura de pruebas
 
-#### 3.1.1 Estructura de directorios
+##### 3.2.1.1 Estructura de directorios
 
 **Estado Actual:**
 
@@ -409,7 +409,7 @@ tests/
 **Nota:** Los tests unitarios cubren `src/soar_lab/` de forma aislada; los E2E validan workflows completos del playbook
 Shuffle, TheHive, Cortex, MISP y ; las pruebas de integración verifican adaptadores y servicios del dominio.
 
-#### 3.1.2 Categorías de pruebas
+##### 3.2.1.2 Categorías de pruebas
 
 **Pruebas Unitarias:** Prueban componentes y funciones individuales de forma aislada.
 
@@ -425,7 +425,7 @@ Shuffle, TheHive, Cortex, MISP y ; las pruebas de integración verifican adaptad
 
 **Pruebas E2E:** Prueban workflows completos de principio a fin.
 
-#### 3.1.3 Recuento de casos recogidos
+##### 3.2.1.3 Recuento de casos recogidos
 
 El recuento exacto depende de la versión actual del código. El inventario detallado se encuentra en `baseline/tests_inventory.json`. Para obtener el recuento reproducible en cualquier entorno:
 
@@ -442,7 +442,7 @@ python -m pytest --collect-only -q
 
 > Para actualizar el inventario o validar el recuento, ejecutar el comando anterior y comparar con `baseline/tests_inventory.json`.
 
-#### 3.1.4 Variables de entorno requeridas
+##### 3.2.1.4 Variables de entorno requeridas
 
 La suite usa `tests/conftest.py` para fijar unas variables mínimas y delega las credenciales operativas a `.env.full` (cuando existe) o a los overrides del entorno de ejecución.
 
@@ -456,7 +456,7 @@ La suite usa `tests/conftest.py` para fijar unas variables mínimas y delega las
 
 > **Seguridad:** No se deben incluir valores reales en este documento. Las credenciales se cargan desde `.env.full` y se tratan como secretos. Para ejecuciones locales se recomienda usar `cp .env.example .env.full` y ejecutar `make generate-secrets` / `soar-lab generate-secrets`.
 
-#### 3.1.5 Flujo real y recomendado de pruebas
+##### 3.2.1.5 Flujo real y recomendado de pruebas
 
 El flujo canónico en un entorno local utiliza los targets `make` definidos en `Makefile.linux` / `Makefile.win`. No se recomienda ejecutar `pytest` directamente sin el entorno y perfiles Docker correctos.
 
@@ -509,9 +509,9 @@ python -m pytest --collect-only -q
 make docs-lint
 ```
 
-#### 3.2 Categorías de pruebas
+#### 3.2.2 Categorías de pruebas
 
-#### 3.2.1 Ejecución de pruebas
+##### 3.2.2.1 Ejecución de pruebas
 
 **Inicio Rápido:**
 
@@ -532,14 +532,14 @@ make test-e2e
 make test-coverage
 ```
 
-#### 3.2.2 Eliminaciones y omisiones
+##### 3.2.2.2 Eliminaciones y omisiones
 
 Varios archivos de prueba obsoletos han sido eliminados para mantener una alta relación señal-ruido. Algunas pruebas usan
 `pytest.skip` en runtime cuando faltan dependencias externas (Docker, servicios SOAR levantados, API keys, workflow
 creado) o cuando se ejecutan dentro de un contenedor sin acceso al código/host. Esto se refleja en el recuento final de
 `pytest` como `skipped`, no como `error`.
 
-#### 3.2.3 Ejecución individual
+##### 3.2.2.3 Ejecución individual
 
 ```bash
 # Ejecutar pruebas unitarias
@@ -567,7 +567,7 @@ python3 -m pytest tests/unit/services/test_calc_kpis.py -v
 python3 -m pytest tests/ --cov=src/soar_lab --cov-report=html --cov-report=term --cov-fail-under=80
 ```
 
-#### 3.2.4 Script de ejecución
+##### 3.2.2.4 Script de ejecución
 
 ```bash
 # Ejecutar suite de pruebas integral
@@ -582,7 +582,7 @@ make test-e2e
 make test-coverage
 ```
 
-#### 3.2.5 Configuración de pruebas
+##### 3.2.2.5 Configuración de pruebas
 
 **Configuración pytest.ini:**
 
@@ -632,7 +632,7 @@ pytest -m requires_external
 
 > **Conceptos de recuento**: `collected` son todos los casos encontrados; `deselected` los filtrados por `-m`; `selected` los que finalmente se ejecutarán. `skipped` aparece cuando una prueba llama a `pytest.skip` en runtime (por ejemplo, falta de servicio externo o ejecución dentro del contenedor). `xfail` indica un caso marcado como fallo esperado; en este repositorio no se usa `xfail` de forma masiva, pero puede existir en pruebas experimentales.
 
-#### 3.2.6 Datos y fixtures
+##### 3.2.2.6 Datos y fixtures
 
 **Ubicación de Datos de Pruebas:**
 
@@ -662,7 +662,7 @@ def mock_thehive_client:
  yield mock
 ```
 
-#### 3.2.7 Tests de autenticación JWT
+##### 3.2.2.7 Tests de autenticación JWT
 
 Los tests del proveedor JWT y del servicio de autenticación se encuentran en:
 
@@ -687,9 +687,9 @@ python -m pytest tests/unit/infrastructure/test_jwt_token_provider.py -v
 python -m pytest tests/integration/test_authorization.py -v
 ```
 
-#### 3.3 Casos de prueba
+#### 3.2.3 Casos de prueba
 
-#### 3.3.1 Objetivos de cobertura
+##### 3.2.3.1 Objetivos de cobertura
 
 | Categoría de Pruebas | Objetivo de Cobertura | |------------------------|---------------------------------| | Pruebas unitarias | >80% | | Pruebas atómicas | >70% | | Pruebas de integración | >60% | | Pruebas de navegador | >50% | | Pruebas de seguridad | >60% | | Pruebas de rendimiento | N/A (benchmarks de rendimiento) | | Pruebas E2E | >50% |
 
@@ -713,7 +713,7 @@ python -m pytest tests/integration/test_authorization.py -v
 - **Reporte de coverage**: `runtime/coverage/htmlcov/` y `runtime/coverage/coverage.xml`.
 - **Comando para generar reporte**: `make test-coverage` (Linux/Mac) o `make -f Makefile.win test-coverage` (Windows).
 
-#### 3.3.2 Entornos de pruebas
+##### 3.2.3.2 Entornos de pruebas
 
 **Desarrollo Local:**
 
@@ -740,7 +740,7 @@ docker compose --env-file .env.full -f infra/docker/compose/docker-compose.yml -
 python -m pytest tests/ -v
 ```
 
-#### 3.3.3 Generación de reportes
+##### 3.2.3.3 Generación de reportes
 
 ```bash
 # Generar reporte de cobertura HTML
@@ -764,7 +764,7 @@ open htmlcov/index.html
 - JUnit XML: Integración CI/CD
 - Consola: Salida en tiempo real
 
-#### 3.3.4 Smoke tests y cobertura histórica
+##### 3.2.3.4 Smoke tests y cobertura histórica
 
 **Smoke tests (`pytest -m smoke`)**
 
@@ -780,9 +780,9 @@ open htmlcov/index.html
 - `make test-coverage` genera tanto el reporte HTML como la métrica consolidada.
 - El CLI `soar-lab` y el dashboard de `web-management` pueden consultar los datos de cobertura actuales via API.
 
-#### 3.4 Ejecución de pruebas
+#### 3.2.4 Ejecución de pruebas
 
-#### 3.4.1 Comandos de ejecución
+##### 3.2.4.1 Comandos de ejecución
 
 **Ejecutar todas las pruebas:**
 
@@ -806,7 +806,7 @@ make test-e2e
 make test-coverage
 ```
 
-#### 3.4.2 Entornos de ejecución
+##### 3.2.4.2 Entornos de ejecución
 
 - **Local**: Ejecución en máquina de desarrollo
 - **CI/CD**: Ejecución automática en GitHub Actions
@@ -814,7 +814,7 @@ make test-coverage
 - **Remoto vía API / Web Management**: La API SOAR expone `POST /tests/run` que delega en `PytestTestRunner`
  (`src/soar_lab/infrastructure/pytest_test_runner.py`).
 
-#### 3.4.3 Ejecución remota vía `PytestTestRunner`
+##### 3.2.4.3 Ejecución remota vía `PytestTestRunner`
 
 `PytestTestRunner` es el adaptador de infraestructura que encapsula la ejecución de `pytest`:
 
@@ -831,7 +831,7 @@ Ejemplo de uso desde el panel Web Management o cURL:
 # Obtener token JWT
 TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
  -H "Content-Type: application/json" \
- -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | jq -r '.access_token')
+ -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | jq -r '.token')
 
 # Lanzar suite E2E
 curl -s -X POST http://localhost:8000/tests/run \
@@ -843,16 +843,16 @@ curl -s -X POST http://localhost:8000/tests/run \
 > **Nota:** La ejecución remota requiere que el contenedor `soar_api` tenga acceso al socket/código y a las variables
 > de entorno de `.env.full`. Para tests E2E e integración, los servicios Docker deben estar levantados.
 
-#### 3.5 Reportes y métricas
+#### 3.2.5 Reportes y métricas
 
-#### 3.5.1 Reportes generados
+##### 3.2.5.1 Reportes generados
 
 - **Resultados de pruebas**: `reports/test_results/test_results.json`
 - **Reportes de cobertura**: `runtime/coverage/htmlcov/`
 - **Reportes de rendimiento**: `reports/performance/`
 - **Reportes de seguridad**: `reports/security/`
 
-#### 3.5.2 Métricas clave
+##### 3.2.5.2 Métricas clave
 
 | Categoría de Pruebas | Objetivo de Cobertura | |------------------------|---------------------------------| | Pruebas unitarias | >80% | | Pruebas atómicas | >70% | | Pruebas de integración | >60% | | Pruebas de navegador | >50% | | Pruebas de seguridad | >60% | | Pruebas de rendimiento | N/A (benchmarks de rendimiento) | | Pruebas E2E | >50% |
 
@@ -1655,8 +1655,8 @@ Este documento no cubre:
 
 - Estrategias de seguridad avanzadas del proyecto (ver docs/02-architecture.md)
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
-- Detalle de casos de prueba específicos (ver docs/05-testing.md)
-- Guía de usuario para ejecutar pruebas (ver docs/05-testing.md)
+- Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#33-casos-de-prueba))
+- Guía de usuario para ejecutar pruebas (ver [3.4 Ejecución de pruebas](#34-ejecución-de-pruebas))
 
 #### 2.3 Dependencias
 
@@ -1664,14 +1664,12 @@ Este documento depende de:
 
 - Documentación de arquitectura (docs/02-architecture.md)
 - Documentación de Docker (docs/02-architecture.md)
-- Guía de pruebas (docs/05-testing.md)
-- Especificación de casos de prueba (docs/05-testing.md)
+- Guía de pruebas (este documento)
+- Especificación de casos de prueba (este documento)
 
-#### 3. Contenido principal
+#### 3.6.1 Estrategia de pruebas
 
-#### 3.1 Estrategia de pruebas
-
-#### 3.1.1 Niveles de pruebas
+##### 3.6.1.1 Niveles de pruebas
 
 **Nivel 1: Validación de Configuración**
 
@@ -1692,7 +1690,7 @@ Este documento depende de:
 - Propósito: Validar interfaces web con automatización de navegador real
 - Requisitos: Selenium WebDriver, navegador Chrome/Chromium, servicios Docker ejecutándose
 
-#### 3.1.2 Fases de ejecución
+##### 3.6.1.2 Fases de ejecución
 
 Flujo canónico con `make`:
 
@@ -1721,9 +1719,9 @@ El proyecto no utiliza el campo `profiles:` de Docker Compose; en su lugar, `Mak
 
 > Para escenarios personalizados, sobreescribir `COMPOSE_FILES` o `ENV_FILE`: `make up ENV_FILE=.env.testing`.
 
-#### 3.2 Tipos de pruebas
+#### 3.6.2 Tipos de pruebas
 
-#### 3.2.1 Fase 1: pruebas de configuración
+##### 3.6.2.1 Fase 1: pruebas de configuración
 
 ```bash
 python -m pytest tests/integration/test_docker_compose_validation.py -v
@@ -1733,7 +1731,7 @@ python -m pytest tests/integration/test_docker_compose_validation.py -v
 - Puede ejecutarse durante el desarrollo
 - Integración en pipeline CI/CD
 
-#### 3.2.2 Fase 2: pruebas de runtime
+##### 3.6.2.2 Fase 2: pruebas de runtime
 
 ```bash
 python -m pytest tests/integration/test_docker_runtime_status.py tests/integration/test_docker_partial_failure.py -v
@@ -1744,7 +1742,7 @@ python -m pytest tests/integration/test_docker_runtime_status.py tests/integrati
 - Prueba de conectividad de red
 - Validación de uso de recursos
 
-#### 3.2.3 Fase 3: pruebas de navegador
+##### 3.6.2.3 Fase 3: pruebas de navegador
 
 ```bash
 python -m pytest tests/e2e/TC-14/test_complete_soar_integration.py -v
@@ -1754,9 +1752,9 @@ python -m pytest tests/e2e/TC-14/test_complete_soar_integration.py -v
 - Prueba de experiencia de usuario
 - Validación de rendimiento y seguridad
 
-#### 3.3 Herramientas y frameworks
+#### 3.6.3 Herramientas y frameworks
 
-#### 3.3.1 Cobertura de servicios
+##### 3.6.3.1 Cobertura de servicios
 
 #### Servicios SOAR Core
 
@@ -1766,7 +1764,7 @@ python -m pytest tests/e2e/TC-14/test_complete_soar_integration.py -v
 
 | Servicio | Configuración | Runtime | Navegador | |-------------|-----------------------------------|------------------------------|-----------------------------------------| | **MISP** | Imagen, puertos, volúmenes, redes | Threat intelligence platform | Login interface, threat data management | | **Redis** | Imagen, puertos, volúmenes, redes | Cache and message broker | No aplicable (data service) | | **MariaDB** | Imagen, puertos, volúmenes, redes | Database for MISP | No aplicable (data service) |
 
-#### 3.3.2 Validación de red
+##### 3.6.3.2 Validación de red
 
 **Redes Esperadas:**
 
@@ -1780,7 +1778,7 @@ python -m pytest tests/e2e/TC-14/test_complete_soar_integration.py -v
 - DNS resolution within networks
 - Port exposure and routing
 
-#### 3.3.3 Validación de volúmenes
+##### 3.6.3.3 Validación de volúmenes
 
 **Volúmenes Esperados:**
 
@@ -1805,9 +1803,9 @@ python -m pytest tests/e2e/TC-14/test_complete_soar_integration.py -v
 - File permissions and ownership
 - Backup and restore capabilities
 
-#### 3.4 Ejecución de pruebas
+#### 3.6.4 Ejecución de pruebas
 
-#### 3.4.1 Comandos de ejecución
+##### 3.6.4.1 Comandos de ejecución
 
 Los comandos canónicos para ejecutar tests del stack Docker son los targets `make`. `pytest` directo funciona para desarrollo aislado pero no configura el entorno completo.
 
@@ -1856,7 +1854,7 @@ python -m pytest --collect-only -q
 make docs-lint
 ```
 
-#### 3.4.2 Integración CI/CD
+##### 3.6.4.2 Integración CI/CD
 
 Las pruebas se integran en GitHub Actions mediante workflows en `.github/workflows/`:
 
@@ -1865,9 +1863,9 @@ Las pruebas se integran en GitHub Actions mediante workflows en `.github/workflo
 - Validación de runtime en rama main
 - Reportes de cobertura de código
 
-#### 3.5 Reportes y métricas
+#### 3.6.5 Reportes y métricas
 
-#### 3.5.1 Reportes generados
+##### 3.6.5.1 Reportes generados
 
 - **Reportes pytest**: Resultados de ejecución de pruebas
 - **Cobertura de código**: Porcentaje de código cubierto por pruebas
@@ -1875,7 +1873,7 @@ Las pruebas se integran en GitHub Actions mediante workflows en `.github/workflo
 - **Capturas de pantalla**: Evidencias de pruebas de navegador
 - **Métricas de rendimiento**: Tiempos de respuesta, uso de recursos
 
-#### 3.5.2 Métricas clave
+##### 3.6.5.2 Métricas clave
 
 | Métrica | Objetivo | Método de Medida | |--------------------------------------|----------|-------------------------------| | **Tasa de éxito** | ≥ 95% | Porcentaje de pruebas pasadas | | **Cobertura de código** | ≥ 80% | pytest-cov | | **Tiempo de ejecución** | ≤ 5 min | pytest --durations | | **Tiempo de inicio de contenedores** | ≤ 2 min | docker ps + timestamps |
 
@@ -2095,7 +2093,6 @@ integración, pruebas de navegador, pruebas de rendimiento, pruebas de seguridad
 Este documento cubre:
 
 - Visión general de la suite de pruebas del SOAR Ransomware Lab
-- Archivos de documentación de pruebas (05-testing.md)
 - Estructura de la suite de pruebas (unit, atomic, integration, browser, performance, security, e2e)
 - Stack actual de servicios validados
 - Comandos de inicio rápido para ejecutar pruebas
@@ -2105,16 +2102,14 @@ Este documento cubre:
 
 Este documento no cubre:
 
-- Detalle de casos de prueba específicos (ver docs/05-testing.md)
-- Estrategia detallada de pruebas de Docker (ver docs/05-testing.md)
+- Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#33-casos-de-prueba))
+- Estrategia detallada de pruebas de Docker (ver [3.6 Pruebas con Docker](#36-pruebas-con-docker))
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
 
 #### 2.3 Dependencias
 
 Este documento depende de:
 
-- Documentación de pruebas (docs/05-testing.md)
-- Estrategia de pruebas de Docker (docs/05-testing.md)
 - Documentación de arquitectura (docs/02-architecture.md)
 - README principal del proyecto (/README.md)
 
@@ -2124,11 +2119,8 @@ Este documento depende de:
 
 #### Archivos de Documentación
 
-**[05-testing.md](05-testing.md):** Documentación principal de la suite de pruebas que cubre estructura, categorías,
-ejecución, configuración, entornos y mejores prácticas.
-
-**[docker_testing_strategy.md](05-testing.md):** Estrategia integral de pruebas de Docker con enfoque
-multinivel (configuración, runtime, validación de navegador).
+Este documento es la fuente canónica de la suite de pruebas. La estrategia de pruebas de Docker se cubre en
+[3.6 Pruebas con Docker](#36-pruebas-con-docker).
 
 #### Estructura de la Suite de Pruebas
 
@@ -2143,7 +2135,6 @@ tests/
 ├── e2e/ # Pruebas de flujo de trabajo de extremo a extremo
 ├── general/ # Pruebas transversales no asociadas a una categoría
 ├── conftest.py # Configuración de Pytest y fixtures
-├── TEST_ELIMINATIONS.md # Documentación de pruebas eliminadas
 └── runners/ # Utilidades de ejecución de pruebas
 ```
 
@@ -2227,18 +2218,18 @@ curl -s -X POST http://localhost:8000/tests/run \
  -d '{"category":"e2e","coverage":false}'
 ```
 
-> Los resultados exactos dependen del entorno y del estado de los servicios Docker. Consulta `05-testing.md` para detalles
+> Los resultados exactos dependen del entorno y del estado de los servicios Docker. Consulta las secciones anteriores de este documento para detalles
 > de recolección, reportes y ejecución remota.
 
-#### 3.3 Herramientas y frameworks
+#### 3.7.3 Herramientas y frameworks
 
-#### Objetivos de Cobertura
+##### Objetivos de Cobertura
 
 | Categoría de Pruebas | Objetivo de Cobertura | |------------------------|-----------------------| | Pruebas unitarias | >80% | | Pruebas atómicas | >70% | | Pruebas de integración | >60% | | Pruebas de navegador | >50% | | Pruebas de seguridad | >60% | | Pruebas E2E | >50% |
 
-#### 3.4 Ejecución de pruebas
+#### 3.7.4 Ejecución de pruebas
 
-#### Comandos de Ejecución
+##### Comandos de Ejecución
 
 **Ejecutar todas las pruebas:**
 
@@ -2340,15 +2331,13 @@ No hay riesgos o incidencias conocidas actualmente. Todas las pruebas han sido c
 
 **Troubleshooting:**
 
-- Para problemas de ejecución de pruebas, revisar docs/05-testing.md
-- Para problemas de pruebas de Docker, revisar docs/05-testing.md
+- Para problemas de ejecución de pruebas, revisar [3.4 Ejecución de pruebas](#34-ejecución-de-pruebas)
+- Para problemas de pruebas de Docker, revisar [3.6 Pruebas con Docker](#36-pruebas-con-docker)
 - Para problemas de configuración del entorno, revisar docs/02-architecture.md
 
 #### 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Pruebas**: [docs/05-testing.md](05-testing.md)
-- **Estrategia de Pruebas de Docker**: [docs/05-testing.md](05-testing.md)
 - **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
 - **README Principal**: [/README.md](../README.md)
 - **Documentación de Pytest**: https://docs.pytest.org/
@@ -2681,7 +2670,7 @@ Los puntos principales son:
 
 
 Referencia TFM: complementa el Capítulo 4 (Desarrollo específico) y el Anexo D (Validación).
-Datos extraídos de `docs/05-testing.md`, `reports/test-review/`, `reports/quality/`,
+Datos extraídos de este documento, `reports/test-review/`, `reports/quality/`,
 `reports/holistic/` y `tests/`.
 
 ---
