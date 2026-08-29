@@ -128,10 +128,10 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/health
 | `GET` | `/soar/cortex/jobs/{job_id}` | Cortex Get Job | |
 | `GET` | `/soar/cortex/jobs/{job_id}/report` | Cortex Get Job Report | |
 | `GET` | `/soar/cortex/health` | Cortex Health | |
-| `GET` | `/soar/misp/attributes` | MISPSearch Attributes | |
-| `GET` | `/soar/misp/events` | MISPList Events | |
-| `GET` | `/soar/misp/events/{event_id}` | MISPGet Event | |
-| `GET` | `/soar/misp/health` | MISPHealth | |
+| `GET` | `/soar/misp/attributes` | MISP Search Attributes | |
+| `GET` | `/soar/misp/events` | MISP List Events | |
+| `GET` | `/soar/misp/events/{event_id}` | MISP Get Event | |
+| `GET` | `/soar/misp/health` | MISP Health | |
 | `GET` | `/soar/shuffle/workflows` | Shuffle List Workflows | |
 | `GET` | `/soar/shuffle/workflows/{workflow_id}` | Shuffle Get Workflow | |
 | `GET` | `/soar/shuffle/workflows/{workflow_id}/executions` | Shuffle Get Executions | |
