@@ -3270,7 +3270,7 @@ graph TD
    E -->|Telegram Bot 7675556882| I[Exfiltracion Bot API<br/>sendDocument]
    F -.->|Token + Chat ID| I
  end
- subgraph Persist["4. Persistencia y evasion"]
+ subgraph Persist["4. Persistencia and evasion"]
    G --> J[4 Scripts VBS/BAT]
    J --> K[max.vbs<br/>Launcher/watchdog<br/>Exclusiones Defender]
    J --> L[babuchen.bat<br/>Killer AV<br/>14 srv + 34 suites + WU]
@@ -3637,7 +3637,7 @@ title: Flujo General del Sistema
 ---
 graph TD
     A[Generación de Alertas] --> B[Recepción en Shuffle]
-    B --> C[Validación y Clasificación]
+    B --> C[Validación and Clasificación]
     C --> D[Análisis de Indicadores]
     D --> E[Cálculo de Riesgo]
     E --> F{Riesgo Alto?}
@@ -3647,7 +3647,7 @@ graph TD
     H --> I
     I --> J[Registro de Acciones]
     J --> K[Cálculo de KPIs]
-    K --> L[Monitoreo y Dashboards]
+    K --> L[Monitoreo and Dashboards]
     L --> M[Análisis de Resultados]
 ```
 
@@ -3665,7 +3665,7 @@ graph TD
     end
 
     subgraph Aplicación
-        A1[application/ - casos de uso y puertos input/output]
+        A1[application/ - casos de uso and puertos input/output]
         A2[auth/ - fachada de autenticación]
     end
 
@@ -3830,7 +3830,7 @@ graph TD
     D --> N[Redis - Caché de IoCs]
     D --> O[Loki - Búsqueda de logs]
     D --> ES[Elasticsearch - Indexar alerta]
-    E --> P[Calc decision - Score y verdict]
+    E --> P[Calc decision - Score and verdict]
     F --> P
     I --> P
     J --> P
@@ -3840,7 +3840,7 @@ graph TD
     N --> P
     O --> P
     ES --> P
-    P --> Q{Score ≥ 80 o malicious?}
+    P --> Q{Score ≥ 80 or malicious?}
     Q -->|Sí| R[Contención simulada]
     Q -->|No| S[TheHive - Resolved/FalsePositive]
     R --> T[TheHive - Caso permanece Open]

@@ -452,15 +452,15 @@ paso refleja la lógica del playbook y las decisiones basadas en análisis autom
 
 ```mermaid
 flowchart TD
- A[Webhook: alerta recibida] --> B[Validación y normalización]
+ A[Webhook: alerta recibida] --> B[Validación and normalización]
  B --> C[Crear caso en TheHive]
  C --> D[Añadir IoCs]
  D --> E[Ejecutar analyzers en Cortex]
  E --> F{Score ≥ 80 or verdict malicioso?}
  F -->|Sí| G[Contención simulada]
  F -->|No| H[Marcar como benigno]
- G --> I[Actualizar caso y notificar]
- H --> I[Actualizar caso y notificar]
+ G --> I[Actualizar caso and notificar]
+ H --> I[Actualizar caso and notificar]
 ```
 
 #### Arquitectura del Laboratorio
@@ -1209,7 +1209,7 @@ graph TD
  B --> C[make up]
  C --> D[make health]
  D --> E[pytest tests/e2e/]
- E --> F[Actualizar docs y matriz]
+ E --> F[Actualizar docs and matriz]
  F --> G[Commit + cierre]
 ```
 
