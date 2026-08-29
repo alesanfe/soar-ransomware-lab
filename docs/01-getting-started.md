@@ -852,7 +852,7 @@ Tras `make reset`, `SHUFFLE_DEFAULT_APIKEY` puede cambiar. `ShuffleClient._fetch
   - **Linux**: `sudo systemd-resolve --flush-caches` (distros con systemd) o `sudo systemctl restart nscd`
   - **macOS**: `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`
 
-**Memoria insuficiente (Elasticsearch / Indexer / OOM):**
+**Memoria insuficiente (Elasticsearch / OpenSearch / OOM):**
 
 - Aumenta la memoria asignada a Docker Desktop (mínimo recomendado **16 GB**, swap **4 GB**).
 - Ajusta `mem_limit` en los archivos `infra/docker/compose/docker-compose*.yml` si es necesario.

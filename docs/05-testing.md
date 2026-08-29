@@ -1754,7 +1754,7 @@ Este documento no cubre:
 
 - Estrategias de seguridad avanzadas del proyecto (ver docs/02-architecture.md)
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
-- Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#323-casos-de-prueba))
+- Detalle de casos de prueba específicos (ver [3.2.3 Casos de prueba](#323-casos-de-prueba))
 - Guía de usuario para ejecutar pruebas (ver [3.2.4 Ejecución de pruebas](#324-ejecución-de-pruebas))
 
 #### 2.3 Dependencias
@@ -2222,7 +2222,7 @@ Este documento cubre:
 
 Este documento no cubre:
 
-- Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#323-casos-de-prueba))
+- Detalle de casos de prueba específicos (ver [3.2.3 Casos de prueba](#323-casos-de-prueba))
 - Estrategia detallada de pruebas de Docker (ver [3.6 Pruebas con Docker](#36-pruebas-con-docker))
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
 
@@ -2386,7 +2386,7 @@ make test-coverage
 - **CI/CD**: Ejecución automática en GitHub Actions
 - **Docker**: Ejecución dentro de contenedores
 - **Remoto vía API / Web Management**: a través del endpoint `POST /tests/run` delegado a `PytestTestRunner`
- (`src/soar_lab/infrastructure/pytest_test_runner.py`). Ver [sección 3.4.3](#3243-ejecución-remota-vía-pytesttestrunner).
+ (`src/soar_lab/infrastructure/pytest_test_runner.py`). Ver [sección 3.2.4.3](#3243-ejecución-remota-vía-pytesttestrunner).
 
 #### 3.7.5 Reportes y métricas
 
