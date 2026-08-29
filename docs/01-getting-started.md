@@ -285,38 +285,7 @@ El laboratorio usa `soar.local` como dominio interno y Nginx termina TLS con cer
 
 3. (Opcional) Importar `infra/docker/config/nginx/ssl/soar.local.crt` como autoridad de confianza en el navegador para evitar advertencias de certificado. En Windows, usa el complemento *Certificados* (`certmgr.msc`) → *Autoridades de certificación raíz de confianza* → *Importar*.
 
-4. Generar certificados del indexer (solo en despliegue nuevo):
-
-   El generador utiliza certificados TLS propios para la comunicación segura entre el manager, el indexer y el dashboard. El archivo `infra/docker/compose/docker-compose.yml` levanta temporalmente el generador oficial de certificados y deposita los archivos en el directorio configurado. Ejecuta el siguiente comando desde la raíz del repositorio:
-
-   ```bash
-   docker compose -f infra/docker/compose/docker-compose.yml run --rm generator
-   ```
-
-   El generador crea los certificados necesarios para `.indexer`, `.dashboard` y `.manager`, junto con el certificado de la CA (`root-ca.pem`) y el par de claves del administrador (`admin.pem` / `admin-key.pem`). Solo es necesario ejecutarlo una vez por despliegue o cuando se regeneren los certificados.
-
-5. (Opcional) Importar la CA del indexer en el almacén de confianza del sistema o del navegador:
-
-   - **Windows** (PowerShell como Administrador):
-
-     ```powershell
-     Import-Certificate -FilePath "infra\docker\config\nginx\ssl\soar.local.crt" -CertStoreLocation Cert:\LocalMachine\Root
-     ```
-
-   - **Linux** (Debian/Ubuntu):
-
-     ```bash
-     sudo cp root-ca.pem /usr/local/share/ca-certificates/indexer-root-ca.crt
-     sudo update-ca-certificates
-     ```
-
-   - **macOS**:
-
-     ```bash
-     sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain root-ca.pem
-     ```
-
-6. Validar resolución y certificados:
+4. Validar resolución y certificados:
 
    ```bash
    ping soar.local
