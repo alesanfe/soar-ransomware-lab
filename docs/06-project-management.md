@@ -1907,7 +1907,7 @@ docker stats
 
 ```bash
 # Validar esquema de alerta
-python3 -c "from src.soar_lab.config.schemas import RansomwareAlert; print(RansomwareAlert.__name__)"
+python3 -c "from soar_lab.config.schemas import RansomwareAlert; print(RansomwareAlert.__name__)"
 
 # Verificar tokens
 echo $THEHIVE_API_KEY
