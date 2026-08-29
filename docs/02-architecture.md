@@ -2641,7 +2641,7 @@ Las evidencias de validación incluyen:
 - **Backup**: Implementar backup automatizado de volúmenes persistentes
  ```bash
  # Crear backup vía API
- curl -X POST http://localhost:8000/api/backup/create \
+ curl -X POST http://localhost:8000/backup/create \
  -H "Authorization: Bearer $TOKEN" \
  -H "Content-Type: application/json" \
  -d '{"name": "manual-backup"}'

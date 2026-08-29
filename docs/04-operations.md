@@ -2310,7 +2310,7 @@ docker run --rm -v soar_es_data:/data -v $(pwd)/backups:/backup alpine \
 
 #### 8. Pruebas
 
-El suite de tests incluye pruebas de integración del driver y del servicio:
+La suite de tests incluye pruebas de integración del driver y del servicio:
 
 ```bash
 python -m pytest tests/unit/infrastructure/test_tar_backup_driver.py -v
