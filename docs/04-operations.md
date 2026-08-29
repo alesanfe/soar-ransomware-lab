@@ -4729,7 +4729,7 @@ flowchart TD
  D -->|API error x3| ERR2([Abort + notificar crítico])
  D -->|OK case_id| E[N4: Adjuntar observables]
  E --> F[N5: Ejecutar analyzers Cortex]
- F --> G{N6: score ≥ 80\no verdict == malicious?}
+ F --> G{N6: score ≥ 80\nor verdict == malicious?}
 
  G -->|SÍ| H[N7: isolate_host.sh]
  H --> I[N8: TheHive → InProgress]

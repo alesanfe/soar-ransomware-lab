@@ -501,7 +501,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 | `GET` | `/soar/elasticsearch/count` | No | Contar documentos en un índice |
 | `GET` | `/soar/elasticsearch/latest` | No | Documentos recientes de un índice |
 | `GET` | `/soar/elasticsearch/health` | No | Health de Elasticsearch |
-| `GET` | `/soar//agents/{agent_id}/vulnerabilities` | No | CVEs de un agente |
+| `GET` | `/soar/agents/{agent_id}/vulnerabilities` | No | CVEs de un agente |
 
 **Payload — Login (`POST /auth/login`):**
 
@@ -1200,7 +1200,7 @@ Las versiones canónicas de los componentes principales se consultan directament
 
 | Componente | Versión verificada | Fuente | Documentación oficial |
 |------------|--------------------|--------|-----------------------|
-| **Shuffle** | `2.2.1` (`ghcr.io/shuffle/shuffle-frontend/backend/orborus:2.2.1`) | `infra/docker/compose/docker-compose.core.yml` | <https://shuffler.io/docs> |
+| **Shuffle** | `2.2.1` (`ghcr.io/shuffle/shuffle-frontend:2.2.1`, `ghcr.io/shuffle/shuffle-backend:2.2.1`, `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | `infra/docker/compose/docker-compose.core.yml` | <https://shuffler.io/docs> |
 | **TheHive** | `3.5.2-1` (`thehiveproject/thehive:3.5.2-1`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/thehive/> |
 | **Cortex** | `3.2.0-1` (imagen compatible con TheHive 3.x) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/cortex/> |
 | **MISP** | `v2.5.44` (`ghcr.io/misp/misp-docker/misp-core:v2.5.44`) | `infra/docker/compose/docker-compose.misp.yml` | <https://www.misp-project.org/documentation/> |
