@@ -557,8 +557,8 @@ principales: DMZ, Aplicación, Datos y Gestión.
 | DMZ / segmentación de red real | Simulado | Diagramas conceptuales; contenedores comparten Docker networks |
 | Contención de endpoints | Simulado | Acciones de contención son notificaciones/logs; no aísla endpoints reales sin agente EDR |
 | Erradicación / recuperación automatizada | Simulado | Backups y métricas reales; la erradicación real no se ejecuta |
-| Cifrado en tránsito (TLS) | Parcial | TLS en Nginx y ; tráfico interno Docker mayoritariamente HTTP |
-| Cifrado en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch/ |
+| Cifrado en tránsito (TLS) | Parcial | TLS en Nginx y OpenSearch; tráfico interno Docker mayoritariamente HTTP |
+| Cifrado en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch |
 
 ### 3.2 Aplicaciones y componentes
 
