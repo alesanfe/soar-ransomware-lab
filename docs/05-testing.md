@@ -1755,7 +1755,7 @@ Este documento no cubre:
 - Estrategias de seguridad avanzadas del proyecto (ver docs/02-architecture.md)
 - Arquitectura detallada del sistema (ver docs/02-architecture.md)
 - Detalle de casos de prueba específicos (ver [3.3 Casos de prueba](#323-casos-de-prueba))
-- Guía de usuario para ejecutar pruebas (ver [3.4 Ejecución de pruebas](#324-ejecución-de-pruebas))
+- Guía de usuario para ejecutar pruebas (ver [3.2.4 Ejecución de pruebas](#324-ejecución-de-pruebas))
 
 #### 2.3 Dependencias
 
@@ -2465,7 +2465,7 @@ No hay riesgos o incidencias conocidas actualmente. Todas las pruebas han sido c
 
 **Troubleshooting:**
 
-- Para problemas de ejecución de pruebas, revisar [3.4 Ejecución de pruebas](#324-ejecución-de-pruebas)
+- Para problemas de ejecución de pruebas, revisar [3.2.4 Ejecución de pruebas](#324-ejecución-de-pruebas)
 - Para problemas de pruebas de Docker, revisar [3.6 Pruebas con Docker](#36-pruebas-con-docker)
 - Para problemas de configuración del entorno, revisar docs/02-architecture.md
 

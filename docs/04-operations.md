@@ -5806,16 +5806,15 @@ La organización de `src/soar_lab/` sigue arquitectura hexagonal/ports-and-adapt
 Ver detalles en:
 
 - `docs/02-architecture.md`
-- `docs/02-architecture.md`
 
-#### 7.5 Distinción entre Elasticsearch, OpenSearch y
+#### 7.5 Distinción entre Elasticsearch, OpenSearch y OpenSearch Dashboards
 
 | Componente | Rol en el laboratorio | Imagen / versión | Puerto host | Notas |
 |------------|-----------------------|------------------|-------------|-------|
 | **Elasticsearch** | Motor de búsqueda para TheHive, Cortex y métricas SOAR (índices `soar-alerts`, `soar-metrics`) | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `8200` | Usado por TheHive, Cortex, Grafana, KPIs y Lab API |
 | **OpenSearch** | Backend interno de Shuffle (almacenamiento de workflows y ejecuciones) | `opensearchproject/opensearch:2.10.0` | `8201` (por defecto en `.env.example`) | Motor principal actual de Shuffle; no es una migración futura |
 
-La documentación operativa debe referirse al nombre completo del servicio (`elasticsearch` para el core del laboratorio, `.indexer` para ) para evitar ambigüedades. No se usa Kibana; Grafana es la herramienta de visualización central.
+La documentación operativa debe referirse al nombre completo del servicio (`elasticsearch` para el core del laboratorio, `opensearch` para el backend de Shuffle, `opensearch-dashboards` para la interfaz de visualización de OpenSearch) para evitar ambigüedades. No se usa Kibana; Grafana es la herramienta de visualización central.
 
 #### 7.6 Estado de capacidades (implementado / simulado / planificado / no verificado)
 

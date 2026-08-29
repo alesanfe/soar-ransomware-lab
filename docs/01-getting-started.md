@@ -313,7 +313,7 @@ Este comando despliega todos los servicios definidos en los archivos Docker Comp
 - Lab API, Docs Site, Web Management, Nginx
 - Stack de logging: Loki, Promtail, Grafana, PostgreSQL (Grafana DB)
 
-> **Nota:** El comando `make up` usa `.env.full` como fuente de configuración (genera una copia local `.env` con paths absolutos resueltos y la pasa a `docker compose` con `--env-file .env`). Incluye automáticamente la creación de directorios, la inicialización de la configuración del indexer y la configuración de Cortex/TheHive, además del webhook de Shuffle (`init_shuffle_webhook.py`). No es necesario ejecutar `make init-webhook` manualmente en un despliegue inicial.
+> **Nota:** El comando `make up` usa `.env.full` como fuente de configuración (genera una copia local `.env` con paths absolutos resueltos y la pasa a `docker compose` con `--env-file .env`). Incluye automáticamente la creación de directorios, la inicialización de la configuración de OpenSearch y la configuración de Cortex/TheHive, además del webhook de Shuffle (`init_shuffle_webhook.py`). No es necesario ejecutar `make init-webhook` manualmente en un despliegue inicial.
 
 **Despliegue manual (equivalente a `make up`):**
 
@@ -321,7 +321,7 @@ Si prefieres no usar `make`, ejecuta los siguientes pasos desde la raíz del rep
 
 ```bash
 # 1. Crear redes y directorios necesarios (omite si ya existen)
-mkdir -p runtime/data/{elasticsearch,thehive/files,cortex,shuffle/apps,shuffle/files,redis,misp/db,misp/files,misp/configs,misp/logs/{api_config,etc,queue,var_multigroups,integration_files,wodles,logs},loki,grafana} runtime/{backups,logs,results,coverage}
+mkdir -p runtime/data/{elasticsearch,thehive/files,cortex,shuffle/apps,shuffle/files,redis,misp/db,misp/files,misp/configs,misp/logs/{api_config,etc,queue,integration_files,logs},loki,grafana} runtime/{backups,logs,results,coverage}
 
 # 2. Levantar el stack
 docker compose -p soar \
@@ -400,7 +400,7 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
    make health
    ```
 
-   `make health` comprueba los endpoints de: TheHive (`:8100`), Cortex (`:8101`), Shuffle (`:5001`), Elasticsearch (`:8200`), API (`:8000/health`), Web Management (`:8085`), MISP (`:8083`), Dashboard del indexer, Grafana (`:8084`), Redis, Nginx y Tenzir.
+   `make health` comprueba los endpoints de: TheHive (`:8100`), Cortex (`:8101`), Shuffle (`:5001`), Elasticsearch (`:8200`), API (`:8000/health`), Web Management (`:8085`), MISP (`:8083`), Dashboard de OpenSearch, Grafana (`:8084`), Redis, Nginx y Tenzir.
 
 3. **URLs de acceso:** Revisa la tabla de la sección [3.4.1 Puertos de acceso a servicios](#341-puertos-de-acceso-a-servicios) y confirma que las URLs responden (`curl -I` o navegador).
 
@@ -419,7 +419,7 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
    make logs
    ```
 
-   Si algún servicio falla, inspecciona `soar_api`, el indexer, `soar_elasticsearch` y `soar_shuffle_backend`.
+   Si algún servicio falla, inspecciona `soar_api`, `soar_opensearch`, `soar_elasticsearch` y `soar_shuffle_backend`.
 
 ---
 
@@ -444,13 +444,13 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 | TheHive | `http://localhost:8100` | `/thehive/` | `admin` / contraseña generada por `init_thehive.py` (ver `.env.full`) |
 | Cortex | `http://localhost:8101` | `/cortex/` | `admin` / contraseña generada por `reset_cortex.py` (ver `.env.full`) |
 | Elasticsearch | `http://localhost:8200` | No expuesto | `elastic` / `ELASTIC_PASSWORD` |
-| Indexer Dashboard | `https://localhost:8202` | No soportado | Ver `.env.full` |
+| OpenSearch Dashboards | `https://localhost:8202` | No soportado | Ver `.env.full` |
 
 > **Notas de acceso:**
 > - El acceso recomendado para usuarios es `https://soar.local` (requiere `127.0.0.1 soar.local` en el archivo `hosts` y confianza en `soar.local.crt`).
 > - Nginx escucha en 80 (redirección a HTTPS) y 443 (proxy inverso a Web Management).
-> - Los puertos directos (`8081`, `8083`, `8084`, `8085`, `8086`, `8100`, `8101`, `8202`) son accesibles directamente sin pasar por Nginx. El dashboard del indexer requiere HTTPS (`https://localhost:8202`).
-> - El despliegue incluye **Elasticsearch 7.10.2** para TheHive/Cortex/KPI y **OpenSearch 2.10.0** para Shuffle; el indexer es otro clúster OpenSearch interno. Ver `docs/02-architecture.md`.
+> - Los puertos directos (`8081`, `8083`, `8084`, `8085`, `8086`, `8100`, `8101`, `8202`) son accesibles directamente sin pasar por Nginx. El dashboard de OpenSearch requiere HTTPS (`https://localhost:8202`).
+> - El despliegue incluye **Elasticsearch 7.10.2** para TheHive/Cortex/KPI y **OpenSearch 2.10.0** para Shuffle (con OpenSearch Dashboards en el puerto 8202). Ver `docs/02-architecture.md`.
 
 #### 3.4.2 Configuración inicial de servicios
 
@@ -671,20 +671,18 @@ Características principales:
 - Alertas y notificaciones basadas en umbrales
 - Exportación de dashboards y configuraciones
 
-**Indexer Dashboard**
+**OpenSearch Dashboards**
 
 - **URL:** `https://localhost:8202`
-- **Descripción:** Plataforma de análisis de logs y seguridad. Proporciona una interfaz para visualizar y analizar logs de todos los servicios del sistema SOAR. Integra detección de amenazas, respuesta a incidentes y monitoreo de integridad de archivos.
+- **Descripción:** Interfaz de visualización para OpenSearch, el backend de Shuffle. Permite inspeccionar workflows, ejecuciones y datos internos de Shuffle almacenados en índices OpenSearch.
 
 Características principales:
 
-- Visualización de logs de todos los servicios SOAR en tiempo real
-- Reglas de detección de amenazas y alertas
-- Monitoreo de integridad de archivos (FIM)
-- Detección de intrusiones y vulnerabilidades
-- Integración con Elasticsearch para almacenamiento de logs
-- Búsqueda avanzada y filtrado de logs
-- Alertas y notificaciones de seguridad
+- Visualización de índices y documentos de OpenSearch
+- Inspección de workflows y ejecuciones de Shuffle
+- Búsqueda avanzada y filtrado de datos
+- Dashboards personalizados sobre datos de Shuffle
+- Integración con OpenSearch como backend de Shuffle
 
 #### 3.6.2 Verificación de contenedores Docker
 
