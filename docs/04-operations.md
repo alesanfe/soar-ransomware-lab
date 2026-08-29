@@ -3403,9 +3403,10 @@ docker pull hello-world
 
 # Usar VPN si hay bloqueo LaLiga/Cloudflare
 # Pre-descargar imágenes cuando no hay bloqueo
-docker pull thehiveproject/thehive:latest
-docker pull cortexproject/cortex:latest
-docker pull shuffler/shuffle:latest
+docker pull thehiveproject/thehive:3.5.2-1
+docker pull ghcr.io/shuffle/shuffle-frontend:2.2.1
+docker pull ghcr.io/shuffle/shuffle-backend:2.2.1
+docker pull ghcr.io/shuffle/shuffle-orborus:2.2.1-patched
 ```
 
 **Verificación:**
