@@ -118,20 +118,20 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/health
 | `POST` | `/backup/restore` | Restore Backup | |
 | `POST` | `/tests/run` | Run Tests | |
 | `GET` | `/services/status` | Get Services Status | |
-| `GET` | `/soar/thehive/cases` | Thehive List Cases | |
-| `GET` | `/soar/thehive/cases/{case_id}` | Thehive Get Case | |
-| `GET` | `/soar/thehive/cases/{case_id}/observables` | Thehive Get Observables | |
-| `GET` | `/soar/thehive/cases/{case_id}/tasks` | Thehive Get Tasks | |
-| `GET` | `/soar/thehive/health` | Thehive Health | |
+| `GET` | `/soar/thehive/cases` | TheHive List Cases | |
+| `GET` | `/soar/thehive/cases/{case_id}` | TheHive Get Case | |
+| `GET` | `/soar/thehive/cases/{case_id}/observables` | TheHive Get Observables | |
+| `GET` | `/soar/thehive/cases/{case_id}/tasks` | TheHive Get Tasks | |
+| `GET` | `/soar/thehive/health` | TheHive Health | |
 | `GET` | `/soar/cortex/analyzers` | Cortex List Analyzers | |
 | `GET` | `/soar/cortex/jobs` | Cortex List Jobs | |
 | `GET` | `/soar/cortex/jobs/{job_id}` | Cortex Get Job | |
 | `GET` | `/soar/cortex/jobs/{job_id}/report` | Cortex Get Job Report | |
 | `GET` | `/soar/cortex/health` | Cortex Health | |
-| `GET` | `/soar/misp/attributes` | Misp Search Attributes | |
-| `GET` | `/soar/misp/events` | Misp List Events | |
-| `GET` | `/soar/misp/events/{event_id}` | Misp Get Event | |
-| `GET` | `/soar/misp/health` | Misp Health | |
+| `GET` | `/soar/misp/attributes` | MISPSearch Attributes | |
+| `GET` | `/soar/misp/events` | MISPList Events | |
+| `GET` | `/soar/misp/events/{event_id}` | MISPGet Event | |
+| `GET` | `/soar/misp/health` | MISPHealth | |
 | `GET` | `/soar/shuffle/workflows` | Shuffle List Workflows | |
 | `GET` | `/soar/shuffle/workflows/{workflow_id}` | Shuffle Get Workflow | |
 | `GET` | `/soar/shuffle/workflows/{workflow_id}/executions` | Shuffle Get Executions | |

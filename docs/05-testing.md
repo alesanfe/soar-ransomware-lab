@@ -1269,7 +1269,8 @@ pytest tests/integration/test_misp_integration.py -v
 # Tests de Shuffle
 pytest tests/integration/test_init_shuffle_webhook.py -v
 
-# Tests de
+# Tests de validación de Docker
+pytest tests/integration/test_docker_build_validation.py -v
 ```
 
 #### Ejecutar con coverage
