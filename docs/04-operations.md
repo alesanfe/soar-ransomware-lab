@@ -1172,7 +1172,7 @@ flake8 src/soar_lab --count --exit-zero --max-complexity=10 --max-line-length=10
 mypy src/soar_lab --ignore-missing-imports
 
 # Tests unitarios con cobertura
-pytest tests/unit/ -v --cov=src.soar_lab --cov-report=xml
+pytest tests/unit/ -v --cov=src/soar_lab --cov-report=xml
 ```
 
 > `make lint` y `make test-all` ejecutan estos pasos agrupados según la plataforma (Linux/macOS/WSL vs Windows).
@@ -4897,7 +4897,7 @@ echo $CORTEX_API_KEY
 
 ```bash
 # Verificar esquema Pydantic de alertas
-python3 -c "from src.soar_lab.config.schemas import RansomwareAlert; print(RansomwareAlert.model_json_schema)"
+python3 -c "from soar_lab.config.schemas import RansomwareAlert; print(RansomwareAlert.model_json_schema)"
 ```
 
 **Analyzers fallidos:**
