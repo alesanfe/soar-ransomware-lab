@@ -424,11 +424,11 @@ sequenceDiagram
  TheHive-->>Shuffle: Datos del caso
  Shuffle->>Cortex: Ejecuta analyzers en IoCs
  Cortex-->>Shuffle: Resultados (score, verdict)
- alt Score ≥ 80 o verdict malicioso
+ alt Score ≥ 80 or verdict malicioso
  Shuffle->>Scripts: Ejecuta contención simulada
  Scripts-->>Shuffle: Notificación de aislamiento
  Shuffle->>TheHive: Marca como "contención activada"
- else Score < 80 y verdict benigno
+ else Score < 80 and verdict benigno
  Shuffle->>TheHive: Marca como "benigno"
  end
  Shuffle-->>TheHive: Actualización final del caso
@@ -1739,7 +1739,7 @@ El laboratorio despliega **dos motores de búsqueda simultáneamente**: Elastics
 
 - **Doble consumo de recursos**: cada nodo aloca ~2 GB de heap (`ES_JAVA_OPTS` / `OPENSEARCH_JAVA_OPTS`). En entornos con poca RAM puede ser necesario escalar verticalmente.
 - **Backups coherentes**: hay que respaldar dos conjuntos de datos (`soar_es_data` y `soar_opensearch_data`).
-- **Hoja de ruta futura**: cuando TheHive/Cortex o sus forks soporten OpenSearch 2.x de forma nativa, Elasticsearch podrá eliminarse y Shuffle/OpenSearch/ podrían compartir un único clúster.
+- **Hoja de ruta futura**: cuando TheHive/Cortex o sus forks soporten OpenSearch 2.x de forma nativa, Elasticsearch podrá eliminarse y Shuffle/OpenSearch podrían compartir un único clúster.
 
 #### Cómo verificar el estado de ambos motores
 
