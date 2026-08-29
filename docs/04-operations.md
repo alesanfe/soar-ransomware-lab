@@ -1118,7 +1118,7 @@ Tras ejecutar `make up` (o el equivalente `docker compose -f ... up -d`), desde 
 7. **Credenciales generadas**
  Verificar que `.env.full` no contiene placeholders `CHANGEME`/`CHANGE_ME` tras `make generate-secrets`:
  ```bash
- grep -iE "CHANGEME|CHANGE_ME|123456|admin/admin" .env.full | | echo "OK"
+ grep -iE "CHANGEME|CHANGE_ME|123456|admin/admin" .env.full || echo "OK"
  ```
 
 8. **Acceso a Shuffle UI**
@@ -1789,7 +1789,7 @@ Dominio local canónico: `soar.local` → `127.0.0.1` (añadir al archivo hosts,
 | Tenzir Node | `15160` / `15140` | `5160` / `1514` | HTTP/Syslog | `http://localhost:15160` | No | `soar_tenzir_node` | `15160` API, `15140` ingest syslog. |
 | TheHive | `${THEHIVE_HTTP_PORT:-8100}` | `9000` | HTTP | `http://localhost:8100` | `/thehive/` | `soar_thehive` | Acceso directo recomendado para validación inicial. |
 | Cortex | `${CORTEX_HTTP_PORT:-8101}` | `9001` | HTTP | `http://localhost:8101` | `/cortex/` | `soar_cortex` | `/cortex/analyzers` desde Nginx. |
-| Elasticsearch | `${ELASTICSEARCH_PORT:-8200}` | `9200` | HTTP | `http://localhost:8200` | No | `soar_elasticsearch` | Usado por TheHive, Cortex, Shuffle, Grafana y . |
+| Elasticsearch | `${ELASTICSEARCH_PORT:-8200}` | `9200` | HTTP | `http://localhost:8200` | No | `soar_elasticsearch` | Usado por TheHive, Cortex, Shuffle y Grafana. |
 | OpenSearch (alternativo) | `${OPENSEARCH_PORT:-8201}` | `9200` | HTTP | `http://localhost:8201` | No | `soar_opensearch` | Compose `docker-compose.opensearch.yml`; no se despliega por defecto. |
 | MISP | `${MISP_PORT:-8083}` | `80` | HTTP/HTTPS| `http://localhost:8083` | No | `soar_misp` | MISP no soporta subpath proxy. |
 | MISP DB | — | `3306` | SQL | — | No | `soar_misp_db` | MariaDB 10.11; solo red interna. |
@@ -4038,7 +4038,7 @@ El workflow `.github/workflows/ci.yml` ejecuta `markdownlint`, `lychee`, `script
 make docs-lint
 
 # O paso a paso:
-npx markdownlint-cli2 "docs/**/*.md" --config .markdownlint.json | | true
+npx markdownlint-cli2 "docs/**/*.md" --config .markdownlint.json || true
 lychee --offline docs/ README.md CONTRIBUTING.md
 python scripts/ci/terminology_check.py docs/
 python -m pytest tests/integration/test_openapi_spec_sync.py -v

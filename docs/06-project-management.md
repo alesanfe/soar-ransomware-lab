@@ -1279,7 +1279,7 @@ docker --version
 docker compose version
 make --version
 echo "vagrant no disponible (eliminado)"
-VBoxManage --version 2>/dev/null | | echo "VirtualBox no disponible"
+VBoxManage --version 2>/dev/null || echo "VirtualBox no disponible"
 git rev-parse HEAD
 ```
 
@@ -1493,8 +1493,7 @@ docker pull (R11⚠️) → docker up (R1✅, R2⚠️) → servicios (R5✅, R6
 - Pruebas: `pytest tests/e2e/TC-01/test_malicious.py`, `pytest tests/e2e/TC-02/`
 - KPIs: `src/soar_lab/domain/services/kpi_analyzer.py` → `runtime/results/kpis.csv`
 
-Los riesgos activos de mayor prioridad son **R11** (bloqueo LaLiga/Cloudflare), **R2** (recursos), **R3** (analyzers), *
-*R4** (integración) y **R7** (umbrales MTTR).
+Los riesgos activos de mayor prioridad son **R11** (bloqueo LaLiga/Cloudflare), **R2** (recursos), **R3** (analyzers), **R4** (integración) y **R7** (umbrales MTTR).
 
 #### 3.3 Estrategias de mitigación
 
@@ -1941,8 +1940,7 @@ pytest tests/e2e/TC-01/
 - **Documentación de MISP**: https://www.misp-project.org/documentation/
 - **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
 - **Cloudflare Status**: https://www.cloudflarestatus.com/
-- **Hyper-V Port Exclusion
- **: https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/reference/hyper-v-virtual-switch
+- **Hyper-V Port Exclusion**: https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/reference/hyper-v-virtual-switch
 - **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
 - **Plan del Proyecto**: [este documento](#33-plan-de-trabajo)
 - **Alcance del Proyecto**: [este documento](#32-alcance)
