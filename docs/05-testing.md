@@ -262,7 +262,7 @@ El archivo `tests/conftest.py` en el directorio raíz de tests contiene fixtures
 - `mock_misp_client`: Cliente MISP mockeado
 - `mock_shuffle_client`: Cliente Shuffle mockeado
 
-#### Pirámide de calidad
+#### Pirámide de calidad (resumen de tipos)
 
 | Nivel | Tipo | Qué valida | Ejecución canónica |
 |---|---|---|---|
