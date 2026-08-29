@@ -152,7 +152,7 @@ Este manual depende de:
 3. **Configuración de Servicios**: Elasticsearch, TheHive, Cortex, Shuffle
 4. **Registro de Apps**: Integración de servicios con Shuffle
 5. **Creación de Workflows**: Definición de flujos de automatización
-6. **Configuración de y MISP**: Integración SIEM y threat intelligence
+6. **Configuración de SIEM y MISP**: Integración SIEM y threat intelligence
 7. **Pruebas End-to-End**: Validación de integraciones
 
 #### 3.2 Proceso de configuración
