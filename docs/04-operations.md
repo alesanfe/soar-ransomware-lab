@@ -1006,7 +1006,7 @@ Scripts principales:
 
 **Integraciones Configuradas:**
 
-1. ** → Shuffle**: Webhook para alertas de seguridad en tiempo real
+1. **SIEM → Shuffle**: Webhook para alertas de seguridad en tiempo real
 2. **Shuffle → MISP**: Consulta de IoCs para enriquecimiento de amenazas
 3. **Shuffle → Cortex**: Análisis de malware y observables
 4. **Shuffle → TheHive**: Creación de casos y alertas
@@ -1625,7 +1625,7 @@ docker compose ps
 docker inspect --format='{{.State.Health.Status}}' soar_<servicio>
 ```
 
-#### - contraseñas y dependencias
+#### Consideraciones de arranque - contraseñas y dependencias
 
 - **Duración del arranque:** tras `make up`, el manager puede requerir 3-5 minutos para aceptar autenticación API.
 

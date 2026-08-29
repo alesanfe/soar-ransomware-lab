@@ -2981,13 +2981,13 @@ sequenceDiagram
  end
  Note over Backend: 11 nodos verify_* validan cada rama<br/>antes de calc_decision
  Backend->>Backend: calc_decision (score + verdict)
- Note over Backend: Shuffle no soporta alt nativo ambas ramas se ejecutan<br/>y los scripts Python deciden segun decision
+ Note over Backend: Shuffle no soporta alt nativo; ambas ramas se ejecutan<br/>y los scripts Python deciden segun decision
  alt score >= 80 OR verdict == "malicious"
    Backend->>API: POST /api/v1/contain (contención simulada)
    API-->>Backend: Contención confirmada (modo simulation)
    Backend->>Backend: update_inprogress (case stays Open, no PATCH)
    Backend->>Backend: notify_critical (email CRITICAL)
- else score < 80 y verdict != malicious
+ else score < 80 and verdict != malicious
    Backend->>TheHive: PATCH /api/case (Resolved/FalsePositive)
    Backend->>Backend: notify_info (email INFO)
  end
@@ -3027,7 +3027,7 @@ flowchart TD
  D --> H[N6: build_es_json + ES indexar<br/>POST /soar-alerts]
  D --> I[N7: Network Watcher + Tenzir<br/>pipeline/create + serve<br/>+ Loki + Redis]
 
- E --> J{N8: calc_decision<br/>score >= 80 o verdict == malicious?}
+ E --> J{N8: calc_decision<br/>score >= 80 or verdict == malicious?}
  E3 --> J
  F --> J
  G --> J
@@ -3067,12 +3067,12 @@ sequenceDiagram
 
  Note over Shuffle: calc_decision ya ejecutado<br/>score y verdict disponibles
  Note over Shuffle: Shuffle no soporta alt nativo ambas ramas se ejecutan<br/>y los scripts Python deciden segun decision
- alt score >= 80 o verdict == malicious
+ alt score >= 80 or verdict == malicious
  Shuffle->>API: POST /api/v1/contain (contención simulada)
  API-->>Shuffle: Contención confirmada (modo simulation)
  Shuffle->>Shuffle: update_inprogress (case stays Open, no PATCH)
  Shuffle->>Shuffle: notify_critical (JSON channel=email severity=CRITICAL)
- else score < 80 y verdict != malicious
+ else score < 80 and verdict != malicious
  Shuffle->>TheHive: PATCH /api/case (status=Resolved, resolutionStatus=FalsePositive)
  Shuffle->>Shuffle: notify_info (JSON channel=email severity=INFO)
  end

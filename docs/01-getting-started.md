@@ -32,7 +32,7 @@
 
 ### 1.1 Objetivo
 
-Este documento proporciona una visión general, guía de instalación y guía de usuario del SOAR Ransomware Lab, un laboratorio mínimo viable (MSV) diseñado para la respuesta automatizada ante incidentes de ransomware. Integra instrucciones paso a paso para instalar, configurar y utilizar el entorno en tu máquina local.
+Este documento proporciona una visión general, guía de instalación y guía de usuario del SOAR Ransomware Lab, un laboratorio mínimo viable (MVP) diseñado para la respuesta automatizada ante incidentes de ransomware. Integra instrucciones paso a paso para instalar, configurar y utilizar el entorno en tu máquina local.
 
 ### 1.2 Contexto
 

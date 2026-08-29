@@ -290,7 +290,7 @@ para garantizar su viabilidad y cumplimiento académico.
 
 #### 1.2 Contexto
 
-El objetivo principal de este TFM es diseñar, implementar y evaluar un laboratorio SOAR mínimo viable (MSV) para la
+El objetivo principal de este TFM es diseñar, implementar y evaluar un laboratorio SOAR mínimo viable (MVP) para la
 respuesta ante incidentes de ransomware. Este laboratorio ejecutará un playbook automatizado de extremo a extremo (E2E)
 que cubra el flujo completo: Webhook → Validación → Caso en TheHive → Adjuntar IoCs → Analyzers en Cortex → Decisión →
 Contención Simulada → Notificación.
@@ -1568,7 +1568,7 @@ graph TD
 | R2 | Recursos insuficientes | 2025-05-01 | 2025-05-08 | Estudiante | Monitorear uso RAM | ⚠️ Vigilancia |
 | R3 | Analyzers lentos o sin respuesta | 2025-05-01 | 2025-05-08 | Estudiante | Limitar analyzers activos | ⚠️ Vigilancia |
 | R4 | Integración Shuffle → TheHive → Cortex rota | 2025-05-01 | 2025-05-08 | Estudiante | Validar tokens | ⚠️ Vigilancia |
-| R5 | incompatible con Elasticsearch | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (mitigado) | ✅ Estable |
+| R5 | OpenSearch Dashboards incompatible con Elasticsearch | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (mitigado) | ✅ Estable |
 | R6 | MISP lento en arranque | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (conocido) | ✅ Estable |
 | R7 | Tiempo de respuesta supera umbrales | 2025-05-01 | 2025-05-08 | Estudiante | Calcular KPIs | ⚠️ Vigilancia |
 | R8 | APIs externas no disponibles | 2025-05-01 | 2025-05-08 | Estudiante | Verificar antes de pruebas | ⚠️ Vigilancia |
@@ -1992,7 +1992,7 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 | 1 | Loki latest no tiene shell/healthcheck | `infra/docker/compose/logging/docker-compose.logging.yml` | Iniciar sin `healthcheck`; depender de reintentos de Promtail/Grafana | Media |
 | 2 | Resolución de `configs.file` relativa al primer compose | `infra/docker/compose/logging/docker-compose.logging.yml` | Dashboards de Grafana usan `configs.file` con rutas `logging/grafana-kpi-dashboard.yml` (sin `./`); Promtail usa volume mount desde `runtime/config/` | Baja |
 | 3 | Bind mount de MariaDB falla en Windows | `infra/docker/compose/docker-compose.misp.yml` | Volumen Docker normal para `misp_db` | Alta (Windows) |
-| 5 | sin healthcheck fiable inicial | `docker-compose.opensearch.yml` | Nginx depende de `service_started` no `service_healthy` | Media |
+| 4 | OpenSearch sin healthcheck fiable inicial | `docker-compose.opensearch.yml` | Nginx depende de `service_started` no `service_healthy` | Media |
 | 6 | Elasticsearch disk watermark | `docker-compose.yml` | Umbrales bajos en entorno de lab; monitorizar disco | Media |
 | 7 | Grafana no trae datasource ES built-in en algunas versiones | `docker-compose.logging.yml` | Grafana 10.3.4 incluye Elasticsearch nativamente; Grafana en `logging_net` y `soar_net` | Baja |
 | 8 | `soar-metrics` mapping incorrecto (mttr_seconds object) | `scripts/setup/init_shuffle_webhook.py` | Crear `soar-metrics` con mapping correcto | Baja |
