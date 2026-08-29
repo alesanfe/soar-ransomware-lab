@@ -1144,7 +1144,7 @@ docker compose --env-file .env -f infra/docker/compose/docker-compose.yml -f inf
 
 **Notas de nomenclatura**:
 - Los nombres de contenedor usan el prefijo `${COMPOSE_PROJECT_NAME:-soar}_` y `_` como separador (ej. `soar_api`).
-- Los nombres de servicio con guión (`shuffle-frontend`, `.manager`) son los nombres internos de Docker Compose.
+- Los nombres de servicio con guión (`shuffle-frontend`, `opensearch-dashboards`) son los nombres internos de Docker Compose.
 - `soar_api` es el nombre del **contenedor**; el **servicio** Compose es `api` y el **hostname** interno es `api`.
 
 #### Healthchecks y dependencias
@@ -1160,7 +1160,7 @@ Valores extraídos de los archivos Compose; pueden ajustarse en `.env.full` o di
 | Grupo | Servicios | CPU límite / reserva | Memoria límite / reserva |
 |---|---|---|---|
 | Grandes | `elasticsearch`, `thehive`, `cortex`, `shuffle-backend`, `misp` | 2.0 / 1.0 cores | 4GB / 2GB |
-| Medianos | `redis`, `shuffle-frontend`, `orborus`, `.manager`, `.indexer`, `grafana`, `api` | 1.0 / 0.5 cores | 1-2GB / 0.5-1GB |
+| Medianos | `redis`, `shuffle-frontend`, `orborus`, `opensearch`, `opensearch-dashboards`, `grafana`, `api` | 1.0 / 0.5 cores | 1-2GB / 0.5-1GB |
 | Pequeños | `docs-site`, `web-management`, `promtail` | 0.5 / 0.25 cores | 256-512MB / 128-256MB |
 
 #### 3.3 Redes y volúmenes
@@ -1170,7 +1170,7 @@ Valores extraídos de los archivos Compose; pueden ajustarse en `.env.full` o di
 | Red | CIDR | Tipo | Servicios | Propósito |
 |---|---|---|---|---|
 | `bridge` | — | `external: true` | Ninguno directamente | Red por defecto de Docker; declarada por compatibilidad |
-| `soar_net` | `10.100.0.0/16` | bridge | `elasticsearch`, `redis`, `thehive`, `cortex`, `shuffle-*`, `orborus`, `network-watcher`, `tenzir-node`, `misp*`, `.*`, `api`, `web-management`, `nginx`, `grafana`, `promtail` | Red principal del laboratorio |
+| `soar_net` | `10.100.0.0/16` | bridge | `elasticsearch`, `redis`, `thehive`, `cortex`, `shuffle-*`, `orborus`, `network-watcher`, `tenzir-node`, `misp*`, `opensearch`, `opensearch-dashboards`, `api`, `web-management`, `nginx`, `grafana`, `promtail` | Red principal del laboratorio |
 | `ti_net` | `172.22.0.0/16` | `internal: true` | `elasticsearch`, `redis`, `api` | Aislada del exterior; tráfico de inteligencia de amenazas |
 | `logging_net` | `172.23.0.0/16` | bridge | `grafana-db`, `grafana`, `loki`, `promtail`, `nginx` | Tráfico de observabilidad |
 
@@ -1239,7 +1239,7 @@ Ubicaciones adicionales:
 
 - El servicio de backup reside en `src/soar_lab/application/use_cases/backup_service.py` y se expone en `/backup/create` y `/backup/restore`.
 - Los artefactos se escriben en `runtime/backups/` (montado en `/app/backups` del contenedor `api`).
-- Para backup completo del laboratorio se recomienda detener el stack y copiar `runtime/` (incluidos `data/` y `logs/`), además de exportar volúmenes Docker normales (`misp_db`, `-indexer-data`, etc.).
+- Para backup completo del laboratorio se recomienda detener el stack y copiar `runtime/` (incluidos `data/` y `logs/`), además de exportar volúmenes Docker normales (`misp_db`, `opensearch_data`, etc.).
 
 
 #### 3.4 Comandos y operaciones
