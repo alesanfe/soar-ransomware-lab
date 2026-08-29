@@ -1291,7 +1291,7 @@ pytest tests/integration/ --cov=src/soar_lab --cov-report=html
 #### Inicialización y Configuración
 
 - `test_init_shuffle_webhook.py`: Inicialización de webhook Shuffle
-- `test_docker_compose_validation.py`: Validación de Docker Compose
+- `test_docker_build_validation.py`: Validación de Docker Compose y builds
 - `test_docker_runtime_status.py`: Estado de runtime Docker
 
 #### Comunicación y Datos
@@ -1771,7 +1771,7 @@ Este documento depende de:
 
 **Nivel 1: Validación de Configuración**
 
-- Archivos: `tests/integration/test_docker_compose_validation.py`, `tests/integration/test_docker_build_validation.py`
+- Archivos: `tests/integration/test_docker_build_validation.py`
 - Propósito: Validar configuración de `infra/docker/compose/docker-compose*.yml` sin requerir Docker daemon
 - Ventajas: Ejecución rápida, puede ejecutarse en cualquier entorno, amigable para CI/CD
 - Limitaciones: No valida inicio real de servicios, conectividad de red real, funcionalidad de servicios
@@ -1827,7 +1827,7 @@ El proyecto no utiliza el campo `profiles:` de Docker Compose; en su lugar, `Mak
 ##### 3.6.2.1 Fase 1: pruebas de configuración
 
 ```bash
-python -m pytest tests/integration/test_docker_compose_validation.py -v
+python -m pytest tests/integration/test_docker_build_validation.py -v
 ```
 
 - Validación rápida de `infra/docker/compose/docker-compose*.yml`
@@ -1940,7 +1940,7 @@ make test-e2e # Requiere stack completo
 **Ejecutar pruebas de configuración directas:**
 
 ```bash
-python -m pytest tests/integration/test_docker_compose_validation.py -v
+python -m pytest tests/integration/test_docker_build_validation.py -v
 ```
 
 **Ejecutar pruebas de runtime directas:**
