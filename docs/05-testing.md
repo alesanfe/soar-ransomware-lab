@@ -415,7 +415,7 @@ tests/
 > **Nota:** `tests/e2e/` SÍ existe como directorio con 48 archivos organizados por test case (TC-00..TC-33, TC-KPI-01..06). Los tests marcados `smoke` se encuentran además en `tests/integration/test_smoke.py` y mediante el marcador `smoke` de pytest.
 
 **Nota:** Los tests unitarios cubren `src/soar_lab/` de forma aislada; los E2E validan workflows completos del playbook
-Shuffle, TheHive, Cortex, MISP y ; las pruebas de integración verifican adaptadores y servicios del dominio.
+Shuffle, TheHive, Cortex, MISP y Elasticsearch; las pruebas de integración verifican adaptadores y servicios del dominio.
 
 ##### 3.2.1.2 Categorías de pruebas
 

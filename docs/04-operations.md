@@ -1022,7 +1022,7 @@ Scripts principales:
 | Shuffle → MISP | Shuffle workflow, MISP API | Enriquecimiento y registro de IoCs | **Implementada** | `MISP_API_KEY`; sincronización bidireccional puede requerir ajuste manual |
 | Shuffle → Elasticsearch | Shuffle workflow, ES API | Indexado de métricas e incidentes | **Implementada** | Índice `soar-metrics` |
 | TheHive → Shuffle | TheHive webhook a Shuffle | Notificación de eventos de caso | **Implementada** | Configurar webhook en `application.conf` / UI |
-| Lab API → Elasticsearch / TheHive / Cortex / MISP / | API endpoints, clientes Python | Consulta de estado y KPIs | **Implementada** | Clientes en `src/soar_lab/infrastructure/integrations/` |
+| Lab API → Elasticsearch / TheHive / Cortex / MISP | API endpoints, clientes Python | Consulta de estado y KPIs | **Implementada** | Clientes en `src/soar_lab/infrastructure/integrations/` |
 | Contención de endpoints | Shuffle workflow, scripts `notify.sh` | Simulada | **Simulada** | No hay agente EDR real; se registran notificaciones y métricas |
 | MFA / SSO | — | No operativo | **Planificado** | Autenticación actual: JWT HS256 |
 | WAF / mTLS / segmentación real | Nginx | No operativo | **Planificado / No verificado** | Nginx es proxy inverso con certificado autofirmado |
@@ -1567,10 +1567,10 @@ sequenceDiagram
  Cortex-->>Backend: resultados (score/veredicto)
  Backend->>MISP: POST /events/add (IoC)
  MISP-->>Backend: eventId
- alt score >= DECISION_SCORE_THRESHOLD o veredicto malicioso
+ alt score >= DECISION_SCORE_THRESHOLD or veredicto malicioso
  Backend->>Backend: Acción de contención simulada
  Backend->>TheHive: PATCH /api/case (Open → Resolved)
- else score < umbral y benigno
+ else score < umbral and benigno
  Backend->>TheHive: PATCH /api/case (marcar benigno)
  end
  Backend->>ES: Indexa métricas KPI (@timestamp, mttr_seconds, ...)

@@ -841,10 +841,10 @@ sequenceDiagram
  Backend->>MISP: POST /events/add (enriquecimiento IoC)
  MISP-->>Backend: Evento creado
  Backend->>Backend: Decisión (score >= 80?)
- alt Score ≥ 80 o verdict malicioso
+ alt Score ≥ 80 or verdict malicioso
  Backend->>Backend: Acción de contención simulada
  Backend->>TheHive: PATCH /api/case (actualizar estado)
- else Score < 80 y verdict benigno
+ else Score < 80 and verdict benigno
  Backend->>TheHive: PATCH /api/case (marcar benigno)
  end
  LabAPI->>Backend: GET /soar/status /metrics
