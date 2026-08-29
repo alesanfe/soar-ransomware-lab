@@ -406,7 +406,7 @@ tests/
 ├── reports/       # Tests de reportes
 ├── runners/       # Scripts de ejecución de suites
 ├── runtime/       # Tests de runtime
-├── conftest.py    # Configuración global de Pytest
+├── conftest.py    # Configuración global de pytest
 └── __init__.py
 ```
 
@@ -2253,7 +2253,7 @@ tests/
 ├── security/ # Pruebas de escaneo de seguridad y vulnerabilidades
 ├── e2e/ # Pruebas de flujo de trabajo de extremo a extremo
 ├── general/ # Pruebas transversales no asociadas a una categoría
-├── conftest.py # Configuración de Pytest y fixtures
+├── conftest.py # Configuración de pytest y fixtures
 └── runners/ # Utilidades de ejecución de pruebas
 ```
 

@@ -1714,8 +1714,8 @@ Los archivos Docker Compose montan estas configuraciones mediante rutas relativa
 ```yaml
 volumes:
  - ../config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
- - ../config/cortex.application.conf/cortex.conf:/etc/cortex/application.conf:ro
- - ../config/thehive.application.conf/thehive.conf:/etc/thehive/application.conf:ro
+ - ../config/cortex.conf:/etc/cortex/application.conf:ro
+ - ../config/thehive.conf:/etc/thehive/application.conf:ro
 ```
 
 ---
@@ -2968,22 +2968,22 @@ for the SOAR Ransomware Lab project.
 
 ```bash
 # Run all quality checks (fast + slow)
-python quality/run_quality_checks.py
+python scripts/quality/run_quality_checks.py
 
 # Run only fast checks (skip mutation, pylint, mypy, coverage)
-python quality/run_quality_checks.py --report-only
+python scripts/quality/run_quality_checks.py --report-only
 
 # Analyze a single file
-python quality/run_quality_checks.py --file src/soar_lab/domain/services/kpi_analyzer.py
+python scripts/quality/run_quality_checks.py --file src/soar_lab/domain/services/kpi_analyzer.py
 
 # Run only one category
-python quality/run_quality_checks.py --only complexity
-python quality/run_quality_checks.py --only security
-python quality/run_quality_checks.py --only coverage
-python quality/run_quality_checks.py --only typing
+python scripts/quality/run_quality_checks.py --only complexity
+python scripts/quality/run_quality_checks.py --only security
+python scripts/quality/run_quality_checks.py --only coverage
+python scripts/quality/run_quality_checks.py --only typing
 
 # Write reports to a custom directory
-python quality/run_quality_checks.py --output-dir reports/quality
+python scripts/quality/run_quality_checks.py --output-dir reports/quality
 ```
 
 #### Generating coverage data
@@ -2995,7 +2995,7 @@ Coverage requires a `coverage.xml` file. Generate it by running the unit tests w
 python -m pytest tests/ -m "unit" --cov=src/soar_lab --cov-report=xml:reports/coverage/coverage.xml
 
 # Then run quality checks — coverage will be picked up automatically
-python quality/run_quality_checks.py
+python scripts/quality/run_quality_checks.py
 ```
 
 Without coverage data, the coverage category shows "Not measured" and does not
@@ -3097,21 +3097,21 @@ Classification:
 
 #### Running checks as pytest tests
 
-Each quality dimension has a pytest test file in `quality/checks/`.
+Each quality dimension has a pytest test file in `tests/quality/`.
 The tests provide more granular checks than the runner and can be run individually:
 
 ```bash
 # Run all quality tests
-pytest quality/checks/ -v
+pytest tests/quality/ -v
 
 # Run only complexity tests
-pytest quality/checks/test_complexity_project.py -v
+pytest tests/quality/test_complexity_project.py -v
 
 # Run with the quality marker
 pytest -m quality -v
 
 # Run a specific test class
-pytest quality/checks/test_security.py::TestSecurity -v
+pytest tests/quality/test_security.py::TestSecurity -v
 ```
 
 #### Test descriptions
@@ -3135,7 +3135,7 @@ pytest quality/checks/test_security.py::TestSecurity -v
 
 #### Thresholds
 
-Thresholds are configurable via YAML files in `quality/thresholds/`:
+Thresholds are configurable via YAML files in `scripts/quality/thresholds/`:
 
 | File | Key thresholds |
 |------|---------------|
@@ -3184,14 +3184,14 @@ The runner exits with code 0 if score >= 70, 1 otherwise. Add to CI:
  run: pytest tests/ -m "unit" --cov=src/soar_lab --cov-report=xml:reports/coverage/coverage.xml
 
 - name: Quality checks
- run: python quality/run_quality_checks.py
+ run: python scripts/quality/run_quality_checks.py
 ```
 
 For fast checks only (no coverage, mypy, pylint, mutation):
 
 ```yaml
 - name: Quality checks (fast)
- run: python quality/run_quality_checks.py --report-only
+ run: python scripts/quality/run_quality_checks.py --report-only
 ```
 
 #### Tools used

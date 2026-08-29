@@ -860,9 +860,9 @@ sequenceDiagram
 6. **Contención**: El playbook registra acciones de contención simuladas con estados `pending`, `executed` o `failed`.
 7. **Observabilidad**: Lab API expone métricas, KPIs y estado de integraciones vía REST y WebSocket `/ws/logs`.
 
-##### 3.4.4.2 Procedimientos Específicos de Rotación de API Keys
+##### 3.4.4.2 Procedimientos Específicos de Rotación de API keys
 
-**Rotación de API Keys para TheHive:**
+**Rotación de API keys para TheHive:**
 
 ```bash
 # 1. Generar nueva API key desde TheHive UI
@@ -880,7 +880,7 @@ docker compose restart shuffle-backend shuffle-frontend
 curl -H "Authorization: Bearer $THEHIVE_API_KEY" http://localhost:8100/api/case
 ```
 
-**Rotación de API Keys para Cortex:**
+**Rotación de API keys para Cortex:**
 
 ```bash
 # 1. Generar nueva API key desde Cortex UI
