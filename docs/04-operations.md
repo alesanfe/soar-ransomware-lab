@@ -491,7 +491,7 @@ docker restart soar_thehive
 
 #### 3.2.5 Paso 5: configuración de Cortex
 
-**Sitio Oficial**: [Cortex Project](https://thehive-project.org/cortex)
+**Sitio Oficial**: [Cortex Project](https://github.com/TheHive-Project/Cortex)
 **Documentación**: [Cortex Documentation](https://docs.strangebee.com/cortex/)
 **GitHub**: [TheHive-Project/Cortex](https://github.com/TheHive-Project/Cortex)
 
