@@ -1470,7 +1470,7 @@ flowchart TD
  SQLITE[SqliteAlertRepository]
  TAR[TarBackupDriver]
  JWT[JWTTokenProvider]
- HTTP[HTTPClient → Shuffle/TheHive/Cortex/MISP//ES]
+ HTTP[HTTPClient → Shuffle/TheHive/Cortex/MISP/ES]
  end
 
  F -->|/auth/login| AS
@@ -1932,7 +1932,7 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 | Contención real de endpoints | Simulado | `scripts/setup/notify.sh` registra notificaciones; no hay agente EDR ni aislamiento de red real |
 | Escaneo de vulnerabilidades | Implementado (script + CI) | `scripts/` y `.github/workflows/ci.yml` (`aquasecurity/trivy-action@master`, `scan-type: fs`) |
 | TLS/SSL en tránsito | Parcial | Certificados autofirmados vía Nginx (`soar.local.crt`); tráfico interno entre contenedores es mayoritariamente HTTP |
-| Encriptación en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch/ en Compose |
+| Encriptación en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch en Compose |
 | Network Watcher | Implementado | `src/soar_lab/infrastructure/network_watcher/` conecta workers de Shuffle a `soar_net` |
 | Logging centralizado | Implementado | Loki + Promtail + Grafana (`infra/docker/compose/logging/docker-compose.logging.yml`) |
 | Trivy / escaneo de imágenes en CI | Implementado | Job `security-scan` en `.github/workflows/ci.yml` genera `trivy-results.sarif` |

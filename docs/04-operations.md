@@ -2375,7 +2375,7 @@ En un despliegue nuevo o tras regenerar certificados :
 bash scripts/setup/gen_certs.sh
 ```
 
-El generador usa la imagen `/-certs-generator:0.0.2` y produce los certificados necesarios para `.manager`, `.indexer` y `.dashboard`.
+El script usa OpenSSL directamente para generar la CA (`ca.crt`), certificados de servidor (`soar.local.crt`) y el bundle `fullchain.pem` en `infra/docker/config/nginx/ssl/`.
 
 #### Confianza en el navegador / sistema operativo
 
@@ -2396,7 +2396,7 @@ Los certificados de servicio tienen una validez de **365 días**; la CA local es
 
 ```bash
 openssl x509 -in infra/docker/config/nginx/ssl/soar.local.crt -noout -dates
-openssl x509 -in infra/docker/config/nginx/ssl/soar.local.crt -noout -dates
+openssl x509 -in infra/docker/config/nginx/ssl/ca.crt -noout -dates
 ```
 
 #### Renovar certificados de servicio
