@@ -742,7 +742,7 @@ python -m pytest tests/integration/test_authorization.py -v
 | Pruebas de rendimiento | N/A (benchmarks de rendimiento) |
 | Pruebas E2E | >50% |
 
-**Estado Actual del Suite (v1.4.0):**
+**Estado Actual de la Suite (v1.4.0):**
 
 - **Python soportado**: `>=3.11` (declarado en `pyproject.toml`; CI y entorno de desarrollo usan 3.11.x).
 - **Objetivo mínimo global**: ≥ 80% de cobertura.
@@ -1807,7 +1807,7 @@ make health
 make test-unit # Fase de pruebas unitarias (no requiere Docker)
 make test-integration # Fase de runtime e integración
 make test-e2e # Fase de navegador/UI y flujos completos
-make test-all # Ejecuta todo el suite
+make test-all # Ejecuta toda la suite
 ```
 
 **Selección de perfiles de Docker Compose:**
