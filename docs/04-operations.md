@@ -4344,7 +4344,7 @@ Resuelto: el endpoint de healthcheck devuelve `success: true`.
 
 #### 5.5 Análisis de archivos obsoletos e incongruencias
 
-El análisis completo está en [`docs/06-project-management.md`](06-project-management.md) y [`docs/06-project-management.md`](06-project-management.md). Puntos clave:
+El análisis completo está en [`docs/06-project-management.md`](06-project-management.md). Puntos clave:
 
 - Los scripts temporales de remediación (`_*.py`, `tmp_*.py`, etc.) se mantienen ignorados en `.gitignore` y no se versionan.
 - `.env.full` está en el historial de Git; si el repositorio se publica, rotar todos los secretos y purgar el historial (`git filter-repo` / `git filter-branch`).
