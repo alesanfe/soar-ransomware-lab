@@ -1,45 +1,45 @@
-﻿# Gestión del Proyecto — SOAR Ransomware Lab
+# Gestión del Proyecto — SOAR Ransomware Lab
 
 ## Índice
 
 - [1. Resumen](#1-resumen)
- - [1.1 Objetivo](#11-objetivo)
- - [1.2 Contexto](#12-contexto)
+  - [1.1 Objetivo](#11-objetivo)
+  - [1.2 Contexto](#12-contexto)
 - [2. Alcance](#2-alcance)
- - [2.1 Qué cubre](#21-qué-cubre)
- - [2.2 Límites](#22-límites)
- - [2.3 Dependencias](#23-dependencias)
+  - [2.1 Qué cubre](#21-qué-cubre)
+  - [2.2 Límites](#22-límites)
+  - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
- - [3.1 Objetivos del proyecto](#31-objetivos-del-proyecto)
- - [3.2 Alcance](#32-alcance)
- - [3.3 Plan de trabajo](#33-plan-de-trabajo)
- - [3.4 Matriz de requisitos](#34-matriz-de-requisitos)
- - [3.5 Gobernanza y validación](#35-gobernanza-y-validación)
- - [3.6 Riesgos](#36-riesgos)
- - [3.7 Deuda técnica](#37-deuda-técnica)
- - [3.8 Matriz de inconsistencias](#38-matriz-de-inconsistencias)
- - [3.9 Remediación documental (resumen)](#39-remediación-documental-resumen)
- - [3.10 Estado de revisión documental](#310-estado-de-revisión-documental)
- - [3.11 Auditoría final](#311-auditoría-final)
+  - [3.1 Objetivos del proyecto](#31-objetivos-del-proyecto)
+  - [3.2 Alcance](#32-alcance)
+  - [3.3 Plan de trabajo](#33-plan-de-trabajo)
+  - [3.4 Matriz de requisitos](#34-matriz-de-requisitos)
+  - [3.5 Gobernanza y validación](#35-gobernanza-y-validación)
+  - [3.6 Riesgos](#36-riesgos)
+  - [3.7 Deuda técnica](#37-deuda-técnica)
+  - [3.8 Matriz de inconsistencias](#38-matriz-de-inconsistencias)
+  - [3.9 Remediación documental (resumen)](#39-remediación-documental-resumen)
+  - [3.10 Estado de revisión documental](#310-estado-de-revisión-documental)
+  - [3.11 Auditoría final](#311-auditoría-final)
+  - [3.12 Anexo: Estado del Arte](#312-anexo-estado-del-arte)
+  - [2.1 a 2.4: Respuesta a incidentes, SOAR, laboratorios open source](#21-respuesta-a-incidentes-y-ransomware-como-dominio-de-aplicación)
+  - [3.13 Anexo: Objetivos y Metodología](#313-anexo-objetivos-y-metodología)
+  - [3.1 a 3.3: Objetivo general, específicos, metodología](#31-objetivo-general)
+  - [3.14 Anexo: Métricas y Visualizaciones Complementarias](#314-anexo-métricas-y-visualizaciones-complementarias)
+  - [C.1 a C.4: Valores reales n=50, tablas avanzadas, gráficos, logs](#c1-valores-reales-calculados-n50-ejecuciones)
+  - [3.15 Anexo: Resultados Experimentales y Validación](#315-anexo-resultados-experimentales-y-validación)
+  - [D.1 a D.5: E2E n=50, Quality Score 92.2, HPR 96.0, resumen ejecutivo](#d1-resultados-experimentales-e2e-n50)
+  - [3.16 Anexo: Conclusiones y Trabajo Futuro](#316-anexo-conclusiones-y-trabajo-futuro)
+  - [5.1 a 5.4: Conclusiones, trabajo futuro, recomendaciones, alcance](#51-conclusiones)
 - [4. Validación](#4-validación)
- - [4.1 Verificación](#41-verificación)
- - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
- - [4.3 Evidencias](#43-evidencias)
+  - [4.1 Verificación](#41-verificación)
+  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+  - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas](#5-problemas)
- - [5.1 Limitaciones](#51-limitaciones)
- - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
- - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.1 Limitaciones](#51-limitaciones)
+  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
-- [Anexo: Estado del Arte](#anexo-estado-del-arte)
- - [2.1 a 2.4: Respuesta a incidentes, SOAR, laboratorios open source](#21-respuesta-a-incidentes-y-ransomware-como-dominio-de-aplicación)
-- [Anexo: Objetivos y Metodología](#anexo-objetivos-y-metodología)
- - [3.1 a 3.3: Objetivo general, específicos, metodología](#31-objetivo-general)
-- [Anexo: Métricas y Visualizaciones Complementarias](#anexo-métricas-y-visualizaciones-complementarias)
- - [C.1 a C.4: Valores reales n=50, tablas avanzadas, gráficos, logs](#c1-valores-reales-calculados-n50-ejecuciones)
-- [Anexo: Resultados Experimentales y Validación](#anexo-resultados-experimentales-y-validación)
- - [D.1 a D.5: E2E n=50, Quality Score 92.2, HPR 96.0, resumen ejecutivo](#d1-resultados-experimentales-e2e-n50)
-- [Anexo: Conclusiones y Trabajo Futuro](#anexo-conclusiones-y-trabajo-futuro)
- - [5.1 a 5.4: Conclusiones, trabajo futuro, recomendaciones, alcance](#51-conclusiones)
 
 ---
 
@@ -79,17 +79,14 @@ Proyecto académico/profesional para construir un laboratorio SOAR de respuesta 
 
 ### 3.1 Objetivos del proyecto
 
-
 Este documento presenta los objetivos SMART del proyecto y su relación con la Estructura de Desglose del Trabajo (EDT),
 indicando dónde se almacenarán las pruebas y evidencias en el repositorio para garantizar la trazabilidad y validación
 académica.
-
 
 El proyecto se basa en la EDT definida y el contexto del laboratorio SOAR para respuesta ante incidentes de ransomware.
 Cada objetivo está alineado con las tareas del EDT y vinculado con la estructura del repositorio, asegurando
 trazabilidad y organización académica rigurosa. Las evidencias se almacenarán en ubicaciones específicas del repositorio
 para facilitar su validación.
-
 
 Este documento cubre:
 
@@ -99,7 +96,6 @@ Este documento cubre:
 - Relación entre objetivos y EDT
 - Estructura del repositorio para almacenamiento de evidencias
 
-
 Este documento no cubre:
 
 - Detalles técnicos de implementación (ver docs/02-architecture.md)
@@ -107,14 +103,12 @@ Este documento no cubre:
 - Planificación detallada del proyecto (ver este documento)
 - Alcance del proyecto (ver este documento)
 
-
 Este documento depende de:
 
 - EDT definida (este documento)
 - Alcance del proyecto (este documento)
 - Documentación de arquitectura (docs/02-architecture.md)
 - Estrategia de pruebas (docs/05-testing.md)
-
 
 #### 3.1 Objetivos principales
 
@@ -181,7 +175,7 @@ TFM académico riguroso.
 | 5 | Integración SIEM Simulada | Configurar SIEM simulado para generar alertas mediante `src/soar_lab/simulator/simulate_alerts.py`. | Alertas procesadas | 100% sin errores | Logs en Shuffle y casos en TheHive | Simulado |
 | 6 | Contención Simulada | Implementar contención simulada en el playbook E2E (`docs/04-operations.md`). | Acciones ejecutadas | 100% completadas | Logs del servicio y confirmación en flujo | Simulado |
 | 7 | Seguridad del Entorno | Garantizar uso exclusivo de muestras inertes, gestión de certificados SSL (`scripts/setup/gen_certs.sh`) y validación de esquemas (`src/soar_lab/config/schemas/__init__.py`). | Incidentes | 0 incidentes | Revisión del contenido y validación | Parcial |
-| 8 | Automatización Integral | Implementar despliegue con Makefiles, Docker Compose, CI/CD (`.github/workflows/`), testing automatizado (`tests/`, `scripts/maintenance/`), backup/restore (`src/soar_lab/application/use_cases/backup_service.py`) . | Despliegue automático | 100% servicios levantados | Ejecución de scripts y verificación | Parcial |
+| 8 | Automatización Integral | Implementar despliegue con Makefiles, Docker Compose, CI/CD (`.github/workflows/`), testing automatizado (`tests/`, `scripts/maintenance/`), backup/restore (`src/soar_lab/application/use_cases/backup_service.py`). | Despliegue automático | 100% servicios levantados | Ejecución de scripts y verificación | Parcial |
 | 9 | Pruebas Atómicas | Ejecutar pruebas atómicas de componentes individuales (`tests/atomic/`: alertas, IoCs, KPIs, esquemas, secrets). | Casos probados | 90% pruebas pasan | `pytest tests/atomic/ -v` | Parcial |
 | 10 | Pruebas de Integración | Ejecutar pruebas de integración entre TheHive, Cortex, Shuffle, API y otros componentes (`tests/integration/`). | Casos probados | 85% pruebas pasan | `pytest tests/integration/ -v` | Parcial |
 | 11 | Pruebas de Seguridad | Ejecutar pruebas de seguridad para validar autenticación, autorización, validación de entrada y controles de acceso (`tests/security/`). | Casos probados | 100% pruebas pasan | `pytest tests/security/ -v` | Parcial |
@@ -199,9 +193,11 @@ TFM académico riguroso.
 
 #### Diagrama de Gantt del Cronograma de Objetivos
 
+> **Nota:** Esta es la estimación inicial del cronograma (borrador de planificación). El cronograma canónico y actualizado con fechas reales de ejecución está en la [sección 3.13 Anexo: Objetivos y Metodología](#313-anexo-objetivos-y-metodología) (Figura 2, abril-agosto 2026).
+
 ```mermaid
 gantt
- title Cronograma de Objetivos SMART - SOAR Ransomware Lab
+ title Cronograma de Objetivos SMART - SOAR Ransomware Lab (estimación inicial)
  dateFormat YYYY-MM-DD
  section Fase 1 Infraestructura
  Objetivo 1 Laboratorio desplegado :active, obj1, 2025-05-01, 14d
@@ -232,10 +228,10 @@ gantt
 
 | Fase | Duración | Objetivos | Entregables |
 |-----------------------------|-----------|--------------------------|--------------------------------------------------------------------|
-| **Fase 1: Infraestructura** | 4 semanas | 1, 8, 17, 18 | Laboratorio desplegado, automatización, API, CLI |
-| **Fase 2: Desarrollo** | 5 semanas | 2, 5, 6, 19, 20 | Playbook E2E, integración SIEM, scripts, docs-site, web-management |
-| **Fase 3: Validación** | 4 semanas | 3, 9, 10, 11, 12, 13, 14 | Métricas MTTR, pruebas especializadas, KPIs |
-| **Fase 4: Cierre** | 2 semanas | 4, 15, 16 | Documentación técnica, presentación, aprobación |
+| **Fase 1: Investigación** | 3 semanas | — | Revisión de literatura, requisitos, selección del stack |
+| **Fase 2: Diseño** | 3 semanas | — | Arquitectura hexagonal, topología Docker, contratos, modelo de scoring |
+| **Fase 3: Desarrollo** | 6 semanas | 1, 2, 5, 6, 7, 8, 17, 18, 19, 20 | Laboratorio, playbook E2E, integraciones, API, CLI, docs-site, web-management |
+| **Fase 4: Validación** | 6 semanas | 3, 4, 9, 10, 11, 12, 13, 14, 15, 16 | Métricas MTTR, pruebas, KPIs, documentación, defensa TFM |
 
 #### 3.5 Hitos
 
@@ -274,10 +270,10 @@ gantt
 
 #### Hitos Principales
 
-- **Hito 1**: Laboratorio SOAR desplegado, API y CLI funcionales (Semana 4)
-- **Hito 2**: Playbook E2E implementado, docs-site y web-management desplegados (Semana 9)
-- **Hito 3**: Métricas MTTR validadas, pruebas especializadas completadas y KPIs calculados (Semana 13)
-- **Hito 4**: Documentación completa, analytics de TFM y aprobación formal (Semana 15)
+- **Hito 1**: Diseño aprobado, arquitectura y contratos definidos (Semana 6)
+- **Hito 2**: Laboratorio SOAR desplegado, playbook E2E, API, CLI, docs-site y web-management funcionales (Semana 12)
+- **Hito 3**: Métricas MTTR validadas, pruebas especializadas completadas y KPIs calculados (Semana 15)
+- **Hito 4**: Documentación completa, analytics de TFM y aprobación formal (Semana 18)
 
 ### 3.2 Alcance
 
@@ -563,19 +559,19 @@ compatibilidad con entornos académicos.
 #### Componentes No Incluidos
 
 - **Integraciones Comerciales Reales**: SIEM, EDR, Firewall comerciales
- - Justificación: Viabilidad técnica y económica para un TFM unipersonal
+  - Justificación: Viabilidad técnica y económica para un TFM unipersonal
 
 - **Alta Disponibilidad (HA)**: Entornos multi-host complejos o clustering
- - Justificación: Simplicidad y reproducibilidad del entorno académico
+  - Justificación: Simplicidad y reproducibilidad del entorno académico
 
 - **Malware Funcional**: Solo muestras inertes para simulación segura
- - Justificación: Seguridad del entorno académico y consideraciones éticas
+  - Justificación: Seguridad del entorno académico y consideraciones éticas
 
 - **Escenarios Avanzados**: Múltiples playbooks o automatizaciones adicionales
- - Justificación: Enfoque en profundidad vs amplitud
+  - Justificación: Enfoque en profundidad vs amplitud
 
 - **Producción**: No se recomienda para entornos productivos sin hardening adicional
- - Justificación: El laboratorio es un entorno de prueba y validación académica
+  - Justificación: El laboratorio es un entorno de prueba y validación académica
 
 #### 3.5 Restricciones y suposiciones
 
@@ -817,11 +813,11 @@ Las evidencias de validación incluyen:
 #### 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Shuffle**: https://shuffler.io/docs
-- **Documentación de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación de Cortex**: https://docs.strangebee.com/cortex/
-- **Documentación de MISP**: https://www.misp-project.org/documentation/
-- **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
+- **Documentación de Shuffle**: <https://shuffler.io/docs>
+- **Documentación de TheHive**: <https://docs.strangebee.com/thehive/>
+- **Documentación de Cortex**: <https://docs.strangebee.com/cortex/>
+- **Documentación de MISP**: <https://www.misp-project.org/documentation/>
+- **Documentación de Elasticsearch**: <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>
 - **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
 - **Objetivos SMART**: [este documento](#31-objetivos-del-proyecto)
 - **Plan del Proyecto**: [este documento](#33-plan-de-trabajo)
@@ -829,20 +825,6 @@ Las evidencias de validación incluyen:
 - **Playbook E2E**: [docs/04-operations.md](04-operations.md)
 
 ---
-
-**Mejoras realizadas:**
-
-- Reestructurado según formato obligatorio con 6 secciones principales
-- Índice actualizado para reflejar nueva estructura
-- Contenido organizado en subsecciones lógicas
-- Sección de Validación añadida con criterios y evidencias
-- Sección de Problemas y Consideraciones consolidada con troubleshooting específico
-- Matriz de alcance, diagramas y tablas mantenidos en sección 3.3
-
-**Contradicciones detectadas:**
-
-- Ninguna detectada en este documento
-
 
 ### 3.3 Plan de trabajo
 
@@ -856,7 +838,7 @@ playbook → pruebas → informe.
 
 #### 1.2 Contexto
 
-El proyecto se desarrolla en 15 semanas, desde la definición de alcance y objetivos hasta el informe y cierre. Cada fase
+El proyecto se desarrolla en 18 semanas, desde la definición de alcance y objetivos hasta el informe y cierre. Cada fase
 tiene objetivos específicos con entregables e evidencias definidas, alineados con la EDT y los 20 objetivos SMART del
 proyecto.
 
@@ -914,23 +896,23 @@ La ruta crítica del proyecto es:
 
 #### Fases del Proyecto
 
-- **Fase 1: Infraestructura** (4 semanas): Laboratorio, automatización, API, CLI ✅ Finalizada
-- **Fase 2: Desarrollo** (5 semanas): Playbook E2E, integración SIEM, scripts, docs-site, web-management ✅ Finalizada
-- **Fase 3: Validación** (4 semanas): Métricas MTTR, pruebas especializadas, KPIs ✅ Finalizada (KPIs operativos, E2E 48 test files en 39 TCs)
-- **Fase 4: Cierre** (2 semanas): Documentación, analytics, aprobación 🔄 En cierre (remediación documental completada; pendientes: defensa TFM y aprobación formal)
+- **Fase 1: Investigación** (3 semanas): Revisión de la literatura, requisitos, selección del stack tecnológico ✅ Finalizada
+- **Fase 2: Diseño** (3 semanas): Arquitectura hexagonal, topología Docker, contratos de integración, modelo de scoring ✅ Finalizada
+- **Fase 3: Desarrollo** (6 semanas): Playbook E2E, integraciones, simulador SIEM, API FastAPI, stack de monitoreo ✅ Finalizada
+- **Fase 4: Validación** (6 semanas): Suite de pruebas, E2E n=50, análisis estadístico, mutation testing, documentación 🔄 En cierre (remediación documental completada; pendientes: defensa TFM y aprobación formal)
 
 #### 3.2 Fases y cronograma
 
 #### Flujo Cronológico
 
-El proyecto sigue un flujo secuencial de 15 semanas, donde cada fase depende de la anterior. Las tareas críticas están
+El proyecto sigue un flujo secuencial de 18 semanas, donde cada fase depende de la anterior. Las tareas críticas están
 marcadas en los diagramas Gantt como `:crit` para identificar la ruta crítica.
 
 #### Dependencias entre Fases
 
-- Fase 2 depende de Fase 1 (infraestructura configurada)
-- Fase 3 depende de Fase 2 (playbook y aplicaciones desplegadas)
-- Fase 4 depende de Fase 3 (pruebas completadas y KPIs calculados)
+- Fase 2 depende de Fase 1 (investigación y requisitos definidos)
+- Fase 3 depende de Fase 2 (arquitectura y diseño completados)
+- Fase 4 depende de Fase 3 (playbook y aplicaciones desplegadas)
 
 #### 3.3 Recursos y asignación
 
@@ -938,10 +920,10 @@ marcadas en los diagramas Gantt como `:crit` para identificar la ruta crítica.
 
 | Semana | Fase / Hito | Objetivo principal | Entregables / Evidencias | Hitos de Validación Intermedia |
 |---------|-------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
-| S1-S4 | Fase 1: Infraestructura | Laboratorio, automatización, API, CLI (Objetivos 1, 8, 17, 18) | infra/docker/compose/, Makefile, src/soar_lab/interfaces/api/, src/soar_lab/interfaces/api/cli.py, .github/workflows/ | Validación: servicios funcionando, API y CLI operativos (Semana 4) |
-| S5-S9 | Fase 2: Desarrollo | Playbook E2E, integración SIEM, scripts, docs-site, web-management (Objetivos 2, 5, 6, 19, 20) | docs/04-operations.md, src/soar_lab/simulator/simulate_alerts.py, apps/docs-site/, apps/web-management/ | Validación: playbook ejecuta, apps desplegadas (Semana 9) |
-| S10-S13 | Fase 3: Validación | Métricas MTTR, pruebas especializadas, KPIs (Objetivos 3, 9, 10, 11, 12, 13, 14) | tests/atomic/, tests/integration/, tests/security/, tests/performance/, tests/e2e/, runtime/results/kpis.csv, docs/thesis/ | Validación: pruebas pasan, KPIs cumplen umbrales (Semana 13) |
-| S14-S15 | Fase 4: Cierre | Documentación, analytics, aprobación (Objetivos 4, 15, 16) | docs/, docs/thesis/, este documento | Validación: documentación aprobada (Semana 15) |
+| S1-S3 | Fase 1: Investigación | Revisión de literatura, requisitos, selección del stack (sin objetivos SMART específicos) | Documento de requisitos, selección tecnológica | Validación: requisitos aprobados (Semana 3) |
+| S4-S6 | Fase 2: Diseño | Arquitectura hexagonal, topología Docker, contratos, modelo de scoring (sin objetivos SMART específicos) | Diseño de arquitectura, contratos de integración | Validación: diseño aprobado (Semana 6) |
+| S7-S12 | Fase 3: Desarrollo | Laboratorio, playbook E2E, integraciones, API, CLI, docs-site, web-management (Objetivos 1, 2, 5, 6, 7, 8, 17, 18, 19, 20) | infra/docker/compose/, Makefile, src/soar_lab/, apps/docs-site/, apps/web-management/ | Validación: playbook ejecuta, apps desplegadas (Semana 12) |
+| S13-S18 | Fase 4: Validación | Métricas MTTR, pruebas, KPIs, documentación, defensa (Objetivos 3, 4, 9, 10, 11, 12, 13, 14, 15, 16) | tests/, reports/e2e/, docs/thesis/, este documento | Validación: pruebas pasan, KPIs cumplen umbrales, documentación aprobada (Semana 18) |
 
 #### Diagrama Gantt por semanas
 
@@ -951,10 +933,10 @@ title Roadmap por Semanas
 dateFormat YYYY-MM-DD
 axisFormat %V
 section Fases
-Fase 1 Infraestructura :active, f1, 2025-01-01, 4w
-Fase 2 Desarrollo :crit, f2, after f1, 5w
-Fase 3 Validacion :crit, f3, after f2, 4w
-Fase 4 Cierre :crit, f4, after f3, 2w
+Fase 1 Investigacion :active, f1, 2026-04-27, 3w
+Fase 2 Diseno :crit, f2, after f1, 3w
+Fase 3 Desarrollo :crit, f3, after f2, 6w
+Fase 4 Validacion :crit, f4, after f3, 6w
 ```
 
 #### Plan por tareas de la EDT
@@ -1105,11 +1087,11 @@ docker logs soar_shuffle_backend
 #### 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Shuffle**: https://shuffler.io/docs
-- **Documentación de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación de Cortex**: https://docs.strangebee.com/cortex/
-- **Documentación de MISP**: https://www.misp-project.org/documentation/
-- **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
+- **Documentación de Shuffle**: <https://shuffler.io/docs>
+- **Documentación de TheHive**: <https://docs.strangebee.com/thehive/>
+- **Documentación de Cortex**: <https://docs.strangebee.com/cortex/>
+- **Documentación de MISP**: <https://www.misp-project.org/documentation/>
+- **Documentación de Elasticsearch**: <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>
 - **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
 - **Documentación de Seguridad**: [docs/02-architecture.md](02-architecture.md)
 - **Objetivos SMART**: [este documento](#31-objetivos-del-proyecto)
@@ -1117,20 +1099,6 @@ docker logs soar_shuffle_backend
 - **Gestión de Riesgos**: [este documento](#36-riesgos)
 
 ---
-
-**Mejoras realizadas:**
-
-- Reestructurado según formato obligatorio con 6 secciones principales
-- Índice actualizado para reflejar nueva estructura
-- Contenido organizado en subsecciones lógicas
-- Sección de Validación añadida con criterios y evidencias
-- Sección de Problemas y Consideraciones consolidada
-- Tablas y diagramas Gantt mantenidos en sección 3.3
-
-**Contradicciones detectadas:**
-
-- Ninguna detectada en este documento
-
 
 ### 3.4 Matriz de requisitos
 
@@ -1148,7 +1116,6 @@ Documento generado en la **FASE 50** del proyecto para registrar el estado de lo
 
 #### Matriz
 
-
 #### Resumen de estados
 
 - **PASS / FIXED**: 18
@@ -1164,12 +1131,8 @@ Documento generado en la **FASE 50** del proyecto para registrar el estado de lo
 
 - `.gitignore`
 - este documento
-- este documento
-- este documento
-- `docs/04-operations.md`
 - `docs/04-operations.md`
 - `docs/05-testing.md`
-
 
 ### 3.5 Gobernanza y validación
 
@@ -1357,7 +1320,7 @@ Control manual/automatizado: todo párrafo que afirme "funciona", "está configu
 #### 7. Observabilidad, métricas y calidad de datos (FASE 60)
 
 - Promtail → Loki → Grafana.
-- Índice `soar-metrics` ; mapping: `mttr_seconds` float, `@timestamp` date.
+- Índice `soar-metrics`; mapping: `mttr_seconds` float, `@timestamp` date.
 - Plugin Elasticsearch incluido nativamente en Grafana 10.3.4 (no requiere `GF_INSTALL_PLUGINS`).
 - Grafana en `soar_net` y `logging_net`.
 
@@ -1398,13 +1361,9 @@ Control manual/automatizado: todo párrafo que afirme "funciona", "está configu
 #### Referencias
 
 - este documento
-- este documento
-- este documento
-- este documento
 - `docs/05-testing.md`
 - `docs/02-architecture.md`
 - `pytest.ini`
-
 
 ### 3.6 Riesgos
 
@@ -1460,7 +1419,7 @@ Este documento depende de:
 - Stack: 18+ servicios en 6 compose files (`infra/docker/compose/docker-compose.yml`, `infra/docker/compose/docker-compose.core.yml`,
  `infra/docker/compose/docker-compose.misp.yml`, `infra/docker/compose/docker-compose.opensearch.yml`, `infra/docker/compose/docker-compose.api.yml`, `infra/docker/compose/logging/docker-compose.logging.yml`)
 - Entorno: Windows + Docker Desktop (Hyper-V)
-- Tests: 2233 tests coleccionados, 1905 seleccionados, 328 deselected (`tests/` con 150 archivos de test; unitarias, integración, E2E, atomic, seguridad, rendimiento, smoke)
+- Tests: 2233 tests coleccionados, 1905 seleccionados, 328 deselected (`tests/` con 182 archivos `test_*.py`; unitarias, integración, E2E, atomic, seguridad, rendimiento, smoke)
 
 #### Categorías de Riesgos
 
@@ -1469,7 +1428,7 @@ Este documento depende de:
 - **Integración**: Tokens inválidos, esquemas incorrectos, API endpoints
 - **Dependencia**: APIs externas no disponibles, servicios CI/CD
 - **Operacional**: Pérdida de configuración, backup/restore
-- **Tiempo**: Deriva de alcance (ahora 15 semanas en lugar de 7)
+- **Tiempo**: Deriva de alcance (ahora 18 semanas en lugar de 7)
 - **Externo/Regulatorio**: Bloqueo LaLiga/Cloudflare
 - **Seguridad**: Certificados SSL expirados, validación de esquemas
 - **Testing**: Cobertura insuficiente, tests especializados complejos
@@ -1479,7 +1438,7 @@ Este documento depende de:
 
 #### Ruta Crítica y Riesgos Asociados
 
-```
+```text
 docker pull (R11⚠️) → docker up (R1✅, R2⚠️) → servicios (R5✅, R6✅) → API (R12⚠️, R13⚠️, R14⚠️) → conexiones (R4⚠️, R8⚠️) → playbook (R3⚠️, R7⚠️) → pruebas (R15⚠️, R16⚠️) → analytics (R20⚠️) → informe (R10✅)
 ```
 
@@ -1520,7 +1479,7 @@ Los riesgos activos de mayor prioridad son **R11** (bloqueo LaLiga/Cloudflare), 
 | R17 | **CLI del Laboratorio inusable** — CLI (`src/soar_lab/interfaces/api/cli.py`) tiene errores de usabilidad o compatibilidad entre plataformas | Operacional | Baja | Medio | ⚠️ Activo | Tests unitarios de CLI; documentación de comandos (`--help`); validación en Windows y Linux |
 | R18 | **Documentación operativa desincronizada** — Rutas, puertos, URLs, credenciales y contratos en `docs/` difieren del código o de Compose; se mantienen archivos duplicados o históricos sin marcar | Documentación | Alta | Alto | ⚠️ Activo | Plan de remediación documental; generar OpenAPI, tabla canónica de puertos y catálogos de tests automáticamente; marcar `legacy/` como histórico; revisar enlaces y secretos periódicamente |
 | R21 | **Credenciales y tokens estáticos en repositorio o documentación** — Ejemplos con contraseñas `2024` o tokens operativos pueden confundirse con secretos vigentes o filtrarse en historial Git | Seguridad | Alta | Alto | ✅ Mitigado | Auditar variables de token SIEM, `.env.example` y `grafana-datasources.yml`; usar placeholders (`<...>`) y `<SIEM_TOKEN>` en documentación; generar secretos con `soar-lab generate-secrets`; revisar historial Git |
-| R22 | **Seguridad interna deshabilitada en Elasticsearch / OpenSearch** — Certificados autofirmados sin CA importada reducen la postura de seguridad; `xpack.security.enabled` se parametriza con `ELASTIC_SECURITY_ENABLED` (por defecto `true`) | Seguridad | Media | Alto | ⚠️ Aceptado | Documentar claramente como riesgo aceptado del laboratorio; no prometer producción; planificar hardening en ruta crítica |
+| R22 | **Seguridad interna deshabilitada en Elasticsearch / OpenSearch** — Certificados autofirmados sin CA importada reducen la postura de seguridad; `xpack.security.enabled` se parametriza con `ELASTIC_SECURITY_ENABLED` (por defecto `false`) | Seguridad | Media | Alto | ⚠️ Aceptado | Documentar claramente como riesgo aceptado del laboratorio; no prometer producción; planificar hardening en ruta crítica |
 | R23 | **Mappings de métricas (`soar-metrics`) inconsistentes** — Cambios en `mttr_seconds` o `@timestamp` sin reindexación rompen dashboards de Grafana | Operacional | Media | Medio | ✅ Mitigado | `init_shuffle_webhook.py` crea/actualiza mapping correcto; documentar procedimiento de reindexación |
 | R24 | **Dependencia crítica de Network Watcher** — Si `soar_network_watcher` no conecta workers de Shuffle a `soar_net` o falla al inyectar hosts, los playbooks no resuelven servicios | Operacional | Media | Alto | ⚠️ Activo | Healthcheck `/health`; logs en `docker logs soar_network_watcher`; reinicio manual; documentar en `docs/04-operations.md` |
 | R19 | **Interfaz web de gestión no funcional** — Web-management (`apps/web-management/`) tiene errores de UX o no muestra estado real de servicios | Operacional | Media | Medio | ⚠️ Activo | Tests de navegador en `tests/e2e/`; validación de datos en tiempo real; logs de errores en consola del navegador |
@@ -1721,7 +1680,7 @@ pytest tests/integration/ -v | grep -c "PASSED" / total_tests
 python3 -m soar_lab.data.calc_kpis --percentiles 50,90
 
 # Disponibilidad APIs externas
-curl -s -o /dev/null -w "%{http_code}" https://www.virustotal.com/api/v3/ | grep -q "200" && echo "OK" || echo "FAIL"
+curl -s -o /dev/null -w "%{http_code}" <https://www.virustotal.com/api/v3/> | grep -q "200" && echo "OK" || echo "FAIL"
 
 # Días desde último backup
 find runtime/backups/ -name "*.tar.gz" -mtime -7 | wc -l
@@ -1743,7 +1702,7 @@ Los riesgos se verifican mediante:
 
 - Monitoreo continuo de recursos (RAM, CPU) con `docker stats`
 - Ejecución de healthchecks en todos los servicios (`docker compose ps` para verificar estado healthy)
-- Verificación de estado de APIs externas antes de pruebas (`curl -I https://www.virustotal.com/api/v3/`)
+- Verificación de estado de APIs externas antes de pruebas (`curl -I <https://www.virustotal.com/api/v3/`>)
 - Consulta de estado de bloqueo LaLiga/Cloudflare antes de `make up` en [hayahora.futbol](https://hayahora.futbol/)
 - Revisión de logs de integración entre servicios (`docker logs soar_thehive`, `docker logs soar_cortex`,
  `docker logs soar_shuffle_backend`)
@@ -1790,7 +1749,7 @@ Las evidencias de validación incluyen:
 
 #### 5.3 Recomendaciones / troubleshooting
 
-#### Reasignación de Puertos (R1) - Detalle Completo
+##### Reasignación de Puertos (R1) - Detalle Completo
 
 **Contexto del problema:**
 Windows con Hyper-V reserva ciertos rangos de puertos para uso interno. Estos rangos incluyen:
@@ -1801,7 +1760,7 @@ Windows con Hyper-V reserva ciertos rangos de puertos para uso interno. Estos ra
 
 Los puertos originales del laboratorio caían en estos rangos, causando errores al iniciar Docker:
 
-```
+```text
 Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:3000 -> 0.0.0.0:0: listen tcp 0.0.0.0:3000: bind: An attempt was made to access a socket in a way forbidden by its access permissions.
 ```
 
@@ -1810,7 +1769,7 @@ Reasignación completa de puertos a valores fuera de los rangos reservados:
 
 | Servicio | Puerto anterior | Puerto nuevo | Motivo |
 |-------------------|-----------------|--------------|------------------------------------------------------|
-| Docs site | 3000 | 8086 | Fuera rango 2976–3075, conflicto Docker Desktop 8080 |
+| Docs site | 8080 | 8086 | Fuera rango 2976–3075, conflicto Docker Desktop 8080 |
 | Shuffle UI | 3001 | 8081 | Fuera rango 2976–3075 |
 | Web Management UI | 3002 | 8085 | Fuera rango 2976–3075 |
 | MISP | 8082 | 8083 | Mantenido en rango 8080-8089 |
@@ -1855,13 +1814,11 @@ Si aparece un error de puerto:
 3. Cambiar el puerto en `.env.full` y en el correspondiente `infra/docker/compose/docker-compose*.yml`
 4. Relanzar con `make up`
 
-#### 5.3 Recomendaciones / troubleshooting
-
-**Bloqueo LaLiga/Cloudflare (R11):**
+##### Bloqueo LaLiga/Cloudflare (R11)
 
 ```bash
 # Verificar estado del bloqueo
-# Consultar https://hayahora.futbol/
+# Consultar <https://hayahora.futbol/>
 
 # Programar descargas fuera de jornadas de LaLiga
 # Sábados 14–22 h, domingos 12–22 h aprox.
@@ -1934,13 +1891,13 @@ pytest tests/e2e/TC-01/
 #### 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Shuffle**: https://shuffler.io/docs
-- **Documentación de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación de Cortex**: https://docs.strangebee.com/cortex/
-- **Documentación de MISP**: https://www.misp-project.org/documentation/
-- **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
-- **Cloudflare Status**: https://www.cloudflarestatus.com/
-- **Hyper-V Port Exclusion**: https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/reference/hyper-v-virtual-switch
+- **Documentación de Shuffle**: <https://shuffler.io/docs>
+- **Documentación de TheHive**: <https://docs.strangebee.com/thehive/>
+- **Documentación de Cortex**: <https://docs.strangebee.com/cortex/>
+- **Documentación de MISP**: <https://www.misp-project.org/documentation/>
+- **Documentación de Elasticsearch**: <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>
+- **Cloudflare Status**: <https://www.cloudflarestatus.com/>
+- **Hyper-V Port Exclusion**: <https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/reference/hyper-v-virtual-switch>
 - **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
 - **Plan del Proyecto**: [este documento](#33-plan-de-trabajo)
 - **Alcance del Proyecto**: [este documento](#32-alcance)
@@ -1949,20 +1906,6 @@ pytest tests/e2e/TC-01/
 > hay bloqueo activo en curso.
 
 ---
-
-**Mejoras realizadas:**
-
-- Reestructurado según formato obligatorio con 6 secciones principales
-- Índice actualizado para reflejar nueva estructura
-- Contenido organizado en subsecciones lógicas
-- Sección de Validación añadida con criterios y evidencias
-- Sección de Problemas y Consideraciones consolidada con troubleshooting específico
-- Matriz de riesgos mantenida en sección 3.3
-
-**Contradicciones detectadas:**
-
-- Ninguna detectada en este documento
-
 
 ### 3.7 Deuda técnica
 
@@ -2020,9 +1963,6 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 
 - [`docs/04-operations.md`](04-operations.md)
 - [`docs/05-testing.md`](05-testing.md)
-- [`docs/04-operations.md`](04-operations.md)
-- [`docs/04-operations.md`](04-operations.md)
-
 
 ### 3.8 Matriz de inconsistencias
 
@@ -2031,7 +1971,6 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 Documento generado en la **FASE 49** para registrar las principales discrepancias detectadas entre documentación, código, infraestructura, tests y realidad operativa del SOAR Ransomware Lab.
 
 #### Matriz
-
 
 #### Notas
 
@@ -2044,9 +1983,6 @@ Documento generado en la **FASE 49** para registrar las principales discrepancia
 - `.gitignore`
 - `docs/05-testing.md`
 - `docs/04-operations.md`
-- `docs/04-operations.md`
-- `docs/04-operations.md`
-
 
 ### 3.9 Remediación documental (resumen)
 
@@ -2055,7 +1991,6 @@ Documento generado en la **FASE 49** para registrar las principales discrepancia
 Documento de seguimiento de la **FASE 52** del plan de remediación (este documento), correspondiente a las tareas extraídas de la revisión archivo a archivo de la documentación del proyecto.
 
 #### Acciones realizadas
-
 
 #### Verificación
 
@@ -2071,10 +2006,7 @@ Documento de seguimiento de la **FASE 52** del plan de remediación (este docume
 
 - `docs/03-api-and-integrations.md`
 - `docs/04-operations.md`
-- `docs/04-operations.md`
 - este documento
-- este documento
-
 
 ### 3.10 Estado de revisión documental
 
@@ -2114,7 +2046,7 @@ Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomwa
 
 #### 2. Shuffle y orquestación
 
-- **Corregido:** `orborus` apunta a `http://opensearch:9200` en lugar de URL errónea.
+- **Corregido:** `orborus` apunta a `<http://opensearch:9200`> en lugar de URL errónea.
 - **Corregido:** `shuffle-backend` depende de `opensearch` arrancado.
 - **Corregido:** `init_shuffle_webhook.py` genera workflows con formato compatible: `$calc_mttr.message`, campos quoted, parámetro `verify`, y `webhook_info.json` con URLs interna (`webhook_url`) y host (`webhook_url_host`).
 - **Corregido:** `send_alert.py` resuelve `BASE_DIR` correctamente a la raíz del repositorio.
@@ -2133,7 +2065,6 @@ Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomwa
 - **Resultado:** `make test-unit` pasa 1030 tests con 83,62 % de cobertura (>80 %).
 
 #### 5. Documentación y guías operativas
-
 
 #### 6. Seguridad de credenciales
 
@@ -2172,19 +2103,14 @@ Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomwa
 #### Referencias
 
 - este documento
-- este documento
-- este documento
-- este documento
 - `docs/05-testing.md`
 - `docs/04-operations.md`
 - `.gitignore`
 - `infra/docker/config/nginx/nginx.conf`
 
-
 ### 3.11 Auditoría final
 
 #### Alcance
-
 
 #### Estado del repositorio
 
@@ -2254,7 +2180,6 @@ Ejemplos:
 
 #### 4. Archivos de documentación generada / legacy (riesgo: bajo-medio, acción: revisar manualmente)
 
-
 **Decisión:** Se mantienen por histórico, explícitamente marcados como `legacy` y no se duplican en documentación operativa.
 
 #### 5. Archivos de configuración sensibles (riesgo: alto, acción: confirmar que están ignorados)
@@ -2270,9 +2195,9 @@ Ejemplos:
 #### Cambios aplicados
 
 - `.gitignore` ampliado con:
- - `/runtime/data/`
- - Patrones para scripts temporales de remediación.
- - `pytest-cache-files-*/`, `pytest_collect*.txt`, `baseline/`.
+  - `/runtime/data/`
+  - Patrones para scripts temporales de remediación.
+  - `pytest-cache-files-*/`, `pytest_collect*.txt`, `baseline/`.
 
 #### Limitaciones y trabajo pendiente
 
@@ -2283,7 +2208,6 @@ Ejemplos:
 
 - `.gitignore`
 - este documento — FASE 48
-
 
 ---
 
@@ -2332,6 +2256,762 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 - [01-getting-started.md](01-getting-started.md)
 - [02-architecture.md](02-architecture.md)
 - [glossary.md](glossary.md)
+
+### 3.12 Anexo: Estado del Arte
+
+Este capítulo revisa la literatura sobre respuesta a incidentes, automatización y orquestación en SOC, con especial atención al ransomware y al uso de playbooks. Los equipos de seguridad operan con ecosistemas de herramientas fragmentados y datos heterogéneos, lo que incrementa la intervención manual e introduce variabilidad difícil de cuantificar y controlar. Las plataformas SOAR actúan como capa de integración que complementa al SIEM, permitiendo operacionalizar procedimientos mediante playbooks sin suprimir la supervisión humana en las decisiones críticas (Kinyua & Awuah, 2021).
+
+#### 2.1. Respuesta a incidentes y ransomware como dominio de aplicación
+
+La respuesta a incidentes se describe habitualmente como un proceso estructurado en fases de preparación, detección y análisis, contención, erradicación y recuperación (NIST, 2023). La norma ISO/IEC 27035 (ISO/IEC, 2016) recoge una estructura equivalente a nivel internacional. NIST ha sistematizado estas fases y las revisa de forma periódica: en abril de 2025, NIST SP 800-61r2 fue retirada y sustituida por NIST SP 800-61r3, documento que refleja la tendencia a incorporar la respuesta a incidentes en el marco más amplio de gestión del riesgo de ciberseguridad (NIST, 2025).
+
+En ransomware, el impacto principal es la pérdida de disponibilidad por cifrado. En muchos ataques recientes eso se combina con exfiltración previa y doble extorsión, lo que acelera los tiempos de decisión. CISA ofrece guías específicas con listas de verificación que concretan las tareas y evidencias mínimas esperadas (CISA, 2023). El escenario de amenazas europeo, recogido en el ENISA Threat Landscape 2023, confirma esta tendencia hacia la doble extorsión como patrón dominante en campañas de ransomware (ENISA, 2023). Mandiant (Mandiant, 2024) reporta un aumento del 11 % en grupos de ransomware activos entre 2023 y 2024, y CrowdStrike (CrowdStrike, 2024) documenta una media de 79 minutos entre acceso inicial y cifrado, frente a los 147 minutos del año anterior.
+
+Para modelar el comportamiento del adversario y conectar detecciones con acciones, MITRE ATT&CK (MITRE Corporation, 2024; MITRE ATT&CK, n.d.) es una referencia habitual en el sector. La técnica T1486 (Data Encrypted for Impact) describe el cifrado de datos para interrumpir la disponibilidad y extorsionar, e incluye detalles sobre propagación y entornos afectados que orientan la definición de observables e IoCs relevantes (MITRE, 2025).
+
+La progresión del ransomware a través de generaciones muestra una tendencia clara hacia sofisticación creciente y demandas de rescate exponencialmente mayores (Razaulla et al., 2023). Como se observa en la **Tabla 1**, los rescates promedio han aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, representando un incremento de más de tres órdenes de magnitud que justifica la inversión en capacidades SOAR para mitigar el coste financiero de estos incidentes (CrowdStrike, 2024; Sophos, 2024).
+
+#### Tabla 1: Progresión de Ransomware por Generación
+
+| Generación | Período       | Características Principales            | Técnicas de Distribución         | Rescate Promedio | Ejemplos Notables            |
+|------------|---------------|----------------------------------------|----------------------------------|------------------|------------------------------|
+| **1ª Gen** | 2013-2016     | Encriptación básica, sin propagación   | Email phishing, exploits simples | $300-$700        | CryptoLocker, CryptoWall     |
+| **2ª Gen** | 2017-2018     | Propagación lateral, gusanos de red    | EternalBlue, exploits SMB        | $300-$50K        | WannaCry, NotPetya           |
+| **3ª Gen** | 2018-2021     | Modelo RaaS, doble extorsión           | Afiliados, access brokers        | $100K-$10M       | Ryuk, Maze, REvil, Conti     |
+| **4ª Gen** | 2021-Presente | Triple extorsión, DDoS, access brokers | Acceso inicial, supply chain     | $500K-$20M       | LockBit 3.0, BlackCat, Royal |
+
+La primera generación se caracterizaba por encriptación básica y demandas de rescate modestas, mientras que la cuarta generación actual incorpora triple extorsión (cifrado + exfiltración + DDoS) y depende de access brokers que venden acceso inicial a redes corporativas (Sophos, 2024). Esta progresión indica la necesidad de capacidades de respuesta automatizadas, ya que la respuesta manual resulta insuficiente ante amenazas de esta complejidad. Los informes anuales de CrowdStrike (CrowdStrike, 2024) y Sophos (Sophos, 2024) corroboran esta tendencia con datos de telemetría global de sus respectivos clientes.
+
+Como muestra de la complejidad que alcanzan las amenazas actuales, el **Anexo F** (secciones F.11 y F.12) documenta el caso real del malware GMinst4ll, un RAT que ilustra varias técnicas propias de la cuarta generación: distribución mediante ingeniería social en plataformas legítimas (YouTube, Tumblr), uso de dead drops (Pastebin, Reddit, Telegram, Dropbox) para la configuración del C2, persistencia mediante scripts VBS y anti-forenses (killer de antivirus, bloqueo DNS), y exfiltración a través de Telegram. El pipeline SOAR diseñado en este TFM procesa los IoCs extraídos de este caso real a través de Cortex, MISP y TheHive (Anexo F, sección F.12).
+
+#### 2.2. Automatización, SOAR y playbooks en operaciones de seguridad
+
+La proliferación de herramientas con representaciones de datos dispares obliga al analista a saltar entre sistemas durante una misma investigación, lo que eleva el tiempo de respuesta y dificulta cualquier intento de estandarización.
+SIEM y SOAR son complementarios. El SIEM centraliza eventos y genera alertas, y SOAR orquesta las integraciones y ejecuta respuestas automatizadas en las fases de contención y recuperación (Kinyua & Awuah, 2021).
+Islam et al. ofrecen la revisión sistemática más completa del área: su multi-vocal literature review clasifica las funcionalidades de las plataformas de orquestación en unificación, orquestación y automatización, e identifica los componentes core, los drivers técnicos y socio-técnicos, y una taxonomía basada en entorno de ejecución, estrategia de automatización y tipo de despliegue (Islam et al., 2019). Esta taxonomía respalda la elección de un despliegue on-premise con orquestación basada en playbooks, como el que se evalúa en este TFM.
+
+Para contextualizar esta elección, la **Tabla 2** compara las plataformas SOAR open source seleccionadas en este TFM con soluciones comerciales representativas según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad.
+
+#### Tabla 2: Comparativa Detallada de Plataformas SOAR
+
+Comparación de plataformas SOAR open source (TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024), Shuffle (Shuffle Tools, 2024)) versus comerciales (Palo Alto XSOAR, IBM
+Resilient) según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad. Las herramientas open source
+ofrecen capacidades competitivas sin costos de licencia.
+
+| Característica        | TheHive                  | Cortex                   | Shuffle                  | Palo Alto XSOAR            | IBM Resilient             |
+|-----------------------|--------------------------|--------------------------|--------------------------|----------------------------|---------------------------|
+| **Licencia**          | Open Source (AGPL-3.0)   | Open Source (AGPL-3.0)   | Open Source (AGPL-3.0)   | Comercial ($106K-$250K/año) | Comercial ($15K-$200K+/año) |
+| **Gestión de Casos**  | Excelente              | No aplica              | Básica                 | Avanzada                 | Avanzada                |
+| **Análisis IoCs**     | No aplica              | Excelente              | Básico                 | Avanzado                 | Avanzado                |
+| **Orquestación**      | Limitada               | No aplica              | Excelente              | Excelente                | Excelente               |
+| **Curva Aprendizaje** | Media                    | Media                    | Baja                     | Alta                       | Alta                      |
+| **Comunidad**         | Activa                   | Activa                   | Creciente                | Empresarial                | Empresarial               |
+| **Integraciones**     | 300+                     | 146+ analyzers           | 2500+ apps               | 850+                       | 300+                      |
+| **Escalabilidad**     | Media                    | Media                    | Alta                     | Alta                       | Alta                      |
+| **Soporte**           | Comunidad                | Comunidad                | Comunidad                | 24/7 Enterprise            | 24/7 Enterprise           |
+
+Las plataformas open source seleccionadas ofrecen una combinación funcional adecuada: TheHive gestiona casos, Cortex
+analiza IoCs y Shuffle orquesta flujos. Esta combinación permite construir una solución SOAR sin costos de licencia. Las
+soluciones comerciales requieren inversiones anuales de seis cifras (IBM Security, 2024), fuera del alcance de muchas organizaciones. La
+comunidad activa de las herramientas open source asegura soporte continuo y desarrollo.
+
+Los playbooks son el mecanismo para convertir decisiones tácticas en procedimientos repetibles. Kinyua y Awuah distinguen entre playbook —checklist lineal— y runbook —workflow con control de flujo, condiciones y puntos donde el analista interviene. Esta distinción encaja con diseños que combinan automatización con decisión humana en acciones de mayor consecuencia. En cuanto a la medición del valor operativo, los mismos autores proponen MTTD, MTTR y tiempo de investigación como indicadores, lo que conecta directamente con las evaluaciones basadas en percentiles de este TFM (Kinyua & Awuah, 2021).
+Otros trabajos han explorado la aplicación de IA/ML en respuesta a incidentes, con mejoras observadas en detección y clasificación de amenazas en infraestructuras críticas (Obuse et al., 2023), y en la automatización de tareas de seguridad TI para reducir la carga operativa (Mohammad & Lakshmisri, 2018).
+
+La primera evaluación empírica de SOAR en uso real la aportan Gutzwiller et al., quienes diseñan y administran el primer estudio de usuario hands-on con herramientas SOAR, involucrando a 24 participantes y seis herramientas comerciales en un cyber range. Sus resultados muestran una reducción del context switching del orden del 30 %, pero también un aumento en errores de omisión del 23 % al 78 % en analistas junior cuando la automatización simplifica demasiado la tarea. Los autores observan además que la configuración específica de cada SOC es crítica y que los analistas senior prefieren combinar automatización con asistencia a la decisión (Gutzwiller et al., 2023). Este resultado respalda la decisión de este TFM de automatizar tareas repetitivas manteniendo la supervisión humana en decisiones de mayor consecuencia.
+
+Sin embargo, la evidencia empírica muestra que tener un playbook no garantiza efectividad. Stevens et al. analizan frameworks de diseño de playbooks y concluyen que producen con frecuencia artefactos insuficientemente detallados para uso real, especialmente para perfiles junior. Los fallos típicos incluyen tareas implícitas omitidas, lenguaje ambiguo y ausencia de ramificación o paralelismo. Cuando los playbooks se iteran junto con los procesos organizativos, la utilidad mejora, lo que implica que el nivel de detalle del diseño afecta al rendimiento real bajo estrés (Stevens et al., 2022).
+
+Schlette et al. analizan 1217 playbooks de múltiples fuentes y detectan ambigüedad sobre qué constituye exactamente un playbook en la práctica. Su conclusión principal es que los playbooks comunitarios suelen requerir adaptación antes de ser operativos: herramientas disponibles, requisitos legales, estructura del equipo y procesos internos condicionan esa adaptación. Este resultado justifica que el laboratorio del TFM defina explícitamente su contexto y que el playbook E2E se diseñe para ese entorno, sin asumir reutilización directa (Schlette et al., 2024).
+
+Akbari Gurabi et al. abordan la transición de playbooks textuales a formatos machine-readable e interoperables, y definen requisitos formales para playbooks que asistan la respuesta a incidentes, el reporting y la automatización. Su trabajo, financiado por el programa Horizon 2020 de la UE, destaca la necesidad de que los playbooks sean portables entre organizaciones y herramientas, un objetivo aún no resuelto que refuerza la relevancia de evaluar playbooks en entornos específicos como el de este TFM (Akbari Gurabi et al., 2024). Por su parte, Karlzén y Sommestad revisan 45 soluciones académicas de respuesta automática a incidentes publicadas desde 2000 y las comparan con cuatro soluciones comerciales, categorizándolas por entrada (señales de intrusión, inventarios de activos) y salida (aislamiento de red, reconfiguración de firewalls) según el framework D3FEND. Su conclusión principal es que muchas soluciones describen entradas y salidas en términos vagos, y que las soluciones comerciales se centran más en reputación de indicadores y análisis de archivos (Karlzén & Sommestad, 2023). Esta revisión contextualiza la contribución de este TFM: el uso de analyzers de Cortex para enriquecer IoCs mediante fuentes de reputación coincide con el patrón dominante en soluciones comerciales, pero la medición cuantitativa del MTTR con percentiles aporta el rigor que Karlzén y Sommestad identifican como ausente en la literatura.
+
+En el terreno específico del ransomware, Kok et al. presentan un framework detallado para diseñar estrategias de respuesta a ransomware que equilibra adaptabilidad y accionabilidad, identificando diferencias entre clases de ransomware y destacando la importancia de la preparación específica, la comunicación rápida y la documentación previa de procesos (Kok et al., 2023). Complementariamente, Brown et al. introducen el concepto de playbook operations-informed, que incorpora el contexto operacional en el playbook para reflejar las interdependencias entre las actividades de respuesta a incidentes y las operaciones de la organización, con un caso de estudio aplicado a ransomware (Brown et al., 2023).
+
+En cuanto a estandarización, OASIS CACAO 2.0 (noviembre de 2023) define un esquema y taxonomía para describir playbooks de ciberseguridad desde la detección hasta la remediación (OASIS, 2023). Microsoft y el Automation SIG de FIRST complementan este marco con guías prácticas e intercambio de experiencias entre CSIRT (Microsoft, 2024; FIRST, n.d.). La coexistencia de iniciativas paralelas en este campo refleja que el sector aún no ha alcanzado convergencia en torno a un estándar único (OASIS, 2023; Schlette et al., 2024), lo que justifica la necesidad de ajustar cualquier playbook al contexto operativo concreto en que va a desplegarse. Sigma (Sigma Project, n.d.)
+representa un esfuerzo complementario para estandarizar reglas de detección, y Shuffle (Shuffle Tools, 2024; Shuffle Tools, n.d.) implementa un motor de orquestación open source que materializa estos conceptos en flujos ejecutables.
+
+#### 2.3. Laboratorios reproducibles, herramientas open source y evaluación
+
+Para investigación aplicada, la reproducibilidad condiciona la validez. Si el entorno cambia entre ejecuciones, las diferencias en resultados no son atribuibles al factor estudiado. Núñez Fernández desarrolla una plataforma SIRP reproducible con Docker Compose para pymes, con un stack similar al de este TFM (TheHive Project, 2024; Cortex Project, 2024; MISP Project, 2024) y un motor de workflows con monitoreo por contenedores, lo que valida la viabilidad tecnológica de la solución (Núñez Fernández, 2023). La compartición de información de amenazas entre organizaciones, estandarizada por NIST SP 800-150 (NIST, 2024b), es un habilitador clave para que plataformas como MISP y Cortex aporten valor en la respuesta a incidentes.
+
+Quintero Tamayo et al. plantean playbooks como base de conocimiento para CSIRT, enfatizando la importancia de la estandarización, la claridad en los pasos y el mantenimiento continuo con indicadores de evaluación (Quintero Tamayo et al., 2023). Atluri y Warner añaden que el control de acceso debe sincronizarse con el flujo del workflow para evitar privilegios residuales, lo que importa para garantizar la trazabilidad de un playbook E2E incluso cuando las acciones de contención son simuladas (Atluri & Warner, 2008).
+
+La literatura de SOAR y la de playbooks coinciden en un punto. Las métricas temporales son necesarias, pero no suficientes para evaluar la eficacia operativa. La claridad del trigger y el nivel de detalle del flujo condicionan la ejecución real en la misma medida que el tiempo de respuesta (Stevens et al., 2022). Esta consideración respalda el uso de percentiles p50 y p90 como indicadores primarios, complementados con logs y artefactos del caso para permitir la verificación y el análisis post-hoc (Kinyua & Awuah, 2021; Stevens et al., 2022).
+
+#### 2.4. Síntesis y relación con el TFM
+
+La literatura revisada converge en tres ideas. Primera: el tiempo de reacción condiciona el daño en ransomware, lo que convierte la automatización en una necesidad operativa (CrowdStrike, 2024; Sophos, 2024). Segunda: la efectividad de SOAR depende del detalle del playbook y su adaptación al contexto, no solo de su existencia (Islam et al., 2019; Kinyua & Awuah, 2021). Tercera: un laboratorio reproducible con herramientas open source es viable para generar evidencias contrastables (Núñez Fernández, 2023; CISA, 2023).
+
+#### Brecha identificada
+
+Pese a la abundancia de modelos conceptuales (CACAO, ATT&CK), guías prácticas (NIST, CISA) y estudios cualitativos, ningún trabajo revisado ejecuta un playbook SOAR específico para ransomware en condiciones controladas midiendo MTTR con percentiles, desviación estándar y consistencia entre ejecuciones. Gutzwiller et al. (2023) no reportan MTTR cuantitativo; Karlzén y Sommestad (2023) detectan vaguedad en entradas y salidas; Kok et al. (2023) y Brown et al. (2023) se centran en el diseño, no en la medición. Este TFM aborda dicha brecha ejecutando un playbook E2E sobre 50 alertas simuladas y reportando métricas estadísticas que permiten contrastar la hipótesis de que la automatización reduce el MTTR frente a la respuesta manual.
+
+El **Anexo F** (sección F.1) recopila 12 diagramas Mermaid canónicos que ilustran la arquitectura y los flujos referenciados en esta revisión.
+
+---
+
+#### Índice de Figuras del Capítulo 2
+
+Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados se encuentran en el Anexo F.
+
+#### Índice de Tablas del Capítulo 2
+
+| Tabla   | Título                                      |
+|---------|---------------------------------------------|
+| Tabla 1 | Progresión de Ransomware por Generación     |
+| Tabla 2 | Comparativa Detallada de Plataformas SOAR   |
+
+### 3.13 Anexo: Objetivos y Metodología
+
+Este capítulo define qué se quiere demostrar y cómo se organiza el desarrollo. El resultado esperado es un laboratorio SOAR mínimo viable que ejecute un playbook E2E en escenarios malicioso y benigno y produzca métricas para la evaluación. La presentación de resultados (§4.1.3.3) se centra en el escenario malicioso (n=50), pero el repositorio incluye el escenario benigno y 39 test cases E2E adicionales listos para ejecutar con `make test-e2e`.
+
+#### 3.1 Objetivo general
+
+Demostrar que un playbook SOAR automatizado reduce el tiempo de respuesta y mejora la consistencia y trazabilidad en la gestión de alertas de ransomware. El entorno debe ser reproducible, usar herramientas open source y generar evidencias verificables.
+
+El objetivo se alcanza cuando el laboratorio ejecuta el flujo completo en los escenarios malicioso y benigno, cumple los umbrales de rendimiento (reducción de MTTR ≥ 50 % respecto al baseline manual) y genera evidencias completas (logs, capturas y métricas). La evaluación experimental presentada en este trabajo se centra en el escenario malicioso (n=50 ejecuciones); el escenario benigno y el resto de test cases están implementados y disponibles en el repositorio para ejecución con `make test-e2e`.
+
+#### 3.2 Objetivos específicos
+
+Para alcanzar el objetivo general, el trabajo se divide en objetivos específicos:
+
+##### 3.2.1. Objetivos Estratégicos
+
+Los objetivos estratégicos se agrupan en cuatro áreas: diseño arquitectónico, implementación funcional, validación empírica y documentación reproducible.
+
+- **Diseño Arquitectónico**
+
+Diseñar una arquitectura SOAR modular y reproducible basada en TheHive, Cortex y Shuffle. Se valida con una arquitectura documentada con diagramas técnicos, especificaciones de integración definidas, un plan de escalabilidad establecido y una configuración Docker Compose estructurada. Soporte documental en `docs/02-architecture.md`, `docs/03-api-and-integrations.md` e `infra/docker/compose/`.
+
+- **Implementación Funcional**
+
+Implementar un playbook E2E en Shuffle con integración entre TheHive, Cortex y Shuffle. Se cumple cuando hay un playbook funcional E2E en los escenarios malicioso y benigno, una integración operativa sin intervención manual, un simulador SIEM funcional y una lógica de contención simulada operativa. El playbook está documentado en el **Anexo B** (sección B.1), los scripts en `src/soar_lab/simulator/`, `src/soar_lab/infrastructure/messaging/send_alert.py`, `src/soar_lab/application/use_cases/analytics_service.py` y los logs en `runtime/logs/`. La evaluación presentada se centra en el escenario malicioso; el benigno está implementado y disponible en el repositorio.
+
+- **Evaluación Experimental**
+
+Aquí se busca validar la eficacia mediante métricas cuantitativas como MTTR y tasa de éxito. Los criterios de éxito son MTTR p50 ≤ 120s y p90 ≤ 180s, tasa de éxito ≥ 95 %, un dataset de al menos 50 ejecuciones por escenario y un análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación). Resultados y código asociado en `reports/e2e/`, `src/soar_lab/application/use_cases/`, `src/soar_lab/domain/statistical_calculator.py`, `src/soar_lab/data/calc_kpis.py`, `tests/e2e/` y `tests/integration/`.
+
+- **Documentación Reproducible**
+
+Documentar exhaustivamente el proceso para permitir la reproducción por terceros. La validación consiste en una guía de instalación y configuración completa, documentación de playbooks con contexto, validación de reproducción mediante Makefile y documentación técnica completa. Material en `docs/`, `docs/04-operations.md`, el Makefile, `docs/03-api-and-integrations.md` y `apps/docs-site/`.
+
+La **Tabla 3** resume los cuatro objetivos estratégicos con sus métricas de éxito, valor objetivo y evidencia requerida.
+
+#### Tabla 3: Resumen de Objetivos Estratégicos y Métricas de Éxito
+
+| ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
+|----------|----------------------------|------------------------|----------------|-----------------------------|
+| **TE-1** | Diseño arquitectónico SOAR | Componentes integrados | 5+ componentes | Diagramas, especificaciones |
+| **TE-2** | Implementación funcional   | Playbook E2E operativo | Escenarios malicioso y benigno | Scripts funcionales, logs   |
+| **TE-3** | Validación experimental    | Reducción MTTR         | ≥50%           | Resultados estadísticos     |
+| **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
+
+El cumplimiento de cada objetivo se reporta en el Capítulo 4 (Resultados) y se discute en el Capítulo 6 (Conclusiones).
+
+##### 3.2.2. Objetivos Operativos
+
+Los objetivos operativos detallan los pasos de implementación:
+
+- **Delimitar** el alcance del proyecto estableciendo inclusiones, exclusiones y restricciones de seguridad. El entorno
+  no debe tener malware funcional ni dependencias externas complejas.
+
+- **Definir** el flujo funcional del playbook E2E: etapas, entradas, salidas, evidencias y criterios de decisión para
+  los escenarios benigno y malicioso.
+
+- **Diseñar** la arquitectura en un host con Docker Compose, incluyendo servicios, dependencias, redes y volúmenes.
+
+- **Verificar** que los servicios arrancan de forma estable tras el despliegue inicial.
+
+- **Configurar** y conectar los componentes: TheHive (TheHive Project, 2024) para gestión de casos, Cortex (Cortex Project, 2024) para análisis y Shuffle (Shuffle Tools, 2024) para
+  orquestación.
+
+- **Construir** el mecanismo de ingesta de alertas por webhook y asegurar la validación del payload de entrada.
+
+- **Implementar** la creación y actualización de casos en TheHive, incluyendo IoCs, etiquetas, estados y resúmenes.
+
+- **Automatizar** el enriquecimiento de observables mediante analyzers en Cortex y establecer la lógica de decisión
+  basada en umbral de score.
+
+- **Simular** las acciones de contención y registrar evidencias en el caso sin cambios reales en sistemas productivos.
+
+- **Implementar** integraciones simuladas: un SIEM simulado para emitir alertas y endpoints mock para EDR y firewall.
+
+- **Medir** el rendimiento del flujo desde la alerta hasta la contención simulada y calcular los percentiles p50 y p90.
+
+- **Generar** evidencias verificables: logs, capturas, trazas y métricas. Documentar el procedimiento para asegurar
+  reproducibilidad.
+
+**Criterios de cumplimiento**: el objetivo general se alcanza cuando el laboratorio ejecuta el flujo completo en dos
+escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
+
+#### 3.3. Metodología del trabajo
+
+La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre el 27 de abril y el 31 de agosto de 2026 (18 semanas) y se estructura en cuatro fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
+
+La planificación temporal evolucionó a lo largo del proyecto. La estimación inicial fue de 12 semanas, suficiente según el alcance previsto. Tras la fase de diseño se aumentó a 15 semanas para acomodar la integración de Cortex con analyzers externos y el stack de monitoreo, no contemplados inicialmente. Finalmente, la duración real fue de 18 semanas debido a la ampliación de la suite de pruebas (hasta 2233 tests coleccionados, 1905 seleccionados) y la ejecución del experimento con n=50 ejecuciones.
+
+```mermaid
+gantt
+    title Figura 2: Cronograma de ejecución del proyecto
+    dateFormat YYYY-MM-DD
+    axisFormat %d %b
+    todayMarker off
+
+    section Inicio
+    Inicio del proyecto :milestone, m1, 2026-04-27, 0d
+
+    section Investigación
+    Literatura y requisitos :a1, 2026-04-27, 3w
+
+    section Diseño
+    Arquitectura y contratos :a2, after a1, 3w
+
+    section Desarrollo
+    Playbook, integraciones y API :crit, a3, after a2, 6w
+    Versión funcional :milestone, m2, after a3, 0d
+
+    section Validación
+    Pruebas E2E :a4, after a3, 2w
+    Experimentos :a5, after a4, 3w
+    Análisis estadístico :a6, after a5, 1w
+    Cierre del proyecto :milestone, m3, after a6, 0d
+```
+
+**Figura 2**: Cronograma de ejecución del proyecto con cuatro fases distribuidas entre abril y agosto de 2026.
+
+**Fase 1 — Investigación (abril-mayo 2026, 3 semanas).** Revisión de la literatura sobre respuesta a
+incidentes, ransomware y plataformas SOAR. Identificación de la brecha cuantitativa en la literatura. Definición de requisitos funcionales, no funcionales y de integración. Selección del stack tecnológico open source.
+
+**Fase 2 — Diseño (mayo-junio 2026, 3 semanas).** Diseño de la arquitectura hexagonal del código
+Python. Definición de la topología Docker Compose con segmentación de redes. Especificación de contratos de integración entre TheHive, Cortex y Shuffle. Diseño del modelo de scoring y del flujo del playbook.
+
+**Fase 3 — Desarrollo (junio-julio 2026, 6 semanas).** Implementación del playbook E2E en
+Shuffle con 46 nodos y 25 scripts Python. Integración con TheHive (gestión de casos) y Cortex (análisis de IoCs).
+Desarrollo del simulador SIEM y de la lógica de contención simulada. Implementación de la API FastAPI con arquitectura hexagonal. Configuración del stack de monitoreo (Loki, Promtail, Grafana).
+
+**Fase 4 — Validación (julio-agosto 2026, 6 semanas).** Ejecución de la suite de pruebas
+completa (2233 tests coleccionados, 1905 seleccionados). Pruebas E2E, experimentos con n=50 ejecuciones del escenario malicioso,
+análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut. El escenario benigno y 39 test cases E2E adicionales están implementados en el repositorio para ejecución con `make test-e2e`.
+
+El stack tecnológico combina herramientas open source para orquestación (TheHive, Cortex y Shuffle), almacenamiento (Elasticsearch, OpenSearch, Redis, MariaDB) y monitoreo (Loki, Promtail, Grafana), todo desplegado sobre Docker Compose (Docker Inc., 2024) con Python como lenguaje de implementación. MISP se incluye como componente opcional para el intercambio de indicadores de amenazas. El desarrollo se apoya en Git, Make y pytest (pytest, 2024) para control de versiones, automatización y pruebas.
+
+El experimento compara la respuesta manual frente a la automatizada con SOAR, midiendo MTTR, tasa de éxito y uso de recursos. El entorno, el dataset y la configuración se mantienen constantes, y el orden de ejecuciones se aleatoriza para evitar sesgos. El escenario malicioso se repite 50 veces (n=50), de las que se extraen los percentiles p50 y p90. El escenario benigno está implementado y disponible en el repositorio para ejecuciones complementarias.
+
+El laboratorio opera de forma aislada, sin datos reales ni acceso a sistemas productivos, y los secretos se gestionan mediante variables de entorno. El diseño se alinea con el RGPD (European Union, 2018), ISO 27001 (ISO/IEC, 2022) y el NIST Cybersecurity Framework (NIST, 2024a). Los riesgos principales —fallo de integración y vulnerabilidades— se mitigan con pruebas tempranas y escaneos periódicos, reservando una holgura del 20 % en la planificación de cada fase.
+
+La reproducción por terceros consiste en clonar el repositorio, levantar el entorno con `make up`, ejecutar `pytest tests/e2e/` para ambos escenarios y extraer el MTTR del índice `soar-metrics`. Se considera exitoso cuando todos los contenedores están healthy, los tests E2E pasan al 100 % y Grafana muestra la reducción del MTTR respecto a la línea base manual.
+
+---
+
+#### Índice de Figuras del Capítulo 3
+
+| Figura    | Título                          | Archivo          |
+|-----------|---------------------------------|------------------|
+| Figura 2 | Cronograma Gantt del proyecto | Mermaid (inline) |
+
+#### Índice de Tablas del Capítulo 3
+
+| Tabla   | Título                                          |
+|---------|-------------------------------------------------|
+| Tabla 3 | Objetivos Específicos con Métricas de Éxito     |
+
+### 3.14 Anexo: Métricas y Visualizaciones Complementarias
+
+Este anexo presenta visualizaciones de datos y gráficos complementarios que ilustran los resultados experimentales y el
+análisis de rendimiento del laboratorio SOAR. Los valores mostrados corresponden a los
+resultados experimentales obtenidos durante la validación del sistema (n=50, 2026-08-24).
+
+Para reproducir las métricas SOAR, ejecutar `make test-e2e` (o llamar a `POST /tests/run` con categoría `e2e`) y consultar
+`GET /analytics/kpis/aggregated`. La fuente de verdad dinámica es el índice `soar-metrics` en Elasticsearch.
+
+Nota importante: la lógica de cálculo de KPIs existe en el código fuente en:
+
+- `src/soar_lab/domain/services/kpi_analyzer.py` - KPIAnalyzer.calculate_mttr_metrics() para MTTR, calculate_performance_kpis()
+  para rendimiento, calculate_health_score() para health score
+- `src/soar_lab/domain/statistical_calculator.py` - StatisticalCalculator.calculate_statistical_metrics() para
+  percentiles (p50, p90, etc.) y métricas estadísticas
+
+Los valores mostrados en los gráficos se han calculado usando estos métodos programáticamente.
+
+#### C.1. Valores Reales Calculados (n=50 ejecuciones)
+
+- Total alerts: 50
+- MTTR mean: 277.15 seconds (4.62 minutes)
+- MTTR median (p50): 193.19 seconds
+- MTTR p90: 621.83 seconds
+- MTTR p95: 644.46 seconds
+- MTTR min: 65.38 seconds
+- MTTR max: 652.92 seconds
+- Std Dev: 187.61 seconds (CV = 67.7%)
+- Tasa de contención: 92.0% (46/50 alertas con score >= 80)
+- Tasa de observación: 8.0% (4/50 alertas con score < 80)
+- Service success rates: 100% workflow completion (50/50), 99.2% Cortex jobs (255/257)
+- Casos TheHive: 50 (46 Open, 4 Resolved)
+- Reducción MTTR vs baseline manual (3600s): 92.3% (277.15s vs 3600s)
+
+#### C.2. Tablas de Métricas Avanzadas
+
+##### Tabla 14: Métricas de Rendimiento por Componente
+
+| Componente        | Métrica               | Manual         | SOAR           | Mejora   | Unidad       |
+|-------------------|-----------------------|----------------|----------------|----------|--------------|
+| **Recepción**     | Tiempo procesamiento  | 300s           | 103.92s        | 65.4%    | segundos     |
+|                   | Throughput            | ~10            | 125            | +1150%   | alertas/hora |
+|                   | Latencia API          | N/A            | ~200           | N/A      | ms           |
+| **Análisis**      | Tiempo por IoC        | 1800s          | 2393.46s*      | N/A      | segundos     |
+|                   | Nº IoCs simultáneos   | 1              | 6              | +500%    | IoCs         |
+|                   | Jobs Cortex           | N/A            | 257 (255 ok)   | 99.2%    | jobs         |
+| **Creación Caso** | Tiempo creación       | 600s           | 2773.48s*      | N/A      | segundos     |
+|                   | Campos completados    | ~70%           | 100%           | +30pp    | %            |
+|                   | Validación datos      | ~80%           | 100%           | +20pp    | %            |
+| **Contención**    | Tiempo aislamiento    | 900s           | 422.00s        | 53.1%    | segundos     |
+|                   | Tasa éxito            | ~80%           | 92.0%          | +12pp    | %            |
+|                   | Reintentos requeridos | 2-3            | 0              | -100%    | intentos     |
+| **Notificación**  | Tiempo notificación   | 120s           | <1s            | >99%     | segundos     |
+|                   | Canales activos       | 1              | 1 (email)      | 0%       | canales      |
+|                   | Confirmación lectura  | N/A            | 100%           | N/A      | %            |
+
+*\* Las fases de análisis y creación de caso se ejecutan en paralelo dentro del workflow.
+El MTTR medio total (277.15s) es menor que la suma de fases porque estas se solapan.*
+
+##### Tabla 15: Análisis de Carga del Sistema
+
+| Métrica               | Condición Ligera | Condición Media | Condición Pesada | Límite Sistema |
+|-----------------------|------------------|-----------------|------------------|----------------|
+| **Alertas/hora**      | 10               | 50              | 125              | 100 (SLA)      |
+| **CPU Usage**         | ~15%             | ~35%            | ~60%             | 80%            |
+| **Memory Usage**      | ~30%             | ~50%            | ~70%             | 90%            |
+| **MTTR**              | 193.19s (P50)    | 277.15s (mean)  | 621.83s (P90)    | 120s (SLA)     |
+| **Success Rate**      | 100%             | 100%            | 100%             | 95% (SLA)      |
+| **Queue Depth**       | 0                | 2               | 6                | 10 (Shuffle)   |
+| **Response Time API** | ~150ms           | ~200ms          | ~400ms           | 500ms (SLA)    |
+| **Error Rate**        | 0%               | 0%              | 0.8%             | 5% (SLA)       |
+
+Nota: Los valores de CPU/Memory/Queue Depth son estimaciones basadas en observación
+durante la simulación de 50 alertas. Un test de carga formal con herramientas como Locust
+o k6 proporcionaría mediciones precisas. El MTTR medido (P50=193s, P90=622s) no cumple
+los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
+
+##### Tabla 16: Métricas de Calidad del Software
+
+| Métrica                     | Valor Objetivo | Valor Logrado   | Estado   | Herramienta  |
+|-----------------------------|----------------|-----------------|----------|--------------|
+| **Coverage de Tests**       | ≥80%           | 84.6%           | Cumplido | pytest/cov   |
+| **Complejidad Ciclomática** | <15            | 2.61 avg, 15 max| Cumplido | radon        |
+| **Issues de Seguridad**     | 0 HIGH         | 0 HIGH          | Cumplido | bandit       |
+| **Vulnerabilidades**        | 0              | 0               | Cumplido | pip-audit    |
+| **Type checking**           | 0 errors       | 0 errors        | Cumplido | mypy         |
+| **Mutation Testing**        | ≥70%           | 51.8%           | Parcial  | mutmut       |
+| **Tests totales**           | —              | 2233 coleccionados (1905 seleccionados, 328 deselected)| —        | pytest       |
+| **Quality Score**           | —              | 92.2/100        | —        | holistic     |
+
+Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
+Mutation testing (51.8%) por debajo del umbral del 70% — ver §4.1.3.5.
+
+##### Tabla 17: KPIs de Negocio por Organización
+
+| KPI                       | PYME   | Mediana | Grande  | Enterprise |
+|---------------------------|--------|---------|---------|------------|
+| **MTTR Objetivo**         | <180s  | <120s   | <90s    | <60s       |
+| **Costo Incidente**       | <$50K  | <$200K  | <$1M    | <$5M       |
+| **ROI SOAR**              | >150%  | >200%   | >250%   | >300%      |
+| **Time to Value**         | 4 sem  | 6 sem   | 8 sem   | 12 sem     |
+| **Team Productivity**     | +30%   | +40%    | +50%    | +60%       |
+| **Compliance Score**      | >70%   | >80%    | >90%    | >95%       |
+| **Customer Satisfaction** | >85%   | >90%    | >92%    | >95%       |
+
+Nota: Los valores de esta tabla son objetivos referenciales por tamaño de organización.
+El laboratorio midió MTTR real de 277.15s (n=50), adecuado para PYME/Mediana según estos umbrales.
+
+#### C.3. Visualizaciones Generadas
+
+Las siguientes figuras se generan automáticamente desde los resultados experimentales y los dashboards de Grafana.
+
+#### Figuras de Resultados E2E
+
+![Distribución de alertas por severidad](thesis/figures/severity_distribution.png)
+
+Figura 12: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
+
+![Distribución de alertas por tipo](thesis/figures/alert_distribution.png)
+
+Figura 13: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
+
+![MTTR por fase del workflow](thesis/figures/mttr_by_phase.png)
+
+Figura 14: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
+
+![MTTR por severidad (boxplot)](thesis/figures/mttr_severity_boxplot.png)
+
+Figura 15: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
+
+![Percentiles MTTR](thesis/figures/GE2_percentiles.png)
+
+Figura 16: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
+
+![Tasas de éxito](thesis/figures/GE3_success_rates.png)
+
+Figura 17: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
+
+#### Dashboards de Grafana
+
+![Mejoras por categoría](thesis/figures/GE5_improvements.png)
+
+Figura 18: Análisis de mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
+
+![Alertas procesadas por hora (throughput)](thesis/figures/workflow_durations.png)
+
+Figura 19: Distribución de duraciones de los 50 workflows ejecutados, mostrando el throughput del sistema.
+
+![MTTR por tipo de alerta](thesis/figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
+
+Figura 20: MTTR por tipo de alerta desde el dashboard de Grafana.
+
+#### Estado de Servicios
+
+![Resultados de MTTR](thesis/figures/Fig5_1_mttr_results.png)
+
+Figura 21: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
+
+![Estado de casos en TheHive](thesis/figures/thehive_case_status.png)
+
+Figura 22: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
+
+#### Monitoreo de Logs
+
+![Volumen de logs en Loki](thesis/figures/loki_log_volume.png)
+
+Figura 23: Volumen de logs agregados en Loki durante las ejecuciones E2E.
+
+#### Cumplimiento de Umbrales y Notificaciones
+
+![Cumplimiento de umbrales](thesis/figures/threshold_compliance.png)
+
+Figura 24: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
+valores medidos. Se aprecia que el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles
+P50 y P90 no los alcanzan en el conjunto completo.
+
+![Análisis coste-beneficio](thesis/figures/Fig5_5_cost_benefit.png)
+
+Figura 25: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
+
+#### Dashboards Complementarios de Grafana
+
+![Distribución de decisiones del workflow](thesis/figures/decision_distribution.png)
+
+Figura 26: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
+
+#### Análisis Estadístico Adicional
+
+![Correlación entre métricas](thesis/figures/correlation_heatmap.png)
+
+Figura 27: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
+Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del playbook y el tiempo de respuesta.
+
+![Evolución de métricas durante el proyecto](thesis/figures/GE4_metrics_evolution.png)
+
+Figura 28: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
+cuatro fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
+
+![Análisis coste-beneficio (versión extendida)](thesis/figures/GE6_cost_benefit.png)
+
+Figura 29: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
+extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
+
+#### C.4. Visualizaciones de Logs
+
+El stack de observabilidad (Loki, Grafana Labs, 2024b; Promtail, Grafana Labs, 2024c; Grafana, Grafana Labs, 2024) permite visualizar logs de todos los contenedores desde Grafana (`<http://localhost:8084`>). Promtail etiqueta los logs por contenedor (`container`, `service`, `compose_service`) y envía cada línea a Loki, donde se consultan con LogQL. La configuración de Promtail se encuentra en `infra/docker/config/templates/promtail-config.yml.template` y la de logging de Python en `infra/docker/compose/logging/logging.yaml`. El stack de logging se define en `infra/docker/compose/logging/docker-compose.logging.yml`.
+
+#### Ejemplo de consulta LogQL
+
+```logql
+{container="soar_api"} |= "error"
+```
+
+#### Dashboards recomendados
+
+- **Logs por servicio**: filtrar por `container` y `compose_service`.
+- **Errores E2E**: `{container="soar_shuffle_backend"} |= "error"`.
+- **Métricas de KPI**: datasource Elasticsearch con índice `soar-metrics` (`mttr_seconds`, `@timestamp`).
+
+### 3.15 Anexo: Resultados Experimentales y Validación
+
+Referencia TFM: complementa el Capítulo 4 (Desarrollo Específico) y el Anexo C (Métricas y Visualizaciones).
+Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
+`reports/holistic/` y `docs/01-getting-started.md`–este documento.
+
+---
+
+#### D.1. Resultados Experimentales E2E (n=50)
+
+#### Cumplimiento de Objetivos TFM
+
+| Objetivo | Umbral | Valor Medido | Cumple |
+|----------|--------|--------------|--------|
+| MTTR P50 (mediana) | ≤ 120s | 193.19s | No |
+| MTTR P90 | ≤ 180s | 621.83s | No |
+| Tasa de Éxito | ≥ 95% | 100% | Sí |
+| Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
+| Reducción MTTR vs Manual | ≥ 50% | 92.3% | Sí |
+
+Cumplimiento: 3/5 objetivos.
+
+#### MTTR Detallado
+
+| Métrica | Valor |
+|---------|-------|
+| MTTR Medio | 277.15s |
+| MTTR Mediana (P50) | 193.19s |
+| MTTR P90 | 621.83s |
+| MTTR P95 | 644.46s |
+| MTTR Mínimo | 65.38s |
+| Desviación Estándar | 187.61s |
+| Reducción vs Manual (3600s) | 92.3% |
+
+#### Decisiones Automatizadas
+
+| Métrica | Valor |
+|---------|-------|
+| Tasa de contención (score ≥ 80) | 92.0% (46/50) |
+| Tasa de observación (score < 80) | 8.0% (4/50) |
+| Score promedio | 96.2/100 (min=55, max=100) |
+| Verdict malicious | 13 (score medio 97.3) |
+| Verdict suspicious | 37 (score medio 95.8) |
+
+#### Servicios e Integraciones
+
+| Métrica | Valor |
+|---------|-------|
+| Servicios healthy | 10/10 (100%) |
+| Workflows completados | 50/50 (100%) |
+| Casos TheHive creados | 50/50 (100%) |
+| Jobs Cortex | 255/257 (99.2%) |
+| Analyzers Cortex disponibles | 34 |
+| Técnicas MITRE detectadas | 32 (MITRE, 2025) |
+| Nodos en workflow | 46 definidos (49 ejecutados) |
+| Tasa de automatización | 100% |
+
+---
+
+#### D.2. Métricas de Calidad Consolidadas
+
+| Radar | Score Global | Estado | Fuente |
+|-------|-------------|--------|--------|
+| Quality Score | 92.2/100 | Excellent | `reports/quality/` |
+| Holistic Project Radar (HPR) | 96.0/100 | Excellent | `reports/holistic/` |
+| Test Review (7 dims) | 92.2/100 | Excellent | `reports/test-review/` |
+
+#### Quality Score por Categoría
+
+| Categoría | Score | Peso | Estado |
+|-----------|-------|------|--------|
+| Maintainability | 77.6 | 20% | Acceptable |
+| Coverage | 84.6 | 20% | Good |
+| Complexity | 100 | 15% | Excellent |
+| Linting (ruff) | 100 | 15% | Excellent (Astral, 2024) |
+| Typing (mypy) | 100 | 10% | Excellent (Python Software Foundation, 2024) |
+| Security (bandit) | 100 | 10% | Excellent (PyCQA, 2024b) |
+| Documentation | 94.6 | 5% | Excellent |
+| Architecture | 100 | 5% | Excellent |
+
+#### HPR por Capa
+
+| Capa | Dimensiones | Score Medio | Estado |
+|------|-------------|-------------|--------|
+| L1 — Core (código producción) | 4 | 94.4 | Excellent |
+| L2 — Tests | 3 | 97.2 | Excellent |
+| L3 — Quality Gates | 3 | 98.2 | Excellent |
+| L4 — Infraestructura | 3 | 100.0 | Excellent |
+| L5 — Documentación | 3 | 90.8 | Excellent |
+
+#### Métricas Clave de Código
+
+| Métrica | Valor | Herramienta |
+|---------|-------|-------------|
+| Coverage de líneas | 84.6% (4730/5592) | pytest/cov |
+| Complejidad media | 2.61 (max 15, 0 bloques alto riesgo) | radon |
+| Maintainability Index | 77.57 (min 50.02, max 100) | radon |
+| Issues bandit | 0 (HIGH=0, MEDIUM=0, LOW=0) | bandit |
+| Vulnerabilidades | 0 | pip-audit |
+| Pylint | 9.1/10, 0 errores | pylint |
+| Docstrings | 94.6% (964/1019 funciones) | — |
+| Dead code | 18 items (todos en tests) | vulture |
+
+#### Métricas Clave de Tests
+
+| Métrica | Valor |
+|---------|-------|
+| Tests coleccionados | 2233 (1905 seleccionados) |
+| Distribución | 65.9% unit, 16.5% integration, 13.8% e2e, 3.8% other |
+| Tests saltados | 2 (esperados: Tenzir 404, docker compose en contenedor) |
+| Requieren Docker | 35 tests (1.7%) |
+| Requieren servicios externos | 83 tests (4.0%) |
+| Tests largos (>50 líneas) | 169 |
+| Nombres duplicados | 88 (4.3%) |
+| Mutation testing | 51.8% (13969 mutantes, 5603 killed, 5322 survived) |
+
+---
+
+#### D.3. Infraestructura y API
+
+| Aspecto | Valor |
+|---------|-------|
+| Servicios totales | 23 (6 compose files, todos válidos) |
+| Endpoints API | 38 (OpenAPI 3.1.0 válido) |
+| WebSocket | `/api/ws/logs` (streaming tiempo real) |
+| APIs reales | 7 (TheHive, Cortex, Shuffle, Lab API, MISP, ES, OpenSearch) |
+| APIs simuladas | 1 (SIEM simulado) |
+| Variables de entorno | 131 (100% documentadas en `.env.example`) |
+| TLS | Nginx self-signed |
+| Redes Docker | 3 aisladas (soar_net, ti_net, logging_net) |
+| Rate limiting webhook | 60 req/min |
+| Backup | `make backup` / `make restore` (tar.gz en `runtime/backups/`) |
+
+Integraciones clave: TheHive API (timeout 120s, 3 retries backoff 0.5), Cortex API (timeout 120s, 3 retries, 7 analyzers en paralelo), Shuffle webhook (60 req/min).
+
+Stack de servicios: Shuffle 2.2.1, TheHive 3.5.2-1, Cortex 3.2.0-1, MISP 2.5.44, Elasticsearch 7.10.2, OpenSearch 2.10.0, Redis 7, PostgreSQL 14, MariaDB 10.11, Nginx 1.25, Loki 2.9.10, Promtail 2.9.9, Grafana 10.3.4, Tenzir v6.8.1.
+
+Requisitos hardware: 8 GB RAM (16 GB+ recomendado), 2 cores (4+), 50 GB SSD, Docker 20.10+, Python 3.11+.
+
+---
+
+#### D.4. Gestión del Proyecto
+
+- **20 objetivos SMART** en 4 fases (18 semanas, 27 abr - 31 ago 2026)
+- Fase 1 Investigación (3 sem), Fase 2 Diseño (3 sem), Fase 3 Desarrollo (6 sem), Fase 4 Validación (6 sem)
+- Estimación inicial 12 sem → 15 sem → 18 sem real (ampliación tests + experimento n=50)
+- Consideraciones éticas: muestras inertes, no exposición de datos reales, entorno aislado
+
+Detalle del cronograma y objetivos en el Anexo de Objetivos y Metodología (este documento) y Anexo F (F.8, F.9) en `docs/02-architecture.md`.
+
+---
+
+#### D.5. Resumen Ejecutivo de Validación
+
+| Aspecto | Resultado | Evidencia |
+|---------|-----------|-----------|
+| Workflow E2E | Sí Funcional | 50/50 workflows completados |
+| MTTR | Sí Mejora 92.3% | 3600s -> 277.15s |
+| Contención | Sí 92% | 46/50 alertas con score ≥ 80 |
+| Automatización | Sí 100% | Sin intervención humana |
+| Calidad código | Sí 92.2/100 | Quality score Excellent |
+| HPR | Sí 96.0/100 | Holistic radar Excellent |
+| Tests | Sí 2233 tests (1905 seleccionados) | 2 skipped (esperados), coverage 84.6% |
+| Seguridad | Sí 0 issues | Bandit + pip-audit limpios |
+| Infraestructura | Sí 23 servicios | 6 compose files válidos |
+| API | Sí 38 endpoints | OpenAPI 3.1.0 válido |
+| Mutation testing | Parcial 51.8% | 13969 mutantes, 5603 killed, 5322 survived |
+| Objetivos TFM | Parcial 3/5 | MTTR P50 y P90 no cumplidos |
+
+### 3.16 Anexo: Conclusiones y Trabajo Futuro
+
+#### 5.1. Conclusiones
+
+La pregunta de investigación planteada en la §1.2 fue: *¿En qué medida un playbook SOAR automatizado, desplegado en un laboratorio reproducible basado en herramientas open source, reduce el MTTR y mejora la consistencia de la respuesta a alertas de ransomware respecto a la respuesta manual?*
+
+Un playbook SOAR automatizado reduce el MTTR medio en un 92.3 % (de 3600 s estimados a 277.15 s medidos, n=50), superando ampliamente el objetivo del 50 %. La consistencia mejora estructuralmente, pues todas las ejecuciones siguen el mismo flujo trazable y registran las mismas evidencias, frente a la variabilidad inherente de la respuesta manual. El coeficiente de variación del MTTR (67.7 %) refleja una cola larga atribuible a la saturación del worker de Cortex por acumulación de jobs, pero no a variabilidad entre analistas. La viabilidad técnica del entorno reproducible con herramientas open source queda confirmada: 10/10 servicios healthy, 50/50 workflows completados, 100 % de automatización. Dos umbrales ambiciosos de percentiles (P50 ≤ 120 s, P90 ≤ 180 s) no se alcanzaron en el conjunto completo, aunque el subconjunto de las primeras 12 ejecuciones sí cumple el P90 (163.90 s ≤ 180 s).
+
+El trabajo ha cumplido el objetivo general y 3 de 5 objetivos del experimento (Tabla 9): reducción de MTTR ≥ 50 % (92.3 %), tasa de éxito ≥ 95 % (100 %) y dataset ≥ 50 ejecuciones (n=50). Los dos objetivos no alcanzados corresponden a los umbrales ambiciosos de P50 ≤ 120 s (193.19 s) y P90 ≤ 180 s (621.83 s), discutidos en la §4.1.3.5.
+
+El diseño aplica arquitectura hexagonal al código Python. `domain/ports/` (481 líneas en 4 módulos) define los contratos y cada capa de infraestructura los implementa de forma independiente. En el plano del despliegue, cinco archivos Docker Compose (Docker Inc., 2024) principales más uno de logging en subdirectorio (23 servicios totales) permiten configuraciones desde mínimas hasta completas. Esta separación evita que la lógica de negocio dependa de detalles como clientes HTTP o motores de base de datos concretos.
+
+La evaluación experimental obtuvo MTTR de 277.15 s frente a 3600 s en la condición manual, superando ampliamente el objetivo del 50 % de reducción. ¿Es este resultado extrapolable? No del todo: las pruebas E2E y el análisis de logs confirman la reproducibilidad del despliegue, pero la saturación de Cortex eleva el P90 por encima del umbral cuando se acumulan jobs en cola. La documentación cubre configuración, despliegue (Makefile) y procedimientos de validación para que terceros puedan replicar el experimento. La cobertura de mutation testing (51.8 %) indica que quedan puntos ciegos en los tests. Los anexos **A** (Docker Compose), **B** (workflow SOAR), **D** (validación experimental), **E** (estrategia de testing) y **F** (diagramas de arquitectura) proporcionan la documentación de respaldo para replicación y auditoría.
+
+La contribución teórica principal es evidencia cuantitativa complementaria a la literatura previa. La reducción observada en MTTR (3600 s a 277.15 s, n=50) permite contrastar hipótesis sobre eficiencia operativa con datos medibles, frente a los estudios de caso descriptivos que dominan el área. Las métricas definidas (MTTR p50 ≤ 120 s, tasa de éxito ≥ 95 %, cobertura de tests ≥ 80 %) pueden servir de referencia para evaluar otros laboratorios SOAR similares, aunque el p50 obtenido en este estudio (193.19 s) no alcanzó el umbral ambicioso de 120 s, la reducción del MTTR medio sí superó ampliamente el objetivo del 50 %. Los patrones arquitectónicos documentados (hexagonal para código, modular para infraestructura) describen una forma de organizar componentes que se puede ajustar a distintos entornos.
+
+En el plano práctico, el laboratorio es desplegable con `make up` y accesible desde navegador sin configuración adicional. Al usar exclusivamente software open source elimina los costos de licenciamiento que en soluciones propietarias equivalentes oscilan entre $200 000 y $500 000 anuales (IBM Security, 2024), lo que hace accesibles estas capacidades a pymes, universidades y CSIRTs en formación. La **Tabla 12** presenta el análisis costo-beneficio comparativo entre la respuesta manual, la solución SOAR open source de este TFM, una solución comercial y una solución híbrida.
+
+#### Tabla 12: Análisis Costo-Beneficio SOAR
+
+| Solución             | Costo Anual | MTTR Promedio | Tasa Éxito | ROI 3 años | Implementación |
+|----------------------|-------------|---------------|------------|------------|----------------|
+| **Manual**           | $150K       | 3600s         | ~80%       | -          | N/A            |
+| **SOAR Open Source** | $200K       | 277s          | 100%       | 250%       | 4 semanas      |
+| **SOAR Comercial**   | $500K       | 75s           | 99.1%      | 180%       | 12 semanas     |
+| **Híbrido**          | $350K       | 82s           | 98.8%      | 210%       | 8 semanas      |
+
+El análisis costo-beneficio muestra que la solución SOAR open source ofrece el mejor retorno de inversión (ROI 250% a 3 años) entre las opciones evaluadas. Aunque las soluciones comerciales ofrecen MTTR ligeramente mejores (75s vs 277s), el costo anual mayor ($500K vs $200K) resulta en un ROI inferior (180% vs 250%) (IBM Security, 2024). La solución híbrida ofrece un compromiso intermedio con ROI de 210%. El tiempo de implementación de 4 semanas para la solución open source representa una ventaja frente a las 12 semanas de soluciones comerciales. Este análisis ofrece una base cuantitativa para justificar la inversión en capacidades SOAR open source frente a alternativas comerciales.
+
+La documentación generada incluye guías de configuración, ejemplos de scripts y casos de prueba verificados. El código de contención de endpoints, aunque opera en modo simulado, puede adaptarse para entornos productivos modificando los drivers de infraestructura.
+
+Para pymes, la barrera principal es el licenciamiento. El laboratorio la elimina y, gracias a su automatización de despliegue, permite poner en marcha capacidades de respuesta en un tiempo reducido (IBM Security, 2024). Las grandes organizaciones pueden emplearlo como entorno de validación previo a la adquisición de soluciones comerciales: la arquitectura documentada facilita desarrollar y comparar integraciones con sistemas propietarios antes de comprometer recursos significativos. En el ámbito educativo, el laboratorio proporciona un entorno de práctica operativa sin riesgo para la infraestructura productiva, lo que permite a los estudiantes extender componentes existentes en lugar de construir una infraestructura de base desde el principio.
+
+La limitación más significativa es que la validación se realiza en laboratorio y no con incidentes reales. El alcance circunscrito a ransomware limita la generalización directa, aunque la arquitectura modular facilita la extensión a otros vectores. La muestra de n=50 permite análisis descriptivos robustos (percentiles, desviación estándar, coeficiente de variación), pero una evaluación longitudinal (ausente en este trabajo) aportaría más solidez.
+
+En el plano técnico, la dependencia de APIs externas (DShield, Mnemonic pDNS, GoogleDNS) exige estrategias de caché y redundancia para entornos productivos. El despliegue en un único host puede superarse con orquestadores de contenedores como Kubernetes. Los requisitos de memoria del entorno completo (detallados en la documentación técnica del proyecto) pueden representar una barrera en organizaciones con infraestructura limitada.
+
+En calidad de tests, el mutation testing con mutmut (mutmut, 2024) sobre `src/soar_lab/` generó 13 969 mutantes, de los cuales 5603 fueron killed y 5322 sobrevivieron, resultando en un mutation score de 51.8 % sobre los 11 050 mutantes con cobertura. Este valor, inferior al umbral del 70 % definido en los quality gates, indica que existen ramificaciones lógicas (operadores, comparaciones, constantes) que los tests actuales no verifican, especialmente en los módulos `infrastructure.integrations` (1132 sobrevivientes) e `interfaces.api` (614 sobrevivientes). Esta limitación se documenta como área de mejora prioritaria para iteraciones futuras.
+
+#### 5.2. Trabajo futuro
+
+Las mejoras más directas afectan al rendimiento. El escalado horizontal del worker de Cortex reduciría los tiempos de análisis, y la migración a Elasticsearch 8.x junto con Kubernetes habilitaría el escalado horizontal.
+
+En calidad de tests, el resultado del mutation testing (51.8 %) sugiere añadir tests que verifiquen operadores lógicos y comparaciones en los módulos `infrastructure.integrations` e `interfaces.api`, donde se concentran la mayor cantidad de mutantes sobrevivientes (1132 y 614 respectivamente). El objetivo sería aumentar el mutation score por encima del umbral del 70 %.
+
+En seguridad, la adopción de principios Zero Trust y el cifrado de comunicaciones internas son los pasos más inmediatos. A más largo plazo, el cifrado homomórfico aplicado al análisis de IoCs permitiría procesar datos sensibles sin exponerlos a los servicios externos, una línea con resultados preliminares positivos en el campo de la inteligencia de amenazas preservadora de privacidad (Agrawal & Boneh, 2024). El soporte multi-tenant y la migración a arquitecturas cloud-native ampliarían la utilidad y reducirían la dependencia del host único.
+
+Un seguimiento de 12-24 meses mostraría cómo cambian el MTTR y la tasa de éxito en operación real, identificando patrones de mejora o degradación que evaluaciones cortas no detectan. La transferencia de los playbooks de ransomware a otros tipos de incidentes es otra línea útil: saber qué componentes son reutilizables y cuáles requieren adaptación aportaría evidencia cuantitativa sobre la generalización del diseño. Un análisis TCO a 5 años entre SOAR open source y soluciones comerciales equivalentes completaría el cuadro de criterios para la toma de decisiones.
+
+El laboratorio ofrece una base sobre la que añadir capacidades de ML. La detección predictiva mediante redes neuronales entrenadas con históricos de comportamiento permitiría anticipar la ejecución del ransomware, aunque su viabilidad depende de disponer de datos suficientes y de controlar la tasa de falsos positivos. La clasificación automática de alertas con NLP ayudaría a agilizar el triage, y su evaluación frente a la clasificación humana permitiría cuantificar el beneficio real. La optimización de playbooks con Reinforcement Learning es la línea más exploratoria: cualquier ajuste automático en los flujos de respuesta debería desplegarse de forma gradual y con supervisión humana.
+
+El laboratorio puede extenderse a otros vectores de amenaza sin rediseñar la base. Los incidentes de APT requerirían playbooks con capacidades de correlación temporal a largo plazo, ya que las campañas APT pueden mantenerse activas durante semanas o meses según la telemetría de Mandiant (Mandiant, 2024), y la integración con threat intelligence geopolítica para identificar actores y motivaciones. El insider threat plantea un reto distinto, pues detectar anomalías de comportamiento interno sin vulnerar la privacidad de los empleados exige que el diseño ético del flujo de respuesta importe tanto como la solución técnica. Los incidentes de supply chain, al afectar a múltiples organizaciones simultáneamente, requieren mecanismos de coordinación que van más allá de un laboratorio aislado. Estudiar cómo extender el playbook a estos escenarios abriría líneas de trabajo con aplicación directa en entornos productivos.
+
+Los sistemas SOAR desplazan parte del trabajo hacia la máquina, pero no eliminan la intervención humana. Estudiar cómo los analistas interactúan con el sistema: qué decisiones delegan, cuáles retienen y cómo interpretan los resultados de los analyzers, es una línea poco explorada en la literatura. La explicabilidad de las decisiones automatizadas es un aspecto concreto. Si el sistema activa la contención, el analista necesita entender por qué. Desarrollar mecanismos que justifiquen las acciones del playbook aumentaría la confianza y facilitaría la detección de errores. Otra línea relacionada es la gestión de carga cognitiva. La automatización reduce tareas mecánicas pero puede generar nuevos focos de sobrecarga — notificaciones, alertas de monitorización y decisiones de escalado. Estudiar empíricamente cómo afecta el sistema al trabajo real del analista proporcionaría datos útiles para diseñar mejores interfaces operativas.
+
+#### 5.3. Recomendaciones para organizaciones
+
+La implementación se organiza en cuatro fases. La **Fase 1** (2-4 semanas) cubre la evaluación de las capacidades actuales, identificación de brechas, definición de casos de uso y KPIs, y selección de stack (open source o comercial). La **Fase 2** (4-6 semanas) corresponde al despliegue en entorno aislado con `make up`, configuración de playbooks y variables de entorno (`.env.full`), integración con 2-3 fuentes de datos y validación E2E. La **Fase 3** (6-8 semanas) abarca la ampliación de integraciones, desarrollo de playbooks especializados, formación del equipo e implantación de métricas de monitoreo. La **Fase 4** (continua) es la migración gradual a producción con validaciones, optimización basada en métricas y escalado horizontal.
+
+El éxito de la adopción depende principalmente de tres factores: patrocinio ejecutivo para autorizar recursos, capacidad técnica en el equipo y una gestión del cambio que acompañe la transición. Las barreras más frecuentes son la resistencia inicial (reducible involucrando al equipo desde el diseño) y la complejidad técnica de los primeros despliegues (abordable comenzando con casos simples). El presupuesto es una barrera menor con este stack, ya que el licenciamiento no es un coste.
+
+Como métricas de referencia: reducción de MTTR del 50 % en los primeros 6 meses, umbral coherente con las mejoras observadas en este experimento (92.3 %) y con las reducciones reportadas en estudios comparables sobre automatización de respuesta (Kinyua & Awuah, 2021; Obuse et al., 2023); tasa de clasificación correcta superior al 95 %; disponibilidad del sistema superior al 99.5 %.
+
+En rendimiento operativo: MTTR < 120 s para incidentes simples, throughput > 100 incidentes/hora, disponibilidad > 99.5 % y tasa de clasificación correcta > 95 %. En madurez del proceso: cobertura de automatización superior al 80 % de las tareas repetitivas identificadas (CIS, 2024), como referencia orientativa derivada de los controles CIS v8.1 aplicados a la gestión de incidentes. El marco CIS Controls (CIS, 2024) ofrece una base para priorizar estas tareas según riesgo. La **Tabla 13** recopila los KPIs recomendados escalados al tamaño y recursos de cada tipo de organización.
+
+#### Tabla 13: KPIs Recomendados por Tipo de Organización
+
+| Tipo Org       | MTTR Objetivo | Throughput | Success Rate | Presupuesto SOAR |
+|----------------|---------------|------------|--------------|------------------|
+| **PYME**       | <180s         | >50/h      | >95%         | <50K/año         |
+| **Mediana**    | <120s         | >100/h     | >97%         | 50-200K/año      |
+| **Grande**     | <90s          | >200/h     | >98%         | 200-500K/año     |
+| **Enterprise** | <60s          | >500/h     | >99%         | >500K/año        |
+
+Los KPIs recomendados por tipo de organización ofrecen objetivos realistas escalados al tamaño y recursos de cada organización. Las PYMEs con presupuestos limitados (<50K/año) pueden aspirar a MTTR <180s y throughput >50/h, mientras que organizaciones grandes con presupuestos significativos (>500K/año) pueden alcanzar MTTR <60s y throughput >500/h. Esta progresión permite establecer objetivos apropiados para cada contexto, evitando expectativas irreales. Los KPIs de tasa de éxito escalan desde >95% para PYMEs hasta >99% para organizaciones grandes, reflejando la inversión en redundancia y capacidades de recuperación.
+
+El mantenimiento operativo requiere parches de seguridad regulares, copias de seguridad diarias con pruebas de restauración y actualización continua de la documentación. El monitoreo con Grafana permite detectar degradaciones de rendimiento antes de que afecten la operación. El mantenimiento del sistema puede seguir un ritmo trimestral — revisar capacidades y rendimiento, evaluar herramientas emergentes, incorporar el feedback del equipo y comparar las prácticas actuales con estándares del sector. El gobierno incluye auditorías de cumplimiento normativo, identificación de riesgos emergentes y aplicación del ciclo PDCA para la mejora continua.
+
+#### 5.4. Alcance del trabajo
+
+Los resultados indican que la automatización mediante SOAR reduce de forma consistente el tiempo de respuesta ante incidentes de ransomware. La reducción observada en MTTR (de 3600 a 277.15 segundos) con 50 ejecuciones ofrece evidencia cuantitativa de que los playbooks automatizados acortan los tiempos de reacción frente a los procesos manuales. Ese dato interesa a equipos que operan bajo restricciones temporales estrictas.
+
+El laboratorio se publica bajo licencia abierta. La arquitectura hexagonal permite sustituir componentes concretos (por ejemplo, el cliente de base de datos o el motor de análisis) sin modificar la lógica de negocio, y la estructura modular de Docker Compose facilita incorporar nuevos servicios sin rediseñar la topología de red. Ambas características convierten el laboratorio en un punto de partida reutilizable tanto para investigación como para docencia en el ámbito de la ciberseguridad operativa.
+
+La combinación de desarrollo tecnológico y validación experimental mediante análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) constituye un método transferible a otros proyectos que evalúen tecnologías de seguridad en condiciones controladas y reproducibles.
+
+El uso exclusivo de software open source elimina los costos de licenciamiento asociados a soluciones comerciales equivalentes, cuyo rango de coste anual ha sido estimado en la literatura entre $200 000 y $500 000 (IBM Security, 2024). Ello hace accesibles estas capacidades a pymes, instituciones educativas y CSIRTs en fase de consolidación.
+
+![Figura 11: Análisis coste-beneficio SOAR open source vs comercial](thesis/figures/Fig5_5_cost_benefit.png)
+
+**Figura 11**: Análisis coste-beneficio comparativo entre SOAR open source (este laboratorio) y soluciones comerciales equivalentes.
+
+---
+
+#### Índice de Figuras del Capítulo 5
+
+| Figura    | Título                                          | Archivo                              |
+|-----------|-------------------------------------------------|--------------------------------------|
+| Figura 11 | Análisis coste-beneficio SOAR open source vs comercial | `thesis/figures/Fig5_5_cost_benefit.png` |
+
+#### Índice de Tablas del Capítulo 5
+
+| Tabla    | Título                                          |
+|----------|-------------------------------------------------|
+| Tabla 12 | Análisis Costo-Beneficio SOAR                   |
+| Tabla 13 | KPIs Recomendados por Tipo de Organización      |
+
+---
 
 ## 4. Validación
 
@@ -2437,782 +3117,15 @@ pytest tests/e2e/ --generate-kpis
 - [Estrategia de pruebas y suite](05-testing.md)
 - [Glosario central](glossary.md)
 - [Índice](index.md)
+
 ## 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Shuffle**: https://shuffler.io/docs
-- **Documentación de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación de Cortex**: https://docs.strangebee.com/cortex/
-- **Documentación de MISP**: https://www.misp-project.org/documentation/
-- **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
+- **Documentación de Shuffle**: <https://shuffler.io/docs>
+- **Documentación de TheHive**: <https://docs.strangebee.com/thehive/>
+- **Documentación de Cortex**: <https://docs.strangebee.com/cortex/>
+- **Documentación de MISP**: <https://www.misp-project.org/documentation/>
+- **Documentación de Elasticsearch**: <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>
 - **Arquitectura y seguridad**: [docs/02-architecture.md](02-architecture.md)
 - **Plan del Proyecto**: [sección 3.3 Plan de trabajo](#33-plan-de-trabajo)
 - **Alcance del Proyecto**: [sección 3.2 Alcance](#32-alcance)
-
----
-
-## Anexo: Estado del Arte
-
-
-Este capítulo revisa la literatura sobre respuesta a incidentes, automatización y orquestación en SOC, con especial atención al ransomware y al uso de playbooks. Los equipos de seguridad operan con ecosistemas de herramientas fragmentados y datos heterogéneos, lo que incrementa la intervención manual e introduce variabilidad difícil de cuantificar y controlar. Las plataformas SOAR actúan como capa de integración que complementa al SIEM, permitiendo operacionalizar procedimientos mediante playbooks sin suprimir la supervisión humana en las decisiones críticas (Kinyua & Awuah, 2021).
-
-### 2.1. Respuesta a incidentes y ransomware como dominio de aplicación
-
-La respuesta a incidentes se describe habitualmente como un proceso estructurado en fases de preparación, detección y análisis, contención, erradicación y recuperación (NIST, 2023). La norma ISO/IEC 27035 (ISO/IEC, 2016) recoge una estructura equivalente a nivel internacional. NIST ha sistematizado estas fases y las revisa de forma periódica: en abril de 2025, NIST SP 800-61r2 fue retirada y sustituida por NIST SP 800-61r3, documento que refleja la tendencia a incorporar la respuesta a incidentes en el marco más amplio de gestión del riesgo de ciberseguridad (NIST, 2025).
-
-En ransomware, el impacto principal es la pérdida de disponibilidad por cifrado. En muchos ataques recientes eso se combina con exfiltración previa y doble extorsión, lo que acelera los tiempos de decisión. CISA ofrece guías específicas con listas de verificación que concretan las tareas y evidencias mínimas esperadas (CISA, 2023). El escenario de amenazas europeo, recogido en el ENISA Threat Landscape 2023, confirma esta tendencia hacia la doble extorsión como patrón dominante en campañas de ransomware (ENISA, 2023). Mandiant (Mandiant, 2024) reporta un aumento del 11 % en grupos de ransomware activos entre 2023 y 2024, y CrowdStrike (CrowdStrike, 2024) documenta una media de 79 minutos entre acceso inicial y cifrado, frente a los 147 minutos del año anterior.
-
-Para modelar el comportamiento del adversario y conectar detecciones con acciones, MITRE ATT&CK (MITRE Corporation, 2024; MITRE ATT&CK, n.d.) es una referencia habitual en el sector. La técnica T1486 (Data Encrypted for Impact) describe el cifrado de datos para interrumpir la disponibilidad y extorsionar, e incluye detalles sobre propagación y entornos afectados que orientan la definición de observables e IoCs relevantes (MITRE, 2025).
-
-La progresión del ransomware a través de generaciones muestra una tendencia clara hacia sofisticación creciente y demandas de rescate exponencialmente mayores (Razaulla et al., 2023). Como se observa en la **Tabla 1**, los rescates promedio han aumentado de $300-$700 en la primera generación a $500K-$20M en la cuarta, representando un incremento de más de tres órdenes de magnitud que justifica la inversión en capacidades SOAR para mitigar el coste financiero de estos incidentes (CrowdStrike, 2024; Sophos, 2024).
-
-### Tabla 1: Progresión de Ransomware por Generación
-
-| Generación | Período       | Características Principales            | Técnicas de Distribución         | Rescate Promedio | Ejemplos Notables            |
-|------------|---------------|----------------------------------------|----------------------------------|------------------|------------------------------|
-| **1ª Gen** | 2013-2016     | Encriptación básica, sin propagación   | Email phishing, exploits simples | $300-$700        | CryptoLocker, CryptoWall     |
-| **2ª Gen** | 2017-2018     | Propagación lateral, gusanos de red    | EternalBlue, exploits SMB        | $300-$50K        | WannaCry, NotPetya           |
-| **3ª Gen** | 2018-2021     | Modelo RaaS, doble extorsión           | Afiliados, access brokers        | $100K-$10M       | Ryuk, Maze, REvil, Conti     |
-| **4ª Gen** | 2021-Presente | Triple extorsión, DDoS, access brokers | Acceso inicial, supply chain     | $500K-$20M       | LockBit 3.0, BlackCat, Royal |
-
-La primera generación se caracterizaba por encriptación básica y demandas de rescate modestas, mientras que la cuarta generación actual incorpora triple extorsión (cifrado + exfiltración + DDoS) y depende de access brokers que venden acceso inicial a redes corporativas (Sophos, 2024). Esta progresión indica la necesidad de capacidades de respuesta automatizadas, ya que la respuesta manual resulta insuficiente ante amenazas de esta complejidad. Los informes anuales de CrowdStrike (CrowdStrike, 2024) y Sophos (Sophos, 2024) corroboran esta tendencia con datos de telemetría global de sus respectivos clientes.
-
-Como muestra de la complejidad que alcanzan las amenazas actuales, el **Anexo F** (secciones F.11 y F.12) documenta el caso real del malware GMinst4ll, un RAT que ilustra varias técnicas propias de la cuarta generación: distribución mediante ingeniería social en plataformas legítimas (YouTube, Tumblr), uso de dead drops (Pastebin, Reddit, Telegram, Dropbox) para la configuración del C2, persistencia mediante scripts VBS y anti-forenses (killer de antivirus, bloqueo DNS), y exfiltración a través de Telegram. El pipeline SOAR diseñado en este TFM procesa los IoCs extraídos de este caso real a través de Cortex, MISP y TheHive (Anexo F, sección F.12).
-
-### 2.2. Automatización, SOAR y playbooks en operaciones de seguridad
-
-La proliferación de herramientas con representaciones de datos dispares obliga al analista a saltar entre sistemas durante una misma investigación, lo que eleva el tiempo de respuesta y dificulta cualquier intento de estandarización.
-SIEM y SOAR son complementarios. El SIEM centraliza eventos y genera alertas, y SOAR orquesta las integraciones y ejecuta respuestas automatizadas en las fases de contención y recuperación (Kinyua & Awuah, 2021).
-Islam et al. ofrecen la revisión sistemática más completa del área: su multi-vocal literature review clasifica las funcionalidades de las plataformas de orquestación en unificación, orquestación y automatización, e identifica los componentes core, los drivers técnicos y socio-técnicos, y una taxonomía basada en entorno de ejecución, estrategia de automatización y tipo de despliegue (Islam et al., 2019). Esta taxonomía respalda la elección de un despliegue on-premise con orquestación basada en playbooks, como el que se evalúa en este TFM.
-
-Para contextualizar esta elección, la **Tabla 2** compara las plataformas SOAR open source seleccionadas en este TFM con soluciones comerciales representativas según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad.
-
-### Tabla 2: Comparativa Detallada de Plataformas SOAR
-
-Comparación de plataformas SOAR open source (TheHive (TheHive Project, 2024), Cortex (Cortex Project, 2024), Shuffle (Shuffle Tools, 2024)) versus comerciales (Palo Alto XSOAR, IBM
-Resilient) según costo, funcionalidad, curva de aprendizaje, comunidad y escalabilidad. Las herramientas open source
-ofrecen capacidades competitivas sin costos de licencia.
-
-| Característica        | TheHive                  | Cortex                   | Shuffle                  | Palo Alto XSOAR            | IBM Resilient             |
-|-----------------------|--------------------------|--------------------------|--------------------------|----------------------------|---------------------------|
-| **Licencia**          | Open Source (AGPL-3.0)   | Open Source (AGPL-3.0)   | Open Source (AGPL-3.0)   | Comercial ($106K-$250K/año) | Comercial ($15K-$200K+/año) |
-| **Gestión de Casos**  | Excelente              | No aplica              | Básica                 | Avanzada                 | Avanzada                |
-| **Análisis IoCs**     | No aplica              | Excelente              | Básico                 | Avanzado                 | Avanzado                |
-| **Orquestación**      | Limitada               | No aplica              | Excelente              | Excelente                | Excelente               |
-| **Curva Aprendizaje** | Media                    | Media                    | Baja                     | Alta                       | Alta                      |
-| **Comunidad**         | Activa                   | Activa                   | Creciente                | Empresarial                | Empresarial               |
-| **Integraciones**     | 300+                     | 146+ analyzers           | 2500+ apps               | 850+                       | 300+                      |
-| **Escalabilidad**     | Media                    | Media                    | Alta                     | Alta                       | Alta                      |
-| **Soporte**           | Comunidad                | Comunidad                | Comunidad                | 24/7 Enterprise            | 24/7 Enterprise           |
-
-Las plataformas open source seleccionadas ofrecen una combinación funcional adecuada: TheHive gestiona casos, Cortex
-analiza IoCs y Shuffle orquesta flujos. Esta combinación permite construir una solución SOAR sin costos de licencia. Las
-soluciones comerciales requieren inversiones anuales de seis cifras (IBM Security, 2024), fuera del alcance de muchas organizaciones. La
-comunidad activa de las herramientas open source asegura soporte continuo y desarrollo.
-
-Los playbooks son el mecanismo para convertir decisiones tácticas en procedimientos repetibles. Kinyua y Awuah distinguen entre playbook —checklist lineal— y runbook —workflow con control de flujo, condiciones y puntos donde el analista interviene. Esta distinción encaja con diseños que combinan automatización con decisión humana en acciones de mayor consecuencia. En cuanto a la medición del valor operativo, los mismos autores proponen MTTD, MTTR y tiempo de investigación como indicadores, lo que conecta directamente con las evaluaciones basadas en percentiles de este TFM (Kinyua & Awuah, 2021).
-Otros trabajos han explorado la aplicación de IA/ML en respuesta a incidentes, con mejoras observadas en detección y clasificación de amenazas en infraestructuras críticas (Obuse et al., 2023), y en la automatización de tareas de seguridad TI para reducir la carga operativa (Mohammad & Lakshmisri, 2018).
-
-La primera evaluación empírica de SOAR en uso real la aportan Gutzwiller et al., quienes diseñan y administran el primer estudio de usuario hands-on con herramientas SOAR, involucrando a 24 participantes y seis herramientas comerciales en un cyber range. Sus resultados muestran una reducción del context switching del orden del 30 %, pero también un aumento en errores de omisión del 23 % al 78 % en analistas junior cuando la automatización simplifica demasiado la tarea. Los autores observan además que la configuración específica de cada SOC es crítica y que los analistas senior prefieren combinar automatización con asistencia a la decisión (Gutzwiller et al., 2023). Este resultado respalda la decisión de este TFM de automatizar tareas repetitivas manteniendo la supervisión humana en decisiones de mayor consecuencia.
-
-Sin embargo, la evidencia empírica muestra que tener un playbook no garantiza efectividad. Stevens et al. analizan frameworks de diseño de playbooks y concluyen que producen con frecuencia artefactos insuficientemente detallados para uso real, especialmente para perfiles junior. Los fallos típicos incluyen tareas implícitas omitidas, lenguaje ambiguo y ausencia de ramificación o paralelismo. Cuando los playbooks se iteran junto con los procesos organizativos, la utilidad mejora, lo que implica que el nivel de detalle del diseño afecta al rendimiento real bajo estrés (Stevens et al., 2022).
-
-Schlette et al. analizan 1217 playbooks de múltiples fuentes y detectan ambigüedad sobre qué constituye exactamente un playbook en la práctica. Su conclusión principal es que los playbooks comunitarios suelen requerir adaptación antes de ser operativos: herramientas disponibles, requisitos legales, estructura del equipo y procesos internos condicionan esa adaptación. Este resultado justifica que el laboratorio del TFM defina explícitamente su contexto y que el playbook E2E se diseñe para ese entorno, sin asumir reutilización directa (Schlette et al., 2024).
-
-Akbari Gurabi et al. abordan la transición de playbooks textuales a formatos machine-readable e interoperables, y definen requisitos formales para playbooks que asistan la respuesta a incidentes, el reporting y la automatización. Su trabajo, financiado por el programa Horizon 2020 de la UE, destaca la necesidad de que los playbooks sean portables entre organizaciones y herramientas, un objetivo aún no resuelto que refuerza la relevancia de evaluar playbooks en entornos específicos como el de este TFM (Akbari Gurabi et al., 2024). Por su parte, Karlzén y Sommestad revisan 45 soluciones académicas de respuesta automática a incidentes publicadas desde 2000 y las comparan con cuatro soluciones comerciales, categorizándolas por entrada (señales de intrusión, inventarios de activos) y salida (aislamiento de red, reconfiguración de firewalls) según el framework D3FEND. Su conclusión principal es que muchas soluciones describen entradas y salidas en términos vagos, y que las soluciones comerciales se centran más en reputación de indicadores y análisis de archivos (Karlzén & Sommestad, 2023). Esta revisión contextualiza la contribución de este TFM: el uso de analyzers de Cortex para enriquecer IoCs mediante fuentes de reputación coincide con el patrón dominante en soluciones comerciales, pero la medición cuantitativa del MTTR con percentiles aporta el rigor que Karlzén y Sommestad identifican como ausente en la literatura.
-
-En el terreno específico del ransomware, Kok et al. presentan un framework detallado para diseñar estrategias de respuesta a ransomware que equilibra adaptabilidad y accionabilidad, identificando diferencias entre clases de ransomware y destacando la importancia de la preparación específica, la comunicación rápida y la documentación previa de procesos (Kok et al., 2023). Complementariamente, Brown et al. introducen el concepto de playbook operations-informed, que incorpora el contexto operacional en el playbook para reflejar las interdependencias entre las actividades de respuesta a incidentes y las operaciones de la organización, con un caso de estudio aplicado a ransomware (Brown et al., 2023).
-
-En cuanto a estandarización, OASIS CACAO 2.0 (noviembre de 2023) define un esquema y taxonomía para describir playbooks de ciberseguridad desde la detección hasta la remediación (OASIS, 2023). Microsoft y el Automation SIG de FIRST complementan este marco con guías prácticas e intercambio de experiencias entre CSIRT (Microsoft, 2024; FIRST, n.d.). La coexistencia de iniciativas paralelas en este campo refleja que el sector aún no ha alcanzado convergencia en torno a un estándar único (OASIS, 2023; Schlette et al., 2024), lo que justifica la necesidad de ajustar cualquier playbook al contexto operativo concreto en que va a desplegarse. Sigma (Sigma Project, n.d.)
-representa un esfuerzo complementario para estandarizar reglas de detección, y Shuffle (Shuffle Tools, 2024; Shuffle Tools, n.d.) implementa un motor de orquestación open source que materializa estos conceptos en flujos ejecutables.
-
-### 2.3. Laboratorios reproducibles, herramientas open source y evaluación
-
-Para investigación aplicada, la reproducibilidad condiciona la validez. Si el entorno cambia entre ejecuciones, las diferencias en resultados no son atribuibles al factor estudiado. Núñez Fernández desarrolla una plataforma SIRP reproducible con Docker Compose para pymes, con un stack similar al de este TFM (TheHive Project, 2024; Cortex Project, 2024; MISP Project, 2024) y un motor de workflows con monitoreo por contenedores, lo que valida la viabilidad tecnológica de la solución (Núñez Fernández, 2023). La compartición de información de amenazas entre organizaciones, estandarizada por NIST SP 800-150 (NIST, 2024b), es un habilitador clave para que plataformas como MISP y Cortex aporten valor en la respuesta a incidentes.
-
-Quintero Tamayo et al. plantean playbooks como base de conocimiento para CSIRT, enfatizando la importancia de la estandarización, la claridad en los pasos y el mantenimiento continuo con indicadores de evaluación (Quintero Tamayo et al., 2023). Atluri y Warner añaden que el control de acceso debe sincronizarse con el flujo del workflow para evitar privilegios residuales, lo que importa para garantizar la trazabilidad de un playbook E2E incluso cuando las acciones de contención son simuladas (Atluri & Warner, 2008).
-
-La literatura de SOAR y la de playbooks coinciden en un punto. Las métricas temporales son necesarias, pero no suficientes para evaluar la eficacia operativa. La claridad del trigger y el nivel de detalle del flujo condicionan la ejecución real en la misma medida que el tiempo de respuesta (Stevens et al., 2022). Esta consideración respalda el uso de percentiles p50 y p90 como indicadores primarios, complementados con logs y artefactos del caso para permitir la verificación y el análisis post-hoc (Kinyua & Awuah, 2021; Stevens et al., 2022).
-
-### 2.4. Síntesis y relación con el TFM
-
-La literatura revisada converge en tres ideas. Primera: el tiempo de reacción condiciona el daño en ransomware, lo que convierte la automatización en una necesidad operativa (CrowdStrike, 2024; Sophos, 2024). Segunda: la efectividad de SOAR depende del detalle del playbook y su adaptación al contexto, no solo de su existencia (Islam et al., 2019; Kinyua & Awuah, 2021). Tercera: un laboratorio reproducible con herramientas open source es viable para generar evidencias contrastables (Núñez Fernández, 2023; CISA, 2023).
-
-### Brecha identificada
-
-Pese a la abundancia de modelos conceptuales (CACAO, ATT&CK), guías prácticas (NIST, CISA) y estudios cualitativos, ningún trabajo revisado ejecuta un playbook SOAR específico para ransomware en condiciones controladas midiendo MTTR con percentiles, desviación estándar y consistencia entre ejecuciones. Gutzwiller et al. (2023) no reportan MTTR cuantitativo; Karlzén y Sommestad (2023) detectan vaguedad en entradas y salidas; Kok et al. (2023) y Brown et al. (2023) se centran en el diseño, no en la medición. Este TFM aborda dicha brecha ejecutando un playbook E2E sobre 50 alertas simuladas y reportando métricas estadísticas que permiten contrastar la hipótesis de que la automatización reduce el MTTR frente a la respuesta manual.
-
-El **Anexo F** (sección F.1) recopila 12 diagramas Mermaid canónicos que ilustran la arquitectura y los flujos referenciados en esta revisión.
-
----
-
-### Índice de Figuras del Capítulo 2
-
-Este capítulo no contiene figuras. Los diagramas de arquitectura referenciados se encuentran en el Anexo F.
-
-### Índice de Tablas del Capítulo 2
-
-| Tabla   | Título                                      |
-|---------|---------------------------------------------|
-| Tabla 1 | Progresión de Ransomware por Generación     |
-| Tabla 2 | Comparativa Detallada de Plataformas SOAR   |
-
-
-## Anexo: Objetivos y Metodología
-
-
-Este capítulo define qué se quiere demostrar y cómo se organiza el desarrollo. El resultado esperado es un laboratorio SOAR mínimo viable que ejecute un playbook E2E en escenarios malicioso y benigno y produzca métricas para la evaluación. La presentación de resultados (§4.1.3.3) se centra en el escenario malicioso (n=50), pero el repositorio incluye el escenario benigno y 39 test cases E2E adicionales listos para ejecutar con `make test-e2e`.
-
-### 3.1 Objetivo general
-
-Demostrar que un playbook SOAR automatizado reduce el tiempo de respuesta y mejora la consistencia y trazabilidad en la gestión de alertas de ransomware. El entorno debe ser reproducible, usar herramientas open source y generar evidencias verificables.
-
-El objetivo se alcanza cuando el laboratorio ejecuta el flujo completo en los escenarios malicioso y benigno, cumple los umbrales de rendimiento (reducción de MTTR ≥ 50 % respecto al baseline manual) y genera evidencias completas (logs, capturas y métricas). La evaluación experimental presentada en este trabajo se centra en el escenario malicioso (n=50 ejecuciones); el escenario benigno y el resto de test cases están implementados y disponibles en el repositorio para ejecución con `make test-e2e`.
-
-### 3.2 Objetivos específicos
-
-Para alcanzar el objetivo general, el trabajo se divide en objetivos específicos:
-
-#### 3.2.1. Objetivos Estratégicos
-
-Los objetivos estratégicos se agrupan en cuatro áreas: diseño arquitectónico, implementación funcional, validación empírica y documentación reproducible.
-
-- **Diseño Arquitectónico**
-
-Diseñar una arquitectura SOAR modular y reproducible basada en TheHive, Cortex y Shuffle. Se valida con una arquitectura documentada con diagramas técnicos, especificaciones de integración definidas, un plan de escalabilidad establecido y una configuración Docker Compose estructurada. Soporte documental en `docs/02-architecture.md`, `docs/03-api-and-integrations.md` e `infra/docker/compose/`.
-
-- **Implementación Funcional**
-
-Implementar un playbook E2E en Shuffle con integración entre TheHive, Cortex y Shuffle. Se cumple cuando hay un playbook funcional E2E en los escenarios malicioso y benigno, una integración operativa sin intervención manual, un simulador SIEM funcional y una lógica de contención simulada operativa. El playbook está documentado en el **Anexo B** (sección B.1), los scripts en `src/soar_lab/simulator/`, `src/soar_lab/infrastructure/messaging/send_alert.py`, `src/soar_lab/application/use_cases/analytics_service.py` y los logs en `runtime/logs/`. La evaluación presentada se centra en el escenario malicioso; el benigno está implementado y disponible en el repositorio.
-
-- **Evaluación Experimental**
-
-Aquí se busca validar la eficacia mediante métricas cuantitativas como MTTR y tasa de éxito. Los criterios de éxito son MTTR p50 ≤ 120s y p90 ≤ 180s, tasa de éxito ≥ 95 %, un dataset de al menos 50 ejecuciones por escenario y un análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación). Resultados y código asociado en `reports/e2e/`, `src/soar_lab/application/use_cases/`, `src/soar_lab/domain/statistical_calculator.py`, `src/soar_lab/data/calc_kpis.py`, `tests/e2e/` y `tests/integration/`.
-
-- **Documentación Reproducible**
-
-Documentar exhaustivamente el proceso para permitir la reproducción por terceros. La validación consiste en una guía de instalación y configuración completa, documentación de playbooks con contexto, validación de reproducción mediante Makefile y documentación técnica completa. Material en `docs/`, `docs/04-operations.md`, el Makefile, `docs/03-api-and-integrations.md` y `apps/docs-site/`.
-
-La **Tabla 3** resume los cuatro objetivos estratégicos con sus métricas de éxito, valor objetivo y evidencia requerida.
-
-### Tabla 3: Resumen de Objetivos Estratégicos y Métricas de Éxito
-
-| ID       | Objetivo Específico        | Métricas de Éxito      | Valor Objetivo | Evidencia Requerida         |
-|----------|----------------------------|------------------------|----------------|-----------------------------|
-| **TE-1** | Diseño arquitectónico SOAR | Componentes integrados | 5+ componentes | Diagramas, especificaciones |
-| **TE-2** | Implementación funcional   | Playbook E2E operativo | Escenarios malicioso y benigno | Scripts funcionales, logs   |
-| **TE-3** | Validación experimental    | Reducción MTTR         | ≥50%           | Resultados estadísticos     |
-| **TE-4** | Documentación reproducible | Guías completas        | 100% cobertura | Tutoriales, validación      |
-
-El cumplimiento de cada objetivo se reporta en el Capítulo 4 (Resultados) y se discute en el Capítulo 6 (Conclusiones).
-
-#### 3.2.2. Objetivos Operativos
-
-Los objetivos operativos detallan los pasos de implementación:
-
-- **Delimitar** el alcance del proyecto estableciendo inclusiones, exclusiones y restricciones de seguridad. El entorno
-  no debe tener malware funcional ni dependencias externas complejas.
-
-- **Definir** el flujo funcional del playbook E2E: etapas, entradas, salidas, evidencias y criterios de decisión para
-  los escenarios benigno y malicioso.
-
-- **Diseñar** la arquitectura en un host con Docker Compose, incluyendo servicios, dependencias, redes y volúmenes.
-
-- **Verificar** que los servicios arrancan de forma estable tras el despliegue inicial.
-
-- **Configurar** y conectar los componentes: TheHive (TheHive Project, 2024) para gestión de casos, Cortex (Cortex Project, 2024) para análisis y Shuffle (Shuffle Tools, 2024) para
-  orquestación.
-
-- **Construir** el mecanismo de ingesta de alertas por webhook y asegurar la validación del payload de entrada.
-
-- **Implementar** la creación y actualización de casos en TheHive, incluyendo IoCs, etiquetas, estados y resúmenes.
-
-- **Automatizar** el enriquecimiento de observables mediante analyzers en Cortex y establecer la lógica de decisión
-  basada en umbral de score.
-
-- **Simular** las acciones de contención y registrar evidencias en el caso sin cambios reales en sistemas productivos.
-
-- **Implementar** integraciones simuladas: un SIEM simulado para emitir alertas y endpoints mock para EDR y firewall.
-
-- **Medir** el rendimiento del flujo desde la alerta hasta la contención simulada y calcular los percentiles p50 y p90.
-
-- **Generar** evidencias verificables: logs, capturas, trazas y métricas. Documentar el procedimiento para asegurar
-  reproducibilidad.
-
-**Criterios de cumplimiento**: el objetivo general se alcanza cuando el laboratorio ejecuta el flujo completo en dos
-escenarios, cumple los umbrales de rendimiento y genera evidencias completas.
-
-### 3.3. Metodología del trabajo
-
-La metodología combina investigación aplicada con desarrollo tecnológico, siguiendo principios de DevSecOps. El proyecto se desarrolla entre el 27 de abril y el 31 de agosto de 2026 (18 semanas) y se estructura en cuatro fases. La **Figura 2** muestra el cronograma Gantt con la distribución temporal de cada fase.
-
-La planificación temporal evolucionó a lo largo del proyecto. La estimación inicial fue de 12 semanas, suficiente según el alcance previsto. Tras la fase de diseño se aumentó a 15 semanas para acomodar la integración de Cortex con analyzers externos y el stack de monitoreo, no contemplados inicialmente. Finalmente, la duración real fue de 18 semanas debido a la ampliación de la suite de pruebas (hasta 2233 tests coleccionados, 1905 seleccionados) y la ejecución del experimento con n=50 ejecuciones.
-
-```mermaid
-gantt
-    title Figura 2: Cronograma de ejecución del proyecto
-    dateFormat YYYY-MM-DD
-    axisFormat %d %b
-    todayMarker off
-
-    section Inicio
-    Inicio del proyecto :milestone, m1, 2026-04-27, 0d
-
-    section Investigación
-    Literatura y requisitos :a1, 2026-04-27, 3w
-
-    section Diseño
-    Arquitectura y contratos :a2, after a1, 3w
-
-    section Desarrollo
-    Playbook, integraciones y API :crit, a3, after a2, 6w
-    Versión funcional :milestone, m2, after a3, 0d
-
-    section Validación
-    Pruebas E2E :a4, after a3, 2w
-    Experimentos :a5, after a4, 3w
-    Análisis estadístico :a6, after a5, 1w
-    Cierre del proyecto :milestone, m3, after a6, 0d
-```
-
-**Figura 2**: Cronograma de ejecución del proyecto con cuatro fases distribuidas entre abril y agosto de 2026.
-
-**Fase 1 — Investigación (abril-mayo 2026, 3 semanas).** Revisión de la literatura sobre respuesta a
-incidentes, ransomware y plataformas SOAR. Identificación de la brecha cuantitativa en la literatura. Definición de requisitos funcionales, no funcionales y de integración. Selección del stack tecnológico open source.
-
-**Fase 2 — Diseño (mayo-junio 2026, 3 semanas).** Diseño de la arquitectura hexagonal del código
-Python. Definición de la topología Docker Compose con segmentación de redes. Especificación de contratos de integración entre TheHive, Cortex y Shuffle. Diseño del modelo de scoring y del flujo del playbook.
-
-**Fase 3 — Desarrollo (junio-julio 2026, 6 semanas).** Implementación del playbook E2E en
-Shuffle con 46 nodos y 25 scripts Python. Integración con TheHive (gestión de casos) y Cortex (análisis de IoCs).
-Desarrollo del simulador SIEM y de la lógica de contención simulada. Implementación de la API FastAPI con arquitectura hexagonal. Configuración del stack de monitoreo (Loki, Promtail, Grafana).
-
-**Fase 4 — Validación (julio-agosto 2026, 6 semanas).** Ejecución de la suite de pruebas
-completa (2233 tests coleccionados, 1905 seleccionados). Pruebas E2E, experimentos con n=50 ejecuciones del escenario malicioso,
-análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) y mutation testing con mutmut. El escenario benigno y 39 test cases E2E adicionales están implementados en el repositorio para ejecución con `make test-e2e`.
-
-El stack tecnológico combina herramientas open source para orquestación (TheHive, Cortex y Shuffle), almacenamiento (Elasticsearch, OpenSearch, Redis, MariaDB) y monitoreo (Loki, Promtail, Grafana), todo desplegado sobre Docker Compose (Docker Inc., 2024) con Python como lenguaje de implementación. MISP se incluye como componente opcional para el intercambio de indicadores de amenazas. El desarrollo se apoya en Git, Make y pytest (pytest, 2024) para control de versiones, automatización y pruebas.
-
-El experimento compara la respuesta manual frente a la automatizada con SOAR, midiendo MTTR, tasa de éxito y uso de recursos. El entorno, el dataset y la configuración se mantienen constantes, y el orden de ejecuciones se aleatoriza para evitar sesgos. El escenario malicioso se repite 50 veces (n=50), de las que se extraen los percentiles p50 y p90. El escenario benigno está implementado y disponible en el repositorio para ejecuciones complementarias.
-
-El laboratorio opera de forma aislada, sin datos reales ni acceso a sistemas productivos, y los secretos se gestionan mediante variables de entorno. El diseño se alinea con el RGPD (European Union, 2018), ISO 27001 (ISO/IEC, 2022) y el NIST Cybersecurity Framework (NIST, 2024a). Los riesgos principales —fallo de integración y vulnerabilidades— se mitigan con pruebas tempranas y escaneos periódicos, reservando una holgura del 20 % en la planificación de cada fase.
-
-La reproducción por terceros consiste en clonar el repositorio, levantar el entorno con `make up`, ejecutar `pytest tests/e2e/` para ambos escenarios y extraer el MTTR del índice `soar-metrics`. Se considera exitoso cuando todos los contenedores están healthy, los tests E2E pasan al 100 % y Grafana muestra la reducción del MTTR respecto a la línea base manual.
-
----
-
-### Índice de Figuras del Capítulo 3
-
-| Figura    | Título                          | Archivo          |
-|-----------|---------------------------------|------------------|
-| Figura 2 | Cronograma Gantt del proyecto | Mermaid (inline) |
-
-### Índice de Tablas del Capítulo 3
-
-| Tabla   | Título                                          |
-|---------|-------------------------------------------------|
-| Tabla 3 | Objetivos Específicos con Métricas de Éxito     |
-
-
-## Anexo: Métricas y Visualizaciones Complementarias
-
-
-Este anexo presenta visualizaciones de datos y gráficos complementarios que ilustran los resultados experimentales y el
-análisis de rendimiento del laboratorio SOAR. Los valores mostrados corresponden a los
-resultados experimentales obtenidos durante la validación del sistema (n=50, 2026-08-24).
-
-Para reproducir las métricas SOAR, ejecutar `make test-e2e` (o llamar a `POST /tests/run` con categoría `e2e`) y consultar
-`GET /analytics/kpis/aggregated`. La fuente de verdad dinámica es el índice `soar-metrics` en Elasticsearch.
-
-Nota importante: la lógica de cálculo de KPIs existe en el código fuente en:
-
-- `src/soar_lab/domain/services/kpi_analyzer.py` - KPIAnalyzer.calculate_mttr_metrics() para MTTR, calculate_performance_kpis()
-  para rendimiento, calculate_health_score() para health score
-- `src/soar_lab/domain/statistical_calculator.py` - StatisticalCalculator.calculate_statistical_metrics() para
-  percentiles (p50, p90, etc.) y métricas estadísticas
-
-Los valores mostrados en los gráficos se han calculado usando estos métodos programáticamente.
-
-### C.1. Valores Reales Calculados (n=50 ejecuciones)
-
-- Total alerts: 50
-- MTTR mean: 277.15 seconds (4.62 minutes)
-- MTTR median (p50): 193.19 seconds
-- MTTR p90: 621.83 seconds
-- MTTR p95: 644.46 seconds
-- MTTR min: 65.38 seconds
-- MTTR max: 652.92 seconds
-- Std Dev: 187.61 seconds (CV = 67.7%)
-- Tasa de contención: 92.0% (46/50 alertas con score >= 80)
-- Tasa de observación: 8.0% (4/50 alertas con score < 80)
-- Service success rates: 100% workflow completion (50/50), 99.2% Cortex jobs (255/257)
-- Casos TheHive: 50 (46 Open, 4 Resolved)
-- Reducción MTTR vs baseline manual (3600s): 92.3% (277.15s vs 3600s)
-
-### C.2. Tablas de Métricas Avanzadas
-
-#### Tabla 14: Métricas de Rendimiento por Componente
-
-| Componente        | Métrica               | Manual         | SOAR           | Mejora   | Unidad       |
-|-------------------|-----------------------|----------------|----------------|----------|--------------|
-| **Recepción**     | Tiempo procesamiento  | 300s           | 103.92s        | 65.4%    | segundos     |
-|                   | Throughput            | ~10            | 125            | +1150%   | alertas/hora |
-|                   | Latencia API          | N/A            | ~200           | N/A      | ms           |
-| **Análisis**      | Tiempo por IoC        | 1800s          | 2393.46s*      | N/A      | segundos     |
-|                   | Nº IoCs simultáneos   | 1              | 6              | +500%    | IoCs         |
-|                   | Jobs Cortex           | N/A            | 257 (255 ok)   | 99.2%    | jobs         |
-| **Creación Caso** | Tiempo creación       | 600s           | 2773.48s*      | N/A      | segundos     |
-|                   | Campos completados    | ~70%           | 100%           | +30pp    | %            |
-|                   | Validación datos      | ~80%           | 100%           | +20pp    | %            |
-| **Contención**    | Tiempo aislamiento    | 900s           | 422.00s        | 53.1%    | segundos     |
-|                   | Tasa éxito            | ~80%           | 92.0%          | +12pp    | %            |
-|                   | Reintentos requeridos | 2-3            | 0              | -100%    | intentos     |
-| **Notificación**  | Tiempo notificación   | 120s           | <1s            | >99%     | segundos     |
-|                   | Canales activos       | 1              | 1 (email)      | 0%       | canales      |
-|                   | Confirmación lectura  | N/A            | 100%           | N/A      | %            |
-
-*\* Las fases de análisis y creación de caso se ejecutan en paralelo dentro del workflow.
-El MTTR medio total (277.15s) es menor que la suma de fases porque estas se solapan.*
-
-#### Tabla 15: Análisis de Carga del Sistema
-
-| Métrica               | Condición Ligera | Condición Media | Condición Pesada | Límite Sistema |
-|-----------------------|------------------|-----------------|------------------|----------------|
-| **Alertas/hora**      | 10               | 50              | 125              | 100 (SLA)      |
-| **CPU Usage**         | ~15%             | ~35%            | ~60%             | 80%            |
-| **Memory Usage**      | ~30%             | ~50%            | ~70%             | 90%            |
-| **MTTR**              | 193.19s (P50)    | 277.15s (mean)  | 621.83s (P90)    | 120s (SLA)     |
-| **Success Rate**      | 100%             | 100%            | 100%             | 95% (SLA)      |
-| **Queue Depth**       | 0                | 2               | 6                | 10 (Shuffle)   |
-| **Response Time API** | ~150ms           | ~200ms          | ~400ms           | 500ms (SLA)    |
-| **Error Rate**        | 0%               | 0%              | 0.8%             | 5% (SLA)       |
-
-Nota: Los valores de CPU/Memory/Queue Depth son estimaciones basadas en observación
-durante la simulación de 50 alertas. Un test de carga formal con herramientas como Locust
-o k6 proporcionaría mediciones precisas. El MTTR medido (P50=193s, P90=622s) no cumple
-los SLA objetivos (P50≤120s, P90≤180s) — ver sección de limitaciones.
-
-#### Tabla 16: Métricas de Calidad del Software
-
-| Métrica                     | Valor Objetivo | Valor Logrado   | Estado   | Herramienta  |
-|-----------------------------|----------------|-----------------|----------|--------------|
-| **Coverage de Tests**       | ≥80%           | 84.6%           | Cumplido | pytest/cov   |
-| **Complejidad Ciclomática** | <15            | 2.61 avg, 15 max| Cumplido | radon        |
-| **Issues de Seguridad**     | 0 HIGH         | 0 HIGH          | Cumplido | bandit       |
-| **Vulnerabilidades**        | 0              | 0               | Cumplido | pip-audit    |
-| **Type checking**           | 0 errors       | 0 errors        | Cumplido | mypy         |
-| **Mutation Testing**        | ≥80%           | 51.8%           | Parcial  | mutmut       |
-| **Tests totales**           | —              | 2233 coleccionados (1905 seleccionados, 328 deselected)| —        | pytest       |
-| **Quality Score**           | —              | 92.2/100        | —        | holistic     |
-
-Ver `reports/quality/quality-summary.md` y `reports/test-review/` para detalles.
-Mutation testing (51.8%) por debajo del umbral ambicioso del 80% — ver §4.1.3.5.
-
-#### Tabla 17: KPIs de Negocio por Organización
-
-| KPI                       | PYME   | Mediana | Grande  | Enterprise |
-|---------------------------|--------|---------|---------|------------|
-| **MTTR Objetivo**         | <180s  | <120s   | <90s    | <60s       |
-| **Costo Incidente**       | <$50K  | <$200K  | <$1M    | <$5M       |
-| **ROI SOAR**              | >150%  | >200%   | >250%   | >300%      |
-| **Time to Value**         | 4 sem  | 6 sem   | 8 sem   | 12 sem     |
-| **Team Productivity**     | +30%   | +40%    | +50%    | +60%       |
-| **Compliance Score**      | >70%   | >80%    | >90%    | >95%       |
-| **Customer Satisfaction** | >85%   | >90%    | >92%    | >95%       |
-
-Nota: Los valores de esta tabla son objetivos referenciales por tamaño de organización.
-El laboratorio midió MTTR real de 277.15s (n=50), adecuado para PYME/Mediana según estos umbrales.
-
-### C.3. Visualizaciones Generadas
-
-Las siguientes figuras se generan automáticamente desde los resultados experimentales y los dashboards de Grafana.
-
-### Figuras de Resultados E2E
-
-![Distribución de alertas por severidad](thesis/figures/severity_distribution.png)
-
-Figura 12: Distribución de alertas por severidad durante las 50 ejecuciones E2E.
-
-![Distribución de alertas por tipo](thesis/figures/alert_distribution.png)
-
-Figura 13: Distribución de alertas por tipo durante las 50 ejecuciones E2E.
-
-![MTTR por fase del workflow](thesis/figures/mttr_by_phase.png)
-
-Figura 14: MTTR desglosado por fase del workflow (ingesta, triage, análisis, contención, cierre).
-
-![MTTR por severidad (boxplot)](thesis/figures/mttr_severity_boxplot.png)
-
-Figura 15: Boxplot de MTTR por severidad de alerta, mostrando mediana, cuartiles y outliers.
-
-![Percentiles MTTR](thesis/figures/GE2_percentiles.png)
-
-Figura 16: Análisis de percentiles MTTR (P50, P90, P95) sobre las 50 ejecuciones.
-
-![Tasas de éxito](thesis/figures/GE3_success_rates.png)
-
-Figura 17: Tasas de éxito por tipo de alerta y escenario (malicioso vs benigno).
-
-### Dashboards de Grafana
-
-![Mejoras por categoría](thesis/figures/GE5_improvements.png)
-
-Figura 18: Análisis de mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
-
-![Alertas procesadas por hora (throughput)](thesis/figures/workflow_durations.png)
-
-Figura 19: Distribución de duraciones de los 50 workflows ejecutados, mostrando el throughput del sistema.
-
-![MTTR por tipo de alerta](thesis/figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
-
-Figura 20: MTTR por tipo de alerta desde el dashboard de Grafana.
-
-### Estado de Servicios
-
-![Resultados de MTTR](thesis/figures/Fig5_1_mttr_results.png)
-
-Figura 21: Resultados detallados de MTTR: comparación manual vs automatizado con desglose de percentiles P50, P90 y P95.
-
-![Estado de casos en TheHive](thesis/figures/thehive_case_status.png)
-
-Figura 22: Estado de los 50 casos creados en TheHive durante las ejecuciones E2E.
-
-### Monitoreo de Logs
-
-![Volumen de logs en Loki](thesis/figures/loki_log_volume.png)
-
-Figura 23: Volumen de logs agregados en Loki durante las ejecuciones E2E.
-
-### Cumplimiento de Umbrales y Notificaciones
-
-![Cumplimiento de umbrales](thesis/figures/threshold_compliance.png)
-
-Figura 24: Cumplimiento de los umbrales definidos (MTTR < 120 s, P50, P90, tasa de éxito ≥ 95 %) frente a los
-valores medidos. Se aprecia que el MTTR medio y la tasa de éxito superan los umbrales, mientras que los percentiles
-P50 y P90 no los alcanzan en el conjunto completo.
-
-![Análisis coste-beneficio](thesis/figures/Fig5_5_cost_benefit.png)
-
-Figura 25: Análisis coste-beneficio del laboratorio SOAR comparado con soluciones comerciales, mostrando el ahorro en licencias y el coste de infraestructura.
-
-### Dashboards Complementarios de Grafana
-
-![Distribución de decisiones del workflow](thesis/figures/decision_distribution.png)
-
-Figura 26: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones E2E, complementaria a la Figura 17.
-
-### Análisis Estadístico Adicional
-
-![Correlación entre métricas](thesis/figures/correlation_heatmap.png)
-
-Figura 27: Mapa de calor de correlación entre métricas clave (MTTR, score, tasa de éxito, uso de CPU/memoria).
-Las correlaciones fuertes (|r| > 0.7) indican relaciones entre el score del playbook y el tiempo de respuesta.
-
-![Evolución de métricas durante el proyecto](thesis/figures/GE4_metrics_evolution.png)
-
-Figura 28: Evolución temporal de las métricas principales (MTTR, tasa de éxito, score medio) a lo largo de las
-cuatro fases del proyecto, mostrando la mejora progresiva tras cada iteración de optimización.
-
-![Análisis coste-beneficio (versión extendida)](thesis/figures/GE6_cost_benefit.png)
-
-Figura 29: Análisis coste-beneficio comparativo entre SOAR open source y soluciones comerciales, versión
-extendida con desglose por componente de coste (licencia, infraestructura, mantenimiento, formación).
-
-### C.4. Visualizaciones de Logs
-
-El stack de observabilidad (Loki, Grafana Labs, 2024b; Promtail, Grafana Labs, 2024c; Grafana, Grafana Labs, 2024) permite visualizar logs de todos los contenedores desde Grafana (`http://localhost:8084`). Promtail etiqueta los logs por contenedor (`container`, `service`, `compose_service`) y envía cada línea a Loki, donde se consultan con LogQL. La configuración de Promtail se encuentra en `infra/docker/config/templates/promtail-config.yml.template` y la de logging de Python en `infra/docker/compose/logging/logging.yaml`. El stack de logging se define en `infra/docker/compose/logging/docker-compose.logging.yml`.
-
-### Ejemplo de consulta LogQL
-
-```logql
-{container="soar_api"} |= "error"
-```
-
-### Dashboards recomendados
-
-- **Logs por servicio**: filtrar por `container` y `compose_service`.
-- **Errores E2E**: `{container="soar_shuffle_backend"} |= "error"`.
-- **Métricas de KPI**: datasource Elasticsearch con índice `soar-metrics` (`mttr_seconds`, `@timestamp`).
-
-
-## Anexo: Resultados Experimentales y Validación
-
-
-Referencia TFM: complementa el Capítulo 4 (Desarrollo Específico) y el Anexo C (Métricas y Visualizaciones).
-Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
-`reports/holistic/` y `docs/01-getting-started.md`–este documento.
-
----
-
-### D.1. Resultados Experimentales E2E (n=50)
-
-### Cumplimiento de Objetivos TFM
-
-| Objetivo | Umbral | Valor Medido | Cumple |
-|----------|--------|--------------|--------|
-| MTTR P50 (mediana) | ≤ 120s | 193.19s | No |
-| MTTR P90 | ≤ 180s | 621.83s | No |
-| Tasa de Éxito | ≥ 95% | 100% | Sí |
-| Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
-| Reducción MTTR vs Manual | ≥ 50% | 92.3% | Sí |
-
-Cumplimiento: 3/5 objetivos.
-
-### MTTR Detallado
-
-| Métrica | Valor |
-|---------|-------|
-| MTTR Medio | 277.15s |
-| MTTR Mediana (P50) | 193.19s |
-| MTTR P90 | 621.83s |
-| MTTR P95 | 644.46s |
-| MTTR Mínimo | 65.38s |
-| Desviación Estándar | 187.61s |
-| Reducción vs Manual (3600s) | 92.3% |
-
-### Decisiones Automatizadas
-
-| Métrica | Valor |
-|---------|-------|
-| Tasa de contención (score ≥ 80) | 92.0% (46/50) |
-| Tasa de observación (score < 80) | 8.0% (4/50) |
-| Score promedio | 96.2/100 (min=55, max=100) |
-| Verdict malicious | 13 (score medio 97.3) |
-| Verdict suspicious | 37 (score medio 95.8) |
-
-### Servicios e Integraciones
-
-| Métrica | Valor |
-|---------|-------|
-| Servicios healthy | 10/10 (100%) |
-| Workflows completados | 50/50 (100%) |
-| Casos TheHive creados | 50/50 (100%) |
-| Jobs Cortex | 255/257 (99.2%) |
-| Analyzers Cortex disponibles | 34 |
-| Técnicas MITRE detectadas | 32 (MITRE, 2025) |
-| Nodos en workflow | 46 definidos (49 ejecutados) |
-| Tasa de automatización | 100% |
-
----
-
-### D.2. Métricas de Calidad Consolidadas
-
-| Radar | Score Global | Estado | Fuente |
-|-------|-------------|--------|--------|
-| Quality Score | 92.2/100 | Excellent | `reports/quality/` |
-| Holistic Project Radar (HPR) | 96.0/100 | Excellent | `reports/holistic/` |
-| Test Review (7 dims) | 92.2/100 | Excellent | `reports/test-review/` |
-
-### Quality Score por Categoría
-
-| Categoría | Score | Peso | Estado |
-|-----------|-------|------|--------|
-| Maintainability | 77.6 | 20% | Acceptable |
-| Coverage | 84.6 | 20% | Good |
-| Complexity | 100 | 15% | Excellent |
-| Linting (ruff) | 100 | 15% | Excellent (Astral, 2024) |
-| Typing (mypy) | 100 | 10% | Excellent (Python Software Foundation, 2024) |
-| Security (bandit) | 100 | 10% | Excellent (PyCQA, 2024b) |
-| Documentation | 94.6 | 5% | Excellent |
-| Architecture | 100 | 5% | Excellent |
-
-### HPR por Capa
-
-| Capa | Dimensiones | Score Medio | Estado |
-|------|-------------|-------------|--------|
-| L1 — Core (código producción) | 4 | 94.4 | Excellent |
-| L2 — Tests | 3 | 97.2 | Excellent |
-| L3 — Quality Gates | 3 | 98.2 | Excellent |
-| L4 — Infraestructura | 3 | 100.0 | Excellent |
-| L5 — Documentación | 3 | 90.8 | Excellent |
-
-### Métricas Clave de Código
-
-| Métrica | Valor | Herramienta |
-|---------|-------|-------------|
-| Coverage de líneas | 84.6% (4730/5592) | pytest/cov |
-| Complejidad media | 2.61 (max 15, 0 bloques alto riesgo) | radon |
-| Maintainability Index | 77.57 (min 50.02, max 100) | radon |
-| Issues bandit | 0 (HIGH=0, MEDIUM=0, LOW=0) | bandit |
-| Vulnerabilidades | 0 | pip-audit |
-| Pylint | 9.1/10, 0 errores | pylint |
-| Docstrings | 94.6% (964/1019 funciones) | — |
-| Dead code | 18 items (todos en tests) | vulture |
-
-### Métricas Clave de Tests
-
-| Métrica | Valor |
-|---------|-------|
-| Tests coleccionados | 2233 (1905 seleccionados) |
-| Distribución | 65.9% unit, 16.5% integration, 13.8% e2e, 3.8% other |
-| Tests saltados | 2 (esperados: Tenzir 404, docker compose en contenedor) |
-| Requieren Docker | 35 tests (1.7%) |
-| Requieren servicios externos | 83 tests (4.0%) |
-| Tests largos (>50 líneas) | 169 |
-| Nombres duplicados | 88 (4.3%) |
-| Mutation testing | 51.8% (13969 mutantes, 5603 killed, 5322 survived) |
-
----
-
-### D.3. Infraestructura y API
-
-| Aspecto | Valor |
-|---------|-------|
-| Servicios totales | 23 (6 compose files, todos válidos) |
-| Endpoints API | 38 (OpenAPI 3.1.0 válido) |
-| WebSocket | `/api/ws/logs` (streaming tiempo real) |
-| APIs reales | 7 (TheHive, Cortex, Shuffle, Lab API, MISP, ES, OpenSearch) |
-| APIs simuladas | 1 (SIEM simulado) |
-| Variables de entorno | 131 (100% documentadas en `.env.example`) |
-| TLS | Nginx self-signed |
-| Redes Docker | 3 aisladas (soar_net, ti_net, logging_net) |
-| Rate limiting webhook | 60 req/min |
-| Backup | `make backup` / `make restore` (tar.gz en `runtime/backups/`) |
-
-Integraciones clave: TheHive API (timeout 120s, 3 retries backoff 0.5), Cortex API (timeout 120s, 3 retries, 7 analyzers en paralelo), Shuffle webhook (60 req/min).
-
-Stack de servicios: Shuffle 2.2.1, TheHive 3.5.2-1, Cortex 3.2.0-1, MISP 2.5.44, Elasticsearch 7.10.2, OpenSearch 2.10.0, Redis 7, PostgreSQL 14, MariaDB 10.11, Nginx 1.25, Loki 2.9.10, Promtail 2.9.9, Grafana 10.3.4, Tenzir v6.8.1.
-
-Requisitos hardware: 8 GB RAM (16 GB+ recomendado), 2 cores (4+), 50 GB SSD, Docker 20.10+, Python 3.11+.
-
----
-
-### D.4. Gestión del Proyecto
-
-- **20 objetivos SMART** en 4 fases (18 semanas, 27 abr - 31 ago 2026)
-- Fase 1 Investigación (3 sem), Fase 2 Diseño (3 sem), Fase 3 Desarrollo (6 sem), Fase 4 Validación (6 sem)
-- Estimación inicial 12 sem → 15 sem → 18 sem real (ampliación tests + experimento n=50)
-- Consideraciones éticas: muestras inertes, no exposición de datos reales, entorno aislado
-
-Detalle del cronograma y objetivos en el Anexo de Objetivos y Metodología (este documento) y Anexo F (F.8, F.9) en `docs/02-architecture.md`.
-
----
-
-### D.5. Resumen Ejecutivo de Validación
-
-| Aspecto | Resultado | Evidencia |
-|---------|-----------|-----------|
-| Workflow E2E | Sí Funcional | 50/50 workflows completados |
-| MTTR | Sí Mejora 92.3% | 3600s -> 277.15s |
-| Contención | Sí 92% | 46/50 alertas con score ≥ 80 |
-| Automatización | Sí 100% | Sin intervención humana |
-| Calidad código | Sí 92.2/100 | Quality score Excellent |
-| HPR | Sí 96.0/100 | Holistic radar Excellent |
-| Tests | Sí 2233 tests (1905 seleccionados) | 2 skipped (esperados), coverage 84.6% |
-| Seguridad | Sí 0 issues | Bandit + pip-audit limpios |
-| Infraestructura | Sí 23 servicios | 6 compose files válidos |
-| API | Sí 38 endpoints | OpenAPI 3.1.0 válido |
-| Mutation testing | Parcial 51.8% | 13969 mutantes, 5603 killed, 5322 survived |
-| Objetivos TFM | Parcial 3/5 | MTTR P50 y P90 no cumplidos |
-
-
-## Anexo: Conclusiones y Trabajo Futuro
-
-
-### 5.1. Conclusiones
-
-La pregunta de investigación planteada en la §1.2 fue: *¿En qué medida un playbook SOAR automatizado, desplegado en un laboratorio reproducible basado en herramientas open source, reduce el MTTR y mejora la consistencia de la respuesta a alertas de ransomware respecto a la respuesta manual?*
-
-Un playbook SOAR automatizado reduce el MTTR medio en un 92.3 % (de 3600 s estimados a 277.15 s medidos, n=50), superando ampliamente el objetivo del 50 %. La consistencia mejora estructuralmente, pues todas las ejecuciones siguen el mismo flujo trazable y registran las mismas evidencias, frente a la variabilidad inherente de la respuesta manual. El coeficiente de variación del MTTR (67.7 %) refleja una cola larga atribuible a la saturación del worker de Cortex por acumulación de jobs, pero no a variabilidad entre analistas. La viabilidad técnica del entorno reproducible con herramientas open source queda confirmada: 10/10 servicios healthy, 50/50 workflows completados, 100 % de automatización. Dos umbrales ambiciosos de percentiles (P50 ≤ 120 s, P90 ≤ 180 s) no se alcanzaron en el conjunto completo, aunque el subconjunto de las primeras 12 ejecuciones sí cumple el P90 (163.90 s ≤ 180 s).
-
-El trabajo ha cumplido el objetivo general y 3 de 5 objetivos del experimento (Tabla 10): reducción de MTTR ≥ 50 % (92.3 %), tasa de éxito ≥ 95 % (100 %) y dataset ≥ 50 ejecuciones (n=50). Los dos objetivos no alcanzados corresponden a los umbrales ambiciosos de P50 ≤ 120 s (193.19 s) y P90 ≤ 180 s (621.83 s), discutidos en la §4.1.3.5.
-
-El diseño aplica arquitectura hexagonal al código Python. `domain/ports/` (481 líneas en 4 módulos) define los contratos y cada capa de infraestructura los implementa de forma independiente. En el plano del despliegue, cinco archivos Docker Compose (Docker Inc., 2024) principales más uno de logging en subdirectorio (23 servicios totales) permiten configuraciones desde mínimas hasta completas. Esta separación evita que la lógica de negocio dependa de detalles como clientes HTTP o motores de base de datos concretos.
-
-La evaluación experimental obtuvo MTTR de 277.15 s frente a 3600 s en la condición manual, superando ampliamente el objetivo del 50 % de reducción. ¿Es este resultado extrapolable? No del todo: las pruebas E2E y el análisis de logs confirman la reproducibilidad del despliegue, pero la saturación de Cortex eleva el P90 por encima del umbral cuando se acumulan jobs en cola. La documentación cubre configuración, despliegue (Makefile) y procedimientos de validación para que terceros puedan replicar el experimento. La cobertura de mutation testing (51.8 %) indica que quedan puntos ciegos en los tests. Los anexos **A** (Docker Compose), **B** (workflow SOAR), **D** (validación experimental), **E** (estrategia de testing) y **F** (diagramas de arquitectura) proporcionan la documentación de respaldo para replicación y auditoría.
-
-La contribución teórica principal es evidencia cuantitativa complementaria a la literatura previa. La reducción observada en MTTR (3600 s a 277.15 s, n=50) permite contrastar hipótesis sobre eficiencia operativa con datos medibles, frente a los estudios de caso descriptivos que dominan el área. Las métricas definidas (MTTR p50 ≤ 120 s, tasa de éxito ≥ 95 %, cobertura de tests ≥ 80 %) pueden servir de referencia para evaluar otros laboratorios SOAR similares, aunque el p50 obtenido en este estudio (193.19 s) no alcanzó el umbral ambicioso de 120 s, la reducción del MTTR medio sí superó ampliamente el objetivo del 50 %. Los patrones arquitectónicos documentados (hexagonal para código, modular para infraestructura) describen una forma de organizar componentes que se puede ajustar a distintos entornos.
-
-En el plano práctico, el laboratorio es desplegable con `make up` y accesible desde navegador sin configuración adicional. Al usar exclusivamente software open source elimina los costos de licenciamiento que en soluciones propietarias equivalentes oscilan entre $200 000 y $500 000 anuales (IBM Security, 2024), lo que hace accesibles estas capacidades a pymes, universidades y CSIRTs en formación. La **Tabla 11** presenta el análisis costo-beneficio comparativo entre la respuesta manual, la solución SOAR open source de este TFM, una solución comercial y una solución híbrida.
-
-### Tabla 11: Análisis Costo-Beneficio SOAR
-
-| Solución             | Costo Anual | MTTR Promedio | Tasa Éxito | ROI 3 años | Implementación |
-|----------------------|-------------|---------------|------------|------------|----------------|
-| **Manual**           | $150K       | 3600s         | ~80%       | -          | N/A            |
-| **SOAR Open Source** | $200K       | 277s          | 100%       | 250%       | 4 semanas      |
-| **SOAR Comercial**   | $500K       | 75s           | 99.1%      | 180%       | 12 semanas     |
-| **Híbrido**          | $350K       | 82s           | 98.8%      | 210%       | 8 semanas      |
-
-El análisis costo-beneficio muestra que la solución SOAR open source ofrece el mejor retorno de inversión (ROI 250% a 3 años) entre las opciones evaluadas. Aunque las soluciones comerciales ofrecen MTTR ligeramente mejores (75s vs 277s), el costo anual mayor ($500K vs $200K) resulta en un ROI inferior (180% vs 250%) (IBM Security, 2024). La solución híbrida ofrece un compromiso intermedio con ROI de 210%. El tiempo de implementación de 4 semanas para la solución open source representa una ventaja frente a las 12 semanas de soluciones comerciales. Este análisis ofrece una base cuantitativa para justificar la inversión en capacidades SOAR open source frente a alternativas comerciales.
-
-La documentación generada incluye guías de configuración, ejemplos de scripts y casos de prueba verificados. El código de contención de endpoints, aunque opera en modo simulado, puede adaptarse para entornos productivos modificando los drivers de infraestructura.
-
-Para pymes, la barrera principal es el licenciamiento. El laboratorio la elimina y, gracias a su automatización de despliegue, permite poner en marcha capacidades de respuesta en un tiempo reducido (IBM Security, 2024). Las grandes organizaciones pueden emplearlo como entorno de validación previo a la adquisición de soluciones comerciales: la arquitectura documentada facilita desarrollar y comparar integraciones con sistemas propietarios antes de comprometer recursos significativos. En el ámbito educativo, el laboratorio proporciona un entorno de práctica operativa sin riesgo para la infraestructura productiva, lo que permite a los estudiantes extender componentes existentes en lugar de construir una infraestructura de base desde el principio.
-
-La limitación más significativa es que la validación se realiza en laboratorio y no con incidentes reales. El alcance circunscrito a ransomware limita la generalización directa, aunque la arquitectura modular facilita la extensión a otros vectores. La muestra de n=50 permite análisis descriptivos robustos (percentiles, desviación estándar, coeficiente de variación), pero una evaluación longitudinal (ausente en este trabajo) aportaría más solidez.
-
-En el plano técnico, la dependencia de APIs externas (DShield, Mnemonic pDNS, GoogleDNS) exige estrategias de caché y redundancia para entornos productivos. El despliegue en un único host puede superarse con orquestadores de contenedores como Kubernetes. Los requisitos de memoria del entorno completo (detallados en la documentación técnica del proyecto) pueden representar una barrera en organizaciones con infraestructura limitada.
-
-En calidad de tests, el mutation testing con mutmut (mutmut, 2024) sobre `src/soar_lab/` generó 13 969 mutantes, de los cuales 5603 fueron killed y 5322 sobrevivieron, resultando en un mutation score de 51.8 % sobre los 11 050 mutantes con cobertura. Este valor, inferior al umbral del 70 % definido en los quality gates, indica que existen ramificaciones lógicas (operadores, comparaciones, constantes) que los tests actuales no verifican, especialmente en los módulos `infrastructure.integrations` (1132 sobrevivientes) e `interfaces.api` (614 sobrevivientes). Esta limitación se documenta como área de mejora prioritaria para iteraciones futuras.
-
-### 5.2. Trabajo futuro
-
-Las mejoras más directas afectan al rendimiento. El escalado horizontal del worker de Cortex reduciría los tiempos de análisis, y la migración a Elasticsearch 8.x junto con Kubernetes habilitaría el escalado horizontal.
-
-En calidad de tests, el resultado del mutation testing (51.8 %) sugiere añadir tests que verifiquen operadores lógicos y comparaciones en los módulos `infrastructure.integrations` e `interfaces.api`, donde se concentran la mayor cantidad de mutantes sobrevivientes (1132 y 614 respectivamente). El objetivo sería aumentar el mutation score por encima del umbral del 70 %.
-
-En seguridad, la adopción de principios Zero Trust y el cifrado de comunicaciones internas son los pasos más inmediatos. A más largo plazo, el cifrado homomórfico aplicado al análisis de IoCs permitiría procesar datos sensibles sin exponerlos a los servicios externos, una línea con resultados preliminares positivos en el campo de la inteligencia de amenazas preservadora de privacidad (Agrawal & Boneh, 2024). El soporte multi-tenant y la migración a arquitecturas cloud-native ampliarían la utilidad y reducirían la dependencia del host único.
-
-Un seguimiento de 12-24 meses mostraría cómo cambian el MTTR y la tasa de éxito en operación real, identificando patrones de mejora o degradación que evaluaciones cortas no detectan. La transferencia de los playbooks de ransomware a otros tipos de incidentes es otra línea útil: saber qué componentes son reutilizables y cuáles requieren adaptación aportaría evidencia cuantitativa sobre la generalización del diseño. Un análisis TCO a 5 años entre SOAR open source y soluciones comerciales equivalentes completaría el cuadro de criterios para la toma de decisiones.
-
-El laboratorio ofrece una base sobre la que añadir capacidades de ML. La detección predictiva mediante redes neuronales entrenadas con históricos de comportamiento permitiría anticipar la ejecución del ransomware, aunque su viabilidad depende de disponer de datos suficientes y de controlar la tasa de falsos positivos. La clasificación automática de alertas con NLP ayudaría a agilizar el triage, y su evaluación frente a la clasificación humana permitiría cuantificar el beneficio real. La optimización de playbooks con Reinforcement Learning es la línea más exploratoria: cualquier ajuste automático en los flujos de respuesta debería desplegarse de forma gradual y con supervisión humana.
-
-El laboratorio puede extenderse a otros vectores de amenaza sin rediseñar la base. Los incidentes de APT requerirían playbooks con capacidades de correlación temporal a largo plazo, ya que las campañas APT pueden mantenerse activas durante semanas o meses según la telemetría de Mandiant (Mandiant, 2024), y la integración con threat intelligence geopolítica para identificar actores y motivaciones. El insider threat plantea un reto distinto, pues detectar anomalías de comportamiento interno sin vulnerar la privacidad de los empleados exige que el diseño ético del flujo de respuesta importe tanto como la solución técnica. Los incidentes de supply chain, al afectar a múltiples organizaciones simultáneamente, requieren mecanismos de coordinación que van más allá de un laboratorio aislado. Estudiar cómo extender el playbook a estos escenarios abriría líneas de trabajo con aplicación directa en entornos productivos.
-
-Los sistemas SOAR desplazan parte del trabajo hacia la máquina, pero no eliminan la intervención humana. Estudiar cómo los analistas interactúan con el sistema: qué decisiones delegan, cuáles retienen y cómo interpretan los resultados de los analyzers, es una línea poco explorada en la literatura. La explicabilidad de las decisiones automatizadas es un aspecto concreto. Si el sistema activa la contención, el analista necesita entender por qué. Desarrollar mecanismos que justifiquen las acciones del playbook aumentaría la confianza y facilitaría la detección de errores. Otra línea relacionada es la gestión de carga cognitiva. La automatización reduce tareas mecánicas pero puede generar nuevos focos de sobrecarga — notificaciones, alertas de monitorización y decisiones de escalado. Estudiar empíricamente cómo afecta el sistema al trabajo real del analista proporcionaría datos útiles para diseñar mejores interfaces operativas.
-
-### 5.3. Recomendaciones para organizaciones
-
-La implementación se organiza en cuatro fases. La **Fase 1** (2-4 semanas) cubre la evaluación de las capacidades actuales, identificación de brechas, definición de casos de uso y KPIs, y selección de stack (open source o comercial). La **Fase 2** (4-6 semanas) corresponde al despliegue en entorno aislado con `make up`, configuración de playbooks y variables de entorno (`.env.full`), integración con 2-3 fuentes de datos y validación E2E. La **Fase 3** (6-8 semanas) abarca la ampliación de integraciones, desarrollo de playbooks especializados, formación del equipo e implantación de métricas de monitoreo. La **Fase 4** (continua) es la migración gradual a producción con validaciones, optimización basada en métricas y escalado horizontal.
-
-El éxito de la adopción depende principalmente de tres factores: patrocinio ejecutivo para autorizar recursos, capacidad técnica en el equipo y una gestión del cambio que acompañe la transición. Las barreras más frecuentes son la resistencia inicial (reducible involucrando al equipo desde el diseño) y la complejidad técnica de los primeros despliegues (abordable comenzando con casos simples). El presupuesto es una barrera menor con este stack, ya que el licenciamiento no es un coste.
-
-Como métricas de referencia: reducción de MTTR del 50 % en los primeros 6 meses, umbral coherente con las mejoras observadas en este experimento (92.3 %) y con las reducciones reportadas en estudios comparables sobre automatización de respuesta (Kinyua & Awuah, 2021; Obuse et al., 2023); tasa de clasificación correcta superior al 95 %; disponibilidad del sistema superior al 99.5 %.
-
-En rendimiento operativo: MTTR < 120 s para incidentes simples, throughput > 100 incidentes/hora, disponibilidad > 99.5 % y tasa de clasificación correcta > 95 %. En madurez del proceso: cobertura de automatización superior al 80 % de las tareas repetitivas identificadas (CIS, 2024), como referencia orientativa derivada de los controles CIS v8.1 aplicados a la gestión de incidentes. El marco CIS Controls (CIS, 2024) ofrece una base para priorizar estas tareas según riesgo. La **Tabla 12** recopila los KPIs recomendados escalados al tamaño y recursos de cada tipo de organización.
-
-### Tabla 12: KPIs Recomendados por Tipo de Organización
-
-| Tipo Org       | MTTR Objetivo | Throughput | Success Rate | Presupuesto SOAR |
-|----------------|---------------|------------|--------------|------------------|
-| **PYME**       | <180s         | >50/h      | >95%         | <50K/año         |
-| **Mediana**    | <120s         | >100/h     | >97%         | 50-200K/año      |
-| **Grande**     | <90s          | >200/h     | >98%         | 200-500K/año     |
-| **Enterprise** | <60s          | >500/h     | >99%         | >500K/año        |
-
-Los KPIs recomendados por tipo de organización ofrecen objetivos realistas escalados al tamaño y recursos de cada organización. Las PYMEs con presupuestos limitados (<50K/año) pueden aspirar a MTTR <180s y throughput >50/h, mientras que organizaciones grandes con presupuestos significativos (>500K/año) pueden alcanzar MTTR <60s y throughput >500/h. Esta progresión permite establecer objetivos apropiados para cada contexto, evitando expectativas irreales. Los KPIs de tasa de éxito escalan desde >95% para PYMEs hasta >99% para organizaciones grandes, reflejando la inversión en redundancia y capacidades de recuperación.
-
-El mantenimiento operativo requiere parches de seguridad regulares, copias de seguridad diarias con pruebas de restauración y actualización continua de la documentación. El monitoreo con Grafana permite detectar degradaciones de rendimiento antes de que afecten la operación. El mantenimiento del sistema puede seguir un ritmo trimestral — revisar capacidades y rendimiento, evaluar herramientas emergentes, incorporar el feedback del equipo y comparar las prácticas actuales con estándares del sector. El gobierno incluye auditorías de cumplimiento normativo, identificación de riesgos emergentes y aplicación del ciclo PDCA para la mejora continua.
-
-### 5.4. Alcance del trabajo
-
-Los resultados indican que la automatización mediante SOAR reduce de forma consistente el tiempo de respuesta ante incidentes de ransomware. La reducción observada en MTTR (de 3600 a 277.15 segundos) con 50 ejecuciones ofrece evidencia cuantitativa de que los playbooks automatizados acortan los tiempos de reacción frente a los procesos manuales. Ese dato interesa a equipos que operan bajo restricciones temporales estrictas.
-
-El laboratorio se publica bajo licencia abierta. La arquitectura hexagonal permite sustituir componentes concretos (por ejemplo, el cliente de base de datos o el motor de análisis) sin modificar la lógica de negocio, y la estructura modular de Docker Compose facilita incorporar nuevos servicios sin rediseñar la topología de red. Ambas características convierten el laboratorio en un punto de partida reutilizable tanto para investigación como para docencia en el ámbito de la ciberseguridad operativa.
-
-La combinación de desarrollo tecnológico y validación experimental mediante análisis estadístico descriptivo (media, percentiles, desviación estándar, coeficiente de variación) constituye un método transferible a otros proyectos que evalúen tecnologías de seguridad en condiciones controladas y reproducibles.
-
-El uso exclusivo de software open source elimina los costos de licenciamiento asociados a soluciones comerciales equivalentes, cuyo rango de coste anual ha sido estimado en la literatura entre $200 000 y $500 000 (IBM Security, 2024). Ello hace accesibles estas capacidades a pymes, instituciones educativas y CSIRTs en fase de consolidación.
-
-![Figura 11: Análisis coste-beneficio SOAR open source vs comercial](thesis/figures/Fig5_5_cost_benefit.png)
-
-**Figura 11**: Análisis coste-beneficio comparativo entre SOAR open source (este laboratorio) y soluciones comerciales equivalentes.
-
----
-
-### Índice de Figuras del Capítulo 5
-
-| Figura    | Título                                          | Archivo                              |
-|-----------|-------------------------------------------------|--------------------------------------|
-| Figura 11 | Análisis coste-beneficio SOAR open source vs comercial | `thesis/figures/Fig5_5_cost_benefit.png` |
-
-### Índice de Tablas del Capítulo 5
-
-| Tabla    | Título                                          |
-|----------|-------------------------------------------------|
-| Tabla 11 | Análisis Costo-Beneficio SOAR                   |
-| Tabla 12 | KPIs Recomendados por Tipo de Organización      |
-
----
-

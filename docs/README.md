@@ -3,26 +3,26 @@
 ## Índice
 
 - [1. Resumen](#1-resumen)
-    - [1.1 Objetivo](#11-objetivo)
-    - [1.2 Contexto](#12-contexto)
-    - [1.3 Portal oficial de documentación](#13-portal-oficial-de-documentación)
+  - [1.1 Objetivo](#11-objetivo)
+  - [1.2 Contexto](#12-contexto)
+  - [1.3 Portal oficial de documentación](#13-portal-oficial-de-documentación)
 - [2. Alcance](#2-alcance)
-    - [2.1 Qué cubre](#21-qué-cubre)
-    - [2.2 Límites](#22-límites)
-    - [2.3 Dependencias](#23-dependencias)
+  - [2.1 Qué cubre](#21-qué-cubre)
+  - [2.2 Límites](#22-límites)
+  - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
-    - [3.1 Documentos principales](#31-documentos-principales)
-    - [3.2 Assets](#32-assets)
-    - [3.3 Archivo histórico](#33-archivo-histórico)
-    - [3.4 Tesis (TFM)](#34-tesis-tfm)
+  - [3.1 Documentos principales](#31-documentos-principales)
+  - [3.2 Assets](#32-assets)
+  - [3.3 Archivo histórico](#33-archivo-histórico)
+  - [3.4 Tesis (TFM)](#34-tesis-tfm)
 - [4. Validación](#4-validación)
-    - [4.1 Verificación](#41-verificación)
-    - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
-    - [4.3 Evidencias](#43-evidencias)
+  - [4.1 Verificación](#41-verificación)
+  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+  - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas](#5-problemas)
-    - [5.1 Limitaciones](#51-limitaciones)
-    - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-    - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.1 Limitaciones](#51-limitaciones)
+  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -50,7 +50,7 @@ La jerarquía de fuentes de verdad es:
 
 El sitio público de documentación se genera con **Docusaurus** a partir de este directorio `docs/` y se sirve en el contenedor `docs-site`:
 
-- Acceso directo: `http://localhost:8086`
+- Acceso directo: <http://localhost:8086>
 
 ---
 
@@ -99,7 +99,6 @@ Este documento es un índice y no cubre:
 - [`assets/references/`](assets/references/) — Referencias técnicas (OpenAPI, plantillas JSON).
 
 ### 3.3 Archivo histórico
-
 
 ### 3.4 Tesis (TFM)
 
@@ -187,7 +186,6 @@ la eficiencia operativa en un entorno controlado. La suite de pruebas contiene 2
 9 marcadores pytest, coverage 84.6 %, 39 TCs E2E) y 281 tests E2E del playbook ejecutados correctamente.
 
 **Palabras clave:** SOAR, ransomware, automatización, playbook, MTTR
-
 
 #### Abstract
 

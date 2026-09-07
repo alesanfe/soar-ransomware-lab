@@ -81,7 +81,8 @@ get_docker_images() {
 scan_image() {
     local image="$1"
     local report_dir="reports/vulnerability"
-    local report_file="${report_dir}/$(echo "$image" | tr '/:' '_').json"
+    local report_file
+    report_file="${report_dir}/$(echo "$image" | tr '/:' '_').json"
     
     mkdir -p "$report_dir"
     
@@ -89,10 +90,11 @@ scan_image() {
     
     if trivy image --format json --output "$report_file" "$image"; then
         # Check for critical/high vulnerabilities
-        local critical=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL") | .VulnerabilityID' "$report_file" | wc -l)
-        local high=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH") | .VulnerabilityID' "$report_file" | wc -l)
-        local medium=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM") | .VulnerabilityID' "$report_file" | wc -l)
-        local low=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW") | .VulnerabilityID' "$report_file" | wc -l)
+        local critical high medium low
+        critical=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL") | .VulnerabilityID' "$report_file" | wc -l)
+        high=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH") | .VulnerabilityID' "$report_file" | wc -l)
+        medium=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM") | .VulnerabilityID' "$report_file" | wc -l)
+        low=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW") | .VulnerabilityID' "$report_file" | wc -l)
         
         if [[ $critical -gt 0 ]]; then
             error "Found $critical CRITICAL vulnerabilities in $image"
@@ -135,11 +137,12 @@ EOF
     
     for report_file in "${report_dir}"/*.json; do
         if [[ -f "$report_file" ]]; then
-            local image=$(basename "$report_file" .json | tr '_' ':' | tr '_' '/')
-            local critical=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL") | .VulnerabilityID' "$report_file" 2>/dev/null | wc -l || echo 0)
-            local high=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH") | .VulnerabilityID' "$report_file" 2>/dev/null | wc -l || echo 0)
-            local medium=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM") | .VulnerabilityID' "$report_file" 2>/dev/null | wc -l || echo 0)
-            local low=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW") | .VulnerabilityID' "$report_file" 2>/dev/null | wc -l || echo 0)
+            local image critical high medium low
+            image=$(basename "$report_file" .json | tr '_' ':' | tr '_' '/')
+            critical=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL") | .VulnerabilityID' "$report_file" 2>/dev/null | wc -l || echo 0)
+            high=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH") | .VulnerabilityID' "$report_file" 2>/dev/null | wc -l || echo 0)
+            medium=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM") | .VulnerabilityID' "$report_file" 2>/dev/null | wc -l || echo 0)
+            low=$(jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW") | .VulnerabilityID' "$report_file" 2>/dev/null | wc -l || echo 0)
             
             echo "- **$image**: CRITICAL: $critical, HIGH: $high, MEDIUM: $medium, LOW: $low" >> "$summary_file"
             

@@ -1,0 +1,30 @@
+{
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD005": false,
+    "MD007": false,
+    "MD010": {
+      "code_blocks": false
+    },
+    "MD012": true,
+    "MD022": false,
+    "MD024": false,
+    "MD028": false,
+    "MD029": false,
+    "MD031": false,
+    "MD032": false,
+    "MD033": {
+      "allowed_elements": ["details", "summary", "img", "br"]
+    },
+    "MD036": false,
+    "MD041": false,
+    "MD046": false,
+    "MD050": false,
+    "MD051": false
+  },
+  "ignores": [
+    "docs/thesis/reports/**/*.md",
+    "apps/docs-site/node_modules/**/*"
+  ]
+}
