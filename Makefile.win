@@ -14,7 +14,7 @@ DC := docker compose -p $(PROJECT) $(COMPOSE_FILES) --env-file .env
 .PHONY: up down restart logs ps health
 .PHONY: test-unit test-integration test-e2e test-atomic test-smoke test-security test-performance test-all test-coverage test-docker-runtime
 .PHONY: test-e2e-report
-.PHONY: test-e2e-tc01 test-e2e-tc01-01 test-e2e-tc01-02 test-e2e-tc01-03 test-e2e-tc01-04 test-e2e-tc01-05 test-e2e-tc01-06 test-e2e-tc01-07 test-e2e-tc01-08 test-e2e-tc01-09 test-e2e-tc01-10 test-e2e-tc01-11 test-e2e-tc02 test-e2e-tc02-01 test-e2e-tc02-02 test-e2e-tc02-03 test-e2e-tc02-04 test-e2e-tc02-05 test-e2e-tc03 test-e2e-tc03-01 test-e2e-tc04 test-e2e-tc04-01 test-e2e-tc04-02 test-e2e-tc04-03 test-e2e-tc04-04 test-e2e-tc04-05 test-e2e-tc04-06 test-e2e-tc04-07 test-e2e-tc04-08 test-e2e-tc05 test-e2e-tc05-01 test-e2e-tc05-02 test-e2e-tc05-03 test-e2e-tc05-04 test-e2e-tc06 test-e2e-tc06-01 test-e2e-tc06-02 test-e2e-tc07 test-e2e-tc07-01 test-e2e-tc07-02 test-e2e-tc07-03 test-e2e-tc07-04 test-e2e-tc07-05 test-e2e-tc08 test-e2e-tc08-01 test-e2e-tc08-02 test-e2e-tc08-03 test-e2e-tc08-04 test-e2e-tc09 test-e2e-tc09-01 test-e2e-tc09-02 test-e2e-tc09-03 test-e2e-tc09-04 test-e2e-tc09-05 test-e2e-tc09-06 test-e2e-tc09-07 test-e2e-tc10 test-e2e-tc10-01 test-e2e-tc10-02 test-e2e-tc10-03 test-e2e-tc10-04 test-e2e-tc10-05 test-e2e-tc10-06 test-e2e-tc10-07 test-e2e-tc11 test-e2e-tc11-01 test-e2e-tc11-02 test-e2e-tc11-03 test-e2e-tc11-04 test-e2e-tc11-05 test-e2e-tc11-06 test-e2e-tc11-07 test-e2e-tc11-08 test-e2e-tc11-09 test-e2e-tc11-10 test-e2e-tc11-11 test-e2e-tc11-12 test-e2e-tc11-13 test-e2e-tc12 test-e2e-tc12-01 test-e2e-tc12-02 test-e2e-tc12-03 test-e2e-tc12-04 test-e2e-tc12-05 test-e2e-tc12-06 test-e2e-tc12-07 test-e2e-tc12-08 test-e2e-tc12-09 test-e2e-tc12-10 test-e2e-tc13 test-e2e-tc13-01 test-e2e-tc13-02 test-e2e-tc13-03 test-e2e-tc13-04 test-e2e-tc13-05 test-e2e-tc13-06 test-e2e-tc13-07 test-e2e-tc13-08 test-e2e-tc13-09 test-e2e-tc13-10 test-e2e-tc13-11 test-e2e-tc13-12 test-e2e-tc13-13 test-e2e-tc14 test-e2e-tc14-01 test-e2e-tc14-02 test-e2e-tc14-03 test-e2e-tc14-04 test-e2e-tc14-05 test-e2e-tc14-06 test-e2e-tc14-07 test-e2e-tc15 test-e2e-tc15-01 test-e2e-tc15-02 test-e2e-tc15-03 test-e2e-tc15-04 test-e2e-tc15-05 test-e2e-tc15-06 test-e2e-tc16 test-e2e-tc16-01 test-e2e-tc16-02 test-e2e-tc16-03 test-e2e-tc17 test-e2e-tc17-01 test-e2e-tc17-02 test-e2e-tc17-03 test-e2e-tc17-04 test-e2e-tc17-05 test-e2e-tc17-06 test-e2e-tc17-07 test-e2e-tc18 test-e2e-tc18-01 test-e2e-tc18-02 test-e2e-tc18-03 test-e2e-tc19 test-e2e-tc19-01 test-e2e-tc20 test-e2e-tc20-01 test-e2e-tc21 test-e2e-tc21-01 test-e2e-tc21-02 test-e2e-tc22 test-e2e-tc22-01 test-e2e-tc22-02 test-e2e-tc23 test-e2e-tc23-01 test-e2e-tc24 test-e2e-tc24-01 test-e2e-tc24-02 test-e2e-tc24-03 test-e2e-tc24-04 test-e2e-tc25 test-e2e-tc25-01 test-e2e-tc25-02 test-e2e-tc25-03 test-e2e-tc26 test-e2e-tc26-01 test-e2e-tc26-02 test-e2e-tc27 test-e2e-tc27-01 test-e2e-tc27-02 test-e2e-tc28 test-e2e-tc28-01 test-e2e-tc28-02 test-e2e-tc28-03 test-e2e-tc28-04 test-e2e-tc28-05 test-e2e-tc28-06 test-e2e-tc28-07 test-e2e-tc28-08 test-e2e-tc28-09 test-e2e-tc29 test-e2e-tc29-01 test-e2e-tc30 test-e2e-tc30-01 test-e2e-tc30-02 test-e2e-tc31 test-e2e-tc31-01 test-e2e-tc31-02 test-e2e-tc31-03 test-e2e-tc32 test-e2e-tc32-01 test-e2e-kpi-01 test-e2e-kpi-01-01 test-e2e-kpi-02 test-e2e-kpi-02-01 test-e2e-kpi-02-02 test-e2e-kpi-03 test-e2e-kpi-03-01 test-e2e-kpi-04 test-e2e-kpi-04-01 test-e2e-kpi-05 test-e2e-kpi-05-01 test-e2e-tc33 test-e2e-tc33-01 test-e2e-tc33-02 test-e2e-tc33-03 test-e2e-tc33-04 test-e2e-tc33-05 test-e2e-tc33-06 test-e2e-tc33-07 test-e2e-tc33-08 test-e2e-tc33-09 test-e2e-tc33-10
+.PHONY: test-e2e-tc00 test-e2e-tc00-01 test-e2e-tc00-02 test-e2e-tc00-03 test-e2e-tc00-04 test-e2e-tc01 test-e2e-tc01-01 test-e2e-tc01-02 test-e2e-tc01-03 test-e2e-tc01-04 test-e2e-tc01-05 test-e2e-tc01-06 test-e2e-tc01-07 test-e2e-tc01-08 test-e2e-tc01-09 test-e2e-tc01-10 test-e2e-tc01-11 test-e2e-tc02 test-e2e-tc02-01 test-e2e-tc02-02 test-e2e-tc02-03 test-e2e-tc02-04 test-e2e-tc02-05 test-e2e-tc03 test-e2e-tc03-01 test-e2e-tc04 test-e2e-tc04-01 test-e2e-tc04-02 test-e2e-tc04-03 test-e2e-tc04-04 test-e2e-tc04-05 test-e2e-tc04-06 test-e2e-tc04-07 test-e2e-tc04-08 test-e2e-tc05 test-e2e-tc05-01 test-e2e-tc05-02 test-e2e-tc05-03 test-e2e-tc05-04 test-e2e-tc06 test-e2e-tc06-01 test-e2e-tc06-02 test-e2e-tc07 test-e2e-tc07-01 test-e2e-tc07-02 test-e2e-tc07-03 test-e2e-tc07-04 test-e2e-tc07-05 test-e2e-tc08 test-e2e-tc08-01 test-e2e-tc08-02 test-e2e-tc08-03 test-e2e-tc08-04 test-e2e-tc09 test-e2e-tc09-01 test-e2e-tc09-02 test-e2e-tc09-03 test-e2e-tc09-04 test-e2e-tc09-05 test-e2e-tc09-06 test-e2e-tc09-07 test-e2e-tc10 test-e2e-tc10-01 test-e2e-tc10-02 test-e2e-tc10-03 test-e2e-tc10-04 test-e2e-tc10-05 test-e2e-tc10-06 test-e2e-tc10-07 test-e2e-tc11 test-e2e-tc11-01 test-e2e-tc11-02 test-e2e-tc11-03 test-e2e-tc11-04 test-e2e-tc11-05 test-e2e-tc11-06 test-e2e-tc11-07 test-e2e-tc11-08 test-e2e-tc11-09 test-e2e-tc11-10 test-e2e-tc11-11 test-e2e-tc11-12 test-e2e-tc11-13 test-e2e-tc12 test-e2e-tc12-01 test-e2e-tc12-02 test-e2e-tc12-03 test-e2e-tc12-04 test-e2e-tc12-05 test-e2e-tc12-06 test-e2e-tc12-07 test-e2e-tc12-08 test-e2e-tc12-09 test-e2e-tc12-10 test-e2e-tc13 test-e2e-tc13-01 test-e2e-tc13-02 test-e2e-tc13-03 test-e2e-tc13-04 test-e2e-tc13-05 test-e2e-tc13-06 test-e2e-tc13-07 test-e2e-tc13-08 test-e2e-tc13-09 test-e2e-tc13-10 test-e2e-tc13-11 test-e2e-tc13-12 test-e2e-tc13-13 test-e2e-tc14 test-e2e-tc14-01 test-e2e-tc14-02 test-e2e-tc14-03 test-e2e-tc14-04 test-e2e-tc14-05 test-e2e-tc14-06 test-e2e-tc14-07 test-e2e-tc15 test-e2e-tc15-01 test-e2e-tc15-02 test-e2e-tc15-03 test-e2e-tc15-04 test-e2e-tc15-05 test-e2e-tc15-06 test-e2e-tc16 test-e2e-tc16-01 test-e2e-tc16-02 test-e2e-tc16-03 test-e2e-tc17 test-e2e-tc17-01 test-e2e-tc17-02 test-e2e-tc17-03 test-e2e-tc17-04 test-e2e-tc17-05 test-e2e-tc17-06 test-e2e-tc17-07 test-e2e-tc18 test-e2e-tc18-01 test-e2e-tc18-02 test-e2e-tc18-03 test-e2e-tc19 test-e2e-tc19-01 test-e2e-tc20 test-e2e-tc20-01 test-e2e-tc21 test-e2e-tc21-01 test-e2e-tc21-02 test-e2e-tc22 test-e2e-tc22-01 test-e2e-tc22-02 test-e2e-tc23 test-e2e-tc23-01 test-e2e-tc24 test-e2e-tc24-01 test-e2e-tc24-02 test-e2e-tc24-03 test-e2e-tc24-04 test-e2e-tc25 test-e2e-tc25-01 test-e2e-tc25-02 test-e2e-tc25-03 test-e2e-tc26 test-e2e-tc26-01 test-e2e-tc26-02 test-e2e-tc27 test-e2e-tc27-01 test-e2e-tc27-02 test-e2e-tc28 test-e2e-tc28-01 test-e2e-tc28-02 test-e2e-tc28-03 test-e2e-tc28-04 test-e2e-tc28-05 test-e2e-tc28-06 test-e2e-tc28-07 test-e2e-tc28-08 test-e2e-tc28-09 test-e2e-tc29 test-e2e-tc29-01 test-e2e-tc30 test-e2e-tc30-01 test-e2e-tc30-02 test-e2e-tc31 test-e2e-tc31-01 test-e2e-tc31-02 test-e2e-tc31-03 test-e2e-tc32 test-e2e-tc32-01 test-e2e-kpi-01 test-e2e-kpi-01-01 test-e2e-kpi-02 test-e2e-kpi-02-01 test-e2e-kpi-02-02 test-e2e-kpi-03 test-e2e-kpi-03-01 test-e2e-kpi-04 test-e2e-kpi-04-01 test-e2e-kpi-05 test-e2e-kpi-05-01 test-e2e-tc33 test-e2e-tc33-01 test-e2e-tc33-02 test-e2e-tc33-03 test-e2e-tc33-04 test-e2e-tc33-05 test-e2e-tc33-06 test-e2e-tc33-07 test-e2e-tc33-08 test-e2e-tc33-09 test-e2e-tc33-10 test-e2e-kpi-06 test-e2e-kpi-06-01 test-e2e-kpi-06-02 test-e2e-kpi-06-03 test-e2e-kpi-06-04 test-e2e-kpi-06-05 test-e2e-kpi-06-06 test-e2e-kpi-06-07 test-e2e-kpi-06-08 test-e2e-kpi-06-09
 .PHONY: test-e2e-new-features
 .PHONY: sync-src sync-tests
 .PHONY: metrics backup restore
@@ -389,7 +389,7 @@ test-integration:
 	@echo "Running integration tests inside Docker container..."
 	docker exec soar_api python3 -m pytest tests/integration -v
 
-test-e2e: clean-shuffle clean-thehive test-e2e-tc01 test-e2e-tc02 test-e2e-tc03 test-e2e-tc04 test-e2e-tc05 test-e2e-tc06 test-e2e-tc07 test-e2e-tc08 test-e2e-tc09 test-e2e-tc10 test-e2e-tc11 test-e2e-tc12 test-e2e-tc13 test-e2e-tc14 test-e2e-tc15 test-e2e-tc16 test-e2e-tc17 test-e2e-tc18 test-e2e-tc19 test-e2e-tc20 test-e2e-tc21 test-e2e-tc22 test-e2e-tc23 test-e2e-tc24 test-e2e-tc25 test-e2e-tc26 test-e2e-tc27 test-e2e-tc28 test-e2e-tc29 test-e2e-tc30 test-e2e-tc31 test-e2e-tc32 test-e2e-tc33 test-e2e-kpi-01 test-e2e-kpi-02 test-e2e-kpi-03 test-e2e-kpi-04 test-e2e-kpi-05
+test-e2e: clean-shuffle clean-thehive test-e2e-tc00 test-e2e-tc01 test-e2e-tc02 test-e2e-tc03 test-e2e-tc04 test-e2e-tc05 test-e2e-tc06 test-e2e-tc07 test-e2e-tc08 test-e2e-tc09 test-e2e-tc10 test-e2e-tc11 test-e2e-tc12 test-e2e-tc13 test-e2e-tc14 test-e2e-tc15 test-e2e-tc16 test-e2e-tc17 test-e2e-tc18 test-e2e-tc19 test-e2e-tc20 test-e2e-tc21 test-e2e-tc22 test-e2e-tc23 test-e2e-tc24 test-e2e-tc25 test-e2e-tc26 test-e2e-tc27 test-e2e-tc28 test-e2e-tc29 test-e2e-tc30 test-e2e-tc31 test-e2e-tc32 test-e2e-tc33 test-e2e-kpi-01 test-e2e-kpi-02 test-e2e-kpi-03 test-e2e-kpi-04 test-e2e-kpi-05 test-e2e-kpi-06
 	@echo "All E2E tests completed. Generating report..."
 	@$(MAKE) --no-print-directory -f Makefile.win test-e2e-report
 	@echo "All E2E tests completed. Report at reports/e2e/e2e_report.md"
@@ -403,6 +403,25 @@ test-e2e-report:
 	-@docker exec soar_api python3 /app/scripts/reports/generate_e2e_report.py --output-dir /app/reports/e2e
 	-@docker cp soar_api:/app/reports/e2e/. reports/e2e/ 2>nul || true
 	@echo "E2E report generated at reports/e2e/e2e_report.md"
+
+test-e2e-tc00: test-e2e-tc00-01 test-e2e-tc00-02 test-e2e-tc00-03 test-e2e-tc00-04
+	@echo "TC-00: All subtests completed."
+
+test-e2e-tc00-01:
+	@echo "Running TC-00 (1/4): test_workflow_malicious..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-00/test_both_workflows.py::TestBothWorkflows::test_workflow_malicious" -v
+
+test-e2e-tc00-02:
+	@echo "Running TC-00 (2/4): test_parallel_workflow_execution..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-00/test_both_workflows.py::TestBothWorkflows::test_parallel_workflow_execution" -v
+
+test-e2e-tc00-03:
+	@echo "Running TC-00 (3/4): test_workflow_consistency..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-00/test_both_workflows.py::TestBothWorkflows::test_workflow_consistency" -v
+
+test-e2e-tc00-04:
+	@echo "Running TC-00 (4/4): test_execution_time_comparison..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-00/test_both_workflows.py::TestBothWorkflows::test_execution_time_comparison" -v
 
 test-e2e-tc01: test-e2e-tc01-01 test-e2e-tc01-02 test-e2e-tc01-03 test-e2e-tc01-04 test-e2e-tc01-05 test-e2e-tc01-06 test-e2e-tc01-07 test-e2e-tc01-08 test-e2e-tc01-09 test-e2e-tc01-10 test-e2e-tc01-11
 	@echo "TC-01: All subtests completed."
@@ -1181,6 +1200,45 @@ test-e2e-kpi-05: test-e2e-kpi-05-01
 test-e2e-kpi-05-01:
 	@echo "Running TC-KPI-05 (1/1): test_node_timings..."
 	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-05/test_node_timings.py::TestNodeTimings::test_node_timings" -v --no-cov
+
+test-e2e-kpi-06: test-e2e-kpi-06-01 test-e2e-kpi-06-02 test-e2e-kpi-06-03 test-e2e-kpi-06-04 test-e2e-kpi-06-05 test-e2e-kpi-06-06 test-e2e-kpi-06-07 test-e2e-kpi-06-08 test-e2e-kpi-06-09
+	@echo "TC-KPI-06: All subtests completed."
+
+test-e2e-kpi-06-01:
+	@echo "Running TC-KPI-06 (1/9): test_shuffle_thehive_coherence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_kpi_data_coherence.py::TestKPIDataCoherence::test_shuffle_thehive_coherence" -v --no-cov
+
+test-e2e-kpi-06-02:
+	@echo "Running TC-KPI-06 (2/9): test_elasticsearch_opensearch_coherence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_kpi_data_coherence.py::TestKPIDataCoherence::test_elasticsearch_opensearch_coherence" -v --no-cov
+
+test-e2e-kpi-06-03:
+	@echo "Running TC-KPI-06 (3/9): test_loki_workflow_coherence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_kpi_data_coherence.py::TestKPIDataCoherence::test_loki_workflow_coherence" -v --no-cov
+
+test-e2e-kpi-06-04:
+	@echo "Running TC-KPI-06 (4/9): test_cross_system_metric_coherence..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_kpi_data_coherence.py::TestKPIDataCoherence::test_cross_system_metric_coherence" -v --no-cov
+
+test-e2e-kpi-06-05:
+	@echo "Running TC-KPI-06 (5/9): test_cortex_analyzer_success_rate..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_service_health.py::TestServiceHealthValidation::test_cortex_analyzer_success_rate" -v --no-cov
+
+test-e2e-kpi-06-06:
+	@echo "Running TC-KPI-06 (6/9): test_misp_api_functional..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_service_health.py::TestServiceHealthValidation::test_misp_api_functional" -v --no-cov
+
+test-e2e-kpi-06-07:
+	@echo "Running TC-KPI-06 (7/9): test_workflow_notification_rate..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_service_health.py::TestServiceHealthValidation::test_workflow_notification_rate" -v --no-cov
+
+test-e2e-kpi-06-08:
+	@echo "Running TC-KPI-06 (8/9): test_workflow_aborted_rate..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_service_health.py::TestServiceHealthValidation::test_workflow_aborted_rate" -v --no-cov
+
+test-e2e-kpi-06-09:
+	@echo "Running TC-KPI-06 (9/9): test_cortex_analyzer_images_available..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_service_health.py::TestServiceHealthValidation::test_cortex_analyzer_images_available" -v --no-cov
 
 test-e2e-new-features:
 	@echo "Running all new SOAR features tests..."

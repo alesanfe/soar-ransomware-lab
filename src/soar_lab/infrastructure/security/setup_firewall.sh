@@ -260,7 +260,8 @@ restore_backup() {
 
 # Generate firewall report
 generate_report() {
-    local report_file="reports/firewall_report_$(date +%Y%m%d_%H%M%S).txt"
+    local report_file
+    report_file="reports/firewall_report_$(date +%Y%m%d_%H%M%S).txt"
     mkdir -p reports
     
     cat > "$report_file" << EOF

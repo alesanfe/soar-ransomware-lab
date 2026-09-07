@@ -3,27 +3,27 @@
 ## Índice
 
 - [1. Resumen](#1-resumen)
- - [1.1 Objetivo](#11-objetivo)
- - [1.2 Contexto](#12-contexto)
+  - [1.1 Objetivo](#11-objetivo)
+  - [1.2 Contexto](#12-contexto)
 - [2. Alcance](#2-alcance)
- - [2.1 Qué cubre](#21-qué-cubre)
- - [2.2 Límites](#22-límites)
- - [2.3 Dependencias](#23-dependencias)
+  - [2.1 Qué cubre](#21-qué-cubre)
+  - [2.2 Límites](#22-límites)
+  - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
- - [3.1 Visión general](#31-visión-general)
- - [3.2 Requisitos previos](#32-requisitos-previos)
- - [3.3 Instalación](#33-instalación)
- - [3.4 Primer acceso](#34-primer-acceso)
- - [3.5 Flujo básico de uso](#35-flujo-básico-de-uso)
- - [3.6 Guía rápida de usuario](#36-guía-rápida-de-usuario)
+  - [3.1 Visión general](#31-visión-general)
+  - [3.2 Requisitos previos](#32-requisitos-previos)
+  - [3.3 Instalación](#33-instalación)
+  - [3.4 Primer acceso](#34-primer-acceso)
+  - [3.5 Flujo básico de uso](#35-flujo-básico-de-uso)
+  - [3.6 Guía rápida de usuario](#36-guía-rápida-de-usuario)
 - [4. Validación](#4-validación)
- - [4.1 Verificación](#41-verificación)
- - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
- - [4.3 Evidencias](#43-evidencias)
+  - [4.1 Verificación](#41-verificación)
+  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+  - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas](#5-problemas)
- - [5.1 Limitaciones](#51-limitaciones)
- - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
- - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.1 Limitaciones](#51-limitaciones)
+  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -115,7 +115,7 @@ El laboratorio integra los siguientes componentes principales:
 - **Redis**: cache/cola con autenticación por contraseña.
 - **MariaDB**: base de datos de MISP (`misp_db`).
 - **PostgreSQL**: base de datos de Grafana (`grafana-db`).
-- **Nginx**: proxy inverso y terminación TLS; punto de entrada canónico `https://soar.local`.
+- **Nginx**: proxy inverso y terminación TLS; punto de entrada canónico `<https://soar.local`>.
 - **Loki + Promtail + Grafana**: stack de observabilidad centralizado (logs y KPIs).
 - **Network Watcher**: servicio de diagnóstico y recuperación de conectividad para Shuffle workers.
 - **Orborus**: ejecutor de contenedores de analizadores de Shuffle/Cortex.
@@ -205,7 +205,7 @@ Salvo que se indique lo contrario, **todos los comandos de esta sección se ejec
 #### 3.3.1 Clonar el repositorio
 
 ```bash
-git clone https://github.com/alesanfe/soar-ransomware-lab.git
+git clone <https://github.com/alesanfe/soar-ransomware-lab.git>
 cd soar-ransomware-lab
 ```
 
@@ -231,7 +231,7 @@ Variables críticas a revisar antes del despliegue:
 - `JWT_ALGORITHM`: Algoritmo de firma (por defecto `HS256`).
 - `WEB_UI_USER` / `WEB_UI_PASSWORD`: Credenciales de acceso al Web Management.
 - `API_AUTH_SECRET`: Secret legacy de firma JWT; solo se usa si `JWT_SECRET_KEY` no está definido.
-- `CORS_ORIGINS`: Orígenes permitidos para CORS (por ejemplo `https://soar.local,http://localhost:8085`).
+- `CORS_ORIGINS`: Orígenes permitidos para CORS (por ejemplo `<https://soar.local,http://localhost:8085`>).
 - `ELASTIC_PASSWORD`: Contraseña de Elasticsearch.
 - `REDIS_PASSWORD`: Contraseña de Redis.
 - `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD`: Credenciales admin de Shuffle.
@@ -289,8 +289,8 @@ El laboratorio usa `soar.local` como dominio interno y Nginx termina TLS con cer
 
    ```bash
    ping soar.local
-   curl -k https://soar.local/nginx-health
-   curl -k https://localhost:8202/app/login
+   curl -k <https://soar.local/nginx-health>
+   curl -k <https://localhost:8202/app/login>
    ```
 
 #### 3.3.4 Desplegar el stack
@@ -357,22 +357,22 @@ docker compose -p soar ps
 
 ```bash
 # Verificar Elasticsearch
-curl -u elastic:<ELASTIC_PASSWORD> http://localhost:8200/_cluster/health
+curl -u elastic:<ELASTIC_PASSWORD> <http://localhost:8200/_cluster/health>
 
 # Verificar TheHive
-curl http://localhost:8100/api/status
+curl <http://localhost:8100/api/status>
 
 # Verificar Cortex
-curl http://localhost:8101/api/health
+curl <http://localhost:8101/api/health>
 
 # Verificar API del Lab
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # Verificar Grafana
-curl http://localhost:8084/api/health
+curl <http://localhost:8084/api/health>
 
 # Verificar Nginx (HTTP→HTTPS)
-curl -I http://localhost
+curl -I <http://localhost>
 ```
 
 **Verificación de integraciones:**
@@ -400,13 +400,13 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
    make health
    ```
 
-   `make health` comprueba los endpoints de: TheHive (`:8100`), Cortex (`:8101`), Shuffle (`:5001`), Elasticsearch (`:8200`), API (`:8000/health`), Web Management (`:8085`), MISP (`:8083`), Dashboard de OpenSearch, Grafana (`:8084`), Redis, Nginx y Tenzir.
+   `make health` comprueba los endpoints de: TheHive (`:8100`), Cortex (`:8101`), Shuffle (`:5001`), Elasticsearch (`:8200`), API (`:8000/health`), Web Management (`:8085`), MISP (`:8083`), Grafana (`:8084`), Redis, Nginx y Tenzir.
 
 3. **URLs de acceso:** Revisa la tabla de la sección [3.4.1 Puertos de acceso a servicios](#341-puertos-de-acceso-a-servicios) y confirma que las URLs responden (`curl -I` o navegador).
 
 4. **Credenciales de acceso:**
    - Usa los valores de `.env.full` para los usuarios/contraseñas.
-   - Realiza al menos un login en: Web Management (`https://soar.local`), Shuffle (`http://localhost:8081`), TheHive (`http://localhost:8100`) y Grafana (`http://localhost:8084`).
+   - Realiza al menos un login en: Web Management (`<https://soar.local`>), Shuffle (`<http://localhost:8081`>), TheHive (`<http://localhost:8100`>) y Grafana (`<http://localhost:8084`>).
    - (Opcional) Valida la sincronización de credenciales:
 
      ```bash
@@ -429,34 +429,34 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 
 > **Fuente canónica:** consultar `docs/04-operations.md` para el listado completo de puertos, URLs y credenciales actualizadas.
 
-| Servicio | Acceso directo (host) | Acceso vía Nginx (`https://soar.local`) | Credenciales |
+| Servicio | Acceso directo (host) | Acceso vía Nginx (`<https://soar.local`>) | Credenciales |
 |---|---|---|---|
-| Nginx / Proxy | `http://localhost`, `https://localhost` | `/` | — |
-| Web Management | `http://localhost:8085` | `/` | `.env.full` → `WEB_UI_USER` / `WEB_UI_PASSWORD` |
-| SOAR API | `http://localhost:8000` | `/api/` | Token JWT en `Authorization: Bearer <token>` |
-| SOAR API (Swagger UI) | `http://localhost:8000/docs` | — | — |
-| SOAR API (ReDoc) | `http://localhost:8000/redoc` | — | — |
-| SOAR API (OpenAPI JSON) | `http://localhost:8000/openapi.json` | — | — |
-| Shuffle UI | `http://localhost:8081` | No soportado (SPA con rutas absolutas) | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` |
-| MISP | `http://localhost:8083` | No soportado | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD` |
-| Grafana | `http://localhost:8084` | No soportado | `admin` / `${GRAFANA_ADMIN_PASSWORD}` |
-| Docs Site | `http://localhost:8086` | No soportado | Sin autenticación |
-| TheHive | `http://localhost:8100` | `/thehive/` | `admin` / contraseña generada por `init_thehive.py` (ver `.env.full`) |
-| Cortex | `http://localhost:8101` | `/cortex/` | `admin` / contraseña generada por `reset_cortex.py` (ver `.env.full`) |
-| Elasticsearch | `http://localhost:8200` | No expuesto | `elastic` / `ELASTIC_PASSWORD` |
-| OpenSearch Dashboards | `https://localhost:8202` | No soportado | Ver `.env.full` |
+| Nginx / Proxy | `<http://localhost`>, `<https://localhost`> | `/` | — |
+| Web Management | `<http://localhost:8085`> | `/` | `.env.full` → `WEB_UI_USER` / `WEB_UI_PASSWORD` |
+| Lab API | `<http://localhost:8000`> | `/api/` | Token JWT en `Authorization: Bearer <token>` |
+| Lab API (Swagger UI) | `<http://localhost:8000/docs`> | — | — |
+| Lab API (ReDoc) | `<http://localhost:8000/redoc`> | — | — |
+| Lab API (OpenAPI JSON) | `<http://localhost:8000/openapi.json`> | — | — |
+| Shuffle UI | `<http://localhost:8081`> | No soportado (SPA con rutas absolutas) | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` |
+| MISP | `<http://localhost:8083`> | No soportado | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD` |
+| Grafana | `<http://localhost:8084`> | No soportado | `admin` / `${GRAFANA_ADMIN_PASSWORD}` |
+| Docs Site | `<http://localhost:8086`> | No soportado | Sin autenticación |
+| TheHive | `<http://localhost:8100`> | `/thehive/` | `admin` / contraseña generada por `init_thehive.py` (ver `.env.full`) |
+| Cortex | `<http://localhost:8101`> | `/cortex/` | `admin` / contraseña generada por `reset_cortex.py` (ver `.env.full`) |
+| Elasticsearch | `<http://localhost:8200`> | No expuesto | `elastic` / `ELASTIC_PASSWORD` |
+| OpenSearch Dashboards | `<https://localhost:8202`> | No soportado | Ver `.env.full` |
 
 > **Notas de acceso:**
-> - El acceso recomendado para usuarios es `https://soar.local` (requiere `127.0.0.1 soar.local` en el archivo `hosts` y confianza en `soar.local.crt`).
+> - El acceso recomendado para usuarios es `<https://soar.local`> (requiere `127.0.0.1 soar.local` en el archivo `hosts` y confianza en `soar.local.crt`).
 > - Nginx escucha en 80 (redirección a HTTPS) y 443 (proxy inverso a Web Management).
-> - Los puertos directos (`8081`, `8083`, `8084`, `8085`, `8086`, `8100`, `8101`, `8202`) son accesibles directamente sin pasar por Nginx. El dashboard de OpenSearch requiere HTTPS (`https://localhost:8202`).
+> - Los puertos directos (`8081`, `8083`, `8084`, `8085`, `8086`, `8100`, `8101`, `8202`) son accesibles directamente sin pasar por Nginx. El dashboard de OpenSearch requiere HTTPS (`<https://localhost:8202`>).
 > - El despliegue incluye **Elasticsearch 7.10.2** para TheHive/Cortex/KPI y **OpenSearch 2.10.0** para Shuffle (con OpenSearch Dashboards en el puerto 8202). Ver `docs/02-architecture.md`.
 
 #### 3.4.2 Configuración inicial de servicios
 
 **Shuffle:**
 
-1. Acceder a Shuffle: `http://localhost:8081/`
+1. Acceder a Shuffle: `<http://localhost:8081/`>
 2. Iniciar sesión con credenciales de `.env.full` (`SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD`)
 3. El workflow de ransomware se crea automáticamente durante `make up`.
 4. Tras `make reset` y `make up`, Shuffle genera una nueva API key y la almacena en OpenSearch. `SHUFFLE_DEFAULT_APIKEY` de `.env.full` puede quedar desactualizada.
@@ -465,13 +465,13 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 
 **TheHive:**
 
-1. Acceder a TheHive: `http://localhost:8100/`
+1. Acceder a TheHive: `<http://localhost:8100/`>
 2. Iniciar sesión con credenciales configuradas
 3. La inicialización de TheHive se ejecuta automáticamente durante `make up`
 
 **Cortex:**
 
-1. Acceder a Cortex: `http://localhost:8101/`
+1. Acceder a Cortex: `<http://localhost:8101/`>
 2. Iniciar sesión con credenciales configuradas
 3. La configuración inicial de Cortex se ejecuta automáticamente durante `make up`
 
@@ -480,10 +480,10 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 ### 3.5 Flujo básico de uso
 
 1. `make up` — levanta todos los servicios (~5-10 min en primer arranque)
-2. Abrir `http://localhost:8085` (Web Management) para verificar el estado
+2. Abrir `<http://localhost:8085`> (Web Management) para verificar el estado
 3. `make simulate` — envía alertas de prueba al SOAR
-4. Verificar casos creados en TheHive (`http://localhost:8100`)
-5. Verificar KPIs en Grafana (`http://localhost:8084`)
+4. Verificar casos creados en TheHive (`<http://localhost:8100`>)
+5. Verificar KPIs en Grafana (`<http://localhost:8084`>)
 6. `make metrics` — genera `runtime/results/kpis.csv` con métricas
 
 #### 3.5.1 Comandos principales
@@ -545,7 +545,7 @@ make init-webhook      # (Re)inicializar webhook de Shuffle
 
 **Web Management**
 
-- **URLs:** Directa: `http://localhost:8085` · Por Nginx: `https://soar.local/`
+- **URLs:** Directa: `<http://localhost:8085`> · Por Nginx: `<https://soar.local/`>
 - **Credenciales:** Ver `.env.full` → `WEB_UI_USER` / `WEB_UI_PASSWORD`
 - **Descripción:** Interfaz web principal para gestión del entorno SOAR. Permite verificar el estado de los servicios, ver logs en tiempo real, ejecutar tests, crear/restaurar backups y consultar KPIs. Está implementada como SPA HTML/JS en `apps/web-management/`.
 
@@ -559,7 +559,7 @@ Características principales:
 
 Comportamiento de `apps/web-management/script.js`:
 
-- `API_BASE = '/api'` permite que la SPA funcione tanto detrás de Nginx como por acceso directo a `http://localhost:8000` (cuando `CORS_ORIGINS` lo permite).
+- `API_BASE = '/api'` permite que la SPA funcione tanto detrás de Nginx como por acceso directo a `<http://localhost:8000`> (cuando `CORS_ORIGINS` lo permite).
 - El login se realiza contra `POST /api/auth/login`; el token JWT se almacena en `localStorage` bajo `auth_token`.
 - Al cargar, `checkAuthStatus` verifica el token con `POST /api/auth/verify`; si es inválido, lo elimina.
 - Actualizaciones periódicas: métricas cada 5 s, servicios cada 10 s, KPIs cada 30 s.
@@ -569,9 +569,9 @@ Comportamiento de `apps/web-management/script.js`:
 
 > **Seguridad:** El token JWT se guarda en `localStorage`; para evitar robo por XSS, el panel debe ejecutarse en un origen de confianza y no debe almacenarse en cookies sin `HttpOnly` sin otras contramedidas.
 
-**SOAR API**
+**Lab API**
 
-- **URL:** `http://localhost:8000`
+- **URL:** `<http://localhost:8000`>
 - **Credenciales:** Token en cabecera `Authorization: Bearer <token>`
 - **Descripción:** API REST principal del sistema. Proporciona endpoints programáticos para envío de alertas, consulta de métricas, gestión de casos, integración con servicios externos y más.
 
@@ -593,7 +593,7 @@ Endpoints principales:
 
 **TheHive**
 
-- **URL:** `http://localhost:8100`
+- **URL:** `<http://localhost:8100`>
 - **Credenciales:** `admin` / contraseña generada por `init_thehive.py` (ver `.env.full`)
 - **Descripción:** Plataforma de gestión de casos de seguridad (SIRP). Permite crear, investigar, asignar y cerrar casos de incidentes de seguridad. Integra automáticamente alertas del sistema SOAR.
 
@@ -609,7 +609,7 @@ Características principales:
 
 **Cortex**
 
-- **URL:** `http://localhost:8101`
+- **URL:** `<http://localhost:8101`>
 - **Credenciales:** `admin` / contraseña generada por `reset_cortex.py` (ver `.env.full`)
 - **Descripción:** Plataforma de análisis de amenazas (TIAM). Permite ejecutar analizadores sobre IOCs para obtener información de inteligencia de amenazas. Integra automáticamente con TheHive para enriquecer casos.
 
@@ -624,7 +624,7 @@ Características principales:
 
 **Shuffle**
 
-- **URL:** `http://localhost:8081`
+- **URL:** `<http://localhost:8081`>
 - **Credenciales:** `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD`
 - **Descripción:** Plataforma de automatización de seguridad (SOAR). Permite crear workflows de respuesta automatizada a incidentes mediante una interfaz visual drag-and-drop.
 
@@ -640,7 +640,7 @@ Características principales:
 
 **MISP**
 
-- **URL:** `http://localhost:8083`
+- **URL:** `<http://localhost:8083`>
 - **Credenciales:** `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD`
 - **Descripción:** Plataforma de inteligencia de amenazas. Permite compartir y consultar IOCs con la comunidad de seguridad. Integra automáticamente con Shuffle workflows para enriquecer alertas.
 
@@ -656,7 +656,7 @@ Características principales:
 
 **Grafana**
 
-- **URL:** `http://localhost:8084`
+- **URL:** `<http://localhost:8084`>
 - **Credenciales:** `admin` / `${GRAFANA_ADMIN_PASSWORD}`
 - **Descripción:** Plataforma de visualización de métricas. Permite crear dashboards con KPIs del sistema SOAR. Integra automáticamente con Elasticsearch para visualizar métricas de alertas procesadas, tiempos de respuesta, tasas de éxito y más.
 
@@ -673,7 +673,7 @@ Características principales:
 
 **OpenSearch Dashboards**
 
-- **URL:** `https://localhost:8202`
+- **URL:** `<https://localhost:8202`>
 - **Descripción:** Interfaz de visualización para OpenSearch, el backend de Shuffle. Permite inspeccionar workflows, ejecuciones y datos internos de Shuffle almacenados en índices OpenSearch.
 
 Características principales:
@@ -696,7 +696,7 @@ Verificación del estado de todos los contenedores Docker del proyecto.
 - El test de disk watermark de Elasticsearch salta (`skip`) cuando el porcentaje reportado proviene del disco del host (>90%) en lugar del volumen del contenedor, ya que `_cat/allocation` puede reflejar el filesystem del host en Docker Desktop.
 - El test `test_concurrent_execution_with_new_features` se salta si el entorno no puede ejecutar webhooks concurrentes bajo carga; no indica una falla funcional del workflow.
 - Para ejecutar la suite completa: `make test-all`
-- Última recolección: **2233 items / 328 deselected / 1905 seleccionados** (184 archivos `test_*.py`, ~2233 funciones definidas). Ver `docs/05-testing.md` y `tests/baseline/tests_inventory.json`.
+- Última recolección: **2233 items / 328 deselected / 1905 seleccionados** (182 archivos `test_*.py`, ~2233 funciones definidas). Ver `docs/05-testing.md` y `tests/baseline/tests_inventory.json`.
 
 #### 3.6.4 Estado operativo final (FASE 50)
 
@@ -760,7 +760,7 @@ Las evidencias de funcionamiento incluyen:
 
 ### 5.2 Riesgos o incidencias
 
-- **Puertos en uso**: Hyper-V en Windows reserva rangos 2976-3075, 5500-55099; verificar con `netstat -ano | findstr :<puerto>`.
+- **Puertos en uso**: Hyper-V en Windows reserva rangos 2976-3075, 5600-5699, 55000-55099; verificar con `netstat -ano | findstr :<puerto>`.
 - **Elasticsearch yellow**: Estado `yellow` es normal en single-node (no puede asignar réplicas).
 - **MISP lento en arranque**: MariaDB y `misp-modules` pueden tardar > 3 min en estar healthy.
 - **Bloqueo Cloudflare/LaLiga**: Durante jornadas de fútbol, los ISP españoles pueden bloquear rangos de Cloudflare, impidiendo `docker pull`.
@@ -826,7 +826,7 @@ Tras `make reset`, `SHUFFLE_DEFAULT_APIKEY` puede cambiar. `ShuffleClient._fetch
 - **Solución**: Asegúrate de que `CORS_ORIGINS` en `.env.full` incluya todos los orígenes desde los que se accede, separados por comas. Ejemplo:
 
   ```text
-  CORS_ORIGINS=https://soar.local,http://localhost:8085,http://localhost:8081
+  CORS_ORIGINS=<https://soar.local,http://localhost:8085,http://localhost:8081>
   ```
 
   Reinicia el contenedor `soar_api` para que tome la nueva variable:
@@ -863,13 +863,13 @@ Tras `make reset`, `SHUFFLE_DEFAULT_APIKEY` puede cambiar. `ShuffleClient._fetch
 - **Solución**: Libera espacio en disco y elimina el bloqueo de solo lectura:
 
   ```bash
-  curl -X PUT -u elastic:<ELASTIC_PASSWORD> "http://localhost:8200/_all/_settings" -H 'Content-Type: application/json' -d '{"index.blocks.read_only_allow_delete": null}'
+  curl -X PUT -u elastic:<ELASTIC_PASSWORD> "<http://localhost:8200/_all/_settings"> -H 'Content-Type: application/json' -d '{"index.blocks.read_only_allow_delete": null}'
   ```
 
   Si los umbrales por defecto son demasiado bajos para el disco del host, ajústalos temporalmente:
 
   ```bash
-  curl -X PUT -u elastic:<ELASTIC_PASSWORD> "http://localhost:8200/_cluster/settings" -H 'Content-Type: application/json' -d '{"transient":{"cluster.routing.allocation.disk.watermark.low":"85%","cluster.routing.allocation.disk.watermark.high":"90%","cluster.routing.allocation.disk.watermark.flood_stage":"95%"}}'
+  curl -X PUT -u elastic:<ELASTIC_PASSWORD> "<http://localhost:8200/_cluster/settings"> -H 'Content-Type: application/json' -d '{"transient":{"cluster.routing.allocation.disk.watermark.low":"85%","cluster.routing.allocation.disk.watermark.high":"90%","cluster.routing.allocation.disk.watermark.flood_stage":"95%"}}'
   ```
 
 **Tests E2E timeout:**
@@ -901,11 +901,11 @@ make init-webhook
 ## 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Docker**: https://docs.docker.com/
-- **Documentación de Docker Compose**: https://docs.docker.com/compose/
-- **Documentación de Shuffle**: https://shuffler.io/docs
-- **Documentación de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación de Cortex**: https://docs.strangebee.com/cortex/
+- **Documentación de Docker**: <https://docs.docker.com/>
+- **Documentación de Docker Compose**: <https://docs.docker.com/compose/>
+- **Documentación de Shuffle**: <https://shuffler.io/docs>
+- **Documentación de TheHive**: <https://docs.strangebee.com/thehive/>
+- **Documentación de Cortex**: <https://docs.strangebee.com/cortex/>
 - **API e integraciones**: `docs/03-api-and-integrations.md`
 - **Testing**: `docs/05-testing.md`
 - **Operaciones y puertos**: `docs/04-operations.md`

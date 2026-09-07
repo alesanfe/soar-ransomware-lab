@@ -68,44 +68,44 @@ Este documento define los acrónimos y términos técnicos que se usan en toda l
 | **VM**      | Virtual Machine                                 |
 | **XDR**     | Extended Detection and Response                 |
 | **YARA**    | Yet Another Ridiculous Acronym — lenguaje de reglas para identificación de malware |
-| **JWT**     | JSON Web Token (Token Web JSON) — autenticación HS256 en la API |
-| **SOC**     | Security Operations Center (Centro de Operaciones de Seguridad) |
-| **CSIRT**   | Computer Security Incident Response Team (Equipo de Respuesta a Incidentes) |
-| **CERT**    | Computer Emergency Response Team                 |
-| **MTTD**    | Mean Time to Detect (Tiempo Medio de Detección)  |
-| **NIST**    | National Institute of Standards and Technology   |
-| **ISO**     | International Organization for Standardization   |
-| **GDPR**    | General Data Protection Regulation (Reglamento General de Protección de Datos) |
-| **MITRE**   | MITRE Corporation — organización que mantiene ATT&CK |
-| **ATT&CK**  | Adversarial Tactics, Techniques, and Common Knowledge (framework de MITRE) |
-| **C4**      | Context, Containers, Components, Code — modelo de arquitectura de software |
-| **HPR**     | Holistic Project Radar (radar de 5 capas y 15 dimensiones para evaluación de proyectos) |
-| **TC**      | Test Case (Caso de Prueba) — identificador de tests E2E (TC-01 a TC-33) |
-| **PDCA**    | Plan-Do-Check-Act (ciclo de mejora continua)      |
-| **TCO**     | Total Cost of Ownership (Costo Total de Propiedad) |
-| **NLP**     | Natural Language Processing (Procesamiento de Lenguaje Natural) |
-| **ML**      | Machine Learning (Aprendizaje Automático)        |
 | **AI**      | Artificial Intelligence (Inteligencia Artificial) |
 | **APT**     | Advanced Persistent Threat (Amenaza Persistente Avanzada) |
-| **Tenzir**  | Plataforma de análisis de datos de red (pipeline de eventos) |
-| **OpenSearch** | Motor de búsqueda y análisis open source (fork de Elasticsearch) |
+| **ATT&CK**  | Adversarial Tactics, Techniques, and Common Knowledge (framework de MITRE) |
+| **C4**      | Context, Containers, Components, Code — modelo de arquitectura de software |
+| **CA**      | Certificate Authority                           |
+| **CERT**    | Computer Emergency Response Team                 |
+| **CORS**    | Cross-Origin Resource Sharing (Intercambio de Recursos de Origen Cruzado) — configurado en la API de FastAPI y Nginx |
+| **CSIRT**   | Computer Security Incident Response Team (Equipo de Respuesta a Incidentes) |
+| **CSS**     | Cascading Style Sheets                          |
+| **DMZ**     | Demilitarized Zone                              |
+| **GDPR**    | General Data Protection Regulation (Reglamento General de Protección de Datos) |
+| **HPR**     | Holistic Project Radar (radar de 5 capas y 16 dimensiones para evaluación de proyectos) |
+| **HSM**     | Hardware Security Module                        |
+| **HTML**    | HyperText Markup Language                       |
+| **IaC**     | Infraestructura como Código (Infrastructure as Code) — Docker Compose, Dockerfiles y scripts del repositorio |
+| **ISO**     | International Organization for Standardization   |
+| **JS**      | JavaScript                                      |
+| **JWT**     | JSON Web Token (Token Web JSON) — autenticación HS256 en la API |
+| **MITRE**   | MITRE Corporation — organización que mantiene ATT&CK |
 | **MFA**     | Multi-Factor Authentication                     |
-| **SSO**     | Single Sign-On                                  |
+| **ML**      | Machine Learning (Aprendizaje Automático)        |
+| **MTTD**    | Mean Time to Detect (Tiempo Medio de Detección)  |
+| **NIST**    | National Institute of Standards and Technology   |
+| **NLP**     | Natural Language Processing (Procesamiento de Lenguaje Natural) |
 | **OIDC**    | OpenID Connect                                  |
 | **OTP**     | One-Time Password                               |
-| **TOTP**    | Time-based One-Time Password                    |
+| **OpenSearch** | Motor de búsqueda y análisis open source (fork de Elasticsearch) |
+| **PDCA**    | Plan-Do-Check-Act (ciclo de mejora continua)      |
 | **RBAC**    | Role-Based Access Control                       |
+| **SOC**     | Security Operations Center (Centro de Operaciones de Seguridad) |
+| **SSO**     | Single Sign-On                                  |
+| **TC**      | Test Case (Caso de Prueba) — identificador de tests E2E (TC-00 a TC-33, TC-KPI-01 a TC-KPI-06) |
+| **TCO**     | Total Cost of Ownership (Costo Total de Propiedad) |
+| **Tenzir**  | Plataforma de análisis de datos de red (pipeline de eventos) |
+| **TOTP**    | Time-based One-Time Password                    |
 | **WAF**     | Web Application Firewall                        |
-| **HSM**     | Hardware Security Module                        |
-| **CA**      | Certificate Authority                           |
-| **DMZ**     | Demilitarized Zone                              |
-| **CORS**    | Cross-Origin Resource Sharing (Intercambio de Recursos de Origen Cruzado) — configurado en la API de FastAPI y Nginx |
-| **IaC**     | Infraestructura como Código (Infrastructure as Code) — Docker Compose, Dockerfiles y scripts del repositorio |
-| **YAML**    | YAML Ain't Markup Language                      |
-| **HTML**    | HyperText Markup Language                       |
-| **CSS**     | Cascading Style Sheets                          |
-| **JS**      | JavaScript                                      |
 | **WebSocket** | Protocolo de comunicación bidireccional en tiempo real |
+| **YAML**    | YAML Ain't Markup Language                      |
 
 ## Abreviaturas de Herramientas y Plataformas
 

@@ -109,7 +109,7 @@ make deps-lint          # Instalar dependencias de linters
 make quality            # Suite completa de quality/ (radon, bandit, vulture, etc.)
 make mutation           # Mutation testing con mutmut en Docker (on-demand, 60-180 min)
 make test-review        # Informe de revisión de tests (7 dimensiones) -> reports/test-review/
-make holistic-review    # Holistic Project Radar (5 capas, 15 dims) -> reports/holistic/
+make holistic-review    # Holistic Project Radar (5 capas, 16 dims) -> reports/holistic/
 
 # === Docker ===
 make up                 # Levantar todo el stack
@@ -193,7 +193,7 @@ La tesis (TFM) vive en `docs/thesis/`. Sus archivos markdown son la fuente de ve
 
 ## Common pitfalls
 
-- **Docker Desktop en Windows**: puertos 2976-3075, 5500-55099 reservados por Hyper-V
+- **Docker Desktop en Windows**: puertos 2976-3075, 5600-5699, 55000-55099 reservados por Hyper-V
 - **Elasticsearch single-node**: estado `yellow` es normal (no puede asignar réplicas)
 - **Shuffle webhook**: tras `make reset`, regenerar con `make init-webhook`
 - **Shuffle stale executions**: los workflows interrumpidos (test failures, restarts) dejan ejecuciones en `EXECUTING` en OpenSearch que saturan el Orborus (max 10 workers). Limpiar con `make clean-shuffle` antes de tests E2E. `make test-e2e` ya lo hace automáticamente. Script: `scripts/maintenance/clean_shuffle_executions.py`

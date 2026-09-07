@@ -1,37 +1,37 @@
-﻿# Arquitectura — SOAR Ransomware Lab
+# Arquitectura — SOAR Ransomware Lab
 
 ## Índice
 
 - [1. Resumen](#1-resumen)
- - [1.1 Objetivo](#11-objetivo)
- - [1.2 Contexto](#12-contexto)
+  - [1.1 Objetivo](#11-objetivo)
+  - [1.2 Contexto](#12-contexto)
 - [2. Alcance](#2-alcance)
- - [2.1 Qué cubre](#21-qué-cubre)
- - [2.2 Límites](#22-límites)
- - [2.3 Dependencias](#23-dependencias)
+  - [2.1 Qué cubre](#21-qué-cubre)
+  - [2.2 Límites](#22-límites)
+  - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
- - [3.1 Visión general de arquitectura](#31-visión-general-de-arquitectura)
- - [3.2 Aplicaciones y componentes](#32-aplicaciones-y-componentes)
- - [3.3 Estructura de código](#33-estructura-de-código)
- - [3.4 Composition root](#34-composition-root)
- - [3.5 Arquitectura Docker](#35-arquitectura-docker)
- - [3.6 Arquitectura hexagonal](#36-arquitectura-hexagonal)
- - [3.7 Inventario de dominio y aplicaciones](#37-inventario-de-dominio-y-aplicaciones)
- - [3.8 Coexistencia de motores de búsqueda](#38-coexistencia-de-motores-de-búsqueda)
- - [3.9 Seguridad](#39-seguridad)
- - [3.10 Matriz de versiones](#310-matriz-de-versiones)
- - [Anexo: Diagramas Canónicos de Arquitectura y Flujos](#anexo-diagramas-canónicos-de-arquitectura-y-flujos)
+  - [3.1 Visión general de arquitectura](#31-visión-general-de-arquitectura)
+  - [3.2 Aplicaciones y componentes](#32-aplicaciones-y-componentes)
+  - [3.3 Estructura de código](#33-estructura-de-código)
+  - [3.4 Composition root](#34-composition-root)
+  - [3.5 Arquitectura Docker](#35-arquitectura-docker)
+  - [3.6 Arquitectura hexagonal](#36-arquitectura-hexagonal)
+  - [3.7 Inventario de dominio y aplicaciones](#37-inventario-de-dominio-y-aplicaciones)
+  - [3.8 Coexistencia de motores de búsqueda](#38-coexistencia-de-motores-de-búsqueda)
+  - [3.9 Seguridad](#39-seguridad)
+  - [3.10 Matriz de versiones](#310-matriz-de-versiones)
+  - [3.11 Anexo: Diagramas Canónicos de Arquitectura y Flujos](#311-anexo-diagramas-canónicos-de-arquitectura-y-flujos)
   - [F.1 a F.12: 12 diagramas Mermaid + caso estudio GMinst4ll](#f1-arquitectura-de-alto-nivel)
- - [Anexo: Desarrollo Específico](#anexo-desarrollo-específico)
+  - [3.12 Anexo: Desarrollo Específico](#312-anexo-desarrollo-específico)
   - [4.1. Desarrollo de software + tablas 3-10](#41-desarrollo-de-software)
 - [4. Validación](#4-validación)
- - [4.1 Verificación](#41-verificación)
- - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
- - [4.3 Evidencias](#43-evidencias)
+  - [4.1 Verificación](#41-verificación)
+  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+  - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas](#5-problemas)
- - [5.1 Limitaciones](#51-limitaciones)
- - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
- - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.1 Limitaciones](#51-limitaciones)
+  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -73,13 +73,12 @@ Plataforma de orquestación de seguridad integral para respuesta ante incidentes
 
 ### 3.1 Visión general de arquitectura
 
-
 #### Arquitectura de Código (Python)
 
 El código Python sigue una **arquitectura hexagonal (Ports and Adapters)**. Las dependencias apuntan siempre hacia el
 interior; el dominio no conoce detalles de infraestructura ni de interfaces de usuario.
 
-```
+```text
 src/soar_lab/
 ├── application/ # Capa de aplicación
 │ ├── ports/ # Definición de puertos (interfaces) de entrada/salida
@@ -127,7 +126,7 @@ Nuevos adaptadores o servicios deben registrarse aquí para mantener la separaci
 ```mermaid
 graph TD
  subgraph "Acceso recomendado (soar.local 443 / Nginx)"
- User -->|https://soar.local| Nginx
+ User -->|<https://soar.local|> Nginx
  Nginx -->|/| WebMgmt[Web Management]
  Nginx -->|/api/| LabAPI[Lab API]
  Nginx -->|/thehive/| TheHive
@@ -161,7 +160,6 @@ graph TD
  Cortex -- HTTP --> ES
  Cortex -- HTTP --> MISPInternal
 
-
  MISPInternal -- SQL --> MariaDB[MariaDB :3306]
 
  GrafanaInternal -- HTTP --> ES
@@ -183,78 +181,78 @@ graph TD
 #### Servicios SOAR Core
 
 1. **Shuffle** (`:8081` UI host / `:5001` API host)
- - Orquestador SOAR principal
- - Constructor de workflows drag-and-drop
- - Ejecuta playbooks de respuesta automatizada
- - Orborus ejecuta contenedores de apps como workers
+  - Orquestador SOAR principal
+  - Constructor de workflows drag-and-drop
+  - Ejecuta playbooks de respuesta automatizada
+  - Orborus ejecuta contenedores de apps como workers
 
 2. **TheHive** (`:8100` host → `:9000` container)
- - Plataforma de gestión de casos de incidentes
- - Seguimiento de evidencias y observables
- - Asignación de tareas y línea de tiempo
- - Se integra con Cortex para enriquecimiento
+  - Plataforma de gestión de casos de incidentes
+  - Seguimiento de evidencias y observables
+  - Asignación de tareas y línea de tiempo
+  - Se integra con Cortex para enriquecimiento
 
 3. **Cortex** (`:8101` host → `:9001` container)
- - Motor de análisis de IoCs
- - Ejecuta analyzers y responders
- - Se integra con MISP, VirusTotal, etc.
- - Soporte para analyzers personalizados en Python
+  - Motor de análisis de IoCs
+  - Ejecuta analyzers y responders
+  - Se integra con MISP, VirusTotal, etc.
+  - Soporte para analyzers personalizados en Python
 
 #### SIEM / Detección
 
 4. **OpenSearch Dashboards** (`:8202` host → `:5601` container)
- - Exploración de logs vía Discover
+  - Exploración de logs vía Discover
 
 #### Inteligencia de Amenazas
 
 5. **MISP** (`:8083`)
- - Plataforma de inteligencia de amenazas open-source
- - Compartición y gestión de IoCs
- - Integración de feeds
- - Conectado a analyzers de Cortex
+  - Plataforma de inteligencia de amenazas open-source
+  - Compartición y gestión de IoCs
+  - Integración de feeds
+  - Conectado a analyzers de Cortex
 
 #### Capa de Datos
 
 6. **Elasticsearch** (red Docker interna)
- - `docker.elastic.co/elasticsearch/elasticsearch:7.10.2`
- - Backend para TheHive, Cortex, métricas del Lab API (`soar-metrics`) y datasource de Grafana
- - Agregación de logs y búsqueda full-text
- - Configuración single-node con `xpack.security.enabled=false`; se mantiene un password canónico `ELASTIC_PASSWORD=ElasticLab2024SecurePass` en `.env.full` y en las aplicaciones para compatibilidad con clientes que sí envían credenciales.
- - **No es redundancia**: OpenSearch 2.10.0 se despliega en paralelo porque Shuffle requiere un motor OpenSearch nativo, mientras que TheHive/Cortex dependen de `elastic4play` / ES 7.x (ver [Motores de búsqueda: coexistencia de Elasticsearch y OpenSearch](#38-coexistencia-de-motores-de-búsqueda)).
+  - `docker.elastic.co/elasticsearch/elasticsearch:7.10.2`
+  - Backend para TheHive, Cortex, métricas del Lab API (`soar-metrics`) y datasource de Grafana
+  - Agregación de logs y búsqueda full-text
+  - Configuración single-node con `xpack.security.enabled=false`; se mantiene un password canónico `ELASTIC_PASSWORD=ElasticLab2024SecurePass` en `.env.full` y en las aplicaciones para compatibilidad con clientes que sí envían credenciales.
+  - **No es redundancia**: OpenSearch 2.10.0 se despliega en paralelo porque Shuffle requiere un motor OpenSearch nativo, mientras que TheHive/Cortex dependen de `elastic4play` / ES 7.x (ver [Motores de búsqueda: coexistencia de Elasticsearch y OpenSearch](#38-coexistencia-de-motores-de-búsqueda)).
 
 7. **Redis** (interno)
- - Almacenamiento de sesiones y caché para Shuffle
- - Cola de mensajes
+  - Almacenamiento de sesiones y caché para Shuffle
+  - Cola de mensajes
 
 8. **MariaDB** (interno)
- - Backend de base de datos para MISP
+  - Backend de base de datos para MISP
 
 9. **Tenzir** (nodo de desarrollo, opcional)
- - Imagen: `tenzir/tenzir:v6.8.1`
- - Puertos host: `15160` → `5160`, `15140` → `1514/udp`
- - Estado: desplegado en `docker-compose.core.yml` pero su pipeline de ingestión no está integrado en los playbooks activos del laboratorio.
+  - Imagen: `tenzir/tenzir:v6.8.1`
+  - Puertos host: `15160` → `5160`, `15140` → `1514/udp`
+  - Estado: desplegado en `docker-compose.core.yml` pero su pipeline de ingestión no está integrado en los playbooks activos del laboratorio.
 
 #### Acceso y Gestión
 
 10. **Nginx** (`:80`, `:443`)
- - Terminación TLS y proxy inverso en `:443`; `:80` redirige a HTTPS
- - Expone `/` → Web Management, `/thehive/` → TheHive, `/cortex/` → Cortex, `/shuffle-api/` → Shuffle Backend
- - Shuffle UI (`:8081`), Web Management (`:8085`), Docs Site (`:8086`) y Grafana (`:8084`) se acceden directamente por sus puertos
- - **Shuffle UI no soporta subpath en Nginx** (`/shuffle` no funciona por rutas SPA absolutas); usar siempre `http://localhost:8081`
+  - Terminación TLS y proxy inverso en `:443`; `:80` redirige a HTTPS
+  - Expone `/` → Web Management, `/thehive/` → TheHive, `/cortex/` → Cortex, `/shuffle-api/` → Shuffle Backend
+  - Shuffle UI (`:8081`), Web Management (`:8085`), Docs Site (`:8086`) y Grafana (`:8084`) se acceden directamente por sus puertos
+  - **Shuffle UI no soporta subpath en Nginx** (`/shuffle` no funciona por rutas SPA absolutas); usar siempre `<http://localhost:8081`>
 
 11. **Lab API** (`:8000`)
- - Aplicación FastAPI (`src/soar_lab/interfaces/api/main.py`)
- - Endpoints de gestión y automatización del laboratorio
- - Health check en `/health`
- - WebSocket `/api/ws/logs` para streaming de logs en vivo
+  - Aplicación FastAPI (`src/soar_lab/interfaces/api/main.py`)
+  - Endpoints de gestión y automatización del laboratorio
+  - Health check en `/health`
+  - WebSocket `/api/ws/logs` para streaming de logs en vivo
 
 12. **Docs Site** (`:8086`)
- - Sitio estático Docusaurus
- - Servido directamente en puerto 8086
+  - Sitio estático Docusaurus
+  - Servido directamente en puerto 8086
 
 #### Zonas de Seguridad
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Zona DMZ │
 │ Web UI │ API Gateway │ Load Balancer │
@@ -313,7 +311,7 @@ El proyecto organiza el código en capas con dirección de dependencias hacia el
 
 #### Pipeline de Procesamiento de Alertas
 
-```
+```text
 Fuentes de Alertas → API de Ingestión → Validación → Enriquecimiento → Scoring → Almacenamiento → Análisis → Respuesta
 ```
 
@@ -327,7 +325,7 @@ Fuentes de Alertas → API de Ingestión → Validación → Enriquecimiento →
 
 #### Flujo de Respuesta
 
-```
+```text
 Detección de Alerta → Triage → Investigación → Contención → Erradicación → Recuperación → Reporte
 ```
 
@@ -349,41 +347,41 @@ Detección de Alerta → Triage → Investigación → Contención → Erradicac
 #### Integraciones Externas
 
 1. **Herramientas de Seguridad**
- - Sistemas SIEM (Splunk, ELK)
- - Soluciones EDR (CrowdStrike, SentinelOne)
- - Plataformas de inteligencia de amenazas
- - Escáners de vulnerabilidades
+  - Sistemas SIEM (Splunk, ELK)
+  - Soluciones EDR (CrowdStrike, SentinelOne)
+  - Plataformas de inteligencia de amenazas
+  - Escáners de vulnerabilidades
 
 2. **Sistemas de Comunicación**
- - Notificaciones por email
- - Integración Slack/Teams
- - Alertas SMS
- - Callbacks de webhook
+  - Notificaciones por email
+  - Integración Slack/Teams
+  - Alertas SMS
+  - Callbacks de webhook
 
 3. **Infraestructura**
- - Proveedores cloud (AWS, Azure, GCP)
- - Orquestación de contenedores (Kubernetes)
- - Plataformas de logging (Splunk, ELK)
+  - Proveedores cloud (AWS, Azure, GCP)
+  - Orquestación de contenedores (Kubernetes)
+  - Plataformas de logging (Splunk, ELK)
 
 #### Patrones de Integración
 
 1. **Integración basada en API**
- - APIs RESTful
- - Interfaces GraphQL
- - Suscripciones de webhook
- - Arquitectura event-driven
+  - APIs RESTful
+  - Interfaces GraphQL
+  - Suscripciones de webhook
+  - Arquitectura event-driven
 
 2. **Integración basada en Mensajes**
- - Colas RabbitMQ
- - Streams Apache Kafka
- - Redis pub/sub
- - Event sourcing
+  - Colas RabbitMQ
+  - Streams Apache Kafka
+  - Redis pub/sub
+  - Event sourcing
 
 3. **Integración basada en Archivos**
- - Importaciones CSV/JSON
- - Parsing de archivos de log
- - Sincronización de configuración
- - Operaciones de backup/restore
+  - Importaciones CSV/JSON
+  - Parsing de archivos de log
+  - Sincronización de configuración
+  - Operaciones de backup/restore
 
 #### Diagramas de Secuencia de Integración
 
@@ -469,7 +467,7 @@ sequenceDiagram
 | `ti_net` | bridge (internal) | `172.22.0.0/16` | Red de Threat Intelligence — Elasticsearch, Redis, API, Shuffle backend/frontend (sin acceso externo) |
 | `logging_net` | bridge | `172.23.0.0/16` | Red de logging — Loki, Promtail, Grafana |
 
-> ⚠️ **Windows/Hyper-V**: rangos de puertos 55000–55099 y 5600–5699 están excluidos por reservas de Hyper-V. Los puertos
+> ⚠️ **Windows/Hyper-V**: rangos de puertos 2976–3075, 5600–5699 y 55000–55099 están excluidos por reservas de Hyper-V. Los puertos
 > del stack están configurados fuera de esos rangos (ver `.env.full`).
 
 #### Volúmenes Persistentes
@@ -537,7 +535,7 @@ principales: DMZ, Aplicación, Datos y Gestión.
 
 | Componente / Capacidad | Estado | Evidencia / Notas |
 |------------------------|--------|---------------------|
-| Nginx (proxy inverso + TLS) | Parcial | Termina TLS en `https://soar.local`; no incluye WAF ni rate limiting avanzado |
+| Nginx (proxy inverso + TLS) | Parcial | Termina TLS en `<https://soar.local`>; no incluye WAF ni rate limiting avanzado |
 | Lab API (FastAPI) | Implementado | Endpoints de auth, analytics, backups, tests y proxy SOAR en `src/soar_lab/interfaces/api/main.py` |
 | Shuffle (workflows + webhook) | Implementado | Contenedores `shuffle-frontend`, `shuffle-backend`, `orborus`; workflow creado por `init_shuffle_webhook.py` |
 | TheHive | Implementado | Gestión de casos vía API en `soar_thehive:9000`; conexión con Cortex |
@@ -602,7 +600,7 @@ uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 800
 
 **Puerto expuesto:** `8000`
 
-**Health check:** `curl -f http://localhost:8000/health || exit 1`
+**Health check:** `curl -f <http://localhost:8000/health> || exit 1`
 
 **Variables de entorno principales (`.env.full`):**
 
@@ -617,9 +615,9 @@ uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 800
 
 **Acceso:**
 
-- Directo: `http://localhost:8000`.
-- A través de Nginx: `https://soar.local/api/`.
-- Swagger/OpenAPI: `http://localhost:8000/docs` o `https://soar.local/api/docs`.
+- Directo: `<http://localhost:8000`>.
+- A través de Nginx: `<https://soar.local/api/`>.
+- Swagger/OpenAPI: `<http://localhost:8000/docs`> o `<https://soar.local/api/docs`>.
 
 **Funciones expuestas:**
 
@@ -656,7 +654,7 @@ uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 800
 
 **Acceso:**
 
-- Directo: `http://localhost:8086`.
+- Directo: `<http://localhost:8086`>.
 - **No** se expone a través de Nginx con subpath; acceso directo únicamente.
 
 **Dependencias:** Ninguna obligatoria; solo requiere la documentación Markdown en `docs/` montada en `/opt/docusaurus/docs`.
@@ -679,17 +677,17 @@ uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 800
 
 **Acceso:**
 
-- Directo: `http://localhost:8085`.
-- A través de Nginx: `https://soar.local/` (raíz del proxy).
+- Directo: `<http://localhost:8085`>.
+- A través de Nginx: `<https://soar.local/`> (raíz del proxy).
 
 **Comunicación con la API:**
 
-- `script.js` usa `const API_BASE = '/api'` (ruta relativa), por lo que depende de que Nginx reescriba `https://soar.local/api/` a `http://api:8000`.
-- El acceso directo `http://localhost:8085` **no expone `/api`**; en ese modo `script.js` intentará `http://localhost:8000/api/...`, que tampoco estará disponible en el puerto 8085. Para desarrollo o pruebas directas, setear `API_BASE = 'http://localhost:8000'` temporalmente y permitir `CORS_ORIGINS`.
+- `script.js` usa `const API_BASE = '/api'` (ruta relativa), por lo que depende de que Nginx reescriba `<https://soar.local/api/`> a `<http://api:8000`>.
+- El acceso directo `<http://localhost:8085`> **no expone `/api`**; en ese modo `script.js` intentará `<http://localhost:8000/api/...`>, que tampoco estará disponible en el puerto 8085. Para desarrollo o pruebas directas, setear `API_BASE = '<http://localhost:8000'`> temporalmente y permitir `CORS_ORIGINS`.
 - El token JWT se almacena en `localStorage`; no debe guardarse en cookies sin `HttpOnly`.
 - Reconexión WebSocket contra `/ws/logs` (o `/api/ws/logs` si pasa por Nginx); Nginx transmite `Upgrade` y `Connection`.
 
-**Nota:** Si se accede directamente por `http://localhost:8085`, asegúrate de que `CORS_ORIGINS` incluye `http://localhost:8085` y considera que `/api` no estará disponible sin un proxy inverso.
+**Nota:** Si se accede directamente por `<http://localhost:8085`>, asegúrate de que `CORS_ORIGINS` incluye `<http://localhost:8085`> y considera que `/api` no estará disponible sin un proxy inverso.
 
 ---
 
@@ -697,9 +695,9 @@ uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 800
 
 | Aplicación | Servicio Compose | Contenedor (proyecto `soar`) | Tecnología | Puerto host | Puerto contenedor | Acceso recomendado | Vía Nginx |
 |------------|------------------|------------------------------|------------|-------------|-------------------|--------------------|-----------|
-| `apps/api` | `api` | `soar_api` | FastAPI / Python 3.11 | `8000` | `8000` | `http://localhost:8000` | Sí (`/api/`) |
-| `apps/docs-site` | `docs-site` | `soar_docs_site` | Docusaurus / Node.js | `8086` | `8080` | `http://localhost:8086` | No |
-| `apps/web-management` | `web-management` | `soar_web_management` | HTML / JS / Nginx | `8085` | `80` | `http://localhost:8085` | Sí (`/`) |
+| `apps/api` | `api` | `soar_api` | FastAPI / Python 3.11 | `8000` | `8000` | `<http://localhost:8000`> | Sí (`/api/`) |
+| `apps/docs-site` | `docs-site` | `soar_docs_site` | Docusaurus / Node.js | `8086` | `8080` | `<http://localhost:8086`> | No |
+| `apps/web-management` | `web-management` | `soar_web_management` | HTML / JS / Nginx | `8085` | `80` | `<http://localhost:8085`> | Sí (`/`) |
 
 ---
 
@@ -709,7 +707,6 @@ uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 800
 - [Arquitectura general](#31-visión-general-de-arquitectura)
 - [Guía de infraestructura](04-operations.md)
 - [README principal](../README.md)
-
 
 ### 3.3 Estructura de código
 
@@ -755,7 +752,7 @@ Tabla one-to-one entre los protocolos del dominio y sus implementaciones concret
 | `HealthCheckInterface` | `domain/ports/infrastructure.py` | `HTTPHealthCheckAdapter`, `HealthService` | `infrastructure/monitoring/health_check_adapter.py`, `infrastructure/monitoring/health_service.py` |
 | `SubprocessRunner` | `domain/ports/infrastructure.py` | `SubprocessRunner` | `infrastructure/subprocess_runner.py` |
 | `LogReader` | `domain/ports/infrastructure.py` | `FileLogReader` | `infrastructure/file_log_reader.py` |
-| `LogParser` | `domain/ports/infrastructure.py` | `LogParser` | `infrastructure/log_parser.py` |
+| `LogParser` | `domain/ports/infrastructure.py` | `ExecutionLogParser` | `infrastructure/log_parser.py` |
 | `KPIFormatter` | `domain/ports/infrastructure.py` | `CSVKPIFormatter` | `infrastructure/kpi_formatter.py` |
 | `ChecksumService` | `domain/ports/infrastructure.py` | `ChecksumService` | *no implementado* |
 | `CacheInterface` | `domain/ports/infrastructure.py` | `Redis` client wrapper | `infrastructure/clients.py` |
@@ -873,7 +870,6 @@ Responsabilidad: Exponer la funcionalidad al exterior.
 - [Composition Root](#34-composition-root)
 - [Guía de infraestructura](04-operations.md)
 
-
 ### 3.4 Composition root
 
 #### 1. Resumen
@@ -986,7 +982,6 @@ Dentro de `CompositionRoot`:
 - [Arquitectura hexagonal](#36-arquitectura-hexagonal)
 - [src/soar_lab/interfaces/api/composition.py](../src/soar_lab/interfaces/api/composition.py)
 
-
 ### 3.5 Arquitectura Docker
 
 > Este documento describe la arquitectura Docker del SOAR Ransomware Lab, incluyendo la organización de archivos
@@ -995,26 +990,26 @@ Dentro de `CompositionRoot`:
 #### Índice
 
 - [1. Resumen](#1-resumen)
- - [1.1 Objetivo](#11-objetivo)
- - [1.2 Contexto](#12-contexto)
+  - [1.1 Objetivo](#11-objetivo)
+  - [1.2 Contexto](#12-contexto)
 - [2. Alcance](#2-alcance)
- - [2.1 Qué cubre](#21-qué-cubre)
- - [2.2 Límites](#22-límites)
- - [2.3 Dependencias](#23-dependencias)
+  - [2.1 Qué cubre](#21-qué-cubre)
+  - [2.2 Límites](#22-límites)
+  - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
- - [3.1 Estrategia de contenerización](#31-estrategia-de-contenerización)
- - [3.2 Servicios y composición](#32-servicios-y-composición)
- - [3.3 Redes y volúmenes](#33-redes-y-volúmenes)
- - [3.4 Comandos y operaciones](#34-comandos-y-operaciones)
- - [3.5 Troubleshooting Docker](#35-troubleshooting-docker)
+  - [3.1 Estrategia de contenerización](#31-estrategia-de-contenerización)
+  - [3.2 Servicios y composición](#32-servicios-y-composición)
+  - [3.3 Redes y volúmenes](#33-redes-y-volúmenes)
+  - [3.4 Comandos y operaciones](#34-comandos-y-operaciones)
+  - [3.5 Troubleshooting Docker](#35-troubleshooting-docker)
 - [4. Validación](#4-validación)
- - [4.1 Verificación](#41-verificación)
- - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
- - [4.3 Evidencias](#43-evidencias)
+  - [4.1 Verificación](#41-verificación)
+  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+  - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas](#5-problemas)
- - [5.1 Limitaciones](#51-limitaciones)
- - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
- - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.1 Limitaciones](#51-limitaciones)
+  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -1084,7 +1079,7 @@ La orquestación se divide en varios archivos `docker-compose*.yml` bajo `infra/
 
 #### Configuración auxiliar de logging
 
-```
+```text
 infra/docker/compose/logging/
 ├── docker-compose.logging.yml
 ├── logging.yaml # configuración de logging
@@ -1125,7 +1120,7 @@ docker compose --env-file .env -f infra/docker/compose/docker-compose.yml -f inf
 | redis | `redis:7-alpine` | `soar_redis` | 6379 → 6379 | `ti_net`, `soar_net` | `nc -z 127.0.0.1 6379` | Cache/cola con autenticación |
 | thehive | `thehiveproject/thehive:3.5.2-1` | `soar_thehive` | `${THEHIVE_HTTP_PORT:-8100}` → 9000 | `soar_net` | `GET /api/status` | Gestión de casos |
 | cortex | build `infra/docker/images/cortex/Dockerfile` | `soar_cortex` | `${CORTEX_HTTP_PORT:-8101}` → 9001 | `soar_net` | HTTP 2xx/3xx en `:9001/` | Motor de analizadores; monta `/var/run/docker.sock` |
-| shuffle-frontend | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | `soar_shuffle_frontend` | `${SHUFFLE_UI_PORT:-8081}` → 80 | `soar_net`, `ti_net` | `GET http://localhost:80` | UI de workflows |
+| shuffle-frontend | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | `soar_shuffle_frontend` | `${SHUFFLE_UI_PORT:-8081}` → 80 | `soar_net`, `ti_net` | `GET <http://localhost:80`> | UI de workflows |
 | shuffle-backend | `ghcr.io/shuffle/shuffle-backend:2.2.1` | `soar_shuffle_backend` | `${SHUFFLE_API_PORT:-5001}` → 5001 | `soar_net`, `ti_net` | deshabilitado | Motor de workflows |
 | orborus | build `infra/docker/images/orborus/Dockerfile` (tag `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | `soar_orborus` | — | `soar_net` | `nc -z shuffle-backend 5001` | Ejecutor de contenedores de analizadores |
 | network-watcher | build `src/soar_lab/infrastructure/network_watcher` | `soar_network_watcher` | `${NETWORK_WATCHER_PORT:-15130}` → 8080 | `soar_net` | `GET /health` en `:8080` | Diagnóstico/recuperación de red (sincroniza `/etc/hosts` de workers) |
@@ -1194,7 +1189,7 @@ Valores extraídos de los archivos Compose; pueden ajustarse en `.env.full` o di
 
 Los volúmenes se declaran en `infra/docker/compose/docker-compose.yml`. La mayoría son bind mounts que apuntan a `runtime/`:
 
-```
+```text
 runtime/
 ├── data/
 │ ├── elasticsearch/ # es_data
@@ -1232,15 +1227,14 @@ Ubicaciones adicionales:
 - Host: `runtime/logs/nginx/` y `runtime/logs/misp/` (bind mounts explícitos).
 - Streaming en vivo: `api` expone `/ws/logs` (WebSocket) y `/api/ws/logs` vía Nginx.
 - Logging centralizado:
- - `promtail` descubre contenedores por el socket Docker y envía a `loki`.
- - `grafana` consulta `loki` y `elasticsearch` (`soar-metrics`) para logs y KPIs.
+  - `promtail` descubre contenedores por el socket Docker y envía a `loki`.
+  - `grafana` consulta `loki` y `elasticsearch` (`soar-metrics`) para logs y KPIs.
 
 #### Estrategia de backup
 
 - El servicio de backup reside en `src/soar_lab/application/use_cases/backup_service.py` y se expone en `/backup/create` y `/backup/restore`.
 - Los artefactos se escriben en `runtime/backups/` (montado en `/app/backups` del contenedor `api`).
 - Para backup completo del laboratorio se recomienda detener el stack y copiar `runtime/` (incluidos `data/` y `logs/`), además de exportar volúmenes Docker normales (`misp_db`, `opensearch_data`, etc.).
-
 
 #### 3.4 Comandos y operaciones
 
@@ -1337,7 +1331,7 @@ docker stats
 
 ```bash
 # Verificar salud de Elasticsearch
-curl http://localhost:8200/_cluster/health
+curl <http://localhost:8200/_cluster/health>
 
 # Aumentar límite de memoria en infra/docker/compose/docker-compose*.yml
 ```
@@ -1389,7 +1383,7 @@ Las evidencias de validación incluyen:
 
 - **Bind mounts en Windows**: El rendimiento de bind mounts puede ser menor en Windows Docker Desktop
 - **Single-node Elasticsearch**: Configuración actual no soporta clustering
-- **Recursos limitados**: Mínimo 8GB RAM requerido para stack completo
+- **Recursos limitados**: Mínimo 8GB RAM (16GB recomendado para stack completo con perfiles opcionales)
 
 #### 5.2 Riesgos o incidencias
 
@@ -1412,18 +1406,17 @@ Las evidencias de validación incluyen:
 #### 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Docker Compose**: https://docs.docker.com/compose/
-- **Documentación de Docker Networking**: https://docs.docker.com/network/
-- **Documentación de Docker Volumes**: https://docs.docker.com/storage/volumes/
-- **Documentación de Shuffle**: https://shuffler.io/docs
-- **Documentación de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación de Cortex**: https://docs.strangebee.com/cortex/
-- **Documentación de MISP**: https://www.misp-project.org/documentation/
-- **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
+- **Documentación de Docker Compose**: <https://docs.docker.com/compose/>
+- **Documentación de Docker Networking**: <https://docs.docker.com/network/>
+- **Documentación de Docker Volumes**: <https://docs.docker.com/storage/volumes/>
+- **Documentación de Shuffle**: <https://shuffler.io/docs>
+- **Documentación de TheHive**: <https://docs.strangebee.com/thehive/>
+- **Documentación de Cortex**: <https://docs.strangebee.com/cortex/>
+- **Documentación de MISP**: <https://www.misp-project.org/documentation/>
+- **Documentación de Elasticsearch**: <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>
 - **Documentación de Arquitectura**: [3.1 Visión general de arquitectura](#31-visión-general-de-arquitectura)
 - **Documentación de Seguridad**: [3.9 Seguridad](#39-seguridad)
 - **Guía de Usuario**: [docs/01-getting-started.md](01-getting-started.md)
-
 
 ### 3.6 Arquitectura hexagonal
 
@@ -1515,7 +1508,6 @@ Casos de uso (`src/soar_lab/application/use_cases/`):
 
 #### Puerto → adaptador → implementación
 
-
 #### Ejemplo real de flujo: recepción y contención de una alerta
 
 > **Nota**: el ingreso de alertas no pasa por la Lab API. El `main.py` de FastAPI expone métricas, estado y orquestación de casos; la ingestión real ocurre a través del webhook de Shuffle generado por `init_shuffle_webhook.py`.
@@ -1582,7 +1574,6 @@ from soar_lab.interfaces.api.composition import create_app
 - `infrastructure/setup/` se movió a `scripts/setup/`; la carpeta `infrastructure/scripts/` se
  considera legacy y no forma parte del runtime.
 - `exceptions.py` centralizado en `src/soar_lab/common/exceptions.py`.
-
 
 ### 3.7 Inventario de dominio y aplicaciones
 
@@ -1679,7 +1670,6 @@ Responsabilidad: implementar los puertos del dominio y conectar con sistemas ext
 - `infrastructure/security/` contiene únicamente scripts de hardening; no contiene lógica de aplicación Python.
 - `infrastructure/scripts/` está marcado como **legacy**; para scripts canónicos ver `scripts/`.
 
-
 ### 3.8 Coexistencia de motores de búsqueda
 
 #### Resumen de la decisión
@@ -1706,16 +1696,16 @@ El laboratorio despliega **dos motores de búsqueda simultáneamente**: Elastics
 - Red: `soar_net`
 - Seguridad: `xpack.security.enabled=false` (necesario para evitar errores de *missing authentication credentials* en TheHive/Cortex).
 - Credenciales en `.env.full`:
- - `ELASTIC_USERNAME=elastic`
- - `ELASTIC_PASSWORD=ElasticLab2024SecurePass`
+  - `ELASTIC_USERNAME=elastic`
+  - `ELASTIC_PASSWORD=ElasticLab2024SecurePass`
 - Configuración de aplicaciones (templates renderizados a `runtime/config/` por `scripts/setup/render_configs.py`):
- - `infra/docker/config/templates/thehive.conf.template` → montado en `/etc/thehive/application.conf`
- - `infra/docker/config/templates/cortex.conf.template` → montado en `/etc/cortex/application.conf`
+  - `infra/docker/config/templates/thehive.conf.template` → montado en `/etc/thehive/application.conf`
+  - `infra/docker/config/templates/cortex.conf.template` → montado en `/etc/cortex/application.conf`
 - Scripts que interactúan con ES:
- - `scripts/setup/configure_es.py`
- - `scripts/setup/reset_cortex.py`
- - `scripts/setup/init_thehive.py`
- - `scripts/setup/init_shuffle_webhook.py`
+  - `scripts/setup/configure_es.py`
+  - `scripts/setup/reset_cortex.py`
+  - `scripts/setup/init_thehive.py`
+  - `scripts/setup/init_shuffle_webhook.py`
 
 #### OpenSearch (`soar_opensearch`)
 
@@ -1723,11 +1713,11 @@ El laboratorio despliega **dos motores de búsqueda simultáneamente**: Elastics
 - Red: `soar_net`
 - Seguridad: `plugins.security.disabled=true`
 - Credenciales en `.env.full`:
- - `OPENSEARCH_USERNAME=admin`
- - `OPENSEARCH_PASSWORD=<generado por make generate-secrets>`
+  - `OPENSEARCH_USERNAME=admin`
+  - `OPENSEARCH_PASSWORD=<generado por make generate-secrets>`
 - Servicios consumidores:
- - `shuffle-backend` (`SHUFFLE_OPENSEARCH_URL=http://opensearch:9200`)
- - `orborus` (`SHUFFLE_OPENSEARCH_URL=http://opensearch:9200`)
+  - `shuffle-backend` (`SHUFFLE_OPENSEARCH_URL=<http://opensearch:9200`>)
+  - `orborus` (`SHUFFLE_OPENSEARCH_URL=<http://opensearch:9200`>)
 
 #### Dependencias en Docker Compose
 
@@ -1745,10 +1735,10 @@ El laboratorio despliega **dos motores de búsqueda simultáneamente**: Elastics
 
 ```powershell
 # Elasticsearch
-curl -sf http://localhost:8200/_cluster/health
+curl -sf <http://localhost:8200/_cluster/health>
 
 # OpenSearch
-curl -sf http://localhost:8201/_cluster/health # OpenSearch escucha en 9200 interno, mapeado a 8201 en host según .env.full
+curl -sf <http://localhost:8201/_cluster/health> # OpenSearch escucha en 9200 interno, mapeado a 8201 en host según .env.full
 ```
 
 Para ver qué servicios usan cada motor, consultar:
@@ -1756,7 +1746,6 @@ Para ver qué servicios usan cada motor, consultar:
 - `infra/docker/compose/docker-compose.yml` (Elasticsearch)
 - `infra/docker/compose/docker-compose.opensearch.yml` (OpenSearch)
 - `infra/docker/compose/docker-compose.core.yml` (TheHive, Cortex, Shuffle)
-
 
 ### 3.9 Seguridad
 
@@ -1832,34 +1821,34 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 **Amenazas Principales:**
 
 1. **Ataques de Ransomware**
- - Encriptación de archivos
- - Exfiltración de datos
- - Disrupción del sistema
- - Impacto de negocio
+  - Encriptación de archivos
+  - Exfiltración de datos
+  - Disrupción del sistema
+  - Impacto de negocio
 
 2. **Amenazas Internas**
- - Insiders maliciosos
- - Exposición accidental de datos
- - Escalada de privilegios
- - Robo de datos
+  - Insiders maliciosos
+  - Exposición accidental de datos
+  - Escalada de privilegios
+  - Robo de datos
 
 3. **Ataques Externos**
- - Intrusión de red
- - Abuso de API
- - Denegación de servicio
- - Ataques a la cadena de suministro
+  - Intrusión de red
+  - Abuso de API
+  - Denegación de servicio
+  - Ataques a la cadena de suministro
 
 4. **Violaciones de Datos**
- - Acceso no autorizado
- - Fuga de datos
- - Violaciones de privacidad
- - Incumplimiento regulatorio
+  - Acceso no autorizado
+  - Fuga de datos
+  - Violaciones de privacidad
+  - Incumplimiento regulatorio
 
 #### Arquitectura de Seguridad
 
 **Zonas de Seguridad:**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Zona DMZ │
 │ Load Balancer │ Web Firewall │ SSL Termination │
@@ -1878,44 +1867,44 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 **Controles de Seguridad:**
 
 1. **Controles Preventivos**
- - Firewalls y segmentación de red
- - Validación y saneamiento de entrada
- - Mecanismos de control de acceso
- - Encriptación y protección de datos
+  - Firewalls y segmentación de red
+  - Validación y saneamiento de entrada
+  - Mecanismos de control de acceso
+  - Encriptación y protección de datos
 
 2. **Controles Detectivos**
- - Sistemas de detección de intrusiones
- - Monitoreo de seguridad y logging
- - Algoritmos de detección de anomalías
- - Analytics de comportamiento de usuario
+  - Sistemas de detección de intrusiones
+  - Monitoreo de seguridad y logging
+  - Algoritmos de detección de anomalías
+  - Analytics de comportamiento de usuario
 
 3. **Controles Correctivos**
- - Procedimientos de respuesta a incidentes
- - Mecanismos de recuperación de sistemas
- - Gestión de parches de seguridad
- - Herramientas de análisis forense
+  - Procedimientos de respuesta a incidentes
+  - Mecanismos de recuperación de sistemas
+  - Gestión de parches de seguridad
+  - Herramientas de análisis forense
 
 #### Seguridad de Infraestructura
 
 **Seguridad de Contenedores:**
 
 1. **Seguridad de Imágenes**
- - Escaneo de imágenes base
- - Evaluación de vulnerabilidades
- - Superficie de ataque mínima
- - Actualizaciones regulares
+  - Escaneo de imágenes base
+  - Evaluación de vulnerabilidades
+  - Superficie de ataque mínima
+  - Actualizaciones regulares
 
 2. **Seguridad en Runtime**
- - Aislamiento de contenedores
- - Límites de recursos
- - Políticas de red
- - Monitoreo en runtime
+  - Aislamiento de contenedores
+  - Límites de recursos
+  - Políticas de red
+  - Monitoreo en runtime
 
 3. **Seguridad de Orquestación**
- - Implementación de RBAC
- - Gestión de secrets
- - Segmentación de red
- - Logging de auditoría
+  - Implementación de RBAC
+  - Gestión de secrets
+  - Segmentación de red
+  - Logging de auditoría
 
 #### Estado de implementación de controles clave
 
@@ -1951,18 +1940,18 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 **Implementado:**
 
 1. **Autenticación JWT**
- - Tokens firmados con `HS256`
- - Secret gestionado por `JWT_SECRET_KEY` / fallback `API_AUTH_SECRET` en `.env.full`
- - Expiración configurable mediante `JWT_EXPIRATION_MINUTES` (default 60)
- - Endpoints `/auth/login` y `/auth/verify`
+  - Tokens firmados con `HS256`
+  - Secret gestionado por `JWT_SECRET_KEY` / fallback `API_AUTH_SECRET` en `.env.full`
+  - Expiración configurable mediante `JWT_EXPIRATION_MINUTES` (default 60)
+  - Endpoints `/auth/login` y `/auth/verify`
 
 **Futuro / No verificado en este despliegue:**
 
 2. **Autenticación Multi-Factor (MFA)**
- - Planificada: OTP basado en tiempo, SMS, tokens de hardware, biometría
+  - Planificada: OTP basado en tiempo, SMS, tokens de hardware, biometría
 
 3. **Single Sign-On (SSO)**
- - Planificado: SAML 2.0, OAuth 2.0 / OpenID Connect, LDAP/Active Directory
+  - Planificado: SAML 2.0, OAuth 2.0 / OpenID Connect, LDAP/Active Directory
 
 **Control de Acceso:**
 
@@ -2001,14 +1990,14 @@ La autenticación de la API se implementa mediante tokens JWT gestionados por `A
  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
  const wsUrl = `${protocol}//${window.location.host}/api/ws/logs`;
  ```
-- Si el cliente se accede por `https://soar.local`, la conexión usa `wss://soar.local/api/ws/logs`; si es por `http://localhost:8000`, usa `ws://localhost:8000/ws/logs`.
+- Si el cliente se accede por `<https://soar.local`>, la conexión usa `wss://soar.local/api/ws/logs`; si es por `<http://localhost:8000`>, usa `ws://localhost:8000/ws/logs`.
 - Nginx reenvía `/api/ws/logs` al backend y añade las cabeceras `Upgrade` y `Connection`.
 - **Consideraciones de seguridad**:
- - Usar siempre HTTPS/WSS en entornos no locales para evitar exposición del token y los logs.
- - Validar origen en el servidor (`Origin`/`Host`) antes de aceptar conexiones si se expone la API fuera de `localhost`.
- - Limitar el tamaño y frecuencia de mensajes para mitigar DoS.
- - No enviar credenciales, PII ni datos clasificados a través del canal de logs.
- - La reconexión es manual en `apps/web-management/script.js`; en producción se recomienda implementar reconexión con backoff y notificación de desconexión.
+  - Usar siempre HTTPS/WSS en entornos no locales para evitar exposición del token y los logs.
+  - Validar origen en el servidor (`Origin`/`Host`) antes de aceptar conexiones si se expone la API fuera de `localhost`.
+  - Limitar el tamaño y frecuencia de mensajes para mitigar DoS.
+  - No enviar credenciales, PII ni datos clasificados a través del canal de logs.
+  - La reconexión es manual en `apps/web-management/script.js`; en producción se recomienda implementar reconexión con backoff y notificación de desconexión.
 
 #### Credenciales de ejemplo y valores por defecto del laboratorio
 
@@ -2033,50 +2022,50 @@ La autenticación de la API se implementa mediante tokens JWT gestionados por `A
 **Gestión del Ciclo de Vida de Datos:**
 
 1. **Retención de Datos**
- - Políticas de retención automatizadas
- - Procedimientos de legal hold
- - Eliminación segura de datos
- - Documentación de cumplimiento
+  - Políticas de retención automatizadas
+  - Procedimientos de legal hold
+  - Eliminación segura de datos
+  - Documentación de cumplimiento
 
 2. **Privacidad de Datos**
- - Identificación y enmascaramiento de PII
- - Cumplimiento GDPR
- - Principios de minimización de datos
- - Privacidad por diseño
+  - Identificación y enmascaramiento de PII
+  - Cumplimiento GDPR
+  - Principios de minimización de datos
+  - Privacidad por diseño
 
 #### Seguridad de Aplicación
 
 **Ciclo de Vida de Desarrollo Seguro:**
 
 1. **Fase de Diseño**
- - Modelado de amenazas
- - Revisión de arquitectura de seguridad
- - Definición de requisitos de seguridad
- - Evaluación de impacto de privacidad
+  - Modelado de amenazas
+  - Revisión de arquitectura de seguridad
+  - Definición de requisitos de seguridad
+  - Evaluación de impacto de privacidad
 
 2. **Fase de Desarrollo**
- - Estándares de codificación segura
- - Procesos de revisión de código
- - Escaneo de análisis estático
- - Escaneo de vulnerabilidades de dependencias
+  - Estándares de codificación segura
+  - Procesos de revisión de código
+  - Escaneo de análisis estático
+  - Escaneo de vulnerabilidades de dependencias
 
 3. **Fase de Pruebas**
- - Automatización de pruebas de seguridad
- - Pruebas de penetración
- - Evaluación de vulnerabilidades
- - Pruebas de regresión de seguridad
+  - Automatización de pruebas de seguridad
+  - Pruebas de penetración
+  - Evaluación de vulnerabilidades
+  - Pruebas de regresión de seguridad
 
 4. **Fase de Despliegue**
- - Revisión de configuración de seguridad
- - Hardening de producción
- - Configuración de monitoreo de seguridad
- - Preparación de respuesta a incidentes
+  - Revisión de configuración de seguridad
+  - Hardening de producción
+  - Configuración de monitoreo de seguridad
+  - Preparación de respuesta a incidentes
 
 #### Respuesta a Incidentes
 
 **Proceso de Respuesta a Incidentes:**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Ciclo de Vida de Respuesta a Incidentes │
 ├─────────────────────────────────────────────────────────────┤
@@ -2089,22 +2078,22 @@ La autenticación de la API se implementa mediante tokens JWT gestionados por `A
 **Procedimientos de Respuesta:**
 
 1. **Respuesta a Ransomware**
- - Aislamiento inmediato
- - Preservación de evidencia
- - Protocolos de comunicación
- - Procedimientos de recuperación
+  - Aislamiento inmediato
+  - Preservación de evidencia
+  - Protocolos de comunicación
+  - Procedimientos de recuperación
 
 2. **Respuesta a Violación de Datos**
- - Medidas de contención
- - Evaluación de impacto
- - Procedimientos de notificación
- - Acciones de remediación
+  - Medidas de contención
+  - Evaluación de impacto
+  - Procedimientos de notificación
+  - Acciones de remediación
 
 3. **Respuesta a Incidente de Seguridad**
- - Triage y priorización
- - Procedimientos de investigación
- - Análisis forense
- - Requisitos de documentación
+  - Triage y priorización
+  - Procedimientos de investigación
+  - Análisis forense
+  - Requisitos de documentación
 
 #### Procedimientos Específicos de Respuesta a Ransomware
 
@@ -2141,7 +2130,7 @@ bash scripts/setup/notify.sh
 
 ```bash
 # 1. Restaurar desde backup limpio
-curl -X POST http://localhost:8000/backup/restore \
+curl -X POST <http://localhost:8000/backup/restore> \
  -H "Authorization: Bearer $TOKEN" \
  -H "Content-Type: application/json" \
  -d '{"name": "<clean_backup_name>"}'
@@ -2157,7 +2146,7 @@ soar-lab generate-secrets --env > .env.full
 
 #### Clasificación de Datos
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Clasificación de Datos │
 ├─────────────────────────────────────────────────────────────┤
@@ -2197,7 +2186,7 @@ El laboratorio está orientado hacia los siguientes marcos de referencia, pero *
 
 #### Vectores de Ataque
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Superficie de Ataque │
 ├─────────────────────────────────────────────────────────────┤
@@ -2314,7 +2303,7 @@ PERMISSIONS = {
 
 **Arquitectura de Red:**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Internet │
 ├─────────────────────────────────────────────────────────────┤
@@ -2418,27 +2407,18 @@ Las evidencias de validación incluyen:
 #### 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Seguridad de Shuffle**: https://shuffler.io/docs/security
-- **Documentación de Seguridad de TheHive**: https://docs.strangebee.com/thehive/admin-guide/security/
-- **Documentación de Seguridad de Cortex**: https://docs.strangebee.com/cortex/admin-guide/security/
-- **Documentación de Seguridad de MISP**: https://www.misp-project.org/guides/admin/
-- **Documentación de Seguridad de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html
-- **OWASP Top 10**: https://owasp.org/www-project-top-ten/
-- **Marco de Ciberseguridad NIST**: https://www.nist.gov/cyberframework
-- **Benchmarks CIS**: https://www.cisecurity.org/cis-benchmarks/
+- **Documentación de Seguridad de Shuffle**: <https://shuffler.io/docs/security>
+- **Documentación de Seguridad de TheHive**: <https://docs.strangebee.com/thehive/admin-guide/security/>
+- **Documentación de Seguridad de Cortex**: <https://docs.strangebee.com/cortex/admin-guide/security/>
+- **Documentación de Seguridad de MISP**: <https://www.misp-project.org/guides/admin/>
+- **Documentación de Seguridad de Elasticsearch**: <https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html>
+- **OWASP Top 10**: <https://owasp.org/www-project-top-ten/>
+- **Marco de Ciberseguridad NIST**: <https://www.nist.gov/cyberframework>
+- **Benchmarks CIS**: <https://www.cisecurity.org/cis-benchmarks/>
 - **Documentación de Arquitectura**: [3.1 Visión general de arquitectura](#31-visión-general-de-arquitectura)
 - **Guía de Usuario**: [docs/01-getting-started.md](01-getting-started.md)
 
 ---
-
-**Mejoras implementadas:**
-
-- Corregidas referencias a docs/core/ a rutas correctas (docs/01-getting-started.md, etc.)
-- Añadidos procedimientos detallados de hardening para cada componente (Shuffle, TheHive, Cortex, Elasticsearch, MISP, Nginx)
-- Documentados procedimientos específicos de respuesta a ransomware con 3 fases (detección, análisis, recuperación)
-- Añadida matriz de trazabilidad entre controles de seguridad y requisitos regulatorios (GDPR, SOC 2, ISO 27001, NIST
- CSF)
-
 
 ### 3.10 Matriz de versiones
 
@@ -2535,7 +2515,6 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 - Las imágenes `misp-core:v2.5.44` y `misp-modules:v3.0.9` están fijadas a etiquetas de versión; para mayor reproducibilidad se recomienda fijar a un digest SHA.
 - Las versiones de Shuffle (`2.2.1`) y TheHive (`3.5.2-1`) coinciden con las variables documentadas en `docs/03-api-and-integrations.md` y este documento (sección 3.10).
 
-
 ---
 
 #### 4. Validación
@@ -2585,116 +2564,7 @@ La validación se realiza mediante tests automatizados, health checks y verifica
 - [04-operations.md](04-operations.md)
 - [glossary.md](glossary.md)
 
-## 4. Validación
-
-### 4.1 Verificación
-
-La arquitectura se verifica mediante:
-
-- Pruebas de configuración Docker (`tests/integration/test_docker_runtime_status.py`)
-- Pruebas de runtime Docker (`tests/integration/test_docker_runtime_status.py`)
-- Pruebas de navegador (`tests/integration/test_docker_runtime_status.py`)
-- Health checks de cada servicio
-- Verificación de conectividad entre redes Docker
-
-### 4.2 Criterios de aceptación
-
-La arquitectura se considera válida cuando:
-
-- Todos los servicios inician correctamente
-- Los puertos configurados son accesibles
-- Las redes Docker permiten la comunicación requerida
-- Los volúmenes persistentes montan correctamente
-- Los servicios de logging y monitoreo funcionan
-- Los health checks pasan para todos los servicios
-
-### 4.3 Evidencias
-
-Las evidencias de validación incluyen:
-
-- Logs de Docker Compose (`docker compose up`)
-- Salida de `docker ps` mostrando contenedores en ejecución
-- Logs de health checks
-- Resultados de pruebas automatizadas
-- Capturas de pantalla de interfaces web accesibles
-
-## 5. Problemas
-
-### 5.1 Limitaciones
-
-- **Single-node Elasticsearch**: Configuración actual no soporta clustering
-- **Requisitos de recursos**: Mínimo 8GB RAM requerido para stack completo
-- **Windows/Hyper-V**: Restricciones en rangos de puertos debido a reservas de Hyper-V
-- **Escalabilidad**: Diseño actual no soporta alta disponibilidad nativa
-- **Persistencia**: Los volúmenes Docker requieren backup manual
-
-### 5.2 Riesgos o incidencias
-
-- **Pérdida de datos**: Si los volúmenes Docker no se respaldan regularmente
-- **Conflictos de puertos**: Puertos ya en uso en el host pueden causar fallos
-- **Dependencias de red**: Requiere conectividad a internet para pulls de imágenes
-- **Versiones de componentes**: Actualizaciones pueden romper compatibilidad
-- **Seguridad**: Configuración por defecto puede no ser adecuada para producción
-
-### 5.3 Recomendaciones / troubleshooting
-
-- **Backup**: Implementar backup automatizado de volúmenes persistentes
- ```bash
- # Crear backup vía API
- curl -X POST http://localhost:8000/backup/create \
- -H "Authorization: Bearer $TOKEN" \
- -H "Content-Type: application/json" \
- -d '{"name": "manual-backup"}'
- ```
-- **Procedimiento de Backup de Volúmenes**:
- - Los volúmenes Docker usan bind mounts a `runtime/data/`
- - Backup manual: Copiar directorio `runtime/data/` a ubicación segura
- - Backup automatizado: Llamar al endpoint `/api/backup/create` o programar tarea con `curl`
- - Restauración: Llamar al endpoint `/api/backup/restore` con el nombre del backup
-- **Monitoreo**: Configurar alertas para health checks y métricas de recursos
-- **Seguridad**: Revisar y hardening de configuración antes de despliegue en producción
-- **Documentación**: Mantener documentación actualizada con cambios de configuración
-- **Testing**: Ejecutar pruebas de configuración antes de cambios en Docker Compose
-
----
-
-#### Navegación
-
-- [Instalación y guía rápida](01-getting-started.md)
-- [API REST, endpoints e integraciones](03-api-and-integrations.md)
-- [Configuración, infraestructura, backups, troubleshooting](04-operations.md)
-- [Estrategia de pruebas y suite](05-testing.md)
-- [Objetivos, plan, riesgos, auditorías](06-project-management.md)
-- [Glosario central](glossary.md)
-- [Índice](index.md)
-## 6. Referencias
-
-- **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de Shuffle**: https://shuffler.io/docs
-- **Documentación de TheHive**: https://docs.strangebee.com/thehive/
-- **Documentación de Cortex**: https://docs.strangebee.com/cortex/
-- **Documentación de MISP**: https://www.misp-project.org/documentation/
-- **Documentación de Elasticsearch**: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
-- **Documentación de Docker Compose**: https://docs.docker.com/compose/
-- **Documentación de FastAPI**: https://fastapi.tiangolo.com/
-- **Documentación de Nginx**: https://nginx.org/en/docs/
-- **Documentación de Seguridad**: [3.9 Seguridad](#39-seguridad)
-- **Guía de Usuario**: [docs/01-getting-started.md](01-getting-started.md)
-- **Estrategia de Docker**: [3.5 Arquitectura Docker](#35-arquitectura-docker)
-
----
-
-**Mejoras implementadas:**
-
-- Corregidas referencias a docs/core/ a rutas correctas
-- Documentados procedimientos de backup de volúmenes en sección 5.3
-- Añadidos diagramas de secuencia Mermaid para flujos de integración en sección 3.4
-
-
----
-
-## Anexo: Diagramas Canónicos de Arquitectura y Flujos
-
+### 3.11 Anexo: Diagramas Canónicos de Arquitectura y Flujos
 
 Referencia TFM: complementa el Capítulo 4 (Desarrollo específico) y el Capítulo 2 (Estado del arte),
 y Anexo B (Playbook SOAR). Estos diagramas son la versión canónica extraída de
@@ -2704,7 +2574,7 @@ los de este anexo son los completos.
 
 ---
 
-### F.1. Arquitectura de Alto Nivel
+#### F.1. Arquitectura de Alto Nivel
 
 Diagrama de componentes principales y flujo de datos del sistema SOAR. Muestra
 los 23 contenedores Docker del laboratorio más el simulador SIEM (script Python,
@@ -2749,7 +2619,7 @@ Fuente: `README.md` e `infra/docker/compose/docker-compose*.yml`
 
 ---
 
-### F.2. Arquitectura de Despliegue Docker
+#### F.2. Arquitectura de Despliegue Docker
 
 Diagrama completo de la topología Docker: Nginx proxy, redes (soar_net, ti_net,
 logging_net) y conexiones entre los 23 servicios.
@@ -2757,7 +2627,7 @@ logging_net) y conexiones entre los 23 servicios.
 ```mermaid
 graph TD
  subgraph "Acceso recomendado (soar.local 443 / Nginx)"
- User -->|https://soar.local| Nginx
+ User -->|<https://soar.local|> Nginx
  Nginx -->|/| WebMgmt[Web Management]
  Nginx -->|/api/| LabAPI[Lab API]
  Nginx -->|/thehive/| TheHive
@@ -2829,7 +2699,7 @@ Fuente: este documento, línea 169
 
 ---
 
-### F.3. Arquitectura Hexagonal (Ports & Adapters)
+#### F.3. Arquitectura Hexagonal (Ports & Adapters)
 
 Diagrama de la arquitectura hexagonal del código Python: capas de dominio, aplicación,
 infraestructura e interfaces, con sus puertos y adaptadores.
@@ -2896,7 +2766,7 @@ Fuente: este documento, línea 1390
 
 ---
 
-### F.4. Diagrama de Contexto C4
+#### F.4. Diagrama de Contexto C4
 
 Modelo C4 de contexto mostrando los límites del sistema y las integraciones externas.
 
@@ -2936,7 +2806,7 @@ Fuente: `docs/04-operations.md` línea 1296
 
 ---
 
-### F.5. Flujo End-to-End de Alertas (Sequence Diagram)
+#### F.5. Flujo End-to-End de Alertas (Sequence Diagram)
 
 Diagrama de secuencia completo del flujo de una alerta desde el simulador SIEM hasta
 la indexación de métricas en Elasticsearch, pasando por Shuffle, TheHive, Cortex y MISP.
@@ -3007,7 +2877,7 @@ Fuente: `docs/04-operations.md` línea 1380
 
 ---
 
-### F.6. Árbol de Decisión del Playbook
+#### F.6. Árbol de Decisión del Playbook
 
 Flowchart del playbook SOAR mostrando la lógica de decisión: validación, creación de caso,
 análisis con Cortex, y branching entre contención (malicioso) y falso positivo (benigno).
@@ -3052,7 +2922,7 @@ Fuente: `docs/04-operations.md` línea 4302
 
 ---
 
-### F.7. Respuesta Automatizada (Sequence Diagram)
+#### F.7. Respuesta Automatizada (Sequence Diagram)
 
 Diagrama de secuencia del zoom sobre la rama de decisión del playbook: tras
 `calc_decision`, el workflow ejecuta contención (malicioso) o marca falso positivo
@@ -3087,7 +2957,7 @@ Fuente: este documento, línea 519
 
 ---
 
-### F.8. Cronograma de Objetivos SMART (Gantt)
+#### F.8. Cronograma de Objetivos SMART (Gantt)
 
 Diagrama Gantt del cronograma de los 20 objetivos SMART distribuidos en 4 fases
 (planificación inicial 12 semanas, aumentada a 15 tras diseño, ejecución real 18 semanas,
@@ -3098,26 +2968,28 @@ gantt
  title Cronograma de Objetivos SMART - SOAR Ransomware Lab
  dateFormat YYYY-MM-DD
  section Fase 1 - Investigación
- Objetivo 1 - Laboratorio desplegado :active, obj1, 2026-04-27, 7d
+ Literatura y requisitos :active, inv1, 2026-04-27, 21d
+ section Fase 2 - Diseño
+ Arquitectura y contratos :inv2, after inv1, 21d
+ section Fase 3 - Desarrollo
+ Objetivo 1 - Laboratorio desplegado :obj1, 2026-06-08, 7d
  Objetivo 7 - Seguridad del Entorno :obj7, after obj1, 4d
  Objetivo 8 - Automatización configurada :obj8, after obj7, 4d
  Objetivo 17 - API del Laboratorio :obj17, after obj8, 3d
  Objetivo 18 - CLI del Laboratorio :obj18, after obj17, 3d
- section Fase 2 - Diseño
- Objetivo 2 - Playbook E2E :obj2, 2026-05-18, 7d
+ Objetivo 2 - Playbook E2E :obj2, 2026-06-15, 7d
  Objetivo 5 - Integración SIEM :obj5, after obj2, 4d
  Objetivo 6 - Contención simulada :obj6, after obj5, 4d
  Objetivo 19 - Sitio de Documentación :obj19, after obj6, 3d
  Objetivo 20 - Interfaz Web de Gestión :obj20, after obj19, 3d
- section Fase 3 - Desarrollo
- Objetivo 3 - Métricas MTTR :obj3, 2026-06-08, 7d
+ section Fase 4 - Validación
+ Objetivo 3 - Métricas MTTR :obj3, 2026-07-20, 7d
  Objetivo 9 - Pruebas Atómicas :obj9, after obj3, 5d
  Objetivo 10 - Pruebas de Integración :obj10, after obj9, 7d
  Objetivo 11 - Pruebas de Seguridad :obj11, after obj10, 5d
  Objetivo 12 - Pruebas de Rendimiento :obj12, after obj11, 5d
  Objetivo 13 - Pruebas de Producción :obj13, after obj12, 5d
  Objetivo 14 - KPIs y Análisis :obj14, after obj13, 8d
- section Fase 4 - Validación
  Objetivo 4 - Documentación técnica :obj4, 2026-07-20, 14d
  Objetivo 15 - Preparación defensa TFM :obj15, after obj4, 14d
  Objetivo 16 - Evidencia aprobación :obj16, after obj15, 14d
@@ -3127,7 +2999,7 @@ Fuente: `docs/06-project-management.md` (Anexo: Objetivos y Metodología, cronog
 
 ---
 
-### F.9. Roadmap Semanal (Gantt)
+#### F.9. Roadmap Semanal (Gantt)
 
 Diagrama Gantt simplificado del roadmap semanal con ruta crítica marcada.
 
@@ -3163,7 +3035,7 @@ Fuente: `docs/06-project-management.md` (Anexo: Objetivos y Metodología, Gantt 
 
 ---
 
-### F.10. Matriz de Priorización de Riesgos
+#### F.10. Matriz de Priorización de Riesgos
 
 Diagrama de la matriz de riesgos del proyecto, clasificados por probabilidad e impacto.
 
@@ -3235,13 +3107,13 @@ Fuente: `docs/06-project-management.md` línea 1381 (tabla detallada R1-R24, fue
 
 ---
 
-### F.11. Caso de Estudio: GMinst4ll (Flujo de Infección)
+#### F.11. Caso de Estudio: GMinst4ll (Flujo de Infección)
 
 Diagrama del flujo completo de infección del malware **GMinst4ll 2.03.rar** (884 MB,
 InfoStealer/Loader), analizado forensemente entre el 11-13 de junio de 2026 en un
 sandbox aislado (Ubuntu 20.04 + Windows Server 2016 con Vagrant, red aislada, Sysmon).
 El caso de estudio valida el laboratorio SOAR con IoCs reales: 4 hashes SHA256, 7 URLs
-C2, 9 IPs, 1 clave de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK.
+C2, 6 IPs C2, 3 claves de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK.
 
 | Atributo | Valor |
 |----------|-------|
@@ -3250,7 +3122,6 @@ C2, 9 IPs, 1 clave de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&C
 | Repo C2 | `github.com/boycots563/wlt56` — público y activo, 253 commits (ago 2026) |
 | Operador Telegram | @KJL4999S (Chat ID 6820575341, bot `buchstys4_bot` ID 7675556882) |
 | Sofisticación | RAR anidado, ConfuserEx, servicios legítimos para C2 |
-
 
 ```mermaid
 graph TD
@@ -3399,7 +3270,7 @@ Fuente: `github.com/alesanfe/gminst4ll-forensics` (README.md, 01_INFORME_PRINCIP
 
 ---
 
-### F.12. Pipeline SOAR para IoCs de GMinst4ll
+#### F.12. Pipeline SOAR para IoCs de GMinst4ll
 
 Diagrama del flujo concreto de los IoCs de GMinst4ll a través del pipeline SOAR,
 mostrando qué analyzers procesan cada tipo de IoC, qué resultados devuelven y cómo se
@@ -3414,9 +3285,9 @@ graph TD
  subgraph Ingesta["Ingesta TC-33"]
    A[4 hashes SHA256<br/>d70c31b0 / a75def53<br/>a50e0785 / eabe4c16] --> B[Webhook Shuffle]
    A2[7 URLs C2<br/>Pastebin / Dropbox / Reddit<br/>Telegram / GitHub / MediaFire] --> B
-   A3[9 IPs<br/>172.66 / 104.20 / 162.125<br/>151.101 x4 / 149.154 x2] --> B
+   A3[6 IPs C2<br/>172.66 / 104.20 / 162.125<br/>151.101 x2 / 149.154] --> B
    A4[2 Telegram<br/>Bot 7675556882<br/>Chat 6820575341] --> B
-   A5[1 Registry<br/>HKLM Winlogon UserInit] --> B
+   A5[3 Registry keys<br/>Winlogon UserInit<br/>EnableLUA / RunOnceEx] --> B
    A6[7 MITRE ATT&CK<br/>T1566.002 / T1059.001<br/>T1547.001 / T1562.001<br/>T1056.001 / T1102 / T1567.002] --> B
  end
  subgraph Cortex["Cortex - analyzers por tipo de IoC"]
@@ -3482,16 +3353,16 @@ contención simulada vía `POST /api/v1/contain`.
 
 | Subtest TC-33 | Tipo IoC | Analyzer Cortex | Resultado esperado | Impacto score |
 |---------------|----------|-----------------|--------------------|---------------|
-| TC-33-01 | Hash SHA256 GMinst4ll | Hashdd + VirusShare | Reputation maliciosa | +base |
-| TC-33-02 | Hash SHA256 TREZ_cor | Hashdd + VirusShare | Sin reputation | +base |
-| TC-33-03 | Hash SHA256 SystemSP | Hashdd + VirusShare | Sin reputation | +base |
-| TC-33-04 | Hash SHA256 appy_patched | Hashdd + VirusShare | Reputation maliciosa | +base |
-| TC-33-05 | URLs C2 (7) | — (no analyzer) | Indexadas en ES | +base |
-| TC-33-06 | Dominios (6) | GoogleDNS resolve | CDN legitimo | +0 |
-| TC-33-07 | IPs (9) | DShield + Mnemonic pDNS | IP limpia + PDNS C2 | +10 |
-| TC-33-08 | Telegram (Bot + Chat) | — (no analyzer) | Indexado en ES | +base |
-| TC-33-09 | Registry UserInit | — (no analyzer) | Indexado en ES | +base |
-| TC-33-10 | MITRE ATT&CK (7) | — (no analyzer) | Tags en TheHive | +base |
+| TC-33-01 | Descarga de 8 muestras reales, verificación SHA256, borrado | — (sin analyzer) | Hashes verificados | — |
+| TC-33-02 | Hash SHA256 TREZ_cor (loader) | Hashdd + VirusShare | Sin reputation | +base |
+| TC-33-03 | Hash SHA256 Pulsar RAT | Hashdd + VirusShare | Reputation maliciosa | +base |
+| TC-33-04 | URLs C2 (Pastebin, Dropbox, GitHub) | — (no analyzer) | Indexadas en ES | +base |
+| TC-33-05 | Dominios C2 (6) | GoogleDNS resolve | CDN legitimo | +0 |
+| TC-33-06 | IPs C2 (6) | DShield + Mnemonic pDNS | IP limpia + PDNS C2 | +10 |
+| TC-33-07 | Telegram (Bot + Chat) | — (no analyzer) | Indexado en ES | +base |
+| TC-33-08 | Registry persistence (3 claves) | — (no analyzer) | Indexado en ES | +base |
+| TC-33-09 | MITRE ATT&CK (7) | — (no analyzer) | Tags en TheHive | +base |
+| TC-33-10 | Multi-IoC (todos en una ejecución) | Todos | Validación integrada | +base |
 
 Las consultas SIEM para hunting incluyen `pastebin.com` (o URLs específicas
 `/raw/FgUMQ9vE`, `/raw/E3s5iTTz`), `dropbox.com/scl/fi/` (path SystemSP.rar),
@@ -3506,12 +3377,11 @@ Apéndice A con origen exacto de cada IoC: archivo fuente + línea). Pipeline SO
 
 ---
 
-## Anexo: Desarrollo Específico
+### 3.12 Anexo: Desarrollo Específico
 
+#### 4.1. Desarrollo de software
 
-### 4.1. Desarrollo de software
-
-### 4.1.1. Identificación de requisitos
+#### 4.1.1. Identificación de requisitos
 
 El problema abordado es la gestión manual de incidentes de ransomware en equipos de respuesta (SOC y CSIRT), donde la fragmentación de herramientas provoca tiempos de respuesta elevados, variabilidad entre analistas y dificultad para generar evidencias trazables. El contexto de uso comprende organizaciones con recursos limitados (pymes, universidades y CSIRTs en formación) que no pueden asumir licencias comerciales de plataformas SOAR propietarias. Los requisitos se han identificado a partir de la literatura revisada en el Capítulo 2, los marcos de referencia (NIST SP 800-61, ISO/IEC 27035, MITRE ATT&CK) y la experiencia en despliegue de laboratorios reproducibles con herramientas open source.
 
@@ -3569,7 +3439,7 @@ Los requisitos de integración especifican las conexiones entre componentes del 
 - RI-04: Integración opcional con MISP. Intercambio de indicadores de amenazas con MISP para enriquecimiento
   adicional, sin ser requisito para la ejecución del playbook E2E.
 
-### Tabla 3: Matriz de Trazabilidad de Requisitos
+#### Tabla 4: Matriz de Trazabilidad de Requisitos
 
 La matriz de trazabilidad conecta cada requisito con su componente implementador, prioridad y método de verificación:
 
@@ -3595,9 +3465,9 @@ La matriz de trazabilidad conecta cada requisito con su componente implementador
 | RI-03  | Threat intelligence | Cortex    | Media     | Verificación de analyzers libres                 |
 | RI-04  | MISP (opcional)    | MISP       | Baja      | `docker-compose.misp.yml` disponible             |
 
-La **Tabla 4** resume el estado de cumplimiento de los requisitos.
+La **Tabla 5** resume el estado de cumplimiento de los requisitos.
 
-### Tabla 4: Estado de Cumplimiento de Requisitos
+#### Tabla 5: Estado de Cumplimiento de Requisitos
 
 | ID     | Tipo   | Requisito                     | Métrica de Verificación  | Estado             |
 |--------|--------|-------------------------------|--------------------------|--------------------|
@@ -3621,13 +3491,13 @@ La **Tabla 4** resume el estado de cumplimiento de los requisitos.
 | RI-03  | **I**  | Threat intelligence           | Hashdd_Status, IP-API, DShield, Mnemonic pDNS, GoogleDNS, DomainMailSPFDMARC, ValidateObservable | Cumplido  |
 | RI-04  | **I**  | MISP (opcional)               | `docker-compose.misp.yml` | Opcional          |
 
-### 4.1.2. Descripción de la herramienta software desarrollada
+#### 4.1.2. Descripción de la herramienta software desarrollada
 
 Arquitectura General del Sistema
 
 El laboratorio combina dos patrones arquitectónicos. El código Python sigue una arquitectura hexagonal (ports and adapters) que aísla el dominio de los detalles técnicos: `domain/` no importa nada de `infrastructure/`, los puertos definen qué operaciones necesita el dominio y los adaptadores las implementan contra tecnologías concretas. Pydantic (Pydantic, 2024) valida los payloads en los límites. El beneficio es doble: en tests, los adaptadores se mockean sin tocar el dominio; en producción, sustituir un proveedor (por ejemplo, Elasticsearch por OpenSearch) solo requiere reescribir un adaptador.
 
-Para la infraestructura Docker se emplea una arquitectura en capas que mantiene la lógica de negocio desacoplada de las implementaciones concretas. La **Figura 3** muestra la arquitectura general y la **Figura 4** el despliegue Docker Compose, ambos en formato Mermaid canónico en el **Anexo F** (sección F.1).
+Para la infraestructura Docker se emplea una arquitectura en capas que mantiene la lógica de negocio desacoplada de las implementaciones concretas. La **Figura 3** muestra la arquitectura general y la **Figura 4** el despliegue Docker Compose, ambos en formato Mermaid canónico en el **Anexo F** (secciones F.2 y F.3).
 
 Flujo General del Sistema
 
@@ -3651,7 +3521,7 @@ graph TD
     L --> M[Análisis de Resultados]
 ```
 
-#### Arquitectura de Código Python
+##### Arquitectura de Código Python
 
 El código en `src/soar_lab/` se organiza según el patrón hexagonal: el dominio en el centro, aislado de infraestructura y frameworks. Los diagramas canónicos completos están en el **Anexo F** (secciones F.2, F.3 y F.4).
 
@@ -3717,7 +3587,7 @@ Las capas son:
 - `db/`: inicialización y gestión de transacciones de base de datos.
 - `logging/`: wrapper de logger estructurado.
 
-#### Arquitectura de Despliegue
+##### Arquitectura de Despliegue
 
 La infraestructura se organiza en cuatro capas:
 
@@ -3785,9 +3655,9 @@ La capa de datos incluye Elasticsearch (Elastic, 2024; Elastic, n.d.) para TheHi
 
 La infraestructura se define con varios archivos Docker Compose (Docker Inc., 2024) que se combinan para desplegar el sistema completo. El archivo principal `docker-compose.yml` define cuatro redes (perimetral bridge, interna soar_net, inteligencia ti_net, monitoreo logging_net) y los volúmenes persistentes, e incluye Elasticsearch. El archivo `docker-compose.core.yml` contiene Redis, TheHive, Cortex, Shuffle, Orborus, Network Watcher y Tenzir, con verificaciones de salud, límites de recursos y dependencias. Los archivos complementarios añaden: `docker-compose.api.yml` (API FastAPI, docs-site, web-management y Nginx), `docker-compose.misp.yml` (MISP, misp-db y misp-modules) (MISP Project, 2024), `docker-compose.opensearch.yml` (OpenSearch y OpenSearch Dashboards) (OpenSearch Project, 2024) y `docker-compose.logging.yml` (Loki, Promtail, Grafana, PostgreSQL y Grafana Renderer).
 
-La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging (Grafana, Loki y Promtail conectan además a soar_net para recoger datos de los servicios). Esta separación limita el movimiento lateral en caso de compromiso. Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio; los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 5** detalla la configuración de recursos.
+La segmentación de redes sigue un modelo por zonas de seguridad: la red bridge es accesible desde el host, soar_net (10.100.0.0/16) conecta los componentes SOAR, ti_net (172.22.0.0/16, red interna) vincula Elasticsearch, Redis, Shuffle y la API, y logging_net (172.23.0.0/16) aísla el stack de logging (Grafana, Loki y Promtail conectan además a soar_net para recoger datos de los servicios). Esta separación limita el movimiento lateral en caso de compromiso. Los volúmenes usan enlaces al directorio runtime con subdirectorios por servicio; los datos sobreviven a reinicios y pueden migrarse copiando ese directorio. La **Tabla 6** detalla la configuración de recursos.
 
-### Tabla 5: Configuración de Recursos Docker
+#### Tabla 6: Configuración de Recursos Docker
 
 | Servicio             | CPU Límite | Memoria Límite | CPU Reserva | Memoria Reserva | Health Check |
 |----------------------|------------|----------------|-------------|-----------------|--------------|
@@ -3855,9 +3725,9 @@ graph TD
 
 TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024) con plantillas especializadas para ransomware, asignación de tareas y registro de acciones. Su integración con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
 
-Cortex (v3.2.0-1) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: Hashdd_Status (hashes), IP-API y DShield (IPs), GoogleDNS y DomainMailSPFDMARC (dominios), Mnemonic pDNS (passive DNS) y ValidateObservable (validación). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 6** lista los analyzers con su tipo y uso en el playbook.
+Cortex (v3.2.0-1) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: Hashdd_Status (hashes), IP-API y DShield (IPs), GoogleDNS y DomainMailSPFDMARC (dominios), Mnemonic pDNS (passive DNS) y ValidateObservable (validación). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 7** lista los analyzers con su tipo y uso en el playbook.
 
-### Tabla 6: Analyzers Cortex Configurados
+#### Tabla 7: Analyzers Cortex Configurados
 
 | Analyzer              | Tipo     | API key | Uso en playbook   |
 |-----------------------|----------|---------|-------------------|
@@ -3873,7 +3743,7 @@ La selección prioriza analyzers libres sin API key (RF-02). Todos están integr
 
 Shuffle (v2.2.1) orquesta los flujos mediante una interfaz visual de bloques (Shuffle Tools, 2024). Orborus ejecuta workflows en paralelo entre workers y gestiona reintentos automáticos. La ejecución condicional y la programación de tareas permiten adaptar el flujo al contexto del incidente.
 
-#### Scripts de Automatización Desarrollados
+##### Scripts de Automatización Desarrollados
 
 ```mermaid
 ---
@@ -3950,13 +3820,13 @@ graph TD
     SF2 --> P3
 ```
 
-La automatización se organiza en siete capacidades. El **provisionamiento** genera secretos, renderiza configuración desde plantillas, inicializa TheHive/Cortex/Shuffle y instala los analyzers de Cortex junto con los IoCs en MISP, de forma que un único comando (`make up`) deja el laboratorio operativo. La **orquestación de workflows** define el playbook completo (46 nodos, 60 ramas) y cablea cada integración; 21 scripts Python embebidos se ejecutan dentro de Shuffle para normalizar, decidir y enriquecer.
+La automatización se organiza en siete capacidades. El **provisionamiento** genera secretos, renderiza configuración desde plantillas, inicializa TheHive/Cortex/Shuffle y instala los analyzers de Cortex junto con los IoCs en MISP, de forma que un único comando (`make up`) deja el laboratorio operativo. La **orquestación de workflows** define el playbook completo (46 nodos, 61 ramas) y cablea cada integración; 25 scripts Python embebidos se ejecutan dentro de Shuffle para normalizar, decidir y enriquecer.
 
 La **simulación** genera alertas de ransomware con IoCs realistas (hashes SHA256 de advisories CISA, IPs C2, técnicas MITRE ATT&CK) y las envía al webhook de Shuffle vía HTTP, permitiendo configurar tipo, volumen y frecuencia. El **mantenimiento** limpia ejecuciones stale de Shuffle y casos de TheHive, hace warmup del orquestador antes de los tests, espera a que los workflows terminen para sincronizar los tests E2E y verifica la integridad de las imágenes Docker.
 
-La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing, control de calidad y terminología de la documentación, y una revisión holística del proyecto en 15 dimensiones. La **seguridad operacional** preserva y restaura las credenciales de los servicios entre resets, evitando rotaciones manuales de API keys.
+La **observabilidad** calcula KPIs (MTTR, percentiles P50/P90, medias, desviaciones) desde los logs y Elasticsearch, los exporta a CSV y los visualiza en dashboards de Grafana; genera además informes automáticos de los tests E2E. La **calidad y CI** ejecuta análisis estático (bandit, ruff, pylint, radon, vulture), mutation testing, control de calidad y terminología de la documentación, y una revisión holística del proyecto en 16 dimensiones. La **seguridad operacional** preserva y restaura las credenciales de los servicios entre resets, evitando rotaciones manuales de API keys.
 
-#### Sistema de Monitoreo
+##### Sistema de Monitoreo
 
 ```mermaid
 ---
@@ -3996,9 +3866,9 @@ graph TD
 
 El monitoreo usa Loki (Grafana Labs, 2024b), Promtail (Grafana Labs, 2024c), Grafana (Grafana Labs, 2024) con PostgreSQL como base de datos y Grafana Renderer para exportación de paneles. Promtail descubre automáticamente todos los contenedores vía Docker socket (`docker_sd_configs`) y los envía a Loki. El workflow de Shuffle indexa métricas en Elasticsearch (índice `soar-metrics`). Grafana consulta tres datasources: Loki para logs, Elasticsearch para KPIs y la API FastAPI para datos en tiempo real, usando PostgreSQL para su configuración.
 
-El dashboard de Grafana (`SOAR KPI Dashboard`) implementa 15 paneles con las métricas reales del proyecto: MTTR (medio, P50, P90, max/min, rango, percentiles P50/P75/P90/P95), total de alertas procesadas, alertas críticas (severity=3), tasa de éxito por tipo de alerta, tasa de éxito por servicio (TheHive/Cortex/MISP), tasa de éxito por severidad, alertas por severidad, throughput por hora, evolución temporal de MTTR, evolución de alertas por tipo y comparación de MTTR por tipo de alerta. La **Tabla 7** resume las métricas con sus umbrales.
+El dashboard de Grafana (`SOAR KPI Dashboard`) implementa 15 paneles con las métricas reales del proyecto: MTTR (medio, P50, P90, max/min, rango, percentiles P50/P75/P90/P95), total de alertas procesadas, alertas críticas (severity=3), tasa de éxito por tipo de alerta, tasa de éxito por servicio (TheHive/Cortex/MISP), tasa de éxito por severidad, alertas por severidad, throughput por hora, evolución temporal de MTTR, evolución de alertas por tipo y comparación de MTTR por tipo de alerta. La **Tabla 8** resume las métricas con sus umbrales.
 
-### Tabla 7: Métricas del Dashboard de Grafana
+#### Tabla 8: Métricas del Dashboard de Grafana
 
 | Categoría          | Métrica              | Objetivo       | Panel |
 |--------------------|----------------------|----------------|-------|
@@ -4020,15 +3890,15 @@ El dashboard de Grafana (`SOAR KPI Dashboard`) implementa 15 paneles con las mé
 
 El stack se inicia con `make up` y la interfaz de Grafana está disponible en el puerto configurado con credenciales del archivo de entorno.
 
-### 4.1.3. Evaluación
+#### 4.1.3. Evaluación
 
-#### 4.1.3.1. Diseño Experimental
+##### 4.1.3.1. Diseño Experimental
 
 La evaluación compara la respuesta manual con la automatizada SOAR. La variable independiente es el tipo de respuesta; la dependiente, el MTTR en segundos (desde recepción de la alerta hasta contención simulada). Las variables controladas comprenden el entorno Docker Compose, el hardware, la configuración de los componentes y el conjunto de alertas.
 
 **Justificación del baseline manual.** El valor de 3600 s (1 hora) se fundamenta en datos de la industria. CrowdStrike establece el benchmark ideal 1-10-60: detectar en 1 minuto, investigar en 10 y contener en 60 (CrowdStrike, 2021), aunque la media real de las organizaciones encuestadas es de 16 horas. ReliaQuest reporta un MTTR tradicional de 2.3 días sin automatización (ReliaQuest, 2024). La SANS SOC Survey 2025 sitúa el tiempo mediano de triaje en 260 minutos (SANS Institute, 2025). El valor de 3600 s adoptado se alinea con el benchmark de CrowdStrike y es conservador frente a las medias reales, evitando sobreestimar la reducción lograda.
 
-#### 4.1.3.2. Procedimiento de Evaluación
+##### 4.1.3.2. Procedimiento de Evaluación
 
 En la respuesta SOAR, Shuffle recibe la alerta por webhook, clasifica el incidente, lanza los analyzers de Cortex en paralelo, crea el caso en TheHive mediante API y activa la contención simulada si el score supera el umbral, sin intervención del analista durante la ejecución. El baseline manual (3600 s) se fundamenta en benchmarks de la industria (sección 4.1.3.1) y no se ejecuta experimentalmente.
 
@@ -4040,17 +3910,21 @@ Comandos de ejecución:
 - `make test-e2e-tc01` (escenario malicioso, 11 subtests)
 - `make test-e2e-tc02` (escenario benigno / falso positivo, 5 subtests)
 - `make test-e2e-tc03` (casos de borde E2E)
-- `make test-e2e` (suite completa: 39 TCs E2E + 5 tests de KPI)
+- `make test-e2e` (suite completa: 40 TCs E2E = 34 funcionales + 6 KPI)
 - `make simulate-batch N=50` (envío de lote de 50 alertas para experimentos)
 - `make metrics` (cálculo de KPIs y exportación a CSV)
 
 Los resultados experimentales se almacenan en `reports/e2e/` y `reports/validation/results/kpis.csv`.
 
-#### 4.1.3.3. Resultados Experimentales
+##### 4.1.3.3. Resultados Experimentales
 
 El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, todas con alertas maliciosas (45 ransomware, 2 RAT, 2 troyano, 1 infostealer). La **Figura 6** muestra la comparación visual del MTTR manual vs automatizado, donde se aprecia la drástica reducción de 3600 s a 277.15 s (92.3 %). El cumplimiento de objetivos resume los umbrales definidos frente a los valores medidos:
 
-### Tabla 8: Cumplimiento de Objetivos del Experimento
+![Figura 6: Resultados de MTTR (manual vs automatizado)](thesis/figures/Fig5_1_mttr_results.png)
+
+**Figura 6**: Comparación visual del MTTR manual vs automatizado sobre 50 ejecuciones del playbook E2E.
+
+#### Tabla 9: Cumplimiento de Objetivos del Experimento
 
 | Objetivo | Umbral | Valor medido | Cumple |
 |----------|--------|--------------|--------|
@@ -4060,9 +3934,9 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 | Dataset (n ejecuciones) | ≥ 50 | 50 | Sí |
 | Reducción MTTR vs manual | ≥ 50 % | 92.3 % | Sí |
 
-**Cumplimiento global: 3 de 5 objetivos.** La **Tabla 9** presenta los resultados detallados contrastando la respuesta manual estimada con la SOAR automatizada.
+**Cumplimiento global: 3 de 5 objetivos.** La **Tabla 10** presenta los resultados detallados contrastando la respuesta manual estimada con la SOAR automatizada.
 
-### Tabla 9: Resultados Experimentales Detallados
+#### Tabla 10: Resultados Experimentales Detallados
 
 | Métrica                 | Manual (estimado) | SOAR (n=50)  | Reducción |
 |-------------------------|-------------------|--------------|-----------|
@@ -4074,7 +3948,7 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 
 Las métricas siguientes son específicas del sistema SOAR automatizado, sin equivalente en la respuesta manual:
 
-### Tabla 9b: Métricas Específicas del Sistema SOAR
+#### Tabla 10b: Métricas Específicas del Sistema SOAR
 
 | Métrica                 | SOAR (n=50)  |
 |-------------------------|--------------|
@@ -4087,7 +3961,7 @@ Las métricas siguientes son específicas del sistema SOAR automatizado, sin equ
 
 La tasa de éxito del 100 % (50/50) y la contención del 92.0 % (46/50 con score >= 80) indican que la automatización no sacrifica calidad por velocidad. El score promedio de 96.2/100 confirma el motor de scoring basado en threat intelligence (Cortex Project, 2024; MISP Project, 2024; Tenzir, 2024; Grafana Labs, 2024b; MITRE, 2025). El tiempo mínimo fue 65.38 s.
 
-La **Figura 7** muestra los tiempos medios por componente del workflow y las tasas de éxito por tipo de alerta. En los tiempos por fase se aprecia que la creación de caso (2773.48 s) y el análisis de IoCs (2393.46 s) dominan el tiempo acumulado, mientras que la contención (422.0 s) y el triaje (103.92 s) son relativamente rápidos. En las tasas de éxito, el sistema mantiene 100 % en todos los tipos procesados (ransomware, RAT, troyano, infostealer). La **Tabla 10** detalla estas fases:
+La **Figura 7** muestra los tiempos medios por componente del workflow y las tasas de éxito por tipo de alerta. En los tiempos por fase se aprecia que la creación de caso (2773.48 s) y el análisis de IoCs (2393.46 s) dominan el tiempo acumulado, mientras que la contención (422.0 s) y el triaje (103.92 s) son relativamente rápidos. En las tasas de éxito, el sistema mantiene 100 % en todos los tipos procesados (ransomware, RAT, troyano, infostealer). La **Tabla 11** detalla estas fases:
 
 ![Figura 7a: Tiempos por componente del workflow](thesis/figures/mttr_by_phase.png)
 
@@ -4097,7 +3971,7 @@ La **Figura 7** muestra los tiempos medios por componente del workflow y las tas
 
 **Figura 7b**: Tasas de éxito por tipo de alerta durante las 50 ejecuciones E2E, mostrando 100 % de éxito en todos los tipos procesados.
 
-### Tabla 10: Análisis por Componente de Tiempo
+#### Tabla 11: Análisis por Componente de Tiempo
 
 | Componente             | SOAR (n=50) | % del total |
 |------------------------|-------------|-------------|
@@ -4123,7 +3997,7 @@ El verdict fue *malicious* en 13 casos (score medio 97.3) y *suspicious* en 37 (
 
 **Figura 9**: Distribución de decisiones del workflow (contain vs observe) sobre las 50 ejecuciones. El verdict subyacente fue *malicious* en 13 casos y *suspicious* en 37.
 
-La **Figura 5** muestra el estado de los jobs de Cortex: 255 de 257 jobs se completaron correctamente (99.2 %), con 2 fallos atribuibles a timeouts puntuales en analyzers externos. Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones, completándose 50/50 workflows y 50/50 casos en TheHive. El workflow incluye 46 nodos (25 ejecutados en las 50 runs) y la automatización fue del 100 %, sin intervención humana.
+La **Figura 5** muestra el estado de los jobs de Cortex: 255 de 257 jobs se completaron correctamente (99.2 %), con 2 fallos atribuibles a timeouts puntuales en analyzers externos. Los 10 servicios críticos estuvieron healthy en el 100 % de las ejecuciones, completándose 50/50 workflows y 50/50 casos en TheHive. El workflow incluye 46 nodos definidos (49 ejecutados, 25 scripts Python embebidos) y la automatización fue del 100 %, sin intervención humana.
 
 ![Figura 5: Estado de jobs de Cortex](thesis/figures/cortex_job_status.png)
 
@@ -4131,9 +4005,9 @@ La **Figura 5** muestra el estado de los jobs de Cortex: 255 de 257 jobs se comp
 
 El consumo medido con `docker stats` se mantuvo dentro de los límites configurados. Elasticsearch (2.28 GiB) y OpenSearch (2.58 GiB) fueron los servicios con mayor consumo de memoria; Tenzir mostró el mayor uso de CPU (15.54 %). Ningún contenedor superó su límite, confirmando la viabilidad en un host con 16 GiB RAM. La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) se detalla en el **Anexo D** (sección D.1).
 
-#### 4.1.3.4. Evaluación de Calidad del Sistema
+##### 4.1.3.4. Evaluación de Calidad del Sistema
 
-El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2233 tests coleccionados, 1905 seleccionados, 328 deselected, pirámide, 9 marcadores pytest, coverage 84.6 %, quality gates, 39 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
+El laboratorio cumple los requisitos funcionales y de calidad, aunque dos umbrales de rendimiento (MTTR P50 y P90) no se alcanzaron (§4.1.3.3). La cobertura de tests se verifica con `make test-coverage` en `reports/coverage/`. La estrategia de testing (2233 tests coleccionados, 1905 seleccionados, 328 deselected, pirámide, 16 marcadores pytest, coverage 84.6 %, quality gates, 40 TCs E2E) se detalla en el **Anexo E** (sección E.1). La validación consolidada (Quality Score 92.2/100, HPR 96.0/100) está en el **Anexo D** (sección D.1).
 
 Comandos de prueba y calidad disponibles:
 
@@ -4149,13 +4023,13 @@ Comandos de prueba y calidad disponibles:
 - `make quality`: análisis estático (radon, bandit, vulture, quality score 92.2/100)
 - `make mutation`: mutation testing con mutmut (robustez de tests)
 - `make test-review`: revisión de tests en 7 dimensiones
-- `make holistic-review`: Holistic Project Radar (5 capas, 15 dims, HPR 96.0/100)
+- `make holistic-review`: Holistic Project Radar (5 capas, 16 dims, HPR 96.0/100)
 - `make lint`: linting completo (ruff, black, isort, mypy, flake8, docs-lint)
 - `make health`: healthcheck de los 10 servicios críticos
 
 En usabilidad, el tiempo de aprendizaje es asumible con formación inicial mínima. La reducción de errores humanos es consistente con la literatura sobre automatización en SOC (Kinyua & Awuah, 2021; Mohammad & Lakshmisri, 2018).
 
-#### 4.1.3.5. Discusión
+##### 4.1.3.5. Discusión
 
 La reducción del MTTR medio (3600 s a 277.15 s) respalda la hipótesis de que la automatización SOAR acorta los tiempos de respuesta, coherente con la literatura: Kinyua y Awuah identifican MTTR como métrica habitual de valor operativo de SOAR (Kinyua & Awuah, 2021), y Obuse et al. reportan mejoras en automatización de respuesta en infraestructuras críticas (Obuse et al., 2023).
 
@@ -4169,15 +4043,19 @@ El resultado negativo (2 de 5 objetivos no cumplidos) no invalida la contribuci�
 
 Comparado con Núñez Fernández (2023), que despliega una plataforma SIRP similar con TheHive, Cortex, MISP y Wazuh, este TFM aporta evidencia cuantitativa adicional (n=50, percentiles, análisis estadístico) que complementa su validación cualitativa. La diferencia es que Núñez Fernández se centra en pymes, mientras que este trabajo fija el contexto en un laboratorio académico reproducible.
 
-Stevens et al. concluyen que los playbooks comunitarios suelen requerir adaptación antes de ser operativos (Stevens et al., 2022). El playbook E2E de este TFM confirma esa observación: la adaptación al contexto (simulación de contención, umbral de score ajustable, integraciones mock) fue necesaria para lograr la tasa de éxito del 100 %.
+Stevens et al. concluyen que los playbooks comunitarios suelen requerir adaptación antes de ser operativos (Stevens et al., 2022). El playbook E2E de este TFM confirma esa observación: la adaptación al contexto (simulación de contención, umbral de score ajustable, integraciones mock) fue necesaria para lograr la tasa de éxito del 100 %. La **Figura 10** muestra la distribución de las mejoras implementadas por categoría durante el proyecto, evidenciando el impacto en MTTR, precisión y automatización.
 
-#### 4.1.3.6. Limitaciones
+![Figura 10: Distribución de mejoras por categoría](thesis/figures/Fig5_2_improvements_category.png)
+
+**Figura 10**: Distribución de las mejoras implementadas por categoría durante el proyecto, mostrando el impacto en MTTR, precisión y automatización.
+
+##### 4.1.3.6. Limitaciones
 
 Las limitaciones principales son la validación en laboratorio (no en producción real) y el alcance restringido a ransomware. La dependencia de APIs externas (DShield, Mnemonic pDNS) requiere estrategias de caché para entornos productivos. Los resultados muestran que el laboratorio cumple los requisitos definidos y puede emplearse como base reproducible para respuesta automatizada a ransomware.
 
 ---
 
-### Índice de Figuras del Capítulo 4
+#### Índice de Figuras del Capítulo 4
 
 | Figura    | Título                                          | Archivo                                    |
 |-----------|-------------------------------------------------|--------------------------------------------|
@@ -4192,17 +4070,113 @@ Las limitaciones principales son la validación en laboratorio (no en producció
 | Figura 9 | Distribución de decisiones del playbook        | `thesis/figures/decision_distribution.png`        |
 | Figura 10 | Distribución de mejoras por categoría          | `thesis/figures/Fig5_2_improvements_category.png` |
 
-### Índice de Tablas del Capítulo 4
+#### Índice de Tablas del Capítulo 4
 
 | Tabla    | Título                                          |
 |----------|-------------------------------------------------|
-| Tabla 3  | Matriz de Trazabilidad de Requisitos            |
-| Tabla 4  | Estado de Cumplimiento de Requisitos            |
-| Tabla 5  | Configuración de Recursos Docker                |
-| Tabla 6  | Analyzers Cortex Configurados                   |
-| Tabla 7  | Métricas del Dashboard de Grafana               |
-| Tabla 8  | Cumplimiento de Objetivos del Experimento       |
-| Tabla 9  | Resultados Experimentales Detallados            |
-| Tabla 9b | Métricas Específicas del Sistema SOAR           |
-| Tabla 10 | Análisis por Componente de Tiempo               |
+| Tabla 4  | Matriz de Trazabilidad de Requisitos            |
+| Tabla 5  | Estado de Cumplimiento de Requisitos            |
+| Tabla 6  | Configuración de Recursos Docker                |
+| Tabla 7  | Analyzers Cortex Configurados                   |
+| Tabla 8  | Métricas del Dashboard de Grafana               |
+| Tabla 9  | Cumplimiento de Objetivos del Experimento       |
+| Tabla 10 | Resultados Experimentales Detallados            |
+| Tabla 10b | Métricas Específicas del Sistema SOAR           |
+| Tabla 11 | Análisis por Componente de Tiempo               |
 
+## 4. Validación
+
+### 4.1 Verificación
+
+La arquitectura se verifica mediante:
+
+- Pruebas de configuración Docker (`tests/integration/test_docker_runtime_status.py`)
+- Pruebas de runtime Docker (`tests/integration/test_docker_runtime_status.py`)
+- Pruebas de navegador (`tests/e2e/TC-27/test_configuration.py`, `tests/e2e/TC-28/test_ui_e2e.py`)
+- Health checks de cada servicio
+- Verificación de conectividad entre redes Docker
+
+### 4.2 Criterios de aceptación
+
+La arquitectura se considera válida cuando:
+
+- Todos los servicios inician correctamente
+- Los puertos configurados son accesibles
+- Las redes Docker permiten la comunicación requerida
+- Los volúmenes persistentes montan correctamente
+- Los servicios de logging y monitoreo funcionan
+- Los health checks pasan para todos los servicios
+
+### 4.3 Evidencias
+
+Las evidencias de validación incluyen:
+
+- Logs de Docker Compose (`docker compose up`)
+- Salida de `docker ps` mostrando contenedores en ejecución
+- Logs de health checks
+- Resultados de pruebas automatizadas
+- Capturas de pantalla de interfaces web accesibles
+
+## 5. Problemas
+
+### 5.1 Limitaciones
+
+- **Single-node Elasticsearch**: Configuración actual no soporta clustering
+- **Requisitos de recursos**: Mínimo 8GB RAM (16GB recomendado para stack completo con perfiles opcionales)
+- **Windows/Hyper-V**: Restricciones en rangos de puertos debido a reservas de Hyper-V
+- **Escalabilidad**: Diseño actual no soporta alta disponibilidad nativa
+- **Persistencia**: Los volúmenes Docker requieren backup manual
+
+### 5.2 Riesgos o incidencias
+
+- **Pérdida de datos**: Si los volúmenes Docker no se respaldan regularmente
+- **Conflictos de puertos**: Puertos ya en uso en el host pueden causar fallos
+- **Dependencias de red**: Requiere conectividad a internet para pulls de imágenes
+- **Versiones de componentes**: Actualizaciones pueden romper compatibilidad
+- **Seguridad**: Configuración por defecto puede no ser adecuada para producción
+
+### 5.3 Recomendaciones / troubleshooting
+
+- **Backup**: Implementar backup automatizado de volúmenes persistentes
+ ```bash
+ # Crear backup vía API
+ curl -X POST <http://localhost:8000/backup/create> \
+ -H "Authorization: Bearer $TOKEN" \
+ -H "Content-Type: application/json" \
+ -d '{"name": "manual-backup"}'
+ ```
+- **Procedimiento de Backup de Volúmenes**:
+  - Los volúmenes Docker usan bind mounts a `runtime/data/`
+  - Backup manual: Copiar directorio `runtime/data/` a ubicación segura
+  - Backup automatizado: Llamar al endpoint `/api/backup/create` o programar tarea con `curl`
+  - Restauración: Llamar al endpoint `/api/backup/restore` con el nombre del backup
+- **Monitoreo**: Configurar alertas para health checks y métricas de recursos
+- **Seguridad**: Revisar y hardening de configuración antes de despliegue en producción
+- **Documentación**: Mantener documentación actualizada con cambios de configuración
+- **Testing**: Ejecutar pruebas de configuración antes de cambios en Docker Compose
+
+---
+
+#### Navegación
+
+- [Instalación y guía rápida](01-getting-started.md)
+- [API REST, endpoints e integraciones](03-api-and-integrations.md)
+- [Configuración, infraestructura, backups, troubleshooting](04-operations.md)
+- [Estrategia de pruebas y suite](05-testing.md)
+- [Objetivos, plan, riesgos, auditorías](06-project-management.md)
+- [Glosario central](glossary.md)
+- [Índice](index.md)
+## 6. Referencias
+
+- **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
+- **Documentación de Shuffle**: <https://shuffler.io/docs>
+- **Documentación de TheHive**: <https://docs.strangebee.com/thehive/>
+- **Documentación de Cortex**: <https://docs.strangebee.com/cortex/>
+- **Documentación de MISP**: <https://www.misp-project.org/documentation/>
+- **Documentación de Elasticsearch**: <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>
+- **Documentación de Docker Compose**: <https://docs.docker.com/compose/>
+- **Documentación de FastAPI**: <https://fastapi.tiangolo.com/>
+- **Documentación de Nginx**: <https://nginx.org/en/docs/>
+- **Documentación de Seguridad**: [3.9 Seguridad](#39-seguridad)
+- **Guía de Usuario**: [docs/01-getting-started.md](01-getting-started.md)
+- **Estrategia de Docker**: [3.5 Arquitectura Docker](#35-arquitectura-docker)

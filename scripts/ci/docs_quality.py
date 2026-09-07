@@ -103,6 +103,16 @@ for md in (ROOT / "docs").rglob("*.md"):
             err(f"{md.relative_to(ROOT)} has empty Mermaid block #{i}")
             continue
         first_line = body.splitlines()[0].strip()
+        # Skip Mermaid YAML frontmatter (--- / title: ... / ---)
+        if first_line == "---":
+            lines = body.splitlines()
+            try:
+                closing = lines.index("---", 1)
+                first_line = lines[closing + 1].strip() if closing + 1 < len(lines) else ""
+            except ValueError:
+                pass
+        if not first_line:
+            continue
         if not any(first_line.startswith(kw) for kw in mermaid_keywords):
             err(
                 f"{md.relative_to(ROOT)} Mermaid block #{i}"

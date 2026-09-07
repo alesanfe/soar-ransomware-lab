@@ -1,31 +1,31 @@
-﻿# API e Integraciones — SOAR Ransomware Lab
+# API e Integraciones — SOAR Ransomware Lab
 
 ## Índice
 
 - [1. Resumen](#1-resumen)
- - [1.1 Objetivo](#11-objetivo)
- - [1.2 Contexto](#12-contexto)
+  - [1.1 Objetivo](#11-objetivo)
+  - [1.2 Contexto](#12-contexto)
 - [2. Alcance](#2-alcance)
- - [2.1 Qué cubre](#21-qué-cubre)
- - [2.2 Límites](#22-límites)
- - [2.3 Dependencias](#23-dependencias)
+  - [2.1 Qué cubre](#21-qué-cubre)
+  - [2.2 Límites](#22-límites)
+  - [2.3 Dependencias](#23-dependencias)
 - [3. Contenido principal](#3-contenido-principal)
- - [3.1 Visión general de la API](#31-visión-general-de-la-api)
- - [3.2 Endpoints principales](#32-endpoints-principales)
- - [3.3 Contratos de integración](#33-contratos-de-integración)
- - [3.4 Autenticación y autorización](#34-autenticación-y-autorización)
- - [3.5 Integración con TheHive](#35-integración-con-thehive)
- - [3.6 Integración con Cortex](#36-integración-con-cortex)
- - [3.7 Integración con Shuffle](#37-integración-con-shuffle)
- - [3.8 Referencias técnicas](#38-referencias-técnicas)
+  - [3.1 Visión general de la API](#31-visión-general-de-la-api)
+  - [3.2 Endpoints principales](#32-endpoints-principales)
+  - [3.3 Contratos de integración](#33-contratos-de-integración)
+  - [3.4 Autenticación y autorización](#34-autenticación-y-autorización)
+  - [3.5 Integración con TheHive](#35-integración-con-thehive)
+  - [3.6 Integración con Cortex](#36-integración-con-cortex)
+  - [3.7 Integración con Shuffle](#37-integración-con-shuffle)
+  - [3.8 Referencias técnicas](#38-referencias-técnicas)
 - [4. Validación](#4-validación)
- - [4.1 Verificación](#41-verificación)
- - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
- - [4.3 Evidencias](#43-evidencias)
+  - [4.1 Verificación](#41-verificación)
+  - [4.2 Criterios de aceptación](#42-criterios-de-aceptación)
+  - [4.3 Evidencias](#43-evidencias)
 - [5. Problemas](#5-problemas)
- - [5.1 Limitaciones](#51-limitaciones)
- - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
- - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.1 Limitaciones](#51-limitaciones)
+  - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -72,15 +72,15 @@ La fuente de verdad de los contratos de la API es el archivo `openapi.json`
 generado automáticamente por FastAPI.
 
 - **OpenAPI**: [`docs/assets/references/openapi.json`](assets/references/openapi.json)
-- **Swagger UI** (en ejecución): `http://localhost:8000/docs` o `https://soar.local/api/docs`
-- **ReDoc** (en ejecución): `http://localhost:8000/redoc`
+- **Swagger UI** (en ejecución): `<http://localhost:8000/docs`> o `<https://soar.local/api/docs`>
+- **ReDoc** (en ejecución): `<http://localhost:8000/redoc`>
 
 #### Información general
 
 - **Título**: SOAR Lab Management API
 - **Versión**: 1.0.0
 - **Descripción**: REST API for SOAR Ransomware Lab Management
-- **Base URL**: `http://localhost:8000` / `https://soar.local/api/`
+- **Base URL**: `<http://localhost:8000`> / `<https://soar.local/api/`>
 - **Autenticación**: JWT Bearer (`Authorization: Bearer <token>`)
 
 #### Autenticación
@@ -88,7 +88,7 @@ generado automáticamente por FastAPI.
 Obtén un token con el endpoint `POST /auth/login`:
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+TOKEN=$(curl -s -X POST <http://localhost:8000/auth/login> \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | jq -r '.token')
 ```
@@ -96,7 +96,7 @@ TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
 Usa el token en siguientes peticiones:
 
 ```bash
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/health
+curl -H "Authorization: Bearer $TOKEN" <http://localhost:8000/health>
 ```
 
 #### Endpoints
@@ -189,23 +189,15 @@ Para la configuración de Nginx, DNS local y certificados, ver
 - [Guía de inicio rápido](01-getting-started.md)
 - [Guía de infraestructura](04-operations.md)
 
-
 ### 3.2 Endpoints principales
 
 Ver [sección 3.1](#31-visión-general-de-la-api) para la tabla completa de endpoints, autenticación y servicios externos.
 
 ### 3.3 Contratos de integración
 
-
 Este documento detalla las APIs utilizadas en el SOAR Ransomware Lab, especificando cuáles son reales (contenedores
 Docker activos) y cuáles son simuladas (`src/soar_lab/simulator/`), con endpoints, autenticación por variables de entorno, payloads
 de ejemplo y límites de uso.
-
-
-El SOAR Ransomware Lab integra múltiples APIs para orquestar la respuesta a incidentes de ransomware. Algunas APIs son
-servicios reales desplegados como contenedores Docker, mientras que otras se simulan mediante scripts para facilitar el
-entorno de laboratorio y el contexto académico (TFM).
-
 
 Este documento cubre:
 
@@ -216,14 +208,12 @@ Este documento cubre:
 - Límites de uso y configuración de rate limiting
 - Scripts de simulación para APIs no HTTP
 
-
 Este documento no cubre:
 
 - Implementación interna de cada API (ver documentación oficial de cada componente)
 - Estrategias de seguridad detalladas (ver docs/02-architecture.md)
 - Estrategia de Docker (ver docs/02-architecture.md)
 - Planificación del proyecto (ver docs/06-project-management.md)
-
 
 Este documento depende de:
 
@@ -233,7 +223,6 @@ Este documento depende de:
 - Documentación oficial de FastAPI
 - Documentación oficial de MISP API
 - Archivo de configuración .env.full
-
 
 #### 3.3.1 Especificación de APIs
 
@@ -309,7 +298,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 ###### 3.3.2.1 TheHive API
 
-**Base URL**: `http://localhost:${THEHIVE_HTTP_PORT:-8100}`
+**Base URL**: `<http://localhost:${THEHIVE_HTTP_PORT:-8100}`>
 **Autenticación**: `Authorization: Bearer ${THEHIVE_API_KEY}`
 **Variable .env**: `THEHIVE_API_KEY=<thehive-api-key>`
 
@@ -364,7 +353,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 ###### 3.3.2.2 Cortex API
 
-**Base URL**: `http://localhost:${CORTEX_HTTP_PORT:-8101}`
+**Base URL**: `<http://localhost:${CORTEX_HTTP_PORT:-8101}`>
 **Autenticación**: `Authorization: Bearer ${CORTEX_API_KEY}`
 **Variable .env**: `CORTEX_API_KEY=<cortex-api-key>`
 
@@ -394,8 +383,8 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 |----------------------------|-----------|---------|---------------------------|
 | `Hashdd_Status_2_0` | hash | offline | No |
 | `IP-API_1_1` | ip | offline | No |
-| `DShield_lookup_1_0` | ip | online | No |
-| `Mnemonic_pDNS_Public_3_0` | ip | online | No |
+| `DShield_lookup_1_0` | ip | offline | No |
+| `Mnemonic_pDNS_Public_3_0` | ip | offline | No |
 | `GoogleDNS_resolve_1_0_0` | ip/domain | offline | No |
 | `ValidateObservable_1_0` | genérico | offline | No |
 | `DomainMailSPFDMARC_1_2` | domain | offline | No |
@@ -411,7 +400,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 ###### 3.3.2.3 Shuffle webhook
 
-**Base URL**: `http://localhost:${SHUFFLE_API_PORT:-5001}/api/v1/hooks/webhook_{trigger_id}` (URL devuelta por `init_shuffle_webhook.py`)
+**Base URL**: `<http://localhost:${SHUFFLE_API_PORT:-5001}/api/v1/hooks/webhook_{trigger_id}`> (URL devuelta por `init_shuffle_webhook.py`)
 **Autenticación**: Token de ruta (`trigger_id`); el `Authorization` Bearer no es requerido por el endpoint de hooks.
 **Variables .env**: `SHUFFLE_DEFAULT_APIKEY` (para API de backend), `SIEM_WEBHOOK_TOKEN` (token usado por `simulate_alerts.py` cuando no se dispone de `webhook_info.json`)
 
@@ -450,13 +439,13 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 
 ###### 3.3.2.4 Lab API — FastAPI
 
-> **Fuente de verdad**: el contrato de la API del laboratorio se encuentra en `docs/assets/references/openapi.json` (generado automáticamente por FastAPI). Los modelos de datos de entrada/salida se definen en `src/soar_lab/config/schemas/__init__.py` (validaciones Pydantic) y `src/soar_lab/interfaces/api/models.py` (modelos de dominio del API). Puede explorarse en vivo en `http://localhost:8000/docs` / `https://soar.local/api/docs`. En caso de discrepancia entre este documento, `openapi.json` y el código, prevalecen el esquema Pydantic y el `openapi.json` actual.
+> **Fuente de verdad**: el contrato de la API del laboratorio se encuentra en `docs/assets/references/openapi.json` (generado automáticamente por FastAPI). Los modelos de datos de entrada/salida se definen en `src/soar_lab/config/schemas/__init__.py` (validaciones Pydantic) y `src/soar_lab/interfaces/api/models.py` (modelos de dominio del API). Puede explorarse en vivo en `<http://localhost:8000/docs`> / `<https://soar.local/api/docs`>. En caso de discrepancia entre este documento, `openapi.json` y el código, prevalecen el esquema Pydantic y el `openapi.json` actual.
 
-**Base URL**: `http://localhost:${API_PORT:-8000}` (directo) / `https://soar.local/api/` (vía Nginx)
+**Base URL**: `<http://localhost:${API_PORT:-8000}`> (directo) / `<https://soar.local/api/`> (vía Nginx)
 **Autenticación**: JWT Bearer token (obtenido vía `POST /auth/login`)
 **Variables .env**: `JWT_SECRET_KEY` (preferente, leído por `AuthService`) o `API_AUTH_SECRET` (legacy fallback) para firmar/validar tokens; `JWT_EXPIRATION_MINUTES` (default 60).
-**Swagger UI**: `https://soar.local/api/docs` (Nginx) o `http://localhost:8000/docs` (directo)
-**ReDoc**: `https://soar.local/api/redoc` (Nginx) o `http://localhost:8000/redoc` (directo)
+**Swagger UI**: `<https://soar.local/api/docs`> (Nginx) o `<http://localhost:8000/docs`> (directo)
+**ReDoc**: `<https://soar.local/api/redoc`> (Nginx) o `<http://localhost:8000/redoc`> (directo)
 
 **Endpoints:**
 
@@ -501,7 +490,6 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 | `GET` | `/soar/elasticsearch/count` | No | Contar documentos en un índice |
 | `GET` | `/soar/elasticsearch/latest` | No | Documentos recientes de un índice |
 | `GET` | `/soar/elasticsearch/health` | No | Health de Elasticsearch |
-| `GET` | `/soar/agents/{agent_id}/vulnerabilities` | No | CVEs de un agente |
 
 **Payload — Login (`POST /auth/login`):**
 
@@ -801,8 +789,8 @@ Ver tabla completa en [3.3.3 Resumen de variables de entorno por API](#333-resum
  {"token": "eyJ0...", "message": "Login successful", "token_type": "Bearer"}
  ```
 - **Errores**:
- - `401 Unauthorized`: credenciales incorrectas (`WEB_UI_USER` / `WEB_UI_PASSWORD`).
- - `500 Internal Server Error`: `JWT_SECRET_KEY`/`API_AUTH_SECRET` no configurado o error interno.
+  - `401 Unauthorized`: credenciales incorrectas (`WEB_UI_USER` / `WEB_UI_PASSWORD`).
+  - `500 Internal Server Error`: `JWT_SECRET_KEY`/`API_AUTH_SECRET` no configurado o error interno.
 
 **`POST /auth/verify`**
 
@@ -812,7 +800,7 @@ Ver tabla completa en [3.3.3 Resumen de variables de entorno por API](#333-resum
  {"valid": true, "user": {"user": "admin"}}
  ```
 - **Errores**:
- - `401 Unauthorized`: token inválido, expirado o ausente.
+  - `401 Unauthorized`: token inválido, expirado o ausente.
 
 > **Nota**: El token JWT contiene claims `sub` (usuario), `iat`, `exp` y `scope: access`. Tras rotar `JWT_SECRET_KEY` o `API_AUTH_SECRET`, los tokens emitidos previamente quedan inválidos; los clientes deben renovarlos llamando de nuevo a `/auth/login`.
 
@@ -866,7 +854,7 @@ sequenceDiagram
 
 ```bash
 # 1. Generar nueva API key desde TheHive UI
-# Acceder a http://localhost:8100/#/administration/users
+# Acceder a <http://localhost:8100/#/administration/users>
 # Seleccionar usuario y generar nueva API key
 
 # 2. Actualizar .env.full
@@ -877,14 +865,14 @@ THEHIVE_API_KEY=<nueva_api_key>
 docker compose restart shuffle-backend shuffle-frontend
 
 # 4. Verificar conexión
-curl -H "Authorization: Bearer $THEHIVE_API_KEY" http://localhost:8100/api/case
+curl -H "Authorization: Bearer $THEHIVE_API_KEY" <http://localhost:8100/api/case>
 ```
 
 **Rotación de API keys para Cortex:**
 
 ```bash
 # 1. Generar nueva API key desde Cortex UI
-# Acceder a http://localhost:8101/#/management/users
+# Acceder a <http://localhost:8101/#/management/users>
 # Seleccionar usuario y generar nueva API key
 
 # 2. Actualizar .env.full
@@ -892,14 +880,14 @@ nano .env.full
 CORTEX_API_KEY=<nueva_api_key>
 
 # 3. Actualizar TheHive con nueva key de Cortex
-# Acceder a http://localhost:8100/#/administration/organizations
+# Acceder a <http://localhost:8100/#/administration/organizations>
 # Editar organización y actualizar Cortex API key
 
 # 4. Reiniciar servicios
 docker compose restart shuffle-backend
 
 # 5. Verificar conexión
-curl -H "Authorization: Bearer $CORTEX_API_KEY" http://localhost:8101/api/analyzer
+curl -H "Authorization: Bearer $CORTEX_API_KEY" <http://localhost:8101/api/analyzer>
 ```
 
 **Rotación de Webhook Token de Shuffle:**
@@ -919,7 +907,7 @@ SIEM_WEBHOOK_TOKEN=<nuevo_token>
 docker compose restart shuffle-backend shuffle-frontend
 
 # 5. Verificar webhook
-curl -H "Authorization: Bearer $SIEM_WEBHOOK_TOKEN" http://localhost:5001/api/v1/health
+curl -H "Authorization: Bearer $SIEM_WEBHOOK_TOKEN" <http://localhost:5001/api/v1/health>
 ```
 
 **Rotación de JWT Secret para Lab API:**
@@ -939,32 +927,32 @@ docker compose restart api
 # Los usuarios deben hacer login nuevamente
 
 # 5. Verificar
-curl -X POST http://localhost:8000/auth/login -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}'
+curl -X POST <http://localhost:8000/auth/login> -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}'
 ```
 
 ##### 3.4.4.3 Ejemplo completo de autenticación JWT
 
 **Swagger / OpenAPI:** La interfaz interactiva de documentación se encuentra en:
 
-- Directo: `http://localhost:8000/docs` y `http://localhost:8000/redoc`
-- Vía Nginx: `https://soar.local/api/docs` y `https://soar.local/api/redoc`
+- Directo: `<http://localhost:8000/docs`> y `<http://localhost:8000/redoc`>
+- Vía Nginx: `<https://soar.local/api/docs`> y `<https://soar.local/api/redoc`>
 
 **Ejemplo de login y uso con `curl`:**
 
 ```bash
 # 1. Login y guardar token
-TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+TOKEN=$(curl -s -X POST <http://localhost:8000/auth/login> \
  -H "Content-Type: application/json" \
  -d '{"username":"admin","password":"<WEB_UI_PASSWORD>"}' | \
  python -c "import sys, json; print(json.load(sys.stdin).get('token',''))")
 
 # 2. Verificar token
-curl -X POST http://localhost:8000/auth/verify \
+curl -X POST <http://localhost:8000/auth/verify> \
  -H "Authorization: Bearer $TOKEN"
 
 # 3. Llamar a un endpoint protegido (ejemplo: health no requiere auth; kpis tampoco requiere auth)
 # Para endpoints JWT-protegidos:
-curl -X GET http://localhost:8000/<endpoint-protegido> \
+curl -X GET <http://localhost:8000/<endpoint-protegido>> \
  -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -983,122 +971,122 @@ import requests
 from requests.exceptions import RequestException
 
 def create_thehive_case(alert_data):
- try:
- response = requests.post(
- f"http://localhost:{THEHIVE_HTTP_PORT}/api/case",
- headers={"Authorization": f"Bearer {THEHIVE_API_KEY}"},
- json=alert_data,
- timeout=30
- )
- response.raise_for_status()
- return response.json()
- except requests.exceptions.HTTPError as e:
- if response.status_code == 401:
- raise Exception("TheHive API key inválida o expirada")
- elif response.status_code == 403:
- raise Exception("Permisos insuficientes en TheHive")
- elif response.status_code == 409:
- raise Exception("El caso ya existe")
- else:
- raise Exception(f"Error HTTP {response.status_code}: {response.text}")
- except requests.exceptions.Timeout:
- raise Exception("Timeout al conectar con TheHive")
- except requests.exceptions.ConnectionError:
- raise Exception("TheHive no está disponible")
- except RequestException as e:
- raise Exception(f"Error de conexión con TheHive: {str(e)}")
+    try:
+        response = requests.post(
+            f"<http://localhost:{THEHIVE_HTTP_PORT}/api/case">,
+            headers={"Authorization": f"Bearer {THEHIVE_API_KEY}"},
+            json=alert_data,
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 401:
+            raise Exception("TheHive API key inválida o expirada")
+        elif response.status_code == 403:
+            raise Exception("Permisos insuficientes en TheHive")
+        elif response.status_code == 409:
+            raise Exception("El caso ya existe")
+        else:
+            raise Exception(f"Error HTTP {response.status_code}: {response.text}")
+    except requests.exceptions.Timeout:
+        raise Exception("Timeout al conectar con TheHive")
+    except requests.exceptions.ConnectionError:
+        raise Exception("TheHive no está disponible")
+    except RequestException as e:
+        raise Exception(f"Error de conexión con TheHive: {str(e)}")
 ```
 
 **Error Handling para Cortex API:**
 
 ```python
 def run_cortex_analyzer(analyzer_id, data_type, data):
- try:
- response = requests.post(
- f"http://localhost:{CORTEX_HTTP_PORT}/api/analyzer/run",
- headers={"Authorization": f"Bearer {CORTEX_API_KEY}"},
- json={"analyzerId": analyzer_id, "dataType": data_type, "data": data},
- timeout=60
- )
- response.raise_for_status()
- return response.json()
- except requests.exceptions.HTTPError as e:
- if response.status_code == 401:
- raise Exception("Cortex API key inválida")
- elif response.status_code == 400:
- raise Exception("Payload inválido para analyzer")
- elif response.status_code == 429:
- raise Exception("Límite de analyzers concurrentes alcanzado")
- else:
- raise Exception(f"Error HTTP {response.status_code}: {response.text}")
- except requests.exceptions.Timeout:
- raise Exception("Timeout en ejecución de analyzer")
- except requests.exceptions.ConnectionError:
- raise Exception("Cortex no está disponible")
+    try:
+        response = requests.post(
+            f"<http://localhost:{CORTEX_HTTP_PORT}/api/analyzer/run">,
+            headers={"Authorization": f"Bearer {CORTEX_API_KEY}"},
+            json={"analyzerId": analyzer_id, "dataType": data_type, "data": data},
+            timeout=60
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 401:
+            raise Exception("Cortex API key inválida")
+        elif response.status_code == 400:
+            raise Exception("Payload inválido para analyzer")
+        elif response.status_code == 429:
+            raise Exception("Límite de analyzers concurrentes alcanzado")
+        else:
+            raise Exception(f"Error HTTP {response.status_code}: {response.text}")
+    except requests.exceptions.Timeout:
+        raise Exception("Timeout en ejecución de analyzer")
+    except requests.exceptions.ConnectionError:
+        raise Exception("Cortex no está disponible")
 ```
 
 **Error Handling para Shuffle Webhook:**
 
 ```python
 def send_alert_to_shuffle(alert_data):
- try:
- response = requests.post(
- f"http://localhost:{SHUFFLE_API_PORT}/api/v1/hooks/{WORKFLOW_ID}",
- headers={"Authorization": f"Bearer {SIEM_WEBHOOK_TOKEN}"},
- json=alert_data,
- timeout=10
- )
- response.raise_for_status()
- return response.json()
- except requests.exceptions.HTTPError as e:
- if response.status_code == 401:
- raise Exception("Webhook token inválido")
- elif response.status_code == 404:
- raise Exception("Workflow ID no encontrado")
- elif response.status_code == 413:
- raise Exception("Payload excede tamaño máximo (64KB)")
- else:
- raise Exception(f"Error HTTP {response.status_code}: {response.text}")
- except requests.exceptions.Timeout:
- raise Exception("Timeout al enviar alerta a Shuffle")
- except requests.exceptions.ConnectionError:
- raise Exception("Shuffle webhook no está disponible")
+    try:
+        response = requests.post(
+            f"<http://localhost:{SHUFFLE_API_PORT}/api/v1/hooks/{WORKFLOW_ID}">,
+            headers={"Authorization": f"Bearer {SIEM_WEBHOOK_TOKEN}"},
+            json=alert_data,
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 401:
+            raise Exception("Webhook token inválido")
+        elif response.status_code == 404:
+            raise Exception("Workflow ID no encontrado")
+        elif response.status_code == 413:
+            raise Exception("Payload excede tamaño máximo (64KB)")
+        else:
+            raise Exception(f"Error HTTP {response.status_code}: {response.text}")
+    except requests.exceptions.Timeout:
+        raise Exception("Timeout al enviar alerta a Shuffle")
+    except requests.exceptions.ConnectionError:
+        raise Exception("Shuffle webhook no está disponible")
 ```
 
 **Error Handling para Lab API:**
 
 ```python
 def execute_lab_tests(category):
- try:
- # Primero obtener JWT token
- auth_response = requests.post(
- f"http://localhost:{API_PORT}/auth/login",
- json={"username": "admin", "password": "<WEB_UI_PASSWORD>"},
- timeout=10
- )
- auth_response.raise_for_status
- token = auth_response.json.get("token")
+    try:
+        # Primero obtener JWT token
+        auth_response = requests.post(
+            f"<http://localhost:{API_PORT}/auth/login">,
+            json={"username": "admin", "password": "<WEB_UI_PASSWORD>"},
+            timeout=10
+        )
+        auth_response.raise_for_status()
+        token = auth_response.json().get("token")
 
- # Ejecutar tests con token
- response = requests.post(
- f"http://localhost:{API_PORT}/tests/run",
- headers={"Authorization": f"Bearer {token}"},
- json={"category": category},
- timeout=300
- )
- response.raise_for_status()
- return response.json()
- except requests.exceptions.HTTPError as e:
- if response.status_code == 401:
- raise Exception("Credenciales de Lab API inválidas")
- elif response.status_code == 403:
- raise Exception("Permisos insuficientes para ejecutar tests")
- else:
- raise Exception(f"Error HTTP {response.status_code}: {response.text}")
- except requests.exceptions.Timeout:
- raise Exception("Timeout en ejecución de tests")
- except requests.exceptions.ConnectionError:
- raise Exception("Lab API no está disponible")
+        # Ejecutar tests con token
+        response = requests.post(
+            f"<http://localhost:{API_PORT}/tests/run">,
+            headers={"Authorization": f"Bearer {token}"},
+            json={"category": category},
+            timeout=300
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 401:
+            raise Exception("Credenciales de Lab API inválidas")
+        elif response.status_code == 403:
+            raise Exception("Permisos insuficientes para ejecutar tests")
+        else:
+            raise Exception(f"Error HTTP {response.status_code}: {response.text}")
+    except requests.exceptions.Timeout:
+        raise Exception("Timeout en ejecución de tests")
+    except requests.exceptions.ConnectionError:
+        raise Exception("Lab API no está disponible")
 ```
 
 ### 3.5 Integración con TheHive
@@ -1125,10 +1113,9 @@ respuesta ante incidentes de ransomware.
 
 #### 3.5.2 Servicios Integrados
 
-
 > **Nota:** Los valores por defecto se toman de `.env.example`. En un despliegue real se generan con
 > `soar-lab generate-secrets --env`. La interfaz de Shuffle no se sirve por Nginx porque usa rutas absolutas; el
-> acceso directo por `http://localhost:8081` es obligatorio.
+> acceso directo por `<http://localhost:8081`> es obligatorio.
 
 #### 3.5.3 Flujo de Datos
 
@@ -1217,7 +1204,6 @@ Las versiones canónicas de los componentes principales se consultan directament
 > Especificidad de Cortex: analyzers configurados (Hashdd_Status, DShield, Mnemonic_pDNS, GoogleDNS, etc.),
 > rotación de API key con `reset_cortex.py`, e integración con TheHive para análisis de observables.
 
-
 ### 3.7 Integración con Shuffle
 
 > La visión general de integraciones y flujo de datos común a todos los componentes está en
@@ -1225,7 +1211,6 @@ Las versiones canónicas de los componentes principales se consultan directament
 >
 > Especificidad de Shuffle: webhook creado con `init_shuffle_webhook.py`, auto-sana de API key
 > (`_fetch_real_apikey`), orquestación de workflows con 46 nodos y 61 ramas (ver Anexo B en 04-operations).
-
 
 ### 3.8 Referencias técnicas
 
@@ -1242,9 +1227,9 @@ Las versiones canónicas de los componentes principales se consultan directament
 
 Las APIs se verifican mediante:
 
-- Health checks de cada servicio (`curl http://localhost:8100/api/status` para TheHive,
- `curl http://localhost:8101/api/status`
- para Cortex, `curl http://localhost:5001/api/v1/health` para Shuffle, `curl http://localhost:8000/health` para Lab
+- Health checks de cada servicio (`curl <http://localhost:8100/api/status`> para TheHive,
+ `curl <http://localhost:8101/api/status`>
+ para Cortex, `curl <http://localhost:5001/api/v1/health`> para Shuffle, `curl <http://localhost:8000/health`> para Lab
  API)
 - Verificación de tokens de autenticación (variables en `.env.full`: `THEHIVE_API_KEY`, `CORTEX_API_KEY`,
  `SHUFFLE_DEFAULT_APIKEY`)
@@ -1296,10 +1281,10 @@ Las evidencias de validación incluyen:
 
 ```bash
 # Verificar health check
-curl http://localhost:8100/api/status # TheHive
-curl http://localhost:8101/api/status # Cortex
-curl http://localhost:5001/api/v1/health # Shuffle
-curl http://localhost:8000/health # Lab API
+curl <http://localhost:8100/api/status> # TheHive
+curl <http://localhost:8101/api/status> # Cortex
+curl <http://localhost:5001/api/v1/health> # Shuffle
+curl <http://localhost:8000/health> # Lab API
 
 # Verificar logs de contenedor
 docker logs soar_thehive
@@ -1317,7 +1302,7 @@ echo $CORTEX_API_KEY
 echo $SIEM_WEBHOOK_TOKEN
 
 # Verificar token JWT
-curl -X POST http://localhost:8000/auth/login \
+curl -X POST <http://localhost:8000/auth/login> \
  -H "Content-Type: application/json" \
  -d '{"username": "admin", "password": "<WEB_UI_PASSWORD>"}'
 ```
@@ -1337,7 +1322,7 @@ make down && make up
 
 ```bash
 # Verificar script de simulación
-PYTHONPATH=src python3 -m soar_lab.simulator.simulate_alerts --count 5 --delay 1 --webhook http://localhost:5001/api/v1/hooks/<workflow_id>
+PYTHONPATH=src python3 -m soar_lab.simulator.simulate_alerts --count 5 --delay 1 --webhook <http://localhost:5001/api/v1/hooks/<workflow_id>>
 
 # Verificar logs de simulación
 cat runtime/logs/soar_lab.log
@@ -1360,11 +1345,10 @@ cat runtime/logs/soar_lab.log
 ## 6. Referencias
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
-- **Documentación de TheHive API**: https://docs.strangebee.com/thehive/api-docs/
-- **Documentación de Cortex API**: https://docs.strangebee.com/cortex/api-docs/
-- **Documentación de Shuffle API**: https://shuffler.io/docs/api
-- **Documentación de FastAPI**: https://fastapi.tiangolo.com/
-- **Documentación de MISP API**: https://www.misp-project.org/api/
+- **Documentación de TheHive API**: <https://docs.strangebee.com/thehive/api-docs/>
+- **Documentación de Cortex API**: <https://docs.strangebee.com/cortex/api-docs/>
+- **Documentación de Shuffle API**: <https://shuffler.io/docs/api>
+- **Documentación de FastAPI**: <https://fastapi.tiangolo.com/>
+- **Documentación de MISP API**: <https://www.misp-project.org/api/>
 - **Arquitectura y seguridad**: [docs/02-architecture.md](02-architecture.md)
-
-> ⚠️ **Nunca commitear valores reales** de API keys al repositorio. Usar `.env.full` (incluido en `.gitignore`).
+- **Seguridad de secretos**: Nunca commitear valores reales de API keys al repositorio. Usar `.env.full` (incluido en `.gitignore`).
