@@ -19,3 +19,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
 .badge.api { background: #e3f2fd; color: #1565c0; }
 .badge.internal { background: #fff3e0; color: #e65100; }
+.badge.auth { background: #fce4ec; color: #b71c1c; }
+.badge.open { background: #e8f5e9; color: #1b5e20; }
+#apiMeta { margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }

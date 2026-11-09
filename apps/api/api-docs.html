@@ -18,6 +18,12 @@
         <div class="intro">
             <h2>Management API Reference</h2>
             <p>This FastAPI service exposes the SOAR Lab management endpoints. Use the links below to browse the live documentation and OpenAPI schema.</p>
+            <p id="liveStatus">Live status: checking…</p>
+            <p id="apiMeta">
+                <span class="badge api" id="apiVersion">version: …</span>
+                <span class="badge api" id="apiPaths">endpoints: …</span>
+                <span class="badge auth" id="apiAuth">auth: …</span>
+            </p>
         </div>
 
         <h3 class="section-title">Live Documentation</h3>
@@ -27,21 +33,80 @@
                 <p>Interactive OpenAPI documentation served by FastAPI.</p>
                 <span class="port">http://localhost:8000/docs</span>
                 <span class="badge api">OpenAPI</span>
+                <span class="badge auth">JWT</span>
             </a>
             <a class="service-card" href="/redoc">
                 <h3>ReDoc</h3>
                 <p>Alternative OpenAPI rendering.</p>
                 <span class="port">/redoc</span>
                 <span class="badge api">OpenAPI</span>
+                <span class="badge auth">JWT</span>
             </a>
             <a class="service-card" href="/openapi.json">
                 <h3>OpenAPI JSON</h3>
                 <p>Source-of-truth schema for the management API.</p>
                 <span class="port">/openapi.json</span>
                 <span class="badge api">JSON</span>
+                <span class="badge open">public</span>
+            </a>
+        </div>
+
+        <h3 class="section-title">Operational Endpoints</h3>
+        <div class="services-grid">
+            <a class="service-card" href="/health">
+                <h3>Health</h3>
+                <p>Liveness/status probe for the API service.</p>
+                <span class="port">/health</span>
+                <span class="badge api">Probe</span>
+                <span class="badge open">public</span>
+            </a>
+            <a class="service-card" href="/metrics">
+                <h3>System Metrics</h3>
+                <p>CPU, memory and disk utilisation.</p>
+                <span class="port">/metrics</span>
+                <span class="badge api">Metrics</span>
+                <span class="badge auth">JWT</span>
+            </a>
+            <a class="service-card" href="/analytics/slo">
+                <h3>SLO Status</h3>
+                <p>Service-level objectives and error budgets.</p>
+                <span class="port">/analytics/slo</span>
+                <span class="badge api">SLO</span>
+                <span class="badge auth">JWT</span>
+            </a>
+            <a class="service-card" href="/api/v1/taxii2">
+                <h3>TAXII Discovery</h3>
+                <p>STIX 2.1 TAXII-lite discovery endpoint.</p>
+                <span class="port">/api/v1/taxii2</span>
+                <span class="badge api">STIX/TAXII</span>
+                <span class="badge auth">JWT</span>
             </a>
         </div>
     </main>
 </div>
+<script>
+fetch('/health').then(r => r.json()).then(h => {
+    document.getElementById('liveStatus').textContent =
+        `Live status: ${h.status || 'unknown'} · version ${h.version || 'n/a'} · ${h.timestamp || ''}`;
+}).catch(() => {
+    document.getElementById('liveStatus').textContent = 'Live status: unreachable';
+});
+
+// Hydrate version/endpoint-count/auth metadata from the live OpenAPI
+// document so the portal can never drift from the served spec.
+fetch('/openapi.json').then(r => r.json()).then(spec => {
+    document.getElementById('apiVersion').textContent =
+        `version: ${(spec.info && spec.info.version) || 'n/a'}`;
+    const paths = Object.keys(spec.paths || {});
+    const ops = paths.reduce((n, p) => n + Object.keys(spec.paths[p]).length, 0);
+    document.getElementById('apiPaths').textContent =
+        `endpoints: ${paths.length} paths / ${ops} ops`;
+    const schemes = Object.keys((spec.components && spec.components.securitySchemes) || {});
+    document.getElementById('apiAuth').textContent =
+        `auth: ${schemes.length ? schemes.join(', ') : 'none'}`;
+}).catch(() => {
+    document.getElementById('apiMeta').style.display = 'none';
+});
+</script>
 </body>
 </html>

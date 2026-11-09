@@ -26,10 +26,20 @@
         </div>
     </header>
 
+    <!-- Section navigation (WEB-NAV-001) -->
+    <nav class="section-nav" id="sectionNav" aria-label="Secciones">
+        <a href="#sec-overview" data-nav="sec-overview">Overview</a>
+        <a href="#sec-pipeline" data-nav="sec-pipeline">Pipeline</a>
+        <a href="#sec-services" data-nav="sec-services">Services</a>
+        <a href="#sec-tests" data-nav="sec-tests">Tests</a>
+        <a href="#sec-logs" data-nav="sec-logs">Logs</a>
+        <a href="#sec-backups" data-nav="sec-backups">Backups</a>
+    </nav>
+
     <!-- Main Content -->
     <main class="main-content" id="mainContent" style="display: none;">
         <!-- Dashboard Overview -->
-        <section class="dashboard">
+        <section class="dashboard" id="sec-overview">
             <h2>📊 System Overview</h2>
             <div class="cards-grid">
                 <div class="card">
@@ -105,8 +115,31 @@
             </div>
         </section>
 
+        <!-- SOAR Pipeline -->
+        <section class="pipeline-section" id="sec-pipeline">
+            <h2>🎯 SOAR Pipeline</h2>
+            <div class="pipeline-grid">
+                <div class="card">
+                    <h3>Admission Queue</h3>
+                    <div class="coverage-details" id="queuePanel">
+                        <div>Depth: <span id="queueDepth">—</span></div>
+                        <div>Stream length: <span id="queueStreamLen">—</span></div>
+                        <div>Consumer lag: <span id="queueLag">—</span></div>
+                        <div>Pending: <span id="queuePending">—</span></div>
+                        <div>DLQ: <span class="dlq-value" id="queueDlq">—</span></div>
+                    </div>
+                </div>
+                <div class="card decisions-card">
+                    <h3>Recent Decisions <button class="btn-mini" data-action="loadDecisions" title="Refresh">⟳</button></h3>
+                    <div class="decisions-list" id="decisionsList">
+                        <span class="muted">Loading…</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Services Links -->
-        <section class="services-section">
+        <section class="services-section" id="sec-services">
             <h2>🔗 Service Links</h2>
 
             <!-- SOAR Stack -->
@@ -257,32 +290,32 @@
         </section>
 
         <!-- Testing Section -->
-        <section class="testing-section">
+        <section class="testing-section" id="sec-tests">
             <h2>🧪 Test Management</h2>
             <div class="testing-controls">
                 <div class="test-categories">
-                    <button class="btn btn-test" data-category="unit" onclick="runTests('unit')">
+                    <button class="btn btn-test" data-category="unit" data-action="runTests">
                         Unit Tests
                     </button>
-                    <button class="btn btn-test" data-category="integration" onclick="runTests('integration')">
+                    <button class="btn btn-test" data-category="integration" data-action="runTests">
                         Integration Tests
                     </button>
-                    <button class="btn btn-test" data-category="e2e" onclick="runTests('e2e')">
+                    <button class="btn btn-test" data-category="e2e" data-action="runTests">
                         E2E Tests
                     </button>
-                    <button class="btn btn-test" data-category="atomic" onclick="runTests('atomic')">
+                    <button class="btn btn-test" data-category="atomic" data-action="runTests">
                         Atomic Tests
                     </button>
-                    <button class="btn btn-test" data-category="performance" onclick="runTests('performance')">
+                    <button class="btn btn-test" data-category="performance" data-action="runTests">
                         Performance Tests
                     </button>
-                    <button class="btn btn-test" data-category="security" onclick="runTests('security')">
+                    <button class="btn btn-test" data-category="security" data-action="runTests">
                         Security Tests
                     </button>
-                    <button class="btn btn-test" data-category="smoke" onclick="runTests('smoke')">
+                    <button class="btn btn-test" data-category="smoke" data-action="runTests">
                         🔥 Smoke Tests
                     </button>
-                    <button class="btn btn-primary btn-large" onclick="runTests('all')">
+                    <button class="btn btn-primary btn-large" data-action="runTests">
                         🚀 Run All Tests
                     </button>
                 </div>
@@ -316,10 +349,10 @@
         </section>
 
         <!-- Logs Section -->
-        <section class="logs-section">
+        <section class="logs-section" id="sec-logs">
             <h2>📋 System Logs</h2>
             <div class="logs-controls">
-                <button class="btn btn-secondary" onclick="toggleLogs()">
+                <button class="btn btn-secondary" data-action="toggleLogs">
                     <span id="logsToggleText">Start Live Logs</span>
                 </button>
                 <select class="log-select" id="logLevel">
@@ -328,7 +361,7 @@
                     <option value="warning">Warnings & Errors</option>
                     <option value="info">Info & Above</option>
                 </select>
-                <button class="btn btn-secondary" onclick="clearLogs()">Clear</button>
+                <button class="btn btn-secondary" data-action="clearLogs">Clear</button>
             </div>
             <div class="logs-container">
                 <pre id="logsOutput"></pre>
@@ -336,21 +369,37 @@
         </section>
 
         <!-- Backup Section -->
-        <section class="backup-section">
+        <section class="backup-section" id="sec-backups">
             <h2>💾 Backup Management</h2>
             <div class="backup-controls">
-                <button class="btn btn-primary" onclick="createBackup()">Create Backup</button>
-                <button class="btn btn-secondary" onclick="listBackups()">List Backups</button>
+                <button class="btn btn-primary" data-action="createBackup">Create Backup</button>
+                <button class="btn btn-secondary" data-action="listBackups">List Backups</button>
                 <div class="restore-section">
                     <select class="backup-select" id="backupList">
                         <option value="">Select backup...</option>
                     </select>
-                    <button class="btn btn-warning" onclick="restoreBackup()">Restore</button>
+                    <button class="btn btn-warning" data-action="restoreBackup">Restore</button>
                 </div>
             </div>
             <div class="backup-status" id="backupStatus"></div>
         </section>
     </main>
+
+        <!-- Execution detail drawer (WEB-DETAIL-001) -->
+        <div class="exec-modal" id="execModal" style="display: none;" role="dialog" aria-modal="true" aria-label="Execution detail">
+            <div class="exec-modal-backdrop" data-action="closeExec"></div>
+            <div class="exec-modal-panel">
+                <div class="exec-modal-header">
+                    <h3 id="execModalTitle">Execution detail</h3>
+                    <button class="btn-mini" data-action="closeExec" title="Close">✕</button>
+                </div>
+                <div class="exec-modal-actions">
+                    <button class="btn-mini" data-action="copyExecId" title="Copy execution id">⧉ Copy ID</button>
+                    <a class="btn-mini" id="execShuffleLink" href="#" target="_blank" rel="noopener" title="Open in Shuffle">↗ Shuffle</a>
+                </div>
+                <div class="exec-modal-body" id="execModalBody"><span class="muted">Loading…</span></div>
+            </div>
+        </div>
 
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
@@ -359,6 +408,6 @@
     </div>
 </div>
 
-<script src="script.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -18,14 +18,14 @@ export default function Home() {
         </p>
         <h2>Getting Started</h2>
         <ul>
-          <li><Link to="/docs/intro">Getting Started Guide</Link></li>
-          <li><Link to="/docs/architecture/overview">Architecture Overview</Link></li>
-          <li><Link to="/docs/getting_started/intro">Installation Guide</Link></li>
+          <li><Link to="/docs/getting-started">Getting Started Guide</Link></li>
+          <li><Link to="/docs/architecture">Architecture Overview</Link></li>
+          <li><Link to="/docs/operations">Operations Guide</Link></li>
         </ul>
         <h2>Resources</h2>
         <ul>
-          <li><a href="http://localhost:8000/docs">API Swagger UI</a></li>
-          <li><a href="http://localhost:8085">Management UI</a></li>
+          <li><a href="http://localhost:8000/">API Portal</a></li>
+          <li><a href="http://localhost:80">Management UI</a></li>
           <li><a href="http://localhost:8084">Grafana</a></li>
           <li><a href="https://github.com/alesanfe/soar-ransomware-lab">GitHub Repository</a></li>
         </ul>

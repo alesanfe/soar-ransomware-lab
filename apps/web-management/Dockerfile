@@ -1,7 +1,8 @@
 FROM nginx:1.25-alpine
 
 # Copy static files
-COPY index.html styles.css script.js /usr/share/nginx/html/
+COPY index.html styles.css /usr/share/nginx/html/
+COPY js/ /usr/share/nginx/html/js/
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf

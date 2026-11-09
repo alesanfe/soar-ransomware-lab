@@ -16,7 +16,6 @@ const config = {
     trailingSlash: false,
 
     onBrokenLinks: 'warn',
-    onBrokenMarkdownLinks: 'warn',
 
     i18n: {
         defaultLocale: 'en',
@@ -42,6 +41,9 @@ const config = {
     ],
     markdown: {
         format: 'md',
+        hooks: {
+            onBrokenMarkdownLinks: 'warn',
+        },
     },
 
     themeConfig:
@@ -81,11 +83,11 @@ const config = {
                         items: [
                             {
                                 label: 'Getting Started',
-                                to: '/docs/intro',
+                                to: '/docs/getting-started',
                             },
                             {
                                 label: 'Architecture',
-                                to: '/docs/architecture/overview',
+                                to: '/docs/architecture',
                             },
                         ],
                     },
