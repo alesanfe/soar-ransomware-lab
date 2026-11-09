@@ -38,7 +38,7 @@
 - [5. Problemas](#5-problemas)
   - [5.1 Limitaciones](#51-limitaciones)
   - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -167,7 +167,7 @@ TFM académico riguroso.
 ##### Tabla de Objetivos SMART y Ubicación de Evidencias
 
 | Nº | Objetivo | Descripción | Métrica | Umbral | Método de Medida | Evidencia |
-|----|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|------------------------------------|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| ---- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
 | 1 | Implementación del Laboratorio | Desplegar entorno reproducible con TheHive, Cortex y Shuffle mediante Docker Compose (`infra/docker/compose/docker-compose.yml`, `infra/docker/compose/docker-compose.core.yml`). | Servicios activos | 100% contenedores funcionando | Verificación con `docker ps` y `make up` | Implementado |
 | 2 | Desarrollo del Playbook E2E | Crear flujo automatizado desde alerta hasta contención simulada en Shuffle (`docs/04-operations.md`). | Ejecución completa | 2 escenarios (malicioso y benigno) | Logs del SOAR y casos en TheHive | Implementado |
 | 3 | Validación de Métricas MTTR | Medir tiempo de respuesta desde alerta hasta contención mediante timestamps en logs. | Percentiles p50 y p90 | p50 ≤ 120 s; p90 ≤ 180 s | Timestamps y cálculo estadístico con `src/soar_lab/domain/services/kpi_analyzer.py` | Implementado |
@@ -227,7 +227,7 @@ gantt
 #### Fases del Proyecto
 
 | Fase | Duración | Objetivos | Entregables |
-|-----------------------------|-----------|--------------------------|--------------------------------------------------------------------|
+| ----------------------------- | ----------- | -------------------------- | -------------------------------------------------------------------- |
 | **Fase 1: Investigación** | 3 semanas | — | Revisión de literatura, requisitos, selección del stack |
 | **Fase 2: Diseño** | 3 semanas | — | Arquitectura hexagonal, topología Docker, contratos, modelo de scoring |
 | **Fase 3: Desarrollo** | 6 semanas | 1, 2, 5, 6, 7, 8, 17, 18, 19, 20 | Laboratorio, playbook E2E, integraciones, API, CLI, docs-site, web-management |
@@ -238,7 +238,7 @@ gantt
 #### Matriz de Trazabilidad: Objetivos vs Entregables
 
 | Objetivo | Entregable Principal | Entregable Secundario | Ubicación en Repositorio | EDT Relacionada | Estado |
-|----------|-------------------------------------|--------------------------------------|-----------------------------------------------------------------------------|-----------------|-----------|
+| ---------- | ------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------- | ----------------- | ----------- |
 | 1 | Laboratorio SOAR desplegado | Capturas de servicios | `docs/04-operations.md` | EDT 4.1 | Implementado |
 | 2 | Playbook E2E implementado | Logs de ejecución | `tests/e2e/TC-01/test_malicious.py`, `tests/e2e/TC-02/` | EDT 5.1 | Implementado |
 | 3 | Métricas MTTR validadas | Archivo KPIs | `runtime/results/kpis.csv` | EDT 7.1 | Implementado |
@@ -431,7 +431,7 @@ Este proyecto cumple con las siguientes consideraciones éticas:
 #### Matriz de Alcance
 
 | Categoría | Incluido | Excluido | Justificación |
-|---------------------|-------------------------------------------------------------------------|--------------------------|------------------------------------|
+| --------------------- | ------------------------------------------------------------------------- | -------------------------- | ------------------------------------ |
 | **Playbooks** | 1 flujo E2E completo | Múltiples playbooks E2E | Enfoque en profundidad vs amplitud |
 | **Integraciones** | SIEM simulado, contención simulada, API, CLI, docs-site, web-management | APIs comerciales reales | Viabilidad técnica y económica |
 | **Seguridad** | Muestras inertes, certificados SSL, validación de esquemas | Malware funcional | Seguridad del entorno académico |
@@ -494,7 +494,7 @@ La infraestructura se diseña para ser segura y fácil de desplegar, evitando co
 compatibilidad con entornos académicos.
 
 | Componente | Descripción | Requisitos Mínimos | Referencias |
-|------------------|---------------------------------------------------------------------------------------------------------------------------------------------|----------------------|-----------------------------------------------------------------------|
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------- |
 | **VM Windows** | Simulación de endpoint víctima, agente EDR | 4GB RAM, 50GB SSD | Playbook E2E de contención: `docs/04-operations.md` |
 | **VM Linux** | Host principal con Docker, herramientas, CI/CD | 8GB RAM, 50GB SSD | `Makefile`, `infra/docker/compose/`, `.github/workflows/` |
 | **Contenedores** | TheHive, Cortex, Shuffle, MISP, Elasticsearch, PostgreSQL, Redis, MariaDB, Nginx, Grafana, Loki, Promtail, docs-site, web-management | Docker Engine 20.10+ | `infra/docker/compose/docker-compose*.yml` |
@@ -512,7 +512,7 @@ compatibilidad con entornos académicos.
 #### Matriz de Trazabilidad: Componentes vs Objetivos SMART
 
 | Componente | Objetivo SMART 1 | Objetivo SMART 2 | Objetivo SMART 3 | Objetivo SMART 4 | Objetivo SMART 5 | Objetivo SMART 6 | Objetivo SMART 7 | Objetivo SMART 8 | Objetivo SMART 9 | Objetivo SMART 10 | Objetivo SMART 11 | Objetivo SMART 12 |
-|------------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|-------------------|-------------------|-------------------|
+| ------------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------- | ------------------- | ------------------- |
 | **Playbook E2E** | - | ✓ | ✓ | ✓ | - | ✓ | - | - | ✓ | ✓ | ✓ | - |
 | **TheHive** | ✓ | ✓ | - | ✓ | - | - | - | - | - | - | - | - |
 | **Cortex** | ✓ | ✓ | - | - | - | - | - | - | - | - | - | - |
@@ -919,7 +919,7 @@ marcadas en los diagramas Gantt como `:crit` para identificar la ruta crítica.
 #### Plan por semanas
 
 | Semana | Fase / Hito | Objetivo principal | Entregables / Evidencias | Hitos de Validación Intermedia |
-|---------|-------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| --------- | ------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
 | S1-S3 | Fase 1: Investigación | Revisión de literatura, requisitos, selección del stack (sin objetivos SMART específicos) | Documento de requisitos, selección tecnológica | Validación: requisitos aprobados (Semana 3) |
 | S4-S6 | Fase 2: Diseño | Arquitectura hexagonal, topología Docker, contratos, modelo de scoring (sin objetivos SMART específicos) | Diseño de arquitectura, contratos de integración | Validación: diseño aprobado (Semana 6) |
 | S7-S12 | Fase 3: Desarrollo | Laboratorio, playbook E2E, integraciones, API, CLI, docs-site, web-management (Objetivos 1, 2, 5, 6, 7, 8, 17, 18, 19, 20) | infra/docker/compose/, Makefile, src/soar_lab/, apps/docs-site/, apps/web-management/ | Validación: playbook ejecuta, apps desplegadas (Semana 12) |
@@ -942,7 +942,7 @@ Fase 4 Validacion :crit, f4, after f3, 6w
 #### Plan por tareas de la EDT
 
 | Tarea EDT | Descripción | Entregables |
-|-------------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| ------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | 2.1 Plan/roadmap | Crear roadmap visual (Gantt), definir ruta crítica y dependencias | este documento, diagrama Gantt |
 | 2.2 Riesgos | Identificar riesgos y mitigaciones | este documento |
 | 3.x Arquitectura | Diseñar arquitectura single-host y flujo del playbook | docs/02-architecture.md |
@@ -1143,7 +1143,7 @@ Documento consolidado para las FASEs 54–65 del plan de remediación documental
 #### 1.1 Matriz de trazabilidad requisito → tarea → evidencia → documento → commit (N001)
 
 | Requisito | Tarea | Evidencia | Documento actualizado | Estado |
-|-----------|-------|-----------|----------------------|--------|
+| ----------- | ------- | ----------- | ---------------------- | -------- |
 | Hardcoded secrets removidos | FASE 46, FASE 52 | Diff de Compose/script | este documento | ✅ |
 | MISP DB bind mount arreglado | FASE 48, FASE 52 | `docker-compose.misp.yml` sin bind; `docker inspect` tipo `volume` | `docs/04-operations.md`, `docs/04-operations.md` | ✅ |
 | Grafana funcional | FASE 50, FASE 60 | E2E KPI pasado, datos en `soar-metrics` | `docs/04-operations.md`, `docs/01-getting-started.md` | ✅ |
@@ -1156,7 +1156,7 @@ Documento consolidado para las FASEs 54–65 del plan de remediación documental
 #### 1.2 Tipificación de cambios (N002)
 
 | Tipo | Ejemplo | Documento predominante |
-|------|---------|--------------------------|
+| ------ | --------- | -------------------------- |
 | Código | Nuevo test de arquitectura | `tests/architecture/`, `pytest.ini` |
 | Infraestructura | Ajuste de Compose, volúmenes | `infra/docker/compose/`, `docs/04-operations.md` |
 | Seguridad | Eliminación de secretos hardcodeados | este documento |
@@ -1215,7 +1215,7 @@ resultado: 48 test files (39 TCs) PASSED
 #### 2.2 Convención de nombres y retención (N008)
 
 | Artefacto | Patrón | Retención |
-|-----------|--------|-----------|
+| ----------- | -------- | ----------- |
 | Logs E2E | `e2e_<fecha>_<commit>.log` | 30 días |
 | Cobertura | `coverage_<fecha>.xml` | 90 días |
 | Backups | `backup_<timestamp>_<tipo>.tar.gz` | según política (default 7 días) |
@@ -1249,7 +1249,7 @@ git rev-parse HEAD
 #### 2.5 Plantilla de registro de comandos fallidos (N011)
 
 | Campo | Valor |
-|-------|-------|
+| ------- | ------- |
 | Fecha/hora | |
 | Comando | |
 | Entorno | |
@@ -1275,7 +1275,7 @@ Control manual/automatizado: todo párrafo que afirme "funciona", "está configu
 #### 3.2 Catálogo puerto → adaptador → implementación (N014)
 
 | Puerto (domain/ports) | Adaptador | Implementación | Consumidor |
-|-----------------------|-----------|----------------|------------|
+| ----------------------- | ----------- | ---------------- | ------------ |
 | AlertRepository | SqliteAlertRepository | `src/soar_lab/infrastructure/persistence/sqlite_alert_repository.py` | Casos de uso API |
 | BackupDriver | TarBackupDriver | `src/soar_lab/infrastructure/tar_backup_driver.py` | BackupService |
 | TokenProviderInterface | JWTTokenProvider | `src/soar_lab/infrastructure/jwt_token_provider.py` | AuthService |
@@ -1459,7 +1459,7 @@ Los riesgos activos de mayor prioridad son **R11** (bloqueo LaLiga/Cloudflare), 
 #### Matriz de Riesgos
 
 | # | Riesgo | Categoría | Prob | Impacto | Estado | Mitigación |
-|-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|:-----:|:-------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | :-----: | :-------: | :------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | R1 | **Puertos bloqueados por Hyper-V en Windows** — rangos 55000–55099, 5600–5699, 2976–3075 excluidos | Infraestructura | Alta | Alto | ✅ Mitigado | Puertos reubicados: API → 8000, Elasticsearch → 8200, Cortex → 8101, TheHive → 8100, Docs site → 8086, Shuffle UI → 8081, Web Management → 8085, Grafana → 8084, MISP → 8083; sin binding de host donde no es necesario |
 | R2 | **Recursos insuficientes** — stack completo requiere ≥ 16 GB RAM (Elasticsearch + OpenSearch + MISP son intensivos) | Infraestructura | Alta | Alto | ⚠️ Activo | Requisitos mínimos documentados en `README.md`; `deploy.resources.limits` configurados en todos los servicios |
 | R3 | **Analyzers de Cortex lentos o sin respuesta** — timeouts del playbook superan p90 = 180 s | Rendimiento | Media | Alto | ⚠️ Activo | Limitar a 3–5 analyzers activos; configurar `timeout` y reintentos; priorizar `Hashdd_Status` y `DShield_lookup` offline |
@@ -1488,7 +1488,7 @@ Los riesgos activos de mayor prioridad son **R11** (bloqueo LaLiga/Cloudflare), 
 #### Leyenda
 
 | Valor | Probabilidad | Impacto | Estado |
-|-----------|--------------|-------------------------------|---------------------------------------------|
+| ----------- | -------------- | ------------------------------- | --------------------------------------------- |
 | **Alta** | > 50 % | Bloquea entregable crítico | ✅ Mitigado — controlado o resuelto |
 | **Media** | 20–50 % | Retraso o degradación parcial | ⚠️ Activo — requiere vigilancia |
 | **Baja** | < 20 % | Impacto menor o recuperable | ✅ Conocido — documentado sin acción urgente |
@@ -1522,7 +1522,7 @@ graph TD
 #### Matriz de Seguimiento de Riesgos con Fechas de Revisión
 
 | # | Riesgo | Última Revisión | Próxima Revisión | Responsable | Acción Requerida | Estado Seguimiento |
-|-----|----------------------------------------------|-----------------|---------------------------|-------------|------------------------------|----------------------|
+| ----- | ---------------------------------------------- | ----------------- | --------------------------- | ------------- | ------------------------------ | ---------------------- |
 | R1 | Puertos bloqueados por Hyper-V | 2025-05-01 | 2025-05-15 | Estudiante | Ninguna (mitigado) | ✅ Estable |
 | R2 | Recursos insuficientes | 2025-05-01 | 2025-05-08 | Estudiante | Monitorear uso RAM | ⚠️ Vigilancia |
 | R3 | Analyzers lentos o sin respuesta | 2025-05-01 | 2025-05-08 | Estudiante | Limitar analyzers activos | ⚠️ Vigilancia |
@@ -1654,7 +1654,7 @@ graph TD
 #### Métricas Cuantitativas para Seguimiento de Riesgos Activos
 
 | Riesgo | Métrica | Umbral | Valor Actual | Estado | Frecuencia Medición |
-|--------|------------------------------|--------------|--------------|-----------|---------------------|
+| -------- | ------------------------------ | -------------- | -------------- | ----------- | --------------------- |
 | R2 | Uso de RAM total | ≤ 16 GB | 14.2 GB | ✅ OK | Diaria |
 | R3 | Tiempo promedio analyzer | ≤ 60 s | 45 s | ✅ OK | Cada ejecución |
 | R4 | Tasa de éxito integración | ≥ 95% | 98% | ✅ OK | Cada ejecución |
@@ -1768,7 +1768,7 @@ Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:3
 Reasignación completa de puertos a valores fuera de los rangos reservados:
 
 | Servicio | Puerto anterior | Puerto nuevo | Motivo |
-|-------------------|-----------------|--------------|------------------------------------------------------|
+| ------------------- | ----------------- | -------------- | ------------------------------------------------------ |
 | Docs site | 8080 | 8086 | Fuera rango 2976–3075, conflicto Docker Desktop 8080 |
 | Shuffle UI | 3001 | 8081 | Fuera rango 2976–3075 |
 | Web Management UI | 3002 | 8085 | Fuera rango 2976–3075 |
@@ -1828,7 +1828,7 @@ Si aparece un error de puerto:
 
 # Pre-descargar imágenes cuando no hay partido
 docker pull ghcr.io/shuffle/shuffle-backend:2.2.1
-docker pull thehiveproject/thehive:3.5.2-1
+docker pull strangebee/thehive:5.7.8-1
 docker pull thehiveproject/cortex:3.2.0-1
 # ... resto de imágenes
 ```
@@ -1921,7 +1921,7 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 #### Comentarios de deuda encontrados
 
 | Tipo | Ubicación | Línea | Descripción | Impacto | Estado |
-|------|-----------|-------|-------------|---------|--------|
+| ------ | ----------- | ------- | ------------- | --------- | -------- |
 | TODO | `tests/e2e/TC-03/` | 288 | Fix Cortex API authentication issue | Medio | Pendiente |
 | TODO | `tests/e2e/TC-03/` | 293 | Fix MISP API response issue | Medio | Pendiente |
 | TODO | `tests/e2e/TC-03/` | 434 | Fix MISP API response issue (teardown) | Medio | Pendiente |
@@ -1931,7 +1931,7 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 #### Workarounds de infraestructura Docker
 
 | # | Problema | Ubicación | Workaround | Prioridad |
-|---|----------|-----------|------------|-----------|
+| --- | ---------- | ----------- | ------------ | ----------- |
 | 1 | Loki latest no tiene shell/healthcheck | `infra/docker/compose/logging/docker-compose.logging.yml` | Iniciar sin `healthcheck`; depender de reintentos de Promtail/Grafana | Media |
 | 2 | Resolución de `configs.file` relativa al primer compose | `infra/docker/compose/logging/docker-compose.logging.yml` | Dashboards de Grafana usan `configs.file` con rutas `logging/grafana-kpi-dashboard.yml` (sin `./`); Promtail usa volume mount desde `runtime/config/` | Baja |
 | 3 | Bind mount de MariaDB falla en Windows | `infra/docker/compose/docker-compose.misp.yml` | Volumen Docker normal para `misp_db` | Alta (Windows) |
@@ -1943,7 +1943,7 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 #### Decisiones de diseño con notas técnicas
 
 | Decisión | Motivo | Riesgo / Nota |
-|----------|--------|---------------|
+| ---------- | -------- | --------------- |
 | `xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-false}` en Elasticsearch | Seguridad deshabilitada por defecto (necesario para TheHive/Cortex con `elastic4play`); se mantiene `ELASTIC_PASSWORD` canónico para clientes que envían credenciales | Verificar que `ELASTIC_PASSWORD` y credenciales de servicios estén en `.env.full`; no usar en producción contraseñas del laboratorio |
 | SQLite para almacenamiento de estado leve | Facilita despliegue sin DB externa | Escalabilidad limitada; documentar migración a PostgreSQL si crece |
 | Polling periódico en `script.js` | Las WebSockets requieren gestión de conexión y autenticación | Aumenta carga en API; intervalos configurables |
@@ -1953,7 +1953,7 @@ Get-ChildItem -Path src,apps,infra,tests -Recurse -Include *.py,*.yml,*.yaml,*.j
 #### Targets Make experimentales o deshabilitados
 
 | Target | Archivo | Estado | Notas |
-|--------|---------|--------|-------|
+| -------- | --------- | -------- | ------- |
 | `make test-atomic` | `Makefile.linux` | Funcional pero requiere `tests/atomic/` | Ejecuta `pytest tests/atomic -v`; validar que la carpeta y fixtures existan. |
 | `make test-security` | `Makefile.linux` | Funcional pero requiere `tests/security/` | Ejecuta `pytest tests/security -v`; validar cobertura real. |
 | `make test-performance` | `Makefile.linux` | Funcional pero requiere `tests/performance/` | Ejecuta `pytest tests/performance -v`; no ejecutar en CI sin recursos dedicados. |
@@ -2017,7 +2017,7 @@ Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomwa
 #### Alcance
 
 | Fase | Ámbito | Estado |
-|------|--------|--------|
+| ------ | -------- | -------- |
 | AUDIT-F1 | Inspección inicial del repo, Makefiles y Docker Compose | Completada |
 | AUDIT-F2 | Validación y ajuste de `docs/01-getting-started.md` | Completada |
 | AUDIT-F3 (y sub-tareas 3.1-3.12) | `Makefile.win`, build context, hashes autenticación ES, contraseñas TheHive/Cortex, coexistencia OpenSearch Dashboard health | Completada |
@@ -2075,7 +2075,7 @@ Este informe recoge el estado final de la auditoría DevOps/QA del SOAR Ransomwa
 #### Evidencia de validación
 
 | Verificación | Comando / Método | Resultado |
-|--------------|------------------|-----------|
+| -------------- | ------------------ | ----------- |
 | `make health` | `make -f Makefile.win health` | TheHive, Cortex, Shuffle, Elasticsearch, API, Web Management, MISP, Grafana, Redis, Nginx, Tenzir: **OK** |
 | Contenedores activos | `docker ps --filter name=soar_` | Todos los servicios esenciales `Up`; `soar_promtail` estable con imagen `2.9.9` |
 | Tests unitarios | `docker exec soar_api pytest tests/unit -q --cov=src/soar_lab --cov-config=/app/.coveragerc --cov-fail-under=80` | **1030 passed**, cobertura **83,62 %** |
@@ -2748,7 +2748,7 @@ Datos extraídos de `reports/e2e/`, `reports/quality/`, `reports/test-review/`,
 #### Cumplimiento de Objetivos TFM
 
 | Objetivo | Umbral | Valor Medido | Cumple |
-|----------|--------|--------------|--------|
+| ---------- | -------- | -------------- | -------- |
 | MTTR P50 (mediana) | ≤ 120s | 193.19s | No |
 | MTTR P90 | ≤ 180s | 621.83s | No |
 | Tasa de Éxito | ≥ 95% | 100% | Sí |
@@ -2760,7 +2760,7 @@ Cumplimiento: 3/5 objetivos.
 #### MTTR Detallado
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | MTTR Medio | 277.15s |
 | MTTR Mediana (P50) | 193.19s |
 | MTTR P90 | 621.83s |
@@ -2772,7 +2772,7 @@ Cumplimiento: 3/5 objetivos.
 #### Decisiones Automatizadas
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Tasa de contención (score ≥ 80) | 92.0% (46/50) |
 | Tasa de observación (score < 80) | 8.0% (4/50) |
 | Score promedio | 96.2/100 (min=55, max=100) |
@@ -2782,7 +2782,7 @@ Cumplimiento: 3/5 objetivos.
 #### Servicios e Integraciones
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Servicios healthy | 10/10 (100%) |
 | Workflows completados | 50/50 (100%) |
 | Casos TheHive creados | 50/50 (100%) |
@@ -2797,7 +2797,7 @@ Cumplimiento: 3/5 objetivos.
 #### D.2. Métricas de Calidad Consolidadas
 
 | Radar | Score Global | Estado | Fuente |
-|-------|-------------|--------|--------|
+| ------- | ------------- | -------- | -------- |
 | Quality Score | 92.2/100 | Excellent | `reports/quality/` |
 | Holistic Project Radar (HPR) | 96.0/100 | Excellent | `reports/holistic/` |
 | Test Review (7 dims) | 92.2/100 | Excellent | `reports/test-review/` |
@@ -2805,7 +2805,7 @@ Cumplimiento: 3/5 objetivos.
 #### Quality Score por Categoría
 
 | Categoría | Score | Peso | Estado |
-|-----------|-------|------|--------|
+| ----------- | ------- | ------ | -------- |
 | Maintainability | 77.6 | 20% | Acceptable |
 | Coverage | 84.6 | 20% | Good |
 | Complexity | 100 | 15% | Excellent |
@@ -2818,7 +2818,7 @@ Cumplimiento: 3/5 objetivos.
 #### HPR por Capa
 
 | Capa | Dimensiones | Score Medio | Estado |
-|------|-------------|-------------|--------|
+| ------ | ------------- | ------------- | -------- |
 | L1 — Core (código producción) | 4 | 94.4 | Excellent |
 | L2 — Tests | 3 | 97.2 | Excellent |
 | L3 — Quality Gates | 3 | 98.2 | Excellent |
@@ -2828,7 +2828,7 @@ Cumplimiento: 3/5 objetivos.
 #### Métricas Clave de Código
 
 | Métrica | Valor | Herramienta |
-|---------|-------|-------------|
+| --------- | ------- | ------------- |
 | Coverage de líneas | 84.6% (4730/5592) | pytest/cov |
 | Complejidad media | 2.61 (max 15, 0 bloques alto riesgo) | radon |
 | Maintainability Index | 77.57 (min 50.02, max 100) | radon |
@@ -2841,7 +2841,7 @@ Cumplimiento: 3/5 objetivos.
 #### Métricas Clave de Tests
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Tests coleccionados | 2233 (1905 seleccionados) |
 | Distribución | 65.9% unit, 16.5% integration, 13.8% e2e, 3.8% other |
 | Tests saltados | 2 (esperados: Tenzir 404, docker compose en contenedor) |
@@ -2856,7 +2856,7 @@ Cumplimiento: 3/5 objetivos.
 #### D.3. Infraestructura y API
 
 | Aspecto | Valor |
-|---------|-------|
+| --------- | ------- |
 | Servicios totales | 23 (6 compose files, todos válidos) |
 | Endpoints API | 38 (OpenAPI 3.1.0 válido) |
 | WebSocket | `/api/ws/logs` (streaming tiempo real) |
@@ -2870,7 +2870,7 @@ Cumplimiento: 3/5 objetivos.
 
 Integraciones clave: TheHive API (timeout 120s, 3 retries backoff 0.5), Cortex API (timeout 120s, 3 retries, 7 analyzers en paralelo), Shuffle webhook (60 req/min).
 
-Stack de servicios: Shuffle 2.2.1, TheHive 3.5.2-1, Cortex 3.2.0-1, MISP 2.5.44, Elasticsearch 7.10.2, OpenSearch 2.10.0, Redis 7, PostgreSQL 14, MariaDB 10.11, Nginx 1.25, Loki 2.9.10, Promtail 2.9.9, Grafana 10.3.4, Tenzir v6.8.1.
+Stack de servicios: Shuffle 2.2.1, TheHive 5.7.8-1, Cortex 3.2.0-1, MISP 2.5.44, Elasticsearch 7.10.2, OpenSearch 2.10.0, Redis 7, PostgreSQL 14, MariaDB 10.11, Nginx 1.25, Loki 2.9.10, Promtail 2.9.9, Grafana 10.3.4, Tenzir v6.8.1.
 
 Requisitos hardware: 8 GB RAM (16 GB+ recomendado), 2 cores (4+), 50 GB SSD, Docker 20.10+, Python 3.11+.
 
@@ -2890,7 +2890,7 @@ Detalle del cronograma y objetivos en el Anexo de Objetivos y Metodología (este
 #### D.5. Resumen Ejecutivo de Validación
 
 | Aspecto | Resultado | Evidencia |
-|---------|-----------|-----------|
+| --------- | ----------- | ----------- |
 | Workflow E2E | Sí Funcional | 50/50 workflows completados |
 | MTTR | Sí Mejora 92.3% | 3600s -> 277.15s |
 | Contención | Sí 92% | 46/50 alertas con score ≥ 80 |

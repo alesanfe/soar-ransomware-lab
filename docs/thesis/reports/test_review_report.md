@@ -8,7 +8,7 @@ Methodology: 7-dimension structured test review
 ## Overall Score
 
 | Dimension | Score | Status |
-|-----------|-------|--------|
+| ----------- | ------- | -------- |
 | D2 Mutation | — | Not available |
 | D3 Pyramid | 94.3 | Excellent |
 | D4 Health | 99.5 | Excellent |
@@ -17,13 +17,11 @@ Methodology: 7-dimension structured test review
 | D7 Duplication | 86.4 | Good |
 | **Overall** | **92.2** | **Excellent** |
 
-
 ---
 
 ## D1 — Structural Coverage
 
 > ⚠️ coverage.xml not found. Run with --with-coverage.
-
 
 ---
 
@@ -31,7 +29,6 @@ Methodology: 7-dimension structured test review
 
 > ⚠️ Not available
 > Run `make mutation` inside Docker to generate mutation testing data.
-
 
 ---
 
@@ -43,7 +40,7 @@ Methodology: 7-dimension structured test review
 ### Distribution by layer
 
 | Layer | Tests | Actual % | Ideal % |
-|-------|-------|----------|---------|
+| ------- | ------- | ---------- | --------- |
 | Unit (unit + atomic) | 1346 | 65.9% | 70% |
 | Integration | 336 | 16.5% | 20% |
 | E2E | 281 | 13.8% | 10% |
@@ -52,7 +49,7 @@ Methodology: 7-dimension structured test review
 ### Distribution by category
 
 | Category | Files | Tests |
-|----------|-------|-------|
+| ---------- | ------- | ------- |
 | architecture | 1 | 1 |
 | atomic | 4 | 101 |
 | e2e | 48 | 281 |
@@ -61,7 +58,6 @@ Methodology: 7-dimension structured test review
 | performance | 4 | 30 |
 | security | 1 | 27 |
 | unit | 79 | 1245 |
-
 
 ---
 
@@ -79,7 +75,6 @@ _Static analysis via AST/regex — only `@pytest.mark.skip` and `pytest.skip()` 
 |--------|-------|
 | Tenzir REST API not available (404 on /api/v0/status) | 1 |
 | docker compose not available inside container — test requires host execution | 1 |
-
 
 ---
 
@@ -106,7 +101,6 @@ _Static analysis via AST/regex — only `@pytest.mark.skip` and `pytest.skip()` 
 - `tests/performance/test_database_performance.py`
 - `tests/performance/test_workflow_performance.py`
 
-
 ---
 
 ## D6 — Test Complexity
@@ -117,7 +111,7 @@ _Static analysis via AST/regex — only `@pytest.mark.skip` and `pytest.skip()` 
 ### Top 10 longest test functions
 
 | Test | File | Line | Length |
-|------|------|------|--------|
+| ------ | ------ | ------ | -------- |
 | `test_realistic_ransomware` | `tests/e2e/TC-09/test_realistic_ransomware.py` | 49 | 224 |
 | `test_mttr_percentiles` | `tests/e2e/TC-KPI-02/test_mttr_percentiles.py` | 114 | 208 |
 | `test_concurrent_alerts` | `tests/e2e/TC-05/test_concurrent_alerts.py` | 195 | 172 |
@@ -132,7 +126,7 @@ _Static analysis via AST/regex — only `@pytest.mark.skip` and `pytest.skip()` 
 ### Files with low assertion density (potential weak tests)
 
 | File | Tests | Assertions | Avg/test |
-|------|-------|------------|----------|
+| ------ | ------- | ------------ | ---------- |
 | `tests/unit/integrations/test_send_alert.py` | 5 | 2 | 0.4 |
 | `tests/unit/common/test_timeout_handling.py` | 10 | 5 | 0.5 |
 | `tests/atomic/test_alert_validation.py` | 21 | 14 | 0.7 |
@@ -146,7 +140,6 @@ _Static analysis via AST/regex — only `@pytest.mark.skip` and `pytest.skip()` 
 
 _Static analysis via AST — assertion counts are based on `assert` statements in the source code, not runtime execution._
 
-
 ---
 
 ## D7 — Test Duplication
@@ -157,7 +150,7 @@ _Static analysis via AST — assertion counts are based on `assert` statements i
 ### Duplicated test names
 
 | Test name | Files |
-|-----------|-------|
+| ----------- | ------- |
 | `test_alert` | `tests/integration/test_api_endpoints.py`, `tests/integration/test_data_consistency.py`, `tests/integration/test_idempotency.py` +1 more |
 | `test_audit_trail` | `tests/e2e/TC-02/test_benign.py`, `tests/e2e/TC-21/test_forensic.py`, `tests/e2e/TC-31/test_compliance.py` |
 | `test_case_creation` | `tests/e2e/TC-09/test_realistic_ransomware.py`, `tests/unit/domain/test_domain_models.py` |
@@ -176,7 +169,6 @@ _Static analysis via AST — assertion counts are based on `assert` statements i
 
 _Showing 15 of 88 duplicated names._
 
-
 ---
 
 ## Recommendations
@@ -190,7 +182,6 @@ _Showing 15 of 88 duplicated names._
 - ℹ️ **D1 Coverage**: Run with `--with-coverage` to analyze structural coverage.
 - ℹ️ **D2 Mutation**: Run `make mutation` in Docker to analyze logic coverage.
 
-
 ---
 
 ## Methodology
@@ -198,7 +189,7 @@ _Showing 15 of 88 duplicated names._
 This report evaluates the test suite across 7 dimensions:
 
 | Dimension | What it measures | Ideal | Tool |
-|-----------|------------------|-------|------|
+| ----------- | ------------------ | ------- | ------ |
 | D1 — Structural coverage | % of code lines/branches executed | ≥80% line, ≥70% branch | coverage.py |
 | D2 — Logic coverage (mutation) | % of mutations killed by tests | ≥90% | mutmut |
 | D3 — Test pyramid | Proportion unit/integration/e2e | 70/20/10 | AST analysis |

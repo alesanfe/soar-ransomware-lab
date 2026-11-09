@@ -25,7 +25,7 @@
 - [5. Problemas](#5-problemas)
   - [5.1 Limitaciones](#51-limitaciones)
   - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -75,6 +75,15 @@ generado automáticamente por FastAPI.
 - **Swagger UI** (en ejecución): `<http://localhost:8000/docs`> o `<https://soar.local/api/docs`>
 - **ReDoc** (en ejecución): `<http://localhost:8000/redoc`>
 
+El spec publicado declara además las respuestas que pueden producir los
+middlewares y dependencias (`429` rate-limit en toda operación, `400`/`404`
+en operaciones con parámetros, `502` en rutas proxy `/soar/*`, `503` en
+rutas dependientes de datastores `/soar/*` y `/analytics/*`). Esto hace el
+contrato verificable por fuzzing: `tests/integration/test_schemathesis_fuzz.py`
+(Schemathesis + Hypothesis, modo positivo, 52 operaciones GET, throttle
+cliente bajo el presupuesto de rate-limit) — ejecución dentro del
+contenedor con `-m requires_docker`.
+
 #### Información general
 
 - **Título**: SOAR Lab Management API
@@ -102,7 +111,7 @@ curl -H "Authorization: Bearer $TOKEN" <http://localhost:8000/health>
 #### Endpoints
 
 | Método | Ruta | Resumen | Tags |
-|--------|-------------------------------------------------------------------|-------------------------|------|
+| -------- | ------------------------------------------------------------------- | ------------------------- | ------ |
 | `GET` | `/` | Root | |
 | `GET` | `/health` | Health | |
 | `POST` | `/auth/login` | Login | |
@@ -113,6 +122,8 @@ curl -H "Authorization: Bearer $TOKEN" <http://localhost:8000/health>
 | `GET` | `/analytics/node-timings` | Get Node Timings | |
 | `POST` | `/api/v1/contain` | Contain | |
 | `POST` | `/api/v1/cache/ioc` | Cache Ioc | |
+| `POST` | `/api/v1/alerts` | Admit alert (async, 202) | ingest |
+| `GET` | `/api/v1/alerts/{admission_id}` | Admission status | ingest |
 | `POST` | `/backup/create` | Create Backup | |
 | `GET` | `/backup/list` | List Backups | |
 | `POST` | `/backup/restore` | Restore Backup | |
@@ -148,6 +159,7 @@ curl -H "Authorization: Bearer $TOKEN" <http://localhost:8000/health>
 - Las respuestas de error usan el esquema HTTP estándar de FastAPI.
 - Para detalles de esquemas de petición/respuesta, consulta `openapi.json` o Swagger UI.
 - `WebSocket /ws/logs`: endpoint de streaming de logs en tiempo real. No aparece en `openapi.json` porque FastAPI no genera WebSockets en la especificación OpenAPI de forma automática.
+- `POST /api/v1/alerts` (PERF-001): admisión asíncrona. Devuelve `202 Accepted` con `{admission_id, status_url}`; un worker reenvía la alerta al webhook de Shuffle con reintentos y DLQ en Redis Streams (`soar:admissions`, `soar:admissions:dlq`). `GET /api/v1/alerts/{admission_id}` expone el ciclo de vida (`queued` → `forwarded`/`dead`). Requiere `REDIS_URL` y `ALERT_INGEST_ENABLED=true` (default); devuelve 503 si la cola no está disponible.
 
 #### Servicios externos
 
@@ -157,7 +169,7 @@ curl -H "Authorization: Bearer $TOKEN" <http://localhost:8000/health>
 La API del laboratorio actúa como fachada sobre servicios desplegados en Docker:
 
 | Servicio | Contenedor (red `soar_net`) |
-|-----------------|-----------------------------|
+| ----------------- | ----------------------------- |
 | TheHive | `thehive:9000` |
 | Cortex | `cortex:9001` |
 | MISP | `misp:80` |
@@ -229,7 +241,7 @@ Este documento depende de:
 ##### 3.3.1.1 Clasificación de APIs
 
 | API | Tipo | Servicio | Puerto host / Proxy |
-|-----------------------------|--------------|---------------------------------------|----------------------------------|
+| ----------------------------- | -------------- | --------------------------------------- | ---------------------------------- |
 | **TheHive** | ✅ Real | Gestión de casos e incidentes | `8100` / `/thehive/` |
 | **Cortex** | ✅ Real | Análisis de IoCs (analyzers) | `8101` / `/cortex/` |
 | **Shuffle UI** | ✅ Real | Interfaz del orquestador SOAR | `8081` (directo, no Nginx) |
@@ -305,17 +317,18 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 **Endpoints utilizados:**
 
 | Método | Endpoint | Descripción |
-|---------|----------------------------------|-------------------------------------------|
-| `GET` | `/api/status` | Health check del servicio |
-| `GET` | `/api/case` | Listar todos los casos |
-| `POST` | `/api/case` | Crear nuevo caso |
-| `GET` | `/api/case/{case_id}` | Obtener caso por ID |
-| `PATCH` | `/api/case/{case_id}` | Actualizar estado del caso |
-| `POST` | `/api/case/{case_id}/artifact` | Añadir observable a un caso |
-| `GET` | `/api/case/{case_id}/observable` | Listar observables de un caso |
-| `POST` | `/api/alert` | Crear alerta (alternativa a caso directo) |
+| --------- | ---------------------------------- | ------------------------------------------- |
+| `GET` | `/api/v1/status/public` | Health check del servicio (sin auth) |
+| `GET` | `/api/v1/status` | Health check + versión (con auth) |
+| `POST` | `/api/v1/query` | Listar/buscar casos (`{"_name":"listCase"}` + `page`) |
+| `POST` | `/api/v1/case` | Crear nuevo caso |
+| `GET` | `/api/v1/case/{case_id}` | Obtener caso por ID (`_id`) |
+| `PATCH` | `/api/v1/case/{case_id}` | Actualizar estado del caso |
+| `POST` | `/api/v1/case/{case_id}/observable` | Añadir observable a un caso |
+| `GET` | `/api/v1/query` | Listar observables (`listObservable` + `filter`) |
+| `POST` | `/api/v1/alert` | Crear alerta (alternativa a caso directo) |
 
-**Payload — Crear caso (`POST /api/case`):**
+**Payload — Crear caso (`POST /api/v1/case`):**
 
 ```json
 {
@@ -324,7 +337,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
  "severity": 3,
  "tlp": 2,
  "tags": ["ransomware", "soar-lab", "tc-01"],
- "status": "Open"
+ "status": "New"
 }
 ```
 
@@ -334,18 +347,23 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 {
  "_id": "~123456789",
  "_type": "case",
- "caseId": 42,
+ "number": 42,
  "title": "Ransomware detectado en WIN-001 [ALERT-2025-001234]",
- "status": "Open",
+ "status": "New",
  "severity": 3,
- "createdAt": 1746295335000
+ "_createdAt": 1746295335000
 }
 ```
+
+> Estados de caso válidos en TheHive 5: `New`, `InProgress`,
+> `TruePositive`, `FalsePositive`, `Indeterminate`, `Duplicated`,
+> `Other` (`Open`/`Resolved` no existen). Estados de tarea:
+> `Waiting`, `InProgress`, `Completed`, `Cancel`.
 
 **Límites de uso:**
 
 | Parámetro | Valor |
-|------------------------|-------------------------------|
+| ------------------------ | ------------------------------- |
 | Timeout por petición | 30 s |
 | Reintentos automáticos | 3 (backoff 5 s) |
 | Severidad válida | 1 (Low), 2 (Medium), 3 (High) |
@@ -360,7 +378,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 **Endpoints utilizados:**
 
 | Método | Endpoint | Descripción |
-|--------|----------------------------|---------------------------------------|
+| -------- | ---------------------------- | --------------------------------------- |
 | `GET` | `/` | Health check (HTTP 200 = disponible) |
 | `GET` | `/api/analyzer` | Listar analyzers disponibles |
 | `POST` | `/api/analyzer/run` | Ejecutar analyzer sobre un observable |
@@ -380,7 +398,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 **Analyzers activos en el lab** (ver `scripts/setup/shuffle_workflow/cortex_setup.py`):
 
 | Analyzer ID | Tipo | Modo | Requiere API key externa |
-|----------------------------|-----------|---------|---------------------------|
+| ---------------------------- | ----------- | --------- | --------------------------- |
 | `Hashdd_Status_2_0` | hash | offline | No |
 | `IP-API_1_1` | ip | offline | No |
 | `DShield_lookup_1_0` | ip | offline | No |
@@ -392,7 +410,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 **Límites de uso:**
 
 | Parámetro | Valor |
-|----------------------------|----------------------------------|
+| ---------------------------- | ---------------------------------- |
 | `MAX_CONCURRENT_ANALYZERS` | `3` (`.env.full`) |
 | `ANALYZER_TIMEOUT` | `30` s (`.env.full`) |
 | `ANALYZER_RETRIES` | `1` (`.env.full`) |
@@ -432,7 +450,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 **Límites de uso:**
 
 | Parámetro | Valor |
-|----------------------------|-----------------------------------|
+| ---------------------------- | ----------------------------------- |
 | `WEBHOOK_RATE_LIMIT` | 60 req/min (`.env.full`) |
 | `WEBHOOK_PAYLOAD_MAX_SIZE` | 65536 bytes / 64 KB (`.env.full`) |
 | Timeout cliente | 3 s (tests E2E) |
@@ -450,7 +468,7 @@ La generación de alertas de prueba se realiza con `src/soar_lab/simulator/simul
 **Endpoints:**
 
 | Método | Endpoint | Auth | Descripción |
-|--------|----------------------|------|--------------------------------------|
+| -------- | ---------------------- | ------ | -------------------------------------- |
 | `GET` | `/health` | No | Health check |
 | `GET` | `/` | No | Documentación HTML |
 | `POST` | `/auth/login` | No | Obtener JWT token |
@@ -551,7 +569,7 @@ Valores válidos para `category`: `unit`, `integration`, `e2e`, `atomic`, `perfo
 ##### 3.3.3 Resumen de variables de entorno por API
 
 | Variable | API | Descripción |
-|----------------------------|-------------------|--------------------------------------------|
+| ---------------------------- | ------------------- | -------------------------------------------- |
 | `THEHIVE_API_KEY` | TheHive | API key de autenticación |
 | `THEHIVE_HTTP_PORT` | TheHive | Puerto host (default 8100) |
 | `CORTEX_API_KEY` | Cortex | API key de autenticación |
@@ -632,7 +650,7 @@ Modelo canónico: `RansomwareAlert` en `src/soar_lab/config/schemas/__init__.py`
  "severity": 3,
  "tlp": 2,
  "tags": ["ransomware", "soar-lab", "tc-01"],
- "status": "Open"
+ "status": "New"
 }
 ```
 
@@ -718,7 +736,7 @@ Los modelos definidos en `src/soar_lab/config/schemas/__init__.py` extienden las
 para los campos que llegan a `init_shuffle_webhook.py` y a la API.
 
 | Modelo | Campos principales | Validaciones |
-|---|---|---|
+| --- | --- | --- |
 | `RansomwareAlert` | `alert_id`, `hostname`, `src_ip`, `hash`, `severity`, `source`, `detection_time`, `event_type`, `description`, `affected_files`, `mitre_tactics`, `mitre_techniques`, `network_events` | `alert_id`: `^ALERT-\d{10}-\d{4}$`; `hostname`: `[a-zA-Z0-9\-]{1,255}`; `detection_time` no futuro; `hash.sha256` 64 hex. |
 | `MITREInfo` | `tactics`, `techniques`, `sub_techniques` | Tácticas limitadas a `TA0001`–`TA0011`, `TA0040`–`TA0043`. |
 | `ContainmentAction` | `action_id`, `alert_id`, `hostname`, `action_type`, `status`, `execution_time`, `details`, `error_message` | `action_id`: `^ACTION-\d{10}-\d{4}$`; `action_type` ∈ `{network_isolation, process_termination, account_lockdown}`; `status` ∈ `{pending, executed, failed, completed}`. |
@@ -822,7 +840,7 @@ sequenceDiagram
 
  Sim->>Shuffle: POST /api/v1/hooks/{workflow_id} (alert)
  Shuffle->>Backend: Reenvía alerta
- Backend->>TheHive: POST /api/case (crear caso)
+ Backend->>TheHive: POST /api/v1/case (crear caso)
  TheHive-->>Backend: Case ID
  Backend->>Cortex: POST /api/analyzer/run (analyzers)
  Cortex-->>Backend: Resultados (score, verdict)
@@ -831,9 +849,9 @@ sequenceDiagram
  Backend->>Backend: Decisión (score >= 80?)
  alt Score ≥ 80 or verdict malicioso
  Backend->>Backend: Acción de contención simulada
- Backend->>TheHive: PATCH /api/case (actualizar estado)
+ Backend->>TheHive: PATCH /api/v1/case/{id} (InProgress)
  else Score < 80 and verdict benigno
- Backend->>TheHive: PATCH /api/case (marcar benigno)
+ Backend->>TheHive: PATCH /api/v1/case/{id} (FalsePositive)
  end
  LabAPI->>Backend: GET /soar/status /metrics
 ```
@@ -865,7 +883,10 @@ THEHIVE_API_KEY=<nueva_api_key>
 docker compose restart shuffle-backend shuffle-frontend
 
 # 4. Verificar conexión
-curl -H "Authorization: Bearer $THEHIVE_API_KEY" <http://localhost:8100/api/case>
+curl -H "Authorization: Bearer $THEHIVE_API_KEY" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"query":[{"_name":"listCase"},{"_name":"page","from":0,"to":10}]}' \
+  <http://localhost:8100/api/v1/query>
 ```
 
 **Rotación de API keys para Cortex:**
@@ -973,7 +994,7 @@ from requests.exceptions import RequestException
 def create_thehive_case(alert_data):
     try:
         response = requests.post(
-            f"<http://localhost:{THEHIVE_HTTP_PORT}/api/case">,
+            f"<http://localhost:{THEHIVE_HTTP_PORT}/api/v1/case">,
             headers={"Authorization": f"Bearer {THEHIVE_API_KEY}"},
             json=alert_data,
             timeout=30
@@ -1186,15 +1207,15 @@ Las claves más relevantes de `.env.full` son:
 Las versiones canónicas de los componentes principales se consultan directamente en `infra/docker/compose/docker-compose.core.yml` y en [docs/02-architecture.md](02-architecture.md).
 
 | Componente | Versión verificada | Fuente | Documentación oficial |
-|------------|--------------------|--------|-----------------------|
+| ------------ | -------------------- | -------- | ----------------------- |
 | **Shuffle** | `2.2.1` (`ghcr.io/shuffle/shuffle-frontend:2.2.1`, `ghcr.io/shuffle/shuffle-backend:2.2.1`, `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched`) | `infra/docker/compose/docker-compose.core.yml` | <https://shuffler.io/docs> |
-| **TheHive** | `3.5.2-1` (`thehiveproject/thehive:3.5.2-1`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/thehive/> |
-| **Cortex** | `3.2.0-1` (imagen compatible con TheHive 3.x) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/cortex/> |
+| **TheHive** | `5.7.8-1` (`strangebee/thehive:5.7.8-1`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/thehive/> |
+| **Cortex** | `3.2.0-1` (conector nativo de TheHive 5, `TH_CORTEX_*`) | `infra/docker/compose/docker-compose.core.yml` | <https://docs.strangebee.com/cortex/> |
 | **MISP** | `v2.5.44` (`ghcr.io/misp/misp-docker/misp-core:v2.5.44`) | `infra/docker/compose/docker-compose.misp.yml` | <https://www.misp-project.org/documentation/> |
 | **Elasticsearch** | `7.10.2` | `infra/docker/compose/docker-compose.yml` | <https://www.elastic.co/guide/en/elasticsearch/reference/7.10/index.html> |
 | **OpenSearch** | `2.10.0` | `infra/docker/compose/docker-compose.opensearch.yml` | <https://opensearch.org/docs/latest/> |
 
-> **Nota:** La imagen TheHive `3.5.2-1` es la que se despliega; la documentación de StrangeBee cubre tanto TheHive 3 como TheHive 5. La API y los endpoints principales no cambian para las operaciones usadas en este laboratorio.
+> **Nota:** Se despliega TheHive `5.7.8-1` (TH-001). La API es `/api/v1` — los listados usan `POST /api/v1/query` (operaciones `listCase`/`filter`/`page`) y los estados de caso son `New`/`InProgress`/`TruePositive`/`FalsePositive`/`Indeterminate`/`Duplicated`/`Other`. Almacenamiento embebido (JanusGraph/BerkeleyJE + Lucene): no requiere Elasticsearch.
 
 ### 3.6 Integración con Cortex
 

@@ -17,6 +17,7 @@ pruebas completas y automatización mediante **Makefile**.
 - [Objetivos del Laboratorio](#objetivos-del-laboratorio)
 - [Arquitectura General](#arquitectura-general)
 - [Resumen de Arquitectura](#resumen-de-arquitectura)
+- [Capturas](#-capturas)
 - [Estructura del Repositorio](#estructura-del-repositorio)
 - [Documentación del Proyecto](#documentación-del-proyecto)
 - [Instalación Rápida](#instalación-rápida)
@@ -94,7 +95,62 @@ inverso HTTPS para los servicios que lo soportan, mientras que otros servicios s
 
 ---
 
-## 📁 Estructura del Repositorio
+## � Capturas
+
+### Puesta en marcha y operación
+
+| Shuffle | TheHive | Cortex | Docker |
+|---|---|---|---|
+| ![Login de Shuffle](docs/assets/images/shuffle/login.png) | ![Login de TheHive](docs/assets/images/thehive/login.png) | ![Login de Cortex](docs/assets/images/cortex/login.png) | ![docker ps con todos los contenedores healthy](docs/assets/images/docker/ps-healthy.png) |
+| | ![TheHive: creación del usuario administrador](docs/assets/images/thehive/create-admin.png) | ![Cortex: creación del usuario administrador](docs/assets/images/cortex/create-admin.png) | |
+| | ![TheHive: API key del usuario de integración](docs/assets/images/thehive/apikey.png) | ![Cortex: actualización de la base de analyzers](docs/assets/images/cortex/update-database.png) | |
+| | ![TheHive: dashboard de casos](docs/assets/images/thehive/dashboard.png) | ![Cortex: dashboard de jobs](docs/assets/images/cortex/dashboard.png) | |
+| | ![TheHive: actualización de base de datos tras la instalación](docs/assets/images/thehive/update-database.png) | | |
+
+### Figuras de la tesis (resultados experimentales)
+
+<details>
+<summary>Todas las figuras — métricas MTTR, distribuciones, Grafana y experimentos GE1–GE6</summary>
+
+| Figura | Contenido |
+|---|---|
+| `Fig1_3_mttr_comparison.png` | ![Comparativa de MTTR manual vs automatizado](docs/thesis/figures/Fig1_3_mttr_comparison.png) |
+| `Fig5_1_mttr_results.png` | ![Resultados de MTTR del experimento](docs/thesis/figures/Fig5_1_mttr_results.png) |
+| `Fig5_2_improvements_category.png` | ![Mejora por categoría de respuesta](docs/thesis/figures/Fig5_2_improvements_category.png) |
+| `Fig5_5_cost_benefit.png` | ![Análisis coste-beneficio de la automatización](docs/thesis/figures/Fig5_5_cost_benefit.png) |
+| `GE1_component_timings.png` | ![GE1: tiempos por componente del pipeline](docs/thesis/figures/GE1_component_timings.png) |
+| `GE2_percentiles.png` | ![GE2: percentiles de latencia](docs/thesis/figures/GE2_percentiles.png) |
+| `GE3_success_rates.png` | ![GE3: tasas de éxito por escenario](docs/thesis/figures/GE3_success_rates.png) |
+| `GE4_metrics_evolution.png` | ![GE4: evolución de métricas durante el experimento](docs/thesis/figures/GE4_metrics_evolution.png) |
+| `GE5_improvements.png` | ![GE5: mejoras obtenidas](docs/thesis/figures/GE5_improvements.png) |
+| `GE6_cost_benefit.png` | ![GE6: coste-beneficio](docs/thesis/figures/GE6_cost_benefit.png) |
+| `alert_distribution.png` | ![Distribución de alertas por tipo](docs/thesis/figures/alert_distribution.png) |
+| `decision_distribution.png` | ![Distribución de decisiones del playbook](docs/thesis/figures/decision_distribution.png) |
+| `severity_distribution.png` | ![Distribución de severidades](docs/thesis/figures/severity_distribution.png) |
+| `mttr_by_phase.png` | ![MTTR descompuesto por fase del incidente](docs/thesis/figures/mttr_by_phase.png) |
+| `mttr_severity_boxplot.png` | ![MTTR por severidad (boxplot)](docs/thesis/figures/mttr_severity_boxplot.png) |
+| `correlation_heatmap.png` | ![Mapa de calor de correlaciones entre métricas](docs/thesis/figures/correlation_heatmap.png) |
+| `workflow_durations.png` | ![Duración de los workflows de respuesta](docs/thesis/figures/workflow_durations.png) |
+| `workflow_notifications.png` | ![Notificaciones emitidas por workflow](docs/thesis/figures/workflow_notifications.png) |
+| `cortex_job_status.png` | ![Estado de los jobs de analyzers en Cortex](docs/thesis/figures/cortex_job_status.png) |
+| `thehive_case_status.png` | ![Estado de los casos en TheHive](docs/thesis/figures/thehive_case_status.png) |
+| `org_daily_stats.png` | ![Estadísticas diarias de la organización](docs/thesis/figures/org_daily_stats.png) |
+| `service_health.png` | ![Salud de los servicios durante la medición](docs/thesis/figures/service_health.png) |
+| `threshold_compliance.png` | ![Cumplimiento de los umbrales p50 ≤ 120 s y p90 ≤ 180 s](docs/thesis/figures/threshold_compliance.png) |
+| `loki_log_volume.png` | ![Volumen de logs en Loki](docs/thesis/figures/loki_log_volume.png) |
+| `loki_log_heatmap.png` | ![Mapa de calor de logs en Loki](docs/thesis/figures/loki_log_heatmap.png) |
+| `grafana_panel_4_…` | ![Grafana — Tasa de éxito por tipo de alerta](docs/thesis/figures/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png) |
+| `grafana_panel_5_…` | ![Grafana — Percentiles de MTTR](docs/thesis/figures/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png) |
+| `grafana_panel_6_…` | ![Grafana — Tasa de éxito de servicios TheHive/Cortex](docs/thesis/figures/grafana_panel_6_Grafico_4_5___Tasa_de_Exito_Servicios__TheHive___C.png) |
+| `grafana_panel_10_…` | ![Grafana — Evolución del MTTR (tendencia diaria)](docs/thesis/figures/grafana_panel_10_Grafico_5_3___Evolucion_MTTR__tendencia_diaria_.png) |
+| `grafana_panel_12_…` | ![Grafana — Alertas procesadas por hora (throughput)](docs/thesis/figures/grafana_panel_12_Grafico_5_4___Alertas_procesadas_por_hora__through.png) |
+| `grafana_panel_13_…` | ![Grafana — MTTR por tipo de alerta](docs/thesis/figures/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png) |
+
+</details>
+
+---
+
+## �📁 Estructura del Repositorio
 
 ```
 soar-ransomware-lab/

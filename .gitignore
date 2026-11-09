@@ -71,3 +71,4 @@ backups/
 *.srl
 *.pem
 infra/docker/config/nginx/ssl/*.key
+node_modules/

@@ -23,7 +23,7 @@
 - [5. Problemas](#5-problemas)
   - [5.1 Limitaciones](#51-limitaciones)
   - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -430,7 +430,7 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 > **Fuente canónica:** consultar `docs/04-operations.md` para el listado completo de puertos, URLs y credenciales actualizadas.
 
 | Servicio | Acceso directo (host) | Acceso vía Nginx (`<https://soar.local`>) | Credenciales |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Nginx / Proxy | `<http://localhost`>, `<https://localhost`> | `/` | — |
 | Web Management | `<http://localhost:8085`> | `/` | `.env.full` → `WEB_UI_USER` / `WEB_UI_PASSWORD` |
 | Lab API | `<http://localhost:8000`> | `/api/` | Token JWT en `Authorization: Bearer <token>` |

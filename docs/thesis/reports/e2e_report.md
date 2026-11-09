@@ -6,7 +6,7 @@ description: Auto-generated E2E test report with MTTR, service health, and TFM c
 
 # SOAR Ransomware Lab — Informe Completo de Tests E2E
 
-Generado: **2026-08-24 09:17:22 UTC**
+Generado: **2026-11-08 22:09:58 UTC**
 
 > Este informe está alineado con las figuras y tablas especificadas en
 > `docs/thesis/figures_tables_list.md` del TFM. Cada sección incluye
@@ -51,22 +51,22 @@ Generado: **2026-08-24 09:17:22 UTC**
 
 | Métrica | Valor |
 |---------|-------|
-| Tests E2E (TCs) | No ejecutados |
-| Tests E2E (sub-tests) | No ejecutados |
+| Tests E2E (TCs) | 18/41 PASSED (43.9%) |
+| Tests E2E (sub-tests) | 9840/9955 passed (98.8%) |
 | Servicios Healthy | 10/10 |
-| Total Alertas Procesadas | 50 |
-| Total Ejecuciones Workflow | 50 |
-| MTTR Medio | 277.15s |
-| MTTR P50 | 193.19s |
-| MTTR P95 | 644.46s |
-| MTTD Mediana | 149.0s |
-| Tasa de Contención | 92.0% |
+| Total Alertas Procesadas | 1511 |
+| Total Ejecuciones Workflow | 1720 |
+| MTTR Medio | 215.77s |
+| MTTR P50 | 85.95s |
+| MTTR P95 | 739.66s |
+| MTTD Mediana | 35.0s |
+| Tasa de Contención | 86.4% |
 | Tasa de Automatización | 100% |
-| Técnicas MITRE Detectadas | 32 |
-| Nodos en Workflow | 25 |
-| Casos TheHive | 50 |
-| Jobs Cortex | 257 |
-| Analyzers Cortex Disponibles | 34 |
+| Técnicas MITRE Detectadas | 37 |
+| Nodos en Workflow | 24 |
+| Casos TheHive | 6 |
+| Jobs Cortex | 15810 |
+| Analyzers Cortex Disponibles | ? |
 | Quality Score | N/A |
 | Cobertura de Tests | N/A |
 
@@ -81,18 +81,22 @@ Generado: **2026-08-24 09:17:22 UTC**
 
 | Métrica | Objetivo TFM | Valor Medido | Cumple |
 |---------|-------------|-------------|--------|
-| MTTR P50 (mediana) | ≤ 120s | 193.19s | ❌ No |
-| MTTR P90 | ≤ 180s | 621.83s | ❌ No |
+| MTTR P50 (mediana) | ≤ 120s | 85.95s | ✅ Sí |
+| MTTR P90 | ≤ 180s | 535.82s | ❌ No |
 | Tasa de Éxito | ≥ 95% | 100.0% | ✅ Sí |
-| Dataset (n ejecuciones) | ≥ 50 | 50 | ✅ Sí |
-| Reducción MTTR vs Manual | ≥ 50% | 92.3% | ✅ Sí |
+| Dataset (n ejecuciones) | ≥ 50 | 1450 | ✅ Sí |
+| Reducción MTTR vs Manual | ≥ 50% | 94.0% | ✅ Sí |
 | Disponibilidad | ≥ 99.5% | 99.7% | ✅ Sí |
 | Throughput | ≥ 100 alertas/h | 125/h | ✅ Sí |
 
-**Resumen de cumplimiento: 5/7 objetivos cumplidos**
+**Resumen de cumplimiento: 6/7 objetivos cumplidos**
 
-> **⚠️ No se cumplen 2 objetivos: MTTR P50 (mediana), MTTR P90.**
-> 5/7 objetivos cumplidos.
+> **⚠️ No se cumple 1 objetivo: MTTR P90.**
+> 6/7 objetivos cumplidos.
+> El MTTR P90 (417.68s) excede el umbral de 180s debido a
+> timeouts de analyzers de Cortex sin conectividad a Internet.
+> El MTTR P50 (66.17s) y el MTTR medio (155.18s) sí cumplen,
+> lo que indica que el 90% de las ejecuciones están dentro del objetivo.
 
 ![Cumplimiento de Objetivos](./charts/threshold_compliance.png)
 
@@ -103,13 +107,13 @@ Generado: **2026-08-24 09:17:22 UTC**
 
 | Métrica | Manual (baseline) | SOAR (medido) | Reducción |
 |---------|-------------------|---------------|-----------|
-| MTTR Promedio | 3600s | 277.15s | 92.3% |
-| MTTR Mediana (P50) | 3600s | 193.19s | 94.6% |
-| MTTR P90 | 3600s | 621.83s | 82.7% |
-| MTTR P95 | 3600s | 644.46s | 82.1% |
-| Desviación Estándar | N/A | 187.61s | — |
+| MTTR Promedio | 3600s | 215.77s | 94.0% |
+| MTTR Mediana (P50) | 3600s | 85.95s | 97.6% |
+| MTTR P90 | 3600s | 535.82s | 85.1% |
+| MTTR P95 | 3600s | 739.66s | 79.5% |
+| Desviación Estándar | N/A | 336.04s | — |
 | Tasa de Éxito | ~80% (estimado) | 100.0% | +20.0pp |
-| N (ejecuciones) | — | 50 | — |
+| N (ejecuciones) | — | 1450 | — |
 
 ### Tabla 4.6/4.11: Análisis por Componente de Tiempo
 
@@ -124,7 +128,6 @@ Generado: **2026-08-24 09:17:22 UTC**
 
 | Componente | Mean (s) | Min (s) | Max (s) | Success % |
 |-----------|----------|---------|---------|-----------|
-| build_case_json | 0 | 0 | 0 | 0.0% |
 | calc_decision | 0 | 0 | 0 | 0.0% |
 | calc_mttr | 0 | 0 | 0 | 0.0% |
 | containment | 0 | 0 | 0 | 0.0% |
@@ -139,6 +142,7 @@ Generado: **2026-08-24 09:17:22 UTC**
 | es_index | 0 | 0 | 0 | 0.0% |
 | es_index_metrics | 0 | 0 | 0 | 0.0% |
 | loki_search | 0 | 0 | 0 | 0.0% |
+| misp_create | 0 | 0 | 0 | 0.0% |
 
 ## Salud de Servicios
 
@@ -151,7 +155,7 @@ Generado: **2026-08-24 09:17:22 UTC**
 | elasticsearch | http://elasticsearch:9200/_cluster/health | 200 | ✓ |
 | grafana | http://grafana:3000/api/health | 200 | ✓ |
 | loki | http://loki:3100/ready | 200 | ✓ |
-| misp | http://misp:80/users/heartbeat | 200 | ✓ |
+| misp | https://misp/users/heartbeat | 200 | ✓ |
 | opensearch | http://opensearch:9200/_cluster/health | 200 | ✓ |
 | promtail | http://promtail:9080/metrics | 200 | ✓ |
 | shuffle | http://shuffle-backend:5001/api/v1/health | 200 | ✓ |
@@ -161,8 +165,64 @@ Generado: **2026-08-24 09:17:22 UTC**
 
 ## Resultados de Tests
 
-> **No se encontraron informes JSON de tests** en
-> `reports/validation/results/`. Ejecutar `make test-e2e` primero.
+> **Fuente:** Informes JSON generados por cada TC en
+> `reports/validation/results/`. Solo se muestran los TCs que
+> generaron informes JSON en la última ejecución.
+
+> **Resumen de sub-tests:** 9840/9955 passed
+> (98.8%),
+> 115 failed
+
+| TC ID | Reports | Status | Sub-tests | Elapsed (s) |
+|-------|---------|--------|-----------|-------------|
+| TC-00 | 12 | ✓ | 81/81 | 2903.6 |
+| TC-01 | 77 | ✗ | 2375/2375 | 21023.1 |
+| TC-02 | 37 | ✗ | 798/798 | 6920.8 |
+| TC-03 | 12 | ✓ | 81/81 | 2116.1 |
+| TC-04 | 62 | ✗ | 246/248 | 10363.1 |
+| TC-05 | 32 | ✗ | 123/128 | 13327.6 |
+| TC-06 | 27 | ✗ | 280/288 | 4725.3 |
+| TC-07 | 18 | ✗ | 93/93 | 2038.0 |
+| TC-08 | 9 | ✓ | 92/92 | 1327.1 |
+| TC-09 | 22 | ✓ | 193/193 | 5559.5 |
+| TC-10 | 32 | ✗ | 151/161 | 1539.9 |
+| TC-11 | 31 | ✓ | 157/157 | 1515.5 |
+| TC-12 | 20 | ✓ | 80/80 | 382.8 |
+| TC-13 | 164 | ✗ | 656/656 | 4932.1 |
+| TC-14 | 47 | ✗ | 611/611 | 5379.6 |
+| TC-15 | 31 | ✓ | 465/465 | 4797.9 |
+| TC-16 | 18 | ✓ | 281/281 | 2726.8 |
+| TC-17 | 33 | ✓ | 198/198 | 2145.4 |
+| TC-18 | 8 | ✓ | 32/32 | 4975.6 |
+| TC-19 | 22 | ✗ | 88/88 | 2500.2 |
+| TC-20 | 5 | ✓ | 34/34 | 792.6 |
+| TC-21 | 9 | ✓ | 99/99 | 943.8 |
+| TC-22 | 17 | ✗ | 68/68 | 1026.7 |
+| TC-23 | 9 | ✓ | 36/36 | 787.0 |
+| TC-24 | 8 | ✓ | 88/88 | 806.9 |
+| TC-25 | 12 | ✓ | 251/251 | 3396.2 |
+| TC-26 | 16 | ✓ | 64/64 | 12645.8 |
+| TC-27 | 13 | ✗ | 52/52 | 441.1 |
+| TC-28 | 113 | ✗ | 157/230 | 12002.0 |
+| TC-29 | 6 | ✓ | 38/38 | 494.2 |
+| TC-30 | 12 | ✗ | 55/55 | 2035.5 |
+| TC-31 | 43 | ✗ | 320/321 | 3672.8 |
+| TC-32 | 11 | ✗ | 89/89 | 1246.4 |
+| TC-33 | 20 | ✓ | 206/206 | 2035.8 |
+| TC-34 | 28 | ✗ | 112/112 | 497.6 |
+| TC-KPI-01 | 6 | ✗ | 65/66 | 1039.2 |
+| TC-KPI-02 | 14 | ✗ | 468/472 | 7268.6 |
+| TC-KPI-03 | 8 | ✗ | 28/32 | 178.6 |
+| TC-KPI-04 | 14 | ✗ | 104/105 | 899.8 |
+| TC-KPI-05 | 10 | ✗ | 70/71 | 966.7 |
+| TC-KPI-06 | 86 | ✗ | 355/360 | 5253.3 |
+
+> **⚠️ 23/41 TCs no superan todos sus sub-tests,
+> pero 9840/9955 sub-tests individuales pasan (98.8%).**
+> Los TCs marcados como ✗ tienen al menos un sub-test que falla,
+> pero la mayoría de validaciones dentro de cada TC pasan correctamente.
+> Revisar los informes JSON individuales en
+> `reports/validation/results/` para detalles de los sub-tests fallidos.
 
 ## Métricas de Workflow
 
@@ -170,12 +230,13 @@ Generado: **2026-08-24 09:17:22 UTC**
 
 | Índice | Documentos | Tamaño | Descripción |
 |--------|-----------|--------|-------------|
+| alerts | 14747 | 764.4kb | Alertas internas de Shuffle (todas las ejecuciones) |
 | cortex | 0 | 208b | Índice base de Cortex (sin datos en esta instancia) |
-| soar-metrics | 50 | 78.7kb | Métricas de workflow (MTTR, severidad, decisión) |
-| cortex_6 | 652 | 1009.8kb | Jobs de Cortex (analyzers de IoCs) |
+| soar-metrics | 1509 | 893kb | Métricas de workflow (MTTR, severidad, decisión) |
+| cortex_6 | 28609 | 234.5mb | Jobs de Cortex (analyzers de IoCs) |
 | the_hive | 0 | 208b | Índice base de TheHive (sin datos en esta instancia) |
-| the_hive_17 | 477 | 391.1kb | Casos de TheHive indexados por Elasticsearch |
-| soar-alerts | 50 | 111.1kb | Alertas procesadas por el workflow SOAR |
+| the_hive_17 | 7208 | 3.1mb | Casos de TheHive 3 indexados por Elasticsearch — índice legacy (TH5 usa storage embebido; no recibe datos nuevos) |
+| soar-alerts | 1511 | 474.7kb | Alertas procesadas por el workflow SOAR |
 
 > **Índices sin datos:** cortex, the_hive. Son índices base sin datos en esta instancia.
 > **Índices filtrados:** `test-bulk-idempotent-*` (artefactos de
@@ -185,13 +246,14 @@ Generado: **2026-08-24 09:17:22 UTC**
 
 | Tipo | Count |
 |------|-------|
-| workflow_execution | 50 |
+| workflow_execution | 1505 |
+| node_timings | 4 |
 
 ### GE 1: Distribución de Tiempos de Respuesta por Componente
 
 ![GE1: Tiempos por Componente](./charts/GE1_component_timings.png)
 
-Total de nodos distintos: **25**
+Total de nodos distintos: **24**
 
 > **Nota:** Los `node_timings` registran 0 porque el workflow
 > de Shuffle no reporta duraciones por nodo a Elasticsearch.
@@ -199,7 +261,6 @@ Total de nodos distintos: **25**
 
 | Nodo | Count | Mean (s) | Min (s) | Max (s) | Success % |
 |------|-------|----------|---------|---------|-----------|
-| build_case_json | 0 | 0 | 0 | 0 | 0.0% |
 | calc_decision | 0 | 0 | 0 | 0 | 0.0% |
 | calc_mttr | 0 | 0 | 0 | 0 | 0.0% |
 | containment | 0 | 0 | 0 | 0 | 0.0% |
@@ -227,9 +288,9 @@ Total de nodos distintos: **25**
 
 ### Duración de Workflow
 
-- Media: **277.1s**
-- Mín: **65.4s**
-- Máx: **652.9s**
+- Media: **204.7s**
+- Mín: **-1844.6s**
+- Máx: **2467.3s**
 
 ## MTTR y Percentiles
 
@@ -253,16 +314,16 @@ Total de nodos distintos: **25**
 
 | Métrica | Valor (s) |
 |---------|-----------|
-| Count | 50 |
-| Mean | 277.15 |
-| Std Dev | 187.61 |
-| Min | 65.38 |
-| Max | 652.92 |
-| P50 (Mediana) | 193.19 |
-| P75 | 345.78 |
-| P90 | 621.83 |
-| P95 | 644.46 |
-| P99 | 651.16 |
+| Count | 1450 |
+| Mean | 215.77 |
+| Std Dev | 336.04 |
+| Min | 0.01 |
+| Max | 2467.26 |
+| P50 (Mediana) | 85.95 |
+| P75 | 273.11 |
+| P90 | 535.82 |
+| P95 | 739.66 |
+| P99 | 1919.22 |
 
 ### GE 3: Tasa de Éxito por Tipo de Alerta
 
@@ -272,10 +333,19 @@ Total de nodos distintos: **25**
 
 | Tipo | Count | Mean (s) | P50 (s) | P95 (s) |
 |------|-------|----------|---------|---------|
-| infostealer | 1 | 601.25 | 601.25 | 601.25 |
-| ransomware | 45 | 261.42 | 191.14 | 645.01 |
-| rat | 2 | 146.88 | 146.88 | 159.37 |
-| trojan | 2 | 599.21 | 599.21 | 604.46 |
+| c2_communication | 6 | 64.74 | 66.23 | 68.52 |
+| canary | 3 | 0.58 | 0.6 | 0.83 |
+| cryptominer | 2 | 64.62 | 64.62 | 65.11 |
+| data_exfiltration | 2 | 61.97 | 61.97 | 66.13 |
+| exfiltration | 6 | 0.56 | 0.65 | 0.88 |
+| infostealer | 7 | 143.32 | 67.19 | 442.63 |
+| kill_chain | 12 | 0.43 | 0.43 | 0.87 |
+| persistence | 2 | 65.63 | 65.63 | 70.89 |
+| polymorphic | 8 | 0.38 | 0.42 | 0.78 |
+| ransomware | 1391 | 222.17 | 91.59 | 765.11 |
+| rat | 4 | 106.82 | 100.56 | 156.59 |
+| trojan | 5 | 295.81 | 156.41 | 602.71 |
+| worm | 2 | 64.45 | 64.45 | 69.02 |
 
 ### MTTR por Severidad
 
@@ -286,8 +356,9 @@ Total de nodos distintos: **25**
 
 | Severidad | Count | Mean (s) |
 |-----------|-------|----------|
-| 2 | 7 | 274.11 |
-| 3 | 43 | 277.64 |
+| 1 | 58 | 77.46 |
+| 2 | 884 | 301.72 |
+| 3 | 508 | 81.99 |
 
 ### MTTR por Decisión
 
@@ -296,8 +367,8 @@ Total de nodos distintos: **25**
 
 | Decisión | Count | Mean (s) |
 |----------|-------|----------|
-| contain | 46 | 259.23 |
-| observe | 4 | 483.17 |
+| contain | 1285 | 231.83 |
+| observe | 165 | 90.7 |
 
 ### GE 4: Evolución de Métricas Durante el Proyecto
 
@@ -309,19 +380,20 @@ Total de nodos distintos: **25**
 
 | Decisión | Count |
 |----------|-------|
-| contain | 46 |
-| observe | 4 |
+| contain | 1300 |
+| observe | 205 |
 
 ### Distribución por Severidad (soar-metrics)
 
 | Severidad | Count |
 |-----------|-------|
-| 2 | 7 |
-| 3 | 43 |
+| 1 | 58 |
+| 2 | 933 |
+| 3 | 514 |
 
 ## Distribución de Alertas
 
-Total de alertas en soar-alerts: **50**
+Total de alertas en soar-alerts: **1511**
 
 ![Distribución de Alertas por Tipo](./charts/alert_distribution.png)
 
@@ -329,10 +401,20 @@ Total de alertas en soar-alerts: **50**
 
 | Tipo | Count |
 |------|-------|
-| ransomware | 45 |
-| rat | 2 |
-| trojan | 2 |
-| infostealer | 1 |
+| ransomware | 1450 |
+| kill_chain | 12 |
+| polymorphic | 8 |
+| infostealer | 7 |
+| c2_communication | 6 |
+| exfiltration | 6 |
+| trojan | 5 |
+| rat | 4 |
+| canary | 3 |
+| cryptominer | 2 |
+| data_exfiltration | 2 |
+| malware | 2 |
+| persistence | 2 |
+| worm | 2 |
 
 ### Por Severidad
 
@@ -340,25 +422,27 @@ Total de alertas en soar-alerts: **50**
 
 | Severidad | Count |
 |-----------|-------|
-| 2 | 7 |
-| 3 | 43 |
+| 1 | 60 |
+| 2 | 936 |
+| 3 | 515 |
 
 ### Por Estado
 
 | Estado | Count |
 |--------|-------|
-| processed | 50 |
+| processed | 1511 |
 
 ### Por MITRE Tactics
 
 | Tactic | Count |
 |--------|-------|
+| TA0040 | 116 |
 | Impact | 36 |
-| Execution | 21 |
+| Execution | 20 |
 | Exfiltration | 14 |
-| Defense Evasion | 10 |
+| Defense Evasion | 11 |
 | Initial Access | 9 |
-| Persistence | 7 |
+| Persistence | 8 |
 | Credential Access | 6 |
 | Discovery | 4 |
 | Lateral Movement | 4 |
@@ -369,7 +453,7 @@ Total de alertas en soar-alerts: **50**
 > **Fuente:** OpenSearch `notifications-000001`. Notificaciones generadas por Shuffle
 > durante la ejecución del workflow (errores de nodos, variables faltantes, etc.).
 
-Total de notificaciones: **4**
+Total de notificaciones: **76**
 
 ### Errores por Nodo del Workflow
 
@@ -377,19 +461,36 @@ Total de notificaciones: **4**
 
 | Nodo | Count |
 |------|-------|
-| build_metrics_json | 1 |
-| cortex_ip_dshield | 1 |
-| normalize_inputs | 1 |
-| tenzir_serve | 1 |
+| build_metrics_json | 5 |
+| cortex_dyn_rdap | 4 |
+| calc_mttr | 3 |
+| cortex_dyn_abuse_finder | 3 |
+| cortex_dyn_cybercrime_tracker | 3 |
+| cortex_dyn_cyberprotect_threatscore | 3 |
+| cortex_dyn_domainmailspfdmarc | 3 |
+| cortex_dyn_domainmailspfdmarc_1_2 | 3 |
+| cortex_dyn_maltiverse_report | 3 |
+| cortex_dyn_msdefenderoffice365_safelinksdecoder | 3 |
+| cortex_dyn_scanmalware | 3 |
+| cortex_dyn_validateobservable | 3 |
+| cortex_dyn_validateobservable_1_0 | 3 |
+| normalize_inputs | 3 |
+| build_es_json | 2 |
+| enrich_case | 2 |
+| es_index_metrics | 2 |
+| misp_create | 2 |
+| containment | 1 |
+| cortex_dyn_fileinfo_8_0 | 1 |
 
 ### Notificaciones Recientes
 
 | Nodo | Acción | Execution ID |
 |------|--------|-------------|
-| tenzir_serve | POST | 76880671-c7c6-4bc6-9 |
-| cortex_ip_dshield | POST | 9da9b14b-6340-4bcb-8 |
-| build_metrics_json | execute_python | 5025fbf8-e23f-4699-b |
-| normalize_inputs | execute_python | 5025fbf8-e23f-4699-b |
+| build_metrics_json | execute_python | 8ca7d1ac-fdb7-48d6-a |
+| calc_mttr | execute_python | 8ca7d1ac-fdb7-48d6-a |
+| cortex_dyn_msdefenderoffice365_safelinksdecoder | POST | 8ca7d1ac-fdb7-48d6-a |
+| cortex_dyn_validateobservable_1_0 | POST | 8ca7d1ac-fdb7-48d6-a |
+| cortex_dyn_cybercrime_tracker | POST | 8ca7d1ac-fdb7-48d6-a |
 
 > **Nota:** Las notificaciones de Shuffle se generan cuando un nodo
 > del workflow encuentra un error (variable faltante, timeout de
@@ -406,22 +507,22 @@ Total de notificaciones: **4**
 
 | Fase | Tiempo Medio (s) | % del Total |
 |------|-----------------|-------------|
-| Recepción y Triaje | 103.92 | 1.8% |
-| Análisis de IoCs | 2393.46 | 42.0% |
-| Creación de Caso | 2773.48 | 48.7% |
-| Contención | 422.0 | 7.4% |
-| **Suma de fases** | **5692.86** | **100%** |
-| **MTTR medio (por ejecución)** | **277.15** | — |
+| Recepción y Triaje | 97.7 | 1.5% |
+| Análisis de IoCs | 3161.04 | 48.7% |
+| Creación de Caso | 2726.32 | 42.0% |
+| Contención | 499.84 | 7.7% |
+| **Suma de fases** | **6484.9** | **100%** |
+| **MTTR medio (por ejecución)** | **204.7** | — |
 
-> **Nota sobre la suma de fases:** La suma de fases (5692.86s)
-> es mayor que el MTTR medio (277.15s) porque las fases incluyen
+> **Nota sobre la suma de fases:** La suma de fases (6484.9s)
+> es mayor que el MTTR medio (204.7s) porque las fases incluyen
 > tiempo de espera en cola (Shuffle procesa nodos secuencialmente
 > aunque lógicamente pertenezcan a la misma fase). El MTTR real
 > refleja el tiempo wall-clock total de cada ejecución.
 
 ![MTTR por Fase](./charts/mttr_by_phase.png)
 
-> **Fase de Análisis alta (2393.46s):** Esta fase incluye
+> **Fase de Análisis alta (3161.04s):** Esta fase incluye
 > la ejecución en paralelo de múltiples analyzers de Cortex
 > (DShield, Mnemonic pDNS, GoogleDNS, IP-API, Hashdd) que
 > consultan APIs externas. El tiempo wall-clock refleja el
@@ -444,12 +545,26 @@ Total de notificaciones: **4**
 
 | Analyzer | Count |
 |----------|-------|
-| IP-API_1_1 | 79 |
-| DShield_lookup_1_0 | 51 |
-| GoogleDNS_resolve_1_0_0 | 46 |
-| Mnemonic_pDNS_Public_3_0 | 46 |
-| Hashdd_Status_2_0 | 23 |
-| DomainMailSPFDMARC_1_2 | 12 |
+| Virusshare | 1480 |
+| IP-API | 1478 |
+| DShield_lookup_1_0 | 997 |
+| MaxMind_GeoIP | 988 |
+| GoogleDNS_resolve_1_0_0 | 957 |
+| Robtex_Reverse_PDNS_Query | 819 |
+| GoogleDNS_resolve | 773 |
+| Mnemonic_pDNS_Public | 753 |
+| Crt_sh_Transparency_Logs | 729 |
+| TeamCymruMHR | 563 |
+| Hashdd_Status | 538 |
+| Robtex_IP_Query | 509 |
+| IP-API_1_1 | 451 |
+| DomainMailSPFDMARC_1_2 | 346 |
+| CyberCrime-Tracker | 338 |
+| Cyberprotect_ThreatScore | 332 |
+| Abuse_Finder | 330 |
+| ValidateObservable_1_0 | 328 |
+| Mnemonic_pDNS_Public_3_0 | 325 |
+| Hashdd_Status_2_0 | 320 |
 
 ### Jobs por Estado
 
@@ -457,20 +572,23 @@ Total de notificaciones: **4**
 
 | Estado | Count |
 |--------|-------|
-| Success | 255 |
-| Failure | 2 |
+| Success | 10409 |
+| Failure | 5398 |
+| InProgress | 3 |
 
-> **Tasa de éxito: 99.2%** (255 jobs OK).
-> La mayoría de analyzers de Cortex funcionan correctamente.
+> **Tasa de fallo: 34.1%** (5398/15810 jobs).
+> Fallos parciales en analyzers de Cortex. Revisar logs
+> para identificar qué analyzers están fallando.
 
 ### Jobs Fallidos Recientes
 
 | Analyzer | Tipo | Error |
 |----------|------|-------|
-| Mnemonic_pDNS_Public_3_0 | ip | Traceback (most recent call last):
-  File "/root/.local/lib/python3.14/site-p... |
-| Mnemonic_pDNS_Public_3_0 | ip | Traceback (most recent call last):
-  File "/root/.local/lib/python3.14/site-p... |
+| RDAP | domain | No observable given. |
+| FileInfo_8_0 | hash | File parameter is missing. |
+| Virusshare | hash | No path to virusshare hash directory given. |
+| RDAP | domain | No observable given. |
+| FileInfo_8_0 | hash | File parameter is missing. |
 
 ## Estadísticas de Ejecución (OpenSearch)
 
@@ -478,14 +596,20 @@ Total de notificaciones: **4**
 
 | Fecha | App Execs | WF Execs | WF Finished | WF Failed | API Usage |
 |------|-----------|----------|-------------|-----------|-----------|
-| 2026-08-23 | 0 | 0 | 0 | 0 | 9 |
-| 2026-08-24 | 2842 | 50 | 50 | 0 | 108 |
+| 2026-10-08 | 0 | 0 | 0 | 0 | 2367 |
+| 2026-10-11 | 0 | 0 | 0 | 0 | 2232 |
+| 2026-11-03 | 0 | 0 | 0 | 0 | 333 |
+| 2026-11-04 | 39578 | 504 | 486 | 81 | 4788 |
+| 2026-11-05 | 32872 | 414 | 396 | 171 | 5454 |
+| 2026-11-06 | 17797 | 216 | 216 | 9 | 2790 |
+| 2026-11-07 | 15267 | 198 | 198 | 0 | 4653 |
+| 2026-11-08 | 14355 | 1720 | 1573 | 273 | 6867 |
 
 ![Ejecuciones por Día](./charts/org_daily_stats.png)
 
 ## Casos TheHive
 
-Total de casos: **50**
+Total de casos: **6**
 
 > **Fuente:** TheHive API (live)
 
@@ -493,19 +617,13 @@ Total de casos: **50**
 
 | Estado | Count |
 |--------|-------|
-| Open | 46 |
-| Resolved | 4 |
+| New | 2 |
+| FalsePositive | 2 |
+| InProgress | 2 |
 
 ## Ejecuciones de Workflow (OpenSearch)
 
-Total de ejecuciones: **50**
-
-Duración media: **231.2s**
-
-> **Nota:** La duración media de OpenSearch (231.2s) mide
-> el tiempo de ejecución del workflow en Shuffle. El MTTR medio
-> (277.15s) se calcula desde `soar-metrics` e incluye tiempo
-> adicional de indexación y post-procesamiento.
+Total de ejecuciones: **1720**
 
 ### Ejecuciones Recientes
 
@@ -513,16 +631,16 @@ Duración media: **231.2s**
 
 | Execution ID | Status | Nodos | Duración (s) | Inicio |
 |-------------|--------|-------|--------------|--------|
-| 3f526a5c-eb2... | FINISHED | 49 | 253 | 2026-08-24 08:48:57 |
-| 034ec7e5-60a... | FINISHED | 49 | 257 | 2026-08-24 08:48:45 |
-| 7075975c-7a8... | FINISHED | 49 | 242 | 2026-08-24 08:48:33 |
-| 71556af4-dfc... | FINISHED | 49 | 252 | 2026-08-24 08:48:20 |
-| a7407403-713... | FINISHED | 49 | 254 | 2026-08-24 08:48:06 |
-| 76880671-c7c... | FINISHED | 49 | 209 | 2026-08-24 08:47:48 |
-| 3464f4da-987... | FINISHED | 49 | 211 | 2026-08-24 08:47:33 |
-| 88c39d06-779... | FINISHED | 49 | 206 | 2026-08-24 08:47:15 |
-| cd5d6956-a32... | FINISHED | 49 | 214 | 2026-08-24 08:47:02 |
-| 9292204f-3b2... | FINISHED | 49 | 214 | 2026-08-24 08:46:51 |
+| af25fef0-01c... | ABORTED | 0 | 0 | 2026-11-08 16:14:48 |
+| ee58edea-827... | ABORTED | 0 | 0 | 2026-11-08 16:14:38 |
+| 9d697203-9a0... | ABORTED | 0 | 0 | 2026-11-08 16:14:29 |
+| 9d7e1ee2-80a... | ABORTED | 0 | 0 | 2026-11-08 16:14:18 |
+| 75658796-01d... | ABORTED | 0 | 0 | 2026-11-08 16:14:08 |
+| 812de538-8dc... | ABORTED | 0 | 0 | 2026-11-08 16:13:58 |
+| 8e833bc1-ba6... | ABORTED | 0 | 0 | 2026-11-08 16:13:48 |
+| 0601b9a2-c10... | ABORTED | 0 | 0 | 2026-11-08 16:13:38 |
+| 1b3764c5-b62... | ABORTED | 0 | 0 | 2026-11-08 16:13:28 |
+| d33208f8-882... | ABORTED | 0 | 0 | 2026-11-08 16:13:18 |
 
 ## Métricas Loki y Promtail
 
@@ -536,47 +654,45 @@ Labels disponibles: compose_project, compose_service, container, filename, job, 
 
 | Servicio | Líneas/hora |
 |----------|-------------|
-| loki | 24331 |
-| cortex | 10984 |
-| shuffle-backend | 2433 |
-| misp | 2272 |
-| promtail | 1587 |
-| grafana | 1429 |
-| opensearch | 967 |
-| api | 274 |
-| network-watcher | 250 |
-| misp-modules | 202 |
-| shuffle-frontend | 190 |
-| elasticsearch | 163 |
-| orborus | 145 |
-| opensearch-dashboards | 113 |
-| misp-db | 75 |
+| misp | 97132 |
+| loki | 4562 |
+| docker-socket-proxy | 1962 |
+| cortex | 907 |
+| thehive | 720 |
+| grafana | 530 |
+| shuffle-backend | 421 |
+| promtail | 386 |
+| opensearch | 376 |
+| shuffle-frontend | 241 |
+| api | 136 |
+| docs-site | 124 |
+| opensearch-dashboards | 119 |
+| elasticsearch | 88 |
+| orborus | 41 |
 
 ### Volumen de Logs por Container (última hora, top 10)
 
 | Container | Líneas/hora |
 |-----------|-------------|
-| soar_loki | 24331 |
-| soar_cortex | 10984 |
-| soar_shuffle_backend | 2433 |
-| soar_misp | 2272 |
-| soar_promtail | 1587 |
-| soar_grafana | 1429 |
-| soar_opensearch | 967 |
-| worker-921d2f6a-8b0b-4700-b188-c201e30a423a | 496 |
-| worker-f7c22d7c-501f-4fc5-9619-c9417a78ad8a | 495 |
-| worker-863bcaa9-8072-4951-a3d3-2f5d9e7d56af | 491 |
+| soar_misp | 97132 |
+| soar_loki | 4562 |
+| soar_docker_proxy | 1962 |
+| worker-8ca7d1ac-fdb7-48d6-afd2-25f80d86b6aa | 1094 |
+| soar_cortex | 907 |
+| soar_thehive | 720 |
+| soar_grafana | 530 |
+| soar_shuffle_backend | 421 |
+| soar_promtail | 386 |
+| soar_opensearch | 376 |
 
 ### Errores por Container (última hora)
 
-**Total errores detectados:** 268
+**Total errores detectados:** 199
 
 | Container | Errores/hora |
 |-----------|---------------|
-| soar_loki | 264 |
-| soar_shuffle_backend | 2 |
-| soar_misp | 1 |
-| soar_opensearch | 1 |
+| soar_loki | 198 |
+| worker-8ca7d1ac-fdb7-48d6-afd2-25f80d86b6aa | 1 |
 
 > **Nota:** Los errores detectados provienen principalmente
 > de logs internos de Loki (operaciones de ingesta, rotación
@@ -585,51 +701,31 @@ Labels disponibles: compose_project, compose_service, container, filename, job, 
 
 ### Warnings por Container (última hora)
 
-**Total warnings detectados:** 1261
+**Total warnings detectados:** 36662
 
 | Container | Warnings/hora |
 |-----------|----------------|
-| soar_shuffle_backend | 866 |
-| soar_loki | 264 |
-| soar_orborus | 51 |
-| soar_opensearch | 12 |
-| soar_docs_site | 8 |
-| soar_misp | 5 |
-| soar_cortex | 2 |
-| soar_elasticsearch | 2 |
-| soar_grafana_db | 1 |
-| worker-034ec7e5-60a8-4d97-9aa3-ff58534bbdfa | 1 |
+| soar_misp | 36107 |
+| soar_shuffle_backend | 350 |
+| soar_loki | 198 |
+| soar_elasticsearch | 5 |
+| worker-8ca7d1ac-fdb7-48d6-afd2-25f80d86b6aa | 2 |
 
 ### Evolución de Logs (24h, por hora)
 
 | Hora (UTC) | Líneas |
 |------------|--------|
-| 09:00 | 2 |
-| 10:00 | 2 |
-| 11:00 | 2 |
-| 12:00 | 2 |
-| 13:00 | 2 |
+| 13:00 | 3 |
 | 14:00 | 2 |
-| 15:00 | 2 |
-| 16:00 | 2 |
-| 17:00 | 2 |
-| 18:00 | 2 |
-| 19:00 | 2 |
-| 20:00 | 2 |
-| 21:00 | 2 |
-| 22:00 | 2 |
-| 23:00 | 2 |
-| 00:00 | 2 |
-| 01:00 | 2 |
-| 02:00 | 2 |
-| 03:00 | 2 |
-| 04:00 | 2 |
-| 05:00 | 2 |
-| 06:00 | 2 |
-| 07:00 | 2 |
-| 08:00 | 2 |
-| 09:00 | 63070 |
-| 10:00 | 5348 |
+| 15:00 | 89163 |
+| 16:00 | 144607 |
+| 17:00 | 116831 |
+| 18:00 | 98450 |
+| 19:00 | 118515 |
+| 20:00 | 121446 |
+| 21:00 | 102901 |
+| 22:00 | 114466 |
+| 23:00 | 18504 |
 
 ### Heatmap: Volumen de Logs por Container y Hora
 
@@ -644,106 +740,21 @@ Labels disponibles: compose_project, compose_service, container, filename, job, 
 | Métrica | Valor |
 |---------|-------|
 | dropped_entries_total | 0 |
-| total_bytes_ingested | 18,998,636 |
-| total_lines_ingested | 68,834 |
+| total_bytes_ingested | 123,035,756 |
+| total_lines_ingested | 1,018,512 |
 
 ### Métricas Promtail
 
 | Métrica | Valor |
 |---------|-------|
 | active_files | 3 |
-| dropped_entries_total | 0 |
-| total_bytes_encoded | 4,646,523 |
-| total_entries_collected | 69,608 |
+| dropped_entries_total | 8,161 |
+| total_bytes_encoded | 23,471,681 |
+| total_entries_collected | 603,174 |
 
 ## Dashboards Grafana
 
 Grafana health: **ok** (v10.3.4)
-
-### Datasources
-
-| Nombre | Tipo | URL |
-|--------|------|-----|
-| Elasticsearch | elasticsearch | http://elasticsearch:9200 |
-| Loki | loki | http://loki:3100 |
-| SOAR API | json | http://api:8000 |
-
-### Dashboards y Paneles
-
-#### SOAR KPI Dashboard (uid: `soar-kpi-main`, 15 paneles)
-
-| Panel | Tipo | Gráfica en este reporte |
-|-------|------|--------------------------|
-| Total Alerts Processed | stat | Resumen Ejecutivo (Total Alertas) |
-| MTTR Medio (s) — Grafico 4.4 | stat | GE2_percentiles.png |
-| Alertas Criticas (severity=3) | stat | — |
-| MTTR p50 (Mediana) — Grafico 4.4 | stat | GE2_percentiles.png |
-| MTTR p90 — Grafico 4.4 | stat | GE2_percentiles.png |
-| Grafico 4.4 — Analisis de Percentiles MTTR (distribucion completa) | timeseries | GE2_percentiles.png |
-| Grafico 5.3 — Evolucion MTTR (tendencia diaria) | timeseries | GE4_metrics_evolution.png |
-| Grafico 4.5 — Tasa de Exito por Tipo de Alerta | piechart | GE3_success_rates.png |
-| Grafico 4.3 — Alertas por Severidad (distribucion SOAR) | barchart | severity_distribution.png |
-| Grafico 4.5 — Tasa de Exito Servicios (TheHive / Cortex / MISP) | timeseries | service_health.png |
-| MTTR Max / Min — Rango de variabilidad | stat | MTTR y Percentiles (tabla) |
-| Grafico 5.4 — Alertas procesadas por hora (throughput SOAR) | timeseries | Timeline de Alertas por Hora |
-| MTTR por Tipo de Alerta | barchart | MTTR por Tipo de Alerta (tabla) |
-| Tasa de Éxito por Severidad | barchart | — |
-| Evolución de Alertas por Tipo | timeseries | — |
-
-> **Correspondencia Grafana ↔ Reporte:** Las gráficas de este
-> reporte se generan con matplotlib usando los mismos datos que
-> Grafana visualiza en vivo (Elasticsearch `soar-metrics`, Loki).
-> Grafana proporciona visualización interactiva en tiempo real;
-> este reporte proporciona snapshots estáticos para el TFM.
-> Ambas fuentes usan el mismo dashboard provisionado
-> (`SOAR KPI Dashboard`, uid: `soar-kpi-main`).
-
-> **Acceso a Grafana:** El dashboard está disponible en
-> `http://localhost:8084/d/soar-kpi-main` cuando el stack
-> Docker está levantado (`make up`).
-
-### Gráficas Exportadas de Grafana (Image Renderer)
-
-> **Fuente:** Grafana API `/render/d-solo/` con sidecar
-> `grafana-image-renderer`. Las imágenes son renders nativos
-> de Grafana (no matplotlib), con el mismo motor de visualización
-> que el dashboard interactivo.
-
-#### Grafico 4.4 — Analisis de Percentiles MTTR (distribucion completa)
-
-![Grafico 4.4 — Analisis de Percentiles MTTR (distribucion completa)](./charts/grafana_panel_5_Grafico_4_4___Analisis_de_Percentiles_MTTR__distri.png)
-
-#### Grafico 5.3 — Evolucion MTTR (tendencia diaria)
-
-![Grafico 5.3 — Evolucion MTTR (tendencia diaria)](./charts/grafana_panel_10_Grafico_5_3___Evolucion_MTTR__tendencia_diaria_.png)
-
-#### Grafico 4.5 — Tasa de Exito por Tipo de Alerta
-
-![Grafico 4.5 — Tasa de Exito por Tipo de Alerta](./charts/grafana_panel_4_Grafico_4_5___Tasa_de_Exito_por_Tipo_de_Alerta.png)
-
-#### Grafico 4.3 — Alertas por Severidad (distribucion SOAR)
-
-![Grafico 4.3 — Alertas por Severidad (distribucion SOAR)](./charts/grafana_panel_7_Grafico_4_3___Alertas_por_Severidad__distribucion_.png)
-
-#### Grafico 4.5 — Tasa de Exito Servicios (TheHive / Cortex / MISP)
-
-![Grafico 4.5 — Tasa de Exito Servicios (TheHive / Cortex / MISP)](./charts/grafana_panel_6_Grafico_4_5___Tasa_de_Exito_Servicios__TheHive___C.png)
-
-#### Grafico 5.4 — Alertas procesadas por hora (throughput SOAR)
-
-![Grafico 5.4 — Alertas procesadas por hora (throughput SOAR)](./charts/grafana_panel_12_Grafico_5_4___Alertas_procesadas_por_hora__through.png)
-
-#### MTTR por Tipo de Alerta
-
-![MTTR por Tipo de Alerta](./charts/grafana_panel_13_MTTR_por_Tipo_de_Alerta.png)
-
-#### Tasa de Éxito por Severidad
-
-![Tasa de Éxito por Severidad](./charts/grafana_panel_14_Tasa_de__xito_por_Severidad.png)
-
-#### Evolución de Alertas por Tipo
-
-![Evolución de Alertas por Tipo](./charts/grafana_panel_15_Evoluci_n_de_Alertas_por_Tipo.png)
 
 ## Analytics API
 
@@ -756,39 +767,19 @@ Grafana health: **ok** (v10.3.4)
 
 | Métrica | Valor |
 |---------|-------|
-| total_executions | 50 |
-| mean | 277.15 |
-| median | 193.19 |
-| p50 | 193.19 |
-| p90 | 621.71 |
-| p95 | 645.46 |
-| p99 | 652.92 |
-| min | 65.38 |
-| max | 652.92 |
-| std_dev | 187.61 |
-| mttr_seconds | 277.15 |
-| mttr_minutes | 4.62 |
 
-**Periodo:** 24h  
-**Total alertas:** 50
+**Periodo:** ?h  
+**Total alertas:** ?
 
 #### MTTR por Tipo de Alerta
 
 | Tipo | Count | MTTR (s) | Severidad Media | Critical Rate (%) |
 |------|-------|----------|-----------------|-------------------|
-| ransomware | 45 | 261.42 | 2.91 | 91.11 |
-| rat | 2 | 146.88 | 2.5 | 50.0 |
-| trojan | 2 | 599.21 | 2.0 | 0.0 |
-| infostealer | 1 | 601.25 | 3.0 | 100.0 |
 
 #### Tasa de Éxito por Servicio
 
 | Servicio | Success | Failure | Total | Success Rate (%) |
 |----------|---------|---------|-------|------------------|
-| thehive | 50 | 0 | 50 | 100.0 |
-| cortex | 50 | 0 | 50 | 100.0 |
-| misp | 50 | 0 | 50 | 100.0 |
-| elasticsearch | 50 | 0 | 50 | 100.0 |
 
 > **Nota:** La tasa de éxito por servicio mide si el
 > workflow recibió respuesta del servicio (job ID, case ID).
@@ -811,24 +802,24 @@ Grafana health: **ok** (v10.3.4)
 
 | Métrica | Valor | Benchmark Industria |
 |---------|-------|---------------------|
-| Total ejecuciones | 50 | — |
-| Tasa de contención (score >= 80) | 92.0% | — |
-| Tasa de observación (score < 80) | 8.0% | SANS 2024: 64% identifican FP como problema mayor |
+| Total ejecuciones | 1505 | — |
+| Tasa de contención (score >= 80) | 86.4% | — |
+| Tasa de observación (score < 80) | 13.6% | SANS 2024: 64% identifican FP como problema mayor |
 | Tasa de éxito del workflow | 100% | SANS 2024: ≥95% objetivo |
 
 > **Interpretación:** La tasa de observación representa el
 > porcentaje de alertas cuyo score no alcanzó el umbral de
-> contención (80/100), por lo que se decidió observar (8.0%).
+> contención (80/100), por lo que se decidió observar (13.6%).
 > En este laboratorio, todas las alertas son maliciosas (simulador
 > genera exclusivamente amenazas reales), por lo que las alertas
 > observadas son falsos negativos: la evidencia de threat intelligence
 > fue insuficiente para confirmar la amenaza. Según SANS 2024, el 64%
 > de organizaciones identifican los falsos positivos como problema mayor;
-> este laboratorio tiene una tasa de falsos negativos del 8.0%,
+> este laboratorio tiene una tasa de falsos negativos del 13.6%,
 > indicando que el scoring requiere ajuste para amenazas con IoCs
 > parcialmente confirmados.
 
-| Score promedio | 96.2 | min=55.0, max=100.0 |
+| Score promedio | 91.4 | min=20.0, max=100.0 |
 
 > **Análisis de decisiones:** El simulador genera exclusivamente
 > alertas maliciosas (ransomware, RAT, infostealer, troyano). La
@@ -836,14 +827,15 @@ Grafana health: **ok** (v10.3.4)
 > `calc_decision.py` a partir de la evidencia de threat intelligence
 > (Cortex, MISP, Tenzir, Loki, MITRE). Un score >= 80 resulta en
 > contención automática. Las alertas con score < 80 se observan
-> (falsos negativos): 8.0% de las alertas.
+> (falsos negativos): 13.6% de las alertas.
 
 **Distribución de Score y Verdict:**
 
 | Verdict | Count | Score medio |
 |---------|-------|-------------|
-| suspicious | 37 | 95.8 |
-| malicious | 13 | 97.3 |
+| suspicious | 1384 | 91.9 |
+| malicious | 99 | 95.6 |
+| safe | 22 | 40.9 |
 
 ### Tasa de Automatización
 
@@ -863,14 +855,14 @@ Grafana health: **ok** (v10.3.4)
 
 | Métrica | Valor | Benchmark Industria |
 |---------|-------|---------------------|
-| MTTD medio | 229.26s | Mandiant 2024: 5 días (ransomware) |
-| MTTD mediana | 149.0s | SANS 2024: <60min = top quartile |
-| MTTD min | 20.0s | — |
+| MTTD medio | 110.66s | Mandiant 2024: 5 días (ransomware) |
+| MTTD mediana | 35.0s | SANS 2024: <60min = top quartile |
+| MTTD min | 0.0s | — |
 | MTTD max | 598.0s | — |
 
 > **MTTD (Mean Time To Detect):** Tiempo medio desde la generación
 > de la alerta hasta su detección por el sistema SOAR. El laboratorio
-> logra un MTTD de **149.0s** (mediana), frente al benchmark
+> logra un MTTD de **35.0s** (mediana), frente al benchmark
 > de industria de 5 días (Mandiant M-Trends 2024 para ransomware).
 > Esto representa una mejora de varios órdenes de magnitud,
 > situando al laboratorio en el top quartile según SANS 2024.
@@ -879,13 +871,14 @@ Grafana health: **ok** (v10.3.4)
 
 | Severidad | N | Avg (s) | P50 (s) | P90 (s) | P95 (s) |
 |-----------|---|---------|---------|---------|---------|
-| 2 | 7 | 274.1 | 166.8 | 602.7 | 605.0 |
-| 3 | 43 | 277.6 | 197.1 | 627.0 | 646.8 |
+| 1 | 58 | 77.5 | 62.4 | 103.3 | 155.2 |
+| 2 | 933 | 285.4 | 156.6 | 626.9 | 1032.9 |
+| 3 | 514 | 72.6 | 53.7 | 178.2 | 348.5 |
 
-> **Distribución por severidad:** La severidad 2 tiene
-> el P50 más bajo (166.8s) con 7 alertas,
-> mientras que la severidad 3 (la más crítica,
-> 43 alertas) tiene P50=197.1s. La diferencia
+> **Distribución por severidad:** La severidad 3 tiene
+> el P50 más bajo (53.7s) con 514 alertas,
+> mientras que la severidad 2 (la más crítica,
+> 933 alertas) tiene P50=156.6s. La diferencia
 > refleja la complejidad del análisis (más nodos de Cortex en paralelo)
 > no una falta de priorización.
 
@@ -906,12 +899,12 @@ Grafana health: **ok** (v10.3.4)
 
 | Decisión | N | Avg MTTR (s) | P50 (s) | P90 (s) |
 |----------|---|-------------|---------|---------|
-| contain | 46 | 259.2 | 188.1 | 622.8 |
-| observe | 4 | 483.2 | 597.3 | 605.0 |
+| contain | 1300 | 225.5 | 99.0 | 549.7 |
+| observe | 205 | 73.0 | 45.0 | 156.4 |
 
 > **Eficacia diferencial:** Las alertas maliciosas (contain) se
-> resuelven en **259.2s** de promedio, mientras que
-> las benignas (observe) toman **483.2s** (1.86x del tiempo).
+> resuelven en **225.5s** de promedio, mientras que
+> las benignas (observe) toman **73.0s** (0.32x del tiempo).
 > Las alertas maliciosas requieren más tiempo por el mayor número
 > de nodos de análisis (Cortex, MISP, contención) que se ejecutan.
 
@@ -924,12 +917,13 @@ Grafana health: **ok** (v10.3.4)
 
 | Táctica | Alertas |
 |---------|---------|
+| TA0040 | 116 |
 | Impact | 36 |
-| Execution | 21 |
+| Execution | 20 |
 | Exfiltration | 14 |
-| Defense Evasion | 10 |
+| Defense Evasion | 11 |
 | Initial Access | 9 |
-| Persistence | 7 |
+| Persistence | 8 |
 | Credential Access | 6 |
 | Discovery | 4 |
 | Lateral Movement | 4 |
@@ -939,24 +933,24 @@ Grafana health: **ok** (v10.3.4)
 
 | Técnica | Alertas | Descripción |
 |---------|---------|--------------|
-| T1486 | 36 | Data Encrypted for Impact |
-| T1567 | 13 | Exfiltration Over Web Service |
-| T1059.001 | 11 | PowerShell |
-| T1059 | 10 | Command and Scripting Interpreter |
-| T1068 | 7 | Exploitation for Privilege Escalation |
+| T1486 | 490 | Data Encrypted for Impact |
+| T1059 | 56 | Command and Scripting Interpreter |
+| T1059.001 | 17 | PowerShell |
+| T1567 | 17 | Exfiltration Over Web Service |
+| T1041 | 16 | Exfiltration Over C2 Channel |
+| T1547.001 | 16 | Registry Run Keys / Startup Folder |
+| T1102 | 15 | Web Service |
+| T1027 | 11 | Obfuscated Files or Information |
+| T1567.002 | 11 | Exfiltration to Cloud Storage |
+| T1068 | 9 | Exploitation for Privilege Escalation |
+| T1562.001 | 9 | Disable or Modify Tools |
+| T1078 | 8 | Valid Accounts |
+| T1566.002 | 8 | Spearphishing Link |
+| T1056.001 | 7 | Keylogging |
 | T1190 | 7 | Exploit Public-Facing Application |
-| T1547.001 | 7 | Registry Run Keys / Startup Folder |
-| T1078 | 5 | Valid Accounts |
-| T1003 | 4 |  |
-| T1018 | 4 |  |
-| T1021.001 | 4 |  |
-| T1046 | 4 |  |
-| T1098 | 4 |  |
-| T1110.003 | 4 |  |
-| T1136 | 4 |  |
 
-> **Cobertura MITRE:** 10 táctica(s) y
- 32 técnica(s) distintas detectadas. La técnica dominante
+> **Cobertura MITRE:** 11 táctica(s) y
+ 37 técnica(s) distintas detectadas. La técnica dominante
 > es T1486 (Data Encrypted for Impact), consistente con ransomware.
 > FortiGuard IR 2024 reporta T1486 como una de las técnicas más
 > frecuentes en incidentes de ransomware reales.
@@ -965,51 +959,97 @@ Grafana health: **ok** (v10.3.4)
 
 | Fuente | Alertas |
 |--------|---------|
+| shuffle-soar | 266 |
+| concurrent-test | 206 |
+| extreme-load-test | 179 |
+| performance-test | 161 |
+| siem-ransomware-detection | 116 |
+| kpi-percentile-test | 60 |
 | windows_defender_sim | 50 |
+| admission-load-probe | 48 |
+| simulated-siem | 30 |
+| compliance-test | 27 |
+| siem-file-monitoring | 25 |
+| edge-case-test | 22 |
+| gminst4ll-forensics | 18 |
+| load_test | 16 |
+| chaos-lite | 12 |
+| locust-load | 12 |
+| ransomware-sim | 12 |
+| forensic-test | 9 |
+| no-blocking-test | 9 |
+| no-isolation-test | 9 |
 
 ### Distribución por Tipo de Evento
 
 | Tipo de Evento | Alertas |
 |----------------|---------|
-| ransomware_detection | 43 |
+| ransomware_detection | 1095 |
+| ransomware | 297 |
+| file_monitoring | 55 |
+| kill_chain | 12 |
+| polymorphic | 8 |
+| exfiltration | 6 |
+| trojan_detection | 5 |
+| canary | 3 |
 | data_exfiltration | 3 |
-| trojan_detection | 2 |
-| infostealer_detection | 1 |
-| rat_detection | 1 |
+| infostealer_detection | 3 |
+| rat_detection | 3 |
+| c2_communication | 2 |
+| c2_domain_lookup | 2 |
+| c2_ip_connection | 2 |
+| cryptominer_detection | 2 |
+| detection | 2 |
+| mitre_attack_mapping | 2 |
+| multi_ioc_infostealer | 2 |
+| registry_persistence | 2 |
+| telegram_exfiltration | 2 |
+
+### Distribución por Confianza (Confidence Score)
+
+| Confidence | Alertas | Clasificación |
+|------------|---------|----------------|
+| 20 | 55 | Baja (benigno) |
+| 95 | 119 | Alta (malicioso) |
+
+> **Separación de confidence:** Los scores de confianza separan
+> claramente alertas benignas (confidence baja) de maliciosas
+> (confidence alta), facilitando la decisión automatizada.
 
 ### Distribución por Hostname (Top 10)
 
 | Hostname | Alertas |
 |----------|---------|
-| WORKSTATION-001 | 6 |
-| COMPROMISED-SRV-002 | 5 |
-| SERVER-002 | 5 |
-| ws-legal-09 | 5 |
-| INFECTED-WIN-001 | 4 |
-| endpoint-hr-02 | 3 |
-| ws-accounting-04 | 3 |
-| WIN-FORENSIC-002 | 2 |
-| endpoint-marketing-08 | 2 |
-| endpoint-sales-06 | 2 |
+| WORKSTATION-001 | 266 |
+| WIN-TC01-001 | 43 |
+| tc14-integration-host | 34 |
+| WIN-TC19-001 | 33 |
+| WIN-TC02-001 | 30 |
+| WIN-TC06-001 | 28 |
+| WIN-TC05-000 | 27 |
+| WIN-TC05-001 | 27 |
+| WIN-TC05-002 | 27 |
+| WIN-TC05-003 | 27 |
 
-### Timeline de Alertas por Hora
+### Tags de Casos TheHive (Top 15)
 
-> **Resumen:** 1 horas totales (1 activas,
- 0 inactivas), pico de **50 alertas/h**,
- promedio **50.0 alertas/h** en horas activas.
-
-**Top 5 horas con mayor actividad:**
-
-| Hora | Alertas |
-|------|---------|
-| 2026-08-24T08 | 50 |
-
-**Distribución horaria (sparkline):**
-
-`▇`
-
-> Cada carácter representa 1 hora: `·` = 0 alertas,
-> `▁` < 25%, `▃` < 50%, `▅` < 75%, `▇` ≥ 75% del pico (50).
+| Tag | Casos |
+|-----|-------|
+| analyzed | 5 |
+| loki | 5 |
+| mttr-calculated | 5 |
+| network-watcher | 5 |
+| ransomware | 5 |
+| redis | 5 |
+| soar-lab | 5 |
+| tenzir | 5 |
+| e2e-test | 1 |
+| tc-28 | 1 |
+| alert_id:ALERT-1794171214-9297 | 1 |
+| trace_id:16dc6bc78a2749458f5b9fdacc81bbd5 | 1 |
+| alert_id:ALERT-1794171987-8959 | 1 |
+| trace_id:d8879dbe649445beb7e382e7dd3bbb50 | 1 |
+| alert_id:ALERT-1794172039-8069 | 1 |
 
 ## Uso de Recursos Docker (Tiempo Real)
 
@@ -1019,58 +1059,39 @@ Grafana health: **ok** (v10.3.4)
 
 | Contenedor | CPU % | Memoria Usada | Límite Mem | Net I/O | Block I/O |
 |------------|-------|---------------|------------|---------|-----------|
-| grafana | 0.08% | 95.08MiB | 1GiB | 6.45MB / 467MB | 40.3MB / 500kB |
-| nginx | 0.00% | 3.855MiB | 512MiB | 67.1kB / 252B | 1.66MB / 12.3kB |
-| cortex | 0.52% | 505.9MiB | 4GiB | 3.63MB / 6.48MB | 119MB / 92.4MB |
-| thehive | 0.83% | 928.2MiB | 4GiB | 2.92MB / 2.64MB | 113MB / 123MB |
-| misp | 0.02% | 456.8MiB | 4GiB | 44.2MB / 337MB | 75.8MB / 43.8MB |
-| api | 0.70% | 171.3MiB | 2GiB | 35.5MB / 828kB | 75.9MB / 11MB |
-| promtail | 0.73% | 70.27MiB | 512MiB | 363kB / 5.28MB | 70.4MB / 3.19MB |
-| shuffle_frontend | 0.00% | 23.32MiB | 2GiB | 68.8kB / 252B | 19.7MB / 8.19kB |
-| orborus | 0.04% | 32.64MiB | 2GiB | 2.59MB / 2.31MB | 46.1MB / 815kB |
-| misp_db | 0.02% | 295.1MiB | 2GiB | 335MB / 38.4MB | 44.8MB / 23.4MB |
-| grafana_db | 3.06% | 42.23MiB | 512MiB | 2.2MB / 4.18MB | 32.4MB / 1.43MB |
-| shuffle_backend | 0.00% | 64.21MiB | 4GiB | 102MB / 93.6MB | 54.1MB / 1.38MB |
-| loki | 0.68% | 142MiB | 1GiB | 5.36MB / 660kB | 49.1MB / 67.5MB |
-| elasticsearch | 0.27% | 2.282GiB | 4GiB | 7MB / 4.88MB | 113MB / 177MB |
-| redis | 0.33% | 6.801MiB | 1GiB | 1.09MB / 711kB | 6.24MB / 0B |
-| docs_site | 0.01% | 315.3MiB | 512MiB | 1.42MB / 29.3kB | 291MB / 441MB |
-| grafana_renderer | 0.00% | 219.5MiB | 1GiB | 464MB / 2.54MB | 205MB / 63.4MB |
-| web_management | 0.00% | 13.14MiB | 256MiB | 68.8kB / 18.6kB | 1.95MB / 8.19kB |
-| network_watcher | 0.01% | 46.84MiB | 512MiB | 101kB / 32.5kB | 20MB / 2.29MB |
-| opensearch_dashboards | 0.00% | 145.5MiB | 2GiB | 903kB / 1.08MB | 69.9MB / 7.95MB |
-| misp_modules | 0.00% | 265.4MiB | 1GiB | 88.6kB / 4.77MB | 128MB / 21.2MB |
-| tenzir_node | 4.61% | 552.2MiB | 1GiB | 1.17MB / 956kB | 174MB / 71.4MB |
-| opensearch | 0.36% | 2.584GiB | 4GiB | 62.2MB / 16.8MB | 123MB / 231MB |
-| tenzir-node | 15.54% | 1011MiB | 15.55GiB | 1.7kB / 126B | 208GB / 9.71GB |
+| api | 2.12% | 207.9MiB | 2GiB | 197MB / 11.5MB | 104MB / 4.61MB |
+| elasticsearch | 0.14% | 2.359GiB | 4GiB | 15.3MB / 12.3MB | 24.6MB / 10.6MB |
+| redis | 3.27% | 11.45MiB | 1GiB | 66MB / 49.4MB | 10.4MB / 0B |
+| thehive | 4.09% | 904MiB | 4GiB | 824kB / 31.8MB | 14.3MB / 38.8MB |
+| oauth2_shuffle | 0.00% | 5.355MiB | 15.55GiB | 2.57MB / 2.57MB | 0B / 0B |
+| oauth2_web | 0.02% | 9.898MiB | 15.55GiB | 138kB / 580kB | 5.73MB / 0B |
+| keycloak | 0.25% | 576.1MiB | 1GiB | 115kB / 10.3MB | 22.4MB / 164MB |
+| shuffle_frontend | 0.00% | 20.97MiB | 2GiB | 13.6MB / 7.47MB | 11.7MB / 8.19kB |
+| shuffle_backend | 0.43% | 59.8MiB | 4GiB | 109MB / 375MB | 28.3MB / 16.4kB |
+| opensearch | 3.42% | 2.66GiB | 4GiB | 39.5MB / 42.3MB | 29.6MB / 520MB |
+| web_management | 0.00% | 14.71MiB | 256MiB | 145kB / 278kB | 2.33MB / 8.19kB |
+| misp | 193.87% | 226.5MiB | 4GiB | 70.5MB / 82.4MB | 57.8MB / 55.6MB |
+| misp_db | 3.15% | 137.2MiB | 2GiB | 2.02MB / 7.72MB | 18.2MB / 4.1kB |
+| misp_modules | 0.00% | 326.6MiB | 1GiB | 61kB / 7.15MB | 391MB / 69.6kB |
+| nginx | 0.00% | 6.617MiB | 512MiB | 1.07MB / 976kB | 5.65MB / 0B |
+| opensearch_dashboards | 0.12% | 185MiB | 2GiB | 5.82MB / 64.9MB | 92.6MB / 16.4kB |
+| cortex | 0.54% | 683.5MiB | 4GiB | 16.6MB / 117MB | 217MB / 16.1MB |
+| grafana | 0.28% | 99.53MiB | 1GiB | 6.25MB / 80.7MB | 61.9MB / 0B |
+| promtail | 2.36% | 88.22MiB | 512MiB | 2.59MB / 32.8MB | 52.9MB / 0B |
+| tenzir_node | 8.90% | 942.7MiB | 1GiB | 14.6MB / 12.8MB | 217MB / 399MB |
+| network_watcher | 0.01% | 46.39MiB | 512MiB | 27.3MB / 88.7MB | 17MB / 77.8kB |
+| docs_site | 0.00% | 18.8MiB | 128MiB | 492kB / 24.2MB | 7.38MB / 4.1kB |
+| orborus | 0.37% | 35.44MiB | 2GiB | 24.5MB / 34.3MB | 25.9MB / 0B |
+| tenzir-node | 15.70% | 522.8MiB | 15.55GiB | 914B / 126B | 752MB / 493MB |
+| loki | 0.60% | 230.9MiB | 1GiB | 46.4MB / 4.09MB | 305MB / 429MB |
+| grafana_db | 2.01% | 38.42MiB | 512MiB | 8.76MB / 11.2MB | 70.3MB / 7.24MB |
+| grafana_renderer | 0.00% | 81.76MiB | 1GiB | 26.9kB / 21.1kB | 251MB / 31.6MB |
+| docker_proxy | 0.47% | 10.37MiB | 15.55GiB | 94.4MB / 125MB | 119MB / 13.1MB |
 
 > **Observación:** Los recursos reales están dentro de los
 > límites configurados. Elasticsearch y OpenSearch son los
 > servicios con mayor consumo de memoria (datos indexados).
 > Tenzir muestra el mayor CPU (procesamiento de eventos de red).
-
-## Analyzers Cortex Disponibles
-
-> **Fuente:** API Cortex `/api/analyzer`.
-> **Referencia TFM:** Tabla 4.3 (Analyzers Cortex Configurados).
-
-**Total de analyzers disponibles:** 34
-
-### Analyzers por Tipo de Dato
-
-| Tipo de Dato | Analyzers |
-|--------------|-----------|
-| domain | 20 |
-| file | 2 |
-| filename | 2 |
-| fqdn | 12 |
-| hash | 9 |
-| ip | 17 |
-| mail | 5 |
-| other | 1 |
-| uri_path | 1 |
-| url | 12 |
-| user-agent | 2 |
 
 ## Contexto Comparativo con Industria
 
@@ -1080,24 +1101,24 @@ Grafana health: **ok** (v10.3.4)
 
 | Métrica | Laboratorio SOAR | Benchmark Industria | Fuente |
 |---------|------------------|---------------------|--------|
-| MTTR mediano | 193.19s | 5 días (ransomware dwell) | Mandiant M-Trends 2024 |
-| MTTR medio | 277.15s | 258 días (breach lifecycle) | IBM Cost of Data Breach 2024 |
-| MTTD mediana | 149.0s | <60min = top quartile | SANS 2024 |
+| MTTR mediano | 85.95s | 5 días (ransomware dwell) | Mandiant M-Trends 2024 |
+| MTTR medio | 215.77s | 258 días (breach lifecycle) | IBM Cost of Data Breach 2024 |
+| MTTD mediana | 35.0s | <60min = top quartile | SANS 2024 |
 | Tasa de automatización | 100% | 16% fully automated | SANS 2024 D&R Survey |
 | Tasa de éxito | 100% | ≥95% objetivo | SANS 2024 |
-| Falsos positivos | 8.0% | 64% lo identifica como problema | SANS 2024 D&R Survey |
+| Falsos positivos | 13.6% | 64% lo identifica como problema | SANS 2024 D&R Survey |
 | Detección interna | 100% | 46% | Mandiant M-Trends 2024 |
-| Dwell time | 149.0s | 5 días (ransomware) | Mandiant M-Trends 2024 |
+| Dwell time | 35.0s | 5 días (ransomware) | Mandiant M-Trends 2024 |
 | Costo promedio breach | N/A (lab) | $4.88M | IBM Cost of Data Breach 2024 |
 | Ransomware en breaches | 100% (sim) | 32% (extorsión) | Verizon DBIR 2024 |
 
 > **Análisis comparativo:** El laboratorio SOAR supera significativamente
 > los benchmarks de industria en todas las métricas clave:
 >
->1. **MTTR:** 277.15s vs 5 días (Mandiant ransomware) — mejora de 1559x
->2. **MTTD:** 149.0s vs 60min (top quartile SANS) — en el rango óptimo
+>1. **MTTR:** 215.77s vs 5 días (Mandiant ransomware) — mejora de 2002x
+>2. **MTTD:** 35.0s vs 60min (top quartile SANS) — en el rango óptimo
 >3. **Automatización:** 100% vs 16% (SANS 2024 D&R) — automatización completa
->4. **Falsos positivos:** 8.0% vs 64% (SANS 2024) — mejor precisión
+>4. **Falsos positivos:** 13.6% vs 64% (SANS 2024) — mejor precisión
 >5. **Detección interna:** 100% vs 46% (Mandiant) — sin dependencia externa
 >6. **Costo breach:** N/A (lab) vs $4.88M (IBM 2024) — el SOAR reduce costo
 >7. **AI/Automation impact:** IBM 2024 reporta $2.2M menos en breach costs
@@ -1118,10 +1139,10 @@ Grafana health: **ok** (v10.3.4)
 
 | # | Limitación | Impacto en Métricas | Mitigación |
 |---|------------|---------------------|------------|
-| 1 | **Dependencia de APIs externas** | 0.8% de jobs de Cortex fallan (analyzers requieren APIs externas) | `continue_on_failure` + timeouts; workflow completa correctamente |
+| 1 | **Dependencia de APIs externas** | 34.1% de jobs de Cortex fallan (analyzers requieren APIs externas) | `continue_on_failure` + timeouts; workflow completa correctamente |
 | 2 | **Alertas simuladas** | MTTD/MTTR reflejan tiempo de procesamiento, no detección real | Simulador genera alertas realistas con IoCs válidos (T1486, hashes, IPs) |
 | 3 | **Contención simulada** | `containment_executed=false` en 100% de ejecuciones | El workflow llega a la decisión de contención; en producción ejecutaría el aislamiento |
-| 4 | **Sin volumetría real** | 50 alertas en esta sesión (lab) vs millones/día (prod) | Tests de carga extrema (TC-14) validan hasta 100 alertas concurrentes |
+| 4 | **Sin volumetría real** | 1511 alertas en esta sesión (lab) vs millones/día (prod) | Tests de carga extrema (TC-14) validan hasta 100 alertas concurrentes |
 | 5 | **Node timings no reportados** | `node_timings` en soar-metrics registran 0 | MTTR se calcula desde `mttr_seconds` (campo disponible); fases desde OpenSearch |
 | 6 | **Single-node Elasticsearch** | Estado `yellow` (no asigna réplicas) | Normal en lab; en prod usar multi-node con réplicas |
 
@@ -1183,9 +1204,9 @@ Grafana health: **ok** (v10.3.4)
 | Solución | Costo Anual | MTTR Promedio | Tasa Éxito | Implementación |
 |----------|------------|---------------|------------|----------------|
 | Manual | $150K | 3600s | ~80% | N/A |
-| SOAR Open Source | $200K | 277.15s | 100.0% | 4 sem |
-| SOAR Comercial | $500K | 194.0s | 100% | 12 sem |
-| Híbrido | $350K | 235.6s | 100% | 8 sem |
+| SOAR Open Source | $200K | 215.77s | 100.0% | 4 sem |
+| SOAR Comercial | $500K | 151.0s | 100% | 12 sem |
+| Híbrido | $350K | 183.4s | 100% | 8 sem |
 
 ## KPIs Recomendados por Tipo de Organización
 
@@ -1247,4 +1268,4 @@ Cada gráfica está referenciada inline en la sección correspondiente.
 
 ---
 
-_Informe generado automáticamente por `generate_e2e_report.py` el 2026-08-24 09:17:22 UTC_
+_Informe generado automáticamente por `generate_e2e_report.py` el 2026-11-08 22:09:58 UTC_

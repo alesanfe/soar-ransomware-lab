@@ -9,7 +9,7 @@ Source mutated: `src/soar_lab/`
 ## Executive Summary
 
 | Metric | Value |
-|--------|-------|
+| -------- | ------- |
 | **Mutation Score** | **0%** |
 | **Status** | **Critical** |
 | Total mutants | 0 |
@@ -22,7 +22,7 @@ Source mutated: `src/soar_lab/`
 ### Score interpretation
 
 | Score | Status | Meaning |
-|-------|--------|---------|
+| ------- | -------- | --------- |
 | 90-100 | Excellent | Tests catch almost all mutations |
 | 80-89 | Good | Tests catch most mutations |
 | 70-79 | Acceptable | Some gaps in test coverage |
@@ -53,7 +53,6 @@ runner_command = "python -m pytest -x -q --tb=no -m 'not requires_docker and not
 ```
 
 ## Recommendations
-
 
 ## How to reproduce
 

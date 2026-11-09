@@ -25,7 +25,7 @@ Path analyzed: `src/`
 ### Category scores
 
 | Category | Score | Weight | Status |
-|----------|-------|--------|--------|
+| ---------- | ------- | -------- | -------- |
 | maintainability | 77.6 | 20% | Acceptable |
 | coverage | 84.6 | 20% | Good |
 | complexity | 100 | 15% | Excellent |
@@ -55,7 +55,7 @@ Path analyzed: `src/`
 ### Grade distribution
 
 | Grade | Count | Meaning |
-|-------|-------|---------|
+| ------- | ------- | --------- |
 | A | 735 | Low risk (1-5) |
 | B | 61 | Acceptable (6-10) |
 | C | 18 | Moderate risk (11-20) |
@@ -66,7 +66,7 @@ Path analyzed: `src/`
 ### Top 10 most complex functions
 
 | # | Function | File | Line | CX | Grade |
-|---|----------|------|------|----|-------|
+| --- | ---------- | ------ | ------ | ---- | ------- |
 | 1 | extract_timings | src/soar_lab/application/use_cases/node_timing_extractor.py | 124 | 15 | C |
 | 2 | calculate_execution_times | src/soar_lab/domain/statistical_calculator.py | 134 | 15 | C |
 | 3 | PytestOutputParser | src/soar_lab/infrastructure/pytest_output_parser.py | 12 | 15 | C |
@@ -86,7 +86,7 @@ Path analyzed: `src/`
 - Max MI: **100.00**
 
 | Scale | Meaning |
-|-------|---------|
+| ------- | --------- |
 | MI >= 80 | Good |
 | MI >= 65 | Acceptable |
 | MI >= 50 | Needs review |
@@ -95,7 +95,7 @@ Path analyzed: `src/`
 ### Top 10 least maintainable files
 
 | # | File | MI |
-|---|------|----|
+| --- | ------ | ---- |
 | 1 | src/soar_lab/data/calc_kpis.py | 50.02 |
 | 2 | src/soar_lab/domain/models.py | 50.29 |
 | 3 | src/soar_lab/validation/validators.py | 50.57 |
@@ -118,7 +118,7 @@ Path analyzed: `src/`
 ### Files with lowest coverage
 
 | # | File | Line cov | Branch cov | Lines |
-|---|------|----------|------------|-------|
+| --- | ------ | ---------- | ------------ | ------- |
 | 1 | src/soar_lab/application/ports/output/__init__.py | 0.0% | — | 0/2 |
 | 2 | src/soar_lab/interfaces/api/__init__.py | 12.5% | 50.0% | 7/56 |
 | 3 | src/soar_lab/infrastructure/subprocess_runner.py | 30.6% | 0.0% | 19/62 |
@@ -163,7 +163,7 @@ _No security issues detected by bandit._
 ### Dead code items
 
 | File | Line | Description |
-|------|------|-------------|
+| ------ | ------ | ------------- |
 | tests/e2e/TC-09/test_realistic_ransomware.py | 114 | unused variable 'ex3' (60% confidence) |
 | tests/e2e/TC-10/test_tenzir_integration.py | 74 | unused method '_skip_if_no_tenzir_api' (60% confidence) |
 | tests/e2e/TC-16/test_error_handling.py | 122 | unused variable 'critical_success_count' (60% confidence) |
@@ -217,7 +217,7 @@ _No secrets detected in the codebase._
 ### Issues by type
 
 | Type | Count |
-|------|-------|
+| ------ | ------- |
 | error | 0 |
 | warning | 335 |
 | refactor | 72 |
@@ -227,7 +227,7 @@ _No secrets detected in the codebase._
 ### Top 10 modules with most issues
 
 | Module | Issues |
-|--------|--------|
+| -------- | -------- |
 | soar_lab.domain.ports.infrastructure | 58 |
 | soar_lab.infrastructure.network_watcher.network_watcher | 32 |
 | soar_lab.infrastructure.integrations.shuffle.shuffle_helpers | 26 |
@@ -242,7 +242,7 @@ _No secrets detected in the codebase._
 ### Most frequent issues (by symbol)
 
 | Symbol | Type | Count | Example module | Line | Message |
-|--------|------|-------|----------------|------|---------|
+| -------- | ------ | ------- | ---------------- | ------ | --------- |
 | logging-fstring-interpolation | warning | 113 | soar_lab.infrastructure.file_log_reader | 41 | Use lazy % formatting in logging functions |
 | broad-exception-caught | warning | 89 | soar_lab.logging.structured | 19 | Catching too general exception Exception |
 | unnecessary-ellipsis | warning | 82 | soar_lab.application.ports.input | 17 | Unnecessary ellipsis constant |
@@ -274,7 +274,7 @@ _Halstead metrics measure code volume, difficulty, effort, and estimated bugs._
 ### Top 5 files by Halstead effort
 
 | # | File | Effort |
-|---|------|--------|
+| --- | ------ | -------- |
 | 1 | soar_lab/resilience/retry.py | 6086 |
 | 2 | soar_lab/application/use_cases/auth_service.py | 5926 |
 | 3 | soar_lab/domain/statistical_calculator.py | 5462 |
@@ -301,7 +301,7 @@ _Halstead metrics measure code volume, difficulty, effort, and estimated bugs._
 ### Top 10 largest files (by LOC)
 
 | # | File | LOC |
-|---|------|-----|
+| --- | ------ | ----- |
 | 1 | soar_lab/interfaces/api/routes_soar.py | 571 |
 | 2 | soar_lab/simulator/simulate_alerts.py | 517 |
 | 3 | soar_lab/infrastructure/integrations/elasticsearch/client.py | 472 |

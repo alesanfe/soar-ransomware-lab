@@ -14,7 +14,7 @@ presentados en la tesis.
 ## Reportes de calidad
 
 | Archivo | Descripción |
-|---------|-------------|
+| --------- | ------------- |
 | `quality_summary.md` | Resumen de calidad: complejidad, seguridad (bandit), mantenibilidad, dependencias |
 | `quality_summary.json` | Datos estructurados del reporte de calidad |
 | `test_review_report.md` | Revisión de tests en 7 dimensiones |
@@ -41,7 +41,7 @@ Los gráficos (PNG) están en `docs/thesis/figures/` (34 archivos). Incluyen:
 ## Datos clave (n=50)
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Workflows completados | 50/50 (100%) |
 | MTTR medio | 277.15s |
 | MTTR P50 | 193.19s |
@@ -60,7 +60,7 @@ Los gráficos (PNG) están en `docs/thesis/figures/` (34 archivos). Incluyen:
 ## Objetivos TFM
 
 | Objetivo | Umbral | Valor | Cumple |
-|----------|--------|-------|--------|
+| ---------- | -------- | ------- | -------- |
 | MTTR P50 | ≤ 120s | 193.19s | ❌ |
 | MTTR P90 | ≤ 180s | 621.83s | ❌ |
 | Tasa de éxito | ≥ 95% | 100% | ✅ |

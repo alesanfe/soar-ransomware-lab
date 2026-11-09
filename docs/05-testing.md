@@ -26,7 +26,7 @@
 - [5. Problemas](#5-problemas)
   - [5.1 Limitaciones](#51-limitaciones)
   - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -75,7 +75,7 @@ Este directorio contiene la suite completa de tests para el proyecto SOAR Ransom
 
 - **Python soportado**: `>=3.11` (declarado en `pyproject.toml`).
 - **Comando canónico**: `python -m pytest --collect-only -q`
-- **Inventario detallado**: [`tests/baseline/tests_inventory.json`](../tests/baseline/tests_inventory.json)
+- **Inventario detallado**: `tests/baseline/tests_inventory.json` (fuera del árbol de docs — accesible en el repo)
 - **Generación de recuentos**: ejecutar `python -m pytest --collect-only -q` para obtener el recuento actual. Último resultado: `collected 2233 items / 328 deselected / 1905 selected`.
 
 #### Pirámide de calidad
@@ -265,7 +265,7 @@ El archivo `tests/conftest.py` en el directorio raíz de tests contiene fixtures
 #### Pirámide de calidad (resumen de tipos)
 
 | Nivel | Tipo | Qué valida | Ejecución canónica |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Unitarios | `tests/unit/` | Funciones, modelos, utilidades sin dependencias externas | `pytest tests/unit/ -v` |
 | Atómicos | `tests/atomic/` | Componentes individuales con mocks | `pytest tests/atomic/ -v` |
 | Integración | `tests/integration/` | Interacción entre adaptadores y clientes | `pytest tests/integration/ -v` |
@@ -457,7 +457,7 @@ La suite usa `tests/conftest.py` para fijar unas variables mínimas y delega las
 **Variables operativas (esperadas en `.env.full` o `docker exec -e`):**
 
 | Variable | Servicio / Uso | Notas |
-|----------|----------------|-------|
+| ---------- | ---------------- | ------- |
 | `SHUFFLE_DEFAULT_APIKEY` | Cliente Shuffle API | Obligatorio para tests E2E contra Shuffle |
 | `SHUFFLE_DEFAULT_PASSWORD` | Autenticación admin Shuffle | Solo necesario si se regeneran credenciales |
 | `THEHIVE_API_KEY` | Cliente TheHive API | Obligatorio para tests E2E |
@@ -504,7 +504,7 @@ make test-coverage
 **Targets Make disponibles:**
 
 | Target | Requiere Docker | Descripción |
-|--------|-----------------|-------------|
+| -------- | ----------------- | ------------- |
 | `make test` (sin alias) | No* | Equivalente a `pytest` base; evitar en flujo operativo |
 | `make test-unit` | No | Ejecuta `tests/unit/`; no requiere servicios |
 | `make test-atomic` | No | Ejecuta `tests/atomic/` |
@@ -696,7 +696,7 @@ Los tests del proveedor JWT y del servicio de autenticación se encuentran en:
 **Escenarios cubiertos por `test_jwt_token_provider.py`:**
 
 | Escenario | Entrada esperada | Comportamiento validado |
-|-----------|------------------|-------------------------|
+| ----------- | ------------------ | ------------------------- |
 | Creación exitosa | `username`, secret `>= 32` chars, `expiration_minutes=60`, algoritmo `HS256` | Token JWT no vacío y verificable |
 | Secret corto | secret `short` (menos de 32 chars) | `PyJWT` permite crear el token; la validación de longitud se delega a `AuthService` |
 | Verificación exitosa | Token creado con el mismo secret | Payload con `user`, `method=jwt` y `exp` |
@@ -726,7 +726,7 @@ python -m pytest tests/integration/test_authorization.py -v
 ##### 3.2.3.1 Objetivos de cobertura
 
 | Categoría de Pruebas | Objetivo de Cobertura |
-|------------------------|---------------------------------|
+| ------------------------ | --------------------------------- |
 | Pruebas unitarias | >80% |
 | Pruebas atómicas | >70% |
 | Pruebas de integración | >60% |
@@ -897,7 +897,7 @@ curl -s -X POST <http://localhost:8000/tests/run> \
 ##### 3.2.5.2 Métricas clave
 
 | Categoría de Pruebas | Objetivo de Cobertura |
-|------------------------|---------------------------------|
+| ------------------------ | --------------------------------- |
 | Pruebas unitarias | >80% |
 | Pruebas atómicas | >70% |
 | Pruebas de integración | >60% |
@@ -1486,7 +1486,7 @@ pytest tests/e2e/ -v -s
 #### Escenarios funcionales representativos
 
 | Caso | Archivo(s) | Objetivo | Servicios implicados | Artefactos generados |
-|------|------------|----------|---------------------|----------------------|
+| ------ | ------------ | ---------- | --------------------- | ---------------------- |
 | TC-00 | `TC-00/test_both_workflows*.py` | Validar comparación entre workflows de ransomware y benigno | Shuffle, TheHive | `webhook_info.json` |
 | TC-01 | `TC-01/test_malicious.py` | Flujo completo de alerta maliciosa: recepción, caso y contención simulada | Shuffle, TheHive, Elasticsearch | Caso en TheHive, métricas en `soar-metrics` |
 | TC-02 | `TC-02/test_benign.py` | Flujo de alerta benigna sin contención | Shuffle, TheHive | Caso cerrado/marcado benigno |
@@ -1805,7 +1805,7 @@ make test-all # Ejecuta toda la suite
 El proyecto no utiliza el campo `profiles:` de Docker Compose; en su lugar, `Makefile.linux` / `Makefile.win` definen `COMPOSE_FILES` como conjunto de archivos `docker-compose*.yml` y el target `make` selecciona el escenario:
 
 | Escenario | Archivos de compose incluidos | Target make |
-|-----------|------------------------------|-------------|
+| ----------- | ------------------------------ | ------------- |
 | Stack completo | `docker-compose.yml`, `docker-compose.core.yml`, `docker-compose.misp.yml`, `docker-compose.opensearch.yml`, `docker-compose.logging.yml` | `make up` |
 | Tests unitarios | Ninguno | `make test-unit` |
 | Tests de integración | Stack completo + contenedor `soar_api` | `make test-integration` |
@@ -1853,7 +1853,7 @@ python -m pytest tests/e2e/TC-14/test_complete_soar_integration.py -v
 #### Servicios SOAR Core
 
 | Servicio | Puerto | Configuración | Runtime | Navegador |
-|---------------------|--------|-------------------------------------|------------------------------------------------|-------------------------------------------|
+| --------------------- | -------- | ------------------------------------- | ------------------------------------------------ | ------------------------------------------- |
 | **Elasticsearch** | 8200 | Imagen, puertos, volúmenes, entorno | Salud del cluster, accesibilidad de API | No aplicable (solo API) |
 | **TheHive** | 8100 | Imagen, puertos, volúmenes, redes | Salud del contenedor (`/api/status`), endpoints de API | Interfaz de login, UI de gestión de casos |
 | **Cortex** | 8101 | Imagen, puertos, volúmenes, redes | Container health, analyzer endpoints | Login interface, analyzer management |
@@ -1864,7 +1864,7 @@ python -m pytest tests/e2e/TC-14/test_complete_soar_integration.py -v
 #### Threat Intelligence
 
 | Servicio | Configuración | Runtime | Navegador |
-|-------------|-----------------------------------|------------------------------|-----------------------------------------|
+| ------------- | ----------------------------------- | ------------------------------ | ----------------------------------------- |
 | **MISP** | Imagen, puertos, volúmenes, redes | Threat intelligence platform | Login interface, threat data management |
 | **Redis** | Imagen, puertos, volúmenes, redes | Cache and message broker | No aplicable (data service) |
 | **MariaDB** | Imagen, puertos, volúmenes, redes | Database for MISP | No aplicable (data service) |
@@ -1981,7 +1981,7 @@ Las pruebas se integran en GitHub Actions mediante workflows en `.github/workflo
 ##### 3.6.5.2 Métricas clave
 
 | Métrica | Objetivo | Método de Medida |
-|--------------------------------------|----------|-------------------------------|
+| -------------------------------------- | ---------- | ------------------------------- |
 | **Tasa de éxito** | ≥ 95% | Porcentaje de pruebas pasadas |
 | **Cobertura de código** | ≥ 80% | pytest-cov |
 | **Tiempo de ejecución** | ≤ 5 min | pytest --durations |
@@ -2335,7 +2335,7 @@ curl -s -X POST <http://localhost:8000/tests/run> \
 ##### Objetivos de Cobertura
 
 | Categoría de Pruebas | Objetivo de Cobertura |
-|------------------------|-----------------------|
+| ------------------------ | ----------------------- |
 | Pruebas unitarias | >80% |
 | Pruebas atómicas | >70% |
 | Pruebas de integración | >60% |
@@ -2389,7 +2389,7 @@ make test-coverage
 #### Métricas Clave
 
 | Categoría de Pruebas | Objetivo de Cobertura |
-|------------------------|-----------------------|
+| ------------------------ | ----------------------- |
 | Pruebas unitarias | >80% |
 | Pruebas atómicas | >70% |
 | Pruebas de integración | >60% |
@@ -2462,7 +2462,7 @@ No hay riesgos o incidencias conocidas actualmente. Todas las pruebas han sido c
 
 - **Repositorio del Proyecto**: [alesanfe/soar-ransomware-lab](https://github.com/alesanfe/soar-ransomware-lab.git)
 - **Documentación de Arquitectura**: [docs/02-architecture.md](02-architecture.md)
-- **README Principal**: [/README.md](../README.md)
+- **README Principal**: [/README.md](./README.md)
 - **Documentación de pytest**: <https://docs.pytest.org/>
 - **Documentación de Playwright**: <https://playwright.dev/>
 - **Documentación de Docker**: <https://docs.docker.com/>
@@ -2524,7 +2524,7 @@ El laboratorio SOAR implementa una estrategia de testing exhaustiva basada en la
 de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistemas independientes:
 
 | Sistema | Score | Dimensiones |
-|---------|-------|-------------|
+| --------- | ------- | ------------- |
 | Quality Score | 92.2/100 | 8 categorías (coverage, complexity, security, linting, typing, docs, architecture, maintainability) |
 | Holistic Project Radar | 96.0/100 | 16 dimensiones en 5 capas (core, tests, quality, infra, docs) |
 | Test Review | 92.2/100 | 7 dimensiones (cobertura estructural, cobertura lógica, pirámide, salud, aislamiento, complejidad, duplicación) |
@@ -2536,7 +2536,7 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 #### Estadísticas Generales
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Tests coleccionados | 2233 |
 | Tests seleccionados | 1905 |
 | Tests deseleccionados | 328 |
@@ -2548,7 +2548,7 @@ de tests con pytest (pytest, 2024), con cobertura de calidad medida por 3 sistem
 #### Distribución por Categoría
 
 | Categoría | Archivos | Tests | % del Total |
-|-----------|----------|-------|-------------|
+| ----------- | ---------- | ------- | ------------- |
 | unit | 79 | 1245 | 61.0% |
 | integration | 30 | 336 | 16.5% |
 | e2e | 49 | 281 | 13.8% |
@@ -2567,7 +2567,7 @@ La diferencia (15 archivos, 192 tests) corresponde a tests añadidos tras la gen
 #### Distribución por Capa (Pirámide)
 
 | Capa | Tests | % Actual | % Ideal | Desviación |
-|------|-------|----------|---------|------------|
+| ------ | ------- | ---------- | --------- | ------------ |
 | Unit + Atomic | 1346 | 65.9% | 70% | -4.1% |
 | Integration | 336 | 16.5% | 20% | -3.5% |
 | E2E | 281 | 13.8% | 10% | +3.8% |
@@ -2579,7 +2579,7 @@ La diferencia (15 archivos, 192 tests) corresponde a tests añadidos tras la gen
 #### E.3. Cobertura de Código
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Cobertura de líneas | 84.6% (4730/5592) |
 | Cobertura de ramas | 73.2% |
 | Archivos analizados | 98 |
@@ -2597,7 +2597,7 @@ Archivos con 100% cobertura: `sqlite_alert_repository.py` (143 líneas), `routes
 El proyecto usa marcadores auto-aplicados por directorio (configurados en `tests/conftest.py`):
 
 | Marcador | Auto-aplicado a |
-|----------|-----------------|
+| ---------- | ----------------- |
 | `unit` | `tests/unit/` |
 | `integration` | `tests/integration/` |
 | `e2e` | `tests/e2e/` |
@@ -2623,7 +2623,7 @@ anotar cada archivo. Adicionalmente, `test_smoke.py` usa sub-marcadores
 Catálogo completo de Test Cases E2E (40 TCs en `tests/e2e/TC-*/`):
 
 | TC | Nombre | Tests | Descripción |
-|----|--------|-------|-------------|
+| ---- | -------- | ------- | ------------- |
 | TC-00 | Both Workflows | 4 | Validación parametrizada de ambos escenarios (malicioso/benigno) |
 | TC-01 | Malicious | 11 | Alerta maliciosa básica — pipeline SOAR completo |
 | TC-02 | Benign | 5 | Alerta benigna (falso positivo) — pipeline SOAR completo |
@@ -2676,7 +2676,7 @@ Total de tests largos (>50 líneas): **169** (8.3% del total).
 #### E.6. Salud y Aislamiento
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Tests saltados | 2 (esperados: Tenzir 404, docker compose en contenedor) |
 | XFail | 0 |
 | Health score | 99.5/100 |
@@ -2690,7 +2690,7 @@ Total de tests largos (>50 líneas): **169** (8.3% del total).
 #### E.7. Complejidad y Duplicación
 
 | Métrica | Valor | Score |
-|---------|-------|-------|
+| --------- | ------- | ------- |
 | Tests largos (>50 líneas) | 169 | — |
 | Tests débiles (<1.5 assertions) | 60 | — |
 | Complexity score | — | 83.4/100 |
@@ -2706,7 +2706,7 @@ desde diferentes niveles (unit + integration), lo cual es esperado en una pirám
 #### E.8. Mutation Testing
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Mutation Score | 51.8% (Parcial High risk) |
 | Total mutantes generados | 13 969 |
 | Mutantes con cobertura (probados) | 11 050 |
@@ -2735,7 +2735,7 @@ Reproducción: `make mutation` (60-180 min, reporte en `reports/mutmut/mutation_
 #### E.9. Requisitos de Cobertura
 
 | Tipo | Umbral | Actual |
-|------|--------|--------|
+| ------ | -------- | -------- |
 | Coverage general | 80% | 84.6% Sí |
 | Funciones críticas | 80% | Sí |
 | Funciones de seguridad | 90% | Sí |
@@ -2766,7 +2766,7 @@ make reset && make health
 #### E.11. Prerrequisitos por Categoría
 
 | Categoría | Python | Docker | .env.full | Stack Up | Shuffle Init |
-|-----------|--------|--------|-----------|----------|--------------|
+| ----------- | -------- | -------- | ----------- | ---------- | -------------- |
 | Unit/Atomic | 3.11+ | No | placeholders | No | No |
 | Integration | 3.11+ | Sí | real creds | Sí | Sí |
 | E2E | 3.11+ | Sí | real creds | Sí | Sí |
@@ -2779,7 +2779,7 @@ make reset && make health
 #### E.12. Quality Gates
 
 | Tool | Issues | Score |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | ruff | 0 | 100/100 |
 | mypy | 0 errors | 100/100 |
 | pylint | 528 issues (0 errors) | 9.1/10 |
@@ -2795,7 +2795,7 @@ Documentación: docstrings 94.6% (964/1019 funciones), dead code 18 items (todos
 #### E.13. Resumen de Validación
 
 | Aspecto | Score | Estado |
-|---------|-------|--------|
+| --------- | ------- | -------- |
 | Quality Score global | 92.2/100 | Excellent |
 | Holistic Project Radar | 96.0/100 | Excellent |
 | Test Review | 92.2/100 | Excellent |
@@ -3076,7 +3076,7 @@ Tests de integración/E2E fallan con `ConnectionRefusedError`, `skipped`, timeou
 - **Documentación de TheHive**: <https://docs.strangebee.com/thehive/>
 - **Documentación de Cortex**: <https://docs.strangebee.com/cortex/>
 - **Plan de Gobernanza y Validación**: [06-project-management.md](06-project-management.md)
-- **README Principal**: [/README.md](../README.md)
+- **README Principal**: [/README.md](./README.md)
 - **Documentación del Proyecto**: [../](../)
 - [02-architecture.md](02-architecture.md)
 - [04-operations.md](04-operations.md)

@@ -1,3 +1,7 @@
+---
+slug: /readme
+---
+
 # Documentación del SOAR Ransomware Lab
 
 ## Índice
@@ -84,7 +88,7 @@ Este documento es un índice y no cubre:
 ### 3.1 Documentos principales
 
 | Documento | Descripción |
-|-----------|-------------|
+| ----------- | ------------- |
 | [01-getting-started.md](01-getting-started.md) | Visión general, requisitos, instalación, primer acceso y guía rápida. |
 | [02-architecture.md](02-architecture.md) | Arquitectura hexagonal, Docker, código, seguridad y matriz de versiones. |
 | [03-api-and-integrations.md](03-api-and-integrations.md) | API REST, endpoints, contratos e integraciones con TheHive, Cortex y Shuffle. |
@@ -95,14 +99,14 @@ Este documento es un índice y no cubre:
 
 ### 3.2 Assets
 
-- [`assets/images/`](assets/images/) — Capturas de pantalla organizadas por servicio (cortex, thehive, shuffle, docker).
-- [`assets/references/`](assets/references/) — Referencias técnicas (OpenAPI, plantillas JSON).
+- ``assets/images/`` — Capturas de pantalla organizadas por servicio (cortex, thehive, shuffle, docker).
+- ``assets/references/`` — Referencias técnicas (OpenAPI, plantillas JSON).
 
 ### 3.3 Archivo histórico
 
 ### 3.4 Tesis (TFM)
 
-- [`thesis/`](thesis/) — Documentación académica del Trabajo Fin de Máster. Puede incluir resultados parciales o simulados; las capacidades operativas deben validarse contra los documentos principales y el código.
+- ``thesis/`` — Documentación académica del Trabajo Fin de Máster. Puede incluir resultados parciales o simulados; las capacidades operativas deben validarse contra los documentos principales y el código.
 
 ---
 

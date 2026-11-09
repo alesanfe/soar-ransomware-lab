@@ -158,7 +158,7 @@ Stevens, R., Votipka, D., Dykstra, J., Tomlinson, F., Quartararo, E., Ahern, C.,
 
 Tenzir. (2024). *Tenzir v6.8 data platform documentation*. Tenzir GmbH. <https://docs.tenzir.com/>
 
-TheHive Project. (2024). *TheHive 3.5 documentation*. TheHive Community. <https://docs.strangebee.com/thehive/>
+StrangeBee. (2024). *TheHive 5 documentation*. StrangeBee. <https://docs.strangebee.com/thehive/>
 
 TheHive Project. (n.d.). *TheHive repository* [GitHub]. <https://github.com/TheHive-Project/TheHive>
 

@@ -31,7 +31,7 @@
 - [5. Problemas](#5-problemas)
   - [5.1 Limitaciones](#51-limitaciones)
   - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -154,7 +154,6 @@ graph TD
  ShuffleBackend -- HTTP --> Redis
  ShuffleBackend -- HTTP --> Orborus[Orborus :5000]
 
- TheHive -- HTTP --> ES
  TheHive -- HTTP --> Cortex
 
  Cortex -- HTTP --> ES
@@ -297,7 +296,7 @@ El proyecto organiza el código en capas con dirección de dependencias hacia el
 - **`src/soar_lab/infrastructure/monitoring/health_service.py`**: Servicio de health checks. Depende de domain/ports (HealthCheckInterface,
  SystemMetricsInterface)
 - **`src/soar_lab/domain/services/kpi_analyzer.py`**: Analizador de KPIs y métricas. Depende de domain/ports (StatisticalCalculatorInterface)
-- **`scripts/test_service.py`**: Servicio de ejecución de pruebas. Depende de domain/ports (CacheInterface, TestRunner,
+- **`src/soar_lab/application/use_cases/test_service.py`**: Servicio de ejecución de pruebas. Depende de domain/ports (CacheInterface, TestRunner,
  TestResultParserInterface)
 - **`scripts/setup/generate_secrets.py`**: Generador de secretos y claves. Depende de domain/ports (FileSystemInterface)
 
@@ -332,7 +331,7 @@ Detección de Alerta → Triage → Investigación → Contención → Erradicac
 #### Real vs. Simulado en la Respuesta
 
 | Fase | Estado | Evidencia / Notas |
-|------|--------|-------------------|
+| ------ | -------- | ------------------- |
 | Detección | Real | Agentes y manager levantados en Docker; alertas generadas por simulador o agente real |
 | Ingesta Webhook (Shuffle) | Real | `init_shuffle_webhook.py` crea workflow y webhook en Shuffle |
 | Triage (Shuffle) | Real | Reglas del workflow evalúan severidad y contexto |
@@ -400,12 +399,12 @@ sequenceDiagram
  SIEM->>Shuffle: POST /api/v1/hooks/webhook (alert)
  Shuffle->>Backend: Reenvía alerta
  Backend->>OS: Valida y almacena alerta
- Backend->>TheHive: POST /api/case (crear caso)
- TheHive->>ES: Almacena caso
+ Backend->>TheHive: POST /api/v1/case (crear caso)
+ Note over TheHive: almacenamiento embebido (JanusGraph/Lucene)
  Backend->>Cortex: POST /api/analyzer/run (analyzers)
  Cortex->>ES: Consulta IoCs
  Cortex-->>Backend: Resultados de análisis
- Backend->>TheHive: PATCH /api/case (actualizar con IoCs)
+ Backend->>TheHive: PATCH /api/v1/case (actualizar con IoCs)
  Backend-->>SIEM: Confirmación de procesamiento
 ```
 
@@ -437,9 +436,9 @@ sequenceDiagram
 #### Servicios, Puertos y Redes
 
 | Servicio | Imagen | Puerto host→contenedor | Redes |
-|--------------------|-------------------------------------------------------|---------------------------------------|-----------------------|
+| -------------------- | ------------------------------------------------------- | --------------------------------------- | ----------------------- |
 | `nginx` | nginx:1.25-alpine | `80:80`, `443:443` | soar_net, logging_net |
-| `thehive` | thehiveproject/thehive:3.5.2-1 | `${THEHIVE_HTTP_PORT:-8100}:9000` | soar_net |
+| `thehive` | strangebee/thehive:5.7.8-1 | `${THEHIVE_HTTP_PORT:-8100}:9000` | soar_net |
 | `cortex` | build `infra/docker/images/cortex/Dockerfile` (FROM `thehiveproject/cortex:3.2.0-1`) | `${CORTEX_HTTP_PORT:-8101}:9001` | soar_net |
 | `shuffle-backend` | ghcr.io/shuffle/shuffle-backend:2.2.1 | `${SHUFFLE_API_PORT:-5001}:5001` | soar_net |
 | `shuffle-frontend` | ghcr.io/shuffle/shuffle-frontend:2.2.1 | `${SHUFFLE_UI_PORT:-8081}:80` | soar_net |
@@ -462,7 +461,7 @@ sequenceDiagram
 #### Redes Docker
 
 | Red | Driver | Subred | Propósito |
-|---------------|-------------------|-----------------|-----------------------------------------------------------------------------------|
+| --------------- | ------------------- | ----------------- | ----------------------------------------------------------------------------------- |
 | `soar_net` | bridge | `10.100.0.0/16` | Red interna principal — todos los servicios SOAR |
 | `ti_net` | bridge (internal) | `172.22.0.0/16` | Red de Threat Intelligence — Elasticsearch, Redis, API, Shuffle backend/frontend (sin acceso externo) |
 | `logging_net` | bridge | `172.23.0.0/16` | Red de logging — Loki, Promtail, Grafana |
@@ -473,7 +472,7 @@ sequenceDiagram
 #### Volúmenes Persistentes
 
 | Volumen | Servicio | Contenido persistido |
-|---------------------------|-----------------|------------------------------------------------------------------|
+| --------------------------- | ----------------- | ------------------------------------------------------------------ |
 | `thehive_files` | thehive | Ficheros adjuntos a casos e incidentes |
 | `cortex_data` | cortex | Configuración y datos de analyzers |
 | `es_data` | elasticsearch | Índices y datos de búsqueda (TheHive, Cortex, métricas del Lab API) |
@@ -497,7 +496,7 @@ sequenceDiagram
 - **Backend**: Python 3.11, FastAPI (`src/soar_lab/interfaces/api/main.py`)
 - **Frontend**: HTML/JS estático (Web Management), React (Shuffle)
 - **Orquestación SOAR**: Shuffle (`ghcr.io/shuffle/shuffle-backend`, `-frontend`, `-orborus` 2.2.1)
-- **Gestión de casos**: TheHive 3.5.2-1 + Cortex 3.2.0-1
+- **Gestión de casos**: TheHive 5.7.8-1 + Cortex 3.2.0-1
 - **Inteligencia de amenazas**: MISP 2.5.44 (`ghcr.io/misp/misp-docker/misp-core`)
 - **Búsqueda e índices**: Elasticsearch 7.10.2
 - **Caché**: Redis 7
@@ -534,7 +533,7 @@ principales: DMZ, Aplicación, Datos y Gestión.
 #### Matriz de estado funcional por componente
 
 | Componente / Capacidad | Estado | Evidencia / Notas |
-|------------------------|--------|---------------------|
+| ------------------------ | -------- | --------------------- |
 | Nginx (proxy inverso + TLS) | Parcial | Termina TLS en `<https://soar.local`>; no incluye WAF ni rate limiting avanzado |
 | Lab API (FastAPI) | Implementado | Endpoints de auth, analytics, backups, tests y proxy SOAR en `src/soar_lab/interfaces/api/main.py` |
 | Shuffle (workflows + webhook) | Implementado | Contenedores `shuffle-frontend`, `shuffle-backend`, `orborus`; workflow creado por `init_shuffle_webhook.py` |
@@ -694,7 +693,7 @@ uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 800
 #### 5. Tabla resumen
 
 | Aplicación | Servicio Compose | Contenedor (proyecto `soar`) | Tecnología | Puerto host | Puerto contenedor | Acceso recomendado | Vía Nginx |
-|------------|------------------|------------------------------|------------|-------------|-------------------|--------------------|-----------|
+| ------------ | ------------------ | ------------------------------ | ------------ | ------------- | ------------------- | -------------------- | ----------- |
 | `apps/api` | `api` | `soar_api` | FastAPI / Python 3.11 | `8000` | `8000` | `<http://localhost:8000`> | Sí (`/api/`) |
 | `apps/docs-site` | `docs-site` | `soar_docs_site` | Docusaurus / Node.js | `8086` | `8080` | `<http://localhost:8086`> | No |
 | `apps/web-management` | `web-management` | `soar_web_management` | HTML / JS / Nginx | `8085` | `80` | `<http://localhost:8085`> | Sí (`/`) |
@@ -706,7 +705,7 @@ uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 800
 - [Arquitectura Docker](#35-arquitectura-docker)
 - [Arquitectura general](#31-visión-general-de-arquitectura)
 - [Guía de infraestructura](04-operations.md)
-- [README principal](../README.md)
+- [README principal](./README.md)
 
 ### 3.3 Estructura de código
 
@@ -737,7 +736,7 @@ Tras la refactorización, el código se reorganizó en cuatro capas principales:
 Tabla one-to-one entre los protocolos del dominio y sus implementaciones concretas en infraestructura. Cada fila muestra el contrato (puerto), el adaptador que lo materializa y el archivo principal.
 
 | Puerto (Protocol) | Definición | Adaptador / Implementación | Archivo principal |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `AlertRepository` | `domain/ports/repositories.py` | `SqliteAlertRepository`, `InMemoryAlertRepository` | `infrastructure/persistence/sqlite_alert_repository.py`, `infrastructure/in_memory_alert_repository.py` |
 | `BackupDriver` | `domain/ports/infrastructure.py` | `TarBackupDriver` | `infrastructure/tar_backup_driver.py` |
 | `StorageProvider` | `domain/ports/infrastructure.py` | `FilesystemStorage` | `infrastructure/filesystem_storage.py` |
@@ -768,7 +767,7 @@ Tabla one-to-one entre los protocolos del dominio y sus implementaciones concret
 Además de las cuatro capas hexagonales, el código fuente contiene paquetes de conveniencia y soporte:
 
 | Paquete | Contenido destacado | Responsabilidad |
-|---|---|---|
+| --- | --- | --- |
 | `auth/` | `models.py` | Modelos de autenticación/RBAC (`Permission`, `Role`, `User`). `AuthService` vive en `application/use_cases/auth_service.py`. |
 | `common/` | `exceptions.py` | Excepciones base compartidas por todas las capas. |
 | `config/` | `settings.py`, `schemas/`, `logging.py` | Configuración central, Pydantic settings y logging. |
@@ -788,7 +787,7 @@ Ubicación: `src/soar_lab/domain/`
 Responsabilidad: Contener la lógica de negocio pura sin dependencias externas.
 
 | Módulo | Propósito |
-|--------|-----------|
+| -------- | ----------- |
 | `models.py` | Entidades de dominio (`IOC`, `Alert`, `Case`) con validación |
 | `ports/repositories.py` | Protocolos de repositorios (`AlertRepository`, `CaseRepository`, etc.) |
 | `ports/infrastructure.py` | Protocolos de infraestructura (`ConfigProvider`, `HTTPClient`, etc.) |
@@ -807,7 +806,7 @@ Ubicación: `src/soar_lab/application/`
 Responsabilidad: Orquestar casos de uso utilizando los puertos del dominio.
 
 | Módulo | Propósito |
-|--------|-----------|
+| -------- | ----------- |
 | `ports/` | Definición de puertos (interfaces) de entrada/salida |
 | `use_cases/analytics_service.py` | Cálculo y exportación de estadísticas y KPIs |
 | `use_cases/auth_service.py` | Autenticación JWT y verificación de credenciales |
@@ -833,7 +832,7 @@ Ubicación: `src/soar_lab/interfaces/`
 Responsabilidad: Exponer la funcionalidad al exterior.
 
 | Módulo | Propósito |
-|--------|-----------|
+| -------- | ----------- |
 | `api/composition.py` | `CompositionRoot` y `create_app`: cableado de dependencias de la app FastAPI |
 | `api/main.py` | Aplicación FastAPI principal con todos los endpoints REST |
 | `api/cli.py` | CLI nativo `soar-lab` (api, generate-secrets, generate-iocs, version) |
@@ -845,7 +844,7 @@ Responsabilidad: Exponer la funcionalidad al exterior.
 #### 7. Código compartido
 
 | Módulo | Propósito |
-|--------|-----------|
+| -------- | ----------- |
 | `common/` | Excepciones y utilidades compartidas |
 | `config/` | `settings.py`, `logging.py`, `schemas/` |
 | `data/` | Esquemas de datos y utilidades |
@@ -916,12 +915,12 @@ El `CompositionRoot` realiza las siguientes tareas:
 #### 4. Componentes cableados
 
 | Componente | Tipo | Rol |
-|------------|------|-----|
+| ------------ | ------ | ----- |
 | `InfrastructureConfigProvider` | Adaptador de config | Lee variables de entorno y `.env.full` |
 | `PathService` | Utilidad | Resuelve rutas del proyecto y crea directorios |
 | `FilesystemStorage` | Adaptador de almacenamiento | Acceso a archivos del sistema |
 | `SqliteAlertRepository` | Adaptador de persistencia | Almacena alertas en SQLite |
-| `AioHTTPClient` | Adaptador HTTP | Cliente HTTP asíncrono |
+| `AioHTTPClient` | Adaptador HTTP | Fachada async sobre `requests` pooled (mono-stack HTTP — D2) |
 | `HTTPHealthCheckAdapter` | Adaptador de health | Realiza health checks HTTP |
 | `SystemMetricsDriver` | Adaptador de métricas | Recolecta CPU, RAM, disco |
 | `JWTTokenProvider` | Adaptador de seguridad | Genera y valida tokens JWT |
@@ -980,7 +979,7 @@ Dentro de `CompositionRoot`:
 - [Arquitectura general](#31-visión-general-de-arquitectura)
 - [Estructura del código fuente](#33-estructura-de-código)
 - [Arquitectura hexagonal](#36-arquitectura-hexagonal)
-- [src/soar_lab/interfaces/api/composition.py](../src/soar_lab/interfaces/api/composition.py)
+- `../src/soar_lab/interfaces/api/composition.py`
 
 ### 3.5 Arquitectura Docker
 
@@ -1009,7 +1008,7 @@ Dentro de `CompositionRoot`:
 - [5. Problemas](#5-problemas)
   - [5.1 Limitaciones](#51-limitaciones)
   - [5.2 Riesgos o incidencias](#52-riesgos-o-incidencias)
-  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones-troubleshooting)
+  - [5.3 Recomendaciones / troubleshooting](#53-recomendaciones--troubleshooting)
 - [6. Referencias](#6-referencias)
 
 ---
@@ -1024,7 +1023,7 @@ configuración de redes, persistencia de datos y procedimientos de despliegue.
 #### 1.2 Contexto
 
 El SOAR Ransomware Lab utiliza Docker Compose para orquestar 18 servicios a través de 4 redes con mejoras en networking,
-persistencia de datos y logging. Para la arquitectura completa del sistema, ver [README.md](../README.md).
+persistencia de datos y logging. Para la arquitectura completa del sistema, ver [README.md](./README.md).
 
 #### 2. Alcance
 
@@ -1068,7 +1067,7 @@ Este documento depende de:
 La orquestación se divide en varios archivos `docker-compose*.yml` bajo `infra/docker/compose/` para facilitar perfiles y arranque selectivo:
 
 | Archivo | Propósito | Servicios principales |
-|---|---|---|
+| --- | --- | --- |
 | `infra/docker/compose/docker-compose.yml` | Redes, volúmenes globales y `elasticsearch` | `elasticsearch` |
 | `infra/docker/compose/docker-compose.core.yml` | Core SOAR | `redis`, `thehive`, `cortex`, `shuffle-frontend`, `shuffle-backend`, `orborus`, `network-watcher`, `tenzir-node` |
 | `infra/docker/compose/docker-compose.misp.yml` | Inteligencia de amenazas | `misp-db`, `misp-modules`, `misp` |
@@ -1115,10 +1114,10 @@ docker compose --env-file .env -f infra/docker/compose/docker-compose.yml -f inf
 ##### Tabla canónica de servicios
 
 | Servicio | Imagen / build | Contenedor (por defecto) | Puerto host → contenedor | Redes | Healthcheck | Propósito |
-|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- |
 | elasticsearch | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `soar_elasticsearch` | `${ELASTICSEARCH_PORT:-8200}` → 9200 | `soar_net`, `ti_net` | `GET /_cluster/health` | Motor de búsqueda y métricas |
 | redis | `redis:7-alpine` | `soar_redis` | 6379 → 6379 | `ti_net`, `soar_net` | `nc -z 127.0.0.1 6379` | Cache/cola con autenticación |
-| thehive | `thehiveproject/thehive:3.5.2-1` | `soar_thehive` | `${THEHIVE_HTTP_PORT:-8100}` → 9000 | `soar_net` | `GET /api/status` | Gestión de casos |
+| thehive | `strangebee/thehive:5.7.8-1` | `soar_thehive` | `${THEHIVE_HTTP_PORT:-8100}` → 9000 | `soar_net` | `GET /api/v1/status` | Gestión de casos |
 | cortex | build `infra/docker/images/cortex/Dockerfile` | `soar_cortex` | `${CORTEX_HTTP_PORT:-8101}` → 9001 | `soar_net` | HTTP 2xx/3xx en `:9001/` | Motor de analizadores; monta `/var/run/docker.sock` |
 | shuffle-frontend | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | `soar_shuffle_frontend` | `${SHUFFLE_UI_PORT:-8081}` → 80 | `soar_net`, `ti_net` | `GET <http://localhost:80`> | UI de workflows |
 | shuffle-backend | `ghcr.io/shuffle/shuffle-backend:2.2.1` | `soar_shuffle_backend` | `${SHUFFLE_API_PORT:-5001}` → 5001 | `soar_net`, `ti_net` | deshabilitado | Motor de workflows |
@@ -1146,14 +1145,14 @@ docker compose --env-file .env -f infra/docker/compose/docker-compose.yml -f inf
 
 - `shuffle-backend` no tiene healthcheck configurado; `orborus` lo monitoriza mediante `nc -z shuffle-backend 5001`.
 - `loki` usa la imagen mínima de Grafana Loki (`2.9.10`), sin shell ni curl, por lo que no dispone de healthcheck.
-- `thehive` usa `/api/status` para evitar falsos negativos mientras Elasticsearch prepara sus índices.
+- `thehive` usa `/api/v1/status/public` (endpoint sin auth de TheHive 5; el storage embebido no depende de Elasticsearch).
 
 #### Límites de recursos
 
 Valores extraídos de los archivos Compose; pueden ajustarse en `.env.full` o directamente en `deploy.resources`:
 
 | Grupo | Servicios | CPU límite / reserva | Memoria límite / reserva |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Grandes | `elasticsearch`, `thehive`, `cortex`, `shuffle-backend`, `misp` | 2.0 / 1.0 cores | 4GB / 2GB |
 | Medianos | `redis`, `shuffle-frontend`, `orborus`, `opensearch`, `opensearch-dashboards`, `grafana`, `api` | 1.0 / 0.5 cores | 1-2GB / 0.5-1GB |
 | Pequeños | `docs-site`, `web-management`, `promtail` | 0.5 / 0.25 cores | 256-512MB / 128-256MB |
@@ -1163,7 +1162,7 @@ Valores extraídos de los archivos Compose; pueden ajustarse en `.env.full` o di
 #### Topología de red
 
 | Red | CIDR | Tipo | Servicios | Propósito |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `bridge` | — | `external: true` | Ninguno directamente | Red por defecto de Docker; declarada por compatibilidad |
 | `soar_net` | `10.100.0.0/16` | bridge | `elasticsearch`, `redis`, `thehive`, `cortex`, `shuffle-*`, `orborus`, `network-watcher`, `tenzir-node`, `misp*`, `opensearch`, `opensearch-dashboards`, `api`, `web-management`, `nginx`, `grafana`, `promtail` | Red principal del laboratorio |
 | `ti_net` | `172.22.0.0/16` | `internal: true` | `elasticsearch`, `redis`, `api` | Aislada del exterior; tráfico de inteligencia de amenazas |
@@ -1338,10 +1337,9 @@ curl <http://localhost:8200/_cluster/health>
 
 #### Problema de Índice de Elasticsearch en TheHive
 
-**Problema:** TheHive requiere el índice de Elasticsearch `the_hive_17` que puede no existir en una instalación fresca.
+**Problema histórico (resuelto):** TheHive 3.x requería el índice de Elasticsearch `the_hive_17` que podía no existir en una instalación fresca.
 
-**Solución Actual:** El healthcheck se cambió para usar `/api/status` en lugar de `/api/health` para evitar la
-dependencia del índice. El índice se creará automáticamente por TheHive al iniciar.
+**Solución actual:** migrado a TheHive 5.7.8-1 (TH-001) — almacenamiento embebido JanusGraph/BerkeleyJE + Lucene, **sin dependencia de Elasticsearch**; el índice `the_hive_17` ya no existe. Healthcheck público: `/api/v1/status/public`.
 
 #### 4. Validación
 
@@ -1426,7 +1424,7 @@ y la infraestructura e interfaces implementan los adaptadores.
 #### Capas principales
 
 | Capa | Ubicación | Responsabilidad |
-|------|-----------|----------------|
+| ------ | ----------- | ---------------- |
 | **Dominio** | `src/soar_lab/domain/` | Entidades, value objects, reglas puras y contratos de puertos (`ports/`) |
 | **Aplicación** | `src/soar_lab/application/` | Casos de uso, coordinación de adaptadores y DTOs |
 | **Infraestructura** | `src/soar_lab/infrastructure/` | Implementaciones de puertos: clientes externos, persistencia, mensajería, monitoreo |
@@ -1585,7 +1583,7 @@ mantenedores y revisores.
 Responsabilidad: modelos de negocio, reglas puras, contratos de puertos y servicios del dominio.
 
 | Archivo / Módulo | Responsabilidad principal |
-|------------------|---------------------------|
+| ------------------ | --------------------------- |
 | `models.py` | Entidades de dominio (`Alert`, `IOC`, `Case`, `AlertSeverity`, `AlertStatus`) |
 | `alert_generator.py` | Generación de alertas de prueba para simulación |
 | `statistical_calculator.py` | Utilidades estadísticas para comparaciones y tests |
@@ -1599,7 +1597,7 @@ Responsabilidad: modelos de negocio, reglas puras, contratos de puertos y servic
 Responsabilidad: casos de uso, orquestación de dominio, coordinación de adaptadores.
 
 | Archivo / Módulo | Responsabilidad principal |
-|------------------|---------------------------|
+| ------------------ | --------------------------- |
 | `use_cases/analytics_service.py` | Casos de uso de analytics y generación de KPIs |
 | `use_cases/auth_service.py` | Casos de uso de autenticación (login, validación JWT) |
 | `use_cases/backup_service.py` | Casos de uso de backup/restore |
@@ -1610,7 +1608,7 @@ Responsabilidad: casos de uso, orquestación de dominio, coordinación de adapta
 Responsabilidad: exponer la aplicación como CLI y API REST.
 
 | Archivo | Responsabilidad principal |
-|---------|---------------------------|
+| --------- | --------------------------- |
 | `main.py` | Aplicación FastAPI: endpoints REST, routers, health y wiring general |
 | `composition.py` | `CompositionRoot` / `create_app`: creación y cableado de dependencias |
 | `cli.py` | CLI nativo `soar-lab` (api, generate-secrets, generate-iocs, version) |
@@ -1631,7 +1629,7 @@ Responsabilidad: exponer la aplicación como CLI y API REST.
 Responsabilidad: implementar los puertos del dominio y conectar con sistemas externos.
 
 | Archivo / Módulo | Responsabilidad principal |
-|------------------|---------------------------|
+| ------------------ | --------------------------- |
 | `integrations/` | Clientes HTTP de Elasticsearch, Shuffle, TheHive, Cortex, MISP |
 | `messaging/` | Transporte de alertas (`send_alert.py`) |
 | `monitoring/` | Health checks, `HealthService`, `SystemMetricsDriver`, `KPIAlertManager` |
@@ -1677,8 +1675,8 @@ Responsabilidad: implementar los puertos del dominio y conectar con sistemas ext
 El laboratorio despliega **dos motores de búsqueda simultáneamente**: Elasticsearch 7.10.2 y OpenSearch 2.10.0. Esta no es una redundancia accidental, sino una decisión técnica forzada por las incompatibilidades de las dependencias de cada servicio.
 
 | Servicio | Motor de búsqueda | Motivo |
-|---|---|---|
-| TheHive 3.5.2 | Elasticsearch 7.10.2 | `elastic4play` no envía credenciales REST de forma fiable con `xpack.security.enabled=true` y presenta problemas de mapeo (`include_type_name`) con ES 8.x/OpenSearch 2.x. |
+| --- | --- | --- |
+| TheHive 5.7.8 | Ninguno (embebido) | JanusGraph/BerkeleyJE + índice Lucene embebidos en el propio contenedor — sin dependencia de Elasticsearch (TH-001). |
 | Cortex 3.2.0 | Elasticsearch 7.10.2 | Misma librería subyacente que TheHive (`elastic4play` / `elastic4s`). Requiere API 7.x. |
 | Lab API / KPI / Grafana | Elasticsearch 7.10.2 | Los datasources de Grafana y los índices de KPI (`soar-metrics`, `soar-alerts`) se crean sobre Elasticsearch. |
 | Shuffle 2.2.1 | OpenSearch 2.10.0 | El backend y `orborus` de Shuffle usan el cliente de OpenSearch y no funcionan correctamente con Elasticsearch 8.x. |
@@ -1911,7 +1909,7 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 > Matriz de clasificación funcional del despliegue de laboratorio, siguiendo la taxonomía: Implementado, Parcialmente implementado, Simulado, Planificado, No verificado, Histórico/Obsoleto.
 
 | Control | Estado | Evidencia / Notas |
-|---------|--------|---------------------|
+| --------- | -------- | --------------------- |
 | Autenticación JWT (`JWTTokenProvider`) | Implementado | `src/soar_lab/infrastructure/jwt_token_provider.py`; algoritmo `HS256`; secretos gestionados por `AuthService` en `src/soar_lab/application/use_cases/auth_service.py`; rutas críticas protegidas en `interfaces/api/main.py` |
 | Autorización / RBAC | Parcial | JWT valida identidad; granularidad de permisos limitada; roles definidos solo a nivel documental |
 | Autenticación MFA | Planificado / No verificado | No existe implementación operativa en el laboratorio |
@@ -1963,7 +1961,7 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 La autenticación de la API se implementa mediante tokens JWT gestionados por `AuthService` y `JWTTokenProvider`.
 
 | Aspecto | Valor / Comportamiento | Ubicación |
-|---------|------------------------|-----------|
+| --------- | ------------------------ | ----------- |
 | Algoritmo | `HS256` | `src/soar_lab/infrastructure/jwt_token_provider.py` |
 | Librería | `PyJWT` | `src/soar_lab/infrastructure/jwt_token_provider.py` |
 | Secret | `config_provider.get('jwt_secret_key')` o fallback `api_auth_secret` | `src/soar_lab/application/use_cases/auth_service.py` |
@@ -2004,7 +2002,7 @@ La autenticación de la API se implementa mediante tokens JWT gestionados por `A
 > **Ámbito:** Los siguientes valores son **funcionales para el entorno de laboratorio local**. Están codificados o configurados como *fallbacks* para que el stack arranque cuando `.env.full` no sobrescribe una variable, **pero no deben considerarse secretos operativos**.
 
 | Variable / secreto | Valor por defecto en el laboratorio | Ubicación típica |
-|--------------------|--------------------------------------|------------------|
+| -------------------- | -------------------------------------- | ------------------ |
 | `ELASTIC_PASSWORD` | `<ELASTIC_PASSWORD>` (generado por `make generate-secrets`) | `.env.full`, `grafana-datasources.yml` (provisioning) |
 | `GRAFANA_ADMIN_PASSWORD` | `<GRAFANA_ADMIN_PASSWORD>` (generado; ejemplo: `${GRAFANA_ADMIN_PASSWORD}`) | `.env.full`, scripts de setup de Grafana |
 | OpenSearch `AUTH` | `admin` / `<OPENSEARCH_PASSWORD>` (fallback `<OPENSEARCH_PASSWORD>`) | `.env.full`, `docker-compose.core.yml` y `docker-compose.opensearch.yml` |
@@ -2160,7 +2158,7 @@ soar-lab generate-secrets --env > .env.full
 #### Matriz de Trazabilidad: Controles de Seguridad vs Requisitos Regulatorios
 
 | Control de Seguridad | GDPR Art. 32 | SOC 2 CC6.1 | ISO 27001 A.12 | NIST CSF PR.AC | Implementación |
-|-----------------------------|--------------|-------------|----------------|----------------|-------------------------------------------------------------|
+| ----------------------------- | -------------- | ------------- | ---------------- | ---------------- | ------------------------------------------------------------- |
 | Autenticación MFA | ✓ | ✓ | ✓ | ✓ | Shuffle, TheHive (pendiente) |
 | Encriptación AES-256 | ✓ | ✓ | ✓ | ✓ | Elasticsearch (pendiente) |
 | TLS 1.3 en tránsito | ✓ | ✓ | ✓ | ✓ | Nginx (pendiente) |
@@ -2427,7 +2425,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 #### Proyecto
 
 | Componente | Versión / Requisito | Fuente |
-|------------|---------------------|--------|
+| ------------ | --------------------- | -------- |
 | `soar-lab` (proyecto) | `1.4.0` | `pyproject.toml` |
 | Python | `>=3.11` | `pyproject.toml` |
 | Node.js (docs-site) | `>=18.0` | `apps/docs-site/package.json` |
@@ -2437,7 +2435,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 #### Dependencias principales (Python)
 
 | Paquete | Versión mínima | Fuente |
-|---------|----------------|--------|
+| --------- | ---------------- | -------- |
 | FastAPI | `>=0.100.0` | `pyproject.toml` |
 | Uvicorn | `>=0.23.0` | `pyproject.toml` |
 | Pydantic | `>=2.0.0` | `pyproject.toml` |
@@ -2448,7 +2446,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 #### Calidad de código y tests
 
 | Herramienta | Versión / Configuración | Fuente |
-|-------------|-------------------------|--------|
+| ------------- | ------------------------- | -------- |
 | pytest | `>=7.0.0` | `pyproject.toml` (`[tool.pytest.ini_options]`) |
 | pytest-cov | `>=4.0.0` | `pyproject.toml` |
 | pytest-asyncio | `>=0.21.0` | `pyproject.toml` |
@@ -2464,9 +2462,9 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 #### Core / SOAR
 
 | Servicio | Imagen | Fuente |
-|----------|--------|--------|
+| ---------- | -------- | -------- |
 | Redis | `redis:7-alpine` | `infra/docker/compose/docker-compose.core.yml` |
-| TheHive | `thehiveproject/thehive:3.5.2-1` | `infra/docker/compose/docker-compose.core.yml` |
+| TheHive | `strangebee/thehive:5.7.8-1` | `infra/docker/compose/docker-compose.core.yml` |
 | Shuffle Frontend | `ghcr.io/shuffle/shuffle-frontend:2.2.1` | `infra/docker/compose/docker-compose.core.yml` |
 | Shuffle Backend | `ghcr.io/shuffle/shuffle-backend:2.2.1` | `infra/docker/compose/docker-compose.core.yml` |
 | Shuffle Orborus | `ghcr.io/shuffle/shuffle-orborus:2.2.1-patched` | `infra/docker/compose/docker-compose.core.yml` |
@@ -2476,7 +2474,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 #### Bases de datos e índices
 
 | Servicio | Imagen | Fuente |
-|----------|--------|--------|
+| ---------- | -------- | -------- |
 | Elasticsearch | `docker.elastic.co/elasticsearch/elasticsearch:7.10.2` | `infra/docker/compose/docker-compose.yml` |
 | OpenSearch | `opensearchproject/opensearch:2.10.0` | `infra/docker/compose/docker-compose.opensearch.yml` |
 | OpenSearch Dashboards | `opensearchproject/opensearch-dashboards:2.10.0` | `infra/docker/compose/docker-compose.opensearch.yml` |
@@ -2485,7 +2483,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 #### Logging y observabilidad
 
 | Servicio | Imagen | Fuente |
-|----------|--------|--------|
+| ---------- | -------- | -------- |
 | Grafana | `grafana/grafana:10.3.4` | `infra/docker/compose/logging/docker-compose.logging.yml` |
 | Loki | `grafana/loki:2.9.10` | `infra/docker/compose/logging/docker-compose.logging.yml` |
 | Promtail | `grafana/promtail:2.9.9` | `infra/docker/compose/logging/docker-compose.logging.yml` |
@@ -2493,7 +2491,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 #### MISP
 
 | Servicio | Imagen | Fuente |
-|----------|--------|--------|
+| ---------- | -------- | -------- |
 | MISP DB | `mariadb:10.11` | `infra/docker/compose/docker-compose.misp.yml` |
 | MISP Core | `ghcr.io/misp/misp-docker/misp-core:v2.5.44` | `infra/docker/compose/docker-compose.misp.yml` |
 | MISP Modules | `ghcr.io/misp/misp-docker/misp-modules:v3.0.9` | `infra/docker/compose/docker-compose.misp.yml` |
@@ -2501,7 +2499,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 #### CI/CD y runners
 
 | Componente | Versión | Fuente |
-|------------|---------|--------|
+| ------------ | --------- | -------- |
 | GitHub Actions runner | `ubuntu-latest` | `.github/workflows/ci.yml` |
 | Python CI | `3.11` | `.github/workflows/ci.yml` |
 | Node.js CI | `20` | `.github/workflows/ci.yml` |
@@ -2513,7 +2511,7 @@ Esta matriz resume las versiones canónicas de las dependencias, imágenes Docke
 - `apps/docs-site/package.json` declara `node>=18.0`, mientras que CI usa `node-version: '20'`; ambas son compatibles.
 - `tenzir/tenzir:v6.8.1` está fijada a una etiqueta de versión; para mayor reproducibilidad se recomienda fijar a un digest SHA en producción.
 - Las imágenes `misp-core:v2.5.44` y `misp-modules:v3.0.9` están fijadas a etiquetas de versión; para mayor reproducibilidad se recomienda fijar a un digest SHA.
-- Las versiones de Shuffle (`2.2.1`) y TheHive (`3.5.2-1`) coinciden con las variables documentadas en `docs/03-api-and-integrations.md` y este documento (sección 3.10).
+- Las versiones de Shuffle (`2.2.1`) y TheHive (`5.7.8-1`) coinciden con las variables documentadas en `docs/03-api-and-integrations.md` y este documento (sección 3.10).
 
 ---
 
@@ -2591,7 +2589,6 @@ flowchart LR
   API -- cache IoCs --> Redis[(Redis)]
   ShuffleBE -- Conexiones --> NW[Network Watcher]
   ShuffleBE -- Tráfico red --> Tenzir[Tenzir Node]
-  TheHive <--> ES[Elasticsearch]
   ShuffleBE <--> OS[OpenSearch]
   API -- Metrics --> ES
   ShuffleBE -- Log search --> Loki[Loki]
@@ -2659,7 +2656,6 @@ graph TD
  Orborus -- HTTP --> Tenzir[Tenzir Node :5160]
  Orborus -- HTTP --> Loki[Loki :3100]
 
- TheHive -- HTTP --> ES
  TheHive -- HTTP --> Cortex
 
  Cortex -- HTTP --> ES
@@ -2830,8 +2826,8 @@ sequenceDiagram
  Shuffle->>Backend: Reenvía payload de alerta
  Backend->>Backend: normalize_inputs
  Backend->>Backend: build_case_json
- Backend->>TheHive: POST /api/case
- TheHive-->>Backend: caseId
+ Backend->>TheHive: POST /api/v1/case
+ TheHive-->>Backend: _id / number
  par En paralelo (16 ramas desde case creation)
    Backend->>TheHive: POST observables (hash, IP)
    Backend->>Backend: calc_task_title (severity >= 3 aislar)
@@ -2855,15 +2851,15 @@ sequenceDiagram
  alt score >= 80 OR verdict == "malicious"
    Backend->>API: POST /api/v1/contain (contención simulada)
    API-->>Backend: Contención confirmada (modo simulation)
-   Backend->>Backend: update_inprogress (case stays Open, no PATCH)
+   Backend->>TheHive: PATCH /api/v1/case (status=InProgress)
    Backend->>Backend: notify_critical (email CRITICAL)
  else score < 80 and verdict != malicious
-   Backend->>TheHive: PATCH /api/case (Resolved/FalsePositive)
+   Backend->>TheHive: PATCH /api/v1/case (status=FalsePositive)
    Backend->>Backend: notify_info (email INFO)
  end
  Backend->>Backend: calc_mttr
  Backend->>Backend: build_hive_summary
- Backend->>TheHive: PATCH /api/case (enrich: summary + tags)
+ Backend->>TheHive: PATCH /api/v1/case (enrich: summary + tags)
  Backend->>Backend: build_metrics_json (mttr_seconds, score, verdict)
  Backend->>ES: POST /soar-metrics/_doc/{alert_id} (mttr_seconds, ...)
  Note over API: Post-workflow: operador consulta resultados via Lab API
@@ -2887,7 +2883,7 @@ flowchart TD
  A(["Webhook POST /webhook_{trigger_id}"]) --> B["N1: normalize_inputs<br/>validar severity + extraer IoCs<br/>+ DNS warmup"]
  B -->|fallo| ERR1([Workflow aborta])
  B -->|OK| B2[N1b: build_case_json]
- B2 --> D[N2: Crear caso TheHive<br/>POST /api/case]
+ B2 --> D[N2: Crear caso TheHive<br/>POST /api/v1/case]
  D -->|fallo| ERR2([Workflow aborta])
  D -->|OK case_id| E[N3: Adjuntar observables<br/>hash + IP]
  D --> E2[N3b: calc_task_title<br/>severity >= 3 aislar<br/>severity < 3 investigar]
@@ -2905,11 +2901,11 @@ flowchart TD
  I --> J
 
  J -->|SÍ| K["N9: POST /api/v1/contain<br/>(contención simulada Lab API)"]
- K --> L["N10: update_inprogress<br/>case stays Open sin PATCH"]
+ K --> L["N10: update_inprogress<br/>PATCH status=InProgress"]
  L --> M[N11: Notificación CRITICAL email]
  M --> N[N12: calc_mttr]
  N --> N2[N12b: build_hive_summary]
- N2 --> O[N13: enrich_case<br/>PATCH /api/case summary+tags]
+ N2 --> O[N13: enrich_case<br/>PATCH /api/v1/case summary+tags]
  O --> P[N14: build_metrics_json + Indexar ES<br/>POST /soar-metrics]
  P --> Z([FIN — caso contenido])
 
@@ -2940,15 +2936,15 @@ sequenceDiagram
  alt score >= 80 or verdict == malicious
  Shuffle->>API: POST /api/v1/contain (contención simulada)
  API-->>Shuffle: Contención confirmada (modo simulation)
- Shuffle->>Shuffle: update_inprogress (case stays Open, no PATCH)
+ Shuffle->>TheHive: PATCH /api/v1/case (status=InProgress)
  Shuffle->>Shuffle: notify_critical (JSON channel=email severity=CRITICAL)
  else score < 80 and verdict != malicious
- Shuffle->>TheHive: PATCH /api/case (status=Resolved, resolutionStatus=FalsePositive)
+ Shuffle->>TheHive: PATCH /api/v1/case (status=FalsePositive)
  Shuffle->>Shuffle: notify_info (JSON channel=email severity=INFO)
  end
  Shuffle->>Shuffle: calc_mttr
  Shuffle->>Shuffle: build_hive_summary (Markdown)
- Shuffle->>TheHive: PATCH /api/case (enrich: description + tags)
+ Shuffle->>TheHive: PATCH /api/v1/case (enrich: description + tags)
  Shuffle->>Shuffle: build_metrics_json (mttr_seconds, score, verdict + 17 campos)
  Shuffle->>ES: POST /soar-metrics/_doc/{alert_id}
 ```
@@ -3116,7 +3112,7 @@ El caso de estudio valida el laboratorio SOAR con IoCs reales: 4 hashes SHA256, 
 C2, 6 IPs C2, 3 claves de registro, 66 dominios bloqueados y 7 técnicas MITRE ATT&CK.
 
 | Atributo | Valor |
-|----------|-------|
+| ---------- | ------- |
 | Actor | `boycots563` (GitHub user ID 193230682, 1 repo, 0 stars, 1 watcher) |
 | Origen | Eslovaquia (subida a MediaFire 2026-06-10 23:57:07) |
 | Repo C2 | `github.com/boycots563/wlt56` — público y activo, 253 commits (ago 2026) |
@@ -3184,7 +3180,7 @@ SystemSP.rar (4 KB, contraseña "zoroz") contiene cuatro scripts VBS/BAT para
 persistencia y evasión:
 
 | Script | Tipo | Función |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `max.vbs` | VBScript | Launcher/watchdog, exclusiones de Windows Defender para `appy.exe` |
 | `babuchen.bat` | Batch | Killer AV: detiene 14 servicios, destruye 34 suites, elimina Windows Update |
 | `rodendron.vbs` | VBScript | Descarga `Windows Compatibility Agent.exe` desde GitHub C2, tarea programada recurrente |
@@ -3194,7 +3190,7 @@ El repositorio GitHub C2 (`github.com/boycots563/wlt56`, público y activo, 253 
 entre octubre 2025 y agosto 2026) contiene nueve archivos:
 
 | Archivo | Tipo | Tamaño | Notas |
-|---------|------|--------|-------|
+| --------- | ------ | -------- | ------- |
 | `Windows Compatibility Agent.exe` | Python 3.13 | 12.4 MB | Imports USER32/KERNEL32/ADVAPI32, packer MachO_File_pyinstaller |
 | `Windows Compatibility Agent Host.exe` | Python 3.14 | 8.5 MB | Mismos imports + OpenProcessToken/GetTokenInformation |
 | `kamzat.exe` | Python 3.13 | 12.4 MB | PyCryptodome completo (AES, SHA, HMAC, BLAKE2, keccak) + asyncio |
@@ -3215,7 +3211,7 @@ El Pulsar RAT v1.6.6.0 (.NET 4.7.2, ConfuserEx) se distribuye en `beket.rar` com
 `appy.exe` (Rust, 719 KB, launcher). Sus capacidades y librerías detectadas:
 
 | Capacidad | Librería .NET | Funciones |
-|-----------|---------------|-----------|
+| ----------- | --------------- | ----------- |
 | HVNC | SharpDX DirectX | StartHVNCProcess, DoHVNCInput, CreateDesktop, SetThreadDesktop |
 | Keylogger | Gma.System.MouseKeyHook v5.7 | KeyboardHook, IKeyboardEvents, GetKeyloggerLogsDirectory |
 | Webcam | AForge.Video.DirectShow v2.2.5 | VideoCaptureDevice, StartWebcamStreaming |
@@ -3231,7 +3227,7 @@ nonces de 12 bytes; no fue recuperable estáticamente (Fase 14 descartada: GUI
 VirtualBox no funcional).
 
 | Categoría | Detalle |
-|-----------|---------|
+| ----------- | --------- |
 | MITRE ATT&CK (7) | T1566.002 Spearphishing Link, T1059.001 PowerShell, T1547.001 Winlogon UserInit, T1562.001 Impair Defenses, T1056.001 Keylogger, T1102 Web Service C2, T1567.002 Exfiltration Telegram |
 | Hashes SHA256 | GMinst4ll `d70c31b0...`, TREZ_cor `a75def53...`, SystemSP `a50e0785...`, appy_patched `eabe4c16...` |
 | Mutex | `Global\{TOKEN-EX-}` |
@@ -3246,7 +3242,7 @@ VirtualBox no funcional).
 La timeline de la campaña abarca desde marzo 2025 hasta agosto 2026:
 
 | Fecha | Evento |
-|-------|--------|
+| ------- | -------- |
 | 2025-03-04 | Creación archivo PASSWORD (metadata RAR interna) |
 | 2025-10-17 | Primer commit GitHub C2 (actualización `maximusz.bat`) |
 | 2025-11-02 a 04 | Ciclos Add/Delete `appy.exe` + `PROMOTIO.BAT` |
@@ -3352,7 +3348,7 @@ reputation confirmada en múltiples fuentes), el score superaría 80 y se activa
 contención simulada vía `POST /api/v1/contain`.
 
 | Subtest TC-33 | Tipo IoC | Analyzer Cortex | Resultado esperado | Impacto score |
-|---------------|----------|-----------------|--------------------|---------------|
+| --------------- | ---------- | ----------------- | -------------------- | --------------- |
 | TC-33-01 | Descarga de 8 muestras reales, verificación SHA256, borrado | — (sin analyzer) | Hashes verificados | — |
 | TC-33-02 | Hash SHA256 TREZ_cor (loader) | Hashdd + VirusShare | Sin reputation | +base |
 | TC-33-03 | Hash SHA256 Pulsar RAT | Hashdd + VirusShare | Reputation maliciosa | +base |
@@ -3712,8 +3708,8 @@ graph TD
     ES --> P
     P --> Q{Score ≥ 80 or malicious?}
     Q -->|Sí| R[Contención simulada]
-    Q -->|No| S[TheHive - Resolved/FalsePositive]
-    R --> T[TheHive - Caso permanece Open]
+    Q -->|No| S[TheHive - status FalsePositive]
+    R --> T[TheHive - status InProgress]
     T --> V[Notificación crítica]
     S --> W[Notificación informativa]
     V --> Y[Calc MTTR]
@@ -3723,7 +3719,7 @@ graph TD
     Z --> AA[Reporte Final]
 ```
 
-TheHive (v3.5.2) gestiona el ciclo de vida de los casos (TheHive Project, 2024) con plantillas especializadas para ransomware, asignación de tareas y registro de acciones. Su integración con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
+TheHive (v5.7.8) gestiona el ciclo de vida de los casos (StrangeBee, 2024) con plantillas especializadas para ransomware, asignación de tareas y registro de acciones. Su integración con Cortex permite analizar IoCs sin salir de la interfaz del caso. Las evidencias se almacenan con verificación hash para asegurar su integridad forense.
 
 Cortex (v3.2.0-1) analiza IoCs en entornos aislados (Cortex Project, 2024) con 7 analyzers libres sin API key: Hashdd_Status (hashes), IP-API y DShield (IPs), GoogleDNS y DomainMailSPFDMARC (dominios), Mnemonic pDNS (passive DNS) y ValidateObservable (validación). El sistema cachea resultados para evitar consultas redundantes. La **Tabla 7** lista los analyzers con su tipo y uso en el playbook.
 
@@ -3927,7 +3923,7 @@ El experimento ejecutó 50 runs del playbook sobre el entorno Docker aislado, to
 #### Tabla 9: Cumplimiento de Objetivos del Experimento
 
 | Objetivo | Umbral | Valor medido | Cumple |
-|----------|--------|--------------|--------|
+| ---------- | -------- | -------------- | -------- |
 | MTTR P50 (mediana) | ≤ 120 s | 193.19 s | No |
 | MTTR P90 | ≤ 180 s | 621.83 s | No |
 | Tasa de éxito | ≥ 95 % | 100 % | Sí |

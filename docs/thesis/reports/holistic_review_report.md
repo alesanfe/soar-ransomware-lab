@@ -31,7 +31,7 @@ Methodology: 5-layer, 15-dimension structured project review
 ```
 
 | Dimension | Layer | Score | Status |
-|-----------|-------|-------|--------|
+| ----------- | ------- | ------- | -------- |
 | L1a | Core | 100.0 | Excellent |
 | L1b | Core | 98.6 | Excellent |
 | L1c | Core | 100 | Excellent |
@@ -49,7 +49,6 @@ Methodology: 5-layer, 15-dimension structured project review
 | L5b | Docs | 87.5 | Good |
 | L5c | Docs | 98.0 | Excellent |
 | **Overall** | — | **96.0** | **Excellent** |
-
 
 ---
 
@@ -72,7 +71,7 @@ _No import-linter contracts configured. Score is 100 because there are no violat
 - Total blocks: 814
 
 | Grade | Count |
-|-------|-------|
+| ------- | ------- |
 | A | 735 |
 | B | 61 |
 | C | 18 |
@@ -94,7 +93,6 @@ _No import-linter contracts configured. Score is 100 because there are no violat
 - Score: **78.8**
 
 _Items are low-confidence (60%) false positives in test files — unused variables, helper functions, and pytest mocks. No high-confidence dead code in production._
-
 
 ---
 
@@ -125,7 +123,6 @@ _Items are low-confidence (60%) false positives in test files — unused variabl
 - Requires external: 83 (4.0%)
 - Score: **97.5**
 
-
 ---
 
 ## Layer 3 — Quality Gates
@@ -145,7 +142,6 @@ _Items are low-confidence (60%) false positives in test files — unused variabl
 
 - Coverage: 964/1019 (94.6%)
 - Score: **94.6**
-
 
 ---
 
@@ -173,7 +169,6 @@ _Items are low-confidence (60%) false positives in test files — unused variabl
 - Full vars: 131
 - Coverage: 100.0%
 - Score: **100.0**
-
 
 ---
 
@@ -207,19 +202,17 @@ _Items are low-confidence (60%) false positives in test files — unused variabl
   - `docs/thesis/reports/holistic_review_report.md`: `src/soar_lab/scripts/setup/generate_env.py`, `infra/docker/compose/logging/grafana-datasources.yml`, `infra/docker/compose/logging/promtail-config.yml` (+1 more)
 - Score: **98.0**
 
-
 ---
 
 ## Layer Scores
 
 | Layer | Dimensions | Avg Score | Status |
-|-------|------------|-----------|--------|
+| ------- | ------------ | ----------- | -------- |
 | L1 (Core) | 4 | 94.4 | Excellent |
 | L2 (Tests) | 3 | 97.2 | Excellent |
 | L3 (Quality) | 3 | 98.2 | Excellent |
 | L4 (Infra) | 3 | 100.0 | Excellent |
 | L5 (Docs) | 3 | 90.8 | Excellent |
-
 
 ---
 
@@ -228,7 +221,6 @@ _Items are low-confidence (60%) false positives in test files — unused variabl
 - ⚠️ **L1d** (Core): 78.8/100 — needs attention
 - ℹ️ Run with `--with-coverage` to include structural coverage analysis.
 - ℹ️ Run `make mutation` in Docker to include mutation testing analysis.
-
 
 ---
 
@@ -258,7 +250,7 @@ Each layer contains 3 dimensions, for a total of 15 dimensions.
 ```
 
 | Layer | Dim | What it measures | Tool |
-|-------|-----|------------------|------|
+| ------- | ----- | ------------------ | ------ |
 | L1 Core | L1a | Architecture (hexagonal) | import-linter |
 | L1 Core | L1b | Complexity | radon cc |
 | L1 Core | L1c | Typing | mypy |
