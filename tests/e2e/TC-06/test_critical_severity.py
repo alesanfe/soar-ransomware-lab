@@ -277,12 +277,10 @@ class TestCriticalSeverity(E2EBaseTest):
         except (TypeError, ValueError):
             notify_msg = {}
         body = notify_msg.get("message", notify_msg)
-        assert body.get("severity") == "CRITICAL", (
-            f"notify payload severity must be CRITICAL, got: {body}"
-        )
-        assert body.get("channel"), (
-            f"notify payload must declare a channel, got: {body}"
-        )
+        assert (
+            body.get("severity") == "CRITICAL"
+        ), f"notify payload severity must be CRITICAL, got: {body}"
+        assert body.get("channel"), f"notify payload must declare a channel, got: {body}"
         subject = body.get("subject", "")
         assert payload["hostname"] in subject, (
             f"notify subject must include the affected hostname "

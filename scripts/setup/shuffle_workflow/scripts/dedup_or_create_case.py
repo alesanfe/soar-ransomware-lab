@@ -28,9 +28,7 @@ alert_id = r"""$exec.alert_id""".strip()
 
 def _req(method, path, body=None, timeout=60):
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(
-        THEHIVE + path, data=data, headers=HEADERS, method=method
-    )
+    req = urllib.request.Request(THEHIVE + path, data=data, headers=HEADERS, method=method)
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         raw = resp.read().decode()
     return json.loads(raw) if raw else {}
@@ -104,8 +102,4 @@ else:
             )
         )
     except Exception as exc:
-        print(
-            json.dumps(
-                {"success": False, "deduped": False, "body": {}, "error": str(exc)}
-            )
-        )
+        print(json.dumps({"success": False, "deduped": False, "body": {}, "error": str(exc)}))

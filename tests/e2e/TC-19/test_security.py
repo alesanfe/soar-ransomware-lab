@@ -836,12 +836,10 @@ class TestSecurity(E2EBaseTest):
         self._assert_rejected_or_failed(r, "SSRF observables")
 
         # System must still be healthy after the attempt.
-        api_health = self.s.get(
-            f"{self.get_service_url('api')}/health", timeout=10
-        )
-        assert api_health.status_code == 200, (
-            f"API unhealthy after SSRF attempt: {api_health.status_code}"
-        )
+        api_health = self.s.get(f"{self.get_service_url('api')}/health", timeout=10)
+        assert (
+            api_health.status_code == 200
+        ), f"API unhealthy after SSRF attempt: {api_health.status_code}"
         self._log("+ API healthy after SSRF attempt")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -887,12 +885,10 @@ class TestSecurity(E2EBaseTest):
                 description="side effects from deserialization attempt",
             )
 
-        api_health = self.s.get(
-            f"{self.get_service_url('api')}/health", timeout=10
-        )
-        assert api_health.status_code == 200, (
-            f"API unhealthy after deserialization attempt: {api_health.status_code}"
-        )
+        api_health = self.s.get(f"{self.get_service_url('api')}/health", timeout=10)
+        assert (
+            api_health.status_code == 200
+        ), f"API unhealthy after deserialization attempt: {api_health.status_code}"
         self._log("+ API healthy after deserialization attempt")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
