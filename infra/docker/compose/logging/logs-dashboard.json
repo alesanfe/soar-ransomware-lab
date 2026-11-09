@@ -131,7 +131,7 @@
       "uid": "loki"
      },
      "editorMode": "code",
-     "expr": "sum by (compose_service) (rate({compose_service=~\".+\"} |~ \"(?i)error|exception|traceback|fatal\" [1m]))",
+     "expr": "sum by (compose_service) (rate({compose_service=~\".+\", compose_service!~\"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail\"} |~ \"(?i)error|exception|traceback|fatal\" [1m]))",
      "legendFormat": "{{compose_service}}",
      "queryType": "range",
      "refId": "A"
@@ -198,7 +198,7 @@
       "uid": "loki"
      },
      "editorMode": "code",
-     "expr": "sum(count_over_time({compose_project=~\".+\"} |~ \"(?i)error|exception|traceback|fatal\" [$__range]))",
+     "expr": "sum(count_over_time({compose_project=~\".+\", compose_service!~\"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail\"} |~ \"(?i)error|exception|traceback|fatal\" [$__range]))",
      "legendFormat": "errors",
      "queryType": "instant",
      "refId": "A"
@@ -265,7 +265,7 @@
       "uid": "loki"
      },
      "editorMode": "code",
-     "expr": "sum(count_over_time({compose_project=~\".+\"} |~ \"(?i)warn\" [$__range]))",
+     "expr": "sum(count_over_time({compose_project=~\".+\", compose_service!~\"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail\"} |~ \"(?i)warn\" [$__range]))",
      "legendFormat": "warnings",
      "queryType": "instant",
      "refId": "A"
@@ -507,7 +507,7 @@
     "options": [],
     "query": "label_values(compose_service)",
     "refresh": 2,
-    "regex": "",
+    "regex": "/^(?!loki$|grafana|prometheus|cadvisor|tempo|otel-collector|promtail).*/",
     "skipUrlSync": false,
     "sort": 1,
     "type": "query"
@@ -521,6 +521,6 @@
  "timezone": "browser",
  "title": "SOAR Logs & Errors",
  "uid": "soar-logs",
- "version": 52,
+ "version": 54,
  "weekStart": ""
 }

@@ -31,7 +31,7 @@ groups:
             model:
               datasource: {type: loki, uid: loki}
               editorMode: code
-              expr: sum(count_over_time({compose_project=~".+"} |~ "(?i)error|exception|traceback|fatal" [5m]))
+              expr: sum(count_over_time({compose_project=~".+", compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"} |~ "(?i)error|exception|traceback|fatal" [5m]))
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200

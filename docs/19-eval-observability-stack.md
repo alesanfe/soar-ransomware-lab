@@ -74,6 +74,64 @@
 - **GRAF-D10**: TLS ausente en todo el stack observabilidad (loopback/compose-net only) + admin password en `.env` (convención aceptada del repo).
 - **GRAF-D11**: Tempo search vía JSON datasource no interpola macros `${__from}` en `urlPath` → ventana fija "reciente" del servidor (últimos N resultados); aceptable para panel "Recent traces".
 
-## Nota global: 9.5 / 10
+## Evaluación de las gráficas (visualizaciones) — tercera revisión
+
+Evaluación específica de los **35 paneles** de los 4 dashboards, con renders PNG reales inspeccionados visualmente (no solo HTTP 200). Marco: ISO 25010 (idoneidad/usabilidad/fiabilidad del artefacto) + principio de veracidad de datos (una gráfica engañosa es peor que una ausente).
+
+### Por tipo de gráfica
+
+| Tipo | Nº | Estado | Evidencia |
+|---|---|---|---|
+| stat | 11 | OK | Unidades correctas, thresholds, `reduceOptions` bien — tras fix BUG-GRAF-14 los contadores son reales |
+| timeseries | 11 | OK con matices | Datos reales multi-serie; agregaciones diarias (p5, p10) quedan dispersas en ventana 24h — es densidad de datos, no bug |
+| piechart | 3 | OK | Buckets reales por `alert_type`/severity post-BUG-GRAF-03/04 |
+| barchart | 1 | OK | MTTR por tipo con valores etiquetados y unidades s/ms/min correctas |
+| logs | 2 | OK tras fix | Mostraban ruido self-match de Loki — corregido (BUG-GRAF-13) |
+| table | 1 | OK | Trazas reales con drill-down a Explore |
+| nodeGraph | 0 | eliminado | Solo 1 edge posible (user→api); sustituido por calls/servicio — decisión honesta |
+
+### Bug crítico encontrado en esta evaluación (corregido)
+
+- **BUG-GRAF-13**: self-match de Loki — los paneles de errores (`{compose_service=~".+"} |~ "(?i)error|exception|traceback"`) contaban los **propios logs internos de Loki**, cuyas líneas de query contienen literalmente el regex. Medido: **2982/3239 "errores" (92%) eran ruido de queries a Loki**; errores reales de apps: 210/30min, dominados por auth-failures de ES y cortex. La gráfica medía *carga de consultas*, no errores. Afectaba a p2 (error rate), p3 (errors in range), p7 (recent errors) **y la alert rule `soar_high_error_log_rate`** — sus disparos previos fueron probablemente ruido de queries. Fix: `compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"` + regex de la variable `$service`. Verificado: p2 muestra ahora series reales (cortex ~0.115 err/s, api, thehive); p7 muestra errores reales de ES.
+- **BUG-GRAF-14**: misma clase en "Warnings in range" — 132/135 (97.8%) self-match. Mismo fix.
+
+### Puntos positivos
+
+- Todas las gráficas muestran **datos reales y veraces** tras los fixes — verificado render a render
+- Unidades y formatos correctos (s/ms/min MTTR, % CPU, req/s, bytes)
+- Desglose por servicio/tipo/severidad funciona (multi-serie, legend tables)
+- Drill-down operativo: traceID → Explore (Tempo traceId query, el único soportado por el backend 10.3.4)
+- Rendimiento de render estable: ~2-5s/panel tras clustering
+- Cobertura completa de los 4 Golden Signals + figuras de tesis (4.3/4.4/4.5/5.3/5.4)
+- El stat "Grafana Alerts Received" cuenta entregas reales — contrato cerrado
+
+### Puntos negativos
+
+- **Densidad de datos**: las agregaciones diarias (percentiles MTTR, tendencia) muestran 1-3 puntos en ventana 24h — visualmente vacías aunque correctas. Recomendable `now-7d` por defecto o `min_interval` explícito
+- La tabla de trazas no interpola macros de tiempo en `urlPath` (JSON datasource) — ventana fija "recientes" del servidor
+- nodeGraph inviable (topología de 1 edge) — limitación de instrumentación OTel, no de la gráfica
+- El patrón self-match existía en **5 lugares** — bug sistémico de diseño (queries de error sin acotar al dominio de aplicación)
+- `grafana-dashboard-soar-kpis.json` es un fichero legacy muerto (formato export, nunca provisionado) — confunde
+
+### Deuda de gráficas
+
+- **GRAF-V1**: ampliar ventana temporal por defecto en agregaciones diarias o forzar `min_interval`
+- **GRAF-V2**: borrar `grafana-dashboard-soar-kpis.json` (dead artifact)
+- **GRAF-V3**: sin p99 (solo p90) ni histogramas de latencia; span p90 existe en saturación
+- **GRAF-V4**: ruido real residual — auth-failures de ES dominan "Recent errors" (son genuinos pero repetitivos; se podría sub-filtrar `MultiAuthSrv` si se quiere señal más limpia)
+- **GRAF-V5**: sin panel de estado de alertas (state timeline de reglas firing/resolved) ni DLQ depth ni ES cluster health
+
+### ¿Hacen falta más gráficas?
+
+Para el alcance declarado (4 señales + KPIs de tesis) la cobertura es suficiente — añadir volumen por volumen resta. Si se añade algo, que sea de utilidad operativa concreta:
+
+1. **State timeline de alert rules** — historia firing/resolved (la única pieza del pipeline de alertas sin visualización)
+2. **DLQ depth + Redis stream lag** — backpressure del admission queue (el stat `soar_queue_depth` existe pero no el lag/DLQ)
+3. **ES/OpenSearch cluster health** (green/yellow/red + índices) — la dependencia más frágil históricamente
+4. **p99 latency** — completar percentiles si se quiere rigor de colas
+
+### Nota de las gráficas: 9.0 / 10
+
+Pre-fix habría sido ~7.5 (dos paneles de errores eran activamente engañosos). Post-fix: todas veraces, bien formadas, rápidas. Deducciones: legibilidad de agregaciones dispersas, ventana fija en trazas, ausencia de state-timeline/DLQ/ES-health, fichero legacy muerto.
 
 El stack de observabilidad es ahora **completo y verificado de punta a punta**: cuatro señales SRE cubiertas con dashboards de datos reales, los tres pilares OTel correlacionados, pipeline de alertas cerrado (regla → contact point → API auth → log → Loki → contador), y un contrato E2E (TC-35, 11/11) que renderiza cada panel a PNG real — el tipo de test que habría cazado BUG-GRAF-03/10/11 automáticamente. Los 12 defectos encontrados y corregidos eran del tipo "invisible/engañoso"; hoy todos tienen test o verificación. La nota no llega a 10 por la ausencia honesta de HA/object-storage, TLS y la fragilidad residual del version-gating y del renderer bajo ráfagas — limitaciones de laboratorio documentadas, no bugs.
