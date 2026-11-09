@@ -697,6 +697,13 @@
         "legend": {
           "displayMode": "list",
           "placement": "right"
+        },
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": true
         }
       },
       "gridPos": {
@@ -796,10 +803,10 @@
       "options": {
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
-          "values": false,
-          "fields": ""
+          "fields": "",
+          "values": true
         },
         "tooltip": {
           "mode": "multi",
@@ -816,7 +823,20 @@
         },
         "pieType": "donut",
         "labels": []
-      }
+      },
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "targetField": "severity",
+                "destinationType": "string"
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       "id": 6,
@@ -1183,10 +1203,10 @@
       "options": {
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
-          "values": false,
-          "fields": ""
+          "fields": "",
+          "values": true
         },
         "tooltip": {
           "mode": "multi",
@@ -1202,7 +1222,20 @@
         },
         "pieType": "donut",
         "labels": []
-      }
+      },
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "targetField": "severity",
+                "destinationType": "string"
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       "id": 15,
@@ -1285,5 +1318,6 @@
         "refresh": 1
       }
     ]
-  }
+  },
+  "version": 100
 }

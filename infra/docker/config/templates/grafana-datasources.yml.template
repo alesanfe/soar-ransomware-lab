@@ -20,7 +20,7 @@ datasources:
     access: proxy
     url: ${ELASTICSEARCH_URL:-http://elasticsearch:9200}
     jsonData:
-      esVersion: "8.0.0"
+      esVersion: "7.10.0"
       timeField: "@timestamp"
       index: "soar-metrics"
       maxConcurrentShardRequests: 5
@@ -48,7 +48,7 @@ datasources:
         datasourceUid: tempo
   - name: SOAR API
     uid: soar-api
-    type: json
+    type: marcusolsson-json-datasource
     access: proxy
     url: ${API_URL:-http://api:8000}
     jsonData:

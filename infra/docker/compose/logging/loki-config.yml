@@ -1,3 +1,5 @@
+auth_enabled: false
+
 server:
   http_listen_port: 3100
 
@@ -29,6 +31,11 @@ schema_config:
 
 limits_config:
   retention_period: 720h
+
+# Dashboards + alert evals + E2E bursts hit the default outstanding-request
+# cap (429 "too many outstanding requests"). Raise it for the lab load.
+query_scheduler:
+  max_outstanding_requests_per_tenant: 4096
 
 compactor:
   working_directory: /var/lib/loki/compactor
