@@ -452,8 +452,8 @@ def phase_post_sync() -> None:
     # grafana datasource file embeds ELASTIC_PASSWORD
     generate_grafana_datasource(
         NEW.get("ELASTIC_PASSWORD", OLD.get("ELASTIC_PASSWORD", "")),
-        REPO_ROOT / "infra/docker/compose/logging/grafana-datasources.yml.template",
-        REPO_ROOT / "infra/docker/compose/logging/grafana-datasources.yml",
+        REPO_ROOT / "infra/docker/config/templates/grafana-datasources.yml.template",
+        REPO_ROOT / "runtime/config/grafana-datasources.yml",
     )
     logger.info("  grafana datasource re-rendered")
     logger.info("  NOTE: run `make init-webhook` to regenerate the Shuffle workflow")

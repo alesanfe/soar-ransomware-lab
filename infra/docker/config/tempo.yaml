@@ -41,8 +41,14 @@ overrides:
 
 storage:
   trace:
-    backend: local
-    local:
-      path: /var/tempo/traces
+    # GRAF-D5: trace blocks in SeaweedFS S3; WAL stays local (fsync path).
+    backend: s3
+    s3:
+      bucket: tempo
+      endpoint: s3:8333
+      access_key: ${S3_ACCESS_KEY}
+      secret_key: ${S3_SECRET_KEY}
+      insecure: true
+      forcepathstyle: true
     wal:
       path: /var/tempo/wal

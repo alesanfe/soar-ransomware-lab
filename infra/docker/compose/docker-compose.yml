@@ -48,12 +48,11 @@ networks:
 
 volumes:
   # Core SOAR volumes
+  # GRAF-D6: real named volume (VM ext4), not a Windows bind-mount —
+  # Elasticsearch watermarks must measure the Docker data disk, not the
+  # host C:\ drive (observed 94% full while indices total ~16MB).
   es_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/elasticsearch
   thehive_files:
     driver: local
     driver_opts:
@@ -123,19 +122,11 @@ volumes:
       o: bind
       device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/misp/configs
 
-  # Centralized logging volumes
-  loki_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/loki
-  grafana_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/grafana
+  # Centralized logging volumes (loki_data, grafana_data, tempo_data,
+  # prometheus_data, s3_data) are defined in compose/logging/
+  # docker-compose.logging.yml as real named volumes (GRAF-D6). Defining
+  # them here as bind-mounts would leak driver_opts through the compose
+  # merge and silently re-bind them to runtime/data.
 
 services:
   elasticsearch:

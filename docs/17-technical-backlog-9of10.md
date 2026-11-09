@@ -1799,6 +1799,41 @@ ejecutado" y runbooks en `docs/20-observability-runbooks.md`. Resumen:
 - **SLOs + ownership + retención** documentados (AGENTS.md §Observability,
   docs/20 §4.3). GRAF-062 (vista exec-by-exec) no ejecutado: P3 justificado.
 
+### 3.37 Cierre de deuda observabilidad residual (2026-11-09, cont. 2)
+
+La deuda "aceptada" de §3.36 (GRAF-D3/D5/D6/D8/D9/D10 + disco ES + GRAF-062)
+se atacó con fixes reales verificados — detalle en docs/19 §"Quinta revisión":
+
+- **D6 + disco ES**: bind-mounts `runtime/data/*` → named volumes reales
+  (`soar_es_data`, `soar_loki_data`, `soar_grafana_data`, `soar_tempo_data`,
+  `soar_prometheus_data`, `soar_s3_data`). Bug de merge corregido: las defs
+  bind-mount de `docker-compose.yml` persistían via `driver_opts` tras el
+  merge con el file de logging. ES migrado con `alpine cp -a`, cluster
+  **green** e índices intactos; el exporter mide ahora el disco Docker:
+  **92% libre** (antes 6%). `docker image prune -a` recuperó 8.57GB del host.
+- **D5**: SeaweedFS 4.53 (`s3` + `s3-init` one-shot que crea buckets
+  `loki`/`tempo` vía `weed shell` — autoCreateBucket no basta con clientes
+  que LISTan antes de PUT). Loki `common.storage.s3`, Tempo `backend: s3`,
+  credenciales IAM por env. MinIO descartado por pull-denied de Docker Hub.
+- **D3**: `scripts/maintenance/grafana_dashboards_deploy.py` — epoch-version
+  bump monotónico + validación + recreate con el set completo de compose
+  files. `make grafana-reload` / `make check-grafana` (paridad win/linux).
+- **D8**: `HttpAlertSender.send()` retry 3× con backoff sobre 5xx/429/
+  `RequestException` (4xx nunca; excepciones no-HTTP caen en el except
+  genérico). 23/23 tests unit reescritos al nuevo contrato.
+- **D9**: renderer `shm_size: 512m` + concurrency 3 — burst de 12 renders
+  en 41s sin degradación (previamente degradaba ~render 25).
+- **D10**: nginx `listen 8444 ssl` → grafana:3000 con cert `soar.local`
+  **firmado por la CA del lab** (SANs soar.local/grafana/localhost/127.0.0.1)
+  — el anterior era autofirmado. Verificado TLSv1.3 contra ca.crt.
+- **GRAF-062**: panel 10 "Workflow executions (exec-by-exec)" en soar-logs —
+  JSON datasource `workflowexec-json`→OpenSearch, alias `workflowexecution`,
+  `script_fields` painless con guard de `completed_at` vacío/cero
+  (EXECUTING→"running"). Render PNG real verificado con 397 ejecuciones.
+- **Deriva**: rutas stale de `grafana-datasources.yml` corregidas en
+  `generate_env.py`/`rotate_secrets.py` (el archivo que generaban nunca se
+  montaba — la fuente real es `config/templates/`→`runtime/config/`).
+
 ## 6. Referencias
 
 - `docs/16-formal-audit-iso25040.md` — auditoría y gates de origen.

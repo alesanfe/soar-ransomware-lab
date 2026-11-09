@@ -144,8 +144,88 @@ stack de observabilidad). El validador estático
 2. Si solo falla el panel de trazas: Tempo search via JSON datasource necesita
    `urlPath` (no `url`) y la versión de Grafana 10.3.4 solo soporta
    `queryType: traceId` en el datasource Tempo nativo.
-3. Renderer a 500 con timeout interno: revisar `CLUSTERING`/`maxConcurrency`
-   en `docker-compose.logging.yml` (los nombres de env var importan).
+3. Renderer a 500 con timeout interno: revisar `RENDERING_MODE`/
+   `RENDERING_CLUSTERING_*`/`shm_size` en `docker-compose.logging.yml`
+   (los nombres de env var importan — `RENDERING_CLUSTERED_*` no existe).
+
+### RB-08 — Disco de datos (ES/Docker) saturado
+
+**Señal**: panel "ES disk / heap pressure" <10% libre, o `df -h` del host
+con C: >90%.
+
+Desde la migración a named volumes, el exporter mide el **disco del VHDX
+Docker**, no el host C:. Dos capas distintas:
+
+1. **Disco Docker** (`elasticsearch_filesystem_data_*`): si baja de 10%,
+   el watermark `flood_stage` pondría índices read-only. Recuperar espacio:
+   `docker image prune -f` (dangling), `docker builder prune -f`,
+   `docker image prune -a -f` (imágenes sin contenedor — recuperables vía
+   pull/build; en la migración de 2026-11-09 liberó 8.57GB).
+2. **Host C: / VHDX hinchado**: WSL2 no devuelve espacio liberado dentro del
+   VHDX automáticamente. Compactación manual (requiere parar Docker):
+   - `wsl --shutdown`
+   - `Optimize-VHD -Path "$env:LOCALAPPDATA\Docker\wsl\disk\docker_data.vhdx" -Mode Full`
+     (PowerShell admin; Hyper-V tools), o `diskpart` → `compact vdisk`.
+3. `runtime/data/` conserva los bind dirs pre-migración como respaldo de
+   rollback (~1.5GB) — purgables solo tras validar que los named volumes
+   funcionan en producción unas semanas.
+
+### RB-09 — Object storage S3 (SeaweedFS) caído o corrupto
+
+**Síntoma**: Loki/Tempo no arrancan o loguean `NoSuchBucket`/`connection
+refused` a `s3:8333`.
+
+1. Estado: `docker ps -f name=soar_s3`; salud: `wget -qO- http://<s3>:9333/cluster/status`.
+2. Buckets esperados: `docker exec soar_s3 sh -c "echo 'fs.ls /buckets/' | weed shell -master=127.0.0.1:9333"`
+   → `loki`, `tempo`. Si faltan: `echo 's3.bucket.create -name loki' | weed shell -master=127.0.0.1:9333`
+   (o recrear el one-shot: `docker compose ... up -d s3-init`).
+3. `autoCreateBucket` NO sustituye al init: Loki/Tempo LISTan el bucket
+   antes del primer PUT y fallan con `NoSuchBucket`.
+4. Credenciales: `iam.config.json` (`infra/docker/config/seaweedfs/`) debe
+   coincidir con `S3_ACCESS_KEY`/`S3_SECRET_KEY` del `.env` — un rotate de
+   secretos exige actualizar el file IAM.
+5. Datos: `soar_s3_data` es un named volume — `make down` normal lo
+   conserva; `down -v` borra chunks/bloques (logs/trazas históricos).
+6. Puerto S3 interno: `8333` (no publicado al host — intencional).
+
+### RB-10 — Migración bind-mount → named volume (procedimiento)
+
+Patrón usado en la migración GRAF-D6 (reversible):
+
+1. Parar el servicio afectado (`docker compose ... stop <svc>`).
+2. Crear el volumen si no existe: `docker volume create soar_<name>_data`.
+3. Copiar: `docker run --rm -v soar_<name>_data:/dst -v <ruta-bind>:/src:ro alpine sh -c "cp -a /src/. /dst/"`.
+4. Ajustar la definición del volumen en compose a `driver: local` **sin**
+   `driver_opts` — OJO: si otra `-f` file también define el volumen con
+   `driver_opts` (bind), el merge las mantiene y el volumen sigue siendo
+   bind-mount. Verificar con `docker compose ... config | grep -A4 <name>`.
+5. Levantar + verificar (para ES: `_cluster/health` green, `_cat/indices`).
+6. El bind dir antiguo queda como rollback — no borrar hasta estabilizar.
+
+### RB-11 — Diagnóstico de 5xx upstream en Shuffle
+
+**Síntoma**: `HttpAlertSender` loguea "Transient failure ... retrying" o
+devuelve `success=false` con `status_code` 5xx.
+
+1. Mirar el upstream, no el sender: `docker logs soar_shuffle_backend --tail 100 | grep -iE "500|error"`.
+2. El sender reintenta 3× (1.5s+3s) solo en 5xx/429/red — un 4xx sale al
+   primer intento. `error="network error after retries"` = 3 fallos
+   consecutivos de transporte.
+3. Si los 5xx persisten tras retries: el bug está en Shuffle backend
+   (upstream, fuera del repo) — escalar, no aumentar el retry budget.
+4. Métricas: `alerts_failed` sube solo tras agotar los reintentos —
+   un pico sugiere upstream sostenido caído, no flaky.
+
+### RB-12 — Acceso TLS a Grafana (:8444)
+
+- Endpoint: `https://soar.local:8444` (nginx → grafana:3000). Cert firmado
+  por `infra/docker/config/certs/ca.crt` (SANs soar.local/grafana/localhost).
+- Verificación: `curl --cacert infra/docker/config/certs/ca.crt --resolve soar.local:8444:127.0.0.1 https://soar.local:8444/api/health`.
+- Windows Schannel puede mostrar `CERT_TRUST_REVOCATION_STATUS_UNKNOWN`
+  con CAs internas sin CRL — benigno; verificar con OpenSSL/Python.
+- Renovar el cert: firmar un nuevo `soar.local.csr` con `ca.key` (mismo
+  procedimiento que `gen_certs.sh` server cert) — **no** regenerar la CA
+  (invalidaría los certs desplegados, p.ej. MISP en `soar_api`).
 
 ## 4. Validación
 
@@ -189,9 +269,9 @@ stack de observabilidad). El validador estático
 
 ### 5.2 Riesgos
 
-- Disco del filesystem de datos de ES al ~94% (6% libre observado): vigilar el
-  panel "ES disk / heap pressure"; si se cruza el watermark `flood_stage`,
-  Elasticsearch bloquea escrituras y los índices pasan a read-only.
+- Disco: tras la migración a named volumes (2026-11-09) el exporter mide el
+  VHDX Docker (~92% libre). El host C: sigue al ~95% — vigilar el panel "ES
+  disk / heap pressure" (disco Docker) y `df -h` del host (RB-08).
 - Una regla en `nodata` puede significar "sin datos" legítimo o "query rota" —
   `grafana_rule_eval_error` y el panel de estados los distinguen.
 

@@ -455,7 +455,10 @@ sequenceDiagram
 | `docs-site` | build: apps/docs-site/Dockerfile | `${DOCS_PORT:-8086}:8080` | soar_net |
 | `loki` | grafana/loki:2.9.10 | — (interno) | logging_net |
 | `promtail` | grafana/promtail:2.9.9 | — (interno) | logging_net |
+| `s3` | chrislusf/seaweedfs:4.53 | — (interno, S3 :8333) | logging_net |
+| `s3-init` | chrislusf/seaweedfs:4.53 | one-shot (buckets) | logging_net |
 | `grafana` | grafana/grafana:10.3.4 | `${GRAFANA_PORT:-8084}:3000` | logging_net, soar_net |
+| `grafana` (TLS vía nginx) | — | `127.0.0.1:${GRAFANA_TLS_PORT:-8444}:8444` | soar_net, logging_net |
 | `grafana-db` | postgres:14-alpine | — (interno) | logging_net |
 
 #### Redes Docker
@@ -485,9 +488,21 @@ sequenceDiagram
 | `misp_configs` | misp | Configuración de MISP |
 | `misp_logs` | misp | Logs de aplicación de MISP |
 | `nginx_logs` | nginx | Logs de acceso y error del proxy |
-| `loki_data` | loki | Logs almacenados en Loki |
+| `loki_data` | loki | Índice boltdb-shipper/WAL (chunks van a S3 — GRAF-D5) |
+| `tempo_data` | tempo | WAL local de Tempo (bloques van a S3 — GRAF-D5) |
+| `prometheus_data` | prometheus | TSDB de métricas |
+| `s3_data` | s3 (SeaweedFS) | Object storage S3: chunks de Loki + bloques de Tempo |
 | `grafana_data` | grafana | Configuración y dashboards de Grafana |
 | `grafana_db_data` | grafana-db | Base de datos PostgreSQL de Grafana |
+
+> **Named volumes (GRAF-D6, 2026-11-09)**: los volúmenes de datos del stack
+> de observabilidad (`es_data`, `loki_data`, `tempo_data`, `prometheus_data`,
+> `grafana_data`, `grafana_db_data`, `s3_data`) son named volumes reales de
+> Docker (ext4 del VHDX), no bind-mounts de `runtime/data/`. Beneficios: IO
+> 10-50× más rápido que el filesystem compartido de Windows, y los exporters
+> de disco miden el disco Docker (no el host C:). El histórico de Loki/Tempo
+> anterior al corte a S3 permanece en `runtime/data/` como rollback.
+> Procedimiento de migración: docs/20 RB-10.
 
 #### Stack Tecnológico
 

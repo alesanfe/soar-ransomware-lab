@@ -581,6 +581,181 @@
    ],
    "title": "ES auth failures in range (noise class)",
    "type": "stat"
+  },
+  {
+   "id": 10,
+   "title": "Workflow executions (exec-by-exec)",
+   "type": "table",
+   "datasource": {
+    "type": "marcusolsson-json-datasource",
+    "uid": "workflowexec-json"
+   },
+   "description": "Últimas 50 ejecuciones del workflow SOAR desde OpenSearch (alias workflowexecution). status EXECUTING con antigüedad alta = ejecución stale (clean_shuffle_executions.py). duration_s -1 = aún en curso.",
+   "gridPos": {
+    "h": 9,
+    "w": 24,
+    "x": 0,
+    "y": 30
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      },
+      "inspect": false,
+      "filterable": true
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "status"
+      },
+      "properties": [
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "FINISHED": {
+            "text": "FINISHED",
+            "color": "green"
+           },
+           "EXECUTING": {
+            "text": "EXECUTING",
+            "color": "yellow"
+           },
+           "FAILED": {
+            "text": "FAILED",
+            "color": "red"
+           },
+           "ABORTED": {
+            "text": "ABORTED",
+            "color": "red"
+           }
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "started"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "dateTimeAsIso"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "duration_s"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "s"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "duration_s"
+      },
+      "properties": [
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "-1": {
+            "text": "running",
+            "color": "yellow"
+           }
+          }
+         }
+        ]
+       },
+       {
+        "id": "unit",
+        "value": "s"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false,
+     "reducer": [
+      "sum"
+     ],
+     "countRows": false
+    }
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "marcusolsson-json-datasource",
+      "uid": "workflowexec-json"
+     },
+     "method": "POST",
+     "urlPath": "/workflowexecution/_search",
+     "body": "{\"size\": 50, \"sort\": [{\"started_at\": \"desc\"}], \"_source\": [\"execution_id\", \"status\", \"started_at\", \"completed_at\", \"last_node\", \"workflow_id\"], \"script_fields\": {\"started_iso\": {\"script\": {\"source\": \"return java.time.Instant.ofEpochSecond(doc['started_at'].value).toString()\"}}, \"duration_s\": {\"script\": {\"source\": \"return doc['completed_at'].size() == 0 || doc['completed_at'].value <= 0 ? -1 : doc['completed_at'].value - doc['started_at'].value\"}}}}",
+     "fields": [
+      {
+       "name": "execution_id",
+       "jsonPath": "$.hits.hits[*]._source.execution_id",
+       "type": "string",
+       "language": "jsonpath"
+      },
+      {
+       "name": "status",
+       "jsonPath": "$.hits.hits[*]._source.status",
+       "type": "string",
+       "language": "jsonpath"
+      },
+      {
+       "name": "started",
+       "jsonPath": "$.hits.hits[*].fields.started_iso[*]",
+       "type": "time",
+       "language": "jsonpath"
+      },
+      {
+       "name": "duration_s",
+       "jsonPath": "$.hits.hits[*].fields.duration_s[*]",
+       "type": "number",
+       "language": "jsonpath"
+      },
+      {
+       "name": "last_node",
+       "jsonPath": "$.hits.hits[*]._source.last_node",
+       "type": "string",
+       "language": "jsonpath"
+      },
+      {
+       "name": "workflow_id",
+       "jsonPath": "$.hits.hits[*]._source.workflow_id",
+       "type": "string",
+       "language": "jsonpath"
+      }
+     ]
+    }
+   ]
   }
  ],
  "refresh": "30s",
@@ -629,6 +804,6 @@
  "timezone": "browser",
  "title": "SOAR Logs & Errors",
  "uid": "soar-logs",
- "version": 55,
+ "version": 1794258554,
  "weekStart": ""
 }

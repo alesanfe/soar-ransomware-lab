@@ -1259,6 +1259,11 @@ test-report:
 
 check-grafana:
 	@python3 scripts/quality/check_grafana_provisioning.py
+	@python3 scripts/quality/validate_dashboards.py
+
+grafana-reload:
+	@echo "Bumping dashboard versions (epoch) and recreating grafana..."
+	@python3 scripts/maintenance/grafana_dashboards_deploy.py
 
 check-ui-inventory:
 	@python3 scripts/quality/check_ui_inventory.py

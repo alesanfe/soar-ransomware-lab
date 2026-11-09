@@ -71,3 +71,9 @@ datasources:
     jsonData:
       httpMethod: "GET"
     editable: true
+  - name: Workflow Executions
+    uid: workflowexec-json
+    type: marcusolsson-json-datasource
+    access: proxy
+    url: ${OPENSEARCH_URL:-http://opensearch:9200}
+    editable: true

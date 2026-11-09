@@ -83,15 +83,44 @@ class HTTPAlertSender(AlertTransporter):
         trace_id = alert.get("trace_id") or new_trace_id()
         alert["trace_id"] = trace_id
         try:
+            # GRAF-D8: the Shuffle webhook returns intermittent 500s
+            # (upstream bug). Alerts are idempotent (dedup by alert_id
+            # downstream), so a short bounded retry on transient failures
+            # is safe and removes the lost-alert gap without masking real
+            # 4xx rejections.
+            response = None
+            attempts = 3
+            for attempt in range(attempts):
+                try:
+                    response = self._session.post(
+                        self.webhook_url,
+                        json=alert,
+                        headers={TRACE_ID_HEADER: trace_id},
+                        timeout=self.timeout,
+                    )
+                except requests.RequestException:
+                    response = None
+                if response is not None and response.status_code < 500 and response.status_code != 429:
+                    break
+                if attempt < attempts - 1:
+                    logger.warning(
+                        f"Transient failure sending alert {alert_id} "
+                        f"(attempt {attempt + 1}/{attempts}), retrying",
+                        extra={"trace_id": trace_id},
+                    )
+                    time.sleep(1.5 * (attempt + 1))
+            if response is None:
+                self.alerts_failed += 1
+                return AlertSendResult(
+                    success=False,
+                    status_code=None,
+                    alert_id=alert_id,
+                    error="network error after retries",
+                    trace_id=trace_id,
+                )
             logger.info(
                 f"Sending alert {alert_id} to {self.webhook_url}",
                 extra={"trace_id": trace_id},
-            )
-            response = self._session.post(
-                self.webhook_url,
-                json=alert,
-                headers={TRACE_ID_HEADER: trace_id},
-                timeout=self.timeout,
             )
             success = response.status_code in (200, 202, 204)
             if success:

@@ -122,17 +122,60 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # GRAF-D5: S3-compatible object storage for Loki chunks and Tempo
+  # blocks — the missing piece vs a production observability stack.
+  # SeaweedFS (docker.io/minio/minio is currently pull-restricted);
+  # single-node all-in-one (master+volume+filer+s3), autoCreateBucket
+  # removes the need for a bucket-init sidecar.
+  s3:
+    image: ${S3_IMAGE:-chrislusf/seaweedfs:4.53}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_s3
+    command: >
+      server -dir=/data -ip=s3 -ip.bind=0.0.0.0
+      -s3 -s3.port=8333 -s3.autoCreateBucket
+      -s3.config=/etc/seaweedfs/iam.config.json
+    volumes:
+      - s3_data:/data
+      - ../config/seaweedfs/iam.config.json:/etc/seaweedfs/iam.config.json:ro
+    networks:
+      - logging_net
+    healthcheck:
+      # S3 root returns 403/404 to anonymous probes even when healthy;
+      # master /cluster/status + S3 TCP probe are the reliable signals.
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && nc -z 127.0.0.1 8333 || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 25s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Image renderer sidecar for Grafana panel PNG export
   grafana-renderer:
     image: ${GRAFANA_RENDERER_IMAGE:-grafana/grafana-image-renderer:3.10.4}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_grafana_renderer
+    # GRAF-D9: default Docker /dev/shm is 64MB — Chromium tabs crash under
+    # render bursts (renderer degrades). 512m gives the pool real room.
+    shm_size: 512m
     environment:
       # Chromium is RAM-hungry on heavy panels (trace tables); clustered
       # mode keeps a small browser pool so sequential renders do not
       # degrade into ReadTimeouts after ~25 panels (TC-35 render sweep).
       ENABLE_METRICS: "true"
       RENDERING_MODE: "clustered"
-      RENDERING_CLUSTERING_MAX_CONCURRENCY: "2"
+      RENDERING_CLUSTERING_MAX_CONCURRENCY: "3"
       RENDERING_CLUSTERING_TIMEOUT: "180"
     networks:
       - logging_net
@@ -157,13 +200,40 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # One-shot bucket bootstrap (loki chunks + tempo blocks). -s3.autoCreateBucket
+  # only materialises a bucket on first PUT; Loki/Tempo LIST first and die
+  # with NoSuchBucket, so the buckets are created explicitly via weed shell.
+  s3-init:
+    image: ${S3_IMAGE:-chrislusf/seaweedfs:4.53}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_s3_init
+    entrypoint: >
+      /bin/sh -c "
+      for b in loki tempo; do
+        echo s3.bucket.create -name $$b | weed shell -master=s3:9333 || true;
+      done;
+      echo 'buckets ready'"
+    networks:
+      - logging_net
+    depends_on:
+      s3:
+        condition: service_healthy
+    restart: "no"
+
   loki:
     image: ${LOKI_IMAGE:-grafana/loki:2.9.10}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_loki
-    command: -config.file=/etc/loki/loki-config.yml
+    # expand-env lets loki-config.yml read ${S3_*} instead of baking
+    # credentials into the committed file.
+    command: -config.file=/etc/loki/loki-config.yml -config.expand-env=true
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-soar-s3}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-soar-s3-secret-change-me}
     networks:
       - logging_net
       - soar_net
+    depends_on:
+      s3-init:
+        condition: service_completed_successfully
     volumes:
       - loki_data:/var/lib/loki
       - ./logging/loki-config.yml:/etc/loki/loki-config.yml:ro
@@ -257,7 +327,11 @@ services:
   tempo:
     image: ${TEMPO_IMAGE:-grafana/tempo:2.6.1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_tempo
-    command: ["-config.file=/etc/tempo.yaml"]
+    # expand-env injects the S3 credentials into tempo.yaml at boot.
+    command: ["-config.file=/etc/tempo.yaml", "-config.expand-env=true"]
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-soar-s3}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-soar-s3-secret-change-me}
     volumes:
       - ../config/tempo.yaml:/etc/tempo.yaml:ro
       - tempo_data:/var/tempo
@@ -270,6 +344,8 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+      s3-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:3200/ready || exit 1" ]
@@ -434,34 +510,20 @@ networks:
     name: soar_net
     external: true
 
+# GRAF-D6: real named volumes (VM ext4) instead of Windows bind-mounts.
+# Hot IO paths (postgres fsync, Loki index/cache, Tempo WAL, Prometheus
+# tsdb) get 10-50x lower fsync latency and stop depending on the host
+# C:\ drive fill level.
 volumes:
   grafana_db_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/grafana_db
   grafana_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/grafana
   loki_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/loki
   tempo_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/tempo
   prometheus_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/prometheus
+  s3_data:
+    driver: local

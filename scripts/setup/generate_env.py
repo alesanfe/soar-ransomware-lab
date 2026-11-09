@@ -22,10 +22,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ENV_TEMPLATE = REPO_ROOT / ".env.example"
 ENV_OUTPUT = REPO_ROOT / ".env.full"
 DATASOURCE_TEMPLATE = (
-    REPO_ROOT / "infra" / "docker" / "compose" / "logging" / "grafana-datasources.yml.template"
+    REPO_ROOT / "infra" / "docker" / "config" / "templates" / "grafana-datasources.yml.template"
 )
+# Rendered file is what docker-compose actually mounts into Grafana
+# (see docker-compose.logging.yml grafana.volumes). The historical
+# compose/logging/grafana-datasources.yml path is stale — never mounted.
 DATASOURCE_OUTPUT = (
-    REPO_ROOT / "infra" / "docker" / "compose" / "logging" / "grafana-datasources.yml"
+    REPO_ROOT / "runtime" / "config" / "grafana-datasources.yml"
 )
 
 
@@ -322,7 +325,7 @@ def main() -> int:
 
     print("\nNext steps:")
     print("  1. Review .env.full and adjust non-secret variables if needed.")
-    print("  2. Never commit .env.full or infra/docker/compose/logging/grafana-datasources.yml.")
+    print("  2. Never commit .env.full or runtime/config/grafana-datasources.yml.")
     print("  3. Run 'make up' to start the stack.")
     return 0
 

@@ -234,6 +234,8 @@ services:
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
+      # GRAF-D10: Grafana sobre TLS (proxy a grafana:3000)
+      - "127.0.0.1:${GRAFANA_TLS_PORT:-8444}:8444"
     networks:
       - soar_net
       - logging_net

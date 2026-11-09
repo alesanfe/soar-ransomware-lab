@@ -291,6 +291,18 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  s3:
+    deploy:
+      resources:
+        limits:
+          pids: 512  # seaweedfs spawns master+volume+filer+s3 goroutines
+    security_opt:
+      - no-new-privileges:true
+
+  s3-init:
+    security_opt:
+      - no-new-privileges:true
+
   promtail:
     deploy:
       resources:

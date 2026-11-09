@@ -149,7 +149,7 @@
  "timezone": "browser",
  "title": "SOAR Traces (Tempo)",
  "uid": "soar-traces",
- "version": 56,
+ "version": 1794258554,
  "weekStart": "",
  "description": "Distributed traces exported by soar-api via OTel (OBS-01). Rendered via Tempo /api/search through the JSON datasource because Grafana 10.3.4's Tempo backend only supports queryType=traceId. Click a traceID to open it in Explore with log correlation."
 }

@@ -260,11 +260,15 @@ class TestHTTPAlertSender:
         mock_response_failure.text = "Error"
 
         mock_session = Mock()
+        # GRAF-D8 retry contract: a 5xx response consumes up to 3 attempts.
+        # alert-3 sees 500 three times (exhausted) before alert-4 succeeds.
         mock_session.post.side_effect = [
-            mock_response_success,
-            mock_response_success,
-            mock_response_failure,
-            mock_response_success,
+            mock_response_success,   # alert-1
+            mock_response_success,   # alert-2
+            mock_response_failure,   # alert-3 attempt 1
+            mock_response_failure,   # alert-3 attempt 2
+            mock_response_failure,   # alert-3 attempt 3 -> exhausted
+            mock_response_success,   # alert-4
         ]
         mock_session_class.return_value = mock_session
 
@@ -356,7 +360,8 @@ class TestHTTPAlertSenderBatch:
         err.status_code = 500
         err.text = "Error"
         mock_session = Mock()
-        mock_session.post.side_effect = [ok, err, ok]
+        # GRAF-D8: 5xx retried up to 3 attempts — a2 fails after three 500s.
+        mock_session.post.side_effect = [ok, err, err, err, ok]
         mock_session_class.return_value = mock_session
 
         sender = HTTPAlertSender(webhook_url="https://example.com/webhook", api_token="t")

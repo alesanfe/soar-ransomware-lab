@@ -66,13 +66,17 @@
 
 ## Deuda residual (aceptada, honesta)
 
-- **GRAF-D3**: version-gating de provisioning — editar un dashboard JSON exige bump de `version` (documentado en AGENTS.md).
-- **GRAF-D5**: Loki/Tempo single-node con storage local filesystem — sin object storage ni HA (limitación de laboratorio, no de diseño).
-- **GRAF-D6**: `grafana_data` en bind-mount Windows — IO lento; el backup `make backup` sí archiva `runtime/` (incl. grafana.db, loki, tempo).
-- **GRAF-D8**: Webhook Shuffle 500s intermitentes (upstream, no Grafana).
-- **GRAF-D9**: Renderer chromium se degrada con ráfagas muy largas de renders secuenciales — mitigado con clustering; en lab no es bloqueante.
-- **GRAF-D10**: TLS ausente en todo el stack observabilidad (loopback/compose-net only) + admin password en `.env` (convención aceptada del repo).
-- **GRAF-D11**: Tempo search vía JSON datasource no interpola macros `${__from}` en `urlPath` → ventana fija "reciente" del servidor (últimos N resultados); aceptable para panel "Recent traces".
+> **Nota (quinta revisión):** los ítems D3/D5/D6/D8/D9/D10 y GRAF-062 fueron
+> atacados con fixes reales — ver §"Quinta revisión — cierre de deuda residual"
+> al final del documento. La lista original se conserva como histórico.
+
+- **GRAF-D3**: version-gating de provisioning — editar un dashboard JSON exige bump de `version` (documentado en AGENTS.md). **→ cerrado: `make grafana-reload` automatiza bump+validación+recreate.**
+- **GRAF-D5**: Loki/Tempo single-node con storage local filesystem — sin object storage ni HA (limitación de laboratorio, no de diseño). **→ mitigado: object storage S3 real (SeaweedFS) para chunks/bloques; single-node permanece.**
+- **GRAF-D6**: `grafana_data` en bind-mount Windows — IO lento; el backup `make backup` sí archiva `runtime/` (incl. grafana.db, loki, tempo). **→ cerrado: named volumes reales + migración verificada.**
+- **GRAF-D8**: Webhook Shuffle 500s intermitentes (upstream, no Grafana). **→ mitigado: retry acotado 3× en `HttpAlertSender`.**
+- **GRAF-D9**: Renderer chromium se degrada con ráfagas muy largas de renders secuenciales — mitigado con clustering; en lab no es bloqueante. **→ mitigado: +shm_size 512m +concurrency 3; burst 12 renders sin degradación.**
+- **GRAF-D10**: TLS ausente en todo el stack observabilidad (loopback/compose-net only) + admin password en `.env` (convención aceptada del repo). **→ cerrado en el borde: Grafana TLS vía nginx :8444 con cert firmado por CA lab.**
+- **GRAF-D11**: Tempo search vía JSON datasource no interpola macros `${__from}` en `urlPath` → ventana fija "reciente" del servidor (últimos N resultados); aceptable para panel "Recent traces". **→ resuelta en cuarta revisión (macros sí interpolan).**
 
 ## Evaluación de las gráficas (visualizaciones) — tercera revisión
 
@@ -186,3 +190,35 @@ El panel nuevo "ES disk / heap pressure" reveló que el filesystem de datos de E
 ### Nota de las gráficas (post-backlog): 9.5 / 10
 
 De los -1.0 deducidos en la tercera revisión, se recuperó ~0.5: todas las piezas operativas pedidas existen ahora con datos reales verificados (alertas firing reales: 21 notificaciones `firing` + 1 `resolved` recibidas por el API), cada regla tiene severidad/owner/runbook, hay contrato E2E ampliado (17 tests), validación estática, runbooks y SLOs documentados. Los -0.5 restantes: densidad de datos por juventud del lab (irreductible), single-node sin HA, TLS ausente, disco ES al 94% pendiente de purga.
+
+## Quinta revisión — cierre de deuda residual (GRAF-D3/D5/D6/D8/D9/D10 + disco ES + GRAF-062)
+
+Toda la deuda "aceptada" de la cuarta revisión se ha atacado con fixes reales verificados sobre el stack vivo, no con documentación:
+
+| Ítem | Resolución | Evidencia |
+|------|------------|-----------|
+| **GRAF-D3** (version-gating) | **Cerrado** — `scripts/maintenance/grafana_dashboards_deploy.py`: sella `version=<epoch>` en los 4 dashboards (monotónico → el gate no puede saltarse), corre `validate_dashboards.py` (aborta si falla) y recrea grafana con el set completo de compose files + hardened overlay. Targets `make grafana-reload` (win+linux) y `make check-grafana`. | Ejecutado: 4 dashboards bumped → v1794258554, 0 violations |
+| **GRAF-D5** (single-node, sin object storage) | **Mitigado a producción-shaped** — SeaweedFS 4.53 (`s3`, `soar_s3`) como object storage S3-compatible real: `s3-init` crea buckets `loki`/`tempo` vía `weed shell` (autoCreateBucket no basta — Loki LISTa antes del primer PUT), IAM file con credenciales `S3_ACCESS_KEY`/`S3_SECRET_KEY` por env. Loki `common.storage.s3` (chunks+boltdb-shipper), Tempo `storage.trace.backend: s3`. MinIO descartado: `docker.io/minio/minio` devuelve pull denied — elección documentada. | `weed shell fs.ls /buckets/loki/` → `fake`+`index`; `/buckets/tempo/` → `single-tenant`+`tempo_cluster_seed.json` |
+| **GRAF-D6** (bind-mounts Windows) | **Cerrado** — `es_data`, `loki_data`, `grafana_data`, `tempo_data`, `prometheus_data`, `s3_data` son named volumes reales (ext4 del VHDX Docker). Bug de merge detectado: las definiciones bind-mount de `docker-compose.yml` sobrevivían al merge con el file de logging — eliminadas de la base. Datos migrados con `alpine cp -a` + integridad verificada: ES **green** con sus 4 índices (`cortex`, `cortex_6`, `soar-alerts`, `soar-metrics`), Grafana con Postgres `grafana-db` (volumen ya era real). | `soar_es_data` con `nodes/`; `_cluster/health` → green |
+| **Disco ES ~94%** | **Resuelto a nivel de señal + parcialmente físico** — el exporter ahora mide el disco Docker: `filesystem_data_available/size` = **92% libre** (antes 6.09%). Docker image prune `-a` recuperó **8.57GB**. El VHDX no devuelve espacio a Windows automáticamente: la compactación requiere `Optimize-VHD` con Docker parado (procedimiento documentado en runbook). C: sigue al 95% por causas mayoritariamente ajenas al lab. | Prometheus: size=1081GB avail=994GB |
+| **GRAF-D8** (Shuffle 500s) | **Mitigado** — `HttpAlertSender.send()`: retry acotado 3× con backoff lineal (1.5s, 3s) solo sobre 5xx/429/`RequestException`; 4xx nunca reintenta; excepciones no-HTTP caen en el `except Exception` existente (contrato de resultado de fallo preservado). El upstream Shuffle no es corregible desde aquí; `simulate_alerts.py` ya tenía retry propio. | 23/23 tests unit tras reescribir side_effects al nuevo contrato |
+| **GRAF-D9** (renderer ráfagas) | **Mitigado** — `shm_size: 512m` (causa raíz clásica de crash de Chromium en Docker: /dev/shm 64MB) + clustering max_concurrency=3 + timeout 180s. | Burst de 12 renders en 41s, 0 fallos, 2.3-7.7s/render sin degradación |
+| **GRAF-D10** (TLS) | **Cerrado en el borde, honesto dentro** — nginx `listen 8444 ssl` → `grafana:3000` con cert `soar.local` **firmado por la CA del lab** (`infra/docker/config/certs/ca.crt`, SANs soar.local/grafana/localhost/127.0.0.1). El cert anterior era autofirmado — regenerado. TLS termina en el proxy; tráfico interno compose sigue HTTP (documentado). `GRAFANA_TLS_PORT` override-able. | `ssl.wrap_socket` con CA → `VERIFIED TLSv1.3`; `https://soar.local:8444/api/health` → 200. Schannel `CERT_TRUST_REVOCATION_STATUS_UNKNOWN` es benigno (CA sin CRL, documentado) |
+| **GRAF-062** (vista exec-by-exec) | **Ejecutado** — panel 10 "Workflow executions (exec-by-exec)" en `soar-logs`: tabla JSON datasource `workflowexec-json`→`opensearch:9200` contra alias `workflowexecution` con `script_fields` painless (`started_iso`, `duration_s` con guard `completed_at.size()==0 || value<=0 → -1` → mapeado a `running`). Bug real encontrado: `doc['completed_at'].size()` solo NO bastaba (EXECUTING tiene el campo a 0 → duración negativa). | Render PNG real: FINISHED con duraciones (21s/28s/1.78min), EXECUTING→"running", 397 ejecuciones |
+
+### Deuda residual REAL tras la quinta revisión
+
+- **HA**: SeaweedFS/Loki/Tempo siguen single-node — object storage sí, replicación no. Limitación estructural de lab documentada, ya no "sin object storage".
+- **TLS interno**: solo el borde (Grafana vía nginx). Loki/Tempo/ES/Prometheus internos siguen HTTP — elección documentada (compose-net privada), no ocultada.
+- **VHDX compaction**: procedimiento manual con Docker parado — runbook, no automatizable sin downtime del stack.
+- **Shuffle 5xx upstream**: mitigado con retry; el bug raíz vive en Shuffle backend (fuera del perímetro del repo).
+- **Renderer bajo ráfagas muy largas (>25 renders seguidos)**: clustering+shm eliminan la degradación observada en 12 renders; cargas extremas sostenidas quedan como riesgo documentado con runbook.
+- **Historial Loki/Tempo**: el corte a S3 no migra chunks/bloques fs antiguos (datos efímeros, retención 720h — decisión documentada; los bind dirs antiguos se conservan en `runtime/data/` por si fuera necesario un rollback).
+
+### Deriva corregida en esta revisión (bugs nuevos encontrados)
+
+- **BUG-GRAF-18**: `infra/docker/compose/logging/grafana-datasources.yml` (generada por `generate_env.py`/`rotate_secrets.py`) era un archivo muerto — el mount real es `runtime/config/...` desde `config/templates/`. Paths corregidos en ambos scripts; archivo stale eliminado (habría perdido `prometheus`, `derivedFields` y `workflowexec-json` en la próxima regeneración).
+- **BUG-GRAF-19**: merge de compose — `loki_data`/`grafana_data` bind-mounts de `docker-compose.yml` ganaban al `driver: local` del file de logging (compose mergea maps; los driver_opts persistían). Definiciones eliminadas de la base.
+- **BUG-GRAF-20**: `common.storage` de Loki 2.9 acepta UN solo backend — `filesystem`+`s3` simultáneos = crash. `filesystem` eliminado (sin ruler desplegado no hace falta `rules_directory`).
+- **BUG-GRAF-21**: `delete_request_store_bucket_name` no existe en compactor 2.9 — eliminado (usa `bucketnames` del S3 común).
+- **BUG-GRAF-22**: test contract — `test_multiple_sends` y `test_batch_mixed_success_failure` asumían 500 terminal; reescritos al contrato retry (exhaustión determinista).
