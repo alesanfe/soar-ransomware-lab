@@ -26,7 +26,9 @@ class TestCriticalSeverity(E2EBaseTest):
         super().setup_method(method)
         self.t0 = datetime.now(UTC)
         cases = self.thehive.search_cases()
-        self._max_case_id_before = max((c.get("caseId", 0) for c in cases), default=0)
+        # Snapshot of existing case IDs — a set-difference watermark, more
+        # robust than max(caseId) if IDs are ever non-contiguous.
+        self._case_ids_before = {c.get("caseId") for c in cases}
 
     def _log(self, msg: str):
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -37,7 +39,7 @@ class TestCriticalSeverity(E2EBaseTest):
         self._log("=== TC-06: Critical Severity Testing ===")
 
         payload = {
-            "alert_id": f"TC06-CRITICAL-{int(time.time())}",
+            "alert_id": self.uid("TC06-CRITICAL"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC06-001",
             "src_ip": "192.168.1.200",
@@ -72,7 +74,10 @@ class TestCriticalSeverity(E2EBaseTest):
 
         # Verify severity is 3 (critical)
         assert last.get("severity") == 3, f"Expected severity 3, got {last.get('severity')}"
-        assert last.get("status") == "Open", f"Expected Open, got {last.get('status')}"
+        assert last.get("status") in (
+            "New",
+            "InProgress",
+        ), f"Expected open-stage status, got {last.get('status')}"
 
         # NEW: Validate that critical cases have execution priority
         self._log("  + Verifying critical case has execution priority")
@@ -186,7 +191,7 @@ class TestCriticalSeverity(E2EBaseTest):
         self._log("=== TC-06-01: CRITICAL WORKFLOW TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC06-CRIT-WF-{int(time.time())}",
+            "alert_id": self.uid("TC06-CRIT-WF"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC06-001",
             "src_ip": "192.168.1.200",
@@ -263,6 +268,27 @@ class TestCriticalSeverity(E2EBaseTest):
             '"skipped": true' not in notify_result and "'skipped': True" not in notify_result
         ), f"notify_critical node skipped for critical alert: {notify_result[:200]}"
 
+        # Assert the notification PAYLOAD content — the node is terminal,
+        # so the recorded email payload IS the notification contract.
+        import json as _json
+
+        try:
+            notify_msg = _json.loads(notify_node.get("result", "{}"))
+        except (TypeError, ValueError):
+            notify_msg = {}
+        body = notify_msg.get("message", notify_msg)
+        assert body.get("severity") == "CRITICAL", (
+            f"notify payload severity must be CRITICAL, got: {body}"
+        )
+        assert body.get("channel"), (
+            f"notify payload must declare a channel, got: {body}"
+        )
+        subject = body.get("subject", "")
+        assert payload["hostname"] in subject, (
+            f"notify subject must include the affected hostname "
+            f"{payload['hostname']}, got: {subject}"
+        )
+
         # Validate severity in payload
         assert payload["severity"] == 3, "Payload severity should be 3"
 
@@ -281,7 +307,7 @@ class TestCriticalSeverity(E2EBaseTest):
         self._log("=== TC-06-02: CORRECT PRIORITY TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC06-PRIORITY-{int(time.time())}",
+            "alert_id": self.uid("TC06-PRIORITY"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC06-001",
             "src_ip": "192.168.1.200",
@@ -301,9 +327,15 @@ class TestCriticalSeverity(E2EBaseTest):
 
         self._log("STEP 3: Verifying TheHive case severity & priority")
         cases = self.thehive.search_cases()
-        new_cases = [c for c in cases if c.get("caseId", 0) > self._max_case_id_before]
-        assert new_cases, "No new TheHive case found for critical alert"
-        last = max(new_cases, key=lambda c: c.get("caseId", 0))
+        # Marker filter (our alert_id) + set-diff (created during this test)
+        # — no reliance on "the globally newest case is ours".
+        new_cases = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if alert_id in c.get("description", "") and c.get("caseId") not in self._case_ids_before
+        ]
+        assert new_cases, f"No new TheHive case found for alert {alert_id}"
+        last = new_cases[0]
 
         # TC-06-02: assert case severity == 3 (critical = highest priority)
         assert (
@@ -329,10 +361,12 @@ class TestCriticalSeverity(E2EBaseTest):
             f"flag={last.get('flag')}, tags={tags}"
         )
 
-        # TC-06-02: assert case status is Open (active critical incident)
-        assert (
-            last.get("status") == "Open"
-        ), f"Expected critical case status Open, got {last.get('status')}"
+        # TC-06-02: assert case status is in an open stage (active
+        # critical incident — TheHive 5: New or InProgress)
+        assert last.get("status") in (
+            "New",
+            "InProgress",
+        ), f"Expected critical case open-stage status, got {last.get('status')}"
 
         # Validate case title contains critical information
         title = last.get("title", "")
@@ -356,7 +390,7 @@ class TestCriticalSeverity(E2EBaseTest):
         self._log("=== TC-06-03: CRITICAL TASKS TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC06-TASKS-{int(time.time())}",
+            "alert_id": self.uid("TC06-TASKS"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC06-001",
             "src_ip": "192.168.1.200",
@@ -376,9 +410,15 @@ class TestCriticalSeverity(E2EBaseTest):
 
         self._log("STEP 3: Verifying critical tasks")
         cases = self.thehive.search_cases()
-        new_cases = [c for c in cases if c.get("caseId", 0) > self._max_case_id_before]
-        assert new_cases, "No new TheHive case found for critical alert"
-        last = max(new_cases, key=lambda c: c.get("caseId", 0))
+        # Marker filter (our alert_id) + set-diff (created during this test)
+        # — no reliance on "the globally newest case is ours".
+        new_cases = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if alert_id in c.get("description", "") and c.get("caseId") not in self._case_ids_before
+        ]
+        assert new_cases, f"No new TheHive case found for alert {alert_id}"
+        last = new_cases[0]
         case_id = last.get("id", last.get("_id", ""))
         assert case_id, "Created case has no id/_id"
 
@@ -435,7 +475,7 @@ class TestCriticalSeverity(E2EBaseTest):
         CRITICAL_SLA_MS = 15000  # 15 seconds for critical
 
         payload = {
-            "alert_id": f"TC06-SLA-{int(time.time())}",
+            "alert_id": self.uid("TC06-SLA"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC06-001",
             "src_ip": "192.168.1.200",
@@ -489,7 +529,7 @@ class TestCriticalSeverity(E2EBaseTest):
         self._log("=== TC-06-05: AUTO ESCALATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC06-ESCALATE-{int(time.time())}",
+            "alert_id": self.uid("TC06-ESCALATE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC06-001",
             "src_ip": "192.168.1.200",
@@ -509,10 +549,15 @@ class TestCriticalSeverity(E2EBaseTest):
 
         self._log("STEP 3: Verifying escalation actions")
         # Check workflow results for escalation nodes
+        # Escalation is implemented by the workflow's `notify_critical`
+        # action; also match generic "escalat*" labels.
         escalation_nodes = [
             n
             for n in execution.get("results", [])
-            if "escalat" in n.get("action", {}).get("label", "").lower()
+            if any(
+                kw in n.get("action", {}).get("label", "").lower()
+                for kw in ("escalat", "notify_critical")
+            )
         ]
         self._log(f"+ Escalation nodes found: {len(escalation_nodes)}")
 
@@ -529,11 +574,13 @@ class TestCriticalSeverity(E2EBaseTest):
         self._log("STEP 4: Verifying escalation produced a critical TheHive case")
         cases = self.thehive.search_cases()
         assert isinstance(cases, list), "TheHive cases must be a list"
-        new_cases = [c for c in cases if c.get("caseId", 0) > self._max_case_id_before]
-        assert (
-            new_cases
-        ), "No new TheHive case created after escalation - escalation did not produce a case"
-        last = max(new_cases, key=lambda c: c.get("caseId", 0))
+        new_cases = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if alert_id in c.get("description", "") and c.get("caseId") not in self._case_ids_before
+        ]
+        assert new_cases, f"No new TheHive case created for alert {alert_id} after escalation"
+        last = new_cases[0]
         assert isinstance(last, dict), "Escalated case must be a dict"
         # Critical alerts should result in a case with severity 3
         assert (

@@ -62,7 +62,7 @@ class TestGoldenThread(E2EBaseTest):
         self._log(f"Generated trace_id: {trace_id}")
 
         # Send alert with trace_id
-        alert_id = f"TC32-GOLDEN-{int(time.time())}"
+        alert_id = self.uid("TC32-GOLDEN")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -96,7 +96,13 @@ class TestGoldenThread(E2EBaseTest):
             f"Expected at least 1 new TheHive case for golden thread, "
             f"got 0 new (before={self.cases_before}, after={len(cases)})"
         )
-        last = max(cases, key=lambda c: c.get("caseId", 0))
+        matching = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if payload["alert_id"] in c.get("description", "")
+        ]
+        assert matching, f"No TheHive case found containing alert_id={payload['alert_id']}"
+        last = matching[0]
         assert isinstance(last, dict), "Case must be a dict"
         thehive_data = {
             "name": "thehive",
@@ -117,6 +123,8 @@ class TestGoldenThread(E2EBaseTest):
         es_data = {
             "name": "elasticsearch",
             "alert_id": doc.get("alert_id"),
+            "alert_type": doc.get("alert_type"),
+            "src_ip": doc.get("src_ip"),
             "hostname": doc.get("hostname"),
             "severity": doc.get("severity"),
             "timestamp": doc.get("@timestamp"),
@@ -124,30 +132,22 @@ class TestGoldenThread(E2EBaseTest):
         }
         self._log("+ Elasticsearch: document found")
 
-        # Cortex (if available)
-        try:
-            analyzers = self.cortex.list_analyzers()
-            self._log(f"+ Cortex: {len(analyzers)} analyzer(s)")
-        except Exception as e:
-            self._log(f"+ Cortex check skipped: {e}")
+        # Cortex — the service must be reachable in the deployed lab
+        analyzers = self.cortex.list_analyzers()
+        assert isinstance(analyzers, list), "Cortex analyzers must be a list"
+        self._log(f"+ Cortex: {len(analyzers)} analyzer(s)")
 
-        # MISP (if available)
-        try:
-            events = self.misp.list_events()
-            self._log(f"+ MISP: {len(events)} event(s)")
-        except Exception as e:
-            self._log(f"+ MISP check skipped: {e}")
+        # MISP — same requirement
+        events = self.misp.list_events()
+        assert isinstance(events, list), "MISP events must be a list"
+        self._log(f"+ MISP: {len(events)} event(s)")
 
         # Validate trace_id consistency
         self._log("STEP 4: Validating trace_id consistency")
         systems = [s for s in [thehive_data, es_data] if s is not None]
         assert len(systems) >= 2, "At least 2 systems should have data for golden thread validation"
-        if len(systems) >= 2:
-            try:
-                assert_trace_id_consistent(systems, trace_id)
-                self._log("+ trace_id consistent across systems")
-            except AssertionError as e:
-                self._log(f"+ trace_id consistency warning: {e}")
+        assert_trace_id_consistent(systems, trace_id)
+        self._log("+ trace_id consistent across systems")
 
         # Validate that golden thread is complete
         self._log("✓ Golden thread validated - data collected from multiple systems")
@@ -157,11 +157,8 @@ class TestGoldenThread(E2EBaseTest):
         assert es_data is not None, "ES data must be present for data integrity validation"
         assert_data_persisted("elasticsearch", es_data)
         critical_fields = ["alert_id", "alert_type", "hostname", "src_ip"]
-        try:
-            assert_data_integrity(payload, es_data, critical_fields)
-            self._log("+ Data integrity verified")
-        except AssertionError as e:
-            self._log(f"+ Data integrity warning: {e}")
+        assert_data_integrity(payload, es_data, critical_fields)
+        self._log("+ Data integrity verified")
 
         # Validate no data loss
         self._log("STEP 6: Validating no data loss")
@@ -173,11 +170,8 @@ class TestGoldenThread(E2EBaseTest):
         self._log("STEP 7: Validating timestamp sequence")
         systems_with_time = [s for s in systems if s.get("timestamp")]
         if len(systems_with_time) >= 2:
-            try:
-                assert_trace_timestamps_sequential(systems_with_time)
-                self._log("+ Timestamps are sequential")
-            except AssertionError as e:
-                self._log(f"+ Timestamp sequence warning: {e}")
+            assert_trace_timestamps_sequential(systems_with_time)
+            self._log("+ Timestamps are sequential")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -210,7 +204,7 @@ class TestGoldenThread(E2EBaseTest):
         self._log("=== TC-32: END-TO-END DATA FLOW TEST STARTED ===")
 
         # Send alert
-        alert_id = f"TC32-FLOW-{int(time.time())}"
+        alert_id = self.uid("TC32-FLOW")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -242,8 +236,14 @@ class TestGoldenThread(E2EBaseTest):
         cases = self.thehive.search_cases()
         new_cases = len(cases) - self.cases_before
         assert new_cases > 0, "TheHive case not created"
-        last = max(cases, key=lambda c: c.get("caseId", 0))
-        assert_incident_state(last, "Open")
+        matching = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if payload["alert_id"] in c.get("description", "")
+        ]
+        assert matching, f"No TheHive case found containing alert_id={payload['alert_id']}"
+        last = matching[0]
+        assert_incident_state(last, ("New", "InProgress"))
         assert_incident_has_observables(last, min_count=1)
 
         # Stage 3: Elasticsearch indexing
@@ -328,8 +328,8 @@ class TestGoldenThread(E2EBaseTest):
         """
         self._log("=== TC-32-03: FULL REMEDIATION CYCLE TEST STARTED ===")
 
-        trace_id = str(int(time.time()))
-        alert_id = f"TC32-REM-{int(time.time())}"
+        trace_id = self.uid("trace")
+        alert_id = self.uid("TC32-REM")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -367,10 +367,11 @@ class TestGoldenThread(E2EBaseTest):
             if alert_id in desc:
                 new_case = c
                 break
-        assert new_case is not None, (
-            f"No new TheHive case created for remediation cycle (alert_id={alert_id})"
-        )
-        last = max(cases, key=lambda c: c.get("caseId", 0))
+        assert (
+            new_case is not None
+        ), f"No new TheHive case created for remediation cycle (alert_id={alert_id})"
+        # Use the marker-matched case — not the globally newest one.
+        last = new_case
         assert isinstance(last, dict), "Case must be a dict"
         case_id = last.get("id", last.get("_id", ""))
         tasks = self.thehive.list_case_tasks(case_id)

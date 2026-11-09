@@ -40,18 +40,17 @@ def _parse_timestamp(ts) -> float | None:
     # Numeric epoch
     try:
         val = float(ts)
+    except (ValueError, TypeError):
+        val = None
+    if val is not None:
         if val > 1e12:
             val = val / 1000.0
         return val
-    except (ValueError, TypeError):
-        pass
     # ISO 8601 string
     try:
-        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
-        return dt.timestamp()
+        return datetime.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp()
     except (ValueError, TypeError):
-        pass
-    return None
+        return None
 
 
 class TestIoCAnalysisTime(E2EBaseTest):
@@ -119,7 +118,7 @@ class TestIoCAnalysisTime(E2EBaseTest):
 
         # ── Step 1: Send alert ──
         self._log("STEP 1: Sending alert with known IoCs (hash + IP)")
-        alert_id = f"TC-32-{int(time.time())}"
+        alert_id = self.uid("TC-32")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",

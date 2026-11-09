@@ -1,0 +1,55 @@
+{
+  "name": "misp",
+  "service_name": "misp",
+  "version": "1.0.0",
+  "supported_versions": ["1.0.0"],
+  "required_headers": ["Content-Type", "Authorization", "Accept"],
+  "rate_limit": {
+    "requests_per_minute": 60,
+    "requests_per_hour": 2000,
+    "requests_per_day": 20000
+  },
+  "error_schema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "message": { "type": "string" }
+    },
+    "required": ["message"]
+  },
+  "endpoints": {
+    "/events": {
+      "GET": {
+        "response_schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "info"]
+          }
+        }
+      },
+      "POST": {
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "info": { "type": "string" },
+            "Attribute": { "type": "array" }
+          },
+          "required": ["info"]
+        }
+      }
+    },
+    "/attributes/restSearch": {
+      "POST": {
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "value": { "type": "string" },
+            "type": { "type": "string" }
+          },
+          "required": ["value"]
+        }
+      }
+    }
+  }
+}

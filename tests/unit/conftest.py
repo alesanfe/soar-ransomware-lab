@@ -7,6 +7,22 @@ external dependencies.
 
 import pytest
 
+# pytest-repeat (--count N) re-executes Hypothesis tests from distinct executor
+# parametrizations, which trips HealthCheck.differing_executors. That is a
+# repeat-mechanism artifact, not real flakiness — suppress it suite-wide so
+# repeat runs measure genuine nondeterminism.
+try:
+    from hypothesis import HealthCheck
+    from hypothesis import settings as _hypothesis_settings
+except ImportError:  # hypothesis absent (e.g. minimal container) — no property tests
+    pass
+else:
+    _hypothesis_settings.register_profile(
+        "repeat_safe",
+        suppress_health_check=[HealthCheck.differing_executors],
+    )
+    _hypothesis_settings.load_profile("repeat_safe")
+
 from soar_lab.infrastructure.in_memory_alert_repository import InMemoryAlertRepository
 from soar_lab.infrastructure.in_memory_storage import InMemoryStorage
 

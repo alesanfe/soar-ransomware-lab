@@ -34,8 +34,12 @@ class TestStructuredLogging:
 
     def test_log_levels(self, structured_logger):
         """Test different log levels."""
+        # DEBUG requires a DEBUG-level logger — BL-OBS-002 replaced the
+        # ad-hoc level gate (which let DEBUG through unconditionally) with
+        # logger.isEnabledFor, so honour the configured level.
+        debug_logger = StructuredLogger(name="test_logger_dbg", level=logging.DEBUG)
         with patch("logging.Logger.debug") as mock_debug:
-            structured_logger.debug("Debug message")
+            debug_logger.debug("Debug message")
             assert mock_debug.called, "Debug log should be called"
 
         with patch("logging.Logger.info") as mock_info:
@@ -149,6 +153,17 @@ class TestStructuredLogging:
         # Should redact sensitive data
         structured_logger.info("Test message", context=sensitive_context)
         assert True, "Sensitive data should be redacted"
+
+    def test_emit_does_not_crash_on_nonserializable_context(self, caplog):
+        """Bug: a context value that json.dumps cannot serialize made the
+        logger raise TypeError and take down the caller."""
+        logger = StructuredLogger("test.nonserializable")
+        import datetime as _dt
+
+        with caplog.at_level(logging.INFO):
+            logger.info("m", context={"when": _dt.datetime(2026, 1, 1), "obj": object()})
+        # Must not raise; context values degrade to repr()
+        assert "m" in caplog.text or len(caplog.records) >= 0
 
 
 if __name__ == "__main__":

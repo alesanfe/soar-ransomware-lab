@@ -54,10 +54,10 @@ def _node_result_skipped(result: Any) -> bool:
 
     # Check common locations for skipped flag
     if isinstance(parsed, dict):
-        # Direct: {"skipped": true}
+        # Direct shape: {"skipped": true}
         if parsed.get("skipped") is True:
             return True
-        # Nested: {"message": {"skipped": true}}
+        # Nested shape: {"message": {"skipped": true}}
         msg = parsed.get("message")
         if isinstance(msg, dict) and msg.get("skipped") is True:
             return True
@@ -220,7 +220,7 @@ class SemanticMixin:
                         )
 
                 # Check task statuses are valid
-                valid_statuses = {"Waiting", "InProgress", "Completed", "Cancelled"}
+                valid_statuses = {"Waiting", "InProgress", "Completed", "Cancel"}
                 for t in tasks:
                     status = t.get("status", "")
                     if status and status not in valid_statuses:
@@ -231,7 +231,9 @@ class SemanticMixin:
         # dedup policy
         if expected.get("dedup_policy") == "single_case" and alert_id:
             try:
-                cases = self.thehive.search_cases()
+                # Recent cases only — this test's alert_id is always fresh
+                # (unbounded list costs ~13 s as cases accumulate, BUG-046).
+                cases = self.thehive.search_cases(sort=["-createdAt"], range_="0-200")
                 matching = [
                     c
                     for c in cases
@@ -554,7 +556,8 @@ class SemanticMixin:
         # 2. thehive_case
         if "thehive_case" in required_locations:
             try:
-                cases = self.thehive.search_cases()
+                # Bounded newest-first page (BUG-046 pattern).
+                cases = self.thehive.search_cases(sort=["-createdAt"], range_="0-200")
                 found = False
                 for c in cases:
                     case_text = _json.dumps(c, default=str)
@@ -611,7 +614,7 @@ class SemanticMixin:
                 exec_id = getattr(self, "execution_id", "")
                 if exec_id:
                     r = requests.get(
-                        f"{os_url}/workflowexecution-000001/_doc/{exec_id}",
+                        f"{os_url}/workflowexecution/_doc/{exec_id}",
                         timeout=10,
                         verify=False,
                     )

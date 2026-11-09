@@ -28,6 +28,12 @@ class TestEdgeCases(E2EBaseTest):
 
     tc_id = "TC-03"
 
+    # Acceptable webhook responses to edge-case payloads: accepted
+    # (200/202), cleanly rejected client error (400/415/422/429) or busy
+    # (500). Anything else — 502/503/504, redirects, auth failures —
+    # indicates an outage or a misconfigured webhook and must fail.
+    _WEBHOOK_OK_STATUSES = (200, 202, 400, 415, 422, 429, 500)
+
     # ------------------------------------------------------------------
     # setUp
     # ------------------------------------------------------------------
@@ -63,7 +69,7 @@ class TestEdgeCases(E2EBaseTest):
 
     def _base_payload(self, tag: str) -> dict:
         return {
-            "alert_id": f"EDGE-{tag}-{int(time.time())}",
+            "alert_id": self.uid(f"EDGE-{tag}"),
             "alert_type": "ransomware",
             "hostname": "EDGE-HOST-001",
             "src_ip": "192.168.1.100",
@@ -116,14 +122,8 @@ class TestEdgeCases(E2EBaseTest):
                     r = self.shuffle._webhook_session.post(
                         self.webhook_url, json=payload, timeout=timeout
                     )
-                # 500 is acceptable — Shuffle may be busy (internal timeout), but is still alive
-                # Only 502/503/504 indicate Shuffle is down
-                assert r.status_code not in (
-                    502,
-                    503,
-                    504,
-                ), (
-                    f"Edge case '{label}' caused Shuffle to go down: "
+                assert r.status_code in self._WEBHOOK_OK_STATUSES, (
+                    f"Edge case '{label}' caused Shuffle outage/misroute: "
                     f"HTTP {r.status_code} — {r.text[:200]}"
                 )
                 status_class = (
@@ -161,10 +161,8 @@ class TestEdgeCases(E2EBaseTest):
             (r for r in self._edge_results if r.get("label") == "malformed_json"), None
         )
         if malformed_result:
-            assert malformed_result.get("status_code") not in (
-                502,
-                503,
-                504,
+            assert malformed_result.get("status_code") in (
+                self._WEBHOOK_OK_STATUSES
             ), "malformed_json must not crash Shuffle"
 
     def _step_verify_services_healthy(self):
@@ -187,38 +185,46 @@ class TestEdgeCases(E2EBaseTest):
             self._log(f"    - '{wf.get('name', '?')}' id={wf.get('id', '?')[:8]}...")
 
         # ── TheHive ──────────────────────────────────────────────────
-        # Wait for edge-case workflows to create at least one active case
-        # (workflows run asynchronously after webhook POST).
-        active_cases: list = []
+        # Wait for a case linked to THIS suite's edge-case alerts — they
+        # all use hostname EDGE-HOST-001, propagated by the workflow into
+        # the case title/description/observables. Selecting by marker
+        # instead of max(caseId) removes cross-suite state coupling.
+        edge_case = None
         for _wait in range(12):  # up to 60s
             cases = self.thehive.search_cases()
             assert cases is not None, "TheHive search_cases returned None"
             assert isinstance(cases, list), "TheHive cases must be a list"
             active_cases = [c for c in cases if c.get("status") != "Deleted"]
-            if active_cases:
+            edge_case = next(
+                (c for c in active_cases if "EDGE-HOST-001" in json.dumps(c, default=str)),
+                None,
+            )
+            if edge_case:
                 break
-            self._log("  + TheHive: no active cases yet, waiting for edge-case workflows...")
+            self._log("  + TheHive: no edge-case case yet, waiting for workflows...")
             time.sleep(5)
 
-        self._log(
-            f"  + TheHive: OK | {len(cases)} total case(s), {len(active_cases)} active"
+        self._log(f"  + TheHive: OK | {len(cases)} total case(s), {len(active_cases)} active")
+        assert edge_case, (
+            "No TheHive case linked to edge-case alerts (EDGE-HOST-001) " "found after 60s"
         )
-        assert len(active_cases) > 0, "TheHive active cases must not be empty"
-        last = max(active_cases, key=lambda c: c.get("caseId", 0))
-        assert isinstance(last, dict), "Last case must be a dict"
-        case_id = last.get("id", last.get("_id", ""))
-        # Last case must have a valid status (edge cases must not have
-        # corrupted it). "Resolved" is valid — benign alerts from prior
-        # tests may have resolved cases.
-        assert last.get("status") in (
-            "Open",
-            "Resolved",
-        ), f"Last TheHive case status corrupted: {last.get('status')}"
+        case_id = edge_case.get("id", edge_case.get("_id", ""))
+        # The edge-linked case must have a valid TheHive 5 status (edge
+        # cases must not have corrupted it).
+        assert edge_case.get("status") in (
+            "New",
+            "InProgress",
+            "TruePositive",
+            "FalsePositive",
+            "Indeterminate",
+            "Duplicated",
+            "Other",
+        ), f"Edge-case TheHive case status corrupted: {edge_case.get('status')}"
         if case_id:
             tasks = self.thehive.list_case_tasks(case_id)
             obs = self.thehive.get_case_observables(case_id)
             self._log(
-                f"    - Last case #{last.get('caseId')}: "
+                f"    - Edge case #{edge_case.get('caseId')}: "
                 f"{len(tasks)} task(s), {len(obs)} observable(s)"
             )
 
@@ -259,26 +265,27 @@ class TestEdgeCases(E2EBaseTest):
         worker slots (concurrency=10), leaving no slot for the recovery
         alert and causing it to time out.
         """
-        import requests as _req
-
         self._log("STEP 2b: Waiting for edge-case workflows to complete...")
         es_url = self.get_service_url("opensearch") or "http://opensearch:9200"
         deadline = time.time() + timeout
+        poll_errors = 0
         while time.time() < deadline:
             try:
-                r = _req.get(
-                    f"{es_url}/workflowqueue-shuffle/_count",
-                    timeout=10,
-                    verify=False,
-                )
+                r = self.s.get(f"{es_url}/workflowqueue-shuffle/_count", timeout=10)
                 count = r.json().get("count", 0)
-            except Exception:
+            except Exception as e:
+                poll_errors += 1
+                assert poll_errors < 5, f"OpenSearch queue count failed {poll_errors} times: {e}"
                 count = -1
-            if count <= 0:
+            if count < 0:
+                # Query error — keep waiting, do not treat as drained
+                time.sleep(5)
+                continue
+            if count == 0:
                 self._log("  + Orborus queue drained — all edge-case workflows completed")
                 return
             self._log(f"  + Orborus queue has {count} pending item(s), waiting...")
-            time.sleep(15)
+            time.sleep(5)
         self._log(f"  ! Orborus queue still has items after {timeout}s — proceeding anyway")
 
     def _step_final_normal_alert(self):
@@ -289,7 +296,7 @@ class TestEdgeCases(E2EBaseTest):
         cases_before = self._count_thehive_cases()
 
         payload = {
-            "alert_id": f"TC03-RECOVERY-{int(time.time())}",
+            "alert_id": self.uid("TC03-RECOVERY"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC03-001",
             "src_ip": "10.218.224.139",
@@ -415,29 +422,20 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json={}, timeout=20)
-            self._log(f"+ Empty payload response: HTTP {r.status_code}")
+        # A connection error here means the service went down — let it
+        # propagate and fail the test instead of soft-checking the message.
+        r = self.shuffle._webhook_session.post(self.webhook_url, json={}, timeout=20)
+        self._log(f"+ Empty payload response: HTTP {r.status_code}")
 
-            # Validate response is not 5xx (service crash)
-            assert r.status_code not in (
-                502,
-                503,
-                504,
-            ), f"Empty payload caused service crash: HTTP {r.status_code}"
+        assert r.status_code in (
+            self._WEBHOOK_OK_STATUSES
+        ), f"Empty payload caused service crash/misroute: HTTP {r.status_code}"
 
-            # Validate response structure
-            try:
-                response_data = r.json()
-                assert isinstance(response_data, dict), "Response should be JSON object"
-            except Exception:
-                # Non-JSON response is acceptable for error cases
-                pass
-
-        except Exception as e:
-            self._log(f"+ Empty payload error: {e}")
-            # Validate it's not a connection error (service crash)
-            assert "Connection" not in str(e), "Empty payload caused connection error"
+        # When the response is JSON it must be an object; non-JSON bodies
+        # are acceptable for rejection responses.
+        if r.headers.get("content-type", "").startswith("application/json"):
+            response_data = r.json()
+            assert isinstance(response_data, dict), "Response should be JSON object"
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -454,7 +452,7 @@ class TestEdgeCases(E2EBaseTest):
         self._log("=== TC-03-02: NULL FIELDS TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC03-NULL-{int(time.time())}",
+            "alert_id": self.uid("TC03-NULL"),
             "alert_type": None,
             "hostname": None,
             "src_ip": None,
@@ -467,24 +465,16 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
-            self._log(f"+ Null fields response: HTTP {r.status_code}")
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
+        self._log(f"+ Null fields response: HTTP {r.status_code}")
 
-            # Validate response is not 5xx (service crash)
-            assert r.status_code not in (
-                502,
-                503,
-                504,
-            ), f"Null fields caused service crash: HTTP {r.status_code}"
+        assert r.status_code in (
+            self._WEBHOOK_OK_STATUSES
+        ), f"Null fields caused service crash/misroute: HTTP {r.status_code}"
 
-            # Validate payload was JSON-serializable despite nulls
-            assert isinstance(payload, dict), "Payload should be dict"
-            assert payload["hostname"] is None, "Hostname should be None"
-
-        except Exception as e:
-            self._log(f"+ Null fields error: {e}")
-            assert "Connection" not in str(e), "Null fields caused connection error"
+        # Nulls must survive JSON serialization (json.dumps would raise
+        # on non-serializable values)
+        assert json.loads(json.dumps(payload))["hostname"] is None
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -501,7 +491,7 @@ class TestEdgeCases(E2EBaseTest):
         self._log("=== TC-03-03: UNICODE CHARACTERS TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC03-UNICODE-{int(time.time())}",
+            "alert_id": self.uid("TC03-UNICODE"),
             "alert_type": "ransomware",
             "hostname": "WIN-中文-001",
             "src_ip": "192.168.1.100",
@@ -517,24 +507,15 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
-            assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
-            self._log("+ Unicode payload accepted")
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
+        assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
+        self._log("+ Unicode payload accepted")
 
-            # Validate unicode characters are preserved
-            assert (
-                "中文" in payload["hostname"]
-            ), "Unicode hostname should contain Chinese characters"
-            assert "🚀" in payload["description"], "Description should contain emoji"
-
-            # Validate payload is valid UTF-8
-            json_str = json.dumps(payload, ensure_ascii=False)
-            assert isinstance(json_str, str), "JSON serialization should produce string"
-
-        except Exception as e:
-            self._log(f"+ Unicode error: {e}")
-            assert "UnicodeEncodeError" not in str(e), "Unicode encoding error occurred"
+        # Unicode must survive a JSON serialization round-trip unchanged
+        json_str = json.dumps(payload, ensure_ascii=False)
+        round_trip = json.loads(json_str)
+        assert "中文" in round_trip["hostname"], "Unicode hostname must survive JSON round-trip"
+        assert "🚀" in round_trip["description"], "Emoji must survive JSON round-trip"
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -551,7 +532,7 @@ class TestEdgeCases(E2EBaseTest):
         self._log("=== TC-03-04: SPECIAL CHARACTERS TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC03-SPECIAL-{int(time.time())}",
+            "alert_id": self.uid("TC03-SPECIAL"),
             "alert_type": "ransomware",
             "hostname": "WIN-<script>-001",
             "src_ip": "192.168.1.100",
@@ -567,21 +548,15 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
-            assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
-            self._log("+ Special characters payload accepted")
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
+        assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
+        self._log("+ Special characters payload accepted")
 
-            # Validate special characters are preserved
-            assert "<script>" in payload["hostname"], "Hostname should contain script tag"
-            assert "<>&\"'" in payload["description"], "Description should contain special chars"
-
-            # Validate payload is JSON-serializable despite special chars
-            json_str = json.dumps(payload)
-            assert isinstance(json_str, str), "JSON serialization should produce string"
-
-        except Exception as e:
-            self._log(f"+ Special characters error: {e}")
+        # Special characters must survive a JSON round-trip unchanged —
+        # this is what the workflow actually receives
+        round_trip = json.loads(json.dumps(payload))
+        assert "<script>" in round_trip["hostname"], "Script tag must survive JSON round-trip"
+        assert "<>&\"'" in round_trip["description"], "Special chars must survive JSON round-trip"
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -598,7 +573,7 @@ class TestEdgeCases(E2EBaseTest):
         self._log("=== TC-03-05: LARGE PAYLOAD TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC03-LARGE-{int(time.time())}",
+            "alert_id": self.uid("TC03-LARGE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC03-001",
             "src_ip": "192.168.1.100",
@@ -614,25 +589,18 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
-            self._log(f"+ Large payload response: HTTP {r.status_code}")
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
+        self._log(f"+ Large payload response: HTTP {r.status_code}")
 
-            # Validate response is not 5xx (service crash)
-            assert r.status_code not in (
-                502,
-                503,
-                504,
-            ), f"Large payload caused service crash: HTTP {r.status_code}"
+        assert r.status_code in (
+            self._WEBHOOK_OK_STATUSES
+        ), f"Large payload caused service crash/misroute: HTTP {r.status_code}"
 
-            # Validate payload size
-            payload_size = len(json.dumps(payload))
-            assert payload_size > 100000, "Payload should be > 100KB"
-            self._log(f"+ Payload size: {payload_size} bytes")
-
-        except Exception as e:
-            self._log(f"+ Large payload error: {e}")
-            assert "Connection" not in str(e), "Large payload caused connection error"
+        # The serialized payload must actually exceed 100KB — otherwise the
+        # test would not be exercising the large-payload path at all
+        payload_size = len(json.dumps(payload))
+        assert payload_size > 100000, "Payload should be > 100KB"
+        self._log(f"+ Payload size: {payload_size} bytes")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -649,7 +617,7 @@ class TestEdgeCases(E2EBaseTest):
         self._log("=== TC-03-06: EMPTY ARRAYS TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC03-EMPTYARR-{int(time.time())}",
+            "alert_id": self.uid("TC03-EMPTYARR"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC03-001",
             "src_ip": "192.168.1.100",
@@ -665,19 +633,15 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
-            assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
-            self._log("+ Empty arrays payload accepted")
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
+        assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
+        self._log("+ Empty arrays payload accepted")
 
-            # Validate arrays are empty
-            assert len(payload["mitre_techniques"]) == 0, "MITRE techniques should be empty"
-            assert len(payload["tags"]) == 0, "Tags should be empty"
-            assert isinstance(payload["mitre_techniques"], list), "MITRE techniques should be list"
-            assert isinstance(payload["tags"], list), "Tags should be list"
-
-        except Exception as e:
-            self._log(f"+ Empty arrays error: {e}")
+        # Empty arrays must stay empty lists through JSON serialization —
+        # serializers that collapse [] to null or "" would break the workflow
+        round_trip = json.loads(json.dumps(payload))
+        assert round_trip["mitre_techniques"] == [], "MITRE techniques must stay an empty list"
+        assert round_trip["tags"] == [], "Tags must stay an empty list"
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -694,7 +658,7 @@ class TestEdgeCases(E2EBaseTest):
         self._log("=== TC-03-07: NESTED JSON TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC03-NESTED-{int(time.time())}",
+            "alert_id": self.uid("TC03-NESTED"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC03-001",
             "src_ip": "192.168.1.100",
@@ -710,25 +674,16 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
-            assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
-            self._log("+ Nested JSON payload accepted")
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
+        assert r.status_code == 200, f"Webhook failed: HTTP {r.status_code}"
+        self._log("+ Nested JSON payload accepted")
 
-            # Validate nested structure is preserved
-            assert "nested_data" in payload, "Nested data should be present"
-            assert "level1" in payload["nested_data"], "Level1 should be present"
-            assert "level2" in payload["nested_data"]["level1"], "Level2 should be present"
-            assert (
-                payload["nested_data"]["level1"]["level2"]["level3"]["level4"] == "deep value"
-            ), "Deep value should be preserved"
-
-            # Validate payload is JSON-serializable
-            json_str = json.dumps(payload)
-            assert isinstance(json_str, str), "JSON serialization should produce string"
-
-        except Exception as e:
-            self._log(f"+ Nested JSON error: {e}")
+        # Nested structure must survive a JSON round-trip — the value the
+        # workflow sees at depth must be identical
+        round_trip = json.loads(json.dumps(payload))
+        assert (
+            round_trip["nested_data"]["level1"]["level2"]["level3"]["level4"] == "deep value"
+        ), "Deep value must survive JSON round-trip"
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -745,7 +700,7 @@ class TestEdgeCases(E2EBaseTest):
         self._log("=== TC-03-08: INVALID DATES TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC03-DATE-{int(time.time())}",
+            "alert_id": self.uid("TC03-DATE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC03-001",
             "src_ip": "192.168.1.100",
@@ -760,25 +715,12 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
-            self._log(f"+ Invalid date response: HTTP {r.status_code}")
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
+        self._log(f"+ Invalid date response: HTTP {r.status_code}")
 
-            # Validate response is not 5xx (service crash)
-            assert r.status_code not in (
-                502,
-                503,
-                504,
-            ), f"Invalid date caused service crash: HTTP {r.status_code}"
-
-            # Validate invalid date is preserved in payload
-            assert (
-                payload["detection_time"] == "invalid-date-format"
-            ), "Invalid date should be preserved in payload"
-
-        except Exception as e:
-            self._log(f"+ Invalid date error: {e}")
-            assert "Connection" not in str(e), "Invalid date caused connection error"
+        assert r.status_code in (
+            self._WEBHOOK_OK_STATUSES
+        ), f"Invalid date caused service crash/misroute: HTTP {r.status_code}"
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -795,7 +737,7 @@ class TestEdgeCases(E2EBaseTest):
         self._log("=== TC-03-09: INVALID HASH TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC03-HASH-{int(time.time())}",
+            "alert_id": self.uid("TC03-HASH"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC03-001",
             "src_ip": "192.168.1.100",
@@ -810,26 +752,12 @@ class TestEdgeCases(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        try:
-            r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
-            self._log(f"+ Invalid hash response: HTTP {r.status_code}")
+        r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=20)
+        self._log(f"+ Invalid hash response: HTTP {r.status_code}")
 
-            # Validate response is not 5xx (service crash)
-            assert r.status_code not in (
-                502,
-                503,
-                504,
-            ), f"Invalid hash caused service crash: HTTP {r.status_code}"
-
-            # Validate invalid hash is preserved in payload
-            assert (
-                payload["hash"] == "not-a-valid-hash"
-            ), "Invalid hash should be preserved in payload"
-            assert len(payload["hash"]) != 64, "Invalid hash should not be 64 characters"
-
-        except Exception as e:
-            self._log(f"+ Invalid hash error: {e}")
-            assert "Connection" not in str(e), "Invalid hash caused connection error"
+        assert r.status_code in (
+            self._WEBHOOK_OK_STATUSES
+        ), f"Invalid hash caused service crash/misroute: HTTP {r.status_code}"
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")

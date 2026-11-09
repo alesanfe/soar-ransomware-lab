@@ -230,8 +230,8 @@ class TestMain:
             main()
 
         # Verify logger.info was called for diagnostic messages
-        assert any("Generando datos simulados" in r.message for r in caplog.records)
-        assert any("Calculando KPIs" in r.message for r in caplog.records)
+        assert any("Generando datos simulados" in r.getMessage() for r in caplog.records)
+        assert any("Calculando KPIs" in r.getMessage() for r in caplog.records)
 
         # Verify CLI print output
         mock_print.assert_any_call("\n=== KPIs Calculados ===")

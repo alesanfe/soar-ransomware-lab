@@ -1,20 +1,23 @@
 {
   "name": "thehive",
   "service_name": "thehive",
-  "version": "1.0.0",
+  "version": "5.0.0",
   "supported_versions": [
+    "5.0.0"
+  ],
+  "deprecated_versions": [
     "1.0.0",
     "0.9.0"
   ],
-  "deprecated_versions": [
-    "0.9.0"
-  ],
   "deprecated_endpoints": {
-    "/api/legacy/case": "Use /api/case instead"
+    "/api/legacy/case": "Use /api/v1/case instead",
+    "/api/case": "TheHive 3 API — use /api/v1/case (create) or POST /api/v1/query (list)",
+    "/api/case/_search": "TheHive 3 API — use POST /api/v1/query",
+    "/api/case/{id}/artifact": "TheHive 3 API — use /api/v1/case/{id}/observable"
   },
   "required_headers": [
     "Content-Type",
-    "X-API-Version"
+    "Authorization"
   ],
   "rate_limit": {
     "requests_per_minute": 100,
@@ -24,14 +27,8 @@
   "error_schema": {
     "type": "object",
     "properties": {
-      "error": {
+      "type": {
         "type": "string"
-      },
-      "code": {
-        "type": [
-          "integer",
-          "string"
-        ]
       },
       "message": {
         "type": "string"
@@ -39,15 +36,17 @@
     }
   },
   "migration_guides": {
-    "0.9.0->1.0.0": "Severity field now accepts both integer and string values."
+    "1.0.0->5.0.0": "TheHive 3.x /api/* endpoints moved to /api/v1/*; artifact became observable; list/search endpoints consolidated into POST /api/v1/query."
   },
   "endpoints": {
-    "/api/case": {
+    "/api/v1/status": {
       "GET": {
         "response_schema": {
-          "type": "array"
+          "type": "object"
         }
-      },
+      }
+    },
+    "/api/v1/case": {
       "POST": {
         "request_schema": {
           "type": "object",
@@ -59,10 +58,7 @@
               "type": "string"
             },
             "severity": {
-              "type": [
-                "integer",
-                "string"
-              ]
+              "type": "integer"
             },
             "tags": {
               "type": "array"
@@ -71,8 +67,64 @@
         }
       }
     },
-    "/api/case/_search": {},
-    "/api/observable": {},
-    "/api/case/_bulk": {}
+    "/api/v1/case/{id}": {
+      "GET": {},
+      "PATCH": {},
+      "DELETE": {}
+    },
+    "/api/v1/case/{id}/observable": {
+      "POST": {
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "dataType": {
+              "type": "string"
+            },
+            "data": {
+              "type": "string"
+            },
+            "tlp": {
+              "type": "integer"
+            },
+            "ioc": {
+              "type": "boolean"
+            },
+            "sighted": {
+              "type": "boolean"
+            },
+            "tags": {
+              "type": "array"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/case/{id}/task": {
+      "POST": {}
+    },
+    "/api/v1/alert": {
+      "POST": {}
+    },
+    "/api/v1/query": {
+      "POST": {
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "array"
+            }
+          }
+        },
+        "response_schema": {
+          "type": "array"
+        }
+      }
+    },
+    "/api/v1/user/current": {
+      "GET": {}
+    }
   }
 }

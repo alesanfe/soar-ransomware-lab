@@ -14,9 +14,8 @@ class TestDockerBuildValidation:
     def test_apps_api_dockerfile_exists(self):
         """Test that apps/api/Dockerfile exists and has required content."""
         # Skip when running inside container unless Dockerfiles are available
-        assert not (
-            os.path.exists("/.dockerenv") and not Path("apps/api/Dockerfile").exists()
-        ), "Dockerfiles not available inside container"
+        if os.path.exists("/.dockerenv") and not Path("apps/api/Dockerfile").exists():
+            pytest.skip("Dockerfiles not available inside container")
         dockerfile_path = Path("apps/api/Dockerfile")
         assert dockerfile_path.exists(), "apps/api/Dockerfile should exist"
 
@@ -34,9 +33,8 @@ class TestDockerBuildValidation:
         """Test that apps/docs-site/Dockerfile exists and has required
         content."""
         # Skip when running inside container unless Dockerfiles are available
-        assert not (
-            os.path.exists("/.dockerenv") and not Path("apps/docs-site/Dockerfile").exists()
-        ), "Dockerfiles not available inside container"
+        if os.path.exists("/.dockerenv") and not Path("apps/docs-site/Dockerfile").exists():
+            pytest.skip("Dockerfiles not available inside container")
         dockerfile_path = Path("apps/docs-site/Dockerfile")
         assert dockerfile_path.exists(), "apps/docs-site/Dockerfile should exist"
 
@@ -54,9 +52,8 @@ class TestDockerBuildValidation:
         """Test that apps/web-management/Dockerfile exists and has required
         content."""
         # Skip when running inside container unless Dockerfiles are available
-        assert not (
-            os.path.exists("/.dockerenv") and not Path("apps/web-management/Dockerfile").exists()
-        ), "Dockerfiles not available inside container"
+        if os.path.exists("/.dockerenv") and not Path("apps/web-management/Dockerfile").exists():
+            pytest.skip("Dockerfiles not available inside container")
         dockerfile_path = Path("apps/web-management/Dockerfile")
         assert dockerfile_path.exists(), "apps/web-management/Dockerfile should exist"
 
@@ -104,12 +101,12 @@ class TestDockerBuildValidation:
     def test_apps_web_management_static_files_exist(self):
         """Test that web-management static files exist."""
         # Skip when running inside container unless static files are available
-        assert not (
-            os.path.exists("/.dockerenv") and not Path("apps/web-management/index.html").exists()
-        ), "Static files not available inside container"
+        if os.path.exists("/.dockerenv") and not Path("apps/web-management/index.html").exists():
+            pytest.skip("Static files not available inside container")
         required_files = [
             "apps/web-management/index.html",
-            "apps/web-management/script.js",
+            "apps/web-management/js/main.js",
+            "apps/web-management/js/state.js",
             "apps/web-management/styles.css",
         ]
 

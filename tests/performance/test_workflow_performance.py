@@ -6,7 +6,7 @@ Performance tests for workflow execution
 
 import time
 from datetime import UTC, datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -151,23 +151,40 @@ class TestWorkflowPerformance:
         ), "Complex workflow should not be 10x slower than simple"
 
     def test_workflow_retry_performance(self, shuffle_client, test_alert):
-        """Test workflow retry performance."""
+        """Test workflow retry performance.
+
+        Exercises the real retry loop in ``api_workflow_executions`` — the
+        session transport is patched to fail twice then succeed, so the
+        client's python-level retry (``retries`` attempts with
+        ``retry_delay`` backoff) is what carries the call to success.
+        """
+        import requests as _requests
+
+        from soar_lab.infrastructure.integrations.shuffle import shuffle_helpers
+
         call_count = [0]
+        ok_resp = MagicMock()
+        ok_resp.content = b'[{"execution_id": "exec-001", "status": "completed"}]'
+        ok_resp.json.return_value = [{"execution_id": "exec-001", "status": "completed"}]
+        ok_resp.raise_for_status.return_value = None
 
         def failing_then_succeeding(*args, **kwargs):
             call_count[0] += 1
             if call_count[0] < 3:
-                raise Exception("Temporary failure")
-            return {"execution_id": "exec-001", "status": "completed"}
+                raise _requests.RequestException("Temporary failure")
+            return ok_resp
 
-        with patch.object(shuffle_client, "execute_workflow") as mock_execute:
-            mock_execute.side_effect = failing_then_succeeding
+        with patch.object(shuffle_client._session, "get") as mock_get:
+            mock_get.side_effect = failing_then_succeeding
 
             start_time = time.time()
-            shuffle_client.execute_workflow(workflow_id="workflow-001", data=test_alert)
+            result = shuffle_helpers.api_workflow_executions(
+                shuffle_client, "workflow-001", retries=2, retry_delay=0.01
+            )
             end_time = time.time()
 
             duration = end_time - start_time
+            assert result[0]["execution_id"] == "exec-001"
             assert duration < 10, f"Retry should complete quickly, got {duration}s"
             assert call_count[0] == 3, "Should have retried twice"
 

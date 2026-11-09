@@ -41,8 +41,33 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 GMINST4LL_IOCS = FIXTURES_DIR / "gminst4ll_iocs.json"
+
+# Fallback base URL for sample downloads when the fixture _meta omits it.
+GMINST4LL_SAMPLES_BASE_URL = (
+    "https://github.com/alesanfe/gminst4ll-forensics/raw/main/malware_samples"
+)
+
+
+def _pick_tmp_dir() -> str:
+    """First writable dir for sample downloads (bind-mounted subdirs may be
+    rw while the parent /app/runtime is root-owned in the container)."""
+    candidates = ["/tmp", "/app/runtime/data", "/app/runtime"]
+    for cand in candidates:
+        p = Path(cand)
+        if not p.is_dir():
+            continue
+        try:
+            probe = p / ".write_probe"
+            probe.touch()
+            probe.unlink()
+            return cand
+        except OSError:
+            continue
+    return tempfile.gettempdir()
+
+
 RUNTIME_DIR = (
-    Path("/app/runtime")
+    Path(_pick_tmp_dir())
     if Path("/app").exists()
     else Path(__file__).parent.parent.parent.parent / "runtime"
 )
@@ -75,17 +100,21 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         line = f"[{ts}] TC-33 {msg}"
         print(line)
 
-    def _get_latest_case(self) -> dict:
-        """Get the most recent TheHive case."""
+    def _get_case_for_alert(self, alert_id: str) -> dict:
+        """Return OUR case via the alert_id marker — never 'newest globally'."""
         cases = self.thehive.search_cases()
         assert isinstance(cases, list), "TheHive cases must be a list"
-        new_cases = len(cases) - self.cases_before
-        if new_cases <= 0:
+        matching = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if alert_id in c.get("description", "")
+        ]
+        if not matching:
             pytest.fail(
-                "No new TheHive case created (workflow may not create case for this IoC type)"
+                f"No TheHive case containing alert_id={alert_id} "
+                "(workflow may not create case for this IoC type)"
             )
-        last = max(cases, key=lambda c: c.get("caseId", 0))
-        return last
+        return matching[0]
 
     # ------------------------------------------------------------------
     # Subtest 1: Descargar TODAS las muestras, verificar hash, borrar
@@ -112,7 +141,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         assert len(samples) > 0, "No downloadable samples in fixture"
         base_url = self.iocs.get("_meta", {}).get(
             "download_base_url",
-            "https://github.com/alesanfe/gminst4ll-forensics/raw/main/malware_samples",
+            GMINST4LL_SAMPLES_BASE_URL,
         )
 
         self._log(f"=== TC-33-01: DOWNLOAD AND HASH ALL {len(samples)} SAMPLES ===")
@@ -138,25 +167,36 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
                 ) as f:
                     tmp_path = Path(f.name)
 
-                response = requests.get(
-                    url,
-                    stream=True,
-                    timeout=DOWNLOAD_TIMEOUT,
-                    allow_redirects=True,
-                    verify=False,
-                )
-                assert (
-                    response.status_code == 200
-                ), f"Download failed for {name}: HTTP {response.status_code}"
-
                 sha256 = hashlib.sha256()
                 total_bytes = 0
-                with open(tmp_path, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=DOWNLOAD_CHUNK):
-                        if chunk:
-                            f.write(chunk)
-                            sha256.update(chunk)
-                            total_bytes += len(chunk)
+                last_exc = None
+                for attempt in range(3):
+                    try:
+                        sha256 = hashlib.sha256()
+                        total_bytes = 0
+                        response = self.s.get(
+                            url,
+                            stream=True,
+                            timeout=DOWNLOAD_TIMEOUT,
+                            allow_redirects=True,
+                        )
+                        assert (
+                            response.status_code == 200
+                        ), f"Download failed for {name}: HTTP {response.status_code}"
+                        with open(tmp_path, "wb") as f:
+                            for chunk in response.iter_content(chunk_size=DOWNLOAD_CHUNK):
+                                if chunk:
+                                    f.write(chunk)
+                                    sha256.update(chunk)
+                                    total_bytes += len(chunk)
+                        last_exc = None
+                        break
+                    except (requests.RequestException, AssertionError) as exc:
+                        last_exc = exc
+                        self._log(f"  ! Download attempt {attempt + 1}/3 failed: {exc}")
+                        time.sleep(5 * (attempt + 1))
+                if last_exc is not None:
+                    raise last_exc
 
                 actual_hash = sha256.hexdigest()
                 self._log(f"  + Downloaded {total_bytes} bytes")
@@ -172,8 +212,12 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
 
             finally:
                 if tmp_path and tmp_path.exists():
-                    tmp_path.unlink()
-                    self._log(f"  + Deleted: {tmp_path.name}")
+                    try:
+                        tmp_path.unlink()
+                        self._log(f"  + Deleted: {tmp_path.name}")
+                    except PermissionError:
+                        # Windows bind-mounts can deny unlink; harmless leftover
+                        self._log(f"  + Could not delete {tmp_path.name} (denied)")
 
         # Summary
         self._log(f"=== SUMMARY: {len(results)}/{len(samples)} samples verified ===")
@@ -202,7 +246,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         trez = next((h for h in hashes if "TREZ_cor" in h["name"]), None)
         assert trez is not None, "TREZ_cor hash not found in fixture"
 
-        alert_id = f"TC33-HASH-TREZ-{int(time.time())}"
+        alert_id = self.uid("TC33-HASH-TREZ")
         payload = {
             "alert_id": alert_id,
             "alert_type": "infostealer",
@@ -227,17 +271,18 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log("  + Workflow FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         case_id = case.get("id", case.get("_id", ""))
         self._log(f"  + TheHive case: {case_id}")
 
-        observables = (
-            self.thehive.list_case_observables(case_id)
-            if hasattr(self.thehive, "list_case_observables")
-            else []
-        )
+        observables = self.thehive.get_case_observables(case_id)
         obs_values = [o.get("data", "") for o in (observables or [])]
         self._log(f"  + Observables: {obs_values[:5]}")
+        # The submitted hash must appear as a case observable — that is the
+        # point of this test, not merely 'a case exists'.
+        assert any(
+            trez["hash"].lower() == v.lower() for v in obs_values
+        ), f"Submitted hash not found in case observables: {obs_values[:10]}"
 
         assert isinstance(case, dict), "Case must be a dict"
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -257,7 +302,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         pulsar = next((h for h in hashes if "pulsar_rat" in h["name"]), None)
         assert pulsar is not None, "Pulsar RAT hash not found in fixture"
 
-        alert_id = f"TC33-HASH-PULSAR-{int(time.time())}"
+        alert_id = self.uid("TC33-HASH-PULSAR")
         payload = {
             "alert_id": alert_id,
             "alert_type": "rat",
@@ -282,9 +327,17 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log("  + Workflow FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         self._log(f"  + TheHive case: {case.get('title', '')}")
         assert isinstance(case, dict), "Case must be a dict"
+
+        case_id = case.get("id", case.get("_id", ""))
+        observables = self.thehive.get_case_observables(case_id)
+        obs_values = [o.get("data", "") for o in (observables or [])]
+        assert any(
+            pulsar["hash"].lower() == v.lower() for v in obs_values
+        ), f"Pulsar RAT hash not found in case observables: {obs_values[:10]}"
+        self._log("  + Pulsar hash present as observable")
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"  Elapsed: {elapsed:.1f}s")
         self._log("=== TC-33-03 COMPLETED — PULSAR RAT IoC VALIDATED ===")
@@ -301,7 +354,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         urls = self.iocs.get("urls_c2", [])
         assert len(urls) > 0, "No C2 URLs in fixture"
 
-        alert_id = f"TC33-URL-C2-{int(time.time())}"
+        alert_id = self.uid("TC33-URL-C2")
         payload = {
             "alert_id": alert_id,
             "alert_type": "c2_communication",
@@ -326,7 +379,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log("  + Workflow FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         self._log(f"  + TheHive case: {case.get('title', '')}")
         assert isinstance(case, dict), "Case must be a dict"
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -345,7 +398,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         domains = self.iocs.get("domains_c2", [])
         assert len(domains) > 0, "No C2 domains in fixture"
 
-        alert_id = f"TC33-DOMAIN-C2-{int(time.time())}"
+        alert_id = self.uid("TC33-DOMAIN-C2")
         payload = {
             "alert_id": alert_id,
             "alert_type": "c2_communication",
@@ -370,7 +423,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log("  + Workflow FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         self._log(f"  + TheHive case: {case.get('title', '')}")
         assert isinstance(case, dict), "Case must be a dict"
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -390,7 +443,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         assert len(ips_data) > 0, "No C2 IPs in fixture"
         ips = [entry["ip"] for entry in ips_data]
 
-        alert_id = f"TC33-IP-C2-{int(time.time())}"
+        alert_id = self.uid("TC33-IP-C2")
         payload = {
             "alert_id": alert_id,
             "alert_type": "c2_communication",
@@ -415,7 +468,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log("  + Workflow FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         self._log(f"  + TheHive case: {case.get('title', '')}")
         assert isinstance(case, dict), "Case must be a dict"
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -435,7 +488,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         tg = self.iocs.get("telegram", {})
         assert tg, "No telegram data in fixture"
 
-        alert_id = f"TC33-TELEGRAM-EXFIL-{int(time.time())}"
+        alert_id = self.uid("TC33-TELEGRAM-EXFIL")
         payload = {
             "alert_id": alert_id,
             "alert_type": "data_exfiltration",
@@ -462,7 +515,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log("  + Workflow FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         self._log(f"  + TheHive case: {case.get('title', '')}")
         assert isinstance(case, dict), "Case must be a dict"
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -481,7 +534,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         reg_keys = self.iocs.get("registry_persistence", [])
         assert len(reg_keys) > 0, "No registry persistence keys in fixture"
 
-        alert_id = f"TC33-REGISTRY-PERSIST-{int(time.time())}"
+        alert_id = self.uid("TC33-REGISTRY-PERSIST")
         payload = {
             "alert_id": alert_id,
             "alert_type": "persistence",
@@ -506,7 +559,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log("  + Workflow FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         self._log(f"  + TheHive case: {case.get('title', '')}")
         assert isinstance(case, dict), "Case must be a dict"
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -526,7 +579,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         assert len(mitre) > 0, "No MITRE techniques in fixture"
         techniques = [m["technique"] for m in mitre]
 
-        alert_id = f"TC33-MITRE-MAP-{int(time.time())}"
+        alert_id = self.uid("TC33-MITRE-MAP")
         payload = {
             "alert_id": alert_id,
             "alert_type": "infostealer",
@@ -549,7 +602,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=alert_id)
         self._log("  + Workflow FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         case_id = case.get("id", case.get("_id", ""))
         self._log(f"  + TheHive case: {case_id}")
         self._log(f"  + Case description: {case.get('description', '')[:200]}")
@@ -577,7 +630,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         mitre = [m["technique"] for m in self.iocs.get("mitre_attack", [])]
         tg = self.iocs.get("telegram", {})
 
-        alert_id = f"TC33-MULTI-IOC-{int(time.time())}"
+        alert_id = self.uid("TC33-MULTI-IOC")
         payload = {
             "alert_id": alert_id,
             "alert_type": "infostealer",
@@ -616,7 +669,7 @@ class TestGMinst4llRealIoCs(E2EBaseTest):
         ), f"Multi-IoC workflow execution must be FINISHED, got {execution.get('status')}"
         self._log("  + Workflow execution status validated: FINISHED")
 
-        case = self._get_latest_case()
+        case = self._get_case_for_alert(alert_id)
         case_id = case.get("id", case.get("_id", ""))
         self._log(f"  + TheHive case: {case_id}")
         self._log(f"  + Total IoCs sent: {payload['iocs_count']}")

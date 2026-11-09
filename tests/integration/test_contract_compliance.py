@@ -20,26 +20,28 @@ class TestContractCompliance:
     @pytest.fixture
     def thehive_contract(self):
         """Load TheHive API contract."""
-        contract_path = Path(__file__).parent.parent.parent / "contracts" / "thehive.json"
+        contract_path = Path(__file__).parent.parent / "contracts" / "thehive.json"
         if contract_path.exists():
             with open(contract_path) as f:
                 return ServiceContract.from_dict(json.load(f))
         return ServiceContract(
             service_name="thehive",
-            version="1.0.0",
+            version="5.0.0",
             endpoints={
-                "/api/case": {
-                    "GET": {"response_schema": {"type": "array"}},
+                "/api/v1/case": {
                     "POST": {"request_schema": {"type": "object"}},
                 },
-                "/api/case/_search": {
+                "/api/v1/query": {
+                    "POST": {
+                        "request_schema": {"type": "object"},
+                        "response_schema": {"type": "array"},
+                    },
+                },
+                "/api/v1/case/{id}/observable": {
                     "POST": {"request_schema": {"type": "object"}},
                 },
-                "/api/observable": {
-                    "GET": {"response_schema": {"type": "array"}},
-                },
-                "/api/case/_bulk": {
-                    "POST": {"request_schema": {"type": "array"}},
+                "/api/v1/alert": {
+                    "POST": {"request_schema": {"type": "object"}},
                 },
             },
         )
@@ -47,6 +49,10 @@ class TestContractCompliance:
     @pytest.fixture
     def cortex_contract(self):
         """Load Cortex API contract."""
+        contract_path = Path(__file__).parent.parent / "contracts" / "cortex.json"
+        if contract_path.exists():
+            with open(contract_path) as f:
+                return ServiceContract.from_dict(json.load(f))
         return ServiceContract(
             service_name="cortex",
             version="1.0.0",
@@ -61,6 +67,10 @@ class TestContractCompliance:
     @pytest.fixture
     def misp_contract(self):
         """Load MISP API contract."""
+        contract_path = Path(__file__).parent.parent / "contracts" / "misp.json"
+        if contract_path.exists():
+            with open(contract_path) as f:
+                return ServiceContract.from_dict(json.load(f))
         return ServiceContract(
             service_name="misp",
             version="1.0.0",
@@ -80,12 +90,13 @@ class TestContractCompliance:
                 "title": "Test Case",
                 "description": "Test description",
                 "severity": 2,
-                "status": "Open",
+                "status": "New",
             }
         ]
 
         is_valid, errors = validate_response_schema(
-            valid_response, thehive_contract.endpoints["/api/case"]["GET"]["response_schema"]
+            valid_response,
+            thehive_contract.endpoints["/api/v1/query"]["POST"]["response_schema"],
         )
         assert is_valid, f"Valid response should pass: {errors}"
 
@@ -120,7 +131,8 @@ class TestContractCompliance:
         invalid_response = {"invalid": "structure"}
 
         is_valid, errors = validate_response_schema(
-            invalid_response, thehive_contract.endpoints["/api/case"]["GET"]["response_schema"]
+            invalid_response,
+            thehive_contract.endpoints["/api/v1/query"]["POST"]["response_schema"],
         )
         assert not is_valid, "Invalid response should be rejected"
         assert errors, "Should return validation errors"
@@ -145,10 +157,10 @@ class TestContractCompliance:
     def test_contract_endpoint_coverage(self, thehive_contract):
         """Test that all endpoints are covered in contract."""
         required_endpoints = [
-            "/api/case",
-            "/api/case/_search",
-            "/api/observable",
-            "/api/case/_bulk",
+            "/api/v1/case",
+            "/api/v1/query",
+            "/api/v1/case/{id}/observable",
+            "/api/v1/alert",
         ]
 
         for endpoint in required_endpoints:
@@ -166,7 +178,8 @@ class TestContractCompliance:
         }
 
         is_valid, errors = validate_response_schema(
-            valid_request, thehive_contract.endpoints["/api/case"]["POST"]["request_schema"]
+            valid_request,
+            thehive_contract.endpoints["/api/v1/case"]["POST"]["request_schema"],
         )
         assert is_valid, f"Valid request should pass: {errors}"
 
@@ -175,7 +188,11 @@ class TestContractCompliance:
         expected_headers = thehive_contract.get_required_headers()
 
         mock_response = Mock()
-        mock_response.headers = {"Content-Type": "application/json", "X-API-Version": "1.0.0"}
+        mock_response.headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer test-token",
+            "X-API-Version": "5.0.0",
+        }
 
         for header in expected_headers:
             assert header in mock_response.headers, f"Required header {header} not in response"
@@ -205,8 +222,9 @@ class TestContractCompliance:
         assert migration_guide, "Should provide migration guide between versions"
 
     def test_backward_compatibility(self, thehive_contract):
-        """Test backward compatibility with previous versions."""
-        # Check that previous version fields are still supported
+        """Legacy field types (e.g. string severity) are rejected by the strict
+        TheHive 5 contract — coercion is handled client-side by
+        ``TheHiveClient.migrate_case_format``."""
         old_request = {
             "title": "Test Case",
             "description": "Test",
@@ -214,10 +232,11 @@ class TestContractCompliance:
         }
 
         is_valid, errors = validate_response_schema(
-            old_request, thehive_contract.endpoints["/api/case"]["POST"]["request_schema"]
+            old_request,
+            thehive_contract.endpoints["/api/v1/case"]["POST"]["request_schema"],
         )
-        # Should be valid due to backward compatibility
-        assert is_valid, f"Old format should be supported: {errors}"
+        assert not is_valid, "Strict TH5 schema should reject string severity"
+        assert errors, "Type mismatch should produce a validation error"
 
 
 if __name__ == "__main__":

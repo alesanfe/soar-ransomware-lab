@@ -3,7 +3,6 @@
 handling, partial success scenarios, and degraded mode operation."""
 
 import sys
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -44,7 +43,7 @@ class TestErrorHandling(E2EBaseTest):
 
         # Send alert with potentially problematic data
         payload = {
-            "alert_id": f"TC16-ERROR-{int(time.time())}",
+            "alert_id": self.uid("TC16-ERROR"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC16-001",
             "src_ip": "192.168.1.220",
@@ -110,12 +109,16 @@ class TestErrorHandling(E2EBaseTest):
             "FAILURE",
         ], f"Workflow status {execution.get('status')} not recognized"
 
-        # Check for hidden HTTP errors in critical nodes (even in error scenarios)
+        # Check for hidden HTTP errors in critical nodes (even in error
+        # scenarios). Some node failures are expected here — the strict
+        # oracle is the critical-node check below; capture the validation
+        # output instead of swallowing it silently.
+        validation_errors = None
         try:
             validate_workflow_results(execution)
         except AssertionError as ve:
-            # Expected in error handling tests — log but don't fail
-            self._log(f"  + Workflow validation found errors (expected): {str(ve)[:200]}")
+            validation_errors = str(ve)[:200]
+            self._log(f"  + Workflow validation found errors (expected): {validation_errors}")
 
         # Even with errors, critical nodes should succeed
         critical_nodes = ["verify_es", "create_thehive_case"]
@@ -126,6 +129,7 @@ class TestErrorHandling(E2EBaseTest):
                 critical_success_count += 1
             else:
                 self._log(f"+ Critical node '{critical}' may have failed or been skipped")
+        assert critical_success_count >= 1, "No critical workflow nodes succeeded"
 
         # Validate that at least some nodes succeeded
         assert len(success_nodes) > 0, "No nodes succeeded - workflow completely failed"
@@ -154,7 +158,7 @@ class TestErrorHandling(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC16-PARTIAL-{int(time.time())}",
+            "alert_id": self.uid("TC16-PARTIAL"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC16-002",
             "src_ip": "192.168.1.221",
@@ -201,12 +205,16 @@ class TestErrorHandling(E2EBaseTest):
         assert new_cases > 0, "No new TheHive case created"
         self._log("+ TheHive case created despite partial failures")
 
-        # Validate case has correct alert_id
+        # Validate case has correct alert_id — the linkage is the point of
+        # this oracle, so it must exist, not just be logged.
         alert_id = payload.get("alert_id", "")
         assert isinstance(alert_id, str), "alert_id must be string"
         matching_cases = [c for c in cases if alert_id in c.get("description", "")]
-        if matching_cases:
-            self._log(f"+ Case linked to alert_id {alert_id}")
+        assert matching_cases, (
+            f"No TheHive case references alert_id {alert_id} — "
+            "case linkage oracle cannot be vacuous"
+        )
+        self._log(f"+ Case linked to alert_id {alert_id}")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -224,7 +232,7 @@ class TestErrorHandling(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC16-DEGRADED-{int(time.time())}",
+            "alert_id": self.uid("TC16-DEGRADED"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC16-003",
             "src_ip": "192.168.1.222",
@@ -305,7 +313,7 @@ class TestErrorHandling(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC16-RECOVERY-{int(time.time())}",
+            "alert_id": self.uid("TC16-RECOVERY"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC16-004",
             "src_ip": "192.168.1.223",
@@ -322,7 +330,7 @@ class TestErrorHandling(E2EBaseTest):
         exec_id, execution = self.submit_alert_and_wait(payload)
         self.execution = execution
         self.execution_id = exec_id
-        self._log("+ Webhook succeeded (retry logic validated)")
+        self._log("+ Webhook submission succeeded")
 
         self._log(f"+ Workflow status: {execution.get('status')}")
 

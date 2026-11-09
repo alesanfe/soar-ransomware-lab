@@ -114,10 +114,12 @@ class TestStructuredLoggerTraceId:
             resp = client2.get("/log-test", headers={TRACE_ID_HEADER: "log-trace-abc"})
         assert resp.status_code == 200
         assert captured["trace_id"] == "log-trace-abc"
-        # At least one log record should contain the trace_id
+        # BL-OBS-002: trace_id travels as a RECORD ATTRIBUTE (extra=), not
+        # embedded in the message text — the canonical formatter serializes
+        # it into the JSON payload.
         trace_found = any(
-            "log-trace-abc" in record.getMessage()
+            getattr(record, "trace_id", None) == "log-trace-abc"
             for record in caplog.records
             if record.name == "test_trace"
         )
-        assert trace_found, "trace_id not found in structured log output"
+        assert trace_found, "trace_id not found on structured log record"

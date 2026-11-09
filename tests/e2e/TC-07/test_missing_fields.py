@@ -34,7 +34,7 @@ class TestMissingFields(E2EBaseTest):
         self._log("=== TC-07: Missing Fields Testing ===")
 
         payload = {
-            "alert_id": f"TC07-MISSING-{int(time.time())}",
+            "alert_id": self.uid("TC07-MISSING"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC07-001",
             "src_ip": "",  # Empty IP
@@ -47,8 +47,9 @@ class TestMissingFields(E2EBaseTest):
 
         self._log("STEP 1: Sending alert with empty hash and IP")
         r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=30)
-        # Workflow should still accept the alert even with empty fields
-        assert r.status_code < 500, f"Alert caused server error: HTTP {r.status_code}"
+        # Workflow should still accept the alert even with empty fields —
+        # any 5xx means the server crashed on the malformed payload.
+        assert r.status_code in range(200, 500), f"Alert caused server error: HTTP {r.status_code}"
         if r.status_code == 200:
             data = r.json()
             assert isinstance(data, dict), "Response must be JSON object"
@@ -83,7 +84,13 @@ class TestMissingFields(E2EBaseTest):
         assert isinstance(cases, list), "TheHive cases must be a list"
         new_cases = len(cases) - self.cases_before
         assert new_cases > 0, "No new TheHive case created"
-        last = max(cases, key=lambda c: c.get("caseId", 0))
+        matching = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if payload["alert_id"] in c.get("description", "")
+        ]
+        assert matching, f"No TheHive case found containing alert_id={payload['alert_id']}"
+        last = matching[0]
         assert isinstance(last, dict), "Case must be a dict"
         self._log(f"  + Case #{last.get('caseId')} created despite missing fields")
 
@@ -143,7 +150,7 @@ class TestMissingFields(E2EBaseTest):
         self._log("=== TC-07-01: MISSING REQUIRED FIELD TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC07-REQ-{int(time.time())}",
+            "alert_id": self.uid("TC07-REQ"),
             # Missing alert_type (required field)
             "hostname": "WIN-TC07-001",
             "src_ip": "192.168.1.100",
@@ -159,13 +166,17 @@ class TestMissingFields(E2EBaseTest):
         self._log(f"+ Response: HTTP {r.status_code}")
 
         if r.status_code >= 400:
-            # Validate no execution_id was returned for a rejected alert
+            # Validate no execution_id was returned for a rejected alert.
+            # A non-JSON rejection body is acceptable; a JSON one must not
+            # carry an execution_id.
             try:
                 response_data = r.json()
+            except ValueError:
+                response_data = None
+                self._log("  + Response not JSON (acceptable for rejected alert)")
+            if response_data is not None:
                 exec_id = response_data.get("execution_id", "")
                 assert exec_id == "", "No execution_id should be returned for rejected alert"
-            except Exception as e:
-                self._log(f"  Response not JSON (expected for rejected alert): {e}")
         else:
             # Shuffle webhook accepts the payload and starts the workflow; verify it completes
             data = r.json()
@@ -205,7 +216,7 @@ class TestMissingFields(E2EBaseTest):
         self._log("=== TC-07-02: MISSING OPTIONAL FIELD TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC07-OPT-{int(time.time())}",
+            "alert_id": self.uid("TC07-OPT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC07-001",
             "src_ip": "192.168.1.100",
@@ -243,7 +254,7 @@ class TestMissingFields(E2EBaseTest):
         self._log("=== TC-07-03: DERIVABLE FIELD TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC07-DERIVE-{int(time.time())}",
+            "alert_id": self.uid("TC07-DERIVE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC07-001",
             "src_ip": "192.168.1.100",
@@ -325,10 +336,8 @@ class TestMissingFields(E2EBaseTest):
                 assert isinstance(error_msg, str), "Error message should be a string"
 
                 # Validate response is not 5xx (server error)
-                assert r.status_code not in (
-                    502,
-                    503,
-                    504,
+                assert r.status_code in range(
+                    200, 500
                 ), f"Server error (5xx) indicates system crash: HTTP {r.status_code}"
         else:
             self._log(f"+ Alert accepted (HTTP {r.status_code}) - field may be optional")

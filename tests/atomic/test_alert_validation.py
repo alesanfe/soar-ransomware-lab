@@ -107,8 +107,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
 
     def test_validate_alert_structure_numeric_severity(self):
         """Test alert structure validation with numeric severity values."""
-        # Test all valid severity values
-        for severity in [0, 1, 2, 3]:  # Low, Medium, High, Critical
+        # Test all valid severity values (canonical AlertSeverity 1-4 — CFG-001)
+        for severity in [1, 2, 3, 4]:  # Low, Medium, High, Critical
             alert = {
                 "alert_id": f"TEST-SEV-{severity}",
                 "hostname": "test-host",
@@ -197,8 +197,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "severity": 0,
             "event_type": "ransomware_detection",
         }
-        # Severity 0 might be valid or invalid depending on requirements
-        AlertValidator.validate_structure(alert)
+        # CFG-002: severity 0 is NOT in canonical AlertSeverity (1-4) → invalid
+        assert not AlertValidator.validate_structure(alert)
 
     def test_edge_case_max_severity(self):
         """Test edge case: maximum severity."""

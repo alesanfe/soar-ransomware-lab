@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for cleanup_service.py."""
 
+import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock
@@ -51,24 +52,26 @@ class TestCleanupService:
         mock_path_service.results_dir.mkdir()
         mock_path_service.logs_dir.mkdir()
 
-        # Create old files - use a very old timestamp to ensure they're cleaned
+        # Create old files - use a very old timestamp to ensure they're cleaned.
+        # NOTE: Path.touch(n) sets MODE, not mtime — use os.utime to age files.
         old_backup = mock_path_service.backup_dir / "old.tar.gz"
         old_backup.write_text("backup")
         old_timestamp = (datetime.now(UTC) - timedelta(days=100)).timestamp()
-        old_backup.touch(old_timestamp)
+        os.utime(old_backup, (old_timestamp, old_timestamp))
 
         old_result = mock_path_service.results_dir / "old.json"
         old_result.write_text("result")
-        old_result.touch(old_timestamp)
+        os.utime(old_result, (old_timestamp, old_timestamp))
 
         old_log = mock_path_service.logs_dir / "old.log"
         old_log.write_text("log")
-        old_log.touch(old_timestamp)
+        os.utime(old_log, (old_timestamp, old_timestamp))
 
         # Create new files
         new_backup = mock_path_service.backup_dir / "new.tar.gz"
         new_backup.write_text("backup")
-        new_backup.touch((datetime.now(UTC) - timedelta(days=1)).timestamp())
+        new_ts = (datetime.now(UTC) - timedelta(days=1)).timestamp()
+        os.utime(new_backup, (new_ts, new_ts))
 
         service = CleanupService(path_service=mock_path_service)
         result = service.cleanup_old_artifacts()
@@ -96,7 +99,8 @@ class TestCleanupService:
         # Create file
         old_backup = mock_path_service.backup_dir / "old.tar.gz"
         old_backup.write_text("backup")
-        old_backup.touch((datetime.now(UTC) - timedelta(days=20)).timestamp())
+        old_ts = (datetime.now(UTC) - timedelta(days=20)).timestamp()
+        os.utime(old_backup, (old_ts, old_ts))
 
         service = CleanupService(path_service=mock_path_service)
         result = service.cleanup_old_artifacts(retention_days=10)
@@ -123,15 +127,17 @@ class TestCleanupService:
         # Create file
         old_backup = mock_path_service.backup_dir / "old.tar.gz"
         old_backup.write_text("backup")
-        old_backup.touch((datetime.now(UTC) - timedelta(days=20)).timestamp())
+        old_ts = (datetime.now(UTC) - timedelta(days=20)).timestamp()
+        os.utime(old_backup, (old_ts, old_ts))
 
         service = CleanupService(
             path_service=mock_path_service, config_provider=mock_config_provider
         )
         result = service.cleanup_old_artifacts()
 
-        # Verify config_provider was called
-        mock_config_provider.get.assert_called_once_with("retention_days", 30)
+        # Verify config_provider was called (no duplicate literal default:
+        # the env-var chain owns the fallback)
+        mock_config_provider.get.assert_called_once_with("retention_days")
         # Verify the structure of the response
         assert "backups_cleaned" in result
         assert isinstance(result["backups_cleaned"], int)
@@ -143,10 +149,15 @@ class TestCleanupService:
 
         service = CleanupService(path_service=mock_path_service)
         result = service._cleanup_directory(
-            mock_path_service.backup_dir, datetime.now(UTC), "*.tar.gz"
+            mock_path_service.backup_dir,
+            datetime.now(UTC),
+            "*.tar.gz",
+            dry_run=False,
+            min_keep=0,
         )
 
-        assert result == 0
+        assert result["cleaned"] == 0
+        assert result["errors"] == 0
 
     def test_cleanup_directory_no_files(self, tmp_path):
         """Test cleanup when directory has no matching files."""
@@ -156,10 +167,15 @@ class TestCleanupService:
 
         service = CleanupService(path_service=mock_path_service)
         result = service._cleanup_directory(
-            mock_path_service.backup_dir, datetime.now(UTC), "*.tar.gz"
+            mock_path_service.backup_dir,
+            datetime.now(UTC),
+            "*.tar.gz",
+            dry_run=False,
+            min_keep=0,
         )
 
-        assert result == 0
+        assert result["cleaned"] == 0
+        assert result["errors"] == 0
 
     def test_get_artifact_stats(self, tmp_path):
         """Test getting artifact statistics."""
@@ -224,20 +240,22 @@ class TestCleanupService:
         old_file = mock_path_service.backup_dir / "old.tar.gz"
         old_file.write_text("backup")
         old_timestamp = (datetime.now(UTC) - timedelta(days=100)).timestamp()
-        old_file.touch(old_timestamp)
+        os.utime(old_file, (old_timestamp, old_timestamp))
 
-        # Make the file read-only to cause unlink to fail
-        old_file.chmod(0o444)
+        # Make unlink fail deterministically (chmod-readonly is
+        # platform-dependent: Unix unlink succeeds in writable dirs).
+        from unittest.mock import patch
 
         service = CleanupService(path_service=mock_path_service)
-        result = service._cleanup_directory(
-            mock_path_service.backup_dir,
-            datetime.now(UTC) - timedelta(days=30),
-            "*.tar.gz",
-        )
+        with patch.object(Path, "unlink", side_effect=PermissionError("denied")):
+            result = service._cleanup_directory(
+                mock_path_service.backup_dir,
+                datetime.now(UTC) - timedelta(days=30),
+                "*.tar.gz",
+                dry_run=False,
+                min_keep=0,
+            )
 
-        # Should return 0 since file couldn't be removed
-        assert result == 0
-
-        # Clean up by making writable again
-        old_file.chmod(0o644)
+        # Failure is counted as an explicit error, not silently dropped
+        assert result["cleaned"] == 0
+        assert result["errors"] == 1

@@ -15,7 +15,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from assertions.incident_assertions import (
     assert_incident_has_observables,
     assert_incident_has_tasks,
-    assert_incident_state,
 )
 from assertions.observable_assertions import (
     assert_observable_has_tags,
@@ -53,7 +52,7 @@ class TestRealisticRansomware(E2EBaseTest):
         # Stage 1: Initial detection (encryption activity)
         self._log("STEP 1: Stage 1 - Initial encryption detection")
         stage1_payload = {
-            "alert_id": f"TC09-ENCRYPTION-{int(time.time())}",
+            "alert_id": self.uid("TC09-ENCRYPTION"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -75,7 +74,7 @@ class TestRealisticRansomware(E2EBaseTest):
         self._log("STEP 2: Stage 2 - Exfiltration detection")
         time.sleep(2)  # Simulate time between stages
         stage2_payload = {
-            "alert_id": f"TC09-EXFILTRATION-{int(time.time())}",
+            "alert_id": self.uid("TC09-EXFILTRATION"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -97,7 +96,7 @@ class TestRealisticRansomware(E2EBaseTest):
         self._log("STEP 3: Stage 3 - Ransom note detection")
         time.sleep(2)
         stage3_payload = {
-            "alert_id": f"TC09-RANSOMNOTE-{int(time.time())}",
+            "alert_id": self.uid("TC09-RANSOMNOTE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -111,7 +110,7 @@ class TestRealisticRansomware(E2EBaseTest):
             "stage": "ransom_note",
         }
 
-        exec_id3, ex3 = self.submit_alert_and_wait(stage3_payload)
+        exec_id3, _ = self.submit_alert_and_wait(stage3_payload)
         self._log(f"  + Stage 3 accepted - execution_id={exec_id3}")
         self._log("  + Stage 3 workflow completed")
 
@@ -132,19 +131,25 @@ class TestRealisticRansomware(E2EBaseTest):
             stage3_payload["alert_id"],
         ]
         new_cases_list = [
-            c for c in cases
-            if any(aid in c.get("description", "") for aid in stage_alert_ids)
+            c for c in cases if any(aid in c.get("description", "") for aid in stage_alert_ids)
         ]
         for case in new_cases_list[:3]:
             assert isinstance(case, dict), "Case must be a dict"
             case_id = case.get("id", case.get("_id", ""))
             assert len(case_id) > 0, "Case ID must not be empty"
-            # The SOAR workflow may auto-resolve cases as part of the
-            # automated response, so both "Open" and "Resolved" are valid.
+            # The SOAR workflow may auto-close cases as part of the
+            # automated response, so open-stage and closed-stage statuses
+            # are both valid (TheHive 5).
             actual_state = case.get("state") or case.get("status")
-            assert actual_state in ("Open", "Resolved"), (
-                f"Expected state Open or Resolved, got {actual_state}"
-            )
+            assert actual_state in (
+                "New",
+                "InProgress",
+                "TruePositive",
+                "FalsePositive",
+                "Indeterminate",
+                "Duplicated",
+                "Other",
+            ), f"Expected a valid TheHive 5 status, got {actual_state}"
             assert_incident_has_tasks(case, min_count=1)
 
             # Validate observables for ransomware cases
@@ -181,10 +186,7 @@ class TestRealisticRansomware(E2EBaseTest):
 
             # Validate critical fields match payload
             critical_fields = ["alert_id", "alert_type", "hostname", "src_ip"]
-            try:
-                assert_data_integrity(payload, doc, critical_fields)
-            except AssertionError as e:
-                self._log(f"  + Data integrity warning for {payload['alert_id']}: {e}")
+            assert_data_integrity(payload, doc, critical_fields)
 
             # Stage verification is optional - workflow may not include it
             if doc.get("stage"):
@@ -221,37 +223,34 @@ class TestRealisticRansomware(E2EBaseTest):
 
         # Verify Cortex analyzers are functional
         self._log("STEP 7: Verifying Cortex analyzers")
-        try:
-            analyzers = self.cortex.list_analyzers()
-            assert isinstance(analyzers, list), "Cortex analyzers must be a list"
-            assert len(analyzers) > 0, "Cortex has no analyzers"
-            self._log(f"  + Cortex: {len(analyzers)} analyzer(s) available")
-            for a in analyzers[:5]:
-                assert isinstance(a, dict), "Analyzer must be a dict"
-                name = a.get("name", "?")
-                assert isinstance(name, str), "Analyzer name must be a string"
-                datatypes = a.get("dataTypeList", [])
-                assert isinstance(datatypes, list), "Analyzer datatypes must be a list"
-        except Exception as e:
-            self._log(f"  + Cortex verification warning: {e}")
+        analyzers = self.cortex.list_analyzers()
+        assert isinstance(analyzers, list), "Cortex analyzers must be a list"
+        assert len(analyzers) > 0, "Cortex has no analyzers"
+        self._log(f"  + Cortex: {len(analyzers)} analyzer(s) available")
+        for a in analyzers[:5]:
+            assert isinstance(a, dict), "Analyzer must be a dict"
+            name = a.get("name", "?")
+            assert isinstance(name, str), "Analyzer name must be a string"
+            datatypes = a.get("dataTypeList", [])
+            assert isinstance(datatypes, list), "Analyzer datatypes must be a list"
 
         # Verify MISP IOC database
         self._log("STEP 8: Verifying MISP IOC database")
-        try:
-            events = self.misp.list_events()
-            assert isinstance(events, list), "MISP events must be a list"
-            self._log(f"  + MISP: {len(events)} event(s) in database")
-            # Search for IoCs from stage 2 (exfiltration - most critical)
-            if stage2_payload.get("hash"):
-                assert isinstance(stage2_payload["hash"], str), "Hash must be a string"
-                search_results = self.misp.search_events(stage2_payload["hash"])
-                assert isinstance(search_results, list), "MISP search results must be a list"
-                if search_results:
-                    self._log(f"  + Found {len(search_results)} event(s) for exfiltration hash")
-                else:
-                    self._log("  + No events found for exfiltration hash (IOC may not be in DB)")
-        except Exception as e:
-            self._log(f"  + MISP verification warning: {e}")
+        events = self.misp.list_events()
+        assert isinstance(events, list), "MISP events must be a list"
+        assert len(events) > 0, "MISP has no events after malicious ransomware workflow"
+        self._log(f"  + MISP: {len(events)} event(s) in database")
+        # Search for IoCs from stage 2 (exfiltration - most critical):
+        # the workflow's misp_create node must have stored them.
+        if stage2_payload.get("hash"):
+            assert isinstance(stage2_payload["hash"], str), "Hash must be a string"
+            search_results = self.misp.search_events(stage2_payload["hash"])
+            assert isinstance(search_results, list), "MISP search results must be a list"
+            assert search_results, (
+                "No MISP events found for exfiltration hash "
+                f"{stage2_payload['hash'][:16]}... — misp_create did not store the IoC"
+            )
+            self._log(f"  + Found {len(search_results)} event(s) for exfiltration hash")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"=== TC-09 COMPLETED — ALL ASSERTIONS PASSED (Elapsed: {elapsed:.1f}s) ===")
@@ -286,7 +285,7 @@ class TestRealisticRansomware(E2EBaseTest):
         self._log("=== TC-09-01: RANSOMWARE DETECTION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC09-DETECT-{int(time.time())}",
+            "alert_id": self.uid("TC09-DETECT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -350,7 +349,7 @@ class TestRealisticRansomware(E2EBaseTest):
         self._log("=== TC-09-02: CASE CREATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC09-CASE-{int(time.time())}",
+            "alert_id": self.uid("TC09-CASE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -417,7 +416,7 @@ class TestRealisticRansomware(E2EBaseTest):
         self._log("=== TC-09-03: CORTEX ANALYSIS TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC09-CORTEX-{int(time.time())}",
+            "alert_id": self.uid("TC09-CORTEX"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -473,7 +472,7 @@ class TestRealisticRansomware(E2EBaseTest):
         self._log("=== TC-09-04: MISP IOC TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC09-MISP-{int(time.time())}",
+            "alert_id": self.uid("TC09-MISP"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -536,7 +535,7 @@ class TestRealisticRansomware(E2EBaseTest):
         self._log("=== TC-09-05: EVIDENCE COLLECTION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC09-EVIDENCE-{int(time.time())}",
+            "alert_id": self.uid("TC09-EVIDENCE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -594,7 +593,7 @@ class TestRealisticRansomware(E2EBaseTest):
         self._log("=== TC-09-06: TASK ASSIGNMENT TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC09-TASK-{int(time.time())}",
+            "alert_id": self.uid("TC09-TASK"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC09-001",
             "src_ip": "192.168.1.220",
@@ -646,7 +645,7 @@ class TestRealisticRansomware(E2EBaseTest):
             self._log(f"  - [{status}] {task.get('title')}")
 
             # Validate task status is valid
-            valid_statuses = ["Waiting", "InProgress", "Completed", "Cancelled", "Cancel"]
+            valid_statuses = ["Waiting", "InProgress", "Completed", "Cancel"]
             assert status in valid_statuses, f"Invalid task status: {status}"
 
             # Check for expected ransomware response tasks

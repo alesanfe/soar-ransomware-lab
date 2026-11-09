@@ -17,7 +17,9 @@ class TestCircuitBreaker:
     @pytest.fixture
     def circuit_breaker(self):
         """Create circuit breaker for testing."""
-        return CircuitBreaker(failure_threshold=3, recovery_timeout=5, expected_exception=Exception)
+        return CircuitBreaker(
+            failure_threshold=3, recovery_timeout=0.2, expected_exception=Exception
+        )
 
     def test_circuit_breaker_initial_state(self, circuit_breaker):
         """Test that circuit breaker starts in closed state."""
@@ -60,8 +62,8 @@ class TestCircuitBreaker:
             except Exception:
                 pass
 
-        # Wait for recovery timeout
-        time.sleep(6)
+        # Wait for recovery timeout (0.2s + margin)
+        time.sleep(0.4)
 
         # Successful call in half-open state should close the circuit
         result = circuit_breaker.call(lambda: "success")
@@ -80,8 +82,8 @@ class TestCircuitBreaker:
             except Exception:
                 pass
 
-        # Wait for recovery timeout
-        time.sleep(6)
+        # Wait for recovery timeout (0.2s + margin)
+        time.sleep(0.4)
 
         # Successful call should close circuit
         result = circuit_breaker.call(lambda: "success")
@@ -100,8 +102,8 @@ class TestCircuitBreaker:
             except Exception:
                 pass
 
-        # Wait for recovery timeout
-        time.sleep(6)
+        # Wait for recovery timeout (0.2s + margin)
+        time.sleep(0.4)
 
         # Failed call should reopen circuit
         try:

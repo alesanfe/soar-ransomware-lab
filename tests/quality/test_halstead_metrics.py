@@ -22,8 +22,25 @@ def _run_radon_hal() -> dict:
         [sys.executable, "-m", "radon", "hal", str(SRC_DIR), "-j"],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     return json.loads(result.stdout) if result.stdout.strip() else {}
+
+
+def _hal_metric(total, key: str, idx: int) -> float:
+    """Read a Halstead metric from radon's ``total`` field.
+
+    Newer radon versions serialize ``total`` as a dict keyed by metric
+    name; older versions used a positional list (see index comment in
+    test_halstead_totals_are_positive)."""
+    if isinstance(total, dict):
+        value = total.get(key)
+    elif isinstance(total, list) and len(total) >= 12:
+        value = total[idx]
+    else:
+        return 0.0
+    return float(value) if isinstance(value, (int, float)) else 0.0
 
 
 @pytest.mark.unit
@@ -46,13 +63,12 @@ class TestHalstead:
         total_volume = 0.0
         total_effort = 0.0
         total_bugs = 0.0
-        for filepath, metrics in data.items():
+        for metrics in data.values():
             if isinstance(metrics, dict) and "total" in metrics:
                 total = metrics["total"]
-                if isinstance(total, list) and len(total) >= 12:
-                    total_volume += total[7] if isinstance(total[7], (int, float)) else 0
-                    total_effort += total[9] if isinstance(total[9], (int, float)) else 0
-                    total_bugs += total[11] if isinstance(total[11], (int, float)) else 0
+                total_volume += _hal_metric(total, "volume", 7)
+                total_effort += _hal_metric(total, "effort", 9)
+                total_bugs += _hal_metric(total, "bugs", 11)
         assert total_volume > 0, f"Total Halstead volume is {total_volume}, expected > 0"
         assert total_effort > 0, f"Total Halstead effort is {total_effort}, expected > 0"
         assert total_bugs > 0, f"Estimated bugs is {total_bugs}, expected > 0"
@@ -67,10 +83,8 @@ class TestHalstead:
         entries = []
         for filepath, metrics in data.items():
             if isinstance(metrics, dict) and "total" in metrics:
-                total = metrics["total"]
-                if isinstance(total, list) and len(total) >= 12:
-                    effort = total[9] if isinstance(total[9], (int, float)) else 0
-                    entries.append((filepath, effort))
+                effort = _hal_metric(metrics["total"], "effort", 9)
+                entries.append((filepath, effort))
         entries.sort(key=lambda x: -x[1])
         print("\nTop 10 files by Halstead effort:")
         for f, effort in entries[:10]:

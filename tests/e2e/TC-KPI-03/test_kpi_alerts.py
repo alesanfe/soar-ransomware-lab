@@ -3,7 +3,7 @@
 when thresholds are exceeded."""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -47,7 +47,7 @@ class TestKPIAlerts(E2EBaseTest):
 
         # Get metrics data from ES
         try:
-            query = {"query": {"range": {"timestamp": {"gte": "now-1h"}}}, "size": 10000}
+            query = {"range": {"@timestamp": {"gte": "now-1h"}}}
             results = self.es.search(query=query, index="soar-metrics", size=10000)
             assert isinstance(results, dict), "ES search results must be a dict"
             metrics_data = [
@@ -87,6 +87,102 @@ class TestKPIAlerts(E2EBaseTest):
         assert "overall_status" in all_checks, "Missing overall status"
         self._log("  + Alert manager is functional")
 
+        # Step 6: THRESHOLD-VIOLATION oracle — the manager must actually
+        # FIRE when a real violation exists, not merely shape its answer.
+        # Inject a synthetic metric doc with an absurd MTTR (1e9s pulls the
+        # hourly average above the 120s threshold unless there are ~10⁷
+        # documents) and a bottom health score (that check reads the
+        # latest metric_type=health_score doc → deterministic).
+        self._log("STEP 6: Verifying threshold violation triggers an alert")
+        marker = self.uid("KPI03-VIOLATION")
+        # Injection must VIOLATE the threshold while staying inside the
+        # analyzer's validity bound (mttr_seconds <= hours*3600 — larger
+        # values are discarded as corrupt documents, which is what made
+        # the old 1e9 probe a no-op). The check averages every mttr doc
+        # in the window — count the real population first and inject at
+        # least as many probes, so the mean is dominated regardless of
+        # how much legitimate data accumulated (avg >= ~1500s > 120s).
+        window_q = {
+            "range": {"@timestamp": {"gte": (datetime.now(UTC) - timedelta(hours=1)).isoformat()}}
+        }
+        try:
+            res = self.es.search(query=window_q, index="soar-metrics", size=1)
+            real_count = res.get("hits", {}).get("total", {}).get("value", 0)
+        except Exception:
+            real_count = 0
+        n_probes = max(10, int(real_count))
+        self._log(f"  Injecting {n_probes} MTTR probes (window has ~{real_count} docs)")
+        injected_mttr = []
+        for i in range(n_probes):
+            mttr_doc = {
+                "@timestamp": datetime.now(UTC).isoformat(),
+                "alert_id": f"{marker}-{i}",
+                "metric_type": "mttr",
+                "mttr_seconds": 3000.0,
+                "service": "kpi03-probe",
+                "success": True,
+            }
+            injected_mttr.append(mttr_doc)
+        health_doc = {
+            "@timestamp": datetime.now(UTC).isoformat(),
+            "alert_id": marker,
+            "metric_type": "health_score",
+            "score": 1,
+            "service": "kpi03-probe",
+        }
+        probe_doc_ids = []
+        for doc in injected_mttr:
+            resp = self.es.index_document(doc, index="soar-metrics", refresh=True)
+            doc_id = resp.get("_id")
+            assert doc_id, f"Index response missing _id: {resp}"
+            probe_doc_ids.append(doc_id)
+            self.register_resource("elasticsearch_documents", f"soar-metrics/_doc/{doc_id}")
+        r2 = self.es.index_document(health_doc, index="soar-metrics", refresh=True)
+        doc_id = r2.get("_id")
+        assert doc_id, f"Index response missing _id: {r2}"
+        probe_doc_ids.append(doc_id)
+        self.register_resource("elasticsearch_documents", f"soar-metrics/_doc/{doc_id}")
+
+        mttr_check = alert_manager.check_mttr_threshold(hours=1)
+        assert mttr_check.get("status") == "alert", (
+            f"Injected mttr_seconds=3000×10 must trigger an alert, "
+            f"got status={mttr_check.get('status')}: {mttr_check}"
+        )
+        assert mttr_check.get("value", 0) > mttr_check.get(
+            "threshold", 0
+        ), "Alert must carry value > threshold"
+        self._log(f"  + MTTR violation fired: {mttr_check.get('message')}")
+
+        health_check = alert_manager.check_health_score()
+        assert health_check.get("status") == "alert", (
+            f"Injected health_score=1 must trigger an alert, "
+            f"got status={health_check.get('status')}: {health_check}"
+        )
+        self._log(f"  + Health-score violation fired: {health_check.get('message')}")
+
+        all_checks = alert_manager.check_all_thresholds(hours=1)
+        assert (
+            all_checks.get("overall_status") == "alert"
+        ), "overall_status must be 'alert' while injected violations exist"
+        self._log("  + Alert manager fires on real threshold violations")
+
+        # Isolation: probes are oracle inputs, not report data — delete them
+        # explicitly (E2E_PRESERVE_REPORT_DATA would otherwise keep them) so
+        # 10×3000s values cannot skew downstream percentile/KPI tests
+        # reading the same soar-metrics index.
+        deleted = 0
+        for pid in probe_doc_ids:
+            try:
+                self.es.delete_document(pid, index="soar-metrics")
+                deleted += 1
+            except Exception as e:
+                self._log(f"  ! probe cleanup failed for {pid}: {e}")
+        try:
+            self.es.indices.refresh("soar-metrics")
+        except Exception:
+            pass
+        self._log(f"  + Injected probes removed: {deleted}/{len(probe_doc_ids)}")
+
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"=== TC-KPI-03 COMPLETED — KPI ALERTS VERIFIED (Elapsed: {elapsed:.1f}s) ===")
 
@@ -99,6 +195,7 @@ class TestKPIAlerts(E2EBaseTest):
             "service_check": service_check,
             "health_check": health_check,
             "overall_status": all_checks.get("overall_status"),
+            "violation_oracle": "injected-violations-fired",
             "elapsed_seconds": elapsed,
             "timestamp": datetime.now(UTC).isoformat(),
         }

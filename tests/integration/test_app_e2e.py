@@ -38,7 +38,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -66,6 +66,13 @@ def run_server():
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
     server = uvicorn.Server(config)
     server.run()
+
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
 
 # Start server in background thread
 server_thread = threading.Thread(target=run_server, daemon=True)
@@ -127,7 +134,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 
 # Get all routes
 routes = [route.path for route in app.routes]
@@ -189,7 +196,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 
 # Check that app state has required dependencies
 # The app should have these dependencies in its state after creation
@@ -242,7 +249,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -262,6 +269,13 @@ def run_server():
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
     server = uvicorn.Server(config)
     server.run()
+
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
 
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
@@ -325,7 +339,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -346,13 +360,22 @@ def run_server():
     server = uvicorn.Server(config)
     server.run()
 
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
+
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 time.sleep(3)
 
 # Test metrics endpoint
 try:
-    response = requests.get(f"http://127.0.0.1:{port}/analytics/metrics", timeout=5)
+    response = requests.get(
+        f"http://127.0.0.1:{port}/analytics/metrics", timeout=5, headers=_svc_headers()
+    )
     assert response.status_code == 200, f"Metrics failed: {response.status_code}"
     data = response.json()
     assert "cpu" in data, "Response should contain cpu"
@@ -403,7 +426,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -423,6 +446,13 @@ def run_server():
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
     server = uvicorn.Server(config)
     server.run()
+
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
 
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
@@ -482,7 +512,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -502,6 +532,13 @@ def run_server():
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
     server = uvicorn.Server(config)
     server.run()
+
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
 
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
@@ -583,7 +620,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -604,13 +641,22 @@ def run_server():
     server = uvicorn.Server(config)
     server.run()
 
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
+
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 time.sleep(3)
 
 # Test KPIs endpoint
 try:
-    response = requests.get(f"http://127.0.0.1:{port}/analytics/kpis", timeout=5)
+    response = requests.get(
+        f"http://127.0.0.1:{port}/analytics/kpis", timeout=5, headers=_svc_headers()
+    )
     # Accept 200 (service available) or 503 (service not available)
     assert response.status_code in [200, 503], f"KPIs failed: {response.status_code}"
     if response.status_code == 200:
@@ -662,7 +708,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -683,13 +729,22 @@ def run_server():
     server = uvicorn.Server(config)
     server.run()
 
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
+
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 time.sleep(3)
 
 # Test backup list endpoint
 try:
-    response = requests.get(f"http://127.0.0.1:{port}/backup/list", timeout=5)
+    response = requests.get(
+        f"http://127.0.0.1:{port}/backup/list", timeout=5, headers=_svc_headers()
+    )
     # Accept 200 (service available) or 503 (service not available)
     assert response.status_code in [200, 503], f"Backup list failed: {response.status_code}"
     if response.status_code == 200:
@@ -745,7 +800,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -766,6 +821,13 @@ def run_server():
     server = uvicorn.Server(config)
     server.run()
 
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
+
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 time.sleep(3)
@@ -775,6 +837,7 @@ try:
     response = requests.post(
         f"http://127.0.0.1:{port}/tests/run",
         json={"category": "atomic"},
+        headers=_svc_headers(),
         timeout=90
     )
     # Accept 200 (service available) or 503 (service not available)
@@ -835,7 +898,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -856,6 +919,13 @@ def run_server():
     server = uvicorn.Server(config)
     server.run()
 
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
+
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 time.sleep(3)
@@ -865,7 +935,8 @@ try:
     response = requests.post(
         f"http://127.0.0.1:{port}/backup/create",
         json={"backup_name": "test-backup.tar.gz"},
-        timeout=5
+        headers=_svc_headers(),
+        timeout=60
     )
     # Accept 200 (service available) or 503 (service not available)
     assert response.status_code in [200, 503], f"Backup create failed: {response.status_code}"
@@ -923,7 +994,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
@@ -944,6 +1015,13 @@ def run_server():
     server = uvicorn.Server(config)
     server.run()
 
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
+
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 time.sleep(3)
@@ -953,7 +1031,8 @@ try:
     response = requests.post(
         f"http://127.0.0.1:{port}/backup/restore",
         json={"backup_name": "test_backup.tar.gz"},
-        timeout=5
+        headers=_svc_headers(),
+        timeout=60
     )
     # Accept 200 (service available) or 503 (service not available)
     assert response.status_code in [200, 500, 503], f"Backup restore failed: {response.status_code}"
@@ -1012,12 +1091,11 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import and start the app
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 import uvicorn
 import threading
 import socket
 import asyncio
-import websockets
 import time
 
 def find_free_port():
@@ -1034,12 +1112,21 @@ def run_server():
     server = uvicorn.Server(config)
     server.run()
 
+
+def _svc_headers():
+    # Service-token header for protected endpoints when API_REQUIRE_AUTH=true
+    # (secure default). Empty dict when unset - passes while auth is disabled.
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
+
 server_thread = threading.Thread(target=run_server, daemon=True)
 server_thread.start()
 time.sleep(3)
 
 # Test WebSocket logs endpoint
 try:
+    import websockets
+
     async def test_websocket():
         uri = f"ws://127.0.0.1:{port}/ws/logs"
         async with websockets.connect(uri) as websocket:
@@ -1050,7 +1137,7 @@ try:
             assert "level" in data, "Log should contain level"
             assert "message" in data, "Log should contain message"
             print(f"SUCCESS: WebSocket logs endpoint works, received log: {data['message']}")
-    
+
     asyncio.run(test_websocket())
 except Exception as e:
     # WebSocket may not be available in test environment

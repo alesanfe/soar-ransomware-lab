@@ -15,7 +15,6 @@ from assertions.persistence_assertions import (
     assert_data_integrity,
     assert_data_persisted,
     assert_data_recoverable,
-    assert_no_data_loss,
 )
 
 from tests.e2e.base import E2EBaseTest
@@ -41,22 +40,23 @@ class TestPersistence(E2EBaseTest):
             # so it does not block the queue forever.
             return True
 
+        parsers = (
+            # Epoch seconds; Shuffle may store milliseconds since epoch
+            lambda v: float(v) / 1000.0 if float(v) > 1e12 else float(v),
+            # ISO 8601 timestamp string (Shuffle stores date strings)
+            lambda v: datetime.fromisoformat(str(v).replace("Z", "+00:00")).timestamp(),
+        )
         started_ts = None
-        try:
-            started_ts = float(started_at)
-            # Shuffle may store started_at as milliseconds since epoch
-            if started_ts > 1e12:
-                started_ts = started_ts / 1000.0
-        except (ValueError, TypeError):
-            pass
+        for parse in parsers:
+            try:
+                started_ts = parse(started_at)
+                break
+            except (ValueError, TypeError, AttributeError):
+                continue
 
         if started_ts is None:
-            try:
-                # Try ISO 8601 timestamp string (Shuffle stores date strings)
-                started_dt = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
-                started_ts = started_dt.timestamp()
-            except Exception:
-                return True
+            self._log(f"  ! Unparsable started_at={started_at!r} — treating execution as stale")
+            return True
 
         return (time.time() - started_ts) > max_age
 
@@ -70,6 +70,7 @@ class TestPersistence(E2EBaseTest):
             return
         self._log(f"Waiting up to {timeout}s for pending executions to drain...")
         deadline = time.time() + timeout
+        poll_errors = 0
         pending_statuses = {"EXECUTING", "QUEUED", "PENDING", "RUNNING"}
         while time.time() < deadline:
             try:
@@ -91,7 +92,9 @@ class TestPersistence(E2EBaseTest):
                     return
                 self._log(f"  + {len(pending)} executions still pending, waiting...")
             except Exception as e:
-                self._log(f"  + Could not check execution status: {e}")
+                poll_errors += 1
+                assert poll_errors < 10, f"Execution status check failed {poll_errors} times: {e}"
+                self._log(f"  + Could not check execution status ({poll_errors}/10): {e}")
             time.sleep(self.POLL_INTERVAL)
         self._log(f"WARNING: timed out after {timeout}s waiting for queue drain")
 
@@ -131,7 +134,7 @@ class TestPersistence(E2EBaseTest):
 
         # Send alert to create data
         payload = {
-            "alert_id": f"TC22-ES-PERSIST-{int(time.time())}",
+            "alert_id": self.uid("TC22-ES-PERSIST"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC22-001",
             "src_ip": "192.168.1.220",
@@ -194,7 +197,7 @@ class TestPersistence(E2EBaseTest):
 
         # Send alert to create case
         payload = {
-            "alert_id": f"TC22-HIVE-PERSIST-{int(time.time())}",
+            "alert_id": self.uid("TC22-HIVE-PERSIST"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC22-002",
             "src_ip": "192.168.1.221",
@@ -281,54 +284,71 @@ class TestPersistence(E2EBaseTest):
         self._log("=== TC-22 COMPLETED — VOLUME PERSISTENCE VALIDATED ===")
 
     def test_backup_integrity(self):
-        """TC-22: Validate backup integrity.
+        """TC-22: Validate backup integrity against the real API.
 
         Verifications:
-          1. Backups can be created
-          2. Backup data is consistent
-          3. Restore functionality works
+          1. POST /backup/create produces a real tar.gz artifact
+          2. GET /backup/list reports the created backup with size > 0
+          3. The artifact exists on disk and has a valid gzip header
+          4. POST /backup/restore rejects an invalid backup name
+             (contract negative path — a real restore is destructive to
+             runtime state and is covered by unit tests instead)
         """
         self._log("=== TC-22: BACKUP INTEGRITY TEST STARTED ===")
 
-        self._log("STEP 1: Validating backup configuration")
+        api_url = self.get_service_url("api")
 
-        # Backup directory should exist (runtime/backups per AGENTS.md)
-        backup_dir = self.runtime_dir / "backups"
-        if not backup_dir.exists():
-            backup_dir.mkdir(parents=True, exist_ok=True)
-        self._log(f"+ Backup directory exists: {backup_dir}")
+        self._log("STEP 1: Creating a real backup via POST /backup/create")
+        requested_name = f"{self.uid('tc22')}.tar.gz"
+        r = self.s.post(
+            f"{api_url}/backup/create",
+            json={"backup_name": requested_name},
+            timeout=120,
+        )
+        assert r.status_code == 200, f"backup/create failed: HTTP {r.status_code} {r.text[:200]}"
+        body = r.json()
+        backup_name = body.get("backup_name") or body.get("filename")
+        assert backup_name, f"backup/create returned no name: {body}"
+        self._log(f"+ Backup created: {backup_name}")
 
-        # Check for backup files in the directory
-        backup_files = list(backup_dir.glob("**/*"))
-        backup_files = [f for f in backup_files if f.is_file()]
-        if len(backup_files) == 0:
-            # Create a minimal backup file so the test can validate the
-            # backup infrastructure works (first run or after cleanup)
-            import json as _json
-            backup_file = backup_dir / f"tc22-backup-{int(time.time())}.json"
-            backup_data = {
-                "timestamp": datetime.now(UTC).isoformat(),
-                "type": "integrity-check",
-                "cases_count": len(self.thehive.search_cases(range_="0-1")),
-            }
-            backup_file.write_text(_json.dumps(backup_data, indent=2))
-            backup_files = [backup_file]
-            self._log(f"+ Created initial backup file: {backup_file.name}")
-        else:
-            self._log(f"+ Found {len(backup_files)} backup file(s)")
+        self._log("STEP 2: Verifying backup appears in GET /backup/list")
+        r = self.s.get(f"{api_url}/backup/list", timeout=30)
+        assert r.status_code == 200, f"backup/list failed: HTTP {r.status_code}"
+        listed = r.json().get("backups", [])
+        names = [b.get("name") for b in listed]
+        assert backup_name in names, f"Created backup {backup_name} not in /backup/list {names[:5]}"
+        entry = next(b for b in listed if b.get("name") == backup_name)
+        assert entry.get("size") not in (
+            None,
+            "0 MB",
+            "0.0 MB",
+        ), f"Listed backup reports zero size: {entry}"
+        self._log(f"+ Backup listed: {entry}")
 
-        # Validate at least one backup file is non-empty
-        non_empty_backups = [f for f in backup_files if f.stat().st_size > 0]
-        assert len(non_empty_backups) > 0, "All backup files are empty — backup data is corrupt"
-        self._log(f"+ {len(non_empty_backups)} non-empty backup file(s) found")
+        self._log("STEP 3: Verifying artifact on disk is a real gzip archive")
+        backup_file = self.runtime_dir / "backups" / backup_name
+        assert backup_file.exists(), f"Backup artifact missing: {backup_file}"
+        assert backup_file.stat().st_size > 0, "Backup artifact is empty"
+        magic = backup_file.read_bytes()[:2]
+        assert magic == b"\x1f\x8b", f"Backup artifact is not a gzip file (magic={magic!r})"
+        self._log(
+            f"+ Artifact verified: {backup_file.name} "
+            f"({backup_file.stat().st_size} bytes, gzip)"
+        )
+        self.register_resource("files", str(backup_file))
 
-        # Validate backup data consistency — check that backup files contain valid data
-        for backup_file in non_empty_backups[:3]:
-            file_size = backup_file.stat().st_size
-            assert file_size > 0, f"Backup file {backup_file.name} is empty"
-            self._log(f"  - {backup_file.name}: {file_size} bytes")
-
-        self._log("+ Critical data backup paths are configured")
+        self._log("STEP 4: Restore contract — invalid name must be rejected")
+        r = self.s.post(
+            f"{api_url}/backup/restore",
+            json={"backup_name": "../../etc/passwd"},
+            timeout=30,
+        )
+        assert r.status_code in (
+            400,
+            422,
+            500,
+        ), f"restore accepted a path-traversal name: HTTP {r.status_code}"
+        self._log(f"+ Path-traversal restore rejected: HTTP {r.status_code}")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -417,21 +437,22 @@ class TestPersistence(E2EBaseTest):
         self._log("+ TheHive container restarted")
 
         # Wait 60s for TheHive to recover (Java app, slow startup)
-        self._log("STEP 3: Waiting 60s for TheHive to recover")
-        time.sleep(60)
+        self._log("STEP 3: Waiting for TheHive to recover (Docker health poll)")
 
         # Assert TheHive is healthy. Use Docker's health status (based on
-        # /api/status, no auth) instead of the client's health_check (which
-        # uses /api/health with auth — the auth layer takes longer to init).
+        # /api/v1/status) instead of the client's health_check (which
+        # uses the same endpoint — the auth layer takes longer to init).
         self._log("STEP 4: Verifying TheHive is healthy (via Docker health)")
         deadline = time.time() + 600
         healthy = False
+        poll_errors = 0
         while time.time() < deadline:
             try:
                 r = subprocess.run(
-                    ["docker", "inspect", "--format", "{{.State.Health.Status}}",
-                     "soar_thehive"],
-                    capture_output=True, text=True, timeout=10,
+                    ["docker", "inspect", "--format", "{{.State.Health.Status}}", "soar_thehive"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
                 )
                 status = r.stdout.strip()
                 if status == "healthy":
@@ -439,7 +460,9 @@ class TestPersistence(E2EBaseTest):
                     break
                 self._log(f"  + TheHive Docker health: {status}")
             except Exception as e:
-                self._log(f"  + TheHive health check error: {e}")
+                poll_errors += 1
+                assert poll_errors < 10, f"TheHive health check failed {poll_errors} times: {e}"
+                self._log(f"  + TheHive health check error ({poll_errors}/10): {e}")
             time.sleep(self.POLL_INTERVAL)
         assert healthy, "TheHive must be healthy after restart"
 
@@ -471,7 +494,10 @@ class TestPersistence(E2EBaseTest):
 
         # Record ES doc count before restart
         doc_count_before = self.es.count()
-        assert doc_count_before >= 0, "ES doc count must be non-negative before restart"
+        assert doc_count_before > 0, (
+            "ES must already contain documents — a persistence check on an "
+            "empty index proves nothing"
+        )
         self._log(f"STEP 1: Recorded ES doc count before restart: {doc_count_before}")
 
         # Restart Elasticsearch container
@@ -486,13 +512,13 @@ class TestPersistence(E2EBaseTest):
         self._log("+ Elasticsearch container restarted")
 
         # Wait 60s for ES to recover
-        self._log("STEP 3: Waiting 60s for Elasticsearch to recover")
-        time.sleep(60)
+        self._log("STEP 3: Waiting for Elasticsearch to recover (health poll)")
 
         # Assert ES is healthy
         self._log("STEP 4: Verifying Elasticsearch is healthy")
         deadline = time.time() + 120
         healthy = False
+        poll_errors = 0
         while time.time() < deadline:
             try:
                 health = self.es.cluster_health()
@@ -501,7 +527,9 @@ class TestPersistence(E2EBaseTest):
                     healthy = True
                     break
             except Exception as e:
-                self._log(f"  + ES not yet healthy: {e}")
+                poll_errors += 1
+                assert poll_errors < 10, f"ES health check failed {poll_errors} times: {e}"
+                self._log(f"  + ES not yet healthy ({poll_errors}/10): {e}")
             time.sleep(self.POLL_INTERVAL)
         assert healthy, "Elasticsearch must be healthy after restart"
 
@@ -541,10 +569,12 @@ class TestPersistence(E2EBaseTest):
                 if r.returncode == 0:
                     compose_available = True
                     break
-            except Exception:
-                pass
+            except (FileNotFoundError, OSError, subprocess.SubprocessError):
+                continue
         if not compose_available:
-            pytest.skip("docker compose not available inside container — test requires host execution")
+            pytest.skip(
+                "docker compose not available inside container — test requires host execution"
+            )
 
         # Record case count before docker down
         cases_before = self.thehive.search_cases(range_="0-100", sort=["-caseId"])
@@ -578,20 +608,22 @@ class TestPersistence(E2EBaseTest):
         self._log("+ Docker compose up -d succeeded")
 
         # Wait 120s for all services to recover
-        self._log("STEP 4: Waiting 120s for all services to recover")
-        time.sleep(120)
+        self._log("STEP 4: Waiting for all services to recover (health poll)")
 
         # Assert all services healthy
         self._log("STEP 5: Verifying all services are healthy")
         deadline = time.time() + 180
         all_healthy = False
+        poll_errors = 0
         while time.time() < deadline:
             try:
                 self.verify_core_services()
                 all_healthy = True
                 break
             except Exception as e:
-                self._log(f"  + Services not yet healthy: {e}")
+                poll_errors += 1
+                assert poll_errors < 10, f"Service health check failed {poll_errors} times: {e}"
+                self._log(f"  + Services not yet healthy ({poll_errors}/10): {e}")
             time.sleep(self.POLL_INTERVAL)
         assert all_healthy, "All services must be healthy after docker compose up"
 
@@ -611,62 +643,58 @@ class TestPersistence(E2EBaseTest):
         self._log("=== TC-22-03 COMPLETED ===")
 
     def test_backup_restore(self):
-        """TC-22-04: Backup restore.
+        """TC-22-04: Backup restore — real canary round-trip.
 
         Verifications:
-          - Backups can be created
-          - Restore functionality works
-          - Data integrity is maintained
+          - POST /backup/create archives the repo (including a canary
+            file written by this test under runtime/)
+          - POST /backup/restore re-extracts it
+          - The deleted canary reappears with identical content
+            (proves extraction actually ran, not just HTTP 200)
         """
         self._log("=== TC-22-04: BACKUP RESTORE TEST STARTED ===")
 
-        # Record current data count
-        case_count_before = len(self.thehive.search_cases(range_="0-100", sort=["-caseId"]))
-        es_count_before = self.es.count()
-        self._log(
-            f"STEP 1: Recorded data counts — cases={case_count_before}, es_docs={es_count_before}"
+        api_url = self.get_service_url("api")
+
+        # Canary must live inside the archived base dir — the backup tar
+        # covers the repo tree (./src, ./scripts, ./tests, …) but NOT
+        # ./runtime, so runtime_dir is unsuitable.
+        canary = self.repo_root / "scripts" / f"canary-{self.uid('tc22')}.txt"
+        canary_content = f"tc22-canary-{datetime.now(UTC).isoformat()}"
+        canary.write_text(canary_content, encoding="utf-8")
+        self._log(f"STEP 1: Canary written: {canary}")
+
+        self._log("STEP 2: Creating backup via POST /backup/create")
+        r = self.s.post(
+            f"{api_url}/backup/create",
+            json={"backup_name": f"{self.uid('tc22')}.tar.gz"},
+            timeout=180,
         )
+        assert r.status_code == 200, f"backup/create failed: HTTP {r.status_code} {r.text[:200]}"
+        backup_name = r.json().get("backup_name")
+        assert backup_name, "backup/create returned no name"
+        self._log(f"+ Backup created: {backup_name}")
+        self.register_resource("files", str(self.runtime_dir / "backups" / backup_name))
 
-        # Create backup (runtime/backups per AGENTS.md)
-        self._log("STEP 2: Creating backup")
-        backup_dir = self.runtime_dir / "backups"
-        backup_dir.mkdir(parents=True, exist_ok=True)
-        backup_file = backup_dir / f"tc22-backup-{int(time.time())}.json"
+        self._log("STEP 3: Deleting canary to prove restore brings it back")
+        canary.unlink()
+        assert not canary.exists(), "Canary delete failed"
 
-        backup_data = {
-            "timestamp": datetime.now(UTC).isoformat(),
-            "case_count": case_count_before,
-            "es_doc_count": es_count_before,
-            "cases": self.thehive.search_cases(range_="0-100", sort=["-caseId"]),
-        }
-        import json
-
-        backup_file.write_text(json.dumps(backup_data, indent=2, default=str))
-
-        # Assert backup file exists and is non-empty
-        assert backup_file.exists(), f"Backup file must exist at {backup_file}"
-        assert backup_file.stat().st_size > 0, "Backup file must be non-empty"
-        self._log(f"+ Backup file created: {backup_file} ({backup_file.stat().st_size} bytes)")
-
-        # Restore backup
-        self._log("STEP 3: Restoring backup")
-        restored_content = backup_file.read_text()
-        restored_data = json.loads(restored_content)
-        assert isinstance(restored_data, dict), "Restored backup data must be a dict"
-
-        # Assert restore succeeded — verify data count matches
-        assert restored_data.get("case_count") == case_count_before, (
-            f"Restored case count ({restored_data.get('case_count')}) must match "
-            f"original ({case_count_before})"
+        self._log("STEP 4: Restoring via POST /backup/restore")
+        r = self.s.post(
+            f"{api_url}/backup/restore",
+            json={"backup_name": backup_name},
+            timeout=180,
         )
-        assert restored_data.get("es_doc_count") == es_count_before, (
-            f"Restored ES doc count ({restored_data.get('es_doc_count')}) must match "
-            f"original ({es_count_before})"
-        )
+        assert r.status_code == 200, f"backup/restore failed: HTTP {r.status_code} {r.text[:200]}"
+
+        self._log("STEP 5: Verifying canary reappeared with identical content")
+        assert canary.exists(), f"Restore did not bring back {canary} — extraction did not run"
         assert (
-            len(restored_data.get("cases", [])) == case_count_before
-        ), "Restored cases list length must match original case count"
-        self._log("+ Restore succeeded — data counts match")
+            canary.read_text(encoding="utf-8") == canary_content
+        ), "Restored canary content differs — data integrity broken"
+        self._log("+ Canary restored with identical content")
+        canary.unlink()
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")

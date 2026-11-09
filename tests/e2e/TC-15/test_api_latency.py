@@ -10,8 +10,10 @@ under realistic load (after a workflow execution generates data).
 import json
 import time
 from datetime import UTC, datetime
+from typing import ClassVar
 
 from tests.e2e.base import E2EBaseTest
+from tests.e2e.base.config_mixin import E2E_RESULTS_DIR
 
 
 class TestAPILatency(E2EBaseTest):
@@ -27,13 +29,46 @@ class TestAPILatency(E2EBaseTest):
     POST_SLA = 5.0
     SEARCH_SLA = 10.0
     P95_SLA = 10.0
+    _class_results: ClassVar[list] = []
+    _class_latencies: ClassVar[list] = []
+    _class_t0: ClassVar[datetime | None] = None
+
+    @classmethod
+    def setup_class(cls):
+        cls._class_results = []
+        cls._class_latencies = []
+        cls._class_t0 = datetime.now(UTC)
+
+    @classmethod
+    def teardown_class(cls):
+        """Persist the aggregate API-latency report once per class run.
+
+        Replaces the removed ``test_api_latency_suite`` orchestrator
+        (EXEC-001): each scenario is collected once, and the report still
+        aggregates every per-test result.
+        """
+        if cls._class_t0 is None:
+            return
+        elapsed = (datetime.now(UTC) - cls._class_t0).total_seconds()
+        report = {
+            "test_case": "TC-15",
+            "scenario": "api_latency",
+            "elapsed_seconds": elapsed,
+            "results": cls._class_results,
+            "latencies_s": cls._class_latencies,
+            "success": all(r.get("ok", False) for r in cls._class_results),
+        }
+        report_file = E2E_RESULTS_DIR / "TC-15_api_latency_report.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
+        report_file.write_text(json.dumps(report, indent=2, default=str))
+        print(f"TC-15 + Report saved: {report_file}")
 
     def setup_method(self, method):
         """Set up test clients and environment."""
         super().setup_method(method)
         self.t0 = datetime.now(UTC)
-        self._results: list[dict] = []
-        self._latencies: list[float] = []
+        self._results: list[dict] = type(self)._class_results
+        self._latencies: list[float] = type(self)._class_latencies
         self._workflow_context_ready = False
 
     def _ensure_workflow_context(self):
@@ -42,7 +77,7 @@ class TestAPILatency(E2EBaseTest):
         if self._workflow_context_ready:
             return
         payload = self.build_alert_payload(
-            alert_id=f"TC15-{self.correlation_id}-{int(time.time())}",
+            alert_id=self.uid("TC15"),
         )
         self.alert_data = payload
         exec_id, execution = self.submit_alert_and_wait(payload)
@@ -78,7 +113,10 @@ class TestAPILatency(E2EBaseTest):
         self._log("=== TC-15-01: GET LATENCY TEST STARTED ===")
 
         result = self._measure_latency(
-            lambda: self.thehive.list_cases(),
+            # Bounded page: latency must measure API responsiveness, not
+            # accumulated case volume (BUG-046 — unbounded 0-1000 took ~13 s
+            # with ~640 cases and broke the SLA deterministically).
+            lambda: self.thehive.list_cases(range_="0-50"),
             "TheHive-GET-list_cases",
         )
         assert result["ok"], f"GET request failed: {result}"
@@ -97,7 +135,7 @@ class TestAPILatency(E2EBaseTest):
         self._log("=== TC-15-02: POST LATENCY TEST STARTED ===")
 
         # Find a case created by the workflow to attach the observable to.
-        cases = self.thehive.search_cases()
+        cases = self.thehive.search_cases(range_="0-50")
         assert isinstance(cases, list), "TheHive search_cases must return a list"
         assert len(cases) > 0, "No TheHive cases available for POST latency test"
 
@@ -131,10 +169,10 @@ class TestAPILatency(E2EBaseTest):
         self._ensure_workflow_context()
         self._log("=== TC-15-03: SEARCH LATENCY TEST STARTED ===")
 
-        # search_cases with a query filter for ransomware cases.
-        query = {"_field": "title", "_value": "ransomware"}
+        # search_cases with a query filter for high-severity cases.
+        query = {"_eq": {"_field": "severity", "_value": 3}}
         result = self._measure_latency(
-            lambda: self.thehive.search_cases(query=query),
+            lambda: self.thehive.search_cases(query=query, range_="0-50"),
             "TheHive-SEARCH-filtered",
         )
         assert result["ok"], f"Search request failed: {result}"
@@ -152,7 +190,7 @@ class TestAPILatency(E2EBaseTest):
         latencies_ms: list[int] = []
         for i in range(20):
             start = time.time()
-            self.thehive.list_cases()
+            self.thehive.list_cases(range_="0-50")
             latencies_ms.append(int((time.time() - start) * 1000))
 
         assert len(latencies_ms) == 20, f"Should have 20 latency samples, got {len(latencies_ms)}"
@@ -182,7 +220,7 @@ class TestAPILatency(E2EBaseTest):
         latencies_s: list[float] = []
         for i in range(20):
             start = time.time()
-            self.thehive.list_cases()
+            self.thehive.list_cases(range_="0-50")
             latencies_s.append(time.time() - start)
 
         latencies_s.sort()
@@ -215,7 +253,7 @@ class TestAPILatency(E2EBaseTest):
     def test_thehive_api_latency(self):
         """Test TheHive API latency under workflow load."""
         self._ensure_workflow_context()
-        result = self._measure_latency(lambda: self.thehive.list_cases(), "TheHive")
+        result = self._measure_latency(lambda: self.thehive.list_cases(range_="0-50"), "TheHive")
         assert result["ok"], f"TheHive latency measurement failed: {result}"
         assert (
             result["latency_s"] < self.GET_SLA
@@ -242,45 +280,3 @@ class TestAPILatency(E2EBaseTest):
     # ------------------------------------------------------------------
     # Report & suite
     # ------------------------------------------------------------------
-
-    def _step_save_report(self, elapsed: float):
-        report = {
-            "test_case": "TC-15",
-            "scenario": "api_latency",
-            "elapsed_seconds": elapsed,
-            "results": self._results,
-            "latencies_s": self._latencies,
-            "success": all(r.get("ok", False) for r in self._results),
-        }
-        report_file = self.e2e_results_dir / "TC-15_api_latency_report.json"
-        report_file.write_text(json.dumps(report, indent=2, default=str))
-        self._log(f"+ Report saved: {report_file}")
-
-    def test_api_latency_suite(self):
-        """Run API latency test suite under workflow load."""
-        self._log("=== TC-15: API LATENCY E2E TEST STARTED ===")
-
-        self._ensure_workflow_context()
-
-        self.test_get_latency()
-        self.test_post_latency()
-        self.test_search_latency()
-
-        # Validate that all services responded successfully.
-        successful_services = [r for r in self._results if r.get("ok")]
-        assert (
-            len(successful_services) >= 3
-        ), f"At least 3 services should respond successfully, got {len(successful_services)}"
-
-        # Validate that all successful services have acceptable latency.
-        for result in successful_services:
-            latency_s = result.get("latency_s", 0)
-            assert (
-                latency_s < self.P95_SLA
-            ), f"{result['service']} latency {latency_s:.3f}s exceeds {self.P95_SLA}s threshold"
-            self._log(f"✓ {result['service']} latency acceptable: {result['latency_ms']}ms")
-
-        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
-        self._log(f"Elapsed: {elapsed:.1f}s")
-        self._log("=== TC-15 COMPLETED ===")
-        self._step_save_report(elapsed)

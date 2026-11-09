@@ -21,14 +21,12 @@ class TestGatewayIPStrategy:
 
         assert strategy.gateway_ip == "192.168.1.1"
 
-    @patch("builtins.__import__")
-    def test_connect_success(self, mock_import):
+    @patch("soar_lab.infrastructure.clients.docker")
+    def test_connect_success(self, mock_docker_module):
         """Test successful connection via gateway IP."""
-        mock_docker_module = Mock()
         mock_client = Mock()
         mock_docker_module.DockerClient.return_value = mock_client
         mock_client.ping.return_value = True
-        mock_import.return_value = mock_docker_module
 
         strategy = GatewayIPStrategy(gateway_ip="192.168.1.1")
         result = strategy.connect("/var/run/docker.sock")
@@ -38,10 +36,10 @@ class TestGatewayIPStrategy:
             base_url="tcp://192.168.1.1:2375", version="auto"
         )
 
-    @patch("builtins.__import__")
-    def test_connect_failure(self, mock_import):
+    @patch("soar_lab.infrastructure.clients.docker")
+    def test_connect_failure(self, mock_docker_module):
         """Test connection failure via gateway IP."""
-        mock_import.side_effect = Exception("Connection failed")
+        mock_docker_module.DockerClient.side_effect = Exception("Connection failed")
 
         strategy = GatewayIPStrategy(gateway_ip="192.168.1.1")
         result = strategy.connect("/var/run/docker.sock")
@@ -52,14 +50,12 @@ class TestGatewayIPStrategy:
 class TestUnixSocketStrategy:
     """Test UnixSocketStrategy."""
 
-    @patch("builtins.__import__")
-    def test_connect_success(self, mock_import):
+    @patch("soar_lab.infrastructure.clients.docker")
+    def test_connect_success(self, mock_docker_module):
         """Test successful connection via unix socket."""
-        mock_docker_module = Mock()
         mock_client = Mock()
         mock_docker_module.DockerClient.return_value = mock_client
         mock_client.ping.return_value = True
-        mock_import.return_value = mock_docker_module
 
         strategy = UnixSocketStrategy()
         result = strategy.connect("/var/run/docker.sock")
@@ -69,10 +65,10 @@ class TestUnixSocketStrategy:
             base_url="unix:///var/run/docker.sock", version="auto"
         )
 
-    @patch("builtins.__import__")
-    def test_connect_failure(self, mock_import):
+    @patch("soar_lab.infrastructure.clients.docker")
+    def test_connect_failure(self, mock_docker_module):
         """Test connection failure via unix socket."""
-        mock_import.side_effect = Exception("Connection failed")
+        mock_docker_module.DockerClient.side_effect = Exception("Connection failed")
 
         strategy = UnixSocketStrategy()
         result = strategy.connect("/var/run/docker.sock")
@@ -83,14 +79,12 @@ class TestUnixSocketStrategy:
 class TestDefaultFromEnvStrategy:
     """Test DefaultFromEnvStrategy."""
 
-    @patch("builtins.__import__")
-    def test_connect_success(self, mock_import):
+    @patch("soar_lab.infrastructure.clients.docker")
+    def test_connect_success(self, mock_docker_module):
         """Test successful connection via from_env."""
-        mock_docker_module = Mock()
         mock_client = Mock()
         mock_docker_module.from_env.return_value = mock_client
         mock_client.ping.return_value = True
-        mock_import.return_value = mock_docker_module
 
         strategy = DefaultFromEnvStrategy()
         result = strategy.connect("/var/run/docker.sock")
@@ -98,10 +92,10 @@ class TestDefaultFromEnvStrategy:
         assert result == mock_client
         mock_docker_module.from_env.assert_called_once_with(version="auto")
 
-    @patch("builtins.__import__")
-    def test_connect_failure(self, mock_import):
+    @patch("soar_lab.infrastructure.clients.docker")
+    def test_connect_failure(self, mock_docker_module):
         """Test connection failure via from_env."""
-        mock_import.side_effect = Exception("Connection failed")
+        mock_docker_module.from_env.side_effect = Exception("Connection failed")
 
         strategy = DefaultFromEnvStrategy()
         result = strategy.connect("/var/run/docker.sock")
@@ -117,8 +111,7 @@ class TestCreateRedisClient:
         result = create_redis_client(config_provider=None)
         assert result is None
 
-    @patch("builtins.__import__")
-    def test_redis_url_not_set(self, mock_import):
+    def test_redis_url_not_set(self):
         """Test when REDIS_URL is not set."""
         mock_config = Mock()
         mock_config.get.return_value = None
@@ -127,14 +120,12 @@ class TestCreateRedisClient:
 
         assert result is None
 
-    @patch("builtins.__import__")
-    def test_redis_connection_success(self, mock_import):
+    @patch("soar_lab.infrastructure.clients.redis")
+    def test_redis_connection_success(self, mock_redis_module):
         """Test successful Redis connection."""
-        mock_redis_module = Mock()
         mock_client = Mock()
         mock_redis_module.from_url.return_value = mock_client
         mock_client.ping.return_value = True
-        mock_import.return_value = mock_redis_module
 
         mock_config = Mock()
         mock_config.get.return_value = "redis://localhost:6379"
@@ -144,12 +135,10 @@ class TestCreateRedisClient:
         assert result == mock_client
         mock_redis_module.from_url.assert_called_once_with("redis://localhost:6379")
 
-    @patch("builtins.__import__")
-    def test_redis_connection_failure(self, mock_import):
+    @patch("soar_lab.infrastructure.clients.redis")
+    def test_redis_connection_failure(self, mock_redis_module):
         """Test Redis connection failure."""
-        mock_redis_module = Mock()
         mock_redis_module.from_url.side_effect = Exception("Connection failed")
-        mock_import.return_value = mock_redis_module
 
         mock_config = Mock()
         mock_config.get.return_value = "redis://localhost:6379"

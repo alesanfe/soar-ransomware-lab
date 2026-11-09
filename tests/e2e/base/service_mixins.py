@@ -6,11 +6,28 @@ Shuffle, and search backends (Elasticsearch, OpenSearch, Redis).
 
 from __future__ import annotations
 
+import os
 import time
 import uuid
+from pathlib import Path
 from typing import Any
 
 import requests
+
+# Lab-internal CA bundle (MISP-001): mounted into soar_api at
+# /app/certs/ca.crt; on the host it lives in infra/docker/config/certs/.
+_LAB_CA_CANDIDATES = (
+    os.environ.get("MISP_CA_BUNDLE", ""),
+    "/app/certs/ca.crt",
+    str(Path(__file__).resolve().parents[3] / "infra" / "docker" / "config" / "certs" / "ca.crt"),
+)
+
+
+def _lab_ca_bundle() -> str | bool:
+    for candidate in _LAB_CA_CANDIDATES:
+        if candidate and Path(candidate).exists():
+            return candidate
+    return False
 
 
 class ShuffleMixin:
@@ -27,12 +44,38 @@ class ShuffleMixin:
         from soar_lab.infrastructure.integrations.shuffle.client import ShuffleClient
 
         shuffle_url = self.get_service_url("shuffle")
+        # Fail closed: missing config must surface as an auth error,
+        # not a silent fake credential (BUG-037).
         shuffle_api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY") or self.env.get(
-            "SHUFFLE_API_KEY", "placeholder"
+            "SHUFFLE_API_KEY", ""
         )
         self.shuffle = ShuffleClient(
             base_url=shuffle_url, api_key=shuffle_api_key, verify_ssl=False
         )
+        self._wrap_webhook_session()
+
+    def _wrap_webhook_session(self) -> None:
+        """Record ``payload.json`` for every POST to a Shuffle hook URL.
+
+        Tests that bypass :meth:`submit_alert` and post to the webhook through
+        the raw session otherwise produce an incomplete evidence bundle.
+        """
+        session = getattr(self.shuffle, "_webhook_session", None)
+        if session is None:
+            return
+        original_post = session.post
+
+        def _recorded_post(url: Any, *args: Any, **kwargs: Any) -> Any:
+            if "/api/v1/hooks/" in str(url):
+                try:
+                    payload = kwargs.get("json", args[0] if args else None)
+                    if payload is not None:
+                        self.write_evidence("payload.json", payload)
+                except Exception:
+                    pass
+            return original_post(url, *args, **kwargs)
+
+        session.post = _recorded_post
 
     def build_alert_payload(
         self,
@@ -159,8 +202,7 @@ class ShuffleMixin:
         )
 
     def _get_execution(self, execution_id: str) -> dict[str, Any] | None:
-        """Get execution status from Shuffle client (preferred) or OpenSearch
-        fallback."""
+        """Get execution status from Shuffle client (preferred) or OpenSearch fallback."""
         # Try Shuffle client first (uses the same auth/session as the workflow)
         try:
             ex = self.shuffle.get_execution(self.workflow_id, execution_id, include_results=True)
@@ -185,7 +227,7 @@ class ShuffleMixin:
         try:
             os_url = self.get_service_url("opensearch")
             r = requests.get(
-                f"{os_url}/workflowexecution-000001/_doc/{execution_id}",
+                f"{os_url}/workflowexecution/_doc/{execution_id}",
                 timeout=30,
                 verify=False,
             )
@@ -226,7 +268,9 @@ class TheHiveMixin:
 
         while time.time() < deadline:
             try:
-                cases = self.thehive.search_cases()
+                # Newest first, bounded — the alert_id polled for was just
+                # submitted, so it is always near the head (BUG-046 pattern).
+                cases = self.thehive.search_cases(sort=["-createdAt"], range_="0-200")
                 for c in cases:
                     title = c.get("title", "")
                     description = c.get("description", "")
@@ -272,12 +316,13 @@ class CortexMixin:
         from soar_lab.infrastructure.integrations.cortex.client import CortexClient
 
         cortex_url = self.get_service_url("cortex")
+        # Org-scoped API key only — the production auth path (composition.py
+        # passes no admin creds). Cortex returns 403 on analyzer /run for
+        # superadmin, which lacks org membership.
         self.cortex = CortexClient(
             base_url=cortex_url,
             api_key=self.env.get("CORTEX_API_KEY", ""),
             verify_ssl=False,
-            admin_user=self.env.get("CORTEX_ADMIN_USER", "admin"),
-            admin_password=self.env.get("CORTEX_ADMIN_PASSWORD", ""),
             timeout=60,
         )
 
@@ -336,16 +381,16 @@ class MispMixin:
         self.misp = MISPClient(
             base_url=misp_url,
             api_key=self.env.get("MISP_API_KEY", ""),
-            verify_ssl=False,
+            verify_ssl=_lab_ca_bundle(),
         )
 
     def assert_misp_lookup_done(
         self, ioc_value: str, expected_hit: bool | None = None
     ) -> list[dict[str, Any]]:
-        """Assert that MISP lookup was performed and optionally check hit/no-
-        hit.
+        """Assert that MISP lookup was performed.
 
-        Records the assertion and returns matching events.
+        Optionally checks hit/no-hit. Records the assertion and returns
+        matching events.
         """
         t0 = time.time()
         try:
@@ -491,6 +536,27 @@ class SearchMixin:
             )
             return None
 
+    def get_opensearch_execution(
+        self, execution_id: str, timeout: int = 30
+    ) -> dict[str, Any] | None:
+        """Fetch the workflow execution document from OpenSearch.
+
+        Returns the ``_source`` dict, or None when absent/unreachable —
+        designed for polling loops (eventual consistency write-back).
+        """
+        os_url = self.get_service_url("opensearch")
+        try:
+            r = requests.get(
+                f"{os_url}/workflowexecution/_doc/{execution_id}",
+                timeout=timeout,
+                verify=False,
+            )
+            if r.status_code == 200:
+                return r.json().get("_source", {})
+            return None
+        except Exception:
+            return None
+
     def assert_opensearch_execution_registered(
         self, execution_id: str, timeout: int = 30
     ) -> dict[str, Any] | None:
@@ -500,7 +566,7 @@ class SearchMixin:
 
         try:
             r = requests.get(
-                f"{os_url}/workflowexecution-000001/_doc/{execution_id}",
+                f"{os_url}/workflowexecution/_doc/{execution_id}",
                 timeout=timeout,
                 verify=False,
             )
@@ -510,7 +576,7 @@ class SearchMixin:
                 self._log(f"  + OpenSearch execution found: {execution_id}")
                 self.register_resource(
                     "opensearch_documents",
-                    f"workflowexecution-000001/_doc/{execution_id}",
+                    f"workflowexecution/_doc/{execution_id}",
                 )
                 self.record_assertion(
                     "opensearch_execution_registered",

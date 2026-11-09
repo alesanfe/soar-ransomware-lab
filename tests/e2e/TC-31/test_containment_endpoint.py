@@ -49,10 +49,10 @@ class TestContainmentEndpoint(E2EBaseTest):
         self._log("=== TC-31-01: CONTAINMENT ENDPOINT SUCCESS TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC33-CONTAIN-{int(datetime.now(UTC).timestamp())}",
+            "alert_id": self.uid("TC33-CONTAIN"),
             "case_id": "test-case-id-12345",
             "hostname": "INFECTED-WIN-001",
-            "mode": "simulation",
+            "mode": "simulated",
         }
 
         self._log(f"STEP 1: Sending POST /api/v1/contain with payload: {payload['alert_id']}")
@@ -111,7 +111,7 @@ class TestContainmentEndpoint(E2EBaseTest):
         self._log("=== TC-31-02: CONTAINMENT ENDPOINT VALIDATION ERROR TEST STARTED ===")
 
         # Missing required fields (alert_id, case_id, hostname)
-        incomplete_payload = {"mode": "simulation"}
+        incomplete_payload = {"mode": "simulated"}
 
         self._log("STEP 1: Sending POST /api/v1/contain with incomplete payload")
         try:
@@ -173,7 +173,7 @@ class TestContainmentEndpoint(E2EBaseTest):
         self._log("=== TC-31-03: CONTAINMENT ENDPOINT DEFAULT MODE TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC33-DEFMODE-{int(datetime.now(UTC).timestamp())}",
+            "alert_id": self.uid("TC33-DEFMODE"),
             "case_id": "test-case-id-67890",
             "hostname": "WORKSTATION-002",
         }

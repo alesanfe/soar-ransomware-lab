@@ -31,9 +31,6 @@ from soar_lab.infrastructure.jwt_token_provider import JWTTokenProvider
 from soar_lab.interfaces.api.main import create_app
 
 # Use TestClient instead of real HTTP requests
-API_BASE = "http://test"
-API_TOKEN = os.getenv("API_TOKEN", "test-token")
-
 # Create a valid test token
 _JWT_SECRET = "test-secret-key-32chars-minimum-length"
 TEST_TOKEN = JWTTokenProvider().create_token("testuser", _JWT_SECRET, 60, "HS256")
@@ -55,6 +52,8 @@ mock_config.get.side_effect = lambda key, default=None: {
     "BACKUP_DIR": str(Path(__file__).parent.parent / "runtime" / "backups"),
     "scripts_dir": str(Path(__file__).parent.parent / "scripts"),
     "docker_dir": str(Path(__file__).parent.parent / "infra" / "docker"),
+    # Explicit opt-out: these tests exercise endpoints, not the auth gate
+    "API_REQUIRE_AUTH": "false",
 }.get(key, default)
 
 mock_auth_service = Mock()

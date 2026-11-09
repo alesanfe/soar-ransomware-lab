@@ -121,14 +121,17 @@ class TestRedisIntegration(E2EBaseTest):
                 decode_responses=True,
             )
 
-            # Search for IoC keys related to this alert
-            ioc_keys = r.keys("ioc:*")
-            assert isinstance(ioc_keys, list), "IoC keys should be a list"
-
-            # Assert at least one IoC is cached
+            # ISO-001: scope the query to THIS run's hash — a global
+            # `ioc:*` scan could be satisfied by another run's keys.
+            own_key = f"ioc:{alert_data['hash']}"
+            ioc_keys = [k for k in r.keys("ioc:*") if k == own_key]
+            if not ioc_keys:
+                # The workflow may not cache this alert's IoC; fall back to
+                # any key strictly owned by this run (run-tagged patterns).
+                ioc_keys = [k for k in r.keys("ioc:*") if self.run_id in (r.get(k) or "")]
             assert (
                 len(ioc_keys) > 0
-            ), "At least one IoC should be cached in Redis after workflow execution"
+            ), "No IoC belonging to this run cached in Redis after workflow execution"
 
             # Validate that cached IoCs have proper structure
             for key in ioc_keys[:5]:
@@ -363,10 +366,9 @@ class TestRedisIntegration(E2EBaseTest):
 
         try:
             # Obtener detalles del workflow
-            response = requests.get(
+            response = self.s.get(
                 f"{self.get_service_url('shuffle')}/api/v1/workflows/{self.workflow_id}",
                 headers={"Authorization": f"Bearer {self.env.get('SHUFFLE_DEFAULT_APIKEY', '')}"},
-                verify=False,
             )
 
             assert response.status_code in (
@@ -388,7 +390,8 @@ class TestRedisIntegration(E2EBaseTest):
 
             # Validar que exista acción de verificación
             verify_actions = [
-                a for a in actions
+                a
+                for a in actions
                 if "verify" in a.get("label", "").lower() and "redis" in a.get("label", "").lower()
             ]
             assert len(verify_actions) > 0, "No Redis verification action found in workflow"

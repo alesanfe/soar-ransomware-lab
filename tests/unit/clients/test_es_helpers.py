@@ -53,62 +53,45 @@ class TestExecuteBulk:
     """Test execute_bulk function."""
 
     def test_execute_bulk_success(self):
-        """Test successful bulk request."""
-        session = Mock()
-        resp = Mock()
-        resp.content = b'{"errors": false}'
-        resp.json.return_value = {"errors": False}
-        resp.raise_for_status.return_value = None
-        session.post.return_value = resp
+        """Test successful bulk request (BL-HTTP-007: post_fn contract)."""
+        post_fn = Mock(return_value={"errors": False})
 
-        result = execute_bulk(session, "http://es:9200", "soar-alerts", '{"data":"test"}')
+        result = execute_bulk(post_fn, "soar-alerts", '{"data":"test"}')
         assert result == {"errors": False}
-        session.post.assert_called_once()
-        call_args = session.post.call_args
-        assert "http://es:9200/soar-alerts/_bulk" in call_args[0][0]
+        post_fn.assert_called_once()
+        call_args = post_fn.call_args[0]
+        assert call_args[0] == "/soar-alerts/_bulk"
 
     def test_execute_bulk_with_refresh(self):
         """Test bulk request with refresh=true."""
-        session = Mock()
-        resp = Mock()
-        resp.content = b'{"errors": false}'
-        resp.json.return_value = {"errors": False}
-        resp.raise_for_status.return_value = None
-        session.post.return_value = resp
+        post_fn = Mock(return_value={"errors": False})
 
-        result = execute_bulk(session, "http://es:9200", "soar-alerts", "{}", refresh=True)
+        result = execute_bulk(post_fn, "soar-alerts", "{}", refresh=True)
         assert result == {"errors": False}
-        call_url = session.post.call_args[0][0]
-        assert "?refresh=true" in call_url
+        assert "?refresh=true" in post_fn.call_args[0][0]
 
     def test_execute_bulk_empty_response(self):
         """Test bulk request with empty response body."""
-        session = Mock()
-        resp = Mock()
-        resp.content = b""
-        resp.raise_for_status.return_value = None
-        session.post.return_value = resp
+        post_fn = Mock(return_value=None)
 
-        result = execute_bulk(session, "http://es:9200", "soar-alerts", "{}")
+        result = execute_bulk(post_fn, "soar-alerts", "{}")
         assert result == {}
 
-    def test_execute_bulk_error_raises_integration_error(self):
-        """Test that HTTP errors raise IntegrationError."""
-        session = Mock()
-        resp = Mock()
-        resp.raise_for_status.side_effect = Exception("HTTP 500")
-        session.post.return_value = resp
+    def test_execute_bulk_error_propagates_typed_error(self):
+        """Transport errors from post_fn keep the typed hierarchy (BL-ERR-004)."""
+        from soar_lab.common.exceptions import IntegrationUnavailableError
 
-        with pytest.raises(IntegrationError):
-            execute_bulk(session, "http://es:9200", "soar-alerts", "{}")
+        post_fn = Mock(side_effect=IntegrationUnavailableError("c", "HTTP 500"))
+
+        with pytest.raises(IntegrationUnavailableError):
+            execute_bulk(post_fn, "soar-alerts", "{}")
 
     def test_execute_bulk_connection_error_raises(self):
         """Test that connection errors raise IntegrationError."""
-        session = Mock()
-        session.post.side_effect = Exception("Connection refused")
+        post_fn = Mock(side_effect=IntegrationError("c", "Connection refused"))
 
         with pytest.raises(IntegrationError):
-            execute_bulk(session, "http://es:9200", "soar-alerts", "{}")
+            execute_bulk(post_fn, "soar-alerts", "{}")
 
 
 class TestScrollSearchGenerator:

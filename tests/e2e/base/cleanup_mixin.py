@@ -143,8 +143,8 @@ class CleanupMixin:
             try:
                 if mode == "delete":
                     self.thehive.delete_case(case_id)
-                else:  # close
-                    self.thehive.update_case(case_id, {"status": "Closed"})
+                else:  # close — TheHive 5 closes via a Closed-stage status value
+                    self.thehive.update_case(case_id, status="Indeterminate")
                 cleaned += 1
             except Exception as e:
                 self._log(f"  + TheHive cleanup: failed for case {case_id}: {e}")
@@ -153,8 +153,6 @@ class CleanupMixin:
 
     def cleanup_elasticsearch(self) -> None:
         """Clean Elasticsearch documents created by this test."""
-        import requests as _req
-
         es_url = self.get_service_url("es")
         es_auth = (
             self.env.get("ELASTIC_USERNAME", "elastic"),
@@ -174,11 +172,12 @@ class CleanupMixin:
                 if len(parts) >= 3:
                     index = parts[0]
                     doc_id = parts[2]
-                    r = _req.delete(
+                    # self.s already carries the lab's TLS posture — no
+                    # per-call verify=False.
+                    r = self.s.delete(
                         f"{es_url}/{index}/_doc/{doc_id}",
                         auth=es_auth,
                         timeout=10,
-                        verify=False,
                     )
                     if r.status_code in (200, 204):
                         deleted += 1

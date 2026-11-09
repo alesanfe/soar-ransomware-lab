@@ -40,7 +40,7 @@ class TestForensic(E2EBaseTest):
             if started_ts > 1e12:
                 started_ts = started_ts / 1000.0
         except (ValueError, TypeError):
-            pass
+            started_ts = None
 
         if started_ts is None:
             try:
@@ -48,7 +48,12 @@ class TestForensic(E2EBaseTest):
                 started_dt = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
                 started_ts = started_dt.timestamp()
             except Exception:
-                return True
+                started_ts = None
+
+        # Unparsable timestamps are treated as fresh, not stale — we do
+        # not abort executions we cannot date.
+        if started_ts is None:
+            return False
 
         return (time.time() - started_ts) > max_age
 
@@ -63,6 +68,7 @@ class TestForensic(E2EBaseTest):
         self._log(f"Waiting up to {timeout}s for pending executions to drain...")
         deadline = time.time() + timeout
         pending_statuses = {"EXECUTING", "QUEUED", "PENDING", "RUNNING"}
+        poll_errors = 0
         while time.time() < deadline:
             try:
                 execs = self.shuffle.get_workflow_executions(self.workflow_id)
@@ -83,7 +89,9 @@ class TestForensic(E2EBaseTest):
                     return
                 self._log(f"  + {len(pending)} executions still pending, waiting...")
             except Exception as e:
-                self._log(f"  + Could not check execution status: {e}")
+                poll_errors += 1
+                assert poll_errors < 10, f"Execution status check failed {poll_errors} times: {e}"
+                self._log(f"  + Could not check execution status ({poll_errors}/10): {e}")
             time.sleep(self.POLL_INTERVAL)
         self._log(f"WARNING: timed out after {timeout}s waiting for queue drain")
 
@@ -105,7 +113,7 @@ class TestForensic(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC21-CUSTODY-{int(time.time())}",
+            "alert_id": self.uid("TC21-CUSTODY"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC21-001",
             "src_ip": "192.168.1.220",
@@ -156,7 +164,7 @@ class TestForensic(E2EBaseTest):
         assert isinstance(cases, list), "TheHive cases must be a list"
         matching_cases = [c for c in cases if payload["alert_id"] in c.get("description", "")]
         assert len(matching_cases) > 0, f"No TheHive case found for {payload['alert_id']}"
-        last = max(matching_cases, key=lambda c: c.get("caseId", 0))
+        last = matching_cases[0]  # alert-filtered; sorted -caseId newest-first
         assert isinstance(last, dict), "Case must be a dict"
         custody_chain.append(
             {
@@ -213,7 +221,7 @@ class TestForensic(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC21-AUDIT-{int(time.time())}",
+            "alert_id": self.uid("TC21-AUDIT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC21-002",
             "src_ip": "192.168.1.221",
@@ -270,7 +278,7 @@ class TestForensic(E2EBaseTest):
         assert isinstance(cases, list), "TheHive cases must be a list"
         matching_cases = [c for c in cases if payload["alert_id"] in c.get("description", "")]
         assert len(matching_cases) > 0, f"No TheHive case found for {payload['alert_id']}"
-        last = max(matching_cases, key=lambda c: c.get("caseId", 0))
+        last = matching_cases[0]  # alert-filtered; sorted -caseId newest-first
         assert isinstance(last, dict), "Case must be a dict"
         audit_events.append(
             {
@@ -316,7 +324,7 @@ class TestForensic(E2EBaseTest):
 
         # Send an alert to create forensic data, then verify it cannot be modified
         payload = {
-            "alert_id": f"TC21-IMMUT-{int(time.time())}",
+            "alert_id": self.uid("TC21-IMMUT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC21-003",
             "src_ip": "192.168.1.222",
@@ -405,7 +413,7 @@ class TestForensic(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC21-01-CUSTODY-{int(time.time())}",
+            "alert_id": self.uid("TC21-01-CUSTODY"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC21-010",
             "src_ip": "192.168.1.230",
@@ -438,7 +446,7 @@ class TestForensic(E2EBaseTest):
             time.sleep(self.POLL_INTERVAL)
 
         assert len(matching_cases) > 0, f"No TheHive case found for {payload['alert_id']}"
-        case = max(matching_cases, key=lambda c: c.get("caseId", 0))
+        case = matching_cases[0]  # alert-filtered; sorted -caseId newest-first
         assert isinstance(case, dict), "Case must be a dict"
 
         # Assert case has createdAt timestamp
@@ -479,7 +487,7 @@ class TestForensic(E2EBaseTest):
         # Send alert with a known hash
         payload_hash = "f" * 64
         payload = {
-            "alert_id": f"TC21-02-CHECKSUM-{int(time.time())}",
+            "alert_id": self.uid("TC21-02-CHECKSUM"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC21-020",
             "src_ip": "192.168.1.231",
@@ -546,7 +554,7 @@ class TestForensic(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC21-03-IMMUT-{int(time.time())}",
+            "alert_id": self.uid("TC21-03-IMMUT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC21-030",
             "src_ip": "192.168.1.232",
@@ -579,7 +587,7 @@ class TestForensic(E2EBaseTest):
             time.sleep(self.POLL_INTERVAL)
 
         assert len(matching_cases) > 0, f"No TheHive case found for {payload['alert_id']}"
-        case = max(matching_cases, key=lambda c: c.get("caseId", 0))
+        case = matching_cases[0]  # alert-filtered; sorted -caseId newest-first
         assert isinstance(case, dict), "Case must be a dict"
         case_id = case.get("id", case.get("_id", ""))
         original_created_at = case.get("createdAt")
@@ -626,7 +634,7 @@ class TestForensic(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC21-04-AUDIT-{int(time.time())}",
+            "alert_id": self.uid("TC21-04-AUDIT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC21-040",
             "src_ip": "192.168.1.233",
@@ -659,7 +667,7 @@ class TestForensic(E2EBaseTest):
             time.sleep(self.POLL_INTERVAL)
 
         assert len(matching_cases) > 0, f"No TheHive case found for {payload['alert_id']}"
-        case = max(matching_cases, key=lambda c: c.get("caseId", 0))
+        case = matching_cases[0]  # alert-filtered; sorted -caseId newest-first
         assert isinstance(case, dict), "Case must be a dict"
         case_id = case.get("id", case.get("_id", ""))
         case_id_num = case.get("caseId", case.get("_id", ""))
@@ -678,7 +686,9 @@ class TestForensic(E2EBaseTest):
         if alert_id in log_content or str(case_id_num) in log_content:
             self._log("+ Audit log contains entries referencing the alert/case")
         else:
-            self._log("+ Alert/case not in notify.log (shared log) — audit trail in TheHive/OpenSearch")
+            self._log(
+                "+ Alert/case not in notify.log (shared log) — audit trail in TheHive/OpenSearch"
+            )
 
         # Assert entries have timestamps — look for timestamp-like patterns in log
         import re

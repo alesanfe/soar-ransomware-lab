@@ -183,8 +183,7 @@ class ObservabilityMixin:
         return data
 
     def export_loki_logs_raw(self) -> dict[str, Any]:
-        """Fetch Loki logs for this correlation_id (without writing
-        evidence)."""
+        """Fetch Loki logs for this correlation_id without writing evidence."""
         loki_url = self.get_service_url("loki")
         query = f'{{compose_project=~".+"}} |= "{self.correlation_id}"'
         try:

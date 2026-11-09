@@ -20,7 +20,7 @@ class TestMain:
             mock_args.command = "version"
             mock_parse.return_value = mock_args
 
-            with patch("soar_lab.__version__", "1.0.0"):
+            with patch("soar_lab.interfaces.api.cli.__version__", "1.0.0"):
                 result = main()
 
                 captured = capsys.readouterr()
@@ -53,11 +53,11 @@ class TestMain:
                 mock_args.count = 5
                 mock_parse.return_value = mock_args
 
-                with patch("soar_lab.config.settings.create_settings") as mock_settings:
+                with patch("soar_lab.interfaces.api.cli.create_settings") as mock_settings:
                     mock_settings.return_value = {}
 
                     with patch(
-                        "soar_lab.infrastructure.config_provider.InfrastructureConfigProvider"
+                        "soar_lab.interfaces.api.cli.InfrastructureConfigProvider"
                     ) as mock_config_provider:
                         mock_config = Mock()
                         mock_config.get.return_value = None  # base_dir is None
@@ -78,23 +78,21 @@ class TestMain:
                 mock_args.env = True
                 mock_parse.return_value = mock_args
 
-                with patch("soar_lab.config.settings.create_settings") as mock_settings:
+                with patch("soar_lab.interfaces.api.cli.create_settings") as mock_settings:
                     mock_settings.return_value = {}
 
                     with patch(
-                        "soar_lab.infrastructure.config_provider.InfrastructureConfigProvider"
+                        "soar_lab.interfaces.api.cli.InfrastructureConfigProvider"
                     ) as mock_config_provider:
                         mock_config = Mock()
                         mock_config.get.return_value = "/tmp/test"
                         mock_config_provider.return_value = mock_config
 
-                        with patch(
-                            "soar_lab.infrastructure.filesystem_storage.FilesystemStorage"
-                        ) as mock_storage:
+                        with patch("soar_lab.interfaces.api.cli.FilesystemStorage") as mock_storage:
                             mock_storage.return_value = Mock()
 
                             with patch(
-                                "scripts.setup.generate_secrets.SecretGeneratorService"
+                                "soar_lab.interfaces.api.cli.SecretGeneratorService"
                             ) as mock_secret_service:
                                 mock_service = Mock()
                                 mock_service.generate_api_key.return_value = "test_api_key"
@@ -123,8 +121,10 @@ class TestMain:
                 mock_args.port = 8000
                 mock_parse.return_value = mock_args
 
-                with patch("uvicorn.run") as mock_uvicorn:
-                    with patch("soar_lab.interfaces.api.composition.create_app") as mock_create_app:
+                with patch("soar_lab.interfaces.api.cli.uvicorn.run") as mock_uvicorn:
+                    with patch(
+                        "soar_lab.interfaces.api.cli.create_composed_app"
+                    ) as mock_create_app:
                         mock_app = Mock()
                         mock_create_app.return_value = mock_app
 
@@ -145,33 +145,33 @@ class TestMain:
                 mock_args.count = 5
                 mock_parse.return_value = mock_args
 
-                with patch("soar_lab.config.settings.create_settings") as mock_settings:
+                with patch("soar_lab.interfaces.api.cli.create_settings") as mock_settings:
                     mock_settings_instance = Mock()
                     mock_settings.return_value = mock_settings_instance
 
                     with patch(
-                        "soar_lab.infrastructure.config_provider.InfrastructureConfigProvider"
+                        "soar_lab.interfaces.api.cli.InfrastructureConfigProvider"
                     ) as mock_config_provider:
                         mock_config = Mock()
                         mock_config.get.return_value = "/tmp/test"
                         mock_config_provider.return_value = mock_config
 
-                        with patch("pathlib.Path") as mock_path:
+                        with patch("soar_lab.interfaces.api.cli.Path") as mock_path:
                             mock_path_instance = Mock()
                             mock_path.return_value = mock_path_instance
 
                             with patch(
-                                "soar_lab.infrastructure.filesystem_storage.FilesystemStorage"
+                                "soar_lab.interfaces.api.cli.FilesystemStorage"
                             ) as mock_storage:
                                 mock_storage.return_value = Mock()
 
                                 with patch(
-                                    "soar_lab.domain.services.ioc_generator.SimulatedIOCGenerator"
+                                    "soar_lab.interfaces.api.cli.SimulatedIOCGenerator"
                                 ) as mock_ioc_gen:
                                     mock_ioc_gen.return_value = Mock()
 
                                     with patch(
-                                        "soar_lab.data.generate_iocs.IOCPackageGenerator"
+                                        "soar_lab.interfaces.api.cli.IOCPackageGenerator"
                                     ) as mock_package_gen:
                                         mock_generator = Mock()
                                         mock_generator.create_ioc_package.return_value = {
@@ -196,33 +196,33 @@ class TestMain:
                 mock_args.count = 5
                 mock_parse.return_value = mock_args
 
-                with patch("soar_lab.config.settings.create_settings") as mock_settings:
+                with patch("soar_lab.interfaces.api.cli.create_settings") as mock_settings:
                     mock_settings_instance = Mock()
                     mock_settings.return_value = mock_settings_instance
 
                     with patch(
-                        "soar_lab.infrastructure.config_provider.InfrastructureConfigProvider"
+                        "soar_lab.interfaces.api.cli.InfrastructureConfigProvider"
                     ) as mock_config_provider:
                         mock_config = Mock()
                         mock_config.get.return_value = "/tmp/test"
                         mock_config_provider.return_value = mock_config
 
-                        with patch("pathlib.Path") as mock_path:
+                        with patch("soar_lab.interfaces.api.cli.Path") as mock_path:
                             mock_path_instance = Mock()
                             mock_path.return_value = mock_path_instance
 
                             with patch(
-                                "soar_lab.infrastructure.filesystem_storage.FilesystemStorage"
+                                "soar_lab.interfaces.api.cli.FilesystemStorage"
                             ) as mock_storage:
                                 mock_storage.return_value = Mock()
 
                                 with patch(
-                                    "soar_lab.domain.services.ioc_generator.SimulatedIOCGenerator"
+                                    "soar_lab.interfaces.api.cli.SimulatedIOCGenerator"
                                 ) as mock_ioc_gen:
                                     mock_ioc_gen.return_value = Mock()
 
                                     with patch(
-                                        "soar_lab.data.generate_iocs.IOCPackageGenerator"
+                                        "soar_lab.interfaces.api.cli.IOCPackageGenerator"
                                     ) as mock_package_gen:
                                         mock_generator = Mock()
                                         mock_generator.create_ioc_package.return_value = {
@@ -248,25 +248,23 @@ class TestMain:
                 mock_args.env = False
                 mock_parse.return_value = mock_args
 
-                with patch("soar_lab.config.settings.create_settings") as mock_settings:
+                with patch("soar_lab.interfaces.api.cli.create_settings") as mock_settings:
                     mock_settings_instance = Mock()
                     mock_settings.return_value = mock_settings_instance
 
                     with patch(
-                        "soar_lab.infrastructure.config_provider.InfrastructureConfigProvider"
+                        "soar_lab.interfaces.api.cli.InfrastructureConfigProvider"
                     ) as mock_config_provider:
                         mock_config = Mock()
                         mock_config.get.return_value = "/tmp/test"
                         mock_config_provider.return_value = mock_config
 
-                        with patch(
-                            "soar_lab.infrastructure.filesystem_storage.FilesystemStorage"
-                        ) as mock_storage:
+                        with patch("soar_lab.interfaces.api.cli.FilesystemStorage") as mock_storage:
                             mock_storage_instance = Mock()
                             mock_storage.return_value = mock_storage_instance
 
                             with patch(
-                                "scripts.setup.generate_secrets.SecretGeneratorService"
+                                "soar_lab.interfaces.api.cli.SecretGeneratorService"
                             ) as mock_secret_service:
                                 mock_service = Mock()
                                 mock_service.generate_api_key.return_value = "test_api_key"
@@ -292,24 +290,22 @@ class TestMain:
                 mock_args.env = False
                 mock_parse.return_value = mock_args
 
-                with patch("soar_lab.config.settings.create_settings") as mock_settings:
+                with patch("soar_lab.interfaces.api.cli.create_settings") as mock_settings:
                     mock_settings_instance = Mock()
                     mock_settings.return_value = mock_settings_instance
 
                     with patch(
-                        "soar_lab.infrastructure.config_provider.InfrastructureConfigProvider"
+                        "soar_lab.interfaces.api.cli.InfrastructureConfigProvider"
                     ) as mock_config_provider:
                         mock_config = Mock()
                         mock_config.get.return_value = "/tmp/test"
                         mock_config_provider.return_value = mock_config
 
-                        with patch(
-                            "soar_lab.infrastructure.filesystem_storage.FilesystemStorage"
-                        ) as mock_storage:
+                        with patch("soar_lab.interfaces.api.cli.FilesystemStorage") as mock_storage:
                             mock_storage.return_value = Mock()
 
                             with patch(
-                                "scripts.setup.generate_secrets.SecretGeneratorService"
+                                "soar_lab.interfaces.api.cli.SecretGeneratorService"
                             ) as mock_secret_service:
                                 mock_service = Mock()
                                 mock_service.generate_api_key.return_value = "test_api_key"

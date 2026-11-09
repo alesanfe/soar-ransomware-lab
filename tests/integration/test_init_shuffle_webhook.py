@@ -16,6 +16,16 @@ from scripts.setup.init_shuffle_webhook import init_shuffle_webhook
 class TestInitShuffleWebhook:
     """Test Shuffle webhook initialization."""
 
+    @pytest.fixture(autouse=True)
+    def isolate_webhook_info(self, tmp_path, monkeypatch):
+        """BUG-041: init_shuffle_webhook writes webhook_info.json — without
+        WEBHOOK_INFO_DIR it lands in the real reports/validation/results/
+        dir and overwrites the live webhook URL with mock data
+        ("trigger-001", "test-api-key"), breaking subsequent E2E tests
+        (webhook 404). Redirect every test to a temp dir."""
+        monkeypatch.setenv("WEBHOOK_INFO_DIR", str(tmp_path))
+        return tmp_path
+
     @pytest.fixture
     def webhook_info_path(self):
         """Path to webhook info file (must match
@@ -153,6 +163,18 @@ class TestInitShuffleWebhook:
             assert (
                 result1["workflow_id"] == result2["workflow_id"]
             ), "Webhook initialization should be idempotent"
+
+    def test_does_not_pollute_real_results_dir(
+        self, shuffle_client, webhook_info_path, isolate_webhook_info
+    ):
+        """Regression BUG-041: mocked init must write to the isolated
+        WEBHOOK_INFO_DIR, never to reports/validation/results/."""
+        assert str(isolate_webhook_info) in str(webhook_info_path)
+        assert "results" not in str(webhook_info_path)
+        with patch("scripts.setup.init_shuffle_webhook.ShuffleClient") as mock_client:
+            mock_client.return_value = shuffle_client
+            init_shuffle_webhook()
+        assert webhook_info_path.exists()
 
     def test_error_handling_on_shuffle_failure(self, shuffle_client):
         """Test error handling when Shuffle is unavailable."""

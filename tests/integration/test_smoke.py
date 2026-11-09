@@ -28,6 +28,13 @@ TIMEOUT = 8  # seconds per HTTP request
 _IN_DOCKER = os.path.exists("/.dockerenv")
 
 
+def _svc_headers() -> dict:
+    """Service-token header for protected endpoints when
+    API_REQUIRE_AUTH=true (secure default). Empty dict when unset."""
+    token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    return {"X-Service-Token": token} if token else {}
+
+
 def _get_host_url(host: str, port: int, path: str = "") -> str:
     """Return appropriate URL based on environment (host vs container)."""
     if _IN_DOCKER:
@@ -61,9 +68,18 @@ def _get_host_url(host: str, port: int, path: str = "") -> str:
         else:
             return f"http://{mapped_host}{path}"
     else:
-        # On host, use localhost
-        if port:
-            return f"http://{host}:{port}{path}"
+        # On host, services publish remapped ports (see docker-compose):
+        # internal → host-published. Unmapped services are not reachable.
+        host_port_map = {
+            9201: 8200,  # elasticsearch
+            9200: 8201,  # opensearch
+            9000: 8100,  # thehive
+            9001: 8101,  # cortex
+            5601: 8202,  # opensearch-dashboards
+        }
+        mapped_port = host_port_map.get(port, port)
+        if mapped_port:
+            return f"http://{host}:{mapped_port}{path}"
         else:
             return f"http://{host}{path}"
 
@@ -80,17 +96,6 @@ def _docker_inspect(container: str) -> dict | None:
     return data[0] if data else None
 
 
-def _container_healthy(name: str) -> bool:
-    info = _docker_inspect(name)
-    if not info:
-        return False
-    state = info.get("State", {})
-    health = state.get("Health", {})
-    if health:
-        return health.get("Status") == "healthy"
-    return state.get("Running", False)
-
-
 def _get(url: str, expected: list[int], **kwargs) -> requests.Response:
     return requests.get(url, timeout=TIMEOUT, **kwargs)
 
@@ -99,7 +104,7 @@ def _get(url: str, expected: list[int], **kwargs) -> requests.Response:
 # Priority markers
 # ─────────────────────────────────────────────────────────────────────────────
 # pytest.ini / pyproject.toml should define:
-#   markers = smoke, smoke_critical, smoke_high, smoke_medium, requires_docker
+#   markers such as: smoke, smoke_critical, smoke_high, smoke_medium, requires_docker
 
 pytestmark = pytest.mark.smoke
 
@@ -214,7 +219,7 @@ class TestSmokeHigh:
         """New endpoint: GET /backup/list."""
         try:
             url = _get_host_url("localhost", 8000, "/backup/list")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, headers=_svc_headers())
             assert r.status_code == 200, f"/backup/list returned {r.status_code}"
             assert "backups" in r.json()
         except requests.ConnectionError:
@@ -224,7 +229,7 @@ class TestSmokeHigh:
         """New endpoint: GET /analytics/kpis."""
         try:
             url = _get_host_url("localhost", 8000, "/analytics/kpis")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, headers=_svc_headers())
             assert r.status_code == 200, f"/analytics/kpis returned {r.status_code}"
         except requests.ConnectionError:
             pytest.fail("API not reachable")
@@ -233,7 +238,7 @@ class TestSmokeHigh:
         """New endpoint: GET /analytics/metrics."""
         try:
             url = _get_host_url("localhost", 8000, "/analytics/metrics")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, headers=_svc_headers())
             assert r.status_code == 200, f"/analytics/metrics returned {r.status_code}"
             data = r.json()
             for key in ("cpu", "memory", "disk"):
@@ -278,6 +283,13 @@ class TestSmokeMedium:
             pytest.fail("Grafana not reachable")
 
     def test_loki_ready(self):
+        # Loki's 3100 is not published to the host — from outside Docker,
+        # verify container liveness via docker inspect instead.
+        if not _IN_DOCKER:
+            info = _docker_inspect("soar_loki")
+            assert info is not None, "Loki container not found"
+            assert info.get("State", {}).get("Running", False), "Loki container not running"
+            return
         try:
             url = _get_host_url("localhost", 3100, "/ready")
             r = requests.get(url, timeout=TIMEOUT)
@@ -361,7 +373,7 @@ class TestSmokeResources:
             if os.path.exists("/.dockerenv"):
                 url = "http://elasticsearch:9200/_cat/allocation?v&format=json"
             else:
-                url = "http://localhost:9201/_cat/allocation?v&format=json"
+                url = _get_host_url("localhost", 9201, "/_cat/allocation?v&format=json")
             r = requests.get(url, timeout=TIMEOUT)
             assert r.status_code == 200, "ES allocation endpoint not available"
             nodes = r.json()

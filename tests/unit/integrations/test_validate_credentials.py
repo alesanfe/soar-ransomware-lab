@@ -233,13 +233,23 @@ class TestValidateCredentials:
 
     @pytest.fixture
     def mock_repo_structure(self, tmp_path):
-        """Create a mock repo structure for testing."""
+        """Create a mock repo structure for testing.
+
+        P0.6: a *valid* repo must contain a canonical ``scripts/`` tree —
+        the validator now treats "no files discovered" as an error rather
+        than silently passing, so the fixture models a real layout.
+        """
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         infra = repo_root / "infra" / "docker" / "compose"
         infra.mkdir(parents=True)
         src = repo_root / "src" / "soar_lab" / "infrastructure"
         src.mkdir(parents=True)
+        scripts = repo_root / "scripts" / "setup"
+        scripts.mkdir(parents=True)
+        (scripts / "init_service.py").write_text(
+            "import os\nKEY = os.environ.get('ELASTIC_PASSWORD', 'testpass')\n"
+        )
         return repo_root
 
     def test_validate_credentials_missing_env_file(self, mock_repo_structure):

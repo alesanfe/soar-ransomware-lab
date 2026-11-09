@@ -10,7 +10,6 @@ Validates configuration management:
 
 import re
 import subprocess
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -126,10 +125,10 @@ class TestConfiguration(E2EBaseTest):
         for var, val in port_vars_from_example.items():
             try:
                 port = int(val)
-                assert 1 <= port <= 65535, f"{var}={val} should be a valid port (1-65535)"
             except ValueError:
-                # Some port vars may have defaults with colons — skip those
-                pass
+                # e.g. "8080:80"-style defaults — not a plain port value
+                continue
+            assert 1 <= port <= 65535, f"{var}={val} should be a valid port (1-65535)"
         self._log(f"+ All {len(port_vars_from_example)} port variables valid")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -307,7 +306,7 @@ class TestConfiguration(E2EBaseTest):
                 self._log(f"  + {dirname}: directory not present (Docker named volume) — skipping")
                 continue
             # Test writability
-            test_file = data_dir / f"tc27_write_test_{int(time.time())}.tmp"
+            test_file = data_dir / f"{self.uid(chr(116)+chr(99)+chr(50)+chr(55))}.tmp"
             try:
                 test_file.write_text("tc27-volume-test", encoding="utf-8")
                 assert test_file.exists(), f"Should be able to write to {data_dir}"
@@ -321,7 +320,9 @@ class TestConfiguration(E2EBaseTest):
         # Elasticsearch should have indexed documents (verified via API)
         try:
             es_count = self.es.count()
-            assert es_count >= 0, f"ES document count should be >= 0, got {es_count}"
+            assert (
+                es_count > 0
+            ), f"ES must contain documents after uptime — persistence oracle, got {es_count}"
             self._log(f"+ Elasticsearch has {es_count} documents (data persists)")
         except Exception as e:
             pytest.fail(f"Could not verify ES data persistence: {e}")

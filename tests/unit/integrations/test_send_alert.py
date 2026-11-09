@@ -18,9 +18,9 @@ class TestMain:
     """Tests for main function."""
 
     @patch("sys.argv", ["send_alert", "--type", "malicious", "--single"])
-    @patch("soar_lab.infrastructure.http_alert_sender.HTTPAlertSender")
-    @patch("soar_lab.domain.alert_generator.AlertGenerator")
-    @patch("soar_lab.config.logging.get_logger")
+    @patch("soar_lab.infrastructure.messaging.send_alert.HTTPAlertSender")
+    @patch("soar_lab.infrastructure.messaging.send_alert.AlertGenerator")
+    @patch("soar_lab.infrastructure.messaging.send_alert.get_logger")
     def test_main_single_malicious_alert(self, mock_get_logger, mock_alert_gen, mock_sender):
         """Test main with single malicious alert."""
         mock_logger = Mock()
@@ -46,9 +46,9 @@ class TestMain:
         mock_sender_instance.send.assert_called_once()
 
     @patch("sys.argv", ["send_alert", "--type", "benign", "--single"])
-    @patch("soar_lab.infrastructure.http_alert_sender.HTTPAlertSender")
-    @patch("soar_lab.domain.alert_generator.AlertGenerator")
-    @patch("soar_lab.config.logging.get_logger")
+    @patch("soar_lab.infrastructure.messaging.send_alert.HTTPAlertSender")
+    @patch("soar_lab.infrastructure.messaging.send_alert.AlertGenerator")
+    @patch("soar_lab.infrastructure.messaging.send_alert.get_logger")
     def test_main_single_benign_alert(self, mock_get_logger, mock_alert_gen, mock_sender):
         """Test main with single benign alert."""
         mock_logger = Mock()
@@ -74,9 +74,9 @@ class TestMain:
         mock_sender_instance.send.assert_called_once()
 
     @patch("sys.argv", ["send_alert", "--type", "malicious", "--num-alerts", "2", "--delay", "0"])
-    @patch("soar_lab.infrastructure.http_alert_sender.HTTPAlertSender")
-    @patch("soar_lab.domain.alert_generator.AlertGenerator")
-    @patch("soar_lab.config.logging.get_logger")
+    @patch("soar_lab.infrastructure.messaging.send_alert.HTTPAlertSender")
+    @patch("soar_lab.infrastructure.messaging.send_alert.AlertGenerator")
+    @patch("soar_lab.infrastructure.messaging.send_alert.get_logger")
     def test_main_multiple_alerts(self, mock_get_logger, mock_alert_gen, mock_sender):
         """Test main with multiple alerts."""
         mock_logger = Mock()
@@ -102,9 +102,9 @@ class TestMain:
         assert mock_sender_instance.send.call_count == 2
 
     @patch("sys.argv", ["send_alert", "--type", "malicious", "--single"])
-    @patch("soar_lab.infrastructure.http_alert_sender.HTTPAlertSender")
-    @patch("soar_lab.domain.alert_generator.AlertGenerator")
-    @patch("soar_lab.config.logging.get_logger")
+    @patch("soar_lab.infrastructure.messaging.send_alert.HTTPAlertSender")
+    @patch("soar_lab.infrastructure.messaging.send_alert.AlertGenerator")
+    @patch("soar_lab.infrastructure.messaging.send_alert.get_logger")
     def test_main_send_failure(self, mock_get_logger, mock_alert_gen, mock_sender):
         """Test main when alert sending fails."""
         mock_logger = Mock()
@@ -129,9 +129,9 @@ class TestMain:
             assert exc_info.value.code == 1
 
     @patch("sys.argv", ["send_alert", "--type", "malicious", "--single"])
-    @patch("soar_lab.infrastructure.http_alert_sender.HTTPAlertSender")
-    @patch("soar_lab.domain.alert_generator.AlertGenerator")
-    @patch("soar_lab.config.logging.get_logger")
+    @patch("soar_lab.infrastructure.messaging.send_alert.HTTPAlertSender")
+    @patch("soar_lab.infrastructure.messaging.send_alert.AlertGenerator")
+    @patch("soar_lab.infrastructure.messaging.send_alert.get_logger")
     def test_main_default_args(self, mock_get_logger, mock_alert_gen, mock_sender):
         """Test main with default arguments."""
         mock_logger = Mock()
@@ -157,6 +157,45 @@ class TestMain:
         # Verify default type is malicious
         mock_alert_gen_instance.generate_malicious.assert_called_once()
 
+    @patch(
+        "sys.argv",
+        ["send_alert", "--type", "malicious", "--single", "--webhook-url", "http://custom/hook"],
+    )
+    @patch("soar_lab.infrastructure.messaging.send_alert.HTTPAlertSender")
+    @patch("soar_lab.infrastructure.messaging.send_alert.AlertGenerator")
+    @patch("soar_lab.infrastructure.messaging.send_alert.get_logger")
+    def test_main_explicit_webhook_url(self, mock_get_logger, mock_alert_gen, mock_sender):
+        """--webhook-url on argv skips the default-resolution branch."""
+        mock_get_logger.return_value = Mock()
+        mock_alert_gen_instance = Mock()
+        mock_alert_gen.return_value = mock_alert_gen_instance
+        mock_alert_gen_instance.generate_malicious.return_value = {"alert_id": "SIM-001"}
+        mock_sender_instance = Mock()
+        mock_sender.return_value = mock_sender_instance
+        mock_sender_instance.send.return_value = {"success": True}
+        mock_sender_instance.get_metrics.return_value = {"alerts_sent": 1, "alerts_failed": 0}
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        main()
+
+        _, kwargs = mock_sender.call_args
+        assert kwargs["webhook_url"] == "http://custom/hook"
+
+    @patch("sys.argv", ["send_alert", "--type", "malicious", "--num-alerts", "2", "--delay", "1"])
+    @patch("soar_lab.infrastructure.messaging.send_alert.HTTPAlertSender")
+    @patch("soar_lab.infrastructure.messaging.send_alert.AlertGenerator")
+    @patch("soar_lab.infrastructure.messaging.send_alert.get_logger")
+    def test_main_sleeps_between_alerts(self, mock_get_logger, mock_alert_gen, mock_sender):
+        """--delay > 0 sleeps between sends (but not after the last)."""
+        mock_get_logger.return_value = Mock()
+        mock_alert_gen_instance = Mock()
+        mock_alert_gen.return_value = mock_alert_gen_instance
+        mock_alert_gen_instance.generate_malicious.return_value = {"alert_id": "SIM-001"}
+        mock_sender_instance = Mock()
+        mock_sender.return_value = mock_sender_instance
+        mock_sender_instance.send.return_value = {"success": True}
+        mock_sender_instance.get_metrics.return_value = {"alerts_sent": 2, "alerts_failed": 0}
+
+        with patch("soar_lab.infrastructure.messaging.send_alert.time.sleep") as mock_sleep:
+            main()
+
+        mock_sleep.assert_called_once_with(1)

@@ -5,7 +5,6 @@ upload, Nginx limits, Cortex artifacts, checksum validation."""
 import hashlib
 import os
 import sys
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -64,7 +63,7 @@ class TestLargeEvidence(E2EBaseTest):
         # STEP 2: Create a TheHive case to attach observables to
         self._log("STEP 2: Creating TheHive case for evidence upload")
         case = self.thehive.create_case(
-            title=f"TC-29-01 Mass Evidence Upload {int(time.time())}",
+            title=self.uid("TC29-01"),
             description="Mass evidence upload test - 50 files",
             severity=2,
             tags=["TC-29", "mass-evidence"],
@@ -154,16 +153,17 @@ class TestLargeEvidence(E2EBaseTest):
         # webhook_url = http://shuffle-backend:5001/api/v1/hooks/<id>
         # nginx_url   = https://nginx/shuffle-api/api/v1/hooks/<id>
         import urllib.parse as _up
+
         _parsed = _up.urlparse(self.webhook_url)
         _hook_path = _parsed.path  # /api/v1/hooks/<id>
-        nginx_webhook_url = f"https://nginx/shuffle-api{_hook_path}"
+        nginx_webhook_url = f"{self.get_service_url('nginx_https')}/shuffle-api{_hook_path}"
         self._log(f"  Using Nginx-proxied URL: {nginx_webhook_url}")
 
         # STEP 1: Send a payload UNDER the limit (~900KB) — should be accepted
         self._log("STEP 1: Sending payload under limit (900KB)")
         small_data = "A" * 900_000  # ~900KB
         small_payload = {
-            "alert_id": f"TC29-SMALL-{int(time.time())}",
+            "alert_id": self.uid("TC29-SMALL"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC29-001",
             "src_ip": "192.168.1.220",
@@ -183,24 +183,20 @@ class TestLargeEvidence(E2EBaseTest):
         )
         self._log(f"+ Small payload accepted: HTTP {r_small.status_code}")
 
-        # Validate the small payload workflow execution for hidden errors
+        # Validate the small payload workflow execution for hidden errors —
+        # a 200 webhook can still hide a failing workflow, so this is loud.
         small_exec_id = r_small.json().get("execution_id", "")
         if small_exec_id and self.workflow_id:
-            try:
-                ex = self.shuffle.get_execution(
-                    self.workflow_id, small_exec_id, include_results=True
-                )
-                if isinstance(ex, dict) and ex.get("results"):
-                    validate_workflow_results(ex)
-                    self._log("+ Small payload workflow validated — no hidden errors")
-            except Exception as e:
-                self._log(f"  Workflow validation skipped: {e}")
+            ex = self.shuffle.get_execution(self.workflow_id, small_exec_id, include_results=True)
+            if isinstance(ex, dict) and ex.get("results"):
+                validate_workflow_results(ex)
+                self._log("+ Small payload workflow validated — no hidden errors")
 
         # STEP 2: Send a payload OVER the limit (2MB) — should be rejected
         self._log("STEP 2: Sending payload over limit (3MB)")
         large_data = "X" * 3_000_000  # 3MB — must exceed nginx client_max_body_size 2m
         large_payload = {
-            "alert_id": f"TC29-LARGE-{int(time.time())}",
+            "alert_id": self.uid("TC29-LARGE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC29-002",
             "src_ip": "192.168.1.221",
@@ -236,7 +232,7 @@ class TestLargeEvidence(E2EBaseTest):
         r_check = self.s.post(
             self.webhook_url,
             json={
-                "alert_id": f"TC29-CHECK-{int(time.time())}",
+                "alert_id": self.uid("TC29-CHECK"),
                 "alert_type": "ransomware",
                 "hostname": "WIN-TC29-003",
                 "src_ip": "192.168.1.222",
@@ -363,7 +359,7 @@ class TestLargeEvidence(E2EBaseTest):
         # STEP 2: Create a TheHive case and upload the file hash as observable
         self._log("STEP 2: Uploading file hash as TheHive observable")
         case = self.thehive.create_case(
-            title=f"TC-29-04 Checksum Validation {int(time.time())}",
+            title=self.uid("TC29-04"),
             description="Checksum validation test",
             severity=1,
             tags=["TC-29", "checksum"],

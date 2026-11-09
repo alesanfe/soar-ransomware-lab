@@ -34,6 +34,8 @@ def _run_ruff_check() -> list:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if result.returncode == 0:
         return []
@@ -49,6 +51,8 @@ def _run_ruff_format_check() -> tuple[int, str]:
         [sys.executable, "-m", "ruff", "format", "--check", str(SRC_DIR)],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     files = [line for line in result.stdout.splitlines() if line.strip()]
     return len(files), result.stdout

@@ -27,7 +27,7 @@ class TestBothWorkflows(E2EBaseTest):
 
     def _build_payload(self, prefix: str = "TC00-SIM", hostname: str = "WIN-SIM-001") -> dict:
         return {
-            "alert_id": f"{prefix}-{int(time.time())}",
+            "alert_id": self.uid(f"{prefix}"),
             "alert_type": "ransomware",
             "hostname": hostname,
             "src_ip": "192.168.1.100",

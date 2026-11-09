@@ -12,11 +12,12 @@ import json
 import subprocess
 import time
 from datetime import UTC, datetime
+from typing import ClassVar
 
 import pytest
-import requests
 
 from tests.e2e.base import E2EBaseTest
+from tests.e2e.base.config_mixin import E2E_RESULTS_DIR
 
 
 class TestNetworkWatcherMonitoring(E2EBaseTest):
@@ -27,11 +28,42 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
 
     tc_id = "TC-17"
 
+    _class_results: ClassVar[list] = []
+    _class_t0: ClassVar[datetime | None] = None
+
+    @classmethod
+    def setup_class(cls):
+        cls._class_results = []
+        cls._class_t0 = datetime.now(UTC)
+
+    @classmethod
+    def teardown_class(cls):
+        """Persist the aggregate Network-Watcher report once per class run.
+
+        Replaces the removed ``test_network_watcher_suite`` orchestrator
+        (EXEC-001): each scenario is collected once, and the report still
+        aggregates every per-test result.
+        """
+        if cls._class_t0 is None:
+            return
+        elapsed = (datetime.now(UTC) - cls._class_t0).total_seconds()
+        report = {
+            "test_case": "TC-17",
+            "scenario": "network_watcher_monitoring",
+            "elapsed_seconds": elapsed,
+            "results": cls._class_results,
+            "success": all(r.get("ok", False) for r in cls._class_results),
+        }
+        report_file = E2E_RESULTS_DIR / "TC-17_network_watcher_report.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
+        report_file.write_text(json.dumps(report, indent=2, default=str))
+        print(f"TC-17 + Report saved: {report_file}")
+
     def setup_method(self, method):
         super().setup_method(method)
         self.t0 = datetime.now(UTC)
         self.network_watcher_url = self.get_service_url("network_watcher")
-        self._results: list[dict] = []
+        self._results: list[dict] = type(self)._class_results
 
     # ------------------------------------------------------------------
     # Helpers
@@ -39,9 +71,7 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
 
     def _get_connections(self) -> dict:
         """Fetch current connections from Network Watcher API."""
-        response = requests.get(
-            f"{self.network_watcher_url}/api/connections", timeout=10, verify=False
-        )
+        response = self.s.get(f"{self.network_watcher_url}/api/connections", timeout=10)
         assert (
             response.status_code == 200
         ), f"Network Watcher /api/connections returned HTTP {response.status_code}"
@@ -51,7 +81,7 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
 
     def _get_health(self) -> dict:
         """Fetch health status from Network Watcher API."""
-        response = requests.get(f"{self.network_watcher_url}/health", timeout=10, verify=False)
+        response = self.s.get(f"{self.network_watcher_url}/health", timeout=10)
         assert (
             response.status_code == 200
         ), f"Network Watcher /health returned HTTP {response.status_code}"
@@ -108,7 +138,7 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
 
         # Submit an alert to generate network activity during workflow execution.
         payload = self.build_alert_payload(
-            alert_id=f"TC17-{self.correlation_id}-{int(time.time())}",
+            alert_id=self.uid("TC17"),
         )
         self.alert_data = payload
 
@@ -120,6 +150,7 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
 
         # Poll Network Watcher during/after execution for connection changes.
         counts: list[int] = [initial_count]
+        sample_errors = 0
         for i in range(5):
             try:
                 data = self._get_connections()
@@ -127,16 +158,22 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
                 counts.append(count)
                 self._log(f"Sample {i + 1}: {count} connections")
             except Exception as e:
+                sample_errors += 1
                 self._log(f"Sample {i + 1} failed: {e}")
             time.sleep(2)
 
         # Assert we collected multiple samples.
         assert len(counts) >= 2, f"Should have at least 2 connection samples, got {len(counts)}"
 
-        # Assert the Network Watcher API was responsive throughout (no errors).
+        # Real-time responsiveness means the API answered every sample —
+        # a silent failure would make the collected counts meaningless.
+        assert sample_errors == 0, (
+            f"Network Watcher API failed on {sample_errors}/5 samples — "
+            "real-time monitoring is unreliable"
+        )
+
         final_count = counts[-1]
         assert isinstance(final_count, int), "Final count should be an integer"
-        assert final_count >= 0, "Final count should be non-negative"
 
         # Assert the connection count is being tracked (either changed or stable
         # — the key is that the API returns valid data in real-time).
@@ -189,6 +226,7 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
         # 3. Wait for the service to become healthy again (within 60 seconds).
         deadline = time.time() + 60
         healthy = False
+        retry_errors = 0
         while time.time() < deadline:
             try:
                 data = self._get_health()
@@ -196,7 +234,8 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
                     healthy = True
                     break
             except Exception as e:
-                self._log(f"  NW health retry: {e}")
+                retry_errors += 1
+                self._log(f"  NW health retry ({retry_errors}): {e}")
             time.sleep(3)
 
         assert healthy, "Network Watcher did not recover within 60 seconds after restart"
@@ -232,39 +271,6 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
     # ------------------------------------------------------------------
     # Report & suite
     # ------------------------------------------------------------------
-
-    def _step_save_report(self, elapsed: float):
-        report = {
-            "test_case": "TC-17",
-            "scenario": "network_watcher_monitoring",
-            "elapsed_seconds": elapsed,
-            "results": self._results,
-            "success": all(r.get("ok", False) for r in self._results),
-        }
-        report_file = self.e2e_results_dir / "TC-17_network_watcher_report.json"
-        report_file.write_text(json.dumps(report, indent=2, default=str))
-        self._log(f"+ Report saved: {report_file}")
-
-    def test_network_watcher_suite(self):
-        """Run Network Watcher monitoring test suite."""
-        self._log("=== TC-17: NETWORK WATCHER MONITORING E2E TEST STARTED ===")
-
-        self.test_network_watcher_health()
-        self.test_network_watcher_connections()
-        self.test_network_watcher_real_time_updates()
-
-        # Validate that results were collected and all passed
-        assert len(self._results) > 0, "No Network Watcher results were recorded"
-        failed = [r for r in self._results if not r.get("ok", False)]
-        assert (
-            not failed
-        ), f"{len(failed)}/{len(self._results)} Network Watcher checks failed: {failed}"
-
-        # self.t0 is set in setup_method — no duplicate variable.
-        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
-        self._log(f"Elapsed: {elapsed:.1f}s")
-        self._log("=== TC-17 COMPLETED ===")
-        self._step_save_report(elapsed)
 
     # ------------------------------------------------------------------
     # Subcase-specific tests (TC-17-01 to TC-17-04)
@@ -368,9 +374,9 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
                 if val is not None:
                     try:
                         port = int(val)
-                        ports.append(port)
                     except (ValueError, TypeError):
-                        pass
+                        continue  # non-numeric port field — not a valid port entry
+                    ports.append(port)
 
         # Validate port ranges.
         for port in ports:
@@ -384,7 +390,10 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
         if len(connections) > 0 and len(ports) > 0:
             self._log(f"Found {len(ports)} port(s) in connections")
         else:
-            self._log(f"No port info in connections (container-level watcher) — skipping port count assertion")
+            self._log(
+                "No port info in connections (container-level watcher) "
+                "— skipping port count assertion"
+            )
 
         self._log("=== TC-17-03 COMPLETED ===")
 
@@ -427,6 +436,9 @@ class TestNetworkWatcherMonitoring(E2EBaseTest):
                 f"{set(protocols) if protocols else 'none'}"
             )
         else:
-            self._log("No protocol info in connections (container-level watcher) — skipping protocol count assertion")
+            self._log(
+                "No protocol info in connections (container-level watcher) "
+                "— skipping protocol count assertion"
+            )
 
         self._log("=== TC-17-04 COMPLETED ===")

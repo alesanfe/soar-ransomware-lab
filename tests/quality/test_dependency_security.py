@@ -22,13 +22,19 @@ THRESHOLDS = (
     / "thresholds"
     / "security_thresholds.yaml"
 )
+REQUIREMENTS_LOCK = Path(__file__).resolve().parents[2] / "requirements.lock"
 
 
-def _run_pip_audit() -> dict:
+def _run_pip_audit(requirements: Path | None = None) -> dict:
+    cmd = [sys.executable, "-m", "pip_audit", "--format", "json"]
+    if requirements is not None:
+        cmd += ["--requirement", str(requirements)]
     result = subprocess.run(
-        [sys.executable, "-m", "pip_audit", "--format", "json"],
+        cmd,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     try:
         return json.loads(result.stdout) if result.stdout.strip() else {}
@@ -114,13 +120,25 @@ class TestDependencySecurity:
             assert "package" in v, f"Vulnerability missing 'package' field: {v}"
 
     def test_vulnerability_count_below_threshold(self):
-        """Total vulnerability count should be below threshold (if
-        configured)."""
-        data = _run_pip_audit()
+        """Production dependency vulnerabilities should stay below
+        threshold.
+
+        Audits ``requirements.lock`` (the pinned production set that
+        ships in containers), not the whole developer environment —
+        env-only tooling (virtualenv, sphinx, jupyter...) is reported
+        informationally by the other tests in this class."""
+        requirements = REQUIREMENTS_LOCK if REQUIREMENTS_LOCK.exists() else None
+        if requirements is None:
+            pytest.skip("requirements.lock not found — cannot audit production deps")
+        data = _run_pip_audit(requirements=requirements)
         vulns = _parse_vulns(data)
         thresholds = _load_thresholds()
         max_vulns = thresholds.get("max_dependency_vulnerabilities")
         assert max_vulns is not None, "max_dependency_vulnerabilities threshold must be configured"
         total = len(vulns)
-        print(f"\nTotal vulnerabilities: {total} (threshold: {max_vulns})")
+        env_total = len(_parse_vulns(_run_pip_audit()))
+        print(
+            f"\nProduction vulnerabilities: {total} (threshold: {max_vulns}); "
+            f"full env (informational): {env_total}"
+        )
         assert total <= max_vulns, f"Total vulnerabilities {total} exceeds threshold {max_vulns}"

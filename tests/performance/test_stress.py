@@ -232,6 +232,8 @@ class StressTester:
 
     def percentile(self, data: list[float], percentile: int) -> float:
         """Calculate percentile."""
+        if not data:
+            return 0
         sorted_data = sorted(data)
         index = (percentile / 100) * (len(sorted_data) - 1)
 

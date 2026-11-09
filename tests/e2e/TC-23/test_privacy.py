@@ -36,7 +36,7 @@ class TestPrivacy(E2EBaseTest):
 
         # Send alert with PII
         payload = {
-            "alert_id": f"TC23-PII-{int(time.time())}",
+            "alert_id": self.uid("TC23-PII"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC23-001",
             "src_ip": "192.168.1.220",
@@ -59,23 +59,15 @@ class TestPrivacy(E2EBaseTest):
             execution.get("status") == "FINISHED"
         ), f"Workflow should be FINISHED, got {execution.get('status')}"
 
-        # Check Elasticsearch for PII masking
+        # Check Elasticsearch for PII masking — by VALUE, not by field:
+        # PII leaked into ANY indexed field (description, extras) counts.
         self._log("STEP 2: Checking Elasticsearch for PII masking")
         doc = self.es.search_by_alert_id(payload["alert_id"])
         assert doc is not None, "ES document not found"
         assert isinstance(doc, dict), "ES document must be a dict"
-        # Check if PII fields are masked
-        pii_fields = ["user_email", "user_phone", "user_ssn"]
-        for field in pii_fields:
-            value = doc.get(field)
-            if value:
-                # Check if masked (contains asterisks or similar)
-                if "*" in str(value) or "REDACTED" in str(value).upper():
-                    self._log(f"+ {field} is masked in Elasticsearch")
-                else:
-                    self._log(f"+ {field} may not be masked in Elasticsearch: {value}")
-            else:
-                self._log(f"+ {field} not present in Elasticsearch (may be filtered)")
+        for pii in ("user@example.com", "+1234567890", "123-45-6789"):
+            self.assert_pii_not_present(pii, indexes=("soar-alerts",), check_loki=False)
+        self._log("+ No PII value present in soar-alerts index")
 
         # Check TheHive for PII masking
         self._log("STEP 3: Checking TheHive for PII masking")
@@ -83,7 +75,13 @@ class TestPrivacy(E2EBaseTest):
         assert isinstance(cases, list), "TheHive cases must be a list"
         new_cases = len(cases) - self.cases_before
         assert new_cases > 0, "No new TheHive cases created for privacy test"
-        last = max(cases, key=lambda c: c.get("caseId", 0))
+        matching = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if payload["alert_id"] in c.get("description", "")
+        ]
+        assert matching, f"No TheHive case found containing alert_id={payload['alert_id']}"
+        last = matching[0]
         assert isinstance(last, dict), "Case must be a dict"
         description = last.get("description", "")
         assert isinstance(description, str), "Description must be string"
@@ -103,6 +101,13 @@ class TestPrivacy(E2EBaseTest):
         assert not pii_found, "PII should not be exposed in TheHive description"
         self._log("✓ PII not exposed in TheHive - privacy validated")
 
+        # STEP 4: PII must not reach the log pipeline either (the docstring
+        # has always claimed this check — now it actually runs).
+        self._log("STEP 4: Checking PII absence in Loki")
+        for pii in ("user@example.com", "+1234567890", "123-45-6789"):
+            self.assert_pii_not_present(pii, indexes=(), check_loki=True)
+        self._log("+ No PII value present in Loki")
+
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
         self._log("=== TC-23 COMPLETED — PII MASKING VALIDATED ===")
@@ -117,39 +122,42 @@ class TestPrivacy(E2EBaseTest):
         """
         self._log("=== TC-23: SECRET REDACTION TEST STARTED ===")
 
-        # Check log files for secrets
+        # Check log files for secrets — notify.log is produced by the
+        # workflow notification step; its absence means there is no
+        # evidence to check, and "no evidence" is not "no leak".  The
+        # subcase test already asserts it must exist.
         self._log("STEP 1: Checking log files for secrets")
         log_file = self.logs_dir / "notify.log"
-        if log_file.exists():
-            log_content = log_file.read_text()
-            assert len(log_content) > 0, "Log content must be non-empty"
+        assert log_file.exists(), (
+            f"notify.log must exist at {log_file} — a missing log cannot "
+            "prove secrets are not leaked"
+        )
+        log_content = log_file.read_text()
+        assert len(log_content) > 0, "Log content must be non-empty"
 
-            # Check for actual secret values (not just field names)
-            # Real secrets would look like "api_key=abc123" not just "api_key"
-            secret_value_patterns = [
-                "api_key=",
-                "apikey=",
-                "api-key=",
-                "password=",
-                "passwd=",
-                "pwd=",
-                "secret=",
-                "private_key=",
-                "bearer ",
-            ]
-            secrets_found = []
-            for pattern in secret_value_patterns:
-                if pattern.lower() in log_content.lower():
-                    secrets_found.append(pattern)
+        # Check for actual secret values (not just field names)
+        # Real secrets would look like "api_key=abc123" not just "api_key"
+        secret_value_patterns = [
+            "api_key=",
+            "apikey=",
+            "api-key=",
+            "password=",
+            "passwd=",
+            "pwd=",
+            "secret=",
+            "private_key=",
+            "bearer ",
+        ]
+        secrets_found = []
+        for pattern in secret_value_patterns:
+            if pattern.lower() in log_content.lower():
+                secrets_found.append(pattern)
 
-            assert len(secrets_found) == 0, (
-                f"Secret values found in notify.log: {secrets_found}. "
-                f"Secrets must be redacted from log files."
-            )
-            self._log("+ No secret values found in log file")
-        else:
-            # If log file doesn't exist, that's acceptable — no secrets to leak
-            self._log("+ Log file does not exist (no secrets to leak)")
+        assert len(secrets_found) == 0, (
+            f"Secret values found in notify.log: {secrets_found}. "
+            f"Secrets must be redacted from log files."
+        )
+        self._log("+ No secret values found in log file")
 
         # Check .env.full is in .gitignore (skip if .gitignore doesn't exist,
         # e.g. inside Docker container where git metadata is not copied)
@@ -168,6 +176,7 @@ class TestPrivacy(E2EBaseTest):
         self._log("STEP 3: Validating .env.full is not tracked by git")
         import subprocess
 
+        git_check_ran = True
         try:
             result = subprocess.run(
                 ["git", "ls-files", "--error-unmatch", ".env.full"],
@@ -181,9 +190,13 @@ class TestPrivacy(E2EBaseTest):
                 result.returncode != 0
             ), ".env.full is tracked by git — secrets are exposed in version control"
         except FileNotFoundError:
-            # git not available — skip this check
-            pass
-        self._log("+ .env.full is not tracked by git (secrets not in version control)")
+            # git not available — the tracked-file check could not run;
+            # record that instead of silently claiming a pass.
+            git_check_ran = False
+        if git_check_ran:
+            self._log("+ .env.full is not tracked by git (secrets not in version control)")
+        else:
+            self._log("  ! git binary unavailable — tracked-file check skipped")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -201,7 +214,7 @@ class TestPrivacy(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC23-MINIMIZE-{int(time.time())}",
+            "alert_id": self.uid("TC23-MINIMIZE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC23-002",
             "src_ip": "192.168.1.221",
@@ -278,7 +291,7 @@ class TestPrivacy(E2EBaseTest):
 
         # Send alert with email PII
         payload = {
-            "alert_id": f"TC23-01-PII-{int(time.time())}",
+            "alert_id": self.uid("TC23-01-PII"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC23-010",
             "src_ip": "192.168.1.230",
@@ -345,7 +358,7 @@ class TestPrivacy(E2EBaseTest):
 
         # Send alert to generate log activity
         payload = {
-            "alert_id": f"TC23-02-SECRET-{int(time.time())}",
+            "alert_id": self.uid("TC23-02-SECRET"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC23-020",
             "src_ip": "192.168.1.231",
@@ -409,7 +422,7 @@ class TestPrivacy(E2EBaseTest):
 
         # Send alert with internal IP and external PII
         payload = {
-            "alert_id": f"TC23-03-EXT-{int(time.time())}",
+            "alert_id": self.uid("TC23-03-EXT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC23-030",
             "src_ip": "192.168.1.232",  # internal IP — should be preserved
@@ -490,7 +503,7 @@ class TestPrivacy(E2EBaseTest):
         # Windows and are correctly parsed by the JSON webhook.
         sensitive_path = "C:/Users/admin/.ssh/id_rsa"
         payload = {
-            "alert_id": f"TC23-04-ARTIFACT-{int(time.time())}",
+            "alert_id": self.uid("TC23-04-ARTIFACT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC23-040",
             "src_ip": "192.168.1.233",

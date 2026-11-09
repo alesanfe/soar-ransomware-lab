@@ -249,3 +249,20 @@ class TestFilesystemStorage:
         result = storage.join_path("dir1", "dir2", "file.txt")
 
         assert result == str(Path("dir1", "dir2", "file.txt"))
+
+
+def test_store_metadata_writes_utf8(tmp_path):
+    """Non-ASCII metadata must round-trip on Windows (cp1252 default
+    encoding would crash or corrupt)."""
+    from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
+
+    class CP(dict):
+        def get(self, k, d=None):
+            return super().get(k, d)
+
+    fs = FilesystemStorage(config_provider=CP(base_dir=str(tmp_path)))
+    fs.store_backup_metadata("b1", {"note": "cifrado ñoño €"})
+    import json
+
+    raw = (tmp_path / "b1.metadata.json").read_bytes()
+    assert json.loads(raw.decode("utf-8"))["note"] == "cifrado ñoño €"

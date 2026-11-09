@@ -149,7 +149,7 @@ class TestSecretGeneratorService:
 
         result = service.validate_secret_format(secret, 9, allowed)
 
-        assert result == True
+        assert result
 
     def test_validate_secret_format_invalid_length(self):
         """Test validating secret format with invalid length."""
@@ -159,7 +159,7 @@ class TestSecretGeneratorService:
 
         result = service.validate_secret_format(secret, 9, allowed)
 
-        assert result == False
+        assert result is False
 
     def test_validate_secret_format_invalid_chars(self):
         """Test validating secret format with invalid characters."""
@@ -169,7 +169,7 @@ class TestSecretGeneratorService:
 
         result = service.validate_secret_format(secret, 10, allowed)
 
-        assert result == False
+        assert result is False
 
     def test_validate_secret_format_empty(self):
         """Test validating secret format with empty string."""
@@ -177,7 +177,7 @@ class TestSecretGeneratorService:
 
         result = service.validate_secret_format("", 10, string.ascii_letters)
 
-        assert result == False
+        assert result is False
 
     def test_generate_all_secrets(self):
         """Test generating all secrets."""
@@ -230,3 +230,66 @@ class TestSecretGeneratorService:
         keys = [service.generate_api_key() for _ in range(10)]
 
         assert len(set(keys)) == 10  # All should be unique
+
+
+class TestSecretMutationHardening:
+    """Deterministic kills for alphabet/exclusion/formatting mutants."""
+
+    EXPECTED_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ"  # ascii_uppercase minus 'O','I'
+    EXPECTED_LOWER = "abcdefghijkmnopqrstuvwxyz"  # ascii_lowercase minus 'l'
+    EXPECTED_DIGITS = "23456789"  # digits minus '0','1'
+    EXPECTED_SPECIAL = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+
+    @staticmethod
+    def _capture_choices(monkeypatch):
+        """Patch secrets.choice to record every alphabet it receives."""
+        import soar_lab.security.secret_generator as sg
+
+        captured = []
+
+        def fake_choice(alphabet):
+            captured.append(alphabet)
+            return alphabet[0]
+
+        monkeypatch.setattr(sg.secrets, "choice", fake_choice)
+        return captured
+
+    def test_password_component_alphabets_exact(self, monkeypatch):
+        captured = self._capture_choices(monkeypatch)
+        service = SecretGeneratorService()
+        service.generate_password(8)
+        assert captured[0] == string.ascii_uppercase
+        assert captured[1] == string.ascii_lowercase
+        assert captured[2] == string.digits
+        assert captured[3] == self.EXPECTED_SPECIAL
+        assert captured[4] == (
+            string.ascii_uppercase + string.ascii_lowercase + string.digits + self.EXPECTED_SPECIAL
+        )
+
+    def test_api_key_exclusion_alphabets_exact(self, monkeypatch):
+        captured = self._capture_choices(monkeypatch)
+        service = SecretGeneratorService()
+        service.generate_api_key()
+        expected_full = (
+            "".join(c for c in string.ascii_letters if c not in "0Ol1I") + self.EXPECTED_DIGITS
+        )
+        for i in range(7):
+            assert captured[i * 3] == self.EXPECTED_UPPER
+            assert captured[i * 3 + 1] == self.EXPECTED_LOWER
+            assert captured[i * 3 + 2] == self.EXPECTED_DIGITS
+        assert captured[21] == expected_full
+
+    def test_all_secrets_lengths_and_utc_timestamp(self):
+        secrets = SecretGeneratorService().generate_all_secrets()
+        assert len(secrets["thehive_api_key"]) == 32
+        assert len(secrets["cortex_api_key"]) == 32
+        assert len(secrets["shuffle_api_key"]) == 32
+        assert secrets["generated_at"].endswith("Z")
+        assert "+00:00" not in secrets["generated_at"]
+
+    def test_all_secrets_file_uses_four_space_indent(self):
+        mock_filesystem = Mock()
+        service = SecretGeneratorService(file_system=mock_filesystem)
+        service.generate_all_secrets(output_file="/tmp/secrets.json")
+        content = mock_filesystem.write_file.call_args[0][1]
+        assert '\n    "thehive_api_key"' in content

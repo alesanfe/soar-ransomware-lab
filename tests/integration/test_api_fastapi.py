@@ -28,6 +28,8 @@ def mock_config():
         "API_DESCRIPTION": "Test",
         "API_VERSION": "1.0.0",
         "CORS_ORIGINS": ["*"],
+        # Explicit opt-out: these tests exercise endpoints, not the auth gate
+        "API_REQUIRE_AUTH": "false",
     }.get(key, default)
     cp.get_service_urls.return_value = {}
     return cp

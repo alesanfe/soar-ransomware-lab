@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Pytest configuration for SOAR Ransomware Lab Provides common fixtures and
-configuration for all tests."""
+"""Pytest configuration for SOAR Ransomware Lab.
+
+Provides common fixtures and configuration for all tests.
+"""
 
 import os
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+
+from tests import perf_recorder
 
 __all__ = [
     "mock_settings",
@@ -84,21 +88,37 @@ def pytest_collection_modifyitems(items):
             item.add_marker(getattr(pytest.mark, extra))
 
 
-# Set BASE_DIR at module load time so that imports of soar_lab.api (which
-# instantiate Settings() eagerly) do not fail during test collection.
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Record per-phase duration of every test for bottleneck analysis."""
+    outcome = yield
+    perf_recorder.record(item, outcome.get_result())
+
+
+def pytest_sessionfinish(session):
+    """Flush the collected durations to reports/perf/."""
+    perf_recorder.finish()
+
+
+# Set BASE_DIR at module load time so that imports of soar_lab.interfaces.api
+# (which instantiate Settings() eagerly) do not fail during test collection.
 os.environ.setdefault("BASE_DIR", str(Path(__file__).parent.parent))
 
-# Disable eager instantiation in soar_lab.api.__init__ to allow tests to
-# configure environment before app creation
+# Disable eager instantiation in soar_lab.interfaces.api.__init__ to allow
+# tests to configure environment before app creation
 os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
 
-# Load .env.full so e2e tests can pick up real tokens (SIEM_WEBHOOK_TOKEN, etc.)
+# Load container env so e2e tests pick up real tokens (SIEM_WEBHOOK_TOKEN,
+# etc.). Inside Docker the mounted snapshot is `.env.container`; on the host
+# we fall back to `.env.full` (SOAR-018).
 try:
     from dotenv import load_dotenv
 
-    _env_file = Path(__file__).parent.parent / ".env.full"
-    if _env_file.exists():
-        load_dotenv(_env_file, override=True)
+    for _name in (".env.container", ".env.full"):
+        _env_file = Path(__file__).parent.parent / _name
+        if _env_file.exists():
+            load_dotenv(_env_file, override=True)
+            break
 except ImportError:
     pass
 
@@ -178,13 +198,15 @@ def reset_env_vars():
     original_env = os.environ.copy()
     # Set BASE_DIR for tests that import modules that require it
     os.environ.setdefault("BASE_DIR", str(Path(__file__).parent.parent))
-    # Reload .env.full to ensure correct API keys are used
+    # Reload container env to ensure correct API keys are used
     try:
         from dotenv import load_dotenv
 
-        _env_file = Path(__file__).parent.parent / ".env.full"
-        if _env_file.exists():
-            load_dotenv(_env_file, override=True)
+        for _name in (".env.container", ".env.full"):
+            _env_file = Path(__file__).parent.parent / _name
+            if _env_file.exists():
+                load_dotenv(_env_file, override=True)
+                break
     except ImportError:
         pass
     yield

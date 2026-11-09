@@ -15,9 +15,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from tests.e2e.base import E2EBaseTest
 
-# Docker network name used by the SOAR stack
-SOAR_NETWORK = "soar_net"
-
 
 class TestOfflineMode(E2EBaseTest):
     """TC-30 — Offline Mode: Comportamiento en escenarios sin conexión."""
@@ -48,13 +45,37 @@ class TestOfflineMode(E2EBaseTest):
                 text=True,
                 timeout=30,
             )
-            if result.returncode == 0:
+            if result.returncode != 0:
+                self._log(f"+ {container} stop failed: {result.stderr.strip()}")
+                return False
+            # Verify the container actually stopped — the exit code alone is
+            # not proof (docker stop may race with healthchecks/restarts).
+            stopped = self.wait_until(
+                lambda: not self._container_running(container),
+                timeout=30,
+                interval=2,
+                description=f"container {container} stopped",
+            )
+            if stopped:
                 self._log(f"+ Stopped {container} (simulating offline)")
-                return True
-            self._log(f"+ {container} stop returned: {result.stderr.strip()}")
-            return True
+            else:
+                self._log(f"+ {container} stop rc=0 but still running")
+            return stopped
         except Exception as e:
             self._log(f"+ Failed to stop {container}: {e}")
+            return False
+
+    def _container_running(self, container: str) -> bool:
+        """True iff `docker inspect` reports the container running."""
+        try:
+            result = subprocess.run(
+                ["docker", "inspect", "-f", "{{.State.Running}}", container],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            return result.returncode == 0 and result.stdout.strip() == "true"
+        except Exception:
             return False
 
     def _reconnect_container(self, container: str) -> bool:
@@ -66,11 +87,20 @@ class TestOfflineMode(E2EBaseTest):
                 text=True,
                 timeout=30,
             )
-            if result.returncode == 0:
+            if result.returncode != 0:
+                self._log(f"+ {container} start failed: {result.stderr.strip()}")
+                return False
+            running = self.wait_until(
+                lambda: self._container_running(container),
+                timeout=60,
+                interval=2,
+                description=f"container {container} running",
+            )
+            if running:
                 self._log(f"+ Started {container} (back online)")
-                return True
-            self._log(f"+ {container} start returned: {result.stderr.strip()}")
-            return True
+            else:
+                self._log(f"+ {container} start rc=0 but not running")
+            return running
         except Exception as e:
             self._log(f"+ Failed to reconnect {container}: {e}")
             return False
@@ -128,12 +158,20 @@ class TestOfflineMode(E2EBaseTest):
                     return True
                 # Check for connection error indicators (graceful degradation)
                 raw_lower = raw_result.lower()
-                if any(kw in raw_lower for kw in (
-                    "connection refused", "connection error", "connect timeout",
-                    "max retries exceeded", "failed to establish",
-                    "connectionreseterror", "connectionabortederror",
-                    "name resolution", "service unavailable",
-                )):
+                if any(
+                    kw in raw_lower
+                    for kw in (
+                        "connection refused",
+                        "connection error",
+                        "connect timeout",
+                        "max retries exceeded",
+                        "failed to establish",
+                        "connectionreseterror",
+                        "connectionabortederror",
+                        "name resolution",
+                        "service unavailable",
+                    )
+                ):
                     return True
         return False
 
@@ -161,7 +199,7 @@ class TestOfflineMode(E2EBaseTest):
 
         # STEP 2: Send alert and wait for workflow to finish
         self._log("STEP 2: Sending alert with Cortex offline")
-        alert_id = f"TC30-AIRGAP-{int(time.time())}"
+        alert_id = self.uid("TC30-AIRGAP")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -181,8 +219,15 @@ class TestOfflineMode(E2EBaseTest):
             # Always reconnect, even if the test fails
             self._log("STEP 3: Reconnecting Cortex (cleanup)")
             self._reconnect_container("soar_cortex")
-            # Wait for Cortex to become healthy again
-            time.sleep(30)
+            # JVM warmup after `docker start` takes minutes, not seconds —
+            # the workflow budget covers it (bounded poll, not blind wait).
+            cortex_healthy = self.wait_until(
+                lambda: self.verify_cortex()[0],
+                timeout=self.timeout("workflow"),
+                interval=10,
+                description="Cortex healthy after reconnection",
+            )
+            assert cortex_healthy
 
         # STEP 3: Assert workflow FINISHED
         self._log("STEP 4: Verifying workflow completed with Cortex offline")
@@ -240,7 +285,7 @@ class TestOfflineMode(E2EBaseTest):
 
         # STEP 2: Send alert and wait for workflow
         self._log("STEP 2: Sending alert with MISP offline")
-        alert_id = f"TC30-MISP-OFFLINE-{int(time.time())}"
+        alert_id = self.uid("TC30-MISP-OFFLINE")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -262,8 +307,15 @@ class TestOfflineMode(E2EBaseTest):
             # Always reconnect
             self._log("STEP 3: Reconnecting MISP (cleanup)")
             self._reconnect_container("soar_misp")
-            # Wait for MISP to become healthy again
-            time.sleep(30)
+            # MISP is the slowest service to recycle — dedicated restart
+            # budget (bounded poll, not blind wait).
+            misp_healthy = self.wait_until(
+                lambda: self.verify_misp()[0],
+                timeout=self.timeout("misp_restart"),
+                interval=10,
+                description="MISP healthy after reconnection",
+            )
+            assert misp_healthy
 
         # STEP 3: Assert workflow FINISHED
         self._log("STEP 4: Verifying workflow completed with MISP offline")
@@ -327,7 +379,7 @@ class TestOfflineMode(E2EBaseTest):
 
         # STEP 2: Send alert and wait for workflow
         self._log("STEP 2: Sending alert for full recovery test")
-        alert_id = f"TC30-RECOVERY-{int(time.time())}"
+        alert_id = self.uid("TC30-RECOVERY")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",

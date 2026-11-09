@@ -12,8 +12,10 @@ __all__ = [
 
 
 def _parse_timestamp(ts: str | float) -> datetime:
-    """Parse an ISO string or Unix timestamp (seconds or milliseconds) into an
-    aware datetime."""
+    """Parse an ISO string or Unix timestamp into an aware datetime.
+
+    Accepts both seconds and milliseconds.
+    """
     if isinstance(ts, (int, float)):
         value = float(ts)
         if value > 1e12:

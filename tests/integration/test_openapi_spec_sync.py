@@ -74,10 +74,11 @@ class TestOpenAPISpecSync:
                         ), f"{method} {path} should have request schema"
 
                 if "responses" in details:
-                    assert (
-                        "200" in details["responses"]
-                    ), f"{method} {path} should have 200 response"
-                    response = details["responses"]["200"]
+                    success_codes = [
+                        c for c in details["responses"] if c.isdigit() and 200 <= int(c) < 300
+                    ]
+                    assert success_codes, f"{method} {path} should have a 2xx response"
+                    response = details["responses"][success_codes[0]]
                     # OpenAPI 3 places schemas under content -> media-type -> schema
                     if "content" in response:
                         assert any(

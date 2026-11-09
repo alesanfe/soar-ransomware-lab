@@ -18,7 +18,7 @@ class TestAPIEndpoints:
     def base_urls(self):
         """Set up test class."""
         return {
-            "thehive": os.getenv("THEHIVE_API_URL", "http://localhost:9000/api"),
+            "thehive": os.getenv("THEHIVE_API_URL", "http://localhost:8100/api/v1"),
             "cortex": os.getenv("CORTEX_API_URL", "http://localhost:9001/api"),
             "shuffle": os.getenv("SHUFFLE_API_URL", "http://localhost:5001"),
         }
@@ -50,7 +50,7 @@ class TestAPIEndpoints:
     def test_thehive_health_check(self, base_urls):
         """Test TheHive API health check."""
         try:
-            response = requests.get(f"{base_urls['thehive']}/health", timeout=10)
+            response = requests.get(f"{base_urls['thehive']}/status/public", timeout=10)
 
             # Should return 200, 404 (if endpoint doesn't exist), or 500 (service error)
             # Any HTTP response is acceptable when service is not running locally
@@ -91,7 +91,7 @@ class TestAPIEndpoints:
                 case = response.json()
                 assert "id" in case
                 assert case["title"] == case_data["title"]
-                # case_id = case['id']  # Store for cleanup - not needed in pytest
+                # case['id'] available for cleanup — not needed in pytest
             elif response.status_code in [401, 403]:
                 # TheHive authentication/authorization failed, but test continues
                 pass
@@ -218,7 +218,7 @@ class TestAPIEndpoints:
                 try:
                     job = response.json()
                     assert "id" in job
-                    # job_id = job['id']  # Store for status check - not needed in pytest
+                    # job['id'] available for status check — not needed in pytest
                 except (ValueError, json.JSONDecodeError):
                     # Handle empty or invalid JSON response
                     pass
@@ -508,7 +508,7 @@ class TestAPIIntegration:
                     "Authorization": f"Bearer {api_keys['thehive']}",
                     "Content-Type": "application/json",
                 },
-                json={"status": "Resolved"},
+                json={"status": "Indeterminate"},
                 timeout=3,
             )
 

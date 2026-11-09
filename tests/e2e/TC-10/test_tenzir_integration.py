@@ -49,10 +49,9 @@ class TestTenzirIntegration(E2EBaseTest):
 
     def _tenzir_api_available(self) -> bool:
         """Check if Tenzir REST API is available (not just the container)."""
-        import requests
 
         try:
-            r = requests.get(self._tenzir_status_url(), timeout=5, verify=False)
+            r = self.s.get(self._tenzir_status_url(), timeout=5)
             return r.status_code == 200
         except Exception:
             return False
@@ -63,19 +62,21 @@ class TestTenzirIntegration(E2EBaseTest):
 
         try:
             r = subprocess.run(
-                ["docker", "exec", "soar_tenzir_node", "tenzir",
-                 "--connection-timeout=5s", "api \"/ping\""],
-                capture_output=True, text=True, timeout=15,
+                [
+                    "docker",
+                    "exec",
+                    "soar_tenzir_node",
+                    "tenzir",
+                    "--connection-timeout=5s",
+                    'api "/ping"',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
             )
             return r.returncode == 0 and "version" in r.stdout
         except Exception:
             return False
-
-    def _skip_if_no_tenzir_api(self):
-        if not self._tenzir_api_available():
-            import pytest
-
-            pytest.skip("Tenzir REST API not available (404 on /api/v0/status)")
 
     # ------------------------------------------------------------------
     # Tests
@@ -88,7 +89,7 @@ class TestTenzirIntegration(E2EBaseTest):
 
         url = self._tenzir_status_url()
         try:
-            response = requests.get(url, timeout=10, verify=False)
+            response = self.s.get(url, timeout=10)
         except requests.exceptions.RequestException as e:
             pytest.fail(f"Tenzir not available: {e}")
         # Tenzir API may return 404 on some endpoints depending on version,
@@ -115,26 +116,25 @@ class TestTenzirIntegration(E2EBaseTest):
 
                 pytest.fail("Tenzir CLI not available — service is down")
             self._log("+ Tenzir CLI available (REST API not in this version)")
-            # Verify workflow has Tenzir actions
-            import requests
+            # Verify workflow has Tenzir actions. Read the workflow doc
+            # from OpenSearch — the Shuffle API key in env rotates, while
+            # workflow-000001 always carries the deployed definition.
 
-            shuffle_base = self.get_service_url("shuffle")
-            api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY", "")
-            response = requests.get(
-                f"{shuffle_base}/api/v1/workflows/{self.workflow_id}",
-                headers={"Authorization": f"Bearer {api_key}"},
-                verify=False,
-            )
-            assert response.status_code == 200, f"Shuffle API failed: {response.status_code}"
-            workflow_data = response.json()
+            os_url = self.get_service_url("opensearch")
+            response = self.s.get(f"{os_url}/workflow-000001/_doc/{self.workflow_id}", timeout=15)
+            assert (
+                response.status_code == 200
+            ), f"OpenSearch workflow lookup failed: {response.status_code}"
+            workflow_data = response.json().get("_source", {})
             actions = workflow_data.get("actions", [])
-            tenzir_actions = [a for a in actions if "tenzir" in a.get("label", "").lower()]
+            tenzir_actions = [
+                a for a in actions if "tenzir" in (a.get("label") or a.get("name", "")).lower()
+            ]
             assert len(tenzir_actions) > 0, "No Tenzir actions found in workflow"
             self._log(f"+ Tenzir actions in workflow: {len(tenzir_actions)}")
             return
-        import requests
 
-        self.alert_data["alert_id"] = f"TC10-PIPE-{int(time.time())}"
+        self.alert_data["alert_id"] = self.uid("TC10-PIPE")
         exec_id, execution = self.submit_alert_and_wait(self.alert_data)
         self.execution_id = exec_id
         self.execution = execution
@@ -143,11 +143,10 @@ class TestTenzirIntegration(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=self.alert_data["alert_id"])
 
         # Query Tenzir API for pipeline results
-        response = requests.post(
+        response = self.s.post(
             self._tenzir_export_url(),
             json={"since": "-10m", "limit": 100},
             timeout=15,
-            verify=False,
         )
         assert (
             response.status_code == 200
@@ -175,14 +174,12 @@ class TestTenzirIntegration(E2EBaseTest):
         self._log("+ Tenzir CLI ping successful (REST API not available in this version)")
 
         # Verify Tenzir node is in the workflow by checking workflow actions
-        import requests
 
         shuffle_base = self.get_service_url("shuffle")
         api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY", "")
-        response = requests.get(
+        response = self.s.get(
             f"{shuffle_base}/api/v1/workflows/{self.workflow_id}",
             headers={"Authorization": f"Bearer {api_key}"},
-            verify=False,
         )
         assert response.status_code == 200, f"Shuffle API failed: {response.status_code}"
         workflow_data = response.json()
@@ -204,18 +201,26 @@ class TestTenzirIntegration(E2EBaseTest):
                 pytest.fail("Tenzir CLI not available — service is down")
             # Run a simple export via CLI to verify event retrieval capability
             r = subprocess.run(
-                ["docker", "exec", "soar_tenzir_node", "tenzir",
-                 "--connection-timeout=10s", "export"],
-                capture_output=True, text=True, timeout=30,
+                [
+                    "docker",
+                    "exec",
+                    "soar_tenzir_node",
+                    "tenzir",
+                    "--connection-timeout=10s",
+                    "export",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
             # CLI export may return empty if no pipeline is running, but should not crash
-            assert r.returncode == 0 or "error" not in r.stderr.lower(), \
-                f"Tenzir CLI export failed: {r.stderr}"
+            assert (
+                r.returncode == 0 or "error" not in r.stderr.lower()
+            ), f"Tenzir CLI export failed: {r.stderr}"
             self._log("+ Tenzir CLI export executed (REST API not in this version)")
             return
-        import requests
 
-        response = requests.post(
+        response = self.s.post(
             self._tenzir_export_url(),
             json={
                 "since": "-5m",
@@ -224,7 +229,6 @@ class TestTenzirIntegration(E2EBaseTest):
                 "limit": 100,
             },
             timeout=10,
-            verify=False,
         )
         assert response.status_code in (
             200,
@@ -248,14 +252,12 @@ class TestTenzirIntegration(E2EBaseTest):
         workflow."""
         # This test checks the Shuffle workflow for Tenzir actions.
         # It does NOT require the Tenzir REST API — only the Shuffle API.
-        import requests
 
         shuffle_base = self.get_service_url("shuffle")
         api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY", "")
-        response = requests.get(
+        response = self.s.get(
             f"{shuffle_base}/api/v1/workflows/{self.workflow_id}",
             headers={"Authorization": f"Bearer {api_key}"},
-            verify=False,
         )
         assert response.status_code in (
             200,
@@ -279,10 +281,9 @@ class TestTenzirIntegration(E2EBaseTest):
 
     def test_tenzir_error_handling(self):
         """Validar manejo de errores en la integración de Tenzir."""
-        import requests
 
         # Enviar consulta inválida para probar manejo de errores
-        response = requests.post(
+        response = self.s.post(
             self._tenzir_export_url(),
             json={
                 "since": "invalid-date",
@@ -290,7 +291,6 @@ class TestTenzirIntegration(E2EBaseTest):
                 "limit": -1,
             },
             timeout=10,
-            verify=False,
         )
         # Debería manejar el error gracefully
         assert response.status_code in [
@@ -298,12 +298,6 @@ class TestTenzirIntegration(E2EBaseTest):
             404,
             500,
         ], f"Unexpected status code: {response.status_code}"
-        # Validate it's not a 5xx server error (indicates crash)
-        assert response.status_code not in [
-            502,
-            503,
-            504,
-        ], f"Server error indicates crash: {response.status_code}"
 
     def test_tenzir_performance_requirements(self):
         """Validar requisitos de rendimiento de Tenzir."""
@@ -313,9 +307,17 @@ class TestTenzirIntegration(E2EBaseTest):
 
             start_time = time.time()
             r = subprocess.run(
-                ["docker", "exec", "soar_tenzir_node", "tenzir",
-                 "--connection-timeout=5s", "api \"/ping\""],
-                capture_output=True, text=True, timeout=15,
+                [
+                    "docker",
+                    "exec",
+                    "soar_tenzir_node",
+                    "tenzir",
+                    "--connection-timeout=5s",
+                    'api "/ping"',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
             )
             response_time = time.time() - start_time
             assert response_time > 0, "Response time should be positive"
@@ -323,14 +325,12 @@ class TestTenzirIntegration(E2EBaseTest):
             assert r.returncode == 0, f"Tenzir CLI failed: {r.stderr}"
             self._log(f"+ Tenzir CLI ping in {response_time:.2f}s")
             return
-        import requests
 
         start_time = time.time()
-        response = requests.post(
+        response = self.s.post(
             self._tenzir_export_url(),
             json={"since": "-1m", "limit": 50},
             timeout=10,
-            verify=False,
         )
         response_time = time.time() - start_time
 
@@ -362,27 +362,25 @@ class TestTenzirIntegration(E2EBaseTest):
                 pytest.fail("Tenzir CLI not available — service is down")
             self._log("+ Tenzir CLI available (REST API not in this version)")
             # Verify workflow runs and includes Tenzir node
-            self.alert_data["alert_id"] = f"TC10-01-{int(time.time())}"
+            self.alert_data["alert_id"] = self.uid("TC10-01")
             exec_id, execution = self.submit_alert_and_wait(self.alert_data)
             self.execution_id = exec_id
             self.execution = execution
             self.validate_workflow_execution(execution, alert_id=self.alert_data["alert_id"])
             self._log("+ Workflow with Tenzir node completed successfully")
             return
-        import requests
 
-        self.alert_data["alert_id"] = f"TC10-01-{int(time.time())}"
+        self.alert_data["alert_id"] = self.uid("TC10-01")
         exec_id, execution = self.submit_alert_and_wait(self.alert_data)
         self.execution_id = exec_id
         self.execution = execution
         self.validate_workflow_execution(execution, alert_id=self.alert_data["alert_id"])
 
         # Verify data was ingested into Tenzir
-        response = requests.post(
+        response = self.s.post(
             self._tenzir_export_url(),
             json={"since": "-1m", "limit": 10},
             timeout=10,
-            verify=False,
         )
         assert response.status_code == 200, f"Tenzir export failed: HTTP {response.status_code}"
         data = response.json()
@@ -414,18 +412,26 @@ class TestTenzirIntegration(E2EBaseTest):
                 pytest.fail("Tenzir CLI not available — service is down")
             # Run a simple query via CLI to verify query capability
             r = subprocess.run(
-                ["docker", "exec", "soar_tenzir_node", "tenzir",
-                 "--connection-timeout=10s", "export"],
-                capture_output=True, text=True, timeout=30,
+                [
+                    "docker",
+                    "exec",
+                    "soar_tenzir_node",
+                    "tenzir",
+                    "--connection-timeout=10s",
+                    "export",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
             # CLI export may return empty if no pipeline is running, but should not crash
-            assert r.returncode == 0 or "error" not in r.stderr.lower(), \
-                f"Tenzir CLI query failed: {r.stderr}"
+            assert (
+                r.returncode == 0 or "error" not in r.stderr.lower()
+            ), f"Tenzir CLI query failed: {r.stderr}"
             self._log("+ Tenzir CLI query executed (REST API not in this version)")
             return
-        import requests
 
-        response = requests.post(
+        response = self.s.post(
             self._tenzir_export_url(),
             json={
                 "since": "-5m",
@@ -433,7 +439,6 @@ class TestTenzirIntegration(E2EBaseTest):
                 "limit": 100,
             },
             timeout=10,
-            verify=False,
         )
         assert response.status_code == 200, f"Tenzir query failed: HTTP {response.status_code}"
         data = response.json()
@@ -465,14 +470,12 @@ class TestTenzirIntegration(E2EBaseTest):
 
                 pytest.fail("Tenzir CLI not available — service is down")
             # Verify workflow has Tenzir actions for correlation
-            import requests
 
             shuffle_base = self.get_service_url("shuffle")
             api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY", "")
-            response = requests.get(
+            response = self.s.get(
                 f"{shuffle_base}/api/v1/workflows/{self.workflow_id}",
                 headers={"Authorization": f"Bearer {api_key}"},
-                verify=False,
             )
             assert response.status_code == 200, f"Shuffle API failed: {response.status_code}"
             workflow_data = response.json()
@@ -481,9 +484,8 @@ class TestTenzirIntegration(E2EBaseTest):
             assert len(tenzir_actions) > 0, "No Tenzir actions found in workflow"
             self._log(f"+ Tenzir correlation via workflow actions: {len(tenzir_actions)}")
             return
-        import requests
 
-        response = requests.post(
+        response = self.s.post(
             self._tenzir_export_url(),
             json={
                 "since": "-5m",
@@ -492,7 +494,6 @@ class TestTenzirIntegration(E2EBaseTest):
                 "limit": 100,
             },
             timeout=10,
-            verify=False,
         )
         assert (
             response.status_code == 200
@@ -521,9 +522,17 @@ class TestTenzirIntegration(E2EBaseTest):
 
             start_time = time.time()
             r = subprocess.run(
-                ["docker", "exec", "soar_tenzir_node", "tenzir",
-                 "--connection-timeout=5s", "api \"/ping\""],
-                capture_output=True, text=True, timeout=15,
+                [
+                    "docker",
+                    "exec",
+                    "soar_tenzir_node",
+                    "tenzir",
+                    "--connection-timeout=5s",
+                    'api "/ping"',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
             )
             latency = time.time() - start_time
             assert latency > 0, "Latency should be positive"
@@ -531,14 +540,12 @@ class TestTenzirIntegration(E2EBaseTest):
             assert r.returncode == 0, f"Tenzir CLI failed: {r.stderr}"
             self._log(f"+ Tenzir CLI latency: {latency:.2f}s")
             return
-        import requests
 
         start_time = time.time()
-        response = requests.post(
+        response = self.s.post(
             self._tenzir_export_url(),
             json={"since": "-1m", "limit": 50},
             timeout=10,
-            verify=False,
         )
         latency = time.time() - start_time
 

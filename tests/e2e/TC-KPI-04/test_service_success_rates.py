@@ -10,7 +10,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-import requests
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
@@ -47,7 +46,7 @@ class TestServiceSuccessRates(E2EBaseTest):
         # Query the SOAR API analytics endpoint for real service success rates
         api_url = self.get_service_url("api")
         try:
-            r = requests.get(f"{api_url}/analytics/kpis/aggregated?period_hours=24", timeout=30)
+            r = self.s.get(f"{api_url}/analytics/kpis/aggregated?hours=24", timeout=30)
             r.raise_for_status()
             analytics = r.json()
         except Exception as e:

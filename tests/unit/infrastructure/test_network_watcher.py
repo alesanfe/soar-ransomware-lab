@@ -246,6 +246,8 @@ class TestAttach:
         mock_container.attrs = {
             "HostConfig": {"NetworkMode": "default"},
             "NetworkSettings": {"Networks": {"bridge": {}}},
+            # P0.1: managed label proves ownership — name alone is not trusted
+            "Config": {"Labels": {"com.shuffle.managed": "true"}, "Image": "orborus"},
         }
         mock_container.name = "worker-1"
         mock_client.networks.get.return_value = mock_net
@@ -297,8 +299,9 @@ class TestAttach:
 
             nw.attach(mock_client, "cid123", "worker-1", "soar_net")
 
-        # Should start threads for fix_resolv, inject_hosts, setup_docker_socket
-        assert mock_thread_cls.call_count == 3
+        # P0.2: threads for fix_resolv + inject_hosts only — the docker
+        # socket forward is OFF by default (WATCHER_DOCKER_SOCKET_INJECT).
+        assert mock_thread_cls.call_count == 2
 
     def test_attach_shuffle_container_create_action(self):
         """Test that hosts file is pre-injected for Shuffle containers on create action."""

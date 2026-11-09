@@ -143,3 +143,11 @@ class TestPathService:
 
         # Should call mkdir for each directory
         assert mock_mkdir.call_count == 4
+
+    def test_properties_work_without_config_provider(self):
+        """Bug: constructor allows config_provider=None but every property
+        crashed with AttributeError on self._config_provider.get()."""
+        ps = PathService(base_dir=Path("/tmp/soar-base"))
+        assert str(ps.runtime_dir).endswith("runtime")
+        assert str(ps.backup_dir).endswith("backups")
+        assert str(ps.kpi_file).endswith("kpis.csv")

@@ -48,7 +48,7 @@ class MockStaticFiles:
 staticfiles.StaticFiles = MockStaticFiles
 
 # Import the module - this should trigger eager instantiation
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 
 # Verify app is instantiated
 assert app is not None, "app should be instantiated when SOAR_SKIP_EAGER_INIT is not set"
@@ -101,7 +101,7 @@ os.environ['BASE_DIR'] = str(Path.cwd())
 os.environ['SOAR_SKIP_EAGER_INIT'] = '1'
 
 # Import the module - this should skip eager instantiation
-from soar_lab.api import app
+from soar_lab.interfaces.api import app
 
 # Verify app is None
 assert app is None, "app should be None when SOAR_SKIP_EAGER_INIT is set"
@@ -168,7 +168,7 @@ from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
 from soar_lab.infrastructure.in_memory_alert_repository import InMemoryAlertRepository
 from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner
 from soar_lab.infrastructure.pytest_output_parser import PytestOutputParser
-from scripts.test_service import TestService
+from soar_lab.application.use_cases.test_service import TestService
 
 # Create real dependencies
 settings = Settings()

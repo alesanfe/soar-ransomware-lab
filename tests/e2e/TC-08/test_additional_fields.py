@@ -4,7 +4,6 @@ fields (mitre_techniques, process_name)."""
 
 import json
 import sys
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -39,7 +38,7 @@ class TestAdditionalFields(E2EBaseTest):
         process_name = "malware.exe"
 
         payload = {
-            "alert_id": f"TC08-ADDITIONAL-{int(time.time())}",
+            "alert_id": self.uid("TC08-ADDITIONAL"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC08-001",
             "src_ip": "192.168.1.210",
@@ -89,10 +88,10 @@ class TestAdditionalFields(E2EBaseTest):
 
             try:
                 parsed = _ast.literal_eval(es_mitre[0])
-                if isinstance(parsed, list):
-                    es_mitre = parsed
-            except Exception as e:
-                self._log(f"  MITRE parse fallback: {e}")
+            except (ValueError, SyntaxError):
+                parsed = None
+            if isinstance(parsed, list):
+                es_mitre = parsed
         assert sorted(es_mitre) == sorted(
             mitre_techniques
         ), f"MITRE techniques mismatch: {es_mitre} vs {mitre_techniques}"
@@ -142,7 +141,7 @@ class TestAdditionalFields(E2EBaseTest):
         self._log("=== TC-08-01: UNKNOWN FIELD TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC08-UNKNOWN-{int(time.time())}",
+            "alert_id": self.uid("TC08-UNKNOWN"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC08-001",
             "src_ip": "192.168.1.210",
@@ -181,7 +180,7 @@ class TestAdditionalFields(E2EBaseTest):
         self._log("=== TC-08-02: CUSTOM METADATA TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC08-METADATA-{int(time.time())}",
+            "alert_id": self.uid("TC08-METADATA"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC08-001",
             "src_ip": "192.168.1.210",
@@ -236,7 +235,7 @@ class TestAdditionalFields(E2EBaseTest):
         self._log("=== TC-08-03: FIELD OVERRIDE PREVENTION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC08-OVERRIDE-{int(time.time())}",
+            "alert_id": self.uid("TC08-OVERRIDE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC08-001",
             "src_ip": "192.168.1.210",

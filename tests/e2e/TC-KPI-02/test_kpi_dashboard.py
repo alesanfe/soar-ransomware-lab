@@ -110,16 +110,14 @@ class TestKPIDashboard(E2EBaseTest):
         # Step 4: Verify Elasticsearch has metrics data
         self._log("STEP 4: Verifying Elasticsearch has metrics data")
 
-        # Check total metrics
-        try:
-            total = self.es.count(index="soar-metrics")
-            self._log(f"  + {total} total metric(s) in soar-metrics index")
-            assert total > 0, "soar-metrics index is empty — no workflow has run yet"
+        # Check total metrics — this IS the dashboard data oracle, so a
+        # query failure or an empty index must fail loudly.
+        total = self.es.count(index="soar-metrics")
+        self._log(f"  + {total} total metric(s) in soar-metrics index")
+        assert total > 0, "soar-metrics index is empty — no workflow has run yet"
 
-            # Validate that KPI dashboard can display metrics
-            self._log("✓ KPI dashboard validated - metrics available for display")
-        except Exception as e:
-            self._log(f"  + Metrics query failed: {e}")
+        # Validate that KPI dashboard can display metrics
+        self._log("✓ KPI dashboard validated - metrics available for display")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"=== TC-KPI-02 COMPLETED — DASHBOARD VERIFIED (Elapsed: {elapsed:.1f}s) ===")

@@ -91,7 +91,7 @@ class TestMaliciousAlert(E2EBaseTest):
             f"-> case={last.get('severity')}"
         )
 
-        assert_incident_state(last, "Open")
+        assert_incident_state(last, ("New", "InProgress"))
         assert_incident_severity(last, "critical")
 
         if case_id:
@@ -111,11 +111,8 @@ class TestMaliciousAlert(E2EBaseTest):
 
             if obs and payload_iocs:
                 obs_data = [{"type": o.get("dataType"), "value": o.get("data")} for o in obs]
-                try:
-                    assert_observables_match_payload(obs_data, payload_iocs)
-                    self._log("  + Observables match payload IoCs")
-                except AssertionError as e:
-                    self._log(f"  + Observable validation warning: {e}")
+                assert_observables_match_payload(obs_data, payload_iocs)
+                self._log("  + Observables match payload IoCs")
 
             for observable in obs[:5]:
                 obs_type = observable.get("dataType")
@@ -154,64 +151,60 @@ class TestMaliciousAlert(E2EBaseTest):
             self._log(f"    - {name} datatypes={datatypes}")
 
         self._log("  + Verifying analyzer execution history")
-        try:
-            jobs = self.cortex.list_jobs()
-            assert isinstance(jobs, list), "Cortex jobs must be a list"
-            self._log(f"    + Found {len(jobs)} total job(s) in Cortex")
+        jobs = self.cortex.list_jobs()
+        assert isinstance(jobs, list), "Cortex jobs must be a list"
+        self._log(f"    + Found {len(jobs)} total job(s) in Cortex")
 
-            recent_jobs = [job for job in jobs if job.get("createdAt")]
-            if recent_jobs:
-                self._log(f"    + Found {len(recent_jobs)} recent job(s)")
-
-                completed_jobs = [job for job in recent_jobs if job.get("status") == "Success"]
-                if completed_jobs:
-                    self._log(f"    + {len(completed_jobs)} job(s) completed successfully")
-                    assert len(completed_jobs) > 0, "No completed Cortex jobs found"
-                else:
-                    self._log("    + Warning: No successfully completed jobs found")
-            else:
-                self._log("    + No recent jobs found - analyzers may not have executed")
-        except Exception as e:
-            self._log(f"    + Could not verify analyzer execution: {e}")
+        recent_jobs = [job for job in jobs if job.get("createdAt")]
+        if recent_jobs:
+            self._log(f"    + Found {len(recent_jobs)} recent job(s)")
+            completed_jobs = [job for job in recent_jobs if job.get("status") == "Success"]
+            self._log(f"    + {len(completed_jobs)} job(s) completed successfully")
+        else:
+            self._log("    + No recent jobs found - analyzers may not have executed")
+        completed_any = [job for job in jobs if job.get("status") == "Success"]
+        assert completed_any, "No successfully completed Cortex jobs found in history"
 
         self._log("  + Testing analyzer execution capability")
-        try:
-            if self.alert_data.get("hash"):
-                test_hash = self.alert_data["hash"]
-                self._log(f"    + Running FileInfo analyzer on hash {test_hash[:16]}...")
-                job = self.cortex.run_analyzer("FileInfo_8_0", "hash", test_hash)
-                assert isinstance(job, dict), "Analyzer job must be a dict"
-                job_id = job.get("id", "")
-                assert isinstance(job_id, str), "Job ID must be a string"
-                self._log(f"    + Analyzer job started: {job_id}")
+        if self.alert_data.get("hash"):
+            test_hash = self.alert_data["hash"]
+            self._log(f"    + Running FileInfo analyzer on hash {test_hash[:16]}...")
+            job = self.cortex.run_analyzer("FileInfo_8_0", "hash", test_hash)
+            assert isinstance(job, dict), "Analyzer job must be a dict"
+            job_id = job.get("id", "")
+            assert isinstance(job_id, str), "Job ID must be a string"
+            assert job_id, "Analyzer job must return a non-empty job id"
+            self._log(f"    + Analyzer job started: {job_id}")
 
-                self._log("    + Waiting for analyzer job completion...")
-                deadline = time.time() + 30
-                while time.time() < deadline:
-                    try:
-                        job_status = self.cortex.get_job(job_id)
-                        if job_status:
-                            status = job_status.get("status", "")
-                            self._log(f"    + Job status: {status}")
-                            if status in ["Success", "Failure"]:
-                                if status == "Success":
-                                    self._log("    + Analyzer executed successfully")
-                                    report = job_status.get("report", {})
-                                    assert isinstance(report, dict), "Job report must be a dict"
-                                    self._log("    + Analyzer execution validated successfully")
-                                else:
-                                    self._log(
-                                        f"    + Analyzer job failed: "
-                                        f"{job_status.get('summary', 'Unknown')}"
-                                    )
-                                break
-                    except Exception as e:
-                        self._log(f"    + Error checking job status: {e}")
-                    time.sleep(2)
-            else:
-                self._log("    + No hash in alert data, skipping analyzer execution test")
-        except Exception as e:
-            self._log(f"    + Analyzer execution test failed: {e}")
+            self._log("    + Waiting for analyzer job completion...")
+            status = ""
+            poll_errors = 0
+            deadline = time.time() + 30
+            while time.time() < deadline:
+                try:
+                    job_status = self.cortex.get_job(job_id)
+                    if job_status:
+                        status = job_status.get("status", "")
+                        self._log(f"    + Job status: {status}")
+                        if status in ["Success", "Failure"]:
+                            if status == "Success":
+                                report = job_status.get("report", {})
+                                assert isinstance(report, dict), "Job report must be a dict"
+                                self._log("    + Analyzer execution validated successfully")
+                            else:
+                                self._log(
+                                    f"    + Analyzer job failed: "
+                                    f"{job_status.get('summary', 'Unknown')}"
+                                )
+                            break
+                except Exception as e:
+                    poll_errors += 1
+                    assert poll_errors < 3, f"Cortex get_job failed {poll_errors} times: {e}"
+                    self._log(f"    + Error checking job status ({poll_errors}/3): {e}")
+                time.sleep(2)
+            assert status == "Success", f"Analyzer job did not reach Success (status={status!r})"
+        else:
+            self._log("    + No hash in alert data, skipping analyzer execution test")
 
     def _step_verify_misp_iocs(self):
         self._log("STEP 6: Verifying MISP IOC database + enrichment")
@@ -289,11 +282,8 @@ class TestMaliciousAlert(E2EBaseTest):
         assert_data_persisted("elasticsearch", src)
 
         critical_fields = ["alert_id", "alert_type", "hostname", "src_ip"]
-        try:
-            assert_data_integrity(self.alert_data, src, critical_fields)
-            self._log("  + ES document matches payload on critical fields")
-        except AssertionError as e:
-            self._log(f"  + Data integrity warning: {e}")
+        assert_data_integrity(self.alert_data, src, critical_fields)
+        self._log("  + ES document matches payload on critical fields")
 
         assert "alert_id" in src, "Indexed ES doc missing 'alert_id' field"
         assert (
@@ -321,9 +311,8 @@ class TestMaliciousAlert(E2EBaseTest):
                 "required_keys": ["score"],
                 "expected_values": {"score": lambda v: v >= 80},
             },
-            "build_hive_summary": {"required_keys": ["success"]},
             "build_metrics_json": {"required_keys": ["success"]},
-            "calc_mttr": {"required_keys": ["mttr_seconds"]},
+            "calc_mttr": {"required_keys": ["mttr_seconds", "summary"]},
         },
     }
 
@@ -338,7 +327,7 @@ class TestMaliciousAlert(E2EBaseTest):
         for test_case in group_cases:
             name = test_case.get("name", "unknown")
             payload = {
-                "alert_id": f"TC01-{name}-{int(time.time())}",
+                "alert_id": self.uid(f"TC01-{name}"),
                 "alert_type": "ransomware",
                 "hostname": test_case.get("hostname", "WIN-TC01-001"),
                 "src_ip": test_case.get("ip", "172.31.54.117"),
@@ -448,22 +437,19 @@ class TestMaliciousAlert(E2EBaseTest):
         self._log(f"Verifying malicious IOC detection for {case_name}")
 
         if "hash" in case_name and test_case.get("hash"):
-            try:
-                job = self.cortex.run_analyzer("FileInfo_8_0", "hash", test_case["hash"])
-                self._log(f"  + Cortex hash analysis job: {job.get('id', 'N/A')}")
-            except Exception as e:
-                self._log(f"  + Cortex hash analysis skipped: {e}")
+            job = self.cortex.run_analyzer("FileInfo_8_0", "hash", test_case["hash"])
+            assert isinstance(job, dict), "Analyzer job must be a dict"
+            assert job.get("id"), "Cortex hash analysis must return a job id"
+            self._log(f"  + Cortex hash analysis job: {job.get('id')}")
 
         for field in ["hash", "ip", "domain", "url", "mail"]:
             if field in case_name and test_case.get(field):
-                try:
-                    events = self.misp.search_events(test_case[field])
-                    if events:
-                        self._log(f"  + MISP found {len(events)} event(s) for {field}")
-                    else:
-                        self._log(f"  + MISP: no events found for {field} (IOC may not be in DB)")
-                except Exception as e:
-                    self._log(f"  + MISP search skipped for {field}: {e}")
+                events = self.misp.search_events(test_case[field])
+                assert events, (
+                    f"MISP must contain events for {field}={test_case[field]} "
+                    "(seeded by setup_analyzers_and_iocs.py as known-malicious IOCs)"
+                )
+                self._log(f"  + MISP found {len(events)} event(s) for {field}")
 
     # ------------------------------------------------------------------
     # Subcase-specific tests
@@ -480,7 +466,7 @@ class TestMaliciousAlert(E2EBaseTest):
         self._log("=== TC-01-03: OBSERVABLE VALIDATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC01-OBS-{int(time.time())}",
+            "alert_id": self.uid("TC01-OBS"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC01-001",
             "src_ip": "192.168.1.100",
@@ -550,7 +536,7 @@ class TestMaliciousAlert(E2EBaseTest):
         self._log("=== TC-01-04: IOC VALIDATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC01-IOC-{int(time.time())}",
+            "alert_id": self.uid("TC01-IOC"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC01-001",
             "src_ip": "192.168.1.100",
@@ -621,7 +607,7 @@ class TestMaliciousAlert(E2EBaseTest):
         self._log("=== TC-01-05: TAG VALIDATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC01-TAG-{int(time.time())}",
+            "alert_id": self.uid("TC01-TAG"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC01-001",
             "src_ip": "192.168.1.100",
@@ -681,7 +667,7 @@ class TestMaliciousAlert(E2EBaseTest):
         self._log("=== TC-01-06: TLP/PAP VALIDATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC01-TLP-{int(time.time())}",
+            "alert_id": self.uid("TC01-TLP"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC01-001",
             "src_ip": "192.168.1.100",
@@ -752,7 +738,7 @@ class TestMaliciousAlert(E2EBaseTest):
         self._log("=== TC-01-07: TASK VALIDATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC01-TASK-{int(time.time())}",
+            "alert_id": self.uid("TC01-TASK"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC01-001",
             "src_ip": "192.168.1.100",
@@ -827,7 +813,7 @@ class TestMaliciousAlert(E2EBaseTest):
         self._log("=== TC-01-08: STATE MACHINE VALIDATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC01-STATE-{int(time.time())}",
+            "alert_id": self.uid("TC01-STATE"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC01-001",
             "src_ip": "192.168.1.100",
@@ -860,9 +846,23 @@ class TestMaliciousAlert(E2EBaseTest):
 
         status = last.get("status")
         self._log(f"+ Case status: {status}")
-        assert status == "Open", f"Expected status 'Open', got '{status}'"
+        # Malicious alerts go New -> InProgress once the workflow's
+        # update_inprogress node runs.
+        assert status in (
+            "New",
+            "InProgress",
+        ), f"Expected an open-stage status (New/InProgress), got '{status}'"
 
-        valid_states = ["New", "Open", "InProgress", "Resolved", "Closed", "Deleted", "Imported"]
+        valid_states = [
+            "New",
+            "InProgress",
+            "TruePositive",
+            "FalsePositive",
+            "Indeterminate",
+            "Duplicated",
+            "Other",
+            "Deleted",
+        ]
         assert status in valid_states, f"Invalid case status: {status}"
 
         created_at = last.get("createdAt")
@@ -891,7 +891,7 @@ class TestMaliciousAlert(E2EBaseTest):
         self._log("=== TC-01-09: OPENSEARCH VALIDATION TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC01-OS-{int(time.time())}",
+            "alert_id": self.uid("TC01-OS"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC01-001",
             "src_ip": "192.168.1.100",

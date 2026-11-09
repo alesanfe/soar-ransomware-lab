@@ -91,7 +91,11 @@ class TestAuthService:
 
         assert token == "test-token"
         mock_token_provider.create_token.assert_called_once_with(
-            "testuser", "test-secret-key-min-32-chars-long", 60, "HS256"
+            "testuser",
+            "test-secret-key-min-32-chars-long",
+            60,
+            "HS256",
+            extra_claims={"role": "admin"},
         )
 
     def test_create_jwt_token_no_secret(self):
@@ -122,8 +126,8 @@ class TestAuthService:
             service.create_jwt_token("testuser")
 
     def test_create_jwt_token_short_secret_legacy(self):
-        """Test JWT token creation with short secret but legacy
-        API_AUTH_SECRET."""
+        """SEC-001 regression: legacy API_AUTH_SECRET no longer bypasses
+        the 32-char minimum — the effective secret must always qualify."""
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
             "jwt_secret_key": "short",
@@ -132,13 +136,10 @@ class TestAuthService:
             "JWT_ALGORITHM": "HS256",
         }.get(key, default)
         mock_token_provider = Mock()
-        mock_token_provider.create_token.return_value = "test-token"
 
         service = AuthService(mock_config, mock_token_provider)
-        token = service.create_jwt_token("testuser")
-
-        # Should succeed because legacy secret is set
-        assert token == "test-token"
+        with pytest.raises(AuthError):
+            service.create_jwt_token("testuser")
 
     def test_verify_jwt_token_success(self):
         """Test successful JWT token verification."""
@@ -223,3 +224,33 @@ class TestAuthService:
         secret = service._get_auth_secret()
 
         assert secret == ""
+
+
+def test_verify_credentials_uses_constant_time_comparison():
+    """Bug: == comparison leaks timing side-channel (CWE-208). Credential
+    checks must go through hmac.compare_digest."""
+    import hmac as _hmac
+    from unittest.mock import patch
+
+    from soar_lab.application.use_cases.auth_service import AuthService
+
+    svc = AuthService(
+        config_provider=type(
+            "CP",
+            (),
+            {
+                "get": lambda s, k, d=None: {"web_ui_user": "admin", "web_ui_password": "pw"}.get(
+                    k, d
+                )
+            },
+        )(),
+        token_provider=object(),
+    )
+    calls = []
+    real = _hmac.compare_digest
+    with patch(
+        "hmac.compare_digest", side_effect=lambda a, b: (calls.append((a, b)), real(a, b))[1]
+    ):
+        assert svc.verify_credentials("admin", "pw") is True
+    assert ("admin", "admin") in calls or b"admin" in [c[0] for c in calls]
+    assert ("pw", "pw") in calls or b"pw" in [c[0] for c in calls]

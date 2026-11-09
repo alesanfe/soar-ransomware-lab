@@ -132,55 +132,58 @@ class TestSubprocessRunnerRun:
 
     def test_run_unexpected_error(self):
         runner = SubprocessRunner()
-        with patch("subprocess.run", side_effect=OSError("boom")):
+        with patch("subprocess.Popen", side_effect=OSError("boom")):
             result = runner.run(["nonexistent_cmd"])
         assert result.success is False
         assert result.returncode == -1
         assert "boom" in result.stderr
 
     def test_run_with_timeout_override(self):
-        """Test run with timeout override passes timeout to subprocess."""
+        """Timeout override is forwarded to Popen.communicate."""
         runner = SubprocessRunner(default_timeout=300)
-        with patch("subprocess.run") as mock_run:
+        with patch("subprocess.Popen") as mock_popen:
             mock_proc = MagicMock()
             mock_proc.returncode = 0
-            mock_proc.stdout = "test"
-            mock_proc.stderr = ""
-            mock_run.return_value = mock_proc
+            mock_proc.communicate.return_value = ("test", "")
+            mock_popen.return_value = mock_proc
 
             runner.run(["echo", "test"], timeout=600)
 
-            mock_run.assert_called_once()
-            call_kwargs = mock_run.call_args[1]
-            assert call_kwargs["timeout"] == 600
+            mock_proc.communicate.assert_called_once_with(timeout=600)
 
     def test_run_with_cwd_override(self):
         """Test run with cwd override passes cwd to subprocess."""
         runner = SubprocessRunner(cwd=Path("/tmp"))
-        with patch("subprocess.run") as mock_run:
+        with patch("subprocess.Popen") as mock_popen:
             mock_proc = MagicMock()
             mock_proc.returncode = 0
-            mock_proc.stdout = "test"
-            mock_proc.stderr = ""
-            mock_run.return_value = mock_proc
+            mock_proc.communicate.return_value = ("test", "")
+            mock_popen.return_value = mock_proc
 
             runner.run(["echo", "test"], cwd=Path("/other"))
 
-            mock_run.assert_called_once()
-            call_kwargs = mock_run.call_args[1]
+            mock_popen.assert_called_once()
+            call_kwargs = mock_popen.call_args[1]
             assert call_kwargs["cwd"] == Path("/other")
 
     def test_run_timeout_expired_mocked(self):
-        """Test run with TimeoutExpired exception."""
+        """Test run with TimeoutExpired kills the process tree."""
         runner = SubprocessRunner()
-        with patch("subprocess.run") as mock_run:
-            mock_run.side_effect = subprocess.TimeoutExpired(cmd=["sleep", "10"], timeout=1)
+        with patch("subprocess.Popen") as mock_popen:
+            mock_proc = MagicMock()
+            mock_proc.pid = 12345
+            mock_proc.communicate.side_effect = subprocess.TimeoutExpired(
+                cmd=["sleep", "10"], timeout=1
+            )
+            mock_popen.return_value = mock_proc
 
-            result = runner.run(["sleep", "10"], timeout=1)
+            with patch("soar_lab.infrastructure.subprocess_runner._kill_process_tree") as mock_kill:
+                result = runner.run(["sleep", "10"], timeout=1)
 
             assert result.success is False
             assert result.returncode == -1
             assert "Timeout" in result.stderr
+            mock_kill.assert_called_once_with(12345)
 
 
 class TestSubprocessRunnerAsync:
@@ -299,3 +302,25 @@ class TestSubprocessRunnerAsync:
                 assert "Timeout" in result.stderr
 
         asyncio.run(_test())
+
+    def test_run_async_timeout_kills_child(self):
+        """Bug: run_async timed out via wait_for() but never terminated the
+        child — the subprocess kept running (unlike sync run(), which the
+        stdlib kills on TimeoutExpired)."""
+        import time
+
+        import psutil
+
+        marker = "soar_async_leak_marker"
+        runner = SubprocessRunner()
+        code = f"import time\n# {marker}\ntime.sleep(60)"
+        result = asyncio.run(runner.run_async([sys.executable, "-c", code], timeout=1))
+        assert result.success is False and "Timeout" in result.stderr
+
+        time.sleep(0.3)
+        alive = [
+            p
+            for p in psutil.process_iter(["cmdline"])
+            if p.info["cmdline"] and marker in " ".join(p.info["cmdline"])
+        ]
+        assert not alive, f"child process leaked: {[p.pid for p in alive]}"

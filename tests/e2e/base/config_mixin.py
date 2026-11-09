@@ -17,10 +17,14 @@ from typing import Any
 INSIDE_CONTAINER = (
     Path("/.dockerenv").exists()
     or os.environ.get("container", "").lower() in ("oci", "docker")
-    or Path("/app").exists()
+    # /app is POSIX-only evidence — on Windows it resolves to <drive>:\app,
+    # which exists on some hosts and produced false positives here.
+    or (os.name != "nt" and Path("/app").exists())
 )
 
-REPO_ROOT = Path("/app") if INSIDE_CONTAINER else Path(__file__).resolve().parent.parent.parent.parent
+REPO_ROOT = (
+    Path("/app") if INSIDE_CONTAINER else Path(__file__).resolve().parent.parent.parent.parent
+)
 FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures"
 RUNTIME_DIR = Path("/app/runtime") if INSIDE_CONTAINER else REPO_ROOT / "runtime"
 REPORTS_DIR = Path("/app/reports") if INSIDE_CONTAINER else REPO_ROOT / "reports"
@@ -33,6 +37,13 @@ E2E_RESULTS_DIR = VALIDATION_RESULTS_DIR / "e2e"
 E2E_REPORT_DIR = Path("/app/reports/e2e") if INSIDE_CONTAINER else REPO_ROOT / "reports" / "e2e"
 LOGS_DIR = Path("/app/runtime/logs") if INSIDE_CONTAINER else REPO_ROOT / "runtime" / "logs"
 ENV_FULL = Path("/app/.env.full") if INSIDE_CONTAINER else REPO_ROOT / ".env.full"
+# Container runs mount .env.container, not .env.full — fall back to it so
+# credential keys (GRAFANA_*, etc.) resolve inside docker.
+_ENV_CANDIDATES = (
+    [Path("/app/.env.full"), Path("/app/.env.container")]
+    if INSIDE_CONTAINER
+    else [REPO_ROOT / ".env.full", REPO_ROOT / ".env.container"]
+)
 
 # Add src to path for importing integration clients
 _SRC_PATH = str(REPO_ROOT / "src")
@@ -81,6 +92,7 @@ class ConfigMixin:
             "GRAFANA_API_KEY",
             "API_URL",
             "REDIS_PASSWORD",
+            "INTERNAL_SERVICE_TOKEN",
             # Cleanup configuration
             "E2E_CLEANUP_ON_SUCCESS",
             "E2E_CLEANUP_ON_FAILURE",
@@ -109,9 +121,11 @@ class ConfigMixin:
             if v is not None:
                 result[k] = v
 
-        # Load from .env.full for any missing keys
-        if ENV_FULL.exists():
-            for line in ENV_FULL.read_text(encoding="utf-8").splitlines():
+        # Load from env files for any missing keys (first file wins).
+        for env_file in _ENV_CANDIDATES:
+            if not env_file.exists():
+                continue
+            for line in env_file.read_text(encoding="utf-8").splitlines():
                 line = line.strip()
                 if line and not line.startswith("#") and "=" in line:
                     k, _, v = line.partition("=")
@@ -163,11 +177,13 @@ class ConfigMixin:
         env = getattr(self, "env", {})
         defaults_container = {
             "shuffle": "http://shuffle-backend:5001",
+            "shuffle_frontend": "http://shuffle-frontend:80",
             "thehive": "http://thehive:9000",
             "cortex": "http://cortex:9001",
             "misp": "http://misp:80",
             "es": "http://elasticsearch:9200",
             "opensearch": "http://opensearch:9200",
+            "opensearch_dashboards": "http://opensearch-dashboards:5601",
             "loki": "http://loki:3100",
             "promtail": "http://promtail:9080",
             "grafana": "http://grafana:3000",
@@ -175,33 +191,50 @@ class ConfigMixin:
             "network_watcher": "http://network-watcher:8080",
             "tenzir": "http://tenzir-node:5160",
             "nginx": "http://nginx:80",
+            "nginx_https": "https://nginx:443",
+            "docs_site": "http://docs-site:8080",
+            "web_management": "http://web-management:80",
             "redis": "http://redis:6379",
         }
         defaults_host = {
             "shuffle": "http://localhost:5001",
-            "thehive": "http://localhost:9000",
-            "cortex": "http://localhost:9001",
-            "misp": "https://localhost:443",
-            "es": "http://localhost:9200",
-            "opensearch": "http://localhost:9201",
+            "shuffle_frontend": "http://localhost:8081",
+            "thehive": "http://localhost:8100",
+            "cortex": "http://localhost:8101",
+            "misp": "http://localhost:8083",
+            "es": "http://localhost:8200",
+            "opensearch": "http://localhost:8201",
+            "opensearch_dashboards": "http://localhost:8202",
             "loki": "http://localhost:3100",
             "promtail": "http://localhost:9080",
-            "grafana": "http://localhost:3000",
+            "grafana": "http://localhost:8084",
             "api": "http://localhost:8000",
             "network_watcher": "http://localhost:15130",
             "tenzir": "http://localhost:15160",
+            "nginx": "http://localhost:80",
+            "nginx_https": "https://localhost:443",
+            "docs_site": "http://localhost:8086",
+            "web_management": "http://localhost:8085",
         }
         env_keys = {
             "shuffle": "SHUFFLE_URL",
+            "shuffle_frontend": "SHUFFLE_FRONTEND_URL",
             "thehive": "THEHIVE_URL",
             "cortex": "CORTEX_URL",
             "misp": "MISP_URL",
             "es": "ES_URL",
             "opensearch": "OPENSEARCH_URL",
+            "opensearch_dashboards": "OPENSEARCH_DASHBOARDS_URL",
             "loki": "LOKI_URL",
             "promtail": "PROMTAIL_URL",
             "grafana": "GRAFANA_URL",
             "api": "API_URL",
+            "network_watcher": "NETWORK_WATCHER_URL",
+            "tenzir": "TENZIR_URL",
+            "nginx": "NGINX_URL",
+            "nginx_https": "NGINX_HTTPS_URL",
+            "docs_site": "DOCS_URL",
+            "web_management": "WEB_MANAGEMENT_URL",
         }
         defaults = defaults_container if self.inside_container else defaults_host
         env_key = env_keys.get(service)

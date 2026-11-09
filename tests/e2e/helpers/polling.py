@@ -26,10 +26,13 @@ def poll_until(
         error_message: Error message to raise on timeout
 
     Returns:
-        True if condition was met, False otherwise
+        True when the condition is met.
+
+    Raises:
+        TimeoutError: When the timeout elapses before the condition holds.
     """
-    start = time.time()
-    while time.time() - start < timeout:
+    start = time.monotonic()
+    while time.monotonic() - start < timeout:
         if condition():
             return True
         time.sleep(interval)
@@ -53,10 +56,13 @@ def poll_for_value(
         error_message: Error message to raise on timeout
 
     Returns:
-        True if expected value was found, False otherwise
+        True when the expected value is observed.
+
+    Raises:
+        TimeoutError: When the timeout elapses first.
     """
-    start = time.time()
-    while time.time() - start < timeout:
+    start = time.monotonic()
+    while time.monotonic() - start < timeout:
         if getter() == expected_value:
             return True
         time.sleep(interval)
@@ -80,8 +86,8 @@ def poll_for_not_none(
     Returns:
         The non-None value
     """
-    start = time.time()
-    while time.time() - start < timeout:
+    start = time.monotonic()
+    while time.monotonic() - start < timeout:
         value = getter()
         if value is not None:
             return value

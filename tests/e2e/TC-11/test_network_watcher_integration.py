@@ -47,9 +47,8 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
     def test_network_watcher_service_availability(self):
         """Verificar que el servicio Network Watcher está disponible (HTTP 200
         en /health)."""
-        import requests
 
-        response = requests.get(f"{self._nw_url()}/health", timeout=10, verify=False)
+        response = self.s.get(f"{self._nw_url()}/health", timeout=10)
         assert (
             response.status_code == 200
         ), f"Network Watcher health check failed: HTTP {response.status_code}"
@@ -61,9 +60,8 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
 
     def test_network_watcher_connections_endpoint(self):
         """Validar el endpoint de conexiones de Network Watcher."""
-        import requests
 
-        response = requests.get(f"{self._nw_url()}/api/connections", timeout=10, verify=False)
+        response = self.s.get(f"{self._nw_url()}/api/connections", timeout=10)
         assert (
             response.status_code == 200
         ), f"Connections endpoint failed: HTTP {response.status_code}"
@@ -80,9 +78,8 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
     def test_network_watcher_connection_monitoring(self):
         """Validar que el workflow incluye monitoreo de Network Watcher y
         captura conexiones."""
-        import requests
 
-        self.alert_data["alert_id"] = f"TC11-MON-{int(time.time())}"
+        self.alert_data["alert_id"] = self.uid("TC11-MON")
         exec_id, execution = self.submit_alert_and_wait(self.alert_data)
         self.execution_id = exec_id
         self.execution = execution
@@ -91,9 +88,7 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
         self.validate_workflow_execution(execution, alert_id=self.alert_data["alert_id"])
 
         # Assert Network Watcher API returns connection data
-        response = requests.get(
-            f"{self._nw_url()}/api/connections?limit=1000", timeout=10, verify=False
-        )
+        response = self.s.get(f"{self._nw_url()}/api/connections?limit=1000", timeout=10)
         assert (
             response.status_code == 200
         ), f"Network Watcher connections query failed: HTTP {response.status_code}"
@@ -111,11 +106,8 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
 
     def test_network_watcher_real_time_monitoring(self):
         """Validar monitoreo en tiempo real de Network Watcher."""
-        import requests
 
-        initial = requests.get(
-            f"{self._nw_url()}/api/connections?limit=1000", timeout=10, verify=False
-        )
+        initial = self.s.get(f"{self._nw_url()}/api/connections?limit=1000", timeout=10)
         assert (
             initial.status_code == 200
         ), f"Initial connections query failed: HTTP {initial.status_code}"
@@ -126,9 +118,7 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
         ), "Initial query network should be 'soar_net'"
 
         time.sleep(0.2)
-        current = requests.get(
-            f"{self._nw_url()}/api/connections?limit=1000", timeout=10, verify=False
-        )
+        current = self.s.get(f"{self._nw_url()}/api/connections?limit=1000", timeout=10)
         assert (
             current.status_code == 200
         ), f"Current connections query failed: HTTP {current.status_code}"
@@ -144,34 +134,23 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
 
     def test_network_watcher_error_handling(self):
         """Validar manejo de errores en Network Watcher."""
-        import requests
 
         # Enviar consulta con parámetros inválidos
-        response = requests.get(
+        response = self.s.get(
             f"{self._nw_url()}/api/connections?ip=invalid-ip&limit=-1",
             timeout=10,
-            verify=False,
         )
         # Debería manejar el error gracefully
         assert response.status_code in [
             400,
             422,
         ], f"Expected error status 400/422, got: {response.status_code}"
-        # Validate it's not a 5xx server error (indicates crash)
-        assert response.status_code not in [
-            502,
-            503,
-            504,
-        ], f"Server error indicates crash: {response.status_code}"
 
     def test_network_watcher_performance_requirements(self):
         """Validar requisitos de rendimiento de Network Watcher."""
-        import requests
 
         started = time.time()
-        response = requests.get(
-            f"{self._nw_url()}/api/connections?limit=1000", timeout=10, verify=False
-        )
+        response = self.s.get(f"{self._nw_url()}/api/connections?limit=1000", timeout=10)
         elapsed = time.time() - started
         assert response.status_code == 200, f"Connections query failed: HTTP {response.status_code}"
         assert elapsed < 5.0, f"Network Watcher connections query exceeded 5 seconds: {elapsed}s"
@@ -179,14 +158,12 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
     def test_network_watcher_integration_completeness(self):
         """Validar que la integración de Network Watcher está completa en el
         workflow."""
-        import requests
 
         shuffle_base = self.get_service_url("shuffle")
         api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY", "")
-        response = requests.get(
+        response = self.s.get(
             f"{shuffle_base}/api/v1/workflows/{self.workflow_id}",
             headers={"Authorization": f"Bearer {api_key}"},
-            verify=False,
         )
         assert response.status_code in (
             200,
@@ -203,10 +180,8 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
         network_actions = [
             a
             for a in actions
-            if "network" in a.get("label", "").lower() and (
-                "watch" in a.get("label", "").lower()
-                or "watcher" in a.get("label", "").lower()
-            )
+            if "network" in a.get("label", "").lower()
+            and ("watch" in a.get("label", "").lower() or "watcher" in a.get("label", "").lower())
         ]
         # Also accept "network_watch" as a network watcher action
         if len(network_actions) == 0:
@@ -217,7 +192,8 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
 
         # Validar que exista acción de monitoreo (label "network_watch" counts)
         monitor_actions = [
-            a for a in network_actions
+            a
+            for a in network_actions
             if "monitorear" in a.get("label", "").lower()
             or "monitor" in a.get("label", "").lower()
             or "watch" in a.get("label", "").lower()
@@ -248,10 +224,9 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
           - Connection data is captured with required fields
           - Network activity is logged with container IDs
         """
-        import requests
 
         # Get network connections
-        response = requests.get(f"{self._nw_url()}/api/connections", timeout=10, verify=False)
+        response = self.s.get(f"{self._nw_url()}/api/connections", timeout=10)
         assert (
             response.status_code == 200
         ), f"Connections endpoint failed: HTTP {response.status_code}"
@@ -277,14 +252,12 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
           - Filtered connections match the requested IP
           - Total count is consistent with filtered results
         """
-        import requests
 
         # Filter by source IP
-        response = requests.get(
+        response = self.s.get(
             f"{self._nw_url()}/api/connections",
             params={"ip": self.alert_data["src_ip"], "limit": 50},
             timeout=10,
-            verify=False,
         )
         assert response.status_code == 200, f"Source filtering failed: HTTP {response.status_code}"
         data = response.json()
@@ -311,11 +284,8 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
           - Connection detail endpoint returns correct data
           - Connection IDs are consistent between listing and detail
         """
-        import requests
 
-        listing = requests.get(
-            f"{self._nw_url()}/api/connections?limit=1", timeout=10, verify=False
-        )
+        listing = self.s.get(f"{self._nw_url()}/api/connections?limit=1", timeout=10)
         assert listing.status_code == 200, f"Connections listing failed: HTTP {listing.status_code}"
         listing_data = listing.json()
         assert isinstance(listing_data, dict), "Response should be JSON"
@@ -325,9 +295,7 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
 
         conn_id = connections[0].get("id")
         assert conn_id, "Connection missing 'id' field"
-        response = requests.get(
-            f"{self._nw_url()}/api/connections/{conn_id}", timeout=10, verify=False
-        )
+        response = self.s.get(f"{self._nw_url()}/api/connections/{conn_id}", timeout=10)
         assert response.status_code == 200, f"Connection detail failed: HTTP {response.status_code}"
         conn_data = response.json()
         assert isinstance(conn_data, dict), "Connection data should be JSON"
@@ -344,12 +312,9 @@ class TestNetworkWatcherIntegration(E2EBaseTest):
           - Connection records have required correlation fields
           - Network patterns can be identified from connection data
         """
-        import requests
 
         # Get all connections for correlation
-        response = requests.get(
-            f"{self._nw_url()}/api/connections?limit=1000", timeout=10, verify=False
-        )
+        response = self.s.get(f"{self._nw_url()}/api/connections?limit=1000", timeout=10)
         assert response.status_code == 200, f"Connections query failed: HTTP {response.status_code}"
         data = response.json()
         assert isinstance(data, dict), "Response should be JSON"

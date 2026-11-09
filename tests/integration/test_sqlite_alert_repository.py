@@ -263,3 +263,73 @@ class TestSqliteAlertRepository:
 
         backups = repo.get_backups()
         assert len(backups) == 3
+
+
+def test_restore_alert_preserves_id_and_timestamp(tmp_path):
+    """Bug: INSERT OR REPLACE on a conflicting alert_id deletes+reinserts,
+    assigning a NEW autoincrement id and resetting timestamp to now —
+    corrupting incident history on idempotent re-ingest."""
+    from soar_lab.infrastructure.persistence.sqlite_alert_repository import (
+        SqliteAlertRepository,
+    )
+
+    repo = SqliteAlertRepository(db_path=str(tmp_path / "t.db"))
+    repo.store_alert(
+        {"alert_id": "A1", "alert_type": "t", "severity": "high", "hostname": "h", "data": {"v": 1}}
+    )
+    first = repo.get_alert("A1")
+    repo.store_alert(
+        {
+            "alert_id": "A1",
+            "alert_type": "t",
+            "severity": "high",
+            "hostname": "h",
+            "data": {"v": 2},
+            "status": "closed",
+        }
+    )
+    second = repo.get_alert("A1")
+    assert second["id"] == first["id"], "id must be stable on upsert"
+    assert second["timestamp"] == first["timestamp"], "original timestamp lost"
+    assert second["data"]["v"] == 2 and second["status"] == "closed"
+
+
+def test_average_coverage_zero_is_not_none(tmp_path):
+    """Bug: AVG(coverage)=0.0 is falsy -> 'float(result) if result else None'
+    conflates a legitimate 0% coverage with 'no data'."""
+    from soar_lab.infrastructure.persistence.sqlite_alert_repository import (
+        SqliteAlertRepository,
+    )
+
+    repo = SqliteAlertRepository(db_path=str(tmp_path / "t.db"))
+    repo.store_test_coverage(
+        {
+            "test_category": "unit",
+            "coverage_percentage": 0.0,
+            "tests_run": 10,
+            "tests_passed": 0,
+            "tests_failed": 10,
+        }
+    )
+    assert repo.get_average_test_coverage() == 0.0
+
+
+def test_get_alerts_negative_limit_returns_nothing(tmp_path):
+    """Bug: SQLite 'LIMIT -1' means NO limit -> get_alerts(limit=-5) returns the
+    whole table instead of honouring 'at most N'."""
+    from soar_lab.infrastructure.persistence.sqlite_alert_repository import (
+        SqliteAlertRepository,
+    )
+
+    repo = SqliteAlertRepository(db_path=str(tmp_path / "t.db"))
+    for i in range(3):
+        repo.store_alert(
+            {
+                "alert_id": f"A{i}",
+                "alert_type": "t",
+                "severity": "high",
+                "hostname": "h",
+                "data": {},
+            }
+        )
+    assert repo.get_alerts(limit=-5) == []

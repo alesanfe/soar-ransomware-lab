@@ -121,7 +121,7 @@ class TestInMemoryAlertRepository:
 
         result = repo.update_status("alert-1", "closed")
 
-        assert result == True
+        assert result
         assert repo._store["alert-1"]["status"] == "closed"
 
     def test_update_status_not_exists(self):
@@ -130,7 +130,7 @@ class TestInMemoryAlertRepository:
 
         result = repo.update_status("nonexistent", "closed")
 
-        assert result == False
+        assert result is False
 
     def test_clear(self):
         """Test clearing all alerts."""
@@ -177,7 +177,7 @@ class TestInMemoryAlertRepository:
 
         # Update status
         result = repo.update_status("alert-1", "closed")
-        assert result == True
+        assert result
 
         # Verify update
         alert = repo.find_by_id("alert-1")

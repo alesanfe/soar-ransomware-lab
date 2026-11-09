@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from soar_lab.config.schemas import (
     AffectedFile,
+    AlertSeverity,
     AlertType,
     BackupReport,
     ContainmentAction,
@@ -19,7 +20,6 @@ from soar_lab.config.schemas import (
     NetworkEvent,
     RansomwareAlert,
     SecurityScan,
-    SeverityLevel,
     WebhookPayload,
     is_valid_alert_id,
     is_valid_ip_address,
@@ -31,14 +31,14 @@ from soar_lab.config.schemas import (
 
 
 class TestSeverityLevel:
-    """Test SeverityLevel enum."""
+    """Canonical AlertSeverity enum (CFG-001: was base-0 strings)."""
 
     def test_severity_levels(self):
         """Test all severity level values."""
-        assert SeverityLevel.LOW.value == "0"
-        assert SeverityLevel.MEDIUM.value == "1"
-        assert SeverityLevel.HIGH.value == "2"
-        assert SeverityLevel.CRITICAL.value == "3"
+        assert AlertSeverity.LOW.value == 1
+        assert AlertSeverity.MEDIUM.value == 2
+        assert AlertSeverity.HIGH.value == 3
+        assert AlertSeverity.CRITICAL.value == 4
 
 
 class TestAlertType:
@@ -202,7 +202,7 @@ class TestRansomwareAlert:
             hostname="test-host",
             src_ip="192.168.1.1",
             hash=FileHash(sha256="a" * 64),
-            severity=SeverityLevel.HIGH,
+            severity=AlertSeverity.HIGH,
             source="endpoint",
             detection_time=now,
             event_type="ransomware_detection",
@@ -210,7 +210,7 @@ class TestRansomwareAlert:
         )
         assert alert.alert_id == "ALERT-1234567890-0001"
         assert alert.hostname == "test-host"
-        assert alert.severity == SeverityLevel.HIGH
+        assert alert.severity == AlertSeverity.HIGH
 
     def test_ransomware_alert_with_optional_fields(self):
         """Test ransomware alert with optional fields."""
@@ -220,7 +220,7 @@ class TestRansomwareAlert:
             hostname="test-host",
             src_ip="192.168.1.1",
             hash=FileHash(sha256="a" * 64),
-            severity=SeverityLevel.HIGH,
+            severity=AlertSeverity.HIGH,
             source="endpoint",
             detection_time=now,
             event_type="ransomware_detection",
@@ -246,7 +246,7 @@ class TestRansomwareAlert:
                 hostname="test-host",
                 src_ip="192.168.1.1",
                 hash=FileHash(sha256="a" * 64),
-                severity=SeverityLevel.HIGH,
+                severity=AlertSeverity.HIGH,
                 source="endpoint",
                 detection_time=now,
                 event_type="ransomware_detection",
@@ -262,7 +262,7 @@ class TestRansomwareAlert:
                 hostname="invalid_hostname!",
                 src_ip="192.168.1.1",
                 hash=FileHash(sha256="a" * 64),
-                severity=SeverityLevel.HIGH,
+                severity=AlertSeverity.HIGH,
                 source="endpoint",
                 detection_time=now,
                 event_type="ransomware_detection",
@@ -278,7 +278,7 @@ class TestRansomwareAlert:
                 hostname="test-host",
                 src_ip="192.168.1.1",
                 hash=FileHash(sha256="a" * 64),
-                severity=SeverityLevel.HIGH,
+                severity=AlertSeverity.HIGH,
                 source="endpoint",
                 detection_time=future,
                 event_type="ransomware_detection",
@@ -295,7 +295,7 @@ class TestRansomwareAlert:
                 hostname="test-host",
                 src_ip="192.168.1.1",
                 hash=FileHash(sha256="a" * 64),
-                severity=SeverityLevel.HIGH,
+                severity=AlertSeverity.HIGH,
                 source="endpoint",
                 detection_time=now,
                 event_type="invalid_event",
@@ -314,7 +314,7 @@ class TestWebhookPayload:
             hostname="test-host",
             src_ip="192.168.1.1",
             hash=FileHash(sha256="a" * 64),
-            severity=SeverityLevel.HIGH,
+            severity=AlertSeverity.HIGH,
             source="endpoint",
             detection_time=now,
             event_type="ransomware_detection",
@@ -333,7 +333,7 @@ class TestWebhookPayload:
             hostname="test-host",
             src_ip="192.168.1.1",
             hash=FileHash(sha256="a" * 64),
-            severity=SeverityLevel.HIGH,
+            severity=AlertSeverity.HIGH,
             source="endpoint",
             detection_time=now,
             event_type="ransomware_detection",
@@ -352,7 +352,7 @@ class TestWebhookPayload:
             hostname="test-host",
             src_ip="192.168.1.1",
             hash=FileHash(sha256="a" * 64),
-            severity=SeverityLevel.HIGH,
+            severity=AlertSeverity.HIGH,
             source="endpoint",
             detection_time=now,
             event_type="ransomware_detection",

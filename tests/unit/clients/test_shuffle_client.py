@@ -42,41 +42,32 @@ class TestShuffleClient:
             ShuffleClient(base_url="http://localhost:5001", api_key=None)
 
     def test_send_webhook_payload(self):
-        """Test sending webhook payload."""
+        """Test sending webhook payload via the shared session (P0.5)."""
         with patch("soar_lab.infrastructure.integrations.shuffle.client.threading.Thread"):
             client = ShuffleClient(base_url="http://localhost:5001", api_key="test-key")
 
-        with patch("requests.Session") as mock_session_class:
-            mock_session = Mock()
-            mock_response = Mock()
-            mock_response.content = b'{"result": "ok"}'
-            mock_response.json.return_value = {"result": "ok"}
-            mock_session.post.return_value = mock_response
-            mock_session_class.return_value = mock_session
+        mock_response = Mock()
+        mock_response.content = b'{"result": "ok"}'
+        mock_response.json.return_value = {"result": "ok"}
+        client._webhook_session.post = Mock(return_value=mock_response)
 
-            result = client.send_webhook_payload(
-                "http://localhost:5001/api/v1/hooks/test", {"data": "test"}
-            )
-            assert result == {"result": "ok"}
+        result = client.send_webhook_payload(
+            "http://localhost:5001/api/v1/hooks/test", {"data": "test"}
+        )
+        assert result == {"result": "ok"}
+        client._webhook_session.post.assert_called_once()
 
     def test_send_webhook_payload_http_error(self):
         """Test send_webhook_payload raises IntegrationError on HTTPError."""
         with patch("soar_lab.infrastructure.integrations.shuffle.client.threading.Thread"):
             client = ShuffleClient(base_url="http://localhost:5001", api_key="test-key")
 
-        with patch("requests.Session") as mock_session_class:
-            import requests
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
+        client._webhook_session.post = Mock(return_value=mock_response)
 
-            mock_session = Mock()
-            mock_response = Mock()
-            mock_response.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
-            mock_session.post.return_value = mock_response
-            mock_session_class.return_value = mock_session
-
-            with pytest.raises(IntegrationError, match="ShuffleClient"):
-                client.send_webhook_payload(
-                    "http://localhost:5001/api/v1/hooks/test", {"data": "test"}
-                )
+        with pytest.raises(IntegrationError, match="ShuffleClient"):
+            client.send_webhook_payload("http://localhost:5001/api/v1/hooks/test", {"data": "test"})
 
     def test_send_webhook_payload_request_exception(self):
         """Test send_webhook_payload raises IntegrationError on
@@ -84,17 +75,12 @@ class TestShuffleClient:
         with patch("soar_lab.infrastructure.integrations.shuffle.client.threading.Thread"):
             client = ShuffleClient(base_url="http://localhost:5001", api_key="test-key")
 
-        with patch("requests.Session") as mock_session_class:
-            import requests
+        client._webhook_session.post = Mock(
+            side_effect=requests.RequestException("Connection error")
+        )
 
-            mock_session = Mock()
-            mock_session.post.side_effect = requests.RequestException("Connection error")
-            mock_session_class.return_value = mock_session
-
-            with pytest.raises(IntegrationError, match="ShuffleClient"):
-                client.send_webhook_payload(
-                    "http://localhost:5001/api/v1/hooks/test", {"data": "test"}
-                )
+        with pytest.raises(IntegrationError, match="ShuffleClient"):
+            client.send_webhook_payload("http://localhost:5001/api/v1/hooks/test", {"data": "test"})
 
     def test_send_webhook_with_token(self):
         """Test send_webhook with token."""
@@ -160,14 +146,16 @@ class TestShuffleClient:
         assert result is True
 
     def test_download_remote_apps_error(self):
-        """Test download_remote_apps returns False on error."""
+        """P0.2: transport failure raises typed error, not False."""
+        from soar_lab.common.exceptions import IntegrationUnavailableError
+
         with patch("soar_lab.infrastructure.integrations.shuffle.client.threading.Thread"):
             client = ShuffleClient(base_url="http://localhost:5001", api_key="test-key")
 
-        client._session.post = Mock(side_effect=Exception("Error"))
+        client._session.post = Mock(side_effect=requests.ConnectionError("refused"))
 
-        result = client.download_remote_apps("https://github.com/shuffle/python-apps")
-        assert result is False
+        with pytest.raises(IntegrationUnavailableError):
+            client.download_remote_apps("https://github.com/shuffle/python-apps")
 
     def test_list_workflows(self):
         """Test listing workflows."""
@@ -305,14 +293,16 @@ class TestShuffleClient:
         assert result is True
 
     def test_login_error(self):
-        """Test login returns False on error."""
+        """P0.2: transport failure raises typed error, not False."""
+        from soar_lab.common.exceptions import IntegrationUnavailableError
+
         with patch("soar_lab.infrastructure.integrations.shuffle.client.threading.Thread"):
             client = ShuffleClient(base_url="http://localhost:5001", api_key="test-key")
 
-        client._session.post = Mock(side_effect=Exception("Error"))
+        client._session.post = Mock(side_effect=requests.ConnectionError("refused"))
 
-        result = client.login("admin", "password")
-        assert result is False
+        with pytest.raises(IntegrationUnavailableError):
+            client.login("admin", "password")
 
     def test_delete_workflow(self):
         """Test deleting a workflow."""
@@ -327,14 +317,16 @@ class TestShuffleClient:
         assert result is True
 
     def test_delete_workflow_error(self):
-        """Test delete_workflow returns False on error."""
+        """P0.2: transport failure raises typed error, not False."""
+        from soar_lab.common.exceptions import IntegrationUnavailableError
+
         with patch("soar_lab.infrastructure.integrations.shuffle.client.threading.Thread"):
             client = ShuffleClient(base_url="http://localhost:5001", api_key="test-key")
 
-        client._session.delete = Mock(side_effect=Exception("Error"))
+        client._session.delete = Mock(side_effect=requests.ConnectionError("refused"))
 
-        result = client.delete_workflow("123")
-        assert result is False
+        with pytest.raises(IntegrationUnavailableError):
+            client.delete_workflow("123")
 
     def test_health_check(self):
         """Test health check."""

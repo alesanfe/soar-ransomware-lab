@@ -3,7 +3,6 @@
 MITRE ATT&CK and D3FEND frameworks."""
 
 import sys
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -39,7 +38,7 @@ class TestCompliance(E2EBaseTest):
         # MITRE ATT&CK techniques for ransomware
 
         # Send alert with MITRE techniques
-        alert_id = f"TC31-MITRE-{int(time.time())}"
+        alert_id = self.uid("TC31-MITRE")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -102,7 +101,13 @@ class TestCompliance(E2EBaseTest):
         cases = self.thehive.search_cases()
         new_cases = len(cases) - self.cases_before
         assert new_cases > 0, "No new TheHive case created"
-        last = max(cases, key=lambda c: c.get("caseId", 0))
+        matching = [
+            c
+            for c in sorted(cases, key=lambda c: c.get("caseId", 0), reverse=True)
+            if alert_id in c.get("description", "")
+        ]
+        assert matching, f"No TheHive case found containing alert_id={alert_id}"
+        last = matching[0]
         case_id = last.get("id", last.get("_id", ""))
         tasks = self.thehive.list_case_tasks(case_id)
         task_titles = [t.get("title", "").lower() for t in tasks]

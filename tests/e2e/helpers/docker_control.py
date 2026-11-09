@@ -48,8 +48,10 @@ def stop_container(container_name: str, timeout: int = 30) -> bool:
         True if container was stopped, False otherwise
     """
     try:
-        subprocess.run(["docker", "stop", container_name], capture_output=True, timeout=timeout)
-        return True
+        result = subprocess.run(
+            ["docker", "stop", container_name], capture_output=True, timeout=timeout
+        )
+        return result.returncode == 0
     except Exception:
         return False
 
@@ -65,8 +67,10 @@ def start_container(container_name: str, timeout: int = 30) -> bool:
         True if container was started, False otherwise
     """
     try:
-        subprocess.run(["docker", "start", container_name], capture_output=True, timeout=timeout)
-        return True
+        result = subprocess.run(
+            ["docker", "start", container_name], capture_output=True, timeout=timeout
+        )
+        return result.returncode == 0
     except Exception:
         return False
 
@@ -82,8 +86,10 @@ def restart_container(container_name: str, timeout: int = 60) -> bool:
         True if container was restarted, False otherwise
     """
     try:
-        subprocess.run(["docker", "restart", container_name], capture_output=True, timeout=timeout)
-        return True
+        result = subprocess.run(
+            ["docker", "restart", container_name], capture_output=True, timeout=timeout
+        )
+        return result.returncode == 0
     except Exception:
         return False
 

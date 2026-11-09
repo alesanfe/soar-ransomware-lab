@@ -52,8 +52,10 @@ class TestHashValidator:
         hash64 = "44d88612fea8a8f36de82e1278abb02f44d88612fea8a8f36de82e1278abb02f"
         assert HashValidator.validate(hash64) is True
 
-    def test_invalid_only_digits(self):
-        assert HashValidator.validate("1" * 32) is False
+    def test_valid_only_digits(self):
+        # All-decimal strings are valid hex digests (digits 0-9 are hex
+        # chars) — the old isdigit() exclusion rejected real hashes.
+        assert HashValidator.validate("1" * 32) is True
 
     def test_invalid_wrong_length(self):
         assert HashValidator.validate("abc123") is False

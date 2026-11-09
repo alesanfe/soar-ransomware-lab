@@ -41,6 +41,7 @@ class TestBehavioralDetection(E2EBaseTest):
         Fail if not found.
         """
         deadline = time.time() + timeout
+        search_errors = 0
         while time.time() < deadline:
             try:
                 cases = self.thehive.search_cases()
@@ -50,7 +51,9 @@ class TestBehavioralDetection(E2EBaseTest):
                     if alert_id in title or alert_id in desc:
                         return c
             except Exception as e:
-                self._log(f"  + TheHive search error: {e}")
+                search_errors += 1
+                assert search_errors < 10, f"TheHive search failed {search_errors} times: {e}"
+                self._log(f"  + TheHive search error ({search_errors}/10): {e}")
             time.sleep(5)
         pytest.fail(f"TheHive case not found for alert_id={alert_id} within {timeout}s")
 
@@ -264,15 +267,14 @@ class TestBehavioralDetection(E2EBaseTest):
 
         # Correlation via shared src_ip in observables
         correlated_via_ip = 0
+        # A failed observable fetch silently under-counts correlation —
+        # let it propagate: if search worked, observables must too.
         for case in cases_found:
             cid = case.get("_id") or case.get("id")
-            try:
-                observables = self.thehive.get_case_observables(cid)
-                has_src_ip = any(obs.get("data") == "192.168.1.221" for obs in observables)
-                if has_src_ip:
-                    correlated_via_ip += 1
-            except Exception as e:
-                self._log(f"  + Could not check observables for {cid}: {e}")
+            observables = self.thehive.get_case_observables(cid)
+            has_src_ip = any(obs.get("data") == "192.168.1.221" for obs in observables)
+            if has_src_ip:
+                correlated_via_ip += 1
 
         assert correlated_via_ip >= 2, (
             f"At least 2 of 3 cases should share the src_ip observable "
@@ -413,11 +415,8 @@ class TestBehavioralDetection(E2EBaseTest):
         # TheHive severity: 0=low, 1=medium, 2=high, 3=critical
         assert final_severity is not None, "Final stage case must have a severity field"
         # Accept either int 3 or string "3" or high/critical
-        if isinstance(final_severity, str):
-            try:
-                final_severity = int(final_severity)
-            except ValueError:
-                pass
+        if isinstance(final_severity, str) and final_severity.isdigit():
+            final_severity = int(final_severity)
         assert final_severity == 3 or (
             isinstance(final_severity, str) and final_severity.lower() in ("high", "critical")
         ), (
@@ -445,7 +444,7 @@ class TestBehavioralDetection(E2EBaseTest):
         """
         self._log("=== TC-25-04: CANARY FILE DETECTION TEST STARTED ===")
 
-        alert_id = f"TC25-CANARY-{int(time.time())}"
+        alert_id = self.uid("TC25-CANARY")
         canary_hash = "c" * 64  # Distinct canary hash
         payload = self.build_alert_payload(
             alert_id=alert_id,
@@ -496,11 +495,8 @@ class TestBehavioralDetection(E2EBaseTest):
         # --- Step 5: Assert alert was treated as high priority ---
         self._log("STEP 4: Verifying high priority treatment")
         case_severity = case.get("severity")
-        if isinstance(case_severity, str):
-            try:
-                case_severity = int(case_severity)
-            except ValueError:
-                pass
+        if isinstance(case_severity, str) and case_severity.isdigit():
+            case_severity = int(case_severity)
 
         # TheHive severity: 0=low, 1=medium, 2=high, 3=critical
         # Canary files should be treated as high priority (>= 2)

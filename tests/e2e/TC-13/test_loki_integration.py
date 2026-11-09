@@ -21,7 +21,7 @@ class TestLokiIntegration(E2EBaseTest):
         super().setup_method(method)
         self.t0 = datetime.now(UTC)
         self.alert_data = {
-            "alert_id": "TC13-LOKI-1783607000-4000",
+            "alert_id": self.uid("TC13-LOKI"),
             "hostname": "tc13-host",
             "src_ip": "192.168.100.80",
             "hash": "c3d4e5f6789012345678901234567890abcdef",
@@ -44,7 +44,7 @@ class TestLokiIntegration(E2EBaseTest):
         for _ in range(12):
             try:
                 start_time = time.time()
-                response = requests.get(f"{loki_url}/ready", timeout=10, verify=False)
+                response = self.s.get(f"{loki_url}/ready", timeout=10)
                 response_time_s = time.time() - start_time
                 if response.status_code == 200:
                     assert (
@@ -86,11 +86,11 @@ class TestLokiIntegration(E2EBaseTest):
         loki_url = self.get_service_url("loki")
         try:
             # Query simple para probar el endpoint
-            query = '{job=~".+"}'
+            query = '{container=~".+"}'
             end_time = datetime.now(UTC)
             start_time = end_time - timedelta(minutes=5)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -99,7 +99,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 100,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert response.status_code == 200, f"Loki query_range failed: {response.status_code}"
@@ -136,7 +135,7 @@ class TestLokiIntegration(E2EBaseTest):
             end_time = datetime.now(UTC)
             start_time = end_time - timedelta(minutes=10)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -145,7 +144,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 50,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert (
@@ -188,7 +186,7 @@ class TestLokiIntegration(E2EBaseTest):
             end_time = datetime.now(UTC)
             start_time = end_time - timedelta(minutes=10)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -197,7 +195,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 50,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert response.status_code == 200, f"Loki IP filtering failed: {response.status_code}"
@@ -236,7 +233,7 @@ class TestLokiIntegration(E2EBaseTest):
             end_time = datetime.now(UTC)
             start_time = end_time - timedelta(minutes=10)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -245,7 +242,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 50,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert (
@@ -265,17 +261,14 @@ class TestLokiIntegration(E2EBaseTest):
                 # Verify the workflow includes a Loki search action
                 shuffle_base = self.get_service_url("shuffle")
                 api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY", "")
-                wf_resp = requests.get(
+                wf_resp = self.s.get(
                     f"{shuffle_base}/api/v1/workflows/{self.workflow_id}",
                     headers={"Authorization": f"Bearer {api_key}"},
-                    verify=False,
                 )
                 if wf_resp.status_code == 200:
                     wf_data = wf_resp.json()
                     actions = wf_data.get("actions", [])
-                    loki_actions = [
-                        a for a in actions if "loki" in a.get("label", "").lower()
-                    ]
+                    loki_actions = [a for a in actions if "loki" in a.get("label", "").lower()]
                     assert len(loki_actions) > 0, "No Loki actions found in workflow"
                     self._log(
                         "+ Loki query succeeded (no logs for correlation_id — "
@@ -292,11 +285,11 @@ class TestLokiIntegration(E2EBaseTest):
         loki_url = self.get_service_url("loki")
         try:
             # Query con parsing de logs
-            query = '{job=~".+"} |= "error"'
+            query = '{container=~".+"} |= "error"'
             end_time = datetime.now(UTC)
             start_time = end_time - timedelta(minutes=5)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -305,7 +298,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 20,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert response.status_code == 200, f"Expected HTTP 200, got {response.status_code}"
@@ -338,9 +330,9 @@ class TestLokiIntegration(E2EBaseTest):
 
             # Test con 1 hora
             start_time = end_time - timedelta(hours=1)
-            query = '{job=~".+"}'
+            query = '{container=~".+"}'
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -349,7 +341,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 10,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert (
@@ -363,7 +354,7 @@ class TestLokiIntegration(E2EBaseTest):
             # Test con 5 minutos
             start_time = end_time - timedelta(minutes=5)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -372,7 +363,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 10,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert (
@@ -384,37 +374,22 @@ class TestLokiIntegration(E2EBaseTest):
 
     def test_loki_error_handling(self):
         """Validar manejo de errores en Loki."""
-        import requests
 
         loki_url = self.get_service_url("loki")
-        try:
-            # Query con sintaxis inválida
-            response = requests.get(
-                f"{loki_url}/loki/api/v1/query_range",
-                params={
-                    "query": "{invalid syntax",
-                    "start": str(int(datetime.now(UTC).timestamp() * 1_000_000_000)),
-                    "end": str(int(datetime.now(UTC).timestamp() * 1_000_000_000)),
-                },
-                timeout=10,
-                verify=False,
-            )
-
-            # Debería devolver error 400
-            assert (
-                response.status_code == 400
-            ), f"Expected 400 for invalid query, got: {response.status_code}"
-
-            # Validate it's not a 5xx server error (indicates crash)
-            assert response.status_code not in [
-                502,
-                503,
-                504,
-            ], f"Server error indicates crash: {response.status_code}"
-
-        except requests.exceptions.RequestException:
-            # Expected for invalid queries
-            pass
+        # Query con sintaxis inválida — Loki must answer 400, not crash.
+        # A RequestException here means Loki is unreachable and must fail.
+        response = self.s.get(
+            f"{loki_url}/loki/api/v1/query_range",
+            params={
+                "query": "{invalid syntax",
+                "start": str(int(datetime.now(UTC).timestamp() * 1_000_000_000)),
+                "end": str(int(datetime.now(UTC).timestamp() * 1_000_000_000)),
+            },
+            timeout=10,
+        )
+        assert (
+            response.status_code == 400
+        ), f"Expected 400 for invalid query, got: {response.status_code}"
 
     def test_loki_performance_requirements(self):
         """Validar requisitos de rendimiento de Loki."""
@@ -427,11 +402,11 @@ class TestLokiIntegration(E2EBaseTest):
             start_time = time.time()
 
             # Query simple para medir rendimiento
-            query = '{job=~".+"}'
+            query = '{container=~".+"}'
             end_time = datetime.now(UTC)
             start_time_query = end_time - timedelta(minutes=5)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -440,7 +415,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 50,
                 },
                 timeout=10,
-                verify=False,
             )
 
             end_time = time.time()
@@ -464,18 +438,15 @@ class TestLokiIntegration(E2EBaseTest):
         """Validar que la integración de Loki está completa en el workflow."""
         import requests
 
-        shuffle_base_url = self.get_service_url("shuffle")
-        shuffle_api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY", "")
+        # Read the deployed workflow from OpenSearch — the env's Shuffle
+        # API key rotates, while workflow-000001 carries the live
+        # definition (same source the Shuffle API would serve).
+        os_url = self.get_service_url("opensearch")
         try:
-            # Obtener detalles del workflow
-            response = requests.get(
-                f"{shuffle_base_url}/api/v1/workflows/{self.workflow_id}",
-                headers={"Authorization": f"Bearer {shuffle_api_key}"},
-                verify=False,
-            )
+            response = self.s.get(f"{os_url}/workflow-000001/_doc/{self.workflow_id}", timeout=15)
 
             assert response.status_code == 200, f"Expected HTTP 200, got {response.status_code}"
-            workflow_data = response.json()
+            workflow_data = response.json().get("_source", {})
             assert isinstance(workflow_data, dict), "Workflow data should be a dict"
             actions = workflow_data.get("actions", [])
             assert isinstance(actions, list), "Actions should be a list"
@@ -487,7 +458,8 @@ class TestLokiIntegration(E2EBaseTest):
             # Validar que exista acción de búsqueda
             # The workflow uses "loki_search" as the label (not "Buscar loki")
             search_actions = [
-                a for a in loki_actions
+                a
+                for a in loki_actions
                 if "search" in a.get("label", "").lower()
                 or "buscar" in a.get("label", "").lower()
                 or "query" in a.get("label", "").lower()
@@ -496,7 +468,8 @@ class TestLokiIntegration(E2EBaseTest):
 
             # Validar que exista acción de verificación
             verify_actions = [
-                a for a in actions
+                a
+                for a in actions
                 if "verify" in a.get("label", "").lower() and "loki" in a.get("label", "").lower()
             ]
             assert len(verify_actions) > 0, "No Loki verification action found"
@@ -516,11 +489,11 @@ class TestLokiIntegration(E2EBaseTest):
         loki_url = self.get_service_url("loki")
         try:
             # Query con agregación
-            query = 'sum by (job) (count_over_time({job=~".+"}[5m]))'
+            query = 'sum by (container) (count_over_time({container=~".+"}[5m]))'
             end_time = datetime.now(UTC)
             start_time = end_time - timedelta(minutes=10)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -529,20 +502,26 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 10,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert response.status_code == 200, f"Expected HTTP 200, got {response.status_code}"
             data = response.json()
 
-            if data["status"] == "success":
-                results = data["data"]["result"]
+            assert data["status"] == "success", f"Loki query failed: {data}"
+            results = data["data"]["result"]
 
-                # Validar estructura de resultados agregados
-                for result in results:
-                    assert "metric" in result, "Aggregated result missing metric"
-                    assert "job" in result["metric"], "Missing job in metric"
-                    assert "values" in result, "Missing values in aggregated result"
+            # Aggregation over all containers must return real series —
+            # Promtail tags every stream with the `container` label.
+            assert results, "Aggregation returned no series — Loki has no ingested streams"
+            for result in results:
+                assert "metric" in result, "Aggregated result missing metric"
+                assert (
+                    "container" in result["metric"]
+                ), f"Missing container in metric: {result['metric']}"
+                assert "values" in result, "Missing values in aggregated result"
+                assert result[
+                    "values"
+                ], f"Series for {result['metric'].get('container')} has no values"
 
         except requests.exceptions.RequestException as e:
             pytest.fail(f"Loki aggregation test failed: {e}")
@@ -565,21 +544,58 @@ class TestLokiIntegration(E2EBaseTest):
         try:
             # Send alert to trigger log ingestion
             webhook_url = self.webhook_url
-            response = requests.post(webhook_url, json=self.alert_data, timeout=30, verify=False)
+            response = self.s.post(webhook_url, json=self.alert_data, timeout=30)
             assert response.status_code == 200, f"Webhook failed: {response.status_code}"
 
             execution_id = response.json().get("execution_id")
             assert execution_id, "No execution_id returned"
             assert isinstance(execution_id, str), "execution_id should be a string"
 
-            time.sleep(10)
+            # Poll Loki until the alert's logs appear — ingestion is async.
+            # Promtail labels streams by container (no "job" label exists);
+            # the api logs `alert=<alert_id>` on the containment path and
+            # each workflow execution spawns a `worker-<execution_id>`
+            # container whose logs Promtail ingests.
+            alert_marker = str(self.alert_data.get("alert_id", ""))
+            worker_stream = f'{{container="worker-{execution_id}"}}'
+            marker_q = f'{{container=~".+"}} |= "{alert_marker}"'
+            result = []
+            deadline = time.time() + 60
+            while time.time() < deadline and not result:
+                for q in (worker_stream, marker_q):
+                    poll = self.s.get(
+                        f"{loki_url}/loki/api/v1/query_range",
+                        params={
+                            "query": q,
+                            "start": str(
+                                int(
+                                    (datetime.now(UTC) - timedelta(minutes=15)).timestamp()
+                                    * 1_000_000_000
+                                )
+                            ),
+                            "end": str(int(datetime.now(UTC).timestamp() * 1_000_000_000)),
+                            "limit": 10,
+                        },
+                        timeout=10,
+                    )
+                    assert poll.status_code == 200, f"Loki poll failed: HTTP {poll.status_code}"
+                    result = poll.json().get("data", {}).get("result", [])
+                    if result:
+                        break
+                if not result:
+                    time.sleep(5)
+            assert result, (
+                f"No Loki log entries for worker-{execution_id} or "
+                f"alert_id={alert_marker} found within 60s of ingestion"
+            )
+            self._log(f"+ Loki ingestion confirmed: {len(result)} stream(s)")
 
             # Query for logs
-            query = '{job=~".+"}'
+            query = '{container=~".+"}'
             end_time = datetime.now(UTC)
             start_time = end_time - timedelta(minutes=5)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -588,7 +604,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 10,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert response.status_code == 200, f"Expected HTTP 200, got {response.status_code}"
@@ -616,31 +631,62 @@ class TestLokiIntegration(E2EBaseTest):
 
         loki_url = self.get_service_url("loki")
         try:
-            # Query by alert_id as trace_id
-            query = f'{{alert_id="{self.alert_data["alert_id"]}"}}'
-            end_time = datetime.now(UTC)
-            start_time = end_time - timedelta(minutes=10)
+            # Send an alert so there is a real trace to search for.
+            # Promtail tags each execution's logs with the container label
+            # ``worker-<execution_id>`` — deterministic traceability from
+            # webhook response to its ingested stream.
+            response = self.s.post(self.webhook_url, json=self.alert_data, timeout=30)
+            assert response.status_code == 200, f"Webhook failed: {response.status_code}"
+            execution_id = response.json().get("execution_id")
+            assert execution_id, "No execution_id returned"
 
-            response = requests.get(
-                f"{loki_url}/loki/api/v1/query_range",
-                params={
-                    "query": query,
-                    "start": str(int(start_time.timestamp() * 1_000_000_000)),
-                    "end": str(int(end_time.timestamp() * 1_000_000_000)),
-                    "limit": 50,
-                },
-                timeout=10,
-                verify=False,
+            # Worker spawn + Promtail scrape + Loki ingest can take >60s
+            # under load — poll up to 180s. Fallback: the api logs
+            # `alert=<alert_id>` on the containment path.
+            streams = []
+            deadline = time.time() + 180
+            while time.time() < deadline and not streams:
+                for q in (
+                    f'{{container="worker-{execution_id}"}}',
+                    f'{{container=~".+"}} |= "{self.alert_data["alert_id"]}"',
+                ):
+                    response = self.s.get(
+                        f"{loki_url}/loki/api/v1/query_range",
+                        params={
+                            "query": q,
+                            "start": str(
+                                int(
+                                    (datetime.now(UTC) - timedelta(minutes=15)).timestamp()
+                                    * 1_000_000_000
+                                )
+                            ),
+                            "end": str(int(datetime.now(UTC).timestamp() * 1_000_000_000)),
+                            "limit": 50,
+                        },
+                        timeout=10,
+                    )
+                    assert (
+                        response.status_code == 200
+                    ), f"Expected HTTP 200, got {response.status_code}"
+                    data = response.json()
+                    assert data["status"] == "success", "Query should succeed"
+                    streams = data.get("data", {}).get("result", [])
+                    if streams:
+                        break
+                if not streams:
+                    time.sleep(5)
+
+            assert streams, (
+                f"No Loki stream for worker-{execution_id} or "
+                f"alert_id={self.alert_data['alert_id']} within 180s "
+                "— execution logs not ingested"
             )
-
-            assert response.status_code == 200, f"Expected HTTP 200, got {response.status_code}"
-            data = response.json()
-            assert isinstance(data, dict), "Response should be JSON"
-            assert data["status"] == "success", "Query should succeed"
-
-            # Validate alert_data structure
-            assert isinstance(self.alert_data, dict), "alert_data should be a dict"
-            assert "alert_id" in self.alert_data, "alert_id should be in alert_data"
+            total_lines = sum(len(s.get("values", [])) for s in streams)
+            assert total_lines > 0, f"Worker stream for {execution_id} has no log lines"
+            self._log(
+                f"+ trace_id search: {len(streams)} stream(s), "
+                f"{total_lines} line(s) for worker-{execution_id}"
+            )
 
         except requests.exceptions.RequestException as e:
             pytest.fail(f"Loki trace_id search test failed: {e}")
@@ -661,11 +707,11 @@ class TestLokiIntegration(E2EBaseTest):
         try:
             start_time = time.time()
 
-            query = '{job=~".+"}'
+            query = '{container=~".+"}'
             end_time = datetime.now(UTC)
             start_time_query = end_time - timedelta(minutes=5)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -674,7 +720,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 50,
                 },
                 timeout=10,
-                verify=False,
             )
 
             end_time = time.time()
@@ -709,11 +754,11 @@ class TestLokiIntegration(E2EBaseTest):
         loki_url = self.get_service_url("loki")
         try:
             # Query for error logs
-            query = '{job=~".+"} |= "error"'
+            query = '{container=~".+"} |= "error"'
             end_time = datetime.now(UTC)
             start_time = end_time - timedelta(minutes=10)
 
-            response = requests.get(
+            response = self.s.get(
                 f"{loki_url}/loki/api/v1/query_range",
                 params={
                     "query": query,
@@ -722,7 +767,6 @@ class TestLokiIntegration(E2EBaseTest):
                     "limit": 20,
                 },
                 timeout=10,
-                verify=False,
             )
 
             assert response.status_code == 200, f"Expected HTTP 200, got {response.status_code}"

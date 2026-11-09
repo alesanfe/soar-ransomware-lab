@@ -63,8 +63,7 @@ class TestMaintainability:
         assert len(data) > 0, "No MI data collected"
         # Informational — does not hard-fail. Some files legitimately have
         # low MI due to high code density (e.g. integration clients).
-        # To enforce: uncomment the assert below
-        # assert not violators, f"{len(violators)} files have MI below {min_mi}"
+        # To enforce, assert that no file has MI below the threshold.
 
     def test_average_mi_above_threshold(self):
         """Project average MI should be above min_mi_global (65)."""

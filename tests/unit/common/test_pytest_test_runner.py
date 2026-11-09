@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Unit tests for pytest_test_runner.py."""
 
+import asyncio
 import json
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner
+from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner, TestRunResult
 
 pytestmark = pytest.mark.filterwarnings("ignore::RuntimeWarning")
 
@@ -50,12 +51,9 @@ class TestPytestTestRunner:
         """Test run_suite with 'all' suite."""
         repo_root = Path("/test/repo")
         mock_path_service = Mock()
-        mock_asyncio_run.return_value = {
-            "returncode": 0,
-            "stdout": "test output",
-            "stderr": "",
-            "duration": 5.0,
-        }
+        mock_asyncio_run.return_value = TestRunResult(
+            returncode=0, stdout="test output", stderr="", duration=5.0
+        )
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
 
         result = runner.run_suite("all", coverage=False)
@@ -69,12 +67,9 @@ class TestPytestTestRunner:
         """Test run_suite with specific suite."""
         repo_root = Path("/test/repo")
         mock_path_service = Mock()
-        mock_asyncio_run.return_value = {
-            "returncode": 0,
-            "stdout": "test output",
-            "stderr": "",
-            "duration": 5.0,
-        }
+        mock_asyncio_run.return_value = TestRunResult(
+            returncode=0, stdout="test output", stderr="", duration=5.0
+        )
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
 
         result = runner.run_suite("unit", coverage=False)
@@ -86,12 +81,9 @@ class TestPytestTestRunner:
         """Test run_suite with coverage enabled."""
         repo_root = Path("/test/repo")
         mock_path_service = Mock()
-        mock_asyncio_run.return_value = {
-            "returncode": 0,
-            "stdout": "test output",
-            "stderr": "",
-            "duration": 5.0,
-        }
+        mock_asyncio_run.return_value = TestRunResult(
+            returncode=0, stdout="test output", stderr="", duration=5.0
+        )
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
 
         result = runner.run_suite("unit", coverage=True)
@@ -103,12 +95,9 @@ class TestPytestTestRunner:
         """Test run_suite with error return code."""
         repo_root = Path("/test/repo")
         mock_path_service = Mock()
-        mock_asyncio_run.return_value = {
-            "returncode": 1,
-            "stdout": "test output",
-            "stderr": "error message",
-            "duration": 5.0,
-        }
+        mock_asyncio_run.return_value = TestRunResult(
+            returncode=1, stdout="test output", stderr="error message", duration=5.0
+        )
         runner = PytestTestRunner(repo_root=repo_root, path_service=mock_path_service)
 
         result = runner.run_suite("unit", coverage=False)
@@ -128,7 +117,13 @@ class TestPytestTestRunner:
 
         result = runner.get_coverage()
 
-        assert result == {"unit": 0, "integration": 0, "overall": 0}
+        # Unmeasured coverage is explicit — never a fake 0%.
+        assert result == {
+            "unit": None,
+            "integration": None,
+            "overall": None,
+            "measured": False,
+        }
 
     @patch("builtins.open")
     def test_get_coverage_file_exists(self, mock_open):
@@ -148,7 +143,8 @@ class TestPytestTestRunner:
 
         assert result["unit"] == 85.5
         assert result["overall"] == 85.5
-        assert result["integration"] == 0
+        assert result["measured"] is True
+        assert result["integration"] is None  # not measured per-suite
 
     @patch("builtins.open")
     def test_get_coverage_missing_totals(self, mock_open):
@@ -166,8 +162,10 @@ class TestPytestTestRunner:
 
         result = runner.get_coverage()
 
-        assert result["unit"] == 0
-        assert result["overall"] == 0
+        # Corrupt/incomplete coverage data reports as unmeasured.
+        assert result["unit"] is None
+        assert result["overall"] is None
+        assert result["measured"] is False
 
     @pytest.mark.asyncio
     @patch("soar_lab.infrastructure.pytest_test_runner.asyncio.create_subprocess_exec")
@@ -184,9 +182,9 @@ class TestPytestTestRunner:
 
         result = await runner._run_async(["python", "-m", "pytest"])
 
-        assert result["returncode"] == 0
-        assert result["stdout"] == "test output"
-        assert result["duration"] >= 0
+        assert result.returncode == 0
+        assert result.stdout == "test output"
+        assert result.duration >= 0
 
     @pytest.mark.asyncio
     @patch("soar_lab.infrastructure.pytest_test_runner.asyncio.create_subprocess_exec")
@@ -202,5 +200,43 @@ class TestPytestTestRunner:
 
         result = await runner._run_async(["python", "-m", "pytest"])
 
-        assert result["returncode"] == -1
-        assert "Timeout" in result["stderr"]
+        assert result.returncode == -1
+        assert "Timeout" in result.stderr
+
+    @pytest.mark.asyncio
+    async def test_run_async_timeout_kills_child(self, tmp_path):
+        """Bug: wait_for(communicate(), timeout) cancels the read but the
+        spawned child keeps running — same leak class fixed in
+        SubprocessRunner. The child must be terminated on timeout."""
+        import sys
+        import time
+
+        import psutil
+
+        marker = f"leak_{time.time_ns()}"
+        runner = PytestTestRunner(repo_root=tmp_path, path_service=Mock(), timeout=1)
+
+        procs_before = {
+            p.pid
+            for p in psutil.process_iter(["cmdline"])
+            if p.info["cmdline"] and marker in " ".join(p.info["cmdline"])
+        }
+
+        result = await runner._run_async(
+            [sys.executable, "-c", f"import time; time.sleep(60)  # {marker}"]
+        )
+        assert result.returncode == -1
+
+        # give the OS a moment to reap
+        for _ in range(20):
+            leaked = [
+                p
+                for p in psutil.process_iter(["cmdline"])
+                if p.info["cmdline"]
+                and marker in " ".join(p.info["cmdline"])
+                and p.pid not in procs_before
+            ]
+            if not leaked:
+                break
+            await asyncio.sleep(0.1)
+        assert not leaked, f"child processes leaked: {[p.pid for p in leaked]}"

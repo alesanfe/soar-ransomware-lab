@@ -19,8 +19,7 @@ def assert_data_persisted(system: str, data: dict[str, Any]):
 
 
 def assert_data_integrity(original: dict[str, Any], persisted: dict[str, Any], fields: list[str]):
-    """Assert that specified fields are preserved between original and
-    persisted data."""
+    """Assert that specified fields are preserved between original and persisted data."""
     for field in fields:
         original_value = original.get(field)
         persisted_value = persisted.get(field)

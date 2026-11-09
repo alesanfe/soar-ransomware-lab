@@ -9,7 +9,6 @@ Requires a live Docker stack (make up). Reads credentials from .env.full.
 
 import json
 import sys
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -42,9 +41,8 @@ _BENIGN_CONTRACT = {
             "required_keys": ["score"],
             "expected_values": {"score": lambda v: v < 50},
         },
-        "build_hive_summary": {"required_keys": ["success"]},
         "build_metrics_json": {"required_keys": ["success"]},
-        "calc_mttr": {"required_keys": ["mttr_seconds"]},
+        "calc_mttr": {"required_keys": ["mttr_seconds", "summary"]},
         "mark_false_positive": {"required_keys": ["success"]},
     },
 }
@@ -70,7 +68,7 @@ class TestBenignAlert(E2EBaseTest):
 
     def _build_benign_payload(self, test_case: dict) -> dict:
         payload = {
-            "alert_id": f"TC02-{test_case.get('name', 'unknown')}-{int(time.time())}",
+            "alert_id": self.uid(f"TC02-{test_case.get('name', 'unknown')}"),
             "alert_type": "ransomware",
             "hostname": test_case.get("hostname", "WIN-TC02-001"),
             "src_ip": test_case.get("ip", "172.31.54.117"),
@@ -99,7 +97,7 @@ class TestBenignAlert(E2EBaseTest):
         last = matching[0]
         case_id = str(last.get("_id", ""))
 
-        assert_incident_state(last, "Resolved")
+        assert_incident_state(last, ("New", "FalsePositive"))
         assert_incident_severity(last, "low")
         assert (
             last.get("severity", 99) <= 2
@@ -174,18 +172,18 @@ class TestBenignAlert(E2EBaseTest):
                 self._log(f"  + Case {name} failed: {e}")
                 failed_cases.append(name)
 
-        if failed_cases and len(failed_cases) > len(self.test_cases) / 2:
-            pytest.fail(f"Too many test cases failed: {len(failed_cases)}/{len(self.test_cases)}")
+        if failed_cases:
+            self._log(f"  + Failed cases: {', '.join(failed_cases)}")
+            pytest.fail(
+                f"Test cases failed: {len(failed_cases)}/{len(self.test_cases)}: "
+                f"{', '.join(failed_cases)}"
+            )
 
         # Validate that at least one workflow execution was recorded and finished
         assert self.execution is not None, "No workflow execution was recorded"
         assert (
             self.execution.get("status") == "FINISHED"
         ), f"Last workflow execution did not finish: status={self.execution.get('status')}"
-        # Validate that not all cases failed
-        assert len(failed_cases) < len(
-            self.test_cases
-        ), f"All {len(self.test_cases)} test cases failed: {failed_cases}"
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -201,7 +199,7 @@ class TestBenignAlert(E2EBaseTest):
         """TC-02-02: No blocking for benign alerts."""
         self._log("=== TC-02-02: NO BLOCKING TEST STARTED ===")
         payload = {
-            "alert_id": f"TC02-NOBLOCK-{int(time.time())}",
+            "alert_id": self.uid("TC02-NOBLOCK"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC02-001",
             "src_ip": "192.168.1.100",
@@ -220,6 +218,8 @@ class TestBenignAlert(E2EBaseTest):
         self.validate_workflow_execution(
             execution, alert_id=alert_id, expected_contract=_BENIGN_CONTRACT
         )
+        # Node-level oracle: no containment-labelled node may have run.
+        self.assert_no_containment_action(exec_id)
 
         cases = self.thehive.search_cases()
         matching = [c for c in cases if alert_id in c.get("description", "")]
@@ -245,7 +245,7 @@ class TestBenignAlert(E2EBaseTest):
         """TC-02-03: No isolation for benign alerts."""
         self._log("=== TC-02-03: NO ISOLATION TEST STARTED ===")
         payload = {
-            "alert_id": f"TC02-NOISO-{int(time.time())}",
+            "alert_id": self.uid("TC02-NOISO"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC02-001",
             "src_ip": "192.168.1.100",
@@ -264,6 +264,8 @@ class TestBenignAlert(E2EBaseTest):
         self.validate_workflow_execution(
             execution, alert_id=alert_id, expected_contract=_BENIGN_CONTRACT
         )
+        # Node-level oracle: no containment-labelled node may have run.
+        self.assert_no_containment_action(exec_id)
 
         cases = self.thehive.search_cases()
         matching = [c for c in cases if alert_id in c.get("description", "")]
@@ -289,7 +291,7 @@ class TestBenignAlert(E2EBaseTest):
         """TC-02-04: No unnecessary intelligence for benign alerts."""
         self._log("=== TC-02-04: NO UNNECESSARY INTELLIGENCE TEST STARTED ===")
         payload = {
-            "alert_id": f"TC02-NOINT-{int(time.time())}",
+            "alert_id": self.uid("TC02-NOINT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC02-001",
             "src_ip": "192.168.1.100",
@@ -314,14 +316,13 @@ class TestBenignAlert(E2EBaseTest):
         assert src.get("severity") == 1, "Benign alert should have severity 1 in ES"
 
         if self.alert_data.get("hash"):
-            try:
-                events = self.misp.search_events(self.alert_data["hash"])
-                if events:
-                    self._log(f"+ Found {len(events)} pre-existing MISP events for hash")
-                else:
-                    self._log("+ No MISP events created for benign hash (correct)")
-            except Exception as e:
-                self._log(f"+ MISP verification skipped: {e}")
+            # The MISP query IS the oracle — a failed query cannot be
+            # treated as 'no intelligence created'.
+            events = self.misp.search_events(self.alert_data["hash"])
+            if events:
+                self._log(f"+ Found {len(events)} pre-existing MISP events for hash")
+            else:
+                self._log("+ No MISP events created for benign hash (correct)")
 
         self._log("=== TC-02-04 COMPLETED — NO UNNECESSARY INTELLIGENCE VALIDATED ===")
 
@@ -331,7 +332,7 @@ class TestBenignAlert(E2EBaseTest):
         """TC-02-05: Audit trail for benign alerts."""
         self._log("=== TC-02-05: AUDIT TRAIL TEST STARTED ===")
         payload = {
-            "alert_id": f"TC02-AUDIT-{int(time.time())}",
+            "alert_id": self.uid("TC02-AUDIT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC02-001",
             "src_ip": "192.168.1.100",

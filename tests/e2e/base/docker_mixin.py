@@ -60,17 +60,63 @@ class DockerMixin:
             if name.lower() in skip_list:
                 self._log(f"  [SKIP] {name} — in E2E_SKIP_SERVICES")
                 continue
-            try:
-                ok, msg = check_fn()
-                if not ok:
-                    errors.append(f"{name}: {msg}")
-            except Exception as e:
-                errors.append(f"{name}: {e}")
+            ok, msg = self._check_with_warmup_retries(name, check_fn)
+            if not ok:
+                errors.append(f"{name}: {msg}")
 
         if errors:
             import pytest
 
             pytest.fail("Service health check failed before test:\n  - " + "\n  - ".join(errors))
+
+    # Transient network conditions during service warmup — worth retrying.
+    # Definitive answers (401 bad key, 404, "not configured") fail immediately.
+    _TRANSIENT_MARKERS = (
+        "timed out",
+        "timeout",
+        "connection refused",
+        "connection reset",
+        "connection aborted",
+        "max retries exceeded",
+        "newconnectionerror",
+        "temporary failure",
+        "name or service not known",
+    )
+
+    def _is_transient_health_error(self, msg: str) -> bool:
+        low = msg.lower()
+        return any(marker in low for marker in self._TRANSIENT_MARKERS)
+
+    def _check_with_warmup_retries(
+        self, name: str, check_fn, attempts: int = 3, pause_s: float = 5.0
+    ) -> tuple[bool, str]:
+        """Retry a health check through service warmup transients.
+
+        One slow start (MISP PHP warmup, JVM under memory pressure) used to
+        fail the whole suite; definitive answers still fail on first try.
+        """
+        import time
+
+        last: tuple[bool, str] = (False, "no result")
+        for attempt in range(1, attempts + 1):
+            try:
+                ok, msg = check_fn()
+            except Exception as e:
+                # A raised check_fn means the probe itself failed (transport
+                # error) — definitive verdicts come back as (False, msg).
+                ok, msg = False, str(e)[:100]
+                transient = True
+            else:
+                transient = self._is_transient_health_error(msg)
+            if ok or not transient:
+                return ok, msg
+            last = (ok, msg)
+            if attempt < attempts:
+                self._log(
+                    f"  [warmup] {name}: {msg} — retry {attempt}/{attempts - 1} in {pause_s}s"
+                )
+                time.sleep(pause_s)
+        return last
 
     def verify_observability_stack(self) -> None:
         """Verify observability services. Fail loud if any are down.
@@ -180,9 +226,9 @@ class DockerMixin:
             return False, str(e)[:100]
 
     def verify_thehive(self) -> tuple[bool, str]:
-        """Verify TheHive is available and API key is valid."""
+        """Verify TheHive 5 is available and API key is valid."""
         url = self.get_service_url("thehive")
-        ok, msg = self._check_http(f"{url}/api/status")
+        ok, msg = self._check_http(f"{url}/api/v1/status/public")
         if not ok:
             return False, msg
         # Verify API key
@@ -191,7 +237,7 @@ class DockerMixin:
             return False, "THEHIVE_API_KEY not configured"
         try:
             r = requests.get(
-                f"{url}/api/v1/case",
+                f"{url}/api/v1/user/current",
                 headers={"Authorization": f"Bearer {api_key}"},
                 timeout=10,
                 verify=False,

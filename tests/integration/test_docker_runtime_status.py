@@ -105,7 +105,7 @@ class TestDockerRuntimeStatus:
     def test_thehive_accessible(self):
         """Test that TheHive is accessible on port 9000."""
         try:
-            response = requests.get("http://thehive:9000/api/status", timeout=10)
+            response = requests.get("http://thehive:9000/api/v1/status/public", timeout=10)
             assert response.status_code in [
                 200,
                 401,

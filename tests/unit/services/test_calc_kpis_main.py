@@ -27,14 +27,14 @@ class TestCalcKpisMainEsSource:
     """Tests for calc_kpis main() with 'es' source."""
 
     @patch("soar_lab.data.calc_kpis._fetch_mttr_from_es")
-    @patch("soar_lab.config.settings.create_settings")
-    @patch("soar_lab.infrastructure.config_provider.InfrastructureConfigProvider")
-    @patch("soar_lab.infrastructure.path_service.PathService")
-    @patch("soar_lab.infrastructure.log_parser.ExecutionLogParser")
-    @patch("soar_lab.infrastructure.kpi_formatter.CSVKPIFormatter")
-    @patch("soar_lab.domain.statistical_calculator.StatisticalCalculator")
-    @patch("soar_lab.domain.services.kpi_analyzer.KPIAnalyzer")
-    @patch("requests.get")
+    @patch("soar_lab.data.calc_kpis.create_settings")
+    @patch("soar_lab.data.calc_kpis.InfrastructureConfigProvider")
+    @patch("soar_lab.data.calc_kpis.PathService")
+    @patch("soar_lab.data.calc_kpis.ExecutionLogParser")
+    @patch("soar_lab.data.calc_kpis.CSVKPIFormatter")
+    @patch("soar_lab.data.calc_kpis.StatisticalCalculator")
+    @patch("soar_lab.data.calc_kpis.KPIAnalyzer")
+    @patch("soar_lab.data.calc_kpis.requests.get")
     def test_main_es_source_with_mttr_data(
         self,
         mock_requests_get,
@@ -79,13 +79,13 @@ class TestCalcKpisMainEsSource:
         assert Path(output_path).exists()
 
     @patch("soar_lab.data.calc_kpis._fetch_mttr_from_es")
-    @patch("soar_lab.config.settings.create_settings")
-    @patch("soar_lab.infrastructure.config_provider.InfrastructureConfigProvider")
-    @patch("soar_lab.infrastructure.path_service.PathService")
-    @patch("soar_lab.infrastructure.log_parser.ExecutionLogParser")
-    @patch("soar_lab.infrastructure.kpi_formatter.CSVKPIFormatter")
-    @patch("soar_lab.domain.statistical_calculator.StatisticalCalculator")
-    @patch("soar_lab.domain.services.kpi_analyzer.KPIAnalyzer")
+    @patch("soar_lab.data.calc_kpis.create_settings")
+    @patch("soar_lab.data.calc_kpis.InfrastructureConfigProvider")
+    @patch("soar_lab.data.calc_kpis.PathService")
+    @patch("soar_lab.data.calc_kpis.ExecutionLogParser")
+    @patch("soar_lab.data.calc_kpis.CSVKPIFormatter")
+    @patch("soar_lab.data.calc_kpis.StatisticalCalculator")
+    @patch("soar_lab.data.calc_kpis.KPIAnalyzer")
     def test_main_es_no_mttr_falls_back_to_log(
         self,
         mock_kpi_analyzer,
@@ -137,13 +137,13 @@ class TestCalcKpisMainEsSource:
 class TestCalcKpisMainLogSource:
     """Tests for calc_kpis main() with 'log' source."""
 
-    @patch("soar_lab.config.settings.create_settings")
-    @patch("soar_lab.infrastructure.config_provider.InfrastructureConfigProvider")
-    @patch("soar_lab.infrastructure.path_service.PathService")
-    @patch("soar_lab.infrastructure.log_parser.ExecutionLogParser")
-    @patch("soar_lab.infrastructure.kpi_formatter.CSVKPIFormatter")
-    @patch("soar_lab.domain.statistical_calculator.StatisticalCalculator")
-    @patch("soar_lab.domain.services.kpi_analyzer.KPIAnalyzer")
+    @patch("soar_lab.data.calc_kpis.create_settings")
+    @patch("soar_lab.data.calc_kpis.InfrastructureConfigProvider")
+    @patch("soar_lab.data.calc_kpis.PathService")
+    @patch("soar_lab.data.calc_kpis.ExecutionLogParser")
+    @patch("soar_lab.data.calc_kpis.CSVKPIFormatter")
+    @patch("soar_lab.data.calc_kpis.StatisticalCalculator")
+    @patch("soar_lab.data.calc_kpis.KPIAnalyzer")
     def test_main_log_source_success(
         self,
         mock_kpi_analyzer,
@@ -185,13 +185,13 @@ class TestCalcKpisMainLogSource:
 
         assert Path(output_path).exists()
 
-    @patch("soar_lab.config.settings.create_settings")
-    @patch("soar_lab.infrastructure.config_provider.InfrastructureConfigProvider")
-    @patch("soar_lab.infrastructure.path_service.PathService")
-    @patch("soar_lab.infrastructure.log_parser.ExecutionLogParser")
-    @patch("soar_lab.infrastructure.kpi_formatter.CSVKPIFormatter")
-    @patch("soar_lab.domain.statistical_calculator.StatisticalCalculator")
-    @patch("soar_lab.domain.services.kpi_analyzer.KPIAnalyzer")
+    @patch("soar_lab.data.calc_kpis.create_settings")
+    @patch("soar_lab.data.calc_kpis.InfrastructureConfigProvider")
+    @patch("soar_lab.data.calc_kpis.PathService")
+    @patch("soar_lab.data.calc_kpis.ExecutionLogParser")
+    @patch("soar_lab.data.calc_kpis.CSVKPIFormatter")
+    @patch("soar_lab.data.calc_kpis.StatisticalCalculator")
+    @patch("soar_lab.data.calc_kpis.KPIAnalyzer")
     def test_main_log_source_file_not_found(
         self,
         mock_kpi_analyzer,
@@ -222,13 +222,13 @@ class TestCalcKpisMainLogSource:
                 main()
             assert exc_info.value.code == 1
 
-    @patch("soar_lab.config.settings.create_settings")
-    @patch("soar_lab.infrastructure.config_provider.InfrastructureConfigProvider")
-    @patch("soar_lab.infrastructure.path_service.PathService")
-    @patch("soar_lab.infrastructure.log_parser.ExecutionLogParser")
-    @patch("soar_lab.infrastructure.kpi_formatter.CSVKPIFormatter")
-    @patch("soar_lab.domain.statistical_calculator.StatisticalCalculator")
-    @patch("soar_lab.domain.services.kpi_analyzer.KPIAnalyzer")
+    @patch("soar_lab.data.calc_kpis.create_settings")
+    @patch("soar_lab.data.calc_kpis.InfrastructureConfigProvider")
+    @patch("soar_lab.data.calc_kpis.PathService")
+    @patch("soar_lab.data.calc_kpis.ExecutionLogParser")
+    @patch("soar_lab.data.calc_kpis.CSVKPIFormatter")
+    @patch("soar_lab.data.calc_kpis.StatisticalCalculator")
+    @patch("soar_lab.data.calc_kpis.KPIAnalyzer")
     def test_main_log_source_no_steps(
         self,
         mock_kpi_analyzer,

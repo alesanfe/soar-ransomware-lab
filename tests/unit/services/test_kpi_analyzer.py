@@ -21,7 +21,9 @@ class TestKPIAnalyzer:
 
     def test_requires_statistical_calculator(self):
         """Test that statistical_calculator is required."""
-        with pytest.raises(ValueError, match="statistical_calculator is required"):
+        with pytest.raises(
+            ValueError, match=r"^statistical_calculator is required for KPIAnalyzer$"
+        ):
             KPIAnalyzer(statistical_calculator=None)
 
     def test_calculate_performance_kpis(self):
@@ -149,7 +151,7 @@ class TestKPIAnalyzer:
         analyzer = KPIAnalyzer(statistical_calculator=mock_stat_calc)
 
         metrics_data = [
-            {"alert_type": "malware", "mttr_seconds": 120.5, "severity": 3},
+            {"alert_type": "malware", "mttr_seconds": 120.5, "severity": 4},
             {"alert_type": "malware", "mttr_seconds": 150.0, "severity": 2},
             {"alert_type": "phishing", "mttr_seconds": 90.0, "severity": 1},
             {"alert_type": "phishing", "mttr_seconds": 110.0, "severity": 2},
@@ -279,3 +281,296 @@ class TestKPIAnalyzer:
         # Only the canonical set of services is tracked
         expected_services = {"thehive", "cortex", "misp", "elasticsearch"}
         assert set(result["services"].keys()) == expected_services
+
+
+class TestKPIMutationHardening:
+    def _analyzer(self):
+        from soar_lab.domain.statistical_calculator import StatisticalCalculator
+
+        return KPIAnalyzer(StatisticalCalculator())
+
+    def test_init_requires_calculator(self):
+        with pytest.raises(
+            ValueError, match=r"^statistical_calculator is required for KPIAnalyzer$"
+        ):
+            KPIAnalyzer(None)
+
+    def test_performance_kpis_exact(self):
+        results = [
+            {"status": "passed", "coverage_percent": 80, "duration_seconds": 10},
+            {"status": "failed", "coverage_percent": 60, "duration_seconds": 20},
+            {"status": "passed", "coverage_percent": 100, "duration_seconds": 30},
+        ]
+        r = KPIAnalyzer.calculate_performance_kpis(results)
+        assert r["period_hours"] == 24
+        assert r["total_tests"] == 3
+        assert r["passed_tests"] == 2
+        assert r["success_rate"] == 66.67
+        assert r["average_coverage"] == 80.0
+        assert r["average_duration_seconds"] == 20.0
+        from datetime import datetime
+
+        assert datetime.fromisoformat(r["timestamp"]).tzinfo is not None
+
+    def test_performance_kpis_empty(self):
+        r = KPIAnalyzer.calculate_performance_kpis([], hours=48)
+        assert r["total_tests"] == 0 and r["passed_tests"] == 0
+        assert r["success_rate"] == 0 and r["period_hours"] == 48
+
+    def test_kpis_by_alert_type_exact(self):
+        metrics = [
+            {"alert_type": "ransomware", "mttr_seconds": 100, "severity": 4},
+            {"alert_type": "ransomware", "mttr_seconds": 200, "severity": 2},
+            {"alert_type": "benign", "mttr_seconds": 50, "severity": 1},
+        ]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["period_hours"] == 24
+        rw = r["by_alert_type"]["ransomware"]
+        assert rw == {
+            "count": 2,
+            "avg_mttr_seconds": 150.0,
+            "avg_severity": 3.0,
+            "critical_count": 1,
+            "critical_rate": 50.0,
+        }
+        b = r["by_alert_type"]["benign"]
+        assert b["count"] == 1 and b["critical_count"] == 0 and b["critical_rate"] == 0
+
+    def test_kpis_by_alert_type_mttr_dict_message(self):
+        metrics = [{"alert_type": "x", "mttr_seconds": {"message": "MTTR: 42.5s"}, "severity": 1}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_mttr_seconds"] == 42.5
+
+    def test_kpis_by_alert_type_mttr_bad_message_zero(self):
+        metrics = [{"alert_type": "x", "mttr_seconds": {"message": "no mttr"}, "severity": 1}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_mttr_seconds"] == 0
+
+    def test_kpis_by_alert_type_zero_and_over_window_excluded(self):
+        metrics = [
+            {"alert_type": "x", "mttr_seconds": 0, "severity": 1},
+            {"alert_type": "x", "mttr_seconds": 24 * 3600 + 1, "severity": 1},
+            {"alert_type": "x", "mttr_seconds": 24 * 3600, "severity": 1},
+        ]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_mttr_seconds"] == 24 * 3600
+
+    def test_kpis_by_alert_type_missing_alert_type_unknown(self):
+        r = KPIAnalyzer.calculate_kpis_by_alert_type([{"mttr_seconds": 10, "severity": 1}])
+        assert "unknown" in r["by_alert_type"]
+
+    def test_critical_boundary_severity_4(self):
+        metrics = [{"alert_type": "x", "mttr_seconds": 1, "severity": 4}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["critical_count"] == 1
+
+    def test_service_success_classification(self):
+        assert KPIAnalyzer._check_service_success("ok") is True
+        assert KPIAnalyzer._check_service_success({"success": True}) is True
+        assert KPIAnalyzer._check_service_success({"success": False}) is False
+        assert KPIAnalyzer._check_service_success({}) is False
+        assert KPIAnalyzer._check_service_success(42) is False
+        assert KPIAnalyzer._check_service_success(None) is False
+
+    def test_cortex_success_either_job(self):
+        assert KPIAnalyzer._check_cortex_success({"cortex_hash_job": "id1"}) is True
+        assert KPIAnalyzer._check_cortex_success({"cortex_ip_job": "id2"}) is True
+        assert KPIAnalyzer._check_cortex_success({}) is False
+        assert KPIAnalyzer._check_cortex_success({"cortex_hash_job": {"success": False}}) is False
+
+    def test_classify_metric_exact(self):
+        m = {
+            "thehive_case_id": "c1",
+            "cortex_ip_job": "j1",
+            "misp_results": {"success": True},
+        }
+        assert KPIAnalyzer._classify_metric_services(m) == {
+            "thehive": "success",
+            "cortex": "success",
+            "misp": "success",
+            "elasticsearch": "success",
+        }
+
+    def test_classify_metric_all_failure(self):
+        assert KPIAnalyzer._classify_metric_services({}) == {
+            "thehive": "failure",
+            "cortex": "failure",
+            "misp": "failure",
+            "elasticsearch": "success",
+        }
+
+    def test_service_integration_kpis_exact(self):
+        metrics = [
+            {
+                "thehive_case_id": "c1",
+                "cortex_hash_job": "j",
+                "misp_results": {"success": True},
+            },
+            {"thehive_case_id": "", "misp_results": {"success": False}},
+        ]
+        r = KPIAnalyzer.calculate_service_integration_kpis(metrics)
+        assert r["period_hours"] == 24
+        sv = r["services"]
+        assert sv["thehive"] == {
+            "success_count": 1,
+            "failure_count": 1,
+            "total": 2,
+            "success_rate_percent": 50.0,
+        }
+        assert sv["cortex"]["success_count"] == 1
+        assert sv["cortex"]["failure_count"] == 1
+        assert sv["misp"]["success_count"] == 1
+        assert sv["elasticsearch"]["success_count"] == 2
+        assert sv["elasticsearch"]["failure_count"] == 0
+        assert sv["elasticsearch"]["success_rate_percent"] == 100.0
+
+    def test_comprehensive_kpis_structure(self):
+        r = KPIAnalyzer.calculate_comprehensive_kpis({"m": 1}, {"p": 2}, {"h": 3})
+        assert r["mttr"] == {"m": 1}
+        assert r["performance"] == {"p": 2}
+        assert r["health"] == {"h": 3}
+        from datetime import datetime
+
+        assert datetime.fromisoformat(r["timestamp"]).tzinfo is not None
+
+    def test_health_score_adds_timestamp(self):
+        a = self._analyzer()
+        r = a.calculate_health_score(10, 10, 10, 100)
+        assert "timestamp" in r
+        # cpu/mem/disk scores = 90 each; overall = 90*0.3+90*0.3+90*0.2+100*0.2 = 92
+        assert r["overall_score"] == 92.0
+        assert r["status"] == "excellent"
+
+    def test_mttr_delegates(self):
+        a = self._analyzer()
+        r = a.calculate_mttr_metrics([10, 20])
+        assert r["total_executions"] == 2
+        assert r["mean"] == 15
+
+    def test_performance_kpis_single_test(self):
+        r = KPIAnalyzer.calculate_performance_kpis(
+            [{"status": "passed", "coverage_percent": 50, "duration_seconds": 5}]
+        )
+        assert r["total_tests"] == 1
+        assert r["passed_tests"] == 1
+        assert r["success_rate"] == 100.0  # kills total>0 -> >1
+        assert r["average_coverage"] == 50 and r["average_duration_seconds"] == 5
+
+    def test_health_score_timestamp_is_utc(self):
+        a = self._analyzer()
+        r = a.calculate_health_score(10, 10, 10, 100)
+        from datetime import datetime
+
+        ts = datetime.fromisoformat(r["timestamp"])
+        assert ts.tzinfo is not None  # kills now(UTC)->now(None) and ts=None
+
+    def test_kpis_missing_fields_use_defaults(self):
+        r = KPIAnalyzer.calculate_kpis_by_alert_type([{"alert_type": "x"}])
+        e = r["by_alert_type"]["x"]
+        assert e["count"] == 1
+        assert e["avg_mttr_seconds"] == 0  # missing mttr_seconds -> 0 -> excluded
+        assert e["avg_severity"] == 0  # missing severity -> 0
+        assert e["critical_count"] == 0
+
+    def test_kpis_mttr_dict_without_message_key(self):
+        metrics = [{"alert_type": "x", "mttr_seconds": {"other": "v"}, "severity": 1}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_mttr_seconds"] == 0
+
+    def test_kpis_mttr_prefix_message(self):
+        # "noise MTTR:42.5s": split("MTTR:")[1] works; split(None)[1] fails
+        metrics = [
+            {"alert_type": "x", "mttr_seconds": {"message": "noise MTTR:42.5s"}, "severity": 1}
+        ]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_mttr_seconds"] == 42.5
+
+    def test_kpis_mttr_non_numeric_type_stays_zero(self):
+        metrics = [{"alert_type": "x", "mttr_seconds": "weird", "severity": 1}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_mttr_seconds"] == 0
+
+    def test_kpis_mttr_one_included(self):
+        metrics = [{"alert_type": "x", "mttr_seconds": 1, "severity": 1}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_mttr_seconds"] == 1  # 0 < mttr, not 1 <
+
+    def test_kpis_two_criticals_increment(self):
+        metrics = [
+            {"alert_type": "x", "mttr_seconds": 1, "severity": 4},
+            {"alert_type": "x", "mttr_seconds": 1, "severity": 4},
+        ]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["critical_count"] == 2  # +=1, not =1
+
+    def test_kpis_avg_severity_single(self):
+        metrics = [{"alert_type": "x", "mttr_seconds": 1, "severity": 3}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_severity"] == 3.0  # count>0, not >1
+
+    def test_kpis_round_precision_three_metrics(self):
+        metrics = [
+            {"alert_type": "x", "mttr_seconds": 100, "severity": 4},
+            {"alert_type": "x", "mttr_seconds": 100, "severity": 1},
+            {"alert_type": "x", "mttr_seconds": 101, "severity": 1},
+        ]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        e = r["by_alert_type"]["x"]
+        assert e["avg_mttr_seconds"] == 100.33  # round 2, not 3
+        assert e["avg_severity"] == 2.0
+        assert e["critical_rate"] == 33.33  # 1/3*100 -> 33.33, not 33.333
+
+    def test_cortex_ip_job_truthy_but_unsuccessful(self):
+        # `and` evaluates check; `or` returns truthy job -> wrong True
+        assert KPIAnalyzer._check_cortex_success({"cortex_ip_job": {"success": False}}) is False
+
+    def test_service_integration_single_metric_rates(self):
+        r = KPIAnalyzer.calculate_service_integration_kpis(
+            [{"thehive_case_id": "c1", "cortex_hash_job": "j", "misp_results": "ok"}]
+        )
+        for svc in ("thehive", "cortex", "misp", "elasticsearch"):
+            assert r["services"][svc] == {
+                "success_count": 1,
+                "failure_count": 0,
+                "total": 1,
+                "success_rate_percent": 100.0,
+            }
+
+    def test_kpis_mttr_unparseable_message_stays_zero(self):
+        # "MTTR:abc" -> float fails -> except -> mttr=0 (excluded)
+        metrics = [{"alert_type": "x", "mttr_seconds": {"message": "MTTR:abc s"}, "severity": 1}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["avg_mttr_seconds"] == 0
+
+    def test_kpis_by_alert_type_timestamp_is_utc(self):
+        from datetime import datetime
+
+        r = KPIAnalyzer.calculate_kpis_by_alert_type([{"alert_type": "x", "severity": 1}])
+        ts = datetime.fromisoformat(r["timestamp"])
+        assert ts.tzinfo is not None
+
+    def test_service_integration_timestamp_is_utc(self):
+        from datetime import datetime
+
+        r = KPIAnalyzer.calculate_service_integration_kpis([])
+        ts = datetime.fromisoformat(r["timestamp"])
+        assert ts.tzinfo is not None
+
+    def test_service_integration_empty_zero_rate(self):
+        r = KPIAnalyzer.calculate_service_integration_kpis([])
+        for svc in ("thehive", "cortex", "misp", "elasticsearch"):
+            assert r["services"][svc]["success_rate_percent"] == 0  # not 1
+
+    def test_service_integration_round_2dp(self):
+        metrics = [
+            {"thehive_case_id": "c1"},
+            {"thehive_case_id": "c2"},
+            {"other": 1},
+        ]
+        r = KPIAnalyzer.calculate_service_integration_kpis(metrics)
+        assert r["services"]["thehive"]["success_rate_percent"] == 66.67
+
+    def test_kpis_critical_rate_single(self):
+        metrics = [{"alert_type": "x", "severity": 4, "mttr_seconds": 1}]
+        r = KPIAnalyzer.calculate_kpis_by_alert_type(metrics)
+        assert r["by_alert_type"]["x"]["critical_rate"] == 100.0  # count>0, not >1

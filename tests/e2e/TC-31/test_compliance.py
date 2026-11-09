@@ -45,7 +45,7 @@ class TestCompliance(E2EBaseTest):
         # T1490: Inhibit System Recovery
 
         # Send alert with MITRE techniques
-        alert_id = f"TC31-MITRE-{int(time.time())}"
+        alert_id = self.uid("TC31-MITRE")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -113,9 +113,9 @@ class TestCompliance(E2EBaseTest):
             if alert_id in str(c.get("description", "")):
                 last = c
                 break
-        if last is None:
-            last = max(cases, key=lambda c: c.get("caseId", 0))
-        assert isinstance(last, dict), "Case must be a dict"
+        # If no case carries our alert_id marker there is no correct case to
+        # inspect — picking the globally newest would test a stranger's data.
+        assert last is not None, f"No TheHive case found containing alert_id={alert_id}"
         assert isinstance(last, dict), "Case must be a dict"
         case_id = last.get("id", last.get("_id", ""))
         tasks = self.thehive.list_case_tasks(case_id)
@@ -147,7 +147,7 @@ class TestCompliance(E2EBaseTest):
         self._log("=== TC-31: D3FEND MAPPING TEST STARTED ===")
 
         # Send alert with MITRE techniques that map to D3FEND
-        alert_id = f"TC31-D3FEND-{int(time.time())}"
+        alert_id = self.uid("TC31-D3FEND")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -219,7 +219,7 @@ class TestCompliance(E2EBaseTest):
 
         # Send alert
         payload = {
-            "alert_id": f"TC31-AUDIT-{int(time.time())}",
+            "alert_id": self.uid("TC31-AUDIT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC31-002",
             "src_ip": "192.168.1.221",
@@ -255,7 +255,6 @@ class TestCompliance(E2EBaseTest):
 
         assert case is not None, "No new TheHive case created for audit trail compliance test"
         assert isinstance(case, dict), "Case must be a dict"
-        case_id_num = case.get("caseId", case.get("_id", ""))
 
         # Query audit log — check notify.log AND ES (audit trail is captured
         # in ES documents and Loki logs, not just notify.log)
@@ -272,20 +271,21 @@ class TestCompliance(E2EBaseTest):
         # Check Loki for the alert (audit trail in Loki logs)
         loki_has_alert = False
         try:
-            loki_logs = self.loki.query_logs(f'{{job="soar_api"}}', limit=100)
+            loki_logs = self.loki.query_logs('{job="soar_api"}', limit=100)
             loki_has_alert = alert_id in str(loki_logs)
-        except Exception:
-            pass
+        except Exception as e:
+            loki_error = str(e)
+            self._log(f"  ! Loki query failed ({loki_error}) — checking other sources")
 
         # Assert audit entries exist in at least one source
-        assert (
-            alert_id in log_content or es_has_alert or loki_has_alert
-        ), (
+        assert alert_id in log_content or es_has_alert or loki_has_alert, (
             f"Audit trail must contain entries referencing alert_id={alert_id} "
             f"(checked notify.log, ES, and Loki)"
         )
-        self._log(f"+ Audit entries found (notify.log={alert_id in log_content}, "
-                     f"ES={es_has_alert}, Loki={loki_has_alert})")
+        self._log(
+            f"+ Audit entries found (notify.log={alert_id in log_content}, "
+            f"ES={es_has_alert}, Loki={loki_has_alert})"
+        )
 
         # Assert entries have timestamps (from any source)
         import re
@@ -299,8 +299,17 @@ class TestCompliance(E2EBaseTest):
         self._log(f"+ Audit entries have timestamps ({len(timestamp_matches)} found)")
 
         # Assert entries have user identity (system or user reference)
-        user_patterns = ["system", "user", "admin", "shuffle", "thehive", "service",
-                         "soar", "workflow", "source"]
+        user_patterns = [
+            "system",
+            "user",
+            "admin",
+            "shuffle",
+            "thehive",
+            "service",
+            "soar",
+            "workflow",
+            "source",
+        ]
         has_user = any(p in log_content.lower() for p in user_patterns)
         if not has_user and es_doc:
             has_user = any(p in str(es_doc).lower() for p in user_patterns)
@@ -321,7 +330,7 @@ class TestCompliance(E2EBaseTest):
         """
         self._log("=== TC-31: REGULATORY COMPLIANCE TEST STARTED ===")
 
-        alert_id = f"TC31-REG-{int(time.time())}"
+        alert_id = self.uid("TC31-REG")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -360,15 +369,24 @@ class TestCompliance(E2EBaseTest):
         assert case is not None, "No new TheHive case created for regulatory compliance test"
         assert isinstance(case, dict), "Case must be a dict"
 
-        # GDPR: assert case has required fields for compliance
-        assert case.get("title") is not None, "Case must have a title (GDPR accountability)"
+        # GDPR: assert case has required fields for compliance — with real
+        # value oracles, not just non-None checks.
+        title = case.get("title")
         assert (
-            case.get("description") is not None
-        ), "Case must have a description (GDPR accountability)"
+            isinstance(title, str) and title.strip()
+        ), "Case must have a non-empty title (GDPR accountability)"
+        desc = case.get("description")
         assert (
-            case.get("severity") is not None
-        ), "Case must have severity (GDPR data classification)"
-        assert case.get("status") is not None, "Case must have a status (GDPR audit trail)"
+            isinstance(desc, str) and payload["alert_id"] in desc
+        ), "Case description must reference our alert_id (GDPR accountability)"
+        sev = case.get("severity")
+        assert (
+            isinstance(sev, int) and 1 <= sev <= 4
+        ), f"Case severity must be a valid TheHive level 1-4, got {sev} (GDPR data classification)"
+        status = case.get("status")
+        assert (
+            isinstance(status, str) and status.strip()
+        ), f"Case must have a non-empty status, got {status!r} (GDPR audit trail)"
         self._log("+ GDPR: Case has title, description, severity, status")
 
         # SOC 2: assert case has owner or assignee (access controls)
@@ -399,7 +417,7 @@ class TestCompliance(E2EBaseTest):
         """
         self._log("=== TC-31-01: MITRE MAPPING TEST STARTED ===")
 
-        alert_id = f"TC31-MITRE-{int(time.time())}"
+        alert_id = self.uid("TC31-MITRE")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -454,7 +472,7 @@ class TestCompliance(E2EBaseTest):
         """
         self._log("=== TC-31-02: D3FEND MAPPING TEST STARTED ===")
 
-        alert_id = f"TC31-D3F-SC-{int(time.time())}"
+        alert_id = self.uid("TC31-D3F-SC")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",
@@ -520,7 +538,7 @@ class TestCompliance(E2EBaseTest):
         self._log("=== TC-31-03: AUDIT TRAIL TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC31-AUDIT-{int(time.time())}",
+            "alert_id": self.uid("TC31-AUDIT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC31-002",
             "src_ip": "192.168.1.221",
@@ -554,20 +572,20 @@ class TestCompliance(E2EBaseTest):
         # Check Loki for the alert (audit trail in Loki logs)
         loki_has_alert = False
         try:
-            loki_logs = self.loki.query_logs(f'{{job="soar_api"}}', limit=100)
+            loki_logs = self.loki.query_logs('{job="soar_api"}', limit=100)
             loki_has_alert = alert_id in str(loki_logs)
-        except Exception:
-            pass
+        except Exception as e:
+            loki_error = str(e)
+            self._log(f"  ! Loki query failed ({loki_error}) — checking other sources")
 
         # Assert audit entries exist in at least one source
-        assert (
-            alert_id in log_content or es_has_alert or loki_has_alert
-        ), (
-            f"Audit trail must contain alert_id={alert_id} "
-            f"(checked notify.log, ES, and Loki)"
+        assert alert_id in log_content or es_has_alert or loki_has_alert, (
+            f"Audit trail must contain alert_id={alert_id} " f"(checked notify.log, ES, and Loki)"
         )
-        self._log(f"+ Alert {alert_id} is in audit trail "
-                     f"(notify.log={alert_id in log_content}, ES={es_has_alert}, Loki={loki_has_alert})")
+        self._log(
+            f"+ Alert {alert_id} is in audit trail "
+            f"(notify.log={alert_id in log_content}, ES={es_has_alert}, Loki={loki_has_alert})"
+        )
 
         # Assert entries have timestamps
         import re
@@ -594,7 +612,7 @@ class TestCompliance(E2EBaseTest):
         """
         self._log("=== TC-31-04: CLOSURE REPORT TEST STARTED ===")
 
-        alert_id = f"TC31-CLOSURE-{int(time.time())}"
+        alert_id = self.uid("TC31-CLOSURE")
         payload = {
             "alert_id": alert_id,
             "alert_type": "ransomware",

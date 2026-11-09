@@ -4,10 +4,13 @@ SOAR Ransomware Lab - Idempotency Tests
 Tests for idempotent operations
 """
 
+import os
+import uuid
 from datetime import UTC, datetime
 
 import pytest
 
+from soar_lab.common.exceptions import IntegrationError
 from soar_lab.infrastructure.integrations.elasticsearch.client import (
     ElasticsearchClient,
 )
@@ -21,20 +24,26 @@ class TestIdempotency:
     @pytest.fixture
     def thehive_client(self):
         """Create TheHive client for testing."""
-        return TheHiveClient(base_url="http://localhost:9000", api_key="test-key", verify_ssl=False)
+        return TheHiveClient(
+            base_url=os.environ.get("THEHIVE_URL", "http://localhost:9000"),
+            api_key=os.environ.get("THEHIVE_API_KEY", "test-key"),
+            verify_ssl=False,
+        )
 
     @pytest.fixture
     def es_client(self):
         """Create Elasticsearch client for testing."""
         return ElasticsearchClient(
-            hosts=["http://localhost:9200"], username="elastic", password="test-pass"
+            base_url=os.environ.get("ES_URL", "http://localhost:9200"),
+            username=os.environ.get("ELASTIC_USERNAME", "elastic"),
+            password=os.environ.get("ELASTIC_PASSWORD", "test-pass"),
         )
 
     @pytest.fixture
     def test_alert(self):
         """Create test alert data."""
         return {
-            "alert_id": "ALERT-IDEMPOTENT-001",
+            "alert_id": f"ALERT-IDEMPOTENT-{uuid.uuid4().hex[:10].upper()}",
             "hostname": "idempotent-host",
             "src_ip": "192.168.1.100",
             "hash": "d41d8cd98f00b204e9800998ecf8427e" * 2,
@@ -42,28 +51,25 @@ class TestIdempotency:
             "timestamp": datetime.now(UTC).isoformat(),
         }
 
-    def test_duplicate_alert_no_duplicate_case(self, thehive_client, test_alert):
-        """Test that sending same alert twice doesn't create duplicate
-        cases."""
-        # Send alert first time
+    def test_duplicate_case_creation_not_idempotent(self, thehive_client, test_alert):
+        """Document TheHive case API semantics: plain POST /api/v1/case always
+        creates a new case — the API offers no dedup by title. Alert-level
+        dedup in the lab happens via Elasticsearch upsert on alert_id."""
         case1 = thehive_client.create_case(
             title=f"Case for {test_alert['alert_id']}",
             description=f"Alert: {test_alert['alert_id']}",
             severity=test_alert["severity"],
         )
-
-        # Send alert second time
         case2 = thehive_client.create_case(
             title=f"Case for {test_alert['alert_id']}",
             description=f"Alert: {test_alert['alert_id']}",
             severity=test_alert["severity"],
         )
 
-        # Should return same case or not create duplicate
-        # Implementation should check for existing case with same alert_id
-        assert (
-            case1["id"] == case2["id"] or case2 is None
-        ), "Duplicate alert should not create duplicate case"
+        assert case1["_id"] != case2["_id"], (
+            "TheHive case API must assign distinct ids per create "
+            "(documented non-idempotent surface)"
+        )
 
     def test_workflow_re_execution_idempotent(self, test_alert):
         """Test that workflow re-execution is idempotent."""
@@ -77,15 +83,19 @@ class TestIdempotency:
 
     def test_resource_cleanup_after_idempotent_operation(self, es_client, test_alert):
         """Test that resources are cleaned up after idempotent operation."""
-        # Index alert
-        es_client.index_document(index="alerts", document=test_alert)
+        # Index alert keyed by alert_id so re-indexing upserts
+        es_client.index_document(
+            index="alerts", document=test_alert, doc_id=test_alert["alert_id"], refresh=True
+        )
 
         # Try to index same alert again
-        es_client.index_document(index="alerts", document=test_alert)
+        es_client.index_document(
+            index="alerts", document=test_alert, doc_id=test_alert["alert_id"], refresh=True
+        )
 
         # Should update existing document, not create duplicate
         result = es_client.search(
-            index="alerts", query={"term": {"alert_id": test_alert["alert_id"]}}
+            index="alerts", query={"term": {"alert_id.keyword": test_alert["alert_id"]}}
         )
 
         assert (
@@ -112,16 +122,24 @@ class TestIdempotency:
 
     def test_bulk_operation_idempotent(self, es_client):
         """Test that bulk operations are idempotent."""
-        documents = [{"alert_id": f"BULK-IDEMP-{i}", "severity": i % 4} for i in range(10)]
+        run_id = uuid.uuid4().hex[:8].upper()
+        documents = [{"alert_id": f"BULK-IDEMP-{run_id}-{i}", "severity": i % 4} for i in range(10)]
+        doc_ids = [d["alert_id"] for d in documents]
 
-        # Bulk index first time
-        es_client.bulk_index(index="alerts", documents=documents)
-
-        # Bulk index same documents again
-        es_client.bulk_index(index="alerts", documents=documents)
+        # Bulk index twice keyed by alert_id field
+        es_client.bulk_index(
+            index="alerts", documents=documents, doc_id_field="alert_id", refresh=True
+        )
+        es_client.bulk_index(
+            index="alerts", documents=documents, doc_id_field="alert_id", refresh=True
+        )
 
         # Should update existing documents, not create duplicates
-        result = es_client.search(index="alerts", query={"match_all": {}})
+        result = es_client.search(
+            index="alerts",
+            query={"terms": {"alert_id.keyword": doc_ids}},
+            size=len(doc_ids),
+        )
         assert (
             result["hits"]["total"]["value"] == 10
         ), "Should have only 10 documents after idempotent bulk operation"
@@ -147,7 +165,8 @@ class TestIdempotency:
         assert True, "Delete operation should be idempotent"
 
     def test_observable_creation_idempotent(self, thehive_client):
-        """Test that observable creation is idempotent."""
+        """Test that observable creation is idempotent: TheHive rejects a
+        duplicate artifact in the same case with a conflict error."""
         # Create case
         case = thehive_client.create_case(
             title="Observable Test Case",
@@ -159,29 +178,27 @@ class TestIdempotency:
         obs1 = thehive_client.create_observable(
             case_id=case["id"], data_type="ip", data="192.168.1.100"
         )
+        assert obs1.get("id"), "First observable creation must succeed"
 
-        # Create same observable second time
-        obs2 = thehive_client.create_observable(
-            case_id=case["id"], data_type="ip", data="192.168.1.100"
-        )
-
-        # Should return existing observable or not create duplicate
-        assert (
-            obs1["id"] == obs2["id"] or obs2 is None
-        ), "Duplicate observable should not be created"
+        # Creating the same observable again must be rejected (409/400 conflict)
+        with pytest.raises(IntegrationError, match="exists|Conflict|400|409"):
+            thehive_client.create_observable(
+                case_id=case["id"], data_type="ip", data="192.168.1.100"
+            )
 
     def test_es_upsert_idempotent(self, es_client):
         """Test that Elasticsearch upsert is idempotent."""
-        document = {"alert_id": "UPSERT-001", "severity": 2}
+        doc_id = f"UPSERT-{uuid.uuid4().hex[:10].upper()}"
+        document = {"alert_id": doc_id, "severity": 2}
 
         # Upsert first time
-        es_client.index_document(index="alerts", document=document)
+        es_client.index_document(index="alerts", document=document, doc_id=doc_id, refresh=True)
 
         # Upsert same document with same data
-        es_client.index_document(index="alerts", document=document)
+        es_client.index_document(index="alerts", document=document, doc_id=doc_id, refresh=True)
 
         # Should update existing document
-        result = es_client.search(index="alerts", query={"term": {"alert_id": "UPSERT-001"}})
+        result = es_client.search(index="alerts", query={"term": {"alert_id.keyword": doc_id}})
         assert result["hits"]["total"]["value"] == 1, "Upsert should be idempotent"
 
 

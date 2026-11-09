@@ -17,9 +17,13 @@ class TestSettings:
         """Create a Settings instance with BASE_DIR set."""
         # Clear environment variables to test default values
         for var in [
-            "API_HOST", "REDIS_URL", "MISP_URL",
-            "THEHIVE_HTTP_PORT", "CORTEX_HTTP_PORT",
-            "SHUFFLE_UI_PORT", "SHUFFLE_API_PORT",
+            "API_HOST",
+            "REDIS_URL",
+            "MISP_URL",
+            "THEHIVE_HTTP_PORT",
+            "CORTEX_HTTP_PORT",
+            "SHUFFLE_UI_PORT",
+            "SHUFFLE_API_PORT",
         ]:
             if var in os.environ:
                 del os.environ[var]
@@ -109,14 +113,19 @@ class TestSettings:
         """Test TEST_COVERAGE_PATH."""
         assert settings.TEST_COVERAGE_PATH == "src/soar_lab"
 
-    def test_base_dir_required(self):
-        """Test that BASE_DIR is required."""
-        # Clear BASE_DIR if set
-        if "BASE_DIR" in os.environ:
-            del os.environ["BASE_DIR"]
+    def test_base_dir_auto_resolves(self, monkeypatch):
+        """CFG-034: BASE_DIR absent -> resolves to repo root, not a crash."""
+        monkeypatch.delenv("BASE_DIR", raising=False)
+        s = Settings()
+        from soar_lab.config.settings import __file__ as settings_file
 
-        with pytest.raises(ValueError, match="BASE_DIR environment variable must be set"):
-            Settings()
+        assert s._config["base_dir"] == str(Path(settings_file).resolve().parents[3])
+
+    def test_base_dir_env_override_wins(self, monkeypatch):
+        """CFG-032: explicit env var beats auto-resolution."""
+        monkeypatch.setenv("BASE_DIR", "/custom/dir")
+        s = Settings()
+        assert s._config["base_dir"] == str(Path("/custom/dir"))
 
     def test_load_config_from_env(self):
         """Test loading config from environment variables."""
@@ -180,8 +189,8 @@ class TestSettings:
         assert settings._config.get("shuffle_url") == "http://shuffle-backend:5001"
 
     def test_misp_url_default(self, settings):
-        """Test default MISP_URL."""
-        assert settings._config.get("misp_url") == "http://misp:80"
+        """Test default MISP_URL — https since BUG-070 (self-signed cert)."""
+        assert settings._config.get("misp_url") == "https://misp:443"
 
     def test_elasticsearch_url_default(self, settings):
         """Test default ELASTICSEARCH_URL."""
@@ -327,7 +336,7 @@ class TestSettings:
 
     def test_compress_backups_default(self, settings):
         """Test default COMPRESS."""
-        assert settings._config.get("compress_backups") == True
+        assert settings._config.get("compress_backups")
 
     def test_get_method(self, settings):
         """Test get method."""

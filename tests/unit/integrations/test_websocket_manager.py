@@ -161,3 +161,38 @@ class TestConnectionManager:
 
         manager.disconnect(mock_websocket)
         assert len(manager.active_connections) == 0
+
+    @pytest.mark.asyncio
+    async def test_broadcast_does_not_skip_connections_after_removal(self):
+        """Bug: mutating active_connections inside the loop skips the
+        connection that follows a failed one."""
+        manager = ConnectionManager()
+        ws1, ws2 = Mock(), Mock()
+        ws1.send_text = AsyncMock(side_effect=Exception("gone"))
+        ws2.send_text = AsyncMock()
+        manager.active_connections = [ws1, ws2]
+
+        await manager.broadcast({"type": "log"})
+
+        ws2.send_text.assert_awaited_once()  # ws2 must still receive the message
+        assert ws1 not in manager.active_connections
+        assert ws2 in manager.active_connections
+
+    @pytest.mark.asyncio
+    async def test_broadcast_handles_disconnect_during_send(self):
+        """Bug: if the connection is removed while send_text runs, the
+        unguarded list.remove() in the except handler raises ValueError
+        out of broadcast()."""
+        manager = ConnectionManager()
+        ws1, ws2 = Mock(), Mock()
+        manager.active_connections = [ws1, ws2]
+
+        async def _fail_and_detach(_msg):
+            manager.active_connections.remove(ws1)
+            raise Exception("gone")
+
+        ws1.send_text = AsyncMock(side_effect=_fail_and_detach)
+        ws2.send_text = AsyncMock()
+
+        await manager.broadcast({"type": "log"})  # must not raise ValueError
+        ws2.send_text.assert_awaited_once()

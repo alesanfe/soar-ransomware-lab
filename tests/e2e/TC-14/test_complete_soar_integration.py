@@ -5,11 +5,9 @@ Este test valida la integración completa de todas las nuevas funcionalidades:
 Tenzir, Network Watcher, Redis, Loki.
 """
 
-import time
 from datetime import UTC, datetime
 
 import pytest
-import requests
 
 from tests.e2e.base import E2EBaseTest
 
@@ -34,7 +32,7 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         super().setup_method(method)
         self.t0 = datetime.now(UTC)
         self.alert_data = {
-            "alert_id": f"TC14-{self.correlation_id}-{int(time.time())}",
+            "alert_id": self.uid("TC14"),
             "alert_type": "ransomware",
             "hostname": "tc14-integration-host",
             "src_ip": "192.168.100.90",
@@ -75,7 +73,7 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         # Tenzir
         tenzir_url = self.get_service_url("tenzir")
         try:
-            response = requests.get(tenzir_url, timeout=5, verify=False)
+            response = self.s.get(tenzir_url, timeout=5)
             services_status["tenzir"] = response.status_code < 500
         except Exception as e:
             self._log(f"Tenzir unavailable: {e}")
@@ -84,7 +82,7 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         # Network Watcher
         nw_url = self.get_service_url("network_watcher")
         try:
-            response = requests.get(f"{nw_url}/health", timeout=5, verify=False)
+            response = self.s.get(f"{nw_url}/health", timeout=5)
             services_status["network_watcher"] = response.status_code == 200
         except Exception as e:
             self._log(f"Network Watcher unavailable: {e}")
@@ -93,7 +91,7 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         # Loki
         loki_url = self.get_service_url("loki")
         try:
-            response = requests.get(f"{loki_url}/ready", timeout=5, verify=False)
+            response = self.s.get(f"{loki_url}/ready", timeout=5)
             services_status["loki"] = response.status_code == 200
         except Exception as e:
             self._log(f"Loki unavailable: {e}")
@@ -192,16 +190,13 @@ class TestCompleteSOARIntegration(E2EBaseTest):
             self.env.get("ELASTIC_USERNAME", "elastic"),
             self.env.get("ELASTIC_PASSWORD", ""),
         )
-        try:
-            requests.post(f"{es_url}/soar-metrics/_refresh", auth=es_auth, timeout=10, verify=False)
-        except Exception as e:
-            self._log(f"  ES refresh warning: {e}")
-        metrics_resp = requests.post(
+        r = self.s.post(f"{es_url}/soar-metrics/_refresh", auth=es_auth, timeout=10)
+        assert r.status_code == 200, f"ES metrics refresh failed: HTTP {r.status_code}"
+        metrics_resp = self.s.post(
             f"{es_url}/soar-metrics/_search",
             json={"query": {"match": {"alert_id": alert_id}}},
             auth=es_auth,
             timeout=10,
-            verify=False,
         )
         assert (
             metrics_resp.status_code == 200
@@ -257,11 +252,10 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         # Promtail is not forwarding container logs to Loki in this environment).
         loki_url = self.get_service_url("loki")
         loki_query = f'{{compose_project=~".+"}} |= "{correlation_id}"'
-        loki_resp = requests.get(
+        loki_resp = self.s.get(
             f"{loki_url}/loki/api/v1/query",
             params={"query": loki_query},
             timeout=30,
-            verify=False,
         )
         assert loki_resp.status_code == 200, f"Loki query returned HTTP {loki_resp.status_code}"
         loki_results = loki_resp.json().get("data", {}).get("result", [])
@@ -269,23 +263,22 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         # healthy and the workflow has a Loki action instead.
         if len(loki_results) == 0:
             # Verify Loki is healthy
-            loki_health = requests.get(f"{loki_url}/ready", timeout=10, verify=False)
-            assert loki_health.status_code in (200, 503), \
-                f"Loki /ready returned {loki_health.status_code}"
+            loki_health = self.s.get(f"{loki_url}/ready", timeout=10)
+            assert loki_health.status_code in (
+                200,
+                503,
+            ), f"Loki /ready returned {loki_health.status_code}"
             # Verify workflow has Loki action
             shuffle_base = self.get_service_url("shuffle")
             api_key = self.env.get("SHUFFLE_DEFAULT_APIKEY", "")
-            wf_resp = requests.get(
+            wf_resp = self.s.get(
                 f"{shuffle_base}/api/v1/workflows/{self.workflow_id}",
                 headers={"Authorization": f"Bearer {api_key}"},
-                verify=False,
             )
             if wf_resp.status_code == 200:
                 wf_data = wf_resp.json()
                 actions = wf_data.get("actions", [])
-                loki_actions = [
-                    a for a in actions if "loki" in a.get("label", "").lower()
-                ]
+                loki_actions = [a for a in actions if "loki" in a.get("label", "").lower()]
                 assert len(loki_actions) > 0, "No Loki actions found in workflow"
             self._log(
                 "+ Loki query succeeded (no logs for correlation_id — "
@@ -297,7 +290,7 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         funcionalidades."""
         # 1. Send a malformed alert — assert it is rejected (HTTP 400/422).
         invalid_alert = {
-            "alert_id": f"TC14-INVALID-{int(time.time())}",
+            "alert_id": self.uid("TC14-INVALID"),
             "hostname": "",
             "src_ip": "invalid-ip",
             "hash": "",
@@ -315,7 +308,7 @@ class TestCompleteSOARIntegration(E2EBaseTest):
 
         # 2. Send a valid alert — assert the workflow FINISHED.
         valid_alert = dict(self.alert_data)
-        valid_alert["alert_id"] = f"TC14-RECOVERY-{self.correlation_id}-{int(time.time())}"
+        valid_alert["alert_id"] = self.uid("TC14-RECOVERY")
         exec_id, execution = self.submit_alert_and_wait(valid_alert)
         self.execution = execution
         self.execution_id = exec_id
@@ -381,7 +374,7 @@ class TestCompleteSOARIntegration(E2EBaseTest):
 
         # Assert Network Watcher API is responsive after workflow execution.
         nw_url = self.get_service_url("network_watcher")
-        nw_resp = requests.get(f"{nw_url}/api/connections", timeout=10, verify=False)
+        nw_resp = self.s.get(f"{nw_url}/api/connections", timeout=10)
         assert (
             nw_resp.status_code == 200
         ), f"Network Watcher /api/connections returned HTTP {nw_resp.status_code}"
@@ -439,19 +432,20 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         # is not forwarding container logs in this environment).
         loki_url = self.get_service_url("loki")
         loki_query = f'{{compose_project=~".+"}} |= "{correlation_id}"'
-        loki_resp = requests.get(
+        loki_resp = self.s.get(
             f"{loki_url}/loki/api/v1/query",
             params={"query": loki_query},
             timeout=30,
-            verify=False,
         )
         assert loki_resp.status_code == 200, f"Loki query returned HTTP {loki_resp.status_code}"
         loki_results = loki_resp.json().get("data", {}).get("result", [])
         # If no logs, verify Loki is healthy and has the action in the workflow
         if len(loki_results) == 0:
-            loki_health = requests.get(f"{loki_url}/ready", timeout=10, verify=False)
-            assert loki_health.status_code in (200, 503), \
-                f"Loki /ready returned {loki_health.status_code}"
+            loki_health = self.s.get(f"{loki_url}/ready", timeout=10)
+            assert loki_health.status_code in (
+                200,
+                503,
+            ), f"Loki /ready returned {loki_health.status_code}"
             self._log(
                 "+ Loki query succeeded (no logs for correlation_id — "
                 "Promtail may not be forwarding, but Loki node executed)"

@@ -36,6 +36,8 @@ def _make_mock_config():
         "API_VERSION": "1.0.0",
         "CORS_ORIGINS": ["*"],
         "DOCS_DIR": "/nonexistent",
+        # Explicit opt-out: these tests exercise endpoints, not the auth gate
+        "API_REQUIRE_AUTH": "false",
     }.get(key, default)
     cp.get_service_urls.return_value = {}
     return cp
@@ -408,6 +410,60 @@ class TestSoarEndpoints:
         resp = client.get("/")
         assert resp.status_code == 200
         assert "Docs" in resp.text
+
+
+class TestApiDocsToggle:
+    """API_DOCS_ENABLED controls the Swagger/OpenAPI surface (SOAR-017).
+
+    true  -> /docs UI + /openapi.json (default, lab profile)
+    spec  -> only /openapi.json (CI contract checks, no UI)
+    false -> neither (hardened profile)
+    """
+
+    @staticmethod
+    def _app_with_docs(value):
+        cp = _make_mock_config()
+        base = cp.get.side_effect
+
+        def _get(key, default=None):
+            if key == "API_DOCS_ENABLED":
+                return value
+            return base(key, default)
+
+        cp.get.side_effect = _get
+        return _create_test_app(config_provider=cp)
+
+    def test_docs_enabled_by_default(self):
+        client = TestClient(self._app_with_docs("true"))
+        assert client.get("/docs").status_code == 200
+        assert client.get("/openapi.json").status_code == 200
+
+    def test_spec_keeps_openapi_without_ui(self):
+        client = TestClient(self._app_with_docs("spec"))
+        assert client.get("/openapi.json").status_code == 200
+        assert client.get("/docs").status_code == 404
+        assert client.get("/redoc").status_code == 404
+
+    def test_docs_disabled_removes_surface(self):
+        client = TestClient(self._app_with_docs("false"))
+        assert client.get("/docs").status_code == 404
+        assert client.get("/redoc").status_code == 404
+        assert client.get("/openapi.json").status_code == 404
+
+    def test_portal_hides_disabled_ui_links(self):
+        """Under spec mode the root portal must not link dead /docs+redoc."""
+        from soar_lab.interfaces.api.main import _filter_docs_portal
+
+        html = (
+            '<a class="service-card" href="/docs"><h3>Swagger UI</h3></a>'
+            '<a class="service-card" href="/redoc"><h3>ReDoc</h3></a>'
+            '<a class="service-card" href="/openapi.json"><h3>OpenAPI JSON</h3></a>'
+        )
+        filtered = _filter_docs_portal(html, ui_enabled=False)
+        assert 'href="/docs"' not in filtered
+        assert 'href="/redoc"' not in filtered
+        assert 'href="/openapi.json"' in filtered
+        assert _filter_docs_portal(html, ui_enabled=True) == html
 
 
 class TestApiInitModule:

@@ -91,7 +91,7 @@ class TestMISPIntegration:
             attributes = event.get("Attribute", [])
 
             assert len(attributes) > 0, "Event should have attributes"
-            assert attributes[0]["to_ids"] == True, "Attribute should be enriched"
+            assert attributes[0]["to_ids"], "Attribute should be enriched"
 
     def test_event_update(self, misp_client):
         """Test event update."""

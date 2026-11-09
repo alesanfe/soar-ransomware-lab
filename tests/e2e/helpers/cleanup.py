@@ -27,12 +27,14 @@ def remove_docker_volumes(volume_prefix: str) -> bool:
 
         matching_volumes = [v for v in volumes if v.startswith(volume_prefix)]
 
+        ok = True
         for volume in matching_volumes:
-            subprocess.run(
+            r = subprocess.run(
                 ["docker", "volume", "rm", "-f", volume], capture_output=True, timeout=10
             )
+            ok = ok and r.returncode == 0
 
-        return True
+        return ok
     except Exception:
         return False
 
@@ -57,10 +59,14 @@ def remove_docker_networks(network_prefix: str) -> bool:
 
         matching_networks = [n for n in networks if n.startswith(network_prefix)]
 
+        ok = True
         for network in matching_networks:
-            subprocess.run(["docker", "network", "rm", network], capture_output=True, timeout=10)
+            r = subprocess.run(
+                ["docker", "network", "rm", network], capture_output=True, timeout=10
+            )
+            ok = ok and r.returncode == 0
 
-        return True
+        return ok
     except Exception:
         return False
 

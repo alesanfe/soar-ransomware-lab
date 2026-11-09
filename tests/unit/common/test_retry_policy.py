@@ -55,6 +55,7 @@ class TestRetryPolicy:
             max_retries=3,
             retryable_errors=[ConnectionError, TimeoutError],
             non_retryable_errors=[ValueError],
+            base_delay=0.01,
         )
 
         connection_count = [0]
@@ -190,6 +191,20 @@ class TestRetryPolicy:
 
         assert result == "success", "Operation should succeed"
         assert len(callback_calls) == 2, "Callback should be called for each retry"
+
+    def test_max_attempts_means_total_attempts(self):
+        """Bug: max_attempts=N was stored as max_retries and produced N+1
+        calls (off-by-one between the two mutually exclusive params)."""
+        calls = [0]
+
+        def always_fail():
+            calls[0] += 1
+            raise RuntimeError("fail")
+
+        policy = RetryPolicy(max_attempts=2, base_delay=0)
+        with pytest.raises(RuntimeError):
+            policy.execute(always_fail)
+        assert calls[0] == 2, "max_attempts=2 must produce exactly 2 calls"
 
 
 if __name__ == "__main__":

@@ -9,6 +9,41 @@ from datetime import UTC, datetime
 from tests.e2e.base import E2EBaseTest
 
 
+def _iso_to_epoch(value: str) -> float | None:
+    """Parse an ISO-8601 timestamp to epoch; None when not ISO."""
+    parsed = None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        parsed = None
+    return parsed
+
+
+def _detection_epoch(detection_time, fallback: float) -> float:
+    """Parse detection_time (ISO or epoch) to epoch seconds."""
+    if isinstance(detection_time, str) and detection_time:
+        iso = _iso_to_epoch(detection_time)
+        if iso is not None:
+            return iso
+    try:
+        return float(detection_time)
+    except (TypeError, ValueError):
+        return float(fallback)
+
+
+def _exec_ts(value) -> float | None:
+    """Execution timestamps may be epoch int/float or ISO strings."""
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, str):
+        return _iso_to_epoch(value)
+    return None
+
+
 class TestMTRRCalculation(E2EBaseTest):
     """TC-KPI-01 — MTTR Calculation: Verify MTTR is calculated correctly."""
 
@@ -27,7 +62,7 @@ class TestMTRRCalculation(E2EBaseTest):
         self._log("=== TC-KPI-01: MTTR Calculation Verification ===")
 
         payload = {
-            "alert_id": f"TC-KPI-01-{int(time.time())}",
+            "alert_id": self.uid("TC-KPI-01"),
             "alert_type": "ransomware",
             "hostname": "WIN-KPI-001",
             "src_ip": "192.168.1.250",
@@ -64,14 +99,54 @@ class TestMTRRCalculation(E2EBaseTest):
         assert mttr < 300, "MTTR should be less than 5 minutes"
         self._log(f"  + MTTR calculated: {mttr:.2f}s")
 
-        # Verify MTTR is reasonable (workflow duration)
-        workflow_start = payload["timestamp"]
-        workflow_end = time.time()
-        expected_mttr = workflow_end - workflow_start
-        assert (
-            abs(mttr - expected_mttr) < 60
-        ), f"MTTR {mttr}s differs significantly from expected {expected_mttr:.2f}s"
-        self._log("  + MTTR within expected range")
+        # Verify MTTR is consistent with the execution record.
+        # calc_mttr measures detection_time -> the calc_mttr node, which
+        # runs inside the workflow's tail (decision -> notify -> calc_mttr
+        # -> summary -> enrich -> metrics). Therefore:
+        #   lower bound: started_at - detection (node can't run before the
+        #                execution starts)
+        #   upper bound: completed_at - detection + clock skew (the node
+        #                runs before workflow completion)
+        # Comparing against test wall-clock is wrong — it includes
+        # submission queueing, polling interval and evidence collection.
+        det_ts = _detection_epoch(payload.get("detection_time"), payload["timestamp"])
+        exec_start = _exec_ts(self.execution.get("started_at"))
+        exec_end = _exec_ts(self.execution.get("completed_at"))
+        if exec_start and exec_end:
+            lo = exec_start - det_ts - 5
+            hi = exec_end - det_ts + 15
+            assert lo <= mttr <= hi, (
+                f"MTTR {mttr}s outside execution-derived bounds "
+                f"[{lo:.1f}, {hi:.1f}] (exec {exec_start}..{exec_end}, "
+                f"detection {det_ts})"
+            )
+        else:
+            # Execution lacks timestamps — fall back to a loose sanity
+            # bound: MTTR cannot exceed detection -> now.
+            assert mttr <= time.time() - det_ts + 15, f"MTTR {mttr}s exceeds detection->now bound"
+        self._log("  + MTTR within execution-derived bounds")
+
+        # STEP 3: cross-execution consistency — recent metrics docs all
+        # carry a sane MTTR, not just the fresh one (single-sample risk).
+        self._log("STEP 3: Verifying MTTR sanity across recent metrics documents")
+        resp = self.es.search(
+            index="soar-metrics",
+            size=10,
+            sort=[{"@timestamp": {"order": "desc"}}],
+        )
+        hits = resp.get("hits", {}).get("hits", [])
+        assert hits, "No documents in soar-metrics — MTTR pipeline is not writing"
+        bad = [
+            (h.get("_source") or {}).get("alert_id")
+            for h in hits
+            if not isinstance((h.get("_source") or {}).get("mttr_seconds"), (int, float))
+            or not (0 < (h.get("_source") or {}).get("mttr_seconds", 0) < 300)
+        ]
+        assert not bad, (
+            f"{len(bad)}/{len(hits)} recent metrics docs lack a sane "
+            f"mttr_seconds (0<mttr<300): {bad[:3]}"
+        )
+        self._log(f"  + {len(hits)} recent metrics docs all carry sane mttr_seconds")
 
         # Validate that MTTR calculation logic is correct
         self._log("✓ MTTR calculation validated - value is reasonable and stored correctly")

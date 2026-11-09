@@ -80,3 +80,24 @@ class TestLogging:
         assert logger1 is logger2
 
     # Removed complex mock test - the directory creation is tested in test_setup_logging_with_file
+    def test_json_formatter_escapes_special_chars(self):
+        """Bug: %-template JSON produced invalid JSON when a message
+        contained quotes/newlines — every log line must parse."""
+        import json as _json
+
+        from soar_lab.config.logging import _make_formatter
+
+        formatter = _make_formatter("json")
+        record = logging.LogRecord(
+            "test",
+            logging.INFO,
+            __file__,
+            1,
+            'quote " and\nnewline',
+            (),
+            None,
+        )
+        line = formatter.format(record)
+        parsed = _json.loads(line)
+        assert parsed["message"] == 'quote " and\nnewline'
+        assert parsed["level"] == "INFO"

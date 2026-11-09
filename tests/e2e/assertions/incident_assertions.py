@@ -39,11 +39,18 @@ def _normalize_severity(value: Any) -> Any:
         return value
 
 
-def assert_incident_state(incident: dict[str, Any], expected_state: str):
-    """Assert that an incident has the expected state (TheHive uses
-    'status')."""
+def assert_incident_state(incident: dict[str, Any], expected_state: str | tuple[str, ...]):
+    """Assert that an incident has the expected state.
+
+    TheHive uses 'status'. Accepts a single state or a tuple of acceptable
+    states — TheHive 5 cases progress New -> InProgress asynchronously, so
+    tests asserting "open" should pass ("New", "InProgress").
+    """
     actual = incident.get("state") or incident.get("status")
-    assert actual == expected_state, f"Expected state {expected_state}, got {actual}"
+    if isinstance(expected_state, tuple):
+        assert actual in expected_state, f"Expected state in {expected_state}, got {actual}"
+    else:
+        assert actual == expected_state, f"Expected state {expected_state}, got {actual}"
 
 
 def assert_incident_severity(incident: dict[str, Any], expected_severity: str):

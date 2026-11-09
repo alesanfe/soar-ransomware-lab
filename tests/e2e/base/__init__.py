@@ -43,6 +43,8 @@ from .cleanup_mixin import CleanupMixin
 from .config_mixin import ConfigMixin
 from .docker_mixin import DockerMixin
 from .evidence_mixin import EvidenceMixin
+from .isolation_mixin import IsolationMixin
+from .negative_mixin import NegativeAssertionsMixin
 from .observability_mixin import ObservabilityMixin
 from .run_context_mixin import RunContextMixin
 from .semantic_mixin import SemanticMixin
@@ -70,6 +72,8 @@ class E2EBaseTest(
     EvidenceMixin,
     CleanupMixin,
     SemanticMixin,
+    NegativeAssertionsMixin,
+    IsolationMixin,
 ):
     """Base class for all E2E tests.
 
@@ -118,6 +122,10 @@ class E2EBaseTest(
         7. Seeds test data if needed
         """
         self.test_name = method.__name__
+        # BUG-035: subclasses override `_log` using `self.t0`, so it must
+        # exist before any `_log` call in this setup (subclasses refresh
+        # it after `super().setup_method()`).
+        self.t0 = datetime.now(UTC)
 
         # Config
         self.env = self.load_env()
@@ -146,6 +154,9 @@ class E2EBaseTest(
         # Raw requests session for direct HTTP calls
         self.s = requests.Session()
         self.s.verify = False
+        _svc_token = self.env.get("INTERNAL_SERVICE_TOKEN", "")
+        if _svc_token:
+            self.s.headers["X-Service-Token"] = _svc_token
 
         # Preflight: verify all services are healthy
         self.verify_core_services()
@@ -410,7 +421,7 @@ class E2EBaseTest(
         # Only run if the contract explicitly requests it — this is a strict
         # check that may fail if the workflow doesn't propagate correlation_id
         # to all locations. Tests that want this should set:
-        #   expected_contract["lineage_locations"] = [...]
+        #   the "lineage_locations" key inside expected_contract (a list)
         if lineage_locations is not None:
             self.assert_correlation_lineage(
                 correlation_id=self.correlation_id,
@@ -427,13 +438,12 @@ class E2EBaseTest(
 
         # ── Nivel 8: Trace ID propagation (optional) ─────────────────────
         # Only run if the contract explicitly requests it:
-        #   expected_contract["verify_trace_id"] = True
+        #   the "verify_trace_id" key inside expected_contract set to True
         if contract.get("verify_trace_id") and alert_id:
             self.assert_trace_id_in_elasticsearch(alert_id)
 
     def assert_trace_id_in_elasticsearch(self, alert_id: str) -> None:
-        """Verify that ``self.trace_id`` is present in the ES document for
-        ``alert_id``.
+        """Verify trace_id presence in the ES document for ``alert_id``.
 
         Records the assertion result but does NOT fail the test if the
         trace_id is missing — the workflow may not propagate it yet.  This
@@ -563,7 +573,8 @@ class E2EBaseTest(
             "notify_critical",
             "notify_info",
             # Summary & enrichment (added to catch HTTP 500 on PATCH)
-            "build_hive_summary",
+            # NOTE: build_hive_summary was fused into calc_mttr (DAG v3,
+            # 2026-11-07) — its output now arrives as $calc_mttr.message.summary.
             "enrich_case",
             # Metrics
             "build_metrics_json",
@@ -601,7 +612,11 @@ class E2EBaseTest(
 
                 if isinstance(obj, dict):
                     http_status = obj.get("status")
-                    if http_status is not None and int(http_status) >= 400:
+                    try:
+                        status_code = int(http_status) if http_status is not None else 0
+                    except (TypeError, ValueError):
+                        status_code = 0  # non-numeric body field, not an HTTP status
+                    if status_code >= 400:
                         errors.append(
                             f"Node '{label}' returned HTTP {http_status}: {raw_result[:300]}"
                         )
@@ -652,8 +667,7 @@ class E2EBaseTest(
     # ── Teardown ─────────────────────────────────────────────────────────────
 
     def teardown_method(self, method):
-        """Collect evidence, verify completeness, write results, and
-        cleanup."""
+        """Collect evidence, verify completeness, write results, and cleanup."""
         try:
             self.collect_evidence()
         except Exception as e:
@@ -712,12 +726,16 @@ class E2EBaseTest(
             )
             return
 
+        # payload.json is only written by submit_alert / the wrapped webhook
+        # POST — require it only when the test actually submitted an alert,
+        # otherwise non-submitting tests permanently fail here (BUG-044).
         required_files = [
-            "payload.json",
             "workflow_execution.json",
             "service_health.json",
             "docker_state.json",
         ]
+        if getattr(self, "execution_id", None):
+            required_files.insert(0, "payload.json")
         optional_files = [
             "thehive_case.json",
             "cortex_jobs.json",
@@ -764,7 +782,9 @@ class E2EBaseTest(
 
         # Check TheHive for existing case with this alert_id
         try:
-            cases = self.thehive.search_cases()
+            # alert_id embeds a fresh correlation_id — any match is recent;
+            # bounded page avoids a ~13 s full scan per check (BUG-046).
+            cases = self.thehive.search_cases(sort=["-createdAt"], range_="0-200")
             existing = [
                 c
                 for c in cases

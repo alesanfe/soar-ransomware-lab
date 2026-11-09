@@ -1,0 +1,66 @@
+{
+  "name": "cortex",
+  "service_name": "cortex",
+  "version": "1.0.0",
+  "supported_versions": ["1.0.0"],
+  "required_headers": ["Content-Type", "Authorization"],
+  "rate_limit": {
+    "requests_per_minute": 60,
+    "requests_per_hour": 2000,
+    "requests_per_day": 20000
+  },
+  "error_schema": {
+    "type": "object",
+    "properties": {
+      "type": { "type": "string" },
+      "message": { "type": "string" }
+    },
+    "required": ["type", "message"]
+  },
+  "endpoints": {
+    "/api/analyzer": {
+      "GET": {
+        "response_schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name"]
+          }
+        }
+      },
+      "POST": {
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "string" },
+            "dataType": { "type": "string" },
+            "tlp": { "type": "integer" }
+          },
+          "required": ["data", "dataType"]
+        }
+      }
+    },
+    "/api/analyzer/{id}/run": {
+      "POST": {
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "string" },
+            "dataType": { "type": "string" }
+          }
+        }
+      }
+    },
+    "/api/job/{id}/waitreport": {
+      "GET": {
+        "response_schema": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string" },
+            "report": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}

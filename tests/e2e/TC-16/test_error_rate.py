@@ -10,11 +10,12 @@ soar-metrics index to calculate and assert error rates.
 import json
 import time
 from datetime import UTC, datetime, timedelta
+from typing import ClassVar
 
 import pytest
-import requests
 
 from tests.e2e.base import E2EBaseTest
+from tests.e2e.base.config_mixin import E2E_RESULTS_DIR
 
 
 class TestErrorRate(E2EBaseTest):
@@ -25,11 +26,41 @@ class TestErrorRate(E2EBaseTest):
 
     tc_id = "TC-16"
     MAX_ERROR_RATE = 5.0  # 5% maximum error rate per service
+    _class_results: ClassVar[list] = []
+    _class_t0: ClassVar[datetime | None] = None
+
+    @classmethod
+    def setup_class(cls):
+        cls._class_results = []
+        cls._class_t0 = datetime.now(UTC)
+
+    @classmethod
+    def teardown_class(cls):
+        """Persist the aggregate error-rate report once per class run.
+
+        Replaces the removed ``test_error_rate_suite`` orchestrator
+        (EXEC-001): each scenario is collected once, and the report still
+        aggregates every per-test result.
+        """
+        if cls._class_t0 is None:
+            return
+        elapsed = (datetime.now(UTC) - cls._class_t0).total_seconds()
+        report = {
+            "test_case": "TC-16",
+            "scenario": "error_rate_monitoring",
+            "elapsed_seconds": elapsed,
+            "results": cls._class_results,
+            "success": all(r.get("ok", False) for r in cls._class_results),
+        }
+        report_file = E2E_RESULTS_DIR / "TC-16_error_rate_report.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
+        report_file.write_text(json.dumps(report, indent=2, default=str))
+        print(f"TC-16 + Report saved: {report_file}")
 
     def setup_method(self, method):
         super().setup_method(method)
         self.t0 = datetime.now(UTC)
-        self._results: list[dict] = []
+        self._results: list[dict] = type(self)._class_results
         self._metrics_generated = False
 
     def _generate_metrics(self, count: int = 3):
@@ -37,9 +68,10 @@ class TestErrorRate(E2EBaseTest):
         metrics."""
         if self._metrics_generated:
             return
+        induced_errors = 0
         for i in range(count):
             payload = self.build_alert_payload(
-                alert_id=f"TC16-{self.correlation_id}-{i}-{int(time.time())}",
+                alert_id=self.uid("TC16"),
             )
             self.alert_data = payload
             try:
@@ -48,8 +80,12 @@ class TestErrorRate(E2EBaseTest):
                 self.execution_id = exec_id
                 self.validate_workflow_execution(execution, alert_id=payload["alert_id"])
             except Exception as e:
-                self._log(f"Alert {i} generated an error (expected for error-rate test): {e}")
+                # A failed alert IS the error signal this test needs —
+                # count it so the metric oracle can verify it later.
+                induced_errors += 1
+                self._log(f"Alert {i} generated an error (induced for error-rate test): {e}")
         self._metrics_generated = True
+        self._log(f"  + Metrics generation done: {induced_errors}/{count} induced errors")
 
     def _query_metrics(self) -> list[dict]:
         """Query the soar-metrics index for recent metrics."""
@@ -58,11 +94,10 @@ class TestErrorRate(E2EBaseTest):
             self.env.get("ELASTIC_USERNAME", "elastic"),
             self.env.get("ELASTIC_PASSWORD", ""),
         )
-        # Force refresh so recently-indexed metrics are visible.
-        try:
-            requests.post(f"{es_url}/soar-metrics/_refresh", auth=es_auth, timeout=30, verify=False)
-        except Exception as e:
-            self._log(f"  ES refresh warning: {e}")
+        # Force refresh so recently-indexed metrics are visible — a failed
+        # refresh would let the metric oracle run on stale data.
+        r = self.s.post(f"{es_url}/soar-metrics/_refresh", auth=es_auth, timeout=30)
+        assert r.status_code == 200, f"ES metrics refresh failed: HTTP {r.status_code}"
 
         query = {
             "range": {"@timestamp": {"gte": (datetime.now(UTC) - timedelta(hours=24)).isoformat()}}
@@ -135,35 +170,6 @@ class TestErrorRate(E2EBaseTest):
 
         self._log(f"✓ All services meet maximum error rate ({self.MAX_ERROR_RATE}%)")
 
-    def _step_save_report(self, elapsed: float):
-        report = {
-            "test_case": "TC-16",
-            "scenario": "error_rate_monitoring",
-            "elapsed_seconds": elapsed,
-            "results": self._results,
-            "success": all(r.get("ok", False) for r in self._results),
-        }
-        report_file = self.e2e_results_dir / "TC-16_error_rate_report.json"
-        report_file.write_text(json.dumps(report, indent=2, default=str))
-        self._log(f"+ Report saved: {report_file}")
-
-    def test_error_rate_suite(self):
-        """Run error rate monitoring test suite."""
-        self._log("=== TC-16: ERROR RATE MONITORING E2E TEST STARTED ===")
-
-        self.test_error_rate_by_service()
-
-        # Validate that results were collected and all passed
-        assert len(self._results) > 0, "No error rate results were recorded"
-        failed = [r for r in self._results if not r.get("ok", False)]
-        assert not failed, f"{len(failed)}/{len(self._results)} error rate checks failed: {failed}"
-
-        # self.t0 is set in setup_method — no duplicate variable.
-        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
-        self._log(f"Elapsed: {elapsed:.1f}s")
-        self._log("=== TC-16 COMPLETED ===")
-        self._step_save_report(elapsed)
-
     # ------------------------------------------------------------------
     # Subcase-specific tests (TC-16-01 to TC-16-05)
     # ------------------------------------------------------------------
@@ -173,52 +179,62 @@ class TestErrorRate(E2EBaseTest):
         URL."""
         wrong_url = self.webhook_url.replace("/webhook", "/nonexistent-endpoint-404")
         try:
-            self.s.post(wrong_url, json={"alert_id": "tc16-http-error"}, timeout=10)
+            r = self.s.post(wrong_url, json={"alert_id": "tc16-http-error"}, timeout=10)
+            outcome = f"HTTP {r.status_code}"
         except Exception as e:
-            self._log(f"  HTTP error generated: {e}")
+            outcome = f"{type(e).__name__}: {e}"
+        self._log(f"  HTTP error attempt outcome: {outcome}")
 
     def _generate_timeout_error(self):
         """Generate a timeout-like error by sending a very large payload."""
         huge_payload = self.build_alert_payload(
-            alert_id=f"TC16-TIMEOUT-{int(time.time())}",
+            alert_id=self.uid("TC16-TIMEOUT"),
         )
         huge_payload["description"] = "x" * 100000  # Very large payload
         try:
-            self.s.post(self.webhook_url, json=huge_payload, timeout=5)
+            r = self.s.post(self.webhook_url, json=huge_payload, timeout=5)
+            outcome = f"HTTP {r.status_code}"
         except Exception as e:
-            self._log(f"  Timeout error generated: {e}")
+            outcome = f"{type(e).__name__}: {e}"
+        self._log(f"  Timeout error attempt outcome: {outcome}")
 
     def _generate_ssl_error(self):
         """Generate an SSL error by connecting to an HTTPS endpoint with bad
         cert."""
         try:
-            requests.get("https://localhost:9999/bad-ssl", timeout=5, verify=True)
+            r = self.s.get("https://localhost:9999/bad-ssl", timeout=5, verify=True)
+            outcome = f"HTTP {r.status_code}"
         except Exception as e:
-            self._log(f"  SSL error generated: {e}")
+            outcome = f"{type(e).__name__}: {e}"
+        self._log(f"  SSL error attempt outcome: {outcome}")
 
     def _generate_parsing_error(self):
         """Generate a parsing error by sending malformed JSON."""
         try:
-            self.s.post(
+            r = self.s.post(
                 self.webhook_url,
                 data="{invalid json content !!!",
                 headers={"Content-Type": "application/json"},
                 timeout=10,
             )
+            outcome = f"HTTP {r.status_code}"
         except Exception as e:
-            self._log(f"  Parsing error generated: {e}")
+            outcome = f"{type(e).__name__}: {e}"
+        self._log(f"  Parsing error attempt outcome: {outcome}")
 
     def _generate_retry_error(self):
         """Generate a retry scenario by sending to a flaky endpoint rapidly."""
         for _ in range(3):
             try:
-                self.s.post(
+                r = self.s.post(
                     self.webhook_url,
                     json={"alert_id": "tc16-retry-test", "bad_field": True},
                     timeout=5,
                 )
+                outcome = f"HTTP {r.status_code}"
             except Exception as e:
-                self._log(f"  Retry error generated: {e}")
+                outcome = f"{type(e).__name__}: {e}"
+            self._log(f"  Retry error attempt outcome: {outcome}")
             time.sleep(1)
 
     @pytest.mark.parametrize(
@@ -255,7 +271,10 @@ class TestErrorRate(E2EBaseTest):
             len(metrics_data) > 0
         ), f"No metrics data available after generating {error_type} error"
 
-        # Count errors matching this type.
+        # Count errors matching this type. Note: transport-level probes
+        # (404/SSL/malformed JSON against the webhook) do not produce
+        # soar-metrics docs — this oracle validates that injected errors
+        # do not corrupt the recorded rates, not that they are tracked.
         errors = 0
         total = len(metrics_data)
         for m in metrics_data:

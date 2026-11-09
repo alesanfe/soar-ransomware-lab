@@ -47,7 +47,7 @@ class TestHTTPHealthCheckAdapter:
 
         result = await adapter.check_service("service1", "http://service1.local/health")
 
-        assert result == True
+        assert result
         mock_http_client.get.assert_called_once_with(
             "http://service1.local/health", verify_ssl=True
         )
@@ -62,7 +62,7 @@ class TestHTTPHealthCheckAdapter:
 
         result = await adapter.check_service("service1", "http://service1.local/health")
 
-        assert result == False
+        assert result is False
 
     @pytest.mark.asyncio
     async def test_check_service_no_url(self):
@@ -73,7 +73,7 @@ class TestHTTPHealthCheckAdapter:
 
         result = await adapter.check_service("service1", "")
 
-        assert result == False
+        assert result is False
         mock_http_client.get.assert_not_called()
 
     @pytest.mark.asyncio
@@ -86,7 +86,7 @@ class TestHTTPHealthCheckAdapter:
 
         result = await adapter.check_service("service1", "http://service1.local/health")
 
-        assert result == False
+        assert result is False
 
     @pytest.mark.asyncio
     async def test_check_service_with_ssl_disabled(self):
@@ -99,7 +99,7 @@ class TestHTTPHealthCheckAdapter:
 
         result = await adapter.check_service("service1", "http://service1.local/health")
 
-        assert result == True
+        assert result
         mock_http_client.get.assert_called_once_with(
             "http://service1.local/health", verify_ssl=False
         )
@@ -115,7 +115,7 @@ class TestHTTPHealthCheckAdapter:
 
         result = await adapter.check_service("service1", "http://service1.local/health")
 
-        assert result == True
+        assert result
         mock_http_client.get.assert_called_once_with(
             "http://service1.local/health", verify_ssl=True
         )

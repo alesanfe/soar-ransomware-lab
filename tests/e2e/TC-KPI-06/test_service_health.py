@@ -21,6 +21,25 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from tests.e2e.base import E2EBaseTest
 
+# execution_argument substrings marking executions whose aborts are
+# intentional by design — suites that deliberately stress or disrupt the
+# pipeline (extreme load, negative/malformed inputs, error injection,
+# resilience kill-tests). NOTE: alert_ids in this suite use the "TCxx-"
+# format (e.g. TC26-BACKPRESSURE-…), NOT "TC-xx" — patterns must match
+# the real format or they silently exclude nothing.
+EXPECTED_ABORT_PATTERNS = [
+    "TC05",
+    "TC07",
+    "TC16",
+    "TC18",
+    "TC19",
+    "TC26",
+    "EDGE-",
+    "invalid json",
+    "malformed",
+    "incomplete",
+]
+
 
 class TestServiceHealthValidation(E2EBaseTest):
     """TC-KPI-06 — Validate that external services are actually functional, not
@@ -49,7 +68,7 @@ class TestServiceHealthValidation(E2EBaseTest):
         images) indicates a broken service, not a healthy lab.
         """
         self._log("=== Test: Cortex Analyzer Success Rate ===")
-        es_url = self.env.get("ES_URL", "http://elasticsearch:9200")
+        es_url = self.get_service_url("es")
 
         # Query Cortex jobs from Elasticsearch
         body = {
@@ -58,7 +77,7 @@ class TestServiceHealthValidation(E2EBaseTest):
             "aggs": {"by_status": {"terms": {"field": "status"}}},
         }
         try:
-            r = requests.post(f"{es_url}/cortex_6/_search", json=body, timeout=30)
+            r = self.s.post(f"{es_url}/cortex_6/_search", json=body, timeout=30)
             r.raise_for_status()
         except Exception as e:
             pytest.fail(f"Cannot query Cortex jobs from Elasticsearch: {e}")
@@ -112,7 +131,7 @@ class TestServiceHealthValidation(E2EBaseTest):
             pytest.fail("MISP_API_KEY not configured - MISP integration is required")
 
         # MISP is on HTTP port 80 internally
-        misp_url = "http://misp:80"
+        misp_url = self.get_service_url("misp")
         headers = {
             "Authorization": misp_key,
             "Accept": "application/json",
@@ -121,9 +140,7 @@ class TestServiceHealthValidation(E2EBaseTest):
 
         # 1. Check server version
         try:
-            r = requests.get(
-                f"{misp_url}/servers/getVersion.json", headers=headers, verify=False, timeout=15
-            )
+            r = self.s.get(f"{misp_url}/servers/getVersion.json", headers=headers, timeout=15)
             if r.status_code == 403:
                 pytest.fail(
                     "MISP API returned 403 (authentication failed). "
@@ -140,11 +157,10 @@ class TestServiceHealthValidation(E2EBaseTest):
         # 2. Search for events (verify API is truly functional)
         search_body = {"returnFormat": "json", "limit": 5}
         try:
-            r2 = requests.post(
+            r2 = self.s.post(
                 f"{misp_url}/events/index",
                 headers=headers,
                 json=search_body,
-                verify=False,
                 timeout=15,
             )
             assert (
@@ -174,11 +190,10 @@ class TestServiceHealthValidation(E2EBaseTest):
                 "limit": 1,
                 "page": 0,
             }
-            r3 = requests.post(
+            r3 = self.s.post(
                 f"{misp_url}/attributes/index",
                 headers=headers,
                 json=search_body2,
-                verify=False,
                 timeout=15,
             )
             assert r3.status_code == 200, f"MISP /attributes/index returned HTTP {r3.status_code}"
@@ -202,11 +217,11 @@ class TestServiceHealthValidation(E2EBaseTest):
         indicates workflow issues like missing variables or broken nodes.
         """
         self._log("=== Test: Workflow Notification Rate ===")
-        os_url = "http://opensearch:9200"
+        os_url = self.get_service_url("opensearch")
 
         # Count total workflow executions
         try:
-            r = requests.get(f"{os_url}/workflowexecution-000001/_count", timeout=15)
+            r = self.s.get(f"{os_url}/workflowexecution/_count", timeout=15)
             r.raise_for_status()
             total_executions = r.json().get("count", 0)
         except Exception as e:
@@ -217,7 +232,7 @@ class TestServiceHealthValidation(E2EBaseTest):
 
         # Count notifications (errors)
         try:
-            r2 = requests.get(f"{os_url}/notifications-000001/_count", timeout=15)
+            r2 = self.s.get(f"{os_url}/notifications-000001/_count", timeout=15)
             r2.raise_for_status()
             total_notifications = r2.json().get("count", 0)
         except Exception:
@@ -265,16 +280,18 @@ class TestServiceHealthValidation(E2EBaseTest):
         cause aborts.
         """
         self._log("=== Test: Workflow Aborted Rate ===")
-        os_url = "http://opensearch:9200"
+        os_url = self.get_service_url("opensearch")
 
-        # Count by status
+        # Count by status. `status` is a text+keyword field on the flat
+        # `workflowexecution` index (dynamic mapping); aggregate the keyword
+        # sub-field which covers every doc in that index.
         body = {
             "size": 0,
             "query": {"range": {"started_at": {"gte": int(time.time() - 86400)}}},
-            "aggs": {"by_status": {"terms": {"field": "status"}}},
+            "aggs": {"by_status": {"terms": {"field": "status.keyword"}}},
         }
         try:
-            r = requests.post(f"{os_url}/workflowexecution-000001/_search", json=body, timeout=30)
+            r = self.s.post(f"{os_url}/workflowexecution/_search", json=body, timeout=30)
             r.raise_for_status()
         except Exception as e:
             pytest.fail(f"Cannot query OpenSearch: {e}")
@@ -297,29 +314,28 @@ class TestServiceHealthValidation(E2EBaseTest):
             self._log(f"  {status}: {count}")
 
         # Exclude intentional test cases that are designed to cause aborts
-        exclude_patterns = [
-            "TC-05",
-            "TC-19",
-            "TC-26",
-            "EDGE-",
-            "invalid json",
-            "TC-07",
-            "malformed",
-            "incomplete",
-        ]
         body2 = {
             "size": 0,
             "query": {
                 "bool": {
                     "must": [{"term": {"status": "ABORTED"}}],
                     "must_not": [
-                        {"wildcard": {"execution_argument": f"*{p}*"}} for p in exclude_patterns
+                        {
+                            "bool": {
+                                "should": [
+                                    {"wildcard": {"execution_argument": f"*{p}*"}},
+                                    {"wildcard": {"execution_argument.keyword": f"*{p}*"}},
+                                ],
+                                "minimum_should_match": 1,
+                            }
+                        }
+                        for p in EXPECTED_ABORT_PATTERNS
                     ],
                 }
             },
         }
         try:
-            r2 = requests.post(f"{os_url}/workflowexecution-000001/_search", json=body2, timeout=30)
+            r2 = self.s.post(f"{os_url}/workflowexecution/_search", json=body2, timeout=30)
             r2.raise_for_status()
             unexpected_aborted = r2.json().get("hits", {}).get("total", {}).get("value", 0)
         except Exception:
@@ -365,24 +381,27 @@ class TestServiceHealthValidation(E2EBaseTest):
         timeouts. This is a prerequisite check, not a performance test.
         """
         self._log("=== Test: Cortex Analyzer Images Available ===")
-        cortex_url = self.env.get("CORTEX_URL", "http://cortex:9001")
+        cortex_url = self.get_service_url("cortex")
         cortex_key = self.env.get("CORTEX_API_KEY", "")
         admin_user = self.env.get("CORTEX_ADMIN_USER", "admin")
         admin_pw = self.env.get("CORTEX_ADMIN_PASSWORD", "")
 
         import base64
 
-        if admin_pw:
+        if cortex_key:
+            # Org-scoped API key — the production auth path (same key
+            # Shuffle uses). Cortex returns 403 for analyzer /run when
+            # authenticated as superadmin, which has no org membership.
+            headers = {"Authorization": f"Bearer {cortex_key}", "Content-Type": "application/json"}
+        elif admin_pw:
             creds = base64.b64encode(f"{admin_user}:{admin_pw}".encode()).decode()
             headers = {"Authorization": f"Basic {creds}", "Content-Type": "application/json"}
-        elif cortex_key:
-            headers = {"Authorization": f"Bearer {cortex_key}", "Content-Type": "application/json"}
         else:
             pytest.fail("No Cortex credentials configured - Cortex integration is required")
 
         # List installed analyzers
         try:
-            r = requests.post(
+            r = self.s.post(
                 f"{cortex_url}/api/analyzer/_search",
                 headers=headers,
                 json={"query": {}, "range": "all"},
@@ -406,10 +425,16 @@ class TestServiceHealthValidation(E2EBaseTest):
         for a in analyzers:
             assert isinstance(a, dict), f"Each analyzer must be a dict, got {type(a).__name__}"
 
-        # Validate that at least 3 common analyzers are present
+        # Validate that at least 1 common analyzer is present. Cortex analyzer
+        # ids carry a version suffix (e.g. "ValidateObservable_1_0"), so match
+        # on the base name prefix.
         analyzer_names = {a.get("workerDefinitionId", a.get("id", "")) for a in analyzers}
-        common_analyzers = {"ValidateObservable", "FileInfo", "MISP_2_0"}
-        present_common = analyzer_names & common_analyzers
+        common_analyzers = {"ValidateObservable", "FileInfo", "MISP", "GoogleDNS"}
+        present_common = {
+            base
+            for base in common_analyzers
+            if any(name == base or name.startswith(f"{base}_") for name in analyzer_names)
+        }
         assert len(present_common) >= 1, (
             f"Cortex should have at least 1 common analyzer from {common_analyzers}, "
             f"got only: {analyzer_names}"
@@ -437,7 +462,7 @@ class TestServiceHealthValidation(E2EBaseTest):
 
         # Run analyzer on a simple domain
         try:
-            r2 = requests.post(
+            r2 = self.s.post(
                 f"{cortex_url}/api/analyzer/{analyzer_id}/run",
                 headers=headers,
                 json={"dataType": "domain", "data": "example.com"},
@@ -457,7 +482,7 @@ class TestServiceHealthValidation(E2EBaseTest):
         for _ in range(18):
             time.sleep(5)
             try:
-                r3 = requests.get(f"{cortex_url}/api/job/{job_id}", headers=headers, timeout=15)
+                r3 = self.s.get(f"{cortex_url}/api/job/{job_id}", headers=headers, timeout=15)
                 r3.raise_for_status()
                 job_status = r3.json().get("status", "")
                 self._log(f"Job status: {job_status}")

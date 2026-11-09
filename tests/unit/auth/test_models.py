@@ -26,11 +26,13 @@ class TestRole:
 
     def test_all_roles_defined(self):
         assert Role.ADMIN.value == "admin"
+        assert Role.OPERATOR.value == "operator"
         assert Role.ANALYST.value == "analyst"
+        assert Role.VIEWER.value == "viewer"
         assert Role.READONLY.value == "readonly"
 
     def test_role_count(self):
-        assert len(list(Role)) == 3
+        assert len(list(Role)) == 5
 
 
 class TestUser:

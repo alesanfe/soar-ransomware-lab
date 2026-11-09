@@ -164,3 +164,20 @@ class TestBackupService:
 
         with pytest.raises(Exception, match="Extract failed"):
             service.restore("backup1.tar.gz", user="testuser")
+
+    def test_restore_rejects_path_traversal(self):
+        """Bug: restore() accepted names with separators/'..', so a caller
+        bypassing the API model could extract an arbitrary archive."""
+        from soar_lab.common.exceptions import ValidationError
+
+        mock_driver = Mock()
+        mock_storage = Mock()
+        mock_storage.get_backup_directory.return_value = "/backups"
+        mock_storage.join_path.side_effect = lambda *p: "/".join(p)
+        mock_storage.file_exists.return_value = True
+
+        service = BackupService(driver=mock_driver, storage=mock_storage)
+        for bad in ("../evil.tar.gz", "a/b.tar.gz", r"..\win.tar.gz", "/etc/x.tar.gz"):
+            with pytest.raises(ValidationError):
+                service.restore(bad)
+        mock_driver.extract.assert_not_called()

@@ -126,10 +126,10 @@ class TestAuthorizationRBAC:
         assert auth_service.has_permission(analyst_user, Permission.READ_ALERTS)
 
     def test_temporary_permission_grant(self, auth_service, readonly_user):
-        """Test temporary permission grants."""
-        # Grant temporary permission
+        """Test temporary permission grants (SEC-003: requires an admin granter)."""
+        admin = User(id="admin", username="admin", role=Role.ADMIN)
         auth_service.grant_temporary_permission(
-            readonly_user, Permission.CREATE_CASES, _duration_seconds=60
+            readonly_user, Permission.CREATE_CASES, admin_user=admin, duration_seconds=60
         )
 
         assert auth_service.has_permission(readonly_user, Permission.CREATE_CASES)

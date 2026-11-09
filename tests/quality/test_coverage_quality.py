@@ -104,10 +104,8 @@ class TestCoverage:
         assert total > 0, "Should have at least one line"
         assert covered <= total, f"Covered {covered} > total {total}"
         # Informational — does not hard-fail while project is in development
-        # To enforce: uncomment the assert below
-        # assert line_cov >= target, (
-        #     f"Global coverage {line_cov:.2f}% below {target}%"
-        # )
+        # To enforce, assert that line_cov >= target with a message
+        # reporting the global coverage percentage.
 
     def test_worst_covered_files_reported(self):
         """Report 10 files with lowest coverage — informational."""

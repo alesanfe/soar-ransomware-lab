@@ -7,11 +7,6 @@ from pathlib import Path
 import pytest
 
 
-def _is_in_docker():
-    """Check if running inside Docker container."""
-    return Path("/.dockerenv").exists()
-
-
 def read_file_utf8(file_path):
     """Helper function to read files with UTF-8 encoding."""
     with open(file_path, encoding="utf-8", errors="ignore") as f:

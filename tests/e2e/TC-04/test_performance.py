@@ -4,12 +4,14 @@ SOAR Ransomware Lab - E2E Test Case 04 (Performance)
 Tests system performance under load including latency, throughput, and resource usage.
 """
 
+import contextlib
 import json
 import subprocess
 import threading
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
@@ -23,12 +25,43 @@ class TestPerformance(E2EBaseTest):
 
     tc_id = "TC-04"
     WORKFLOW_TIMEOUT = 900
+    _class_results: ClassVar[list] = []
+    _class_t0: ClassVar[datetime | None] = None
+
+    @classmethod
+    def setup_class(cls):
+        cls._class_results = []
+        cls._class_t0 = datetime.now(UTC)
+
+    @classmethod
+    def teardown_class(cls):
+        """Persist the aggregate performance report once per class run.
+
+        Replaces the removed ``test_performance_suite`` orchestrator
+        (EXEC-001): pytest collects each scenario exactly once, and the
+        report still aggregates every per-test result appended to
+        ``cls._class_results``.
+        """
+        if cls._class_t0 is None:
+            return
+        elapsed = (datetime.now(UTC) - cls._class_t0).total_seconds()
+        report = {
+            "test_case": "TC-04",
+            "scenario": "performance",
+            "elapsed_seconds": elapsed,
+            "results": cls._class_results,
+            "success": all(r.get("ok", False) for r in cls._class_results),
+        }
+        report_file = Path("results") / "TC-04_performance_report.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
+        report_file.write_text(json.dumps(report, indent=2, default=str))
+        print(f"TC-04 + Report saved: {report_file}")
 
     def setup_method(self, method):
         """Set up test clients and environment."""
         super().setup_method(method)
         self.t0 = datetime.now(UTC)
-        self._results = []
+        self._results = type(self)._class_results
 
     def _log(self, msg: str):
         ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
@@ -37,7 +70,7 @@ class TestPerformance(E2EBaseTest):
 
     def _base_payload(self, tag: str) -> dict:
         return {
-            "alert_id": f"PERF-{tag}-{int(time.time())}",
+            "alert_id": self.uid(f"PERF-{tag}"),
             "alert_type": "ransomware",
             "hostname": f"PERF-HOST-{tag}",
             "src_ip": "192.168.1.100",
@@ -53,6 +86,7 @@ class TestPerformance(E2EBaseTest):
         if not self.webhook_url:
             raise RuntimeError("Webhook URL not found in webhook_info.json")
 
+        self.write_evidence("payload.json", payload)
         r = self.shuffle._webhook_session.post(self.webhook_url, json=payload, timeout=timeout)
         r.raise_for_status()
         data = r.json()
@@ -124,8 +158,11 @@ class TestPerformance(E2EBaseTest):
                 payload = self._base_payload(f"CONC-{tag}")
                 exec_info = self._send_alert(payload)
                 exec_id = exec_info.get("execution_id", "")
-                assert isinstance(exec_id, str), "execution_id must be string"
-                assert exec_id, "execution_id must not be empty"
+                # Validation (not assert): AssertionError would be swallowed
+                # by this worker's except; the parent thread asserts on
+                # `ok=False` results and needs a typed, descriptive failure.
+                if not isinstance(exec_id, str) or not exec_id:
+                    raise ValueError(f"execution_id invalid: {exec_id!r}")
                 return {"tag": tag, "execution_id": exec_id, "started_at": start, "ok": True}
             except Exception as exc:
                 return {"tag": tag, "error": str(exc), "ok": False}
@@ -321,7 +358,7 @@ class TestPerformance(E2EBaseTest):
                 metrics, dict
             ), f"KPI metrics must be a dict, got {type(metrics).__name__}"
             # Statistical calculator should produce key statistical fields
-            expected_stat_fields = {"mean", "median", "std"}
+            expected_stat_fields = {"mean", "median", "std_dev"}
             assert expected_stat_fields.issubset(set(metrics.keys())), (
                 f"KPI metrics missing expected fields {expected_stat_fields}, "
                 f"got {set(metrics.keys())}"
@@ -347,26 +384,35 @@ class TestPerformance(E2EBaseTest):
             pytest.fail(f"KPI calculation test failed: {e}")
         finally:
             assert test_log.exists(), f"Log file must exist at {test_log}"
-            try:
+            # Windows may keep the log locked briefly — a failed cleanup
+            # must not fail the test, but the intent is explicit.
+            with contextlib.suppress(PermissionError, OSError):
                 test_log.unlink()
-            except (PermissionError, OSError):
-                pass
 
     def test_queue_depth(self):
         """Test 7: Queue depth under load."""
         self._log("=== Test 7: Queue depth under load ===")
 
         try:
-            # Check Shuffle workflow execution queue via Elasticsearch
-            query = {
-                "range": {
-                    "@timestamp": {"gte": (datetime.now(UTC) - timedelta(minutes=5)).isoformat()}
-                }
-            }
-
-            # Query workflow executions in progress
-            results = self.es.search(query=query, index="workflowexecution-000001", size=100)
-            executions = results.get("hits", {}).get("hits", [])
+            # Shuffle writes workflow executions to OpenSearch, not Elasticsearch
+            # (BUG-063: querying self.es here returned a deterministic 404).
+            os_url = self.get_service_url("opensearch")
+            resp = self.s.post(
+                f"{os_url}/workflowexecution/_search",
+                json={
+                    "size": 100,
+                    "query": {
+                        "range": {
+                            "@timestamp": {
+                                "gte": (datetime.now(UTC) - timedelta(minutes=5)).isoformat()
+                            }
+                        }
+                    },
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+            executions = resp.json().get("hits", {}).get("hits", [])
 
             # Count pending/in-progress executions
             pending = sum(
@@ -391,41 +437,6 @@ class TestPerformance(E2EBaseTest):
             self._log(f"⚠ Queue depth test failed: {e}")
             self._results.append({"test": "queue_depth", "ok": False, "error": str(e)})
             raise
-
-    def _step_save_report(self, elapsed: float):
-        report = {
-            "test_case": "TC-04",
-            "scenario": "performance",
-            "elapsed_seconds": elapsed,
-            "results": self._results,
-            "success": all(r.get("ok", False) for r in self._results),
-        }
-        report_file = Path("results") / "TC-04_performance_report.json"
-        report_file.parent.mkdir(parents=True, exist_ok=True)
-        report_file.write_text(json.dumps(report, indent=2, default=str))
-        self._log(f"+ Report saved: {report_file}")
-
-    def test_performance_suite(self):
-        """Run all performance tests in sequence."""
-        self._log("=== TC-04: PERFORMANCE E2E TEST STARTED ===")
-
-        self.test_single_alert_latency()
-        self.test_concurrent_alerts()
-        self.test_sequential_batch()
-        self.test_memory_usage()
-        self.test_cpu_usage()
-        self.test_kpi_calculation_performance()
-        self.test_queue_depth()
-
-        # Validate that results were collected and all passed
-        assert len(self._results) > 0, "No performance test results were recorded"
-        failed = [r for r in self._results if not r.get("ok", False)]
-        assert not failed, f"{len(failed)}/{len(self._results)} performance tests failed: {failed}"
-
-        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
-        self._log(f"Elapsed: {elapsed:.1f}s")
-        self._log("=== TC-04 COMPLETED ===")
-        self._step_save_report(elapsed)
 
     # ------------------------------------------------------------------
     # Subcase-specific tests (TC-04-01 to TC-04-07)

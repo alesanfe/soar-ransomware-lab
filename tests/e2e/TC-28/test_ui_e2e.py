@@ -4,27 +4,14 @@ creation, dashboards."""
 
 import os
 import sys
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-import requests
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-
-def _ui_url(env_var: str, internal_url: str, external_url: str) -> str:
-    """Return the correct URL for a UI service based on where tests run.
-
-    Inside the Docker test container we use internal Docker DNS
-    names/ports; on the host we fall back to the published localhost
-    ports.
-    """
-    default = internal_url if Path("/app").exists() else external_url
-    return os.environ.get(env_var, default)
 
 
 from tests.e2e.base import E2EBaseTest
@@ -56,7 +43,7 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-01: SHUFFLE LOGIN TEST STARTED ===")
 
         self._log("STEP 1: Attempting Shuffle login with credentials")
-        shuffle_url = _ui_url("SHUFFLE_URL", "http://shuffle-frontend:80", "http://localhost:8081")
+        shuffle_url = self.get_service_url("shuffle_frontend")
         username = os.environ.get("SHUFFLE_DEFAULT_USERNAME", "admin")
         password = os.environ.get("SHUFFLE_DEFAULT_PASSWORD", "")
 
@@ -65,18 +52,17 @@ class TestUIE2E(E2EBaseTest):
 
         try:
             # First check UI is accessible
-            r = requests.get(shuffle_url, timeout=10, verify=False)
+            r = self.s.get(shuffle_url, timeout=10)
             assert r.status_code == 200, f"Shuffle UI not accessible: HTTP {r.status_code}"
             assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
             self._log(f"+ Shuffle UI accessible: HTTP {r.status_code}")
 
             # Attempt login via API
             login_url = f"{shuffle_url}/api/v1/login"
-            r = requests.post(
+            r = self.s.post(
                 login_url,
                 json={"username": username, "password": password},
                 timeout=10,
-                verify=False,
             )
             assert r.status_code == 200, f"Shuffle login failed: HTTP {r.status_code}"
             self._log(f"+ Shuffle login successful: HTTP {r.status_code}")
@@ -84,15 +70,12 @@ class TestUIE2E(E2EBaseTest):
             # Verify session by checking workflows using the API key
             # (Shuffle login returns a session cookie, not a bearer key;
             #  use SHUFFLE_DEFAULT_APIKEY for API access)
-            api_url = _ui_url(
-                "SHUFFLE_API_URL", "http://shuffle-backend:5001", "http://localhost:15001"
-            )
+            api_url = self.env.get("SHUFFLE_API_URL") or self.get_service_url("shuffle")
             api_key = os.environ.get("SHUFFLE_DEFAULT_APIKEY", "")
-            r = requests.get(
+            r = self.s.get(
                 f"{api_url}/api/v1/workflows",
                 headers={"Authorization": f"Bearer {api_key}"},
                 timeout=10,
-                verify=False,
             )
             assert r.status_code == 200, f"Session verification failed: HTTP {r.status_code}"
             workflows = r.json()
@@ -122,23 +105,32 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-02: THEHIVE UI ACCESSIBILITY TEST STARTED ===")
 
         self._log("STEP 1: Checking TheHive UI web interface")
-        thehive_url = _ui_url("THEHIVE_URL", "http://thehive:9000", "http://localhost:9000")
+        thehive_url = self.get_service_url("thehive")
         api_key = self.env.get("THEHIVE_API_KEY", "")
 
         try:
             # First check UI is accessible
-            r = requests.get(thehive_url, timeout=10, verify=False)
+            r = self.s.get(thehive_url, timeout=10)
             assert r.status_code == 200, f"TheHive UI not accessible: HTTP {r.status_code}"
             assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
             self._log(f"+ TheHive UI accessible: HTTP {r.status_code}")
 
             # Verify API authentication
             if api_key:
-                r = requests.get(
-                    f"{thehive_url}/api/case",
-                    headers={"Authorization": f"Bearer {api_key}"},
+                # TheHive 5: list endpoints are POST /api/v1/query
+                r = self.s.post(
+                    f"{thehive_url}/api/v1/query",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "query": [
+                            {"_name": "listCase"},
+                            {"_name": "page", "from": 0, "to": 5},
+                        ]
+                    },
                     timeout=10,
-                    verify=False,
                 )
                 assert r.status_code == 200, f"TheHive API auth failed: HTTP {r.status_code}"
                 cases = r.json()
@@ -241,7 +233,7 @@ class TestUIE2E(E2EBaseTest):
         self._log("STEP 1: Creating test case via API")
         try:
             case_data = {
-                "title": f"TC-28 Test Case {int(time.time())}",
+                "title": self.uid("TC28-CASE"),
                 "description": "E2E test case for UI validation",
                 "severity": 2,
                 "tags": ["e2e-test", "tc-28"],
@@ -303,70 +295,60 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-05: DASHBOARD UI ACCESSIBILITY TEST STARTED ===")
 
         self._log("STEP 1: Checking Shuffle UI web interface")
-        shuffle_url = _ui_url("SHUFFLE_URL", "http://shuffle-frontend:80", "http://localhost:8081")
-        try:
-            r = requests.get(shuffle_url, timeout=10, verify=False)
-            assert r.status_code == 200, f"Shuffle UI not accessible: HTTP {r.status_code}"
-            assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
-            self._log(f"+ Shuffle UI accessible: HTTP {r.status_code}")
-        except Exception as e:
-            self._log(f"+ Shuffle UI check failed: {e}")
+        shuffle_url = self.get_service_url("shuffle_frontend")
+        r = self.s.get(shuffle_url, timeout=10)
+        assert r.status_code == 200, f"Shuffle UI not accessible: HTTP {r.status_code}"
+        assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
+        self._log(f"+ Shuffle UI accessible: HTTP {r.status_code}")
 
         self._log("STEP 2: Checking TheHive UI web interface")
-        thehive_url = _ui_url("THEHIVE_URL", "http://thehive:9000", "http://localhost:9000")
-        try:
-            r = requests.get(thehive_url, timeout=10, verify=False)
-            assert r.status_code == 200, f"TheHive UI not accessible: HTTP {r.status_code}"
-            assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
-            self._log(f"+ TheHive UI accessible: HTTP {r.status_code}")
-        except Exception as e:
-            self._log(f"+ TheHive UI check failed: {e}")
+        thehive_url = self.get_service_url("thehive")
+        r = self.s.get(thehive_url, timeout=10)
+        assert r.status_code == 200, f"TheHive UI not accessible: HTTP {r.status_code}"
+        assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
+        self._log(f"+ TheHive UI accessible: HTTP {r.status_code}")
 
         self._log("STEP 3: Checking Grafana UI web interface with login")
-        grafana_url = _ui_url("GRAFANA_URL", "http://grafana:3000", "http://localhost:8084")
+        grafana_url = self.get_service_url("grafana")
         grafana_user = os.environ.get("GRAFANA_ADMIN_USER", "admin")
         grafana_pass = os.environ.get("GRAFANA_ADMIN_PASSWORD", "")
 
         if not grafana_pass:
             self._log("+ Grafana password not configured, skipping login test")
         else:
-            try:
-                # First check UI is accessible
-                r = requests.get(grafana_url, timeout=10, verify=False)
-                assert r.status_code == 200, f"Grafana UI not accessible: HTTP {r.status_code}"
-                assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
-                self._log(f"+ Grafana UI accessible: HTTP {r.status_code}")
+            # First check UI is accessible
+            r = self.s.get(grafana_url, timeout=10)
+            assert r.status_code == 200, f"Grafana UI not accessible: HTTP {r.status_code}"
+            assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
+            self._log(f"+ Grafana UI accessible: HTTP {r.status_code}")
 
-                # Attempt login
-                login_url = f"{grafana_url}/login"
-                r = requests.post(
-                    login_url,
-                    json={"user": grafana_user, "password": grafana_pass},
-                    timeout=10,
-                    verify=False,
-                    allow_redirects=False,
+            # Attempt login
+            login_url = f"{grafana_url}/login"
+            r = self.s.post(
+                login_url,
+                json={"user": grafana_user, "password": grafana_pass},
+                timeout=10,
+                allow_redirects=False,
+            )
+            assert r.status_code in [
+                200,
+                302,
+                303,
+            ], f"Grafana login failed: HTTP {r.status_code}"
+            self._log(f"+ Grafana login successful: HTTP {r.status_code}")
+
+            # Verify no errors in response
+            if r.status_code in [302, 303]:
+                self._log("+ Login redirect successful - no errors")
+            elif r.status_code == 200:
+                response_data = (
+                    r.json()
+                    if r.headers.get("Content-Type", "").startswith("application/json")
+                    else {}
                 )
-                assert r.status_code in [
-                    200,
-                    302,
-                    303,
-                ], f"Grafana login failed: HTTP {r.status_code}"
-                self._log(f"+ Grafana login successful: HTTP {r.status_code}")
-
-                # Verify no errors in response
-                if r.status_code in [302, 303]:
-                    self._log("+ Login redirect successful - no errors")
-                elif r.status_code == 200:
-                    response_data = (
-                        r.json()
-                        if r.headers.get("Content-Type", "").startswith("application/json")
-                        else {}
-                    )
-                    if not response_data or "error" not in str(response_data).lower():
-                        self._log("+ No errors in login response")
-                self._log("✓ Grafana login validated - authentication works, no errors")
-            except Exception as e:
-                self._log(f"+ Grafana login check failed: {e}")
+                if not response_data or "error" not in str(response_data).lower():
+                    self._log("+ No errors in login response")
+            self._log("✓ Grafana login validated - authentication works, no errors")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -383,14 +365,14 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-06: CORTEX UI ACCESSIBILITY TEST STARTED ===")
 
         self._log("STEP 1: Checking Cortex UI web interface with authentication")
-        cortex_url = _ui_url("CORTEX_URL", "http://cortex:9001", "http://localhost:19001")
+        cortex_url = self.get_service_url("cortex")
         cortex_user = os.environ.get("CORTEX_ADMIN_USER", "admin")
         cortex_pass = os.environ.get("CORTEX_ADMIN_PASSWORD", "")
         assert cortex_pass, "CORTEX_ADMIN_PASSWORD must be set in .env.full or environment"
 
         try:
             # First check UI is accessible
-            r = requests.get(cortex_url, timeout=10, verify=False)
+            r = self.s.get(cortex_url, timeout=10)
             assert r.status_code == 200, f"Cortex UI not accessible: HTTP {r.status_code}"
             assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
             self._log(f"+ Cortex UI accessible: HTTP {r.status_code}")
@@ -399,11 +381,10 @@ class TestUIE2E(E2EBaseTest):
             import base64
 
             auth_str = base64.b64encode(f"{cortex_user}:{cortex_pass}".encode()).decode()
-            r = requests.get(
+            r = self.s.get(
                 f"{cortex_url}/api/analyzer",
                 headers={"Authorization": f"Basic {auth_str}"},
                 timeout=10,
-                verify=False,
             )
             assert r.status_code == 200, f"Cortex API auth failed: HTTP {r.status_code}"
             analyzers = r.json()
@@ -435,16 +416,15 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-07: NETWORK WATCHER UI ACCESSIBILITY TEST STARTED ===")
 
         self._log("STEP 1: Checking Network Watcher UI web interface")
-        nw_url = _ui_url(
-            "NETWORK_WATCHER_URL", "http://network-watcher:8080", "http://localhost:15130"
-        )
+        nw_url = self.get_service_url("network_watcher")
         try:
-            r = requests.get(nw_url, timeout=10, verify=False)
+            r = self.s.get(nw_url, timeout=10)
             # Network Watcher is an API service, not a full UI — accept any
             # HTTP response (200, 404) as proof the service is reachable
-            assert r.status_code in (200, 404), (
-                f"Network Watcher not accessible: HTTP {r.status_code}"
-            )
+            assert r.status_code in (
+                200,
+                404,
+            ), f"Network Watcher not accessible: HTTP {r.status_code}"
             self._log(f"+ Network Watcher accessible: HTTP {r.status_code}")
             self._log("✓ Network Watcher validated - service reachable")
         except Exception as e:
@@ -465,9 +445,9 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-08: API UI ACCESSIBILITY TEST STARTED ===")
 
         self._log("STEP 1: Checking API UI web interface")
-        api_url = _ui_url("API_URL", "http://localhost:8000", "http://localhost:8000")
+        api_url = self.get_service_url("api")
         try:
-            r = requests.get(f"{api_url}/docs", timeout=10, verify=False)
+            r = self.s.get(f"{api_url}/docs", timeout=10)
             assert r.status_code == 200, f"API UI not accessible: HTTP {r.status_code}"
             assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
             self._log(f"+ API UI accessible: HTTP {r.status_code}")
@@ -490,9 +470,9 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-09: DOCS SITE UI ACCESSIBILITY TEST STARTED ===")
 
         self._log("STEP 1: Checking Docs Site UI web interface")
-        docs_url = _ui_url("DOCS_URL", "http://docs-site:8080", "http://localhost:8086")
+        docs_url = self.get_service_url("docs_site")
         try:
-            r = requests.get(docs_url, timeout=10, verify=False)
+            r = self.s.get(docs_url, timeout=10)
             assert r.status_code == 200, f"Docs Site UI not accessible: HTTP {r.status_code}"
             assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
             self._log(f"+ Docs Site UI accessible: HTTP {r.status_code}")
@@ -515,11 +495,9 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-10: WEB MANAGEMENT UI ACCESSIBILITY TEST STARTED ===")
 
         self._log("STEP 1: Checking Web Management UI web interface")
-        web_mgmt_url = _ui_url(
-            "WEB_MANAGEMENT_URL", "http://web-management:80", "http://localhost:8085"
-        )
+        web_mgmt_url = self.get_service_url("web_management")
         try:
-            r = requests.get(web_mgmt_url, timeout=10, verify=False)
+            r = self.s.get(web_mgmt_url, timeout=10)
             assert r.status_code == 200, f"Web Management UI not accessible: HTTP {r.status_code}"
             assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
             self._log(f"+ Web Management UI accessible: HTTP {r.status_code}")
@@ -543,8 +521,6 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-11: MISP UI ACCESSIBILITY TEST STARTED ===")
 
         self._log("STEP 1: Checking MISP UI web interface with authentication")
-        misp_url = _ui_url("MISP_URL", "http://misp:80", "http://localhost:8083")
-        misp_user = os.environ.get("MISP_ADMIN_EMAIL", "admin@soar.local")
         misp_pass = os.environ.get("MISP_ADMIN_PASSWORD", "")
 
         if not misp_pass:
@@ -556,30 +532,27 @@ class TestUIE2E(E2EBaseTest):
             # which is not reachable from inside the Docker network.
             # Instead, verify MISP is accessible via its API endpoint.
             # Disable redirects since MISP redirects to its external baseurl.
-            misp_api_url = _ui_url("MISP_API_URL", "https://misp:443", "http://localhost:8083")
+            misp_api_url = self.env.get("MISP_API_URL") or self.get_service_url("misp")
             api_key = os.environ.get("MISP_API_KEY", "")
-            r = requests.get(
+            r = self.s.get(
                 f"{misp_api_url}/servers/getVersion",
                 headers={"Authorization": api_key},
                 timeout=10,
-                verify=False,
                 allow_redirects=False,
             )
             # Accept 200 (API accessible) or 302 (redirect to login = service alive)
-            assert r.status_code in (200, 302), (
-                f"MISP API not accessible: HTTP {r.status_code}"
-            )
+            assert r.status_code in (200, 302), f"MISP API not accessible: HTTP {r.status_code}"
             self._log(f"+ MISP API accessible: HTTP {r.status_code}")
 
             # Verify MISP version response (only if 200, not 302 redirect)
             if r.status_code == 200:
-                try:
+                if r.headers.get("Content-Type", "").startswith("application/json"):
                     version = r.json()
                     assert isinstance(version, dict), "MISP version response must be a dict"
                     self._log(f"+ MISP version: {version.get('version', 'unknown')}")
                     if "error" not in version:
-                        self._log(f"+ No errors in MISP API response")
-                except Exception:
+                        self._log("+ No errors in MISP API response")
+                else:
                     self._log("+ MISP returned 200 but non-JSON response (still accessible)")
             else:
                 self._log(f"+ MISP returned {r.status_code} (service alive, redirect to login)")
@@ -602,21 +575,15 @@ class TestUIE2E(E2EBaseTest):
         self._log("=== TC-28-13: ALL UI ACCESSIBILITY TEST SUITE STARTED ===")
 
         interfaces = {
-            "Shuffle": _ui_url(
-                "SHUFFLE_URL", "http://shuffle-frontend:80", "http://localhost:8081"
-            ),
-            "TheHive": _ui_url("THEHIVE_URL", "http://thehive:9000", "http://localhost:9000"),
-            "Grafana": _ui_url("GRAFANA_URL", "http://grafana:3000", "http://localhost:8084"),
-            "Cortex": _ui_url("CORTEX_URL", "http://cortex:9001", "http://localhost:19001"),
-            "Network Watcher": _ui_url(
-                "NETWORK_WATCHER_URL", "http://network-watcher:8080", "http://localhost:15130"
-            ),
-            "API": f"{_ui_url('API_URL', 'http://localhost:8000', 'http://localhost:8000')}/docs",
-            "Docs Site": _ui_url("DOCS_URL", "http://docs-site:8080", "http://localhost:8086"),
-            "Web Management": _ui_url(
-                "WEB_MANAGEMENT_URL", "http://web-management:80", "http://localhost:8085"
-            ),
-            "MISP": _ui_url("MISP_URL", "http://misp:80", "http://localhost:8083"),
+            "Shuffle": self.get_service_url("shuffle_frontend"),
+            "TheHive": self.get_service_url("thehive"),
+            "Grafana": self.get_service_url("grafana"),
+            "Cortex": self.get_service_url("cortex"),
+            "Network Watcher": self.get_service_url("network_watcher"),
+            "API": f"{self.get_service_url('api')}/docs",
+            "Docs Site": self.get_service_url("docs_site"),
+            "Web Management": self.get_service_url("web_management"),
+            "MISP": self.get_service_url("misp"),
         }
 
         accessible_count = 0
@@ -625,7 +592,7 @@ class TestUIE2E(E2EBaseTest):
         for name, url in interfaces.items():
             self._log(f"Checking {name} UI: {url}")
             try:
-                r = requests.get(url, timeout=10, verify=False)
+                r = self.s.get(url, timeout=10)
                 if r.status_code == 200 and "text/html" in r.headers.get("Content-Type", ""):
                     self._log(f"+ {name} UI accessible: HTTP {r.status_code}")
                     accessible_count += 1

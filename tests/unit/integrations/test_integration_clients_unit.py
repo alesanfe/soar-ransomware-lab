@@ -5,7 +5,6 @@ All HTTP calls are mocked via requests_mock / patch so no external
 services needed.
 """
 
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -35,29 +34,6 @@ __all__ = [
 ]
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _mock_response(json_data=None, status_code=200, content=b"{}"):
-    resp = MagicMock()
-    resp.status_code = status_code
-    resp.content = content if content is not None else b""
-    resp.json.return_value = json_data if json_data is not None else {}
-    resp.raise_for_status.return_value = None
-    return resp
-
-
-def _http_error_response(status_code=404):
-    import requests
-
-    resp = MagicMock()
-    resp.status_code = status_code
-    http_err = requests.HTTPError(response=resp)
-    resp.raise_for_status.side_effect = http_err
-    return resp
-
-
 # ===========================================================================
 # CortexClient
 # ===========================================================================
@@ -101,12 +77,31 @@ class TestCortexClientListAnalyzers:
 class TestCortexClientRunAnalyzer:
     def test_run_analyzer_success(self, requests_mock):
         job = {"id": "job-1", "status": "Waiting"}
+        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=[])
         requests_mock.post("http://cortex:9001/api/analyzer/Abuse_Finder_3_0/run", json=job)
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         result = client.run_analyzer("Abuse_Finder_3_0", "ip", "1.2.3.4")
         assert result == job
 
+    def test_run_analyzer_resolves_name_to_internal_id(self, requests_mock):
+        analyzers = [
+            {
+                "_id": "e646ef883f7e1a6877f73b0bb8027f9f",
+                "name": "FileInfo_8_0",
+                "workerDefinitionId": "FileInfo_8_0",
+            }
+        ]
+        job = {"id": "job-9", "status": "Waiting"}
+        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=analyzers)
+        requests_mock.post(
+            "http://cortex:9001/api/analyzer/e646ef883f7e1a6877f73b0bb8027f9f/run", json=job
+        )
+        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        result = client.run_analyzer("FileInfo_8_0", "hash", "abc123")
+        assert result == job
+
     def test_run_analyzer_sends_correct_payload(self, requests_mock):
+        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=[])
         requests_mock.post("http://cortex:9001/api/analyzer/Abuse_Finder_3_0/run", json={})
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         client.run_analyzer("Abuse_Finder_3_0", "domain", "evil.com")
@@ -115,6 +110,7 @@ class TestCortexClientRunAnalyzer:
         assert sent["data"] == "evil.com"
 
     def test_run_analyzer_http_error(self, requests_mock):
+        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=[])
         requests_mock.post("http://cortex:9001/api/analyzer/X/run", status_code=400)
         client = CortexClient(base_url="http://cortex:9001", api_key="k")
         with pytest.raises(IntegrationError):
@@ -165,13 +161,13 @@ class TestTheHiveClientInit:
 class TestTheHiveClientCreateAlert:
     def test_create_alert_success(self, requests_mock):
         alert_resp = {"id": "alert-1", "status": "New"}
-        requests_mock.post("http://hive:9000/api/alert", json=alert_resp)
+        requests_mock.post("http://hive:9000/api/v1/alert", json=alert_resp)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         result = client.create_alert({"title": "Ransomware detected", "severity": 2})
         assert result == alert_resp
 
     def test_create_alert_sends_payload(self, requests_mock):
-        requests_mock.post("http://hive:9000/api/alert", json={})
+        requests_mock.post("http://hive:9000/api/v1/alert", json={})
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         client.create_alert({"title": "Test", "severity": 3})
         sent = requests_mock.last_request.json()
@@ -179,7 +175,7 @@ class TestTheHiveClientCreateAlert:
         assert sent["severity"] == 3
 
     def test_create_alert_http_error(self, requests_mock):
-        requests_mock.post("http://hive:9000/api/alert", status_code=401)
+        requests_mock.post("http://hive:9000/api/v1/alert", status_code=401)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         with pytest.raises(IntegrationError):
             client.create_alert({"title": "X"})
@@ -188,13 +184,13 @@ class TestTheHiveClientCreateAlert:
 class TestTheHiveClientCreateCase:
     def test_create_case_success(self, requests_mock):
         case_resp = {"id": "case-1", "title": "SOAR Case"}
-        requests_mock.post("http://hive:9000/api/case", json=case_resp)
+        requests_mock.post("http://hive:9000/api/v1/case", json=case_resp)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         result = client.create_case({"title": "SOAR Case", "severity": 2})
         assert result == case_resp
 
     def test_create_case_http_error(self, requests_mock):
-        requests_mock.post("http://hive:9000/api/case", status_code=500)
+        requests_mock.post("http://hive:9000/api/v1/case", status_code=500)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         with pytest.raises(IntegrationError):
             client.create_case({"title": "X"})
@@ -203,12 +199,12 @@ class TestTheHiveClientCreateCase:
 class TestTheHiveClientGetCase:
     def test_get_case_success(self, requests_mock):
         case = {"id": "case-1", "title": "My Case"}
-        requests_mock.get("http://hive:9000/api/case/case-1", json=case)
+        requests_mock.get("http://hive:9000/api/v1/case/case-1", json=case)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         assert client.get_case("case-1") == case
 
     def test_get_case_not_found(self, requests_mock):
-        requests_mock.get("http://hive:9000/api/case/missing", status_code=404)
+        requests_mock.get("http://hive:9000/api/v1/case/missing", status_code=404)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         with pytest.raises(IntegrationError):
             client.get_case("missing")
@@ -217,13 +213,13 @@ class TestTheHiveClientGetCase:
 class TestTheHiveClientAddObservable:
     def test_add_observable_success(self, requests_mock):
         obs_resp = {"id": "obs-1"}
-        requests_mock.post("http://hive:9000/api/case/case-1/artifact", json=obs_resp)
+        requests_mock.post("http://hive:9000/api/v1/case/case-1/observable", json=obs_resp)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         result = client.add_observable("case-1", {"dataType": "ip", "data": "1.2.3.4"})
         assert result == obs_resp
 
     def test_add_observable_http_error(self, requests_mock):
-        requests_mock.post("http://hive:9000/api/case/case-1/artifact", status_code=422)
+        requests_mock.post("http://hive:9000/api/v1/case/case-1/observable", status_code=422)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         with pytest.raises(IntegrationError):
             client.add_observable("case-1", {"dataType": "ip", "data": "1.2.3.4"})
@@ -232,25 +228,25 @@ class TestTheHiveClientAddObservable:
 class TestTheHiveClientListCases:
     def test_list_cases_success(self, requests_mock):
         cases = [{"id": "case-1"}, {"id": "case-2"}]
-        requests_mock.get("http://hive:9000/api/case", json=cases)
+        requests_mock.post("http://hive:9000/api/v1/query", json=cases)
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         result = client.list_cases()
         assert result == cases
 
     def test_list_cases_non_list(self, requests_mock):
-        requests_mock.get("http://hive:9000/api/case", json={"error": "bad"})
+        requests_mock.post("http://hive:9000/api/v1/query", json={"error": "bad"})
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         assert client.list_cases() == []
 
 
 class TestTheHiveClientHealthCheck:
     def test_health_check_true(self, requests_mock):
-        requests_mock.get("http://hive:9000/api/health", json={"status": "ok"})
+        requests_mock.get("http://hive:9000/api/v1/status/public", json={"status": "ok"})
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         assert client.health_check() is True
 
     def test_health_check_false(self, requests_mock):
-        requests_mock.get("http://hive:9000/api/health", exc=ConnectionError("down"))
+        requests_mock.get("http://hive:9000/api/v1/status/public", exc=ConnectionError("down"))
         client = TheHiveClient(base_url="http://hive:9000", api_key="k")
         assert client.health_check() is False
 

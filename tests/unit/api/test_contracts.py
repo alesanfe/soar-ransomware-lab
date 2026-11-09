@@ -152,3 +152,12 @@ class TestAPIContract:
         assert len(ac.services) == 2
         assert ac.services[0].name == "svc1"
         assert ac.services[1].name == "svc2"
+
+
+def test_keeps_explicit_supported_versions():
+    """Bug: 'supported_versions or [v] if v else [DEFAULT]' dropped
+    the explicit list whenever version was empty."""
+    c = ServiceContract(name="x", supported_versions=["1.0", "2.0"])
+    assert c.supported_versions == ["1.0", "2.0"]
+    c2 = ServiceContract(name="x")
+    assert c2.supported_versions == ["1.0.0"]

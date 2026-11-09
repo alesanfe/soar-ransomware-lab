@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for NodeTimingExtractor."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -9,7 +9,12 @@ from soar_lab.application.use_cases.node_timing_extractor import NodeTimingExtra
 
 
 @pytest.fixture
-def extractor():
+def mock_post():
+    return MagicMock()
+
+
+@pytest.fixture
+def extractor(mock_post):
     return NodeTimingExtractor(
         opensearch_url="http://opensearch:9200",
         opensearch_user="admin",
@@ -18,6 +23,7 @@ def extractor():
         elasticsearch_user="elastic",
         elasticsearch_pass="test",
         metrics_index="soar-metrics",
+        http_post=mock_post,
     )
 
 
@@ -151,46 +157,42 @@ class TestNodeTimingExtractor:
         assert "node_with_timestamps" in timings["nodes"]
         assert "node_without_timestamps" not in timings["nodes"]
 
-    @patch("soar_lab.application.use_cases.node_timing_extractor.requests")
-    def test_fetch_execution_success(self, mock_requests, extractor):
+    def test_fetch_execution_success(self, extractor, mock_post):
         """Test fetching execution from OpenSearch."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "hits": {"hits": [{"_source": {"execution_id": "test-123"}}]}
         }
         mock_response.raise_for_status = MagicMock()
-        mock_requests.post.return_value = mock_response
+        mock_post.return_value = mock_response
 
         result = extractor.fetch_execution("test-123")
         assert result is not None
         assert result["execution_id"] == "test-123"
 
-    @patch("soar_lab.application.use_cases.node_timing_extractor.requests")
-    def test_fetch_execution_not_found(self, mock_requests, extractor):
+    def test_fetch_execution_not_found(self, extractor, mock_post):
         """Test fetching non-existent execution."""
         mock_response = MagicMock()
         mock_response.json.return_value = {"hits": {"hits": []}}
         mock_response.raise_for_status = MagicMock()
-        mock_requests.post.return_value = mock_response
+        mock_post.return_value = mock_response
 
         result = extractor.fetch_execution("nonexistent")
         assert result is None
 
-    @patch("soar_lab.application.use_cases.node_timing_extractor.requests")
-    def test_index_timings_success(self, mock_requests, extractor):
+    def test_index_timings_success(self, extractor, mock_post):
         """Test indexing timings to Elasticsearch."""
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
-        mock_requests.post.return_value = mock_response
+        mock_post.return_value = mock_response
 
         timings = {"execution_id": "test", "workflow_duration_s": 100.0}
         result = extractor.index_timings(timings, alert_id="alert-1")
         assert result is True
 
-    @patch("soar_lab.application.use_cases.node_timing_extractor.requests")
-    def test_index_timings_failure(self, mock_requests, extractor):
+    def test_index_timings_failure(self, extractor, mock_post):
         """Test indexing timings failure."""
-        mock_requests.post.side_effect = Exception("Connection error")
+        mock_post.side_effect = Exception("Connection error")
 
         timings = {"execution_id": "test", "workflow_duration_s": 100.0}
         result = extractor.index_timings(timings, alert_id="alert-1")
@@ -205,3 +207,40 @@ class TestNodeTimingExtractor:
         assert nodes["normalize_inputs"]["start_offset_s"] == 0.0
         # thehive_create_case starts at 1001, workflow starts at 1000
         assert nodes["thehive_create_case"]["start_offset_s"] == 1.0
+
+
+class TestMalformedTimestamps:
+    """Bug: float('garbage') on malformed workflow/node timestamps crashes
+    extract_timings instead of degrading gracefully (ES -> 500)."""
+
+    def test_malformed_workflow_timestamp_no_crash(self, extractor):
+        result = extractor.extract_timings(
+            {"execution_id": "x", "started_at": "garbage", "completed_at": 0, "results": []}
+        )
+        assert result["workflow_duration_s"] == 0
+        assert result["nodes"] == {}
+
+    def test_malformed_node_timestamp_skipped(self, extractor):
+        result = extractor.extract_timings(
+            {
+                "execution_id": "x",
+                "started_at": 1000,
+                "completed_at": 1010,
+                "results": [
+                    {
+                        "action": {"label": "bad"},
+                        "started_at": "garbage",
+                        "completed_at": 2000,
+                        "status": "SUCCESS",
+                    },
+                    {
+                        "action": {"label": "good"},
+                        "started_at": 1000000,
+                        "completed_at": 1002000,
+                        "status": "SUCCESS",
+                    },
+                ],
+            }
+        )
+        assert "bad" not in result["nodes"]
+        assert "good" in result["nodes"]

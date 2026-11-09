@@ -26,6 +26,7 @@ class TestKPIDataCoherence(E2EBaseTest):
         self._alert_id = None
         self._execution = None
         self._execution_id = None
+        self.t0 = datetime.now(UTC)
 
     def _log(self, msg: str):
         ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
@@ -98,19 +99,39 @@ class TestKPIDataCoherence(E2EBaseTest):
         assert es_source.get("alert_id") == self._alert_id or self._alert_id in str(es_source)
         self._log(f"+ ES document indexed for alert_id={self._alert_id}")
 
-        # OpenSearch side: execution registered
-        os_doc = self.assert_opensearch_execution_registered(self._execution_id)
-        assert (
-            os_doc is not None
-        ), f"OpenSearch execution not found for exec_id={self._execution_id}"
+        # OpenSearch side: execution registered. The status write-back to
+        # OpenSearch lags the Shuffle API's FINISHED (eventual
+        # consistency) — poll the doc until it converges instead of a
+        # single read (flakeloop 2026-11-06 caught OS=EXECUTING post-FINISH).
+        def _os_finished() -> dict | None:
+            doc = self.get_opensearch_execution(self._execution_id)
+            if not doc:
+                return None
+            status = doc.get("status", doc.get("_source", {}).get("status", ""))
+            return doc if status == "FINISHED" else None
+
+        os_doc = self.wait_until(
+            _os_finished,
+            timeout=self.timeout("es_index") * 2,
+            interval=3,
+            description=f"OpenSearch execution {self._execution_id} FINISHED",
+        )
         self._log(f"+ OpenSearch execution registered for {self._execution_id}")
 
-        # Coherence: both must reference the same workflow execution
+        # Coherence: both systems record the SAME execution (alert_id /
+        # execution_id linkage). Status vocabularies differ by design — ES
+        # tracks alert lifecycle ("processed") while OpenSearch tracks the
+        # Shuffle execution state ("FINISHED"), so equality is not expected.
         es_status = es_source.get("status", "")
         os_status = os_doc.get("status", os_doc.get("_source", {}).get("status", ""))
         if es_status and os_status:
-            assert es_status == os_status, f"Status mismatch: ES={es_status}, OS={os_status}"
-            self._log(f"+ Status coherent: {es_status}")
+            assert os_status == "FINISHED", f"Workflow not finished: OS={os_status}"
+            assert es_status in (
+                "processed",
+                "enriched",
+                "FINISHED",
+            ), f"Unexpected ES alert status: {es_status}"
+            self._log(f"+ Statuses coherent: ES={es_status}, OS={os_status}")
 
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
         self._log(f"Elapsed: {elapsed:.1f}s")
@@ -131,17 +152,28 @@ class TestKPIDataCoherence(E2EBaseTest):
         end_ts = self._execution.get("end_time", "")
         self._log(f"+ Workflow window: {start_ts} → {end_ts}")
 
-        # Query Loki for correlation_id
-        loki_url = self.env.get("LOKI_URL", "http://loki:3100")
+        # Query Loki for correlation_id (it reaches Loki inside alert_id
+        # markers in api/worker logs). Promtail ship + ingest lags under
+        # load — poll with the loki_ingest budget instead of a single read
+        # (flakeloop 2026-11-06 caught 0 streams right after FINISHED).
+        loki_url = self.get_service_url("loki")
         query = f'{{container=~".+"}} |~ "{self.correlation_id}"'
-        resp = self.s.get(
-            f"{loki_url}/loki/api/v1/query",
-            params={"query": query},
-            timeout=30,
+
+        def _streams() -> list:
+            resp = self.s.get(
+                f"{loki_url}/loki/api/v1/query",
+                params={"query": query},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            return resp.json().get("data", {}).get("result", [])
+
+        results = self.wait_until(
+            _streams,
+            timeout=self.timeout("loki_ingest") * 2,
+            interval=5,
+            description=f"Loki streams for correlation_id={self.correlation_id}",
         )
-        assert resp.status_code == 200, f"Loki query failed: HTTP {resp.status_code}"
-        data = resp.json()
-        results = data.get("data", {}).get("result", [])
         assert len(results) > 0, f"No Loki logs found for correlation_id={self.correlation_id}"
         self._log(f"+ Loki returned {len(results)} log streams with correlation_id")
 

@@ -108,7 +108,7 @@ class TestDatabasePerformance:
             query={"match_all": {}},
             aggs={
                 "severity_distribution": {"terms": {"field": "severity"}},
-                "type_distribution": {"terms": {"field": "type"}},
+                "type_distribution": {"terms": {"field": "type.keyword"}},
             },
         )
         end_time = time.time()
@@ -237,7 +237,9 @@ class TestDatabasePerformance:
         es_client.indices.refresh(index="alerts")
 
         # Get document ID
-        result = es_client.search(index="alerts", query={"term": {"alert_id": "UPDATE-PERF-001"}})
+        result = es_client.search(
+            index="alerts", query={"term": {"alert_id.keyword": "UPDATE-PERF-001"}}
+        )
         doc_id = result["hits"]["hits"][0]["_id"]
 
         # Benchmark update
@@ -257,7 +259,9 @@ class TestDatabasePerformance:
         es_client.indices.refresh(index="alerts")
 
         # Get document ID
-        result = es_client.search(index="alerts", query={"term": {"alert_id": "DELETE-PERF-001"}})
+        result = es_client.search(
+            index="alerts", query={"term": {"alert_id.keyword": "DELETE-PERF-001"}}
+        )
         doc_id = result["hits"]["hits"][0]["_id"]
 
         # Benchmark delete

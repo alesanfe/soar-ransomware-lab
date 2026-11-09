@@ -180,9 +180,12 @@ class TestElasticsearchClient:
         assert result == {"result": "deleted"}
 
     def test_delete_document_exception(self):
-        """Test delete_document raises IntegrationError on exception."""
+        """delete_document routes through the breakered pipeline: transport
+        failures surface as TYPED IntegrationError (BL-ES-003)."""
+        import requests as _req
+
         client = ElasticsearchClient(base_url="http://localhost:9200")
-        client._session.delete = Mock(side_effect=Exception("Delete error"))
+        client._session.delete = Mock(side_effect=_req.ConnectionError("Delete error"))
 
         with pytest.raises(IntegrationError, match="ElasticsearchClient"):
             client.delete_document("123")
@@ -255,7 +258,11 @@ class TestElasticsearchClient:
 
         result = client.get_latest_documents(index="custom-index")
         assert result == []
-        client.search.assert_called_once_with(size=10, index="custom-index")
+        client.search.assert_called_once_with(
+            size=10,
+            index="custom-index",
+            sort=[{"@timestamp": {"order": "desc", "unmapped_type": "date"}}],
+        )
 
     def test_search_by_alert_id_found(self):
         """Test searching by alert_id when found."""

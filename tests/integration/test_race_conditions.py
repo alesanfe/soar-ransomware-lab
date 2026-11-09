@@ -4,11 +4,14 @@ SOAR Ransomware Lab - Race Conditions Tests
 Tests for race conditions and concurrent operations
 """
 
+import os
 import threading
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pytest
 
+from soar_lab.common.exceptions import IntegrationError
 from soar_lab.infrastructure.integrations.elasticsearch.client import (
     ElasticsearchClient,
 )
@@ -22,27 +25,50 @@ class TestRaceConditions:
     @pytest.fixture
     def thehive_client(self):
         """Create TheHive client for testing."""
-        return TheHiveClient(base_url="http://localhost:9000", api_key="test-key", verify_ssl=False)
+        return TheHiveClient(
+            base_url=os.environ.get("THEHIVE_URL", "http://localhost:9000"),
+            api_key=os.environ.get("THEHIVE_API_KEY", "test-key"),
+            verify_ssl=False,
+        )
 
     @pytest.fixture
     def es_client(self):
         """Create Elasticsearch client for testing."""
         return ElasticsearchClient(
-            hosts=["http://localhost:9200"], username="elastic", password="test-pass"
+            base_url=os.environ.get("ES_URL", "http://localhost:9200"),
+            username=os.environ.get("ELASTIC_USERNAME", "elastic"),
+            password=os.environ.get("ELASTIC_PASSWORD", "test-pass"),
         )
 
     def test_concurrent_case_creation(self, thehive_client):
-        """Test concurrent case creation doesn't create duplicates."""
+        """Test concurrent case creation completes safely: every create must
+        succeed and produce a distinct case id (TheHive case API does not
+        dedupe by title).
+
+        TheHive can reject a burst of simultaneous ``POST /api/v1/case``
+        with a transient 400 (case-number counter race), so each create
+        retries once — the assertion is on the final outcome."""
         alert_id = "RACE-TEST-001"
         created_cases = []
         lock = threading.Lock()
 
         def create_case():
-            case = thehive_client.create_case(
-                title=f"Case for {alert_id}", description=f"Alert: {alert_id}", severity=2
-            )
-            with lock:
-                created_cases.append(case["id"])
+            import time
+
+            for attempt in range(3):
+                try:
+                    case = thehive_client.create_case(
+                        title=f"Case for {alert_id}",
+                        description=f"Alert: {alert_id}",
+                        severity=2,
+                    )
+                    with lock:
+                        created_cases.append(case["_id"])
+                    return
+                except IntegrationError:
+                    if attempt == 2:
+                        raise
+                    time.sleep(0.5 * (attempt + 1))
 
         # Create cases concurrently
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -50,24 +76,35 @@ class TestRaceConditions:
             for future in as_completed(futures):
                 future.result()
 
-        # Should have only unique case IDs
+        # All concurrent creates must succeed with unique ids
+        assert len(created_cases) == 10, "All concurrent creates must succeed"
         unique_cases = set(created_cases)
         assert (
-            len(unique_cases) <= 1
-        ), f"Concurrent case creation should not create duplicates, got {len(unique_cases)} cases"
+            len(unique_cases) == 10
+        ), f"Every case must get a distinct id, got {len(unique_cases)} unique"
 
     def test_concurrent_observable_creation(self, thehive_client):
-        """Test concurrent observable creation doesn't create duplicates."""
-        case_id = "case-001"
+        """Test concurrent observable creation: TheHive dedupes artifacts in a
+        case — exactly one create must succeed, the rest get a conflict."""
+        case = thehive_client.create_case(
+            title="Race Observable Case",
+            description="Case for concurrent observable creation",
+            severity=2,
+        )
         created_observables = []
+        conflicts = []
         lock = threading.Lock()
 
         def create_observable():
-            obs = thehive_client.create_observable(
-                case_id=case_id, data_type="ip", data="192.168.1.100"
-            )
-            with lock:
-                created_observables.append(obs["id"])
+            try:
+                obs = thehive_client.create_observable(
+                    case_id=case["id"], data_type="ip", data="192.168.1.100"
+                )
+                with lock:
+                    created_observables.append(obs["id"])
+            except IntegrationError:
+                with lock:
+                    conflicts.append(1)
 
         # Create observables concurrently
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -75,21 +112,28 @@ class TestRaceConditions:
             for future in as_completed(futures):
                 future.result()
 
-        # Should have only unique observable IDs
-        unique_obs = set(created_observables)
-        assert len(unique_obs) <= 1, (
-            f"Concurrent observable creation should not create duplicates, "
-            f"got {len(unique_obs)} observables"
+        # Exactly one observable must win; the rest must be rejected
+        assert len(created_observables) == 1, (
+            f"Concurrent observable creation must create exactly 1 artifact, "
+            f"got {len(created_observables)}"
         )
+        assert (
+            len(conflicts) == 9
+        ), f"Duplicate observables must be rejected, got {len(conflicts)} conflicts"
 
     def test_concurrent_document_indexing(self, es_client):
-        """Test concurrent document indexing doesn't create duplicates."""
-        doc_id = "RACE-DOC-001"
+        """Test concurrent document indexing upserts to a single document."""
+        doc_id = f"RACE-DOC-{uuid.uuid4().hex[:10].upper()}"
         indexed_count = [0]
         lock = threading.Lock()
 
         def index_document():
-            es_client.index_document(index="alerts", document={"alert_id": doc_id, "severity": 2})
+            es_client.index_document(
+                index="alerts",
+                document={"alert_id": doc_id, "severity": 2},
+                doc_id=doc_id,
+                refresh=True,
+            )
             with lock:
                 indexed_count[0] += 1
 
@@ -100,7 +144,7 @@ class TestRaceConditions:
                 future.result()
 
         # Verify only one document exists
-        result = es_client.search(index="alerts", query={"term": {"alert_id": doc_id}})
+        result = es_client.search(index="alerts", query={"term": {"alert_id.keyword": doc_id}})
         assert (
             result["hits"]["total"]["value"] == 1
         ), f"Should have only 1 document, got {result['hits']['total']['value']}"
@@ -163,10 +207,18 @@ class TestRaceConditions:
 
     def test_atomic_transaction(self, es_client):
         """Test atomic transaction prevents partial updates."""
-        doc_id = "ATOMIC-DOC-001"
+        doc_id = f"ATOMIC-DOC-{uuid.uuid4().hex[:10].upper()}"
+        es_client.index_document(
+            index="alerts",
+            document={"alert_id": doc_id, "severity": 2},
+            doc_id=doc_id,
+            refresh=True,
+        )
 
         def update_document():
-            es_client.update_document(index="alerts", doc_id=doc_id, document={"severity": 3})
+            es_client.update_document(
+                index="alerts", doc_id=doc_id, document={"severity": 3}, refresh=True
+            )
 
         # Update document concurrently
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -175,20 +227,25 @@ class TestRaceConditions:
                 future.result()
 
         # Verify document is in consistent state
-        result = es_client.search(index="alerts", query={"term": {"alert_id": doc_id}})
-        if result["hits"]["total"]["value"] > 0:
-            severity = result["hits"]["hits"][0]["_source"]["severity"]
-            assert severity == 3, "Document should be in consistent state"
+        result = es_client.search(index="alerts", query={"term": {"alert_id.keyword": doc_id}})
+        assert result["hits"]["total"]["value"] == 1, "Should have exactly 1 document"
+        severity = result["hits"]["hits"][0]["_source"]["severity"]
+        assert severity == 3, "Document should be in consistent state"
 
     def test_concurrent_search_and_update(self, es_client):
         """Test concurrent search and update operations."""
-        doc_id = "SEARCH-UPDATE-001"
+        doc_id = f"SEARCH-UPDATE-{uuid.uuid4().hex[:10].upper()}"
 
         # Index document
-        es_client.index_document(index="alerts", document={"alert_id": doc_id, "severity": 2})
+        es_client.index_document(
+            index="alerts",
+            document={"alert_id": doc_id, "severity": 2},
+            doc_id=doc_id,
+            refresh=True,
+        )
 
         def search_and_update():
-            result = es_client.search(index="alerts", query={"term": {"alert_id": doc_id}})
+            result = es_client.search(index="alerts", query={"term": {"alert_id.keyword": doc_id}})
             if result["hits"]["total"]["value"] > 0:
                 es_client.update_document(
                     index="alerts",
@@ -203,7 +260,7 @@ class TestRaceConditions:
                 future.result()
 
         # Verify consistency
-        result = es_client.search(index="alerts", query={"term": {"alert_id": doc_id}})
+        result = es_client.search(index="alerts", query={"term": {"alert_id.keyword": doc_id}})
         assert result["hits"]["total"]["value"] == 1, "Should have only 1 document"
 
     def test_concurrent_delete_operations(self, thehive_client):

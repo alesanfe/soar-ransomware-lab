@@ -177,14 +177,26 @@ class TestStatisticalCalculator:
         assert result[0] == 5.0
         assert result[1] == 5.0
 
-    def test_calculate_execution_times_step1_keys_fallback(self):
-        """Test execution times calculation with step1 keys fallback."""
+    def test_calculate_execution_times_step1_keys_not_computable(self):
+        """M-005 regression: step1-only keys yield NO execution times.
+
+        The old fallback measured inter-ARRIVAL deltas and reported them as
+        execution times — a semantically wrong MTTR. Now the metric is
+        honestly uncomputable (empty), never silently substituted.
+        """
         now = datetime.now(UTC)
         alert_steps = {
             "Sending alert": [now, now + timedelta(seconds=10), now + timedelta(seconds=20)]
         }
         result = StatisticalCalculator.calculate_execution_times(alert_steps)
-        assert len(result) == 2  # Inter-arrival times
+        assert result == []
+
+    def test_inter_arrival_times_available_as_named_api(self):
+        """The arrival-rate helper still exists, explicitly named (M-005)."""
+        now = datetime.now(UTC)
+        steps = {"Sending alert": [now, now + timedelta(seconds=10), now + timedelta(seconds=20)]}
+        arrival = StatisticalCalculator.inter_arrival_times(steps, ["Sending alert"])
+        assert len(arrival) == 2
 
     def test_calculate_statistical_metrics_p90_idx_edge_case(self):
         """Test p90 calculation with edge case where p90_idx could be
@@ -192,3 +204,294 @@ class TestStatisticalCalculator:
         # This tests line 61 where p90_idx < 0 check happens
         result = StatisticalCalculator.calculate_statistical_metrics([1.0])
         assert result["p90"] == 1.0  # With single value, p90 should be that value
+
+
+class TestGoldenStatisticalMetrics:
+    """Mutation-hardening: exact output dicts kill round()/key/arith mutants."""
+
+    DATA = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+
+    def test_metrics_exact_dict(self):
+        assert StatisticalCalculator.calculate_statistical_metrics(self.DATA) == {
+            "total_executions": 10,
+            "mean": 55,
+            "median": 55.0,
+            "p50": 55.0,
+            "p90": 91.0,
+            "p95": 95.5,
+            "p99": 99.1,
+            "min": 10,
+            "max": 100,
+            "std_dev": 30.28,
+            "mttr_seconds": 55,
+            "mttr_minutes": 0.92,
+        }
+
+    def test_metrics_filters_invalid_times(self):
+        # 0, negatives, and >3600 dropped from the sample
+        r = StatisticalCalculator.calculate_statistical_metrics([0, -5, 3700, 10, 20])
+        assert r["total_executions"] == 2
+        assert r["mean"] == 15
+
+    def test_metrics_all_invalid_returns_empty_shape(self):
+        r = StatisticalCalculator.calculate_statistical_metrics([0, -1, 4000])
+        assert r["total_executions"] == 0
+        assert r["mean"] == 0.0 and r["p99"] == 0.0
+
+    def test_metrics_single_value(self):
+        r = StatisticalCalculator.calculate_statistical_metrics([5.0])
+        assert r["total_executions"] == 1
+        assert r["std_dev"] == 0.0
+        assert r["mean"] == 5
+
+    def test_health_score_exact(self):
+        assert StatisticalCalculator.calculate_health_score(20, 30, 40, 90) == {
+            "overall_score": 75.0,
+            "status": "good",
+            "components": {"cpu": 80, "memory": 70, "disk": 60, "tests": 90},
+        }
+
+    def test_health_score_status_boundaries(self):
+        assert StatisticalCalculator.calculate_health_score(0, 0, 0, 100)["status"] == ("excellent")
+        assert StatisticalCalculator.calculate_health_score(40, 40, 40, 0)["status"] == ("warning")
+        assert StatisticalCalculator.calculate_health_score(100, 100, 100, 0)["status"] == (
+            "critical"
+        )
+
+    def test_health_score_clamps_negative(self):
+        r = StatisticalCalculator.calculate_health_score(150, 150, 150, 0)
+        assert r["components"]["cpu"] == 0
+        assert r["components"]["memory"] == 0
+        assert r["components"]["disk"] == 0
+
+    def test_execution_times_paired(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1, 0, 0, 0)
+        steps = {
+            "Alert received": [t0, t0 + timedelta(minutes=10)],
+            "Containment executed": [
+                t0 + timedelta(seconds=30),
+                t0 + timedelta(minutes=10, seconds=45),
+            ],
+        }
+        assert StatisticalCalculator.calculate_execution_times(steps) == [30.0, 45.0]
+
+    def test_execution_times_negative_delta_dropped(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1, 0, 0, 0)
+        steps = {
+            "Alert received": [t0],
+            "Containment executed": [t0 - timedelta(seconds=5)],
+        }
+        assert StatisticalCalculator.calculate_execution_times(steps) == []
+
+    def test_execution_times_started_passed(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1, 0, 0, 0)
+        steps = {
+            "Step STARTED ingest": [t0],
+            "Step PASSED ingest": [t0 + timedelta(seconds=12)],
+        }
+        assert StatisticalCalculator.calculate_execution_times(steps) == [12.0]
+
+    def test_execution_times_uncomputable(self):
+        from datetime import datetime
+
+        steps = {"Something else": [datetime(2024, 1, 1)]}
+        assert StatisticalCalculator.calculate_execution_times(steps) == []
+
+    def test_inter_arrival_exact(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1, 0, 0, 0)
+        steps = {
+            "Step1": [t0, t0 + timedelta(seconds=10), t0 + timedelta(seconds=25)],
+        }
+        assert StatisticalCalculator.inter_arrival_times(steps, ["Step1"]) == [10.0, 15.0]
+
+    def test_metrics_fractional_values_kill_round_mutants(self):
+        assert StatisticalCalculator.calculate_statistical_metrics([1.0, 2.0, 4.0]) == {
+            "total_executions": 3,
+            "mean": 2.33,
+            "median": 2.0,
+            "p50": 2.0,
+            "p90": 3.6,
+            "p95": 3.8,
+            "p99": 3.96,
+            "min": 1.0,
+            "max": 4.0,
+            "std_dev": 1.53,
+            "mttr_seconds": 2.33,
+            "mttr_minutes": 0.04,
+        }
+
+    def test_metrics_empty_exact(self):
+        assert StatisticalCalculator.calculate_statistical_metrics([]) == {
+            "total_executions": 0,
+            "mean": 0.0,
+            "median": 0.0,
+            "p50": 0.0,
+            "p90": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "std_dev": 0.0,
+            "mttr_seconds": 0.0,
+            "mttr_minutes": 0.0,
+        }
+
+    def test_metrics_stdev_two_valid_times(self):
+        # len>1 computes stdev (kills `>1`->`>2`)
+        r = StatisticalCalculator.calculate_statistical_metrics([1.0, 3.0])
+        assert r["std_dev"] == 1.41
+        assert r["total_executions"] == 2
+
+    def test_health_score_status_boundary_80(self):
+        r = StatisticalCalculator.calculate_health_score(20, 20, 20, 80)
+        assert r["overall_score"] == 80.0 and r["status"] == "excellent"
+
+    def test_health_score_status_boundary_60(self):
+        r = StatisticalCalculator.calculate_health_score(40, 40, 40, 60)
+        assert r["overall_score"] == 60.0 and r["status"] == "good"
+
+    def test_health_score_status_boundary_40(self):
+        r = StatisticalCalculator.calculate_health_score(60, 60, 60, 40)
+        assert r["overall_score"] == 40.0 and r["status"] == "warning"
+
+    def test_health_score_fractional_components(self):
+        r = StatisticalCalculator.calculate_health_score(33.3, 33.3, 33.3, 33.3)
+        assert r["overall_score"] == 60.02
+        assert r["components"] == {
+            "cpu": 66.7,
+            "memory": 66.7,
+            "disk": 66.7,
+            "tests": 33.3,
+        }
+
+    def test_execution_times_only_containment_falls_through(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1)
+        steps = {
+            "Containment executed": [t0 + timedelta(seconds=30)],
+            "Step STARTED x": [t0],
+            "Step PASSED x": [t0 + timedelta(seconds=7)],
+        }
+        # `and` is required: empty alert_times must NOT short-circuit to paired
+        assert StatisticalCalculator.calculate_execution_times(steps) == [7.0]
+
+    def test_execution_times_failed_key_counts_as_end(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1)
+        steps = {
+            "Step STARTED x": [t0],
+            "Step FAILED x": [t0 + timedelta(seconds=9)],
+        }
+        assert StatisticalCalculator.calculate_execution_times(steps) == [9.0]
+
+    def test_paired_times_continues_past_bad_pair(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1)
+        steps = {
+            "Alert received": [t0, t0, t0],
+            "Containment executed": [
+                t0 + timedelta(seconds=10),
+                "garbage",  # TypeError -> continue, not break
+                t0 + timedelta(seconds=20),
+            ],
+        }
+        assert StatisticalCalculator.calculate_execution_times(steps) == [10.0, 20.0]
+
+    def test_paired_times_zero_delta_excluded(self):
+        from datetime import datetime
+
+        t0 = datetime(2024, 1, 1)
+        steps = {"Alert received": [t0], "Containment executed": [t0]}
+        assert StatisticalCalculator.calculate_execution_times(steps) == []
+
+    def test_inter_arrival_zero_delta_excluded(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1)
+        steps = {"S": [t0, t0, t0 + timedelta(seconds=5)]}
+        assert StatisticalCalculator.inter_arrival_times(steps, ["S"]) == [5.0]
+
+    def test_inter_arrival_window_boundary(self):
+        from datetime import datetime, timedelta
+
+        t0 = datetime(2024, 1, 1)
+        steps = {"S": [t0, t0 + timedelta(seconds=3600), t0 + timedelta(seconds=3601)]}
+        # first delta (3600) excluded by <3600; second (1s) is included
+        assert StatisticalCalculator.inter_arrival_times(steps, ["S"]) == [1.0]
+
+    def test_golden_metrics_all_keys_2dp(self):
+        # 3-decimal inputs kill round(x,2)->round(x,3) on median/p50/min/max too
+        r = StatisticalCalculator.calculate_statistical_metrics([1.234, 2.345, 3.456])
+        assert r["mean"] == 2.35
+        assert r["median"] == 2.35  # kills round(...,3) -> 2.345 and round(...,None)
+        assert r["p50"] == 2.35
+        assert r["min"] == 1.23
+        assert r["max"] == 3.46
+        assert r["p90"] == 3.23
+        assert r["p95"] == 3.34
+        assert r["p99"] == 3.43
+
+    def test_health_score_components_2dp(self):
+        # percent=33.333 -> score 66.667 -> round2=66.67 kills round(...,3)
+        r = StatisticalCalculator.calculate_health_score(33.333, 33.333, 33.333, 33.333)
+        assert r["components"]["cpu"] == 66.67
+        assert r["components"]["memory"] == 66.67
+        assert r["components"]["disk"] == 66.67
+        assert r["components"]["tests"] == 33.33
+        assert r["overall_score"] == 60.0
+
+    @staticmethod
+    def _t(seconds, base=None):
+        return (base or datetime.now(UTC)) + timedelta(seconds=seconds)
+
+    def test_paired_delta_one_included(self):
+        base = datetime.now(UTC)
+        steps = {
+            "Alert received": [self._t(0, base)],
+            "Containment executed": [self._t(1.0, base)],
+        }
+        r = StatisticalCalculator.calculate_execution_times(steps)
+        assert r == [1.0]  # delta > 0, not > 1
+
+    def test_paired_delta_zero_excluded(self):
+        base = datetime.now(UTC)
+        steps = {
+            "Alert received": [self._t(0, base)],
+            "Containment executed": [self._t(0, base)],
+        }
+        assert StatisticalCalculator.calculate_execution_times(steps) == []
+
+    def test_execution_times_missing_keys_empty(self):
+        # .get(...,[]) -> original []; ->None crashes
+        assert StatisticalCalculator.calculate_execution_times({}) == []
+        assert (
+            StatisticalCalculator.calculate_execution_times({"Alert received": [self._t(0)]}) == []
+        )
+
+    def test_started_passed_requires_both(self):
+        steps = {"STEP_STARTED": [self._t(0)]}  # no PASSED/FAILED key
+        r = StatisticalCalculator.calculate_execution_times(steps)
+        assert r == []  # `and`, not `or`
+
+    def test_started_passed_zero_delta_excluded(self):
+        base = datetime.now(UTC)
+        steps = {"A_STARTED": [self._t(5, base)], "A_PASSED": [self._t(5, base)]}
+        r = StatisticalCalculator.calculate_execution_times(steps)
+        assert r == []  # >0, not >=0
+
+    def test_started_passed_one_second_included(self):
+        base = datetime.now(UTC)
+        steps = {"A_STARTED": [self._t(5, base)], "A_PASSED": [self._t(6, base)]}
+        r = StatisticalCalculator.calculate_execution_times(steps)
+        assert r == [1.0]

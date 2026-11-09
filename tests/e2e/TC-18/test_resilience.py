@@ -31,11 +31,17 @@ class TestResilience(E2EBaseTest):
         the ``finally`` block can restart it, subsequent tests will fail in
         setup. This teardown is a safety net that always runs.
         """
+        restore_errors: list[str] = []
         for container in ("soar_cortex", "soar_misp"):
             try:
                 result = subprocess.run(
-                    ["docker", "inspect", "--format",
-                     "{{.State.Status}} {{.State.Health.Status}}", container],
+                    [
+                        "docker",
+                        "inspect",
+                        "--format",
+                        "{{.State.Status}} {{.State.Health.Status}}",
+                        container,
+                    ],
                     capture_output=True,
                     text=True,
                     timeout=15,
@@ -51,12 +57,20 @@ class TestResilience(E2EBaseTest):
                         timeout=60,
                     )
                 # Always wait for healthcheck + HTTP API to be ready
-                if result.returncode == 0 and status == "running" and health not in ("healthy", "none"):
+                if (
+                    result.returncode == 0
+                    and status == "running"
+                    and health not in ("healthy", "none")
+                ):
                     self._log(f"teardown: waiting for {container} to become healthy (was {health})")
                 # Use _wait_for_container_healthy which also checks HTTP API
                 self._wait_for_container_healthy(container, timeout=300)
             except Exception as e:
+                restore_errors.append(f"{container}: {e}")
                 self._log(f"teardown: failed to restore {container}: {e}")
+        # A container left stopped/unhealthy poisons every subsequent test —
+        # surface restore failures as test errors, not just log lines.
+        assert not restore_errors, f"teardown failed to restore containers: {restore_errors}"
         super().teardown_method(method)
 
     def _log(self, msg: str):
@@ -113,11 +127,17 @@ class TestResilience(E2EBaseTest):
             "soar_cortex": ("http://cortex:9001/api/status", None),
             "soar_misp": ("https://misp:443/servers/getVersion", "misp_key"),
         }
+        retry_errors = 0
         while time.time() < deadline:
             try:
                 result = subprocess.run(
-                    ["docker", "inspect", "--format",
-                     "{{.State.Status}} {{.State.Health.Status}}", name],
+                    [
+                        "docker",
+                        "inspect",
+                        "--format",
+                        "{{.State.Status}} {{.State.Health.Status}}",
+                        name,
+                    ],
                     capture_output=True,
                     text=True,
                     timeout=15,
@@ -133,19 +153,22 @@ class TestResilience(E2EBaseTest):
                             url, _ = http_checks[name]
                             try:
                                 import requests as _req
-                                r = _req.get(url, timeout=10, verify=False)
+
+                                r = _req.get(url, timeout=10)
                                 if r.status_code in (200, 401, 403):
                                     time.sleep(3)
                                     return True
                                 self._log(f"  {name} HTTP check: {r.status_code}")
                             except Exception as e:
-                                self._log(f"  {name} HTTP not ready: {e}")
+                                retry_errors += 1
+                                self._log(f"  {name} HTTP not ready ({retry_errors}): {e}")
                         else:
                             time.sleep(5)
                             return True
                     # health is "starting" or "unhealthy" — keep waiting
             except Exception as e:
-                self._log(f"  docker inspect {name} retry: {e}")
+                retry_errors += 1
+                self._log(f"  docker inspect {name} retry ({retry_errors}): {e}")
             time.sleep(3)
         self._log(f"Container {name} did not become healthy within {timeout}s")
         return False
@@ -171,7 +194,7 @@ class TestResilience(E2EBaseTest):
 
         try:
             payload = {
-                "alert_id": f"TC18-CORTEX-{int(time.time())}",
+                "alert_id": self.uid("TC18-CORTEX"),
                 "alert_type": "ransomware",
                 "hostname": "WIN-TC18-001",
                 "src_ip": "192.168.1.220",
@@ -217,16 +240,26 @@ class TestResilience(E2EBaseTest):
             # attempted to reach Cortex and handled the failure gracefully.
             # Non-critical Cortex nodes (e.g. cleanup) may legitimately
             # report success without error.
-            error_indicators = ("error", "fail", "refused", "timeout", "unavailable", "degraded", "connection")
+            error_indicators = (
+                "error",
+                "fail",
+                "refused",
+                "timeout",
+                "unavailable",
+                "degraded",
+                "connection",
+            )
             nodes_with_error = 0
             for node in cortex_nodes:
                 assert isinstance(node, dict), "Cortex node should be a dict"
                 node_status = node.get("status", "?")
                 result_str = str(node.get("result", ""))
                 self._log(f"  + Cortex node status: {node_status} result={result_str[:200]}")
-                if node_status in ("ERROR", "SKIPPED", "ABORTED", "FAILED"):
-                    nodes_with_error += 1
-                elif node_status == "SUCCESS" and any(kw in result_str.lower() for kw in error_indicators):
+                if (
+                    node_status in ("ERROR", "SKIPPED", "ABORTED", "FAILED")
+                    or node_status == "SUCCESS"
+                    and any(kw in result_str.lower() for kw in error_indicators)
+                ):
                     nodes_with_error += 1
             assert nodes_with_error > 0, (
                 f"At least one Cortex node should show a connection error (Cortex is down); "
@@ -237,13 +270,15 @@ class TestResilience(E2EBaseTest):
             self._log("STEP 4: Verifying TheHive case creation in degraded mode")
             cases = self.thehive.search_cases(range_="0-100", sort=["-caseId"])
             assert isinstance(cases, list), "Cases should be a list"
-            matching_cases = [
-                c for c in cases if payload["alert_id"] in c.get("description", "")
-            ]
-            assert (
-                len(matching_cases) > 0
-            ), f"TheHive should create a case for {payload['alert_id']} even when Cortex is unavailable (degraded mode)"
-            self._log(f"+ TheHive case created ({len(matching_cases)} match) despite Cortex unavailability")
+            matching_cases = [c for c in cases if payload["alert_id"] in c.get("description", "")]
+            assert len(matching_cases) > 0, (
+                f"TheHive should create a case for {payload['alert_id']} "
+                "even when Cortex is unavailable (degraded mode)"
+            )
+            self._log(
+                f"+ TheHive case created ({len(matching_cases)} match) "
+                "despite Cortex unavailability"
+            )
 
             # Assert ES indexing still works
             self._log("STEP 5: Verifying Elasticsearch indexing in degraded mode")
@@ -294,7 +329,7 @@ class TestResilience(E2EBaseTest):
 
         try:
             payload = {
-                "alert_id": f"TC18-MISP-{int(time.time())}",
+                "alert_id": self.uid("TC18-MISP"),
                 "alert_type": "ransomware",
                 "hostname": "WIN-TC18-002",
                 "src_ip": "192.168.1.221",
@@ -335,16 +370,26 @@ class TestResilience(E2EBaseTest):
             self._log(f"+ Found {len(misp_nodes)} MISP node(s)")
             # Same degraded-mode logic as Cortex: require at least ONE MISP
             # node to show a connection error.
-            error_indicators = ("error", "fail", "refused", "timeout", "unavailable", "degraded", "connection")
+            error_indicators = (
+                "error",
+                "fail",
+                "refused",
+                "timeout",
+                "unavailable",
+                "degraded",
+                "connection",
+            )
             nodes_with_error = 0
             for node in misp_nodes:
                 assert isinstance(node, dict), "MISP node should be a dict"
                 node_status = node.get("status", "?")
                 result_str = str(node.get("result", ""))
                 self._log(f"  + MISP node status: {node_status} result={result_str[:200]}")
-                if node_status in ("ERROR", "SKIPPED", "ABORTED", "FAILED"):
-                    nodes_with_error += 1
-                elif node_status == "SUCCESS" and any(kw in result_str.lower() for kw in error_indicators):
+                if (
+                    node_status in ("ERROR", "SKIPPED", "ABORTED", "FAILED")
+                    or node_status == "SUCCESS"
+                    and any(kw in result_str.lower() for kw in error_indicators)
+                ):
                     nodes_with_error += 1
             assert nodes_with_error > 0, (
                 f"At least one MISP node should show a connection error (MISP is down); "
@@ -355,13 +400,14 @@ class TestResilience(E2EBaseTest):
             self._log("STEP 4: Verifying TheHive case creation in degraded mode")
             cases = self.thehive.search_cases(range_="0-100", sort=["-caseId"])
             assert isinstance(cases, list), "Cases should be a list"
-            matching_cases = [
-                c for c in cases if payload["alert_id"] in c.get("description", "")
-            ]
-            assert (
-                len(matching_cases) > 0
-            ), f"TheHive should create a case for {payload['alert_id']} even when MISP is unavailable (degraded mode)"
-            self._log(f"+ TheHive case created ({len(matching_cases)} match) despite MISP unavailability")
+            matching_cases = [c for c in cases if payload["alert_id"] in c.get("description", "")]
+            assert len(matching_cases) > 0, (
+                f"TheHive should create a case for {payload['alert_id']} "
+                "even when MISP is unavailable (degraded mode)"
+            )
+            self._log(
+                f"+ TheHive case created ({len(matching_cases)} match) despite MISP unavailability"
+            )
 
             # Assert ES indexing still works
             self._log("STEP 5: Verifying Elasticsearch indexing in degraded mode")
@@ -411,7 +457,7 @@ class TestResilience(E2EBaseTest):
 
         try:
             payload = {
-                "alert_id": f"TC18-BOTH-{int(time.time())}",
+                "alert_id": self.uid("TC18-BOTH"),
                 "alert_type": "ransomware",
                 "hostname": "WIN-TC18-003",
                 "src_ip": "192.168.1.222",
@@ -443,12 +489,11 @@ class TestResilience(E2EBaseTest):
             assert isinstance(cases, list), "Cases should be a list"
             # Find the case by alert_id (len-based diff is unreliable because
             # cases may be resolved/deleted between tests).
-            matching_cases = [
-                c for c in cases if payload["alert_id"] in c.get("description", "")
-            ]
-            assert (
-                len(matching_cases) > 0
-            ), f"TheHive should create a case for {payload['alert_id']} even when both Cortex and MISP are unavailable"
+            matching_cases = [c for c in cases if payload["alert_id"] in c.get("description", "")]
+            assert len(matching_cases) > 0, (
+                f"TheHive should create a case for {payload['alert_id']} "
+                "even when both Cortex and MISP are unavailable"
+            )
             self._log(f"+ TheHive case created ({len(matching_cases)} match) in degraded mode")
 
             # Assert ES indexing still works
@@ -504,7 +549,7 @@ class TestResilience(E2EBaseTest):
 
         try:
             payload = {
-                "alert_id": f"TC18-ORBORUS-{int(time.time())}",
+                "alert_id": self.uid("TC18-ORBORUS"),
                 "alert_type": "ransomware",
                 "hostname": "WIN-TC18-004",
                 "src_ip": "192.168.1.223",
@@ -522,18 +567,24 @@ class TestResilience(E2EBaseTest):
             assert exec_id, "Alert submission should return an execution ID even with Orborus down"
             self.execution_id = exec_id
 
-            # Wait a reasonable period and assert the workflow did NOT complete
+            # Assert the workflow does NOT complete while Orborus is down —
+            # poll continuously (an early FINISHED must also be caught).
             self._log("STEP 3: Asserting workflow does NOT complete without Orborus")
-            time.sleep(30)  # Give the system time to (not) process
-            execution = self.shuffle.get_execution(self.workflow_id, exec_id, include_results=False)
+            deadline = time.time() + 30  # bounded absence window
+            execution = None
+            while time.time() < deadline:
+                execution = self.shuffle.get_execution(
+                    self.workflow_id, exec_id, include_results=False
+                )
+                if execution and execution.get("status") in ("FINISHED", "SUCCESS"):
+                    break
+                time.sleep(self.POLL_INTERVAL)
             assert execution is not None, "Workflow execution data must not be None"
             status = execution.get("status", "")
             self._log(f"+ Workflow status with Orborus down: {status}")
-            # The workflow should NOT be FINISHED/SUCCESS — Orborus is required
-            assert status not in [
-                "FINISHED",
-                "SUCCESS",
-            ], f"Workflow should NOT complete without Orborus, but got {status}"
+            assert (
+                status != "FINISHED" and status != "SUCCESS"
+            ), f"Workflow should NOT complete without Orborus, but got {status}"
             self._log("+ Confirmed: workflow does not complete without Orborus")
 
         finally:
@@ -552,7 +603,7 @@ class TestResilience(E2EBaseTest):
             # Assert recovery: send a new alert and verify it completes
             self._log("STEP 5: Verifying recovery after Orborus restart")
             recovery_payload = {
-                "alert_id": f"TC18-ORBORUS-RECOVERY-{int(time.time())}",
+                "alert_id": self.uid("TC18-ORBORUS-RECOVERY"),
                 "alert_type": "ransomware",
                 "hostname": "WIN-TC18-004R",
                 "src_ip": "192.168.1.230",
@@ -590,7 +641,7 @@ class TestResilience(E2EBaseTest):
         self._log("=== TC-18-05: DEPENDENCY TIMEOUT TEST STARTED ===")
 
         payload = {
-            "alert_id": f"TC18-TIMEOUT-{int(time.time())}",
+            "alert_id": self.uid("TC18-TIMEOUT"),
             "alert_type": "ransomware",
             "hostname": "WIN-TC18-005",
             "src_ip": "192.168.1.224",

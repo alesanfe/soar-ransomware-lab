@@ -9,12 +9,8 @@ Validates Zero Trust principles in the SOAR environment:
 """
 
 import socket
-import time
 from datetime import UTC, datetime
 from urllib.parse import urlparse
-
-import pytest
-import requests
 
 from tests.e2e.base import E2EBaseTest
 
@@ -36,6 +32,23 @@ class TestZeroTrust(E2EBaseTest):
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _probe_internal(self, method: str, url: str, **kw) -> tuple[str, str]:
+        """Probe an internal URL and classify the outcome for
+        micro-segmentation assertions.
+
+        Returns (outcome, detail) where outcome is one of:
+          - ``auth_required``: HTTP 401/403 — segmentation enforced
+          - ``unreachable``:   connection/DNS failure — also enforced
+          - ``open``:          any other HTTP status — possible violation
+        """
+        try:
+            r = getattr(self.s, method)(url, timeout=5, **kw)
+            if r.status_code in (401, 403):
+                return "auth_required", f"HTTP {r.status_code}"
+            return "open", f"HTTP {r.status_code}"
+        except Exception as e:
+            return "unreachable", str(e)[:100]
 
     @staticmethod
     def _host_port(url: str) -> tuple[str, int]:
@@ -72,7 +85,7 @@ class TestZeroTrust(E2EBaseTest):
         # --- Step 1: Valid API key -> workflow FINISHED ---
         self._log("STEP 1: Sending alert with VALID API key (webhook)")
         payload = self.build_alert_payload(
-            alert_id=f"TC20-AUTH-VALID-{int(time.time())}",
+            alert_id=self.uid("TC20-AUTH-VALID"),
             alert_type="ransomware",
             severity=3,
         )
@@ -90,8 +103,7 @@ class TestZeroTrust(E2EBaseTest):
         self._log("STEP 2: Testing TheHive with INVALID API key")
         thehive_url = self.get_service_url("thehive")
         invalid_resp = self.s.get(
-            f"{thehive_url}/api/case",
-            params={"range": "0-5"},
+            f"{thehive_url}/api/v1/user/current",
             headers={"Authorization": "Bearer invalid_key_12345"},
             timeout=10,
         )
@@ -104,8 +116,7 @@ class TestZeroTrust(E2EBaseTest):
         # --- Step 3: No API key -> HTTP 401/403 ---
         self._log("STEP 3: Testing TheHive with NO API key")
         no_key_resp = self.s.get(
-            f"{thehive_url}/api/case",
-            params={"range": "0-5"},
+            f"{thehive_url}/api/v1/user/current",
             timeout=10,
         )
         assert no_key_resp.status_code in (
@@ -169,7 +180,7 @@ class TestZeroTrust(E2EBaseTest):
 
         # --- Step 1: Verify each service is accessible on its expected port ---
         self._log("STEP 1: Verifying services accessible on expected ports")
-        for name, (url, expected_port) in services.items():
+        for name, (url, _expected_port) in services.items():
             host, port = self._host_port(url)
             # The host port may be mapped (e.g. 8100->9000), so we check the
             # actual URL port, not the container-internal expected_port.
@@ -247,39 +258,30 @@ class TestZeroTrust(E2EBaseTest):
 
         # --- Step 1: TheHive can create cases ---
         self._log("STEP 1: Verifying TheHive service account can create cases")
-        test_case = None
-        try:
-            test_case = self.thehive.create_case(
-                title=f"TC20-LEAST-PRIV-{int(time.time())}",
-                description="Least privilege test — case creation",
-                severity=1,
-                tags=["tc20", "least-privilege-test"],
-            )
-            assert isinstance(test_case, dict), "create_case should return a dict"
-            case_id = test_case.get("_id") or test_case.get("id")
-            assert case_id, f"Created case must have an _id, got: {test_case}"
-            self._log(f"+ TheHive service account created case: {case_id}")
-            self.register_resource("thehive_cases", case_id)
-        finally:
-            # Clean up the test case
-            if test_case:
-                cid = test_case.get("_id") or test_case.get("id")
-                if cid:
-                    try:
-                        self.thehive.delete_case(cid)
-                    except Exception as e:
-                        self._log(f"  Cleanup case {cid}: {e}")
+        test_case = self.thehive.create_case(
+            title=self.uid("TC20-LEAST-PRIV"),
+            description="Least privilege test — case creation",
+            severity=1,
+            tags=["tc20", "least-privilege-test"],
+        )
+        assert isinstance(test_case, dict), "create_case should return a dict"
+        case_id = test_case.get("_id") or test_case.get("id")
+        assert case_id, f"Created case must have an _id, got: {test_case}"
+        self._log(f"+ TheHive service account created case: {case_id}")
+        # Case cleanup is handled by the resource manifest
+        # (register_resource) — no manual delete needed here.
+        self.register_resource("thehive_cases", case_id)
 
         # --- Step 2: TheHive service account CANNOT delete users ---
         self._log("STEP 2: Verifying TheHive service account CANNOT delete users")
         thehive_url = self.get_service_url("thehive")
         api_key = self.env.get("THEHIVE_API_KEY", "")
-        # TheHive 3.x user deletion endpoint: DELETE /api/user/{id}
+        # TheHive 5 user deletion endpoint: DELETE /api/v1/user/{id}
         # The service account (API key) should not have admin privileges
         # to delete users. We try deleting a non-existent user ID — the key
         # distinction is between 403 (forbidden) and 200 (allowed).
         delete_resp = self.s.delete(
-            f"{thehive_url}/api/user/nonexistent_user_tc20",
+            f"{thehive_url}/api/v1/user/nonexistent_user_tc20",
             headers={"Authorization": f"Bearer {api_key}"},
             timeout=10,
         )
@@ -308,17 +310,15 @@ class TestZeroTrust(E2EBaseTest):
         if ip_analyzers:
             analyzer_id = ip_analyzers[0].get("_id", "")
             if analyzer_id:
-                try:
-                    job = self.cortex.run_analyzer(analyzer_id, "ip", "8.8.8.8")
-                    assert isinstance(job, dict), "run_analyzer should return a dict"
-                    job_id = job.get("id", "")
-                    assert job_id, f"Cortex job must have an id, got: {job}"
-                    self._log(f"+ Cortex service account ran analyzer: job {job_id}")
-                    self.register_resource("cortex_jobs", job_id)
-                except Exception as e:
-                    # Some analyzers may fail due to external API limits,
-                    # but the job creation itself should not be denied
-                    self._log(f"+ Cortex analyzer execution attempted: {e}")
+                # Job creation failure is loud: the service account is
+                # expected to hold analyzer-run permission, so a denial
+                # or error here is a real finding.
+                job = self.cortex.run_analyzer(analyzer_id, "ip", "8.8.8.8")
+                assert isinstance(job, dict), "run_analyzer should return a dict"
+                job_id = job.get("id", "")
+                assert job_id, f"Cortex job must have an id, got: {job}"
+                self._log(f"+ Cortex service account ran analyzer: job {job_id}")
+                self.register_resource("cortex_jobs", job_id)
 
         # --- Step 4: Cortex service account CANNOT change config ---
         self._log("STEP 4: Verifying Cortex service account CANNOT change config")
@@ -380,75 +380,55 @@ class TestZeroTrust(E2EBaseTest):
         # (soar_api container), so the hostname IS resolvable. The key
         # invariant is that the endpoint requires authentication (401/403),
         # not that it's network-unreachable. A 200 would be a violation.
-        internal_cortex = "http://cortex:9001"
-        try:
-            r = self.s.get(f"{internal_cortex}/api/analyzer", timeout=5)
-            if r.status_code in (401, 403):
-                self._log(f"+ Internal Cortex URL requires auth (HTTP {r.status_code}) — micro-segmentation enforced")
-            else:
-                pytest.fail(
-                    f"Internal Cortex URL {internal_cortex} is accessible without auth "
-                    f"from outside the Docker network — micro-segmentation violated "
-                    f"(HTTP {r.status_code})"
-                )
-        except (requests.ConnectionError, requests.exceptions.ConnectTimeout) as e:
-            # This is expected — the internal hostname should not resolve
-            self._log(f"+ Internal Cortex URL not reachable: {str(e)[:100]}")
-        except Exception as e:
-            # Any non-success is acceptable (DNS failure, connection refused, etc.)
-            self._log(f"+ Internal Cortex URL blocked: {str(e)[:100]}")
+        internal_cortex = self.get_service_url("cortex")
+        outcome, detail = self._probe_internal("get", f"{internal_cortex}/api/analyzer")
+        assert outcome != "open", (
+            f"Internal Cortex URL {internal_cortex} is accessible without auth "
+            f"— micro-segmentation violated ({detail})"
+        )
+        self._log(f"+ Internal Cortex URL {outcome} ({detail}) — micro-segmentation enforced")
 
         # --- Step 2: TheHive internal URL not accessible from outside ---
         # Note: The test runs inside the Docker network, so internal URLs
-        # ARE resolvable. TheHive 3.x allows unauthenticated GET on /api/case
-        # (read-only). We verify that write operations (POST) require auth.
+        # ARE resolvable. TheHive 5 requires auth on all data endpoints.
+        # We verify that write operations (POST) require auth.
         self._log("STEP 2: Verifying TheHive internal URL requires auth for writes")
-        internal_thehive = "http://thehive:9000"
-        try:
-            r = self.s.post(
-                f"{internal_thehive}/api/case",
-                json={"title": "tc20-segmentation-test", "description": "test"},
-                timeout=5,
-            )
-            if r.status_code in (401, 403):
-                self._log(f"+ Internal TheHive URL requires auth for writes (HTTP {r.status_code}) — micro-segmentation enforced")
-            else:
-                pytest.fail(
-                    f"Internal TheHive URL {internal_thehive} allows unauthenticated writes "
-                    f"from outside the Docker network — micro-segmentation violated "
-                    f"(HTTP {r.status_code})"
-                )
-        except (requests.ConnectionError, requests.exceptions.ConnectTimeout) as e:
-            self._log(f"+ Internal TheHive URL not reachable: {str(e)[:100]}")
-        except Exception as e:
-            self._log(f"+ Internal TheHive URL blocked: {str(e)[:100]}")
+        internal_thehive = self.get_service_url("thehive")
+        outcome, detail = self._probe_internal(
+            "post",
+            f"{internal_thehive}/api/v1/case",
+            json={"title": "tc20-segmentation-test", "description": "test"},
+        )
+        assert outcome != "open", (
+            f"Internal TheHive URL {internal_thehive} allows unauthenticated writes "
+            f"— micro-segmentation violated ({detail})"
+        )
+        self._log(f"+ Internal TheHive URL {outcome} ({detail}) — micro-segmentation enforced")
 
         # --- Step 3: Elasticsearch internal URL not accessible from outside ---
         # Note: ES in this lab has security disabled (xpack security off).
         # /_cluster/health is a health endpoint (not data). Accept 200 for
         # health endpoints, only fail on unauthenticated data access.
         self._log("STEP 3: Verifying Elasticsearch internal URL not accessible")
-        internal_es = "http://elasticsearch:9200"
-        try:
-            r = self.s.get(f"{internal_es}/_cluster/health", timeout=5)
-            if r.status_code in (401, 403):
-                self._log(f"+ Internal ES URL requires auth (HTTP {r.status_code}) — micro-segmentation enforced")
-            elif r.status_code == 200:
-                self._log(f"+ Internal ES health endpoint accessible (HTTP 200) — security disabled in lab, health endpoint only")
-            else:
-                pytest.fail(
-                    f"Internal Elasticsearch URL {internal_es} returned unexpected status "
-                    f"(HTTP {r.status_code})"
-                )
-        except (requests.ConnectionError, requests.exceptions.ConnectTimeout) as e:
-            self._log(f"+ Internal Elasticsearch URL not reachable: {str(e)[:100]}")
-        except Exception as e:
-            self._log(f"+ Internal Elasticsearch URL blocked: {str(e)[:100]}")
+        internal_es = self.get_service_url("es")
+        outcome, detail = self._probe_internal("get", f"{internal_es}/_cluster/health")
+        # ES runs with xpack security disabled in this lab — a 200 on the
+        # health endpoint (no data access) is the documented posture.
+        if outcome == "open" and detail == "HTTP 200":
+            self._log(
+                "+ Internal ES health endpoint accessible (HTTP 200) — "
+                "security disabled in lab, health endpoint only"
+            )
+        else:
+            assert (
+                outcome != "open"
+            ), f"Internal Elasticsearch URL {internal_es} returned unexpected status ({detail})"
+            self._log(f"+ Internal ES URL {outcome} ({detail})")
 
         # --- Step 4: Verify the external URLs DO work (positive control) ---
         self._log("STEP 4: Positive control — external URLs work")
         thehive_url = self.get_service_url("thehive")
-        r = self.s.get(f"{thehive_url}/api/status", timeout=10)
+        r = self.s.get(f"{thehive_url}/api/v1/status/public", timeout=10)
         assert r.status_code == 200, (
             f"TheHive external URL should be accessible (positive control), "
             f"got HTTP {r.status_code}"

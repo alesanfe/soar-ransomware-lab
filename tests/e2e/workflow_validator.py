@@ -18,8 +18,7 @@ def validate_workflow_results(
     execution: dict,
     require_nodes: list[str] | None = None,
 ):
-    """Validate that a workflow execution completed successfully with no hidden
-    errors.
+    """Validate that a workflow execution completed successfully with no hidden errors.
 
     Args:
         execution: Workflow execution dict from Shuffle API or OpenSearch.
@@ -84,9 +83,7 @@ def validate_workflow_results(
         # Every node must be SUCCESS or SKIPPED
         if node_status not in ("SUCCESS", "SKIPPED"):
             raw = str(node.get("result", ""))
-            errors.append(
-                f"Node '{label}' status={node_status}: {raw[:300]}"
-            )
+            errors.append(f"Node '{label}' status={node_status}: {raw[:300]}")
             continue
 
         node_labels[label] = node_status
@@ -104,7 +101,11 @@ def validate_workflow_results(
 
             if isinstance(obj, dict):
                 http_status = obj.get("status")
-                if http_status is not None and int(http_status) >= 400:
+                try:
+                    status_code = int(http_status) if http_status is not None else 0
+                except (TypeError, ValueError):
+                    status_code = 0  # non-numeric body field, not an HTTP status
+                if status_code >= 400:
                     errors.append(f"Node '{label}' returned HTTP {http_status}: {raw_result[:300]}")
                     continue
 

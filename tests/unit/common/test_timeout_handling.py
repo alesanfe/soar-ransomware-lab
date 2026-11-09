@@ -152,7 +152,10 @@ class TestTimeoutHandling:
         from soar_lab.resilience.timeout import timeout_context
 
         with pytest.raises(TimeoutError), timeout_context(1):
-            time.sleep(10)
+            # Must exceed the 1s timeout. On POSIX SIGALRM interrupts the
+            # sleep at 1s; on Windows the handler runs when sleep returns,
+            # so keep the sleep short to bound wall-clock cost.
+            time.sleep(3)
 
     def test_timeout_cancellation(self, timeout_handler):
         """Test timeout cancellation."""

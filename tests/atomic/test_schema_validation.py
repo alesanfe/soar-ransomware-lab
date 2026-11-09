@@ -9,12 +9,12 @@ from pydantic import ValidationError
 
 from soar_lab.config.schemas import (
     AffectedFile,
+    AlertSeverity,
     AlertType,
     FileHash,
     MITREInfo,
     NetworkEvent,
     RansomwareAlert,
-    SeverityLevel,
 )
 
 
@@ -22,17 +22,18 @@ class TestSchemaValidationAtomic:
     """Atomic tests for individual schema validation functions."""
 
     def test_severity_level_enum_values(self):
-        """Test SeverityLevel enum has correct values."""
-        assert SeverityLevel.LOW.value == "0"
-        assert SeverityLevel.MEDIUM.value == "1"
-        assert SeverityLevel.HIGH.value == "2"
-        assert SeverityLevel.CRITICAL.value == "3"
+        """Canonical AlertSeverity enum (CFG-001: IntEnum 1-4)."""
+        assert AlertSeverity.LOW.value == 1
+        assert AlertSeverity.MEDIUM.value == 2
+        assert AlertSeverity.HIGH.value == 3
+        assert AlertSeverity.CRITICAL.value == 4
 
     def test_severity_level_enum_comparison(self):
-        """Test SeverityLevel enum comparisons."""
-        assert SeverityLevel.LOW == SeverityLevel("0")
-        assert SeverityLevel.LOW != SeverityLevel.HIGH
-        assert SeverityLevel.MEDIUM in [SeverityLevel.LOW, SeverityLevel.MEDIUM, SeverityLevel.HIGH]
+        """AlertSeverity IntEnum comparisons work on raw ints."""
+        assert AlertSeverity.LOW == AlertSeverity(1)
+        assert AlertSeverity.LOW != AlertSeverity.HIGH
+        assert AlertSeverity.MEDIUM in [AlertSeverity.LOW, AlertSeverity.MEDIUM, AlertSeverity.HIGH]
+        assert AlertSeverity.HIGH == 3  # IntEnum: direct int comparison
 
     def test_alert_type_enum_values(self):
         """Test AlertType enum has correct values."""
@@ -204,7 +205,7 @@ class TestSchemaValidationAtomic:
             hostname="server-01",
             src_ip="192.168.1.100",
             hash=file_hash,
-            severity="2",
+            severity=2,
             source="siem-detection",
             detection_time="2025-01-15T10:30:00",
             event_type="ransomware_detection",

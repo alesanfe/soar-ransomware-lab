@@ -3,30 +3,32 @@
 
 from unittest.mock import Mock, patch
 
+import pytest
+
 from soar_lab.infrastructure.http_alert_sender import AlertSendResult, HTTPAlertSender
 
 
 class TestAlertSendResult:
-    """Test AlertSendResult."""
+    """Test AlertSendResult — a plain serializable dict; success is explicit."""
 
-    def test_bool_true(self):
-        """Test AlertSendResult evaluates to True when success is True."""
+    def test_success_field_explicit(self):
+        """Callers read the success key, not dict truthiness."""
         result = AlertSendResult(success=True, status_code=200, alert_id="test")
 
-        assert bool(result) == True
+        assert result["success"] is True
+        assert result.get("success") is True
 
-    def test_bool_false(self):
-        """Test AlertSendResult evaluates to False when success is False."""
+    def test_failure_field_explicit(self):
         result = AlertSendResult(success=False, status_code=500, alert_id="test")
 
-        assert bool(result) == False
+        assert result["success"] is False
 
-    def test_bool_missing_success(self):
-        """Test AlertSendResult evaluates to False when success key is
-        missing."""
-        result = AlertSendResult(status_code=200, alert_id="test")
+    def test_serializes_as_plain_dict(self):
+        """No dual semantics: JSON round-trip preserves the contract."""
+        import json
 
-        assert bool(result) == False
+        result = AlertSendResult(success=False, status_code=None, alert_id="a1", error="boom")
+        assert json.loads(json.dumps(result))["success"] is False
 
 
 class TestHTTPAlertSender:
@@ -74,7 +76,7 @@ class TestHTTPAlertSender:
 
         result = sender.send(alert)
 
-        assert result["success"] == True
+        assert result["success"]
         assert result["status_code"] == 200
         assert result["alert_id"] == "alert-1"
         assert "trace_id" in result
@@ -103,7 +105,7 @@ class TestHTTPAlertSender:
 
         result = sender.send(alert)
 
-        assert result["success"] == True
+        assert result["success"]
         assert result["status_code"] == 202
         assert sender.alerts_sent == 1
 
@@ -122,7 +124,7 @@ class TestHTTPAlertSender:
 
         result = sender.send(alert)
 
-        assert result["success"] == True
+        assert result["success"]
         assert result["status_code"] == 204
         assert sender.alerts_sent == 1
 
@@ -141,7 +143,7 @@ class TestHTTPAlertSender:
 
         result = sender.send(alert)
 
-        assert result["success"] == False
+        assert result["success"] is False
         assert result["status_code"] == 500
         assert result["alert_id"] == "alert-1"
         assert sender.alerts_sent == 0
@@ -162,7 +164,7 @@ class TestHTTPAlertSender:
 
         result = sender.send(alert)
 
-        assert result["success"] == False
+        assert result["success"] is False
         assert result["status_code"] == 400
         assert sender.alerts_failed == 1
 
@@ -180,7 +182,7 @@ class TestHTTPAlertSender:
 
         result = sender.send(alert)
 
-        assert result["success"] == False
+        assert result["success"] is False
         assert result["status_code"] is None
         assert result["alert_id"] == "alert-1"
         assert "error" in result
@@ -199,7 +201,7 @@ class TestHTTPAlertSender:
 
         result = sender.send(alert)
 
-        assert result["success"] == False
+        assert result["success"] is False
         assert result["status_code"] is None
         assert result["alert_id"] == "alert-1"
         assert "error" in result
@@ -221,7 +223,7 @@ class TestHTTPAlertSender:
 
         result = sender.send(alert)
 
-        assert result["success"] == True
+        assert result["success"]
         assert result["alert_id"] == "unknown"
 
     def test_get_metrics(self):
@@ -365,3 +367,15 @@ class TestHTTPAlertSenderBatch:
         failures = [r for r in results if not r["success"]]
         assert len(successes) == 2
         assert len(failures) == 1
+
+
+class TestBatchBackpressureContract:
+    """Bug: queue.Queue(maxsize=0) means UNBOUNDED -> send_batch(max_queue_size=0)
+    silently disables backpressure instead of rejecting."""
+
+    @patch("soar_lab.infrastructure.http_alert_sender.requests.Session")
+    def test_zero_max_queue_size_rejected(self, mock_session_class):
+        mock_session_class.return_value = Mock()
+        sender = HTTPAlertSender(webhook_url="https://example.com/webhook", api_token="t")
+        with pytest.raises(ValueError):
+            sender.send_batch([{"alert_id": "a1"}], max_queue_size=0)

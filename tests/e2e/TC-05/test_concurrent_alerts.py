@@ -53,22 +53,23 @@ class TestConcurrentAlerts(E2EBaseTest):
             # so it does not block the queue forever.
             return True
 
+        parsers = (
+            # Epoch seconds; Shuffle may store milliseconds since epoch
+            lambda v: float(v) / 1000.0 if float(v) > 1e12 else float(v),
+            # ISO 8601 timestamp string (Shuffle stores date strings)
+            lambda v: datetime.fromisoformat(str(v).replace("Z", "+00:00")).timestamp(),
+        )
         started_ts = None
-        try:
-            started_ts = float(started_at)
-            # Shuffle may store started_at as milliseconds since epoch
-            if started_ts > 1e12:
-                started_ts = started_ts / 1000.0
-        except (ValueError, TypeError):
-            pass
+        for parse in parsers:
+            try:
+                started_ts = parse(started_at)
+                break
+            except (ValueError, TypeError, AttributeError):
+                continue
 
         if started_ts is None:
-            try:
-                # Try ISO 8601 timestamp string (Shuffle stores date strings)
-                started_dt = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
-                started_ts = started_dt.timestamp()
-            except Exception:
-                return True
+            self._log(f"  ! Unparsable started_at={started_at!r} — treating execution as stale")
+            return True
 
         return (time.time() - started_ts) > max_age
 
@@ -82,6 +83,7 @@ class TestConcurrentAlerts(E2EBaseTest):
             return
         self._log(f"Waiting up to {timeout}s for pending executions to drain...")
         deadline = time.time() + timeout
+        poll_errors = 0
         pending_statuses = {"EXECUTING", "QUEUED", "PENDING", "RUNNING"}
         while time.time() < deadline:
             try:
@@ -103,7 +105,9 @@ class TestConcurrentAlerts(E2EBaseTest):
                     return
                 self._log(f"  + {len(pending)} executions still pending, waiting...")
             except Exception as e:
-                self._log(f"  + Could not check execution status: {e}")
+                poll_errors += 1
+                assert poll_errors < 10, f"Execution status check failed {poll_errors} times: {e}"
+                self._log(f"  + Could not check execution status ({poll_errors}/10): {e}")
             time.sleep(self.POLL_INTERVAL)
         self._log(f"WARNING: timed out after {timeout}s waiting for queue drain")
 
@@ -152,6 +156,7 @@ class TestConcurrentAlerts(E2EBaseTest):
         completed_ids = set()
         pending_ids = list(execution_ids)
         target = min_completed if min_completed is not None else num_expected
+        poll_errors = 0
         while time.time() < deadline and len(completed_ids) < target:
             try:
                 execs = self.shuffle.get_workflow_executions(self.workflow_id)
@@ -168,7 +173,9 @@ class TestConcurrentAlerts(E2EBaseTest):
                             f"({len(completed_ids)}/{num_expected})"
                         )
             except Exception as e:
-                self._log(f"  + Could not check execution status: {e}")
+                poll_errors += 1
+                assert poll_errors < 10, f"Execution status check failed {poll_errors} times: {e}"
+                self._log(f"  + Could not check execution status ({poll_errors}/10): {e}")
             time.sleep(self.POLL_INTERVAL)
         if min_completed is not None:
             assert (
@@ -203,29 +210,6 @@ class TestConcurrentAlerts(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        def _send_with_retry(idx: int, payload: dict):
-            """Send a single alert with up to 5 retries on HTTP 500 or
-            timeout."""
-            last_exc = None
-            for attempt in range(5):
-                try:
-                    r = self.shuffle._webhook_session.post(
-                        self.webhook_url, json=payload, timeout=30
-                    )
-                    if r.status_code == 200:
-                        return r
-                    self._log(
-                        f"  + Alert {idx} attempt {attempt + 1}/5: "
-                        f"HTTP {r.status_code}, retrying..."
-                    )
-                except Exception as e:
-                    last_exc = e
-                    self._log(f"  + Alert {idx} attempt {attempt + 1}/5: {e}, retrying...")
-                time.sleep(10)
-            if last_exc:
-                raise last_exc
-            raise RuntimeError(f"Alert {idx} failed after 5 attempts")
-
         # Send alerts concurrently
         self._log(
             f"STEP 1: Sending {num_alerts} alerts concurrently (max_workers={self.MAX_WORKERS})"
@@ -238,7 +222,7 @@ class TestConcurrentAlerts(E2EBaseTest):
             for i in range(num_alerts):
                 payload = self._base_payload(i)
                 alert_ids.append(payload["alert_id"])
-                future = executor.submit(_send_with_retry, i, payload)
+                future = executor.submit(self._send_with_retry, i, payload)
                 futures[future] = i
 
             for future in as_completed(futures):
@@ -386,30 +370,13 @@ class TestConcurrentAlerts(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        def _send_with_retry(idx: int, payload: dict):
-            for attempt in range(5):
-                try:
-                    r = self.shuffle._webhook_session.post(
-                        self.webhook_url, json=payload, timeout=30
-                    )
-                    if r.status_code == 200:
-                        return r
-                    self._log(
-                        f"  + Alert {idx} attempt {attempt + 1}/5: "
-                        f"HTTP {r.status_code}, retrying..."
-                    )
-                except Exception as e:
-                    self._log(f"  + Alert {idx} attempt {attempt + 1}/5: {e}, retrying...")
-                time.sleep(10)
-            raise RuntimeError(f"Alert {idx} failed after 5 attempts")
-
         self._log(f"STEP 1: Sending {num_alerts} alerts concurrently")
         with ThreadPoolExecutor(max_workers=num_alerts) as executor:
             futures = {}
             for i in range(num_alerts):
                 payload = self._base_payload(i)
                 alert_ids.append(payload["alert_id"])
-                future = executor.submit(_send_with_retry, i, payload)
+                future = executor.submit(self._send_with_retry, i, payload)
                 futures[future] = i
 
             for future in as_completed(futures):
@@ -463,42 +430,24 @@ class TestConcurrentAlerts(E2EBaseTest):
         if not self.webhook_url:
             pytest.fail("Webhook URL not found in webhook_info.json")
 
-        def _send_with_retry(idx: int, payload: dict):
-            for attempt in range(5):
-                try:
-                    r = self.shuffle._webhook_session.post(
-                        self.webhook_url, json=payload, timeout=30
-                    )
-                    if r.status_code == 200:
-                        return r
-                    self._log(
-                        f"  + Alert {idx} attempt {attempt + 1}/5: "
-                        f"HTTP {r.status_code}, retrying..."
-                    )
-                except Exception as e:
-                    self._log(f"  + Alert {idx} attempt {attempt + 1}/5: {e}, retrying...")
-                time.sleep(10)
-            raise RuntimeError(f"Alert {idx} failed after 5 attempts")
-
         self._log(f"STEP 1: Sending {num_alerts} alerts concurrently")
         with ThreadPoolExecutor(max_workers=20) as executor:
             futures = {}
             for i in range(num_alerts):
                 payload = self._base_payload(i)
                 alert_ids.append(payload["alert_id"])
-                future = executor.submit(_send_with_retry, i, payload)
+                future = executor.submit(self._send_with_retry, i, payload)
                 futures[future] = i
 
             for future in as_completed(futures):
                 i = futures[future]
-                try:
-                    r = future.result()
-                    exec_id = r.json().get("execution_id", "")
-                    assert exec_id, f"Alert {i} no execution_id"
-                    execution_ids.append(exec_id)
-                    self._log(f"  + Alert {i} accepted - execution_id={exec_id[:8]}...")
-                except Exception as e:
-                    self._log(f"  - Alert {i} failed: {e}")
+                # Any failed submission is a real failure under load —
+                # the 100% completion assert below expects all of them.
+                r = future.result()
+                exec_id = r.json().get("execution_id", "")
+                assert exec_id, f"Alert {i} no execution_id"
+                execution_ids.append(exec_id)
+                self._log(f"  + Alert {i} accepted - execution_id={exec_id[:8]}...")
 
         self._log(f"STEP 2: Waiting for {num_alerts} workflows to complete")
         completed_ids = self._wait_for_executions(execution_ids, num_alerts)
@@ -667,8 +616,8 @@ class TestConcurrentAlerts(E2EBaseTest):
         self._log(f"STEP 2: Waiting for {num_alerts} load workflows to complete")
         self._wait_for_executions(execution_ids, num_alerts)
 
-        self._log("STEP 3: Waiting for load to clear (30s)")
-        time.sleep(30)
+        self._log("STEP 3: Waiting for load to clear (queue drain, max 60s)")
+        self._wait_for_queue_drain(timeout=60)
 
         self._log("STEP 4: Sending single alert to verify recovery")
         recovery_payload = self._base_payload(999)

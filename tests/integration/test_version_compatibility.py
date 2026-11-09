@@ -69,7 +69,7 @@ class TestVersionCompatibility:
             "title": "Old Case",
             "description": "Old description",
             "severity": "2",  # String (old format)
-            "status": "Open",
+            "status": "New",
         }
 
         # Migrate to new format

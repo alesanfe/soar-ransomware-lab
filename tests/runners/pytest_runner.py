@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""
-SOAR Ransomware Lab - Test Runner
-Comprehensive test runner for all test suites
+"""SOAR Ransomware Lab - Test Runner.
+
+Comprehensive test runner for all test suites.
 """
 
 import argparse

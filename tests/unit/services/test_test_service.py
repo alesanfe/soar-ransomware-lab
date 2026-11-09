@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from scripts.test_service import TestService
+from soar_lab.application.use_cases.test_service import TestService
 
 
 class TestTestService:
@@ -149,8 +149,23 @@ class TestTestService:
 
         result = await service.get_test_coverage(cache=mock_cache)
 
-        # Cache error is caught by the exception handler, returns defaults
-        assert result == {"unit": 0, "integration": 0, "overall": 0}
+        # A cache failure must not misreport measured coverage — the real
+        # values are returned; only a runner failure yields measured=False.
+        assert result == {"unit": 80, "integration": 70, "overall": 75}
+
+    @pytest.mark.asyncio
+    async def test_get_test_coverage_runner_error_reports_unmeasured(self):
+        """A measurement failure is explicit, never a fake 0%."""
+        mock_runner = Mock()
+        mock_runner.get_coverage.side_effect = OSError("no coverage file")
+        mock_parser = Mock()
+        service = TestService(runner=mock_runner, parser=mock_parser)
+
+        result = await service.get_test_coverage()
+
+        assert result["measured"] is False
+        assert result["unit"] is None
+        assert result["overall"] is None
 
     @pytest.mark.asyncio
     async def test_run_tests_sync(self):

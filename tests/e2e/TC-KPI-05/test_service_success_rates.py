@@ -9,6 +9,7 @@ import sys
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import ClassVar
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
@@ -25,12 +26,42 @@ class TestServiceSuccessRates(E2EBaseTest):
     """
 
     tc_id = "TC-KPI-05"
+    _class_results: ClassVar[list] = []
+    _class_t0: ClassVar[datetime | None] = None
+
+    @classmethod
+    def setup_class(cls):
+        cls._class_results = []
+        cls._class_t0 = datetime.now(UTC)
+
+    @classmethod
+    def teardown_class(cls):
+        """Persist the aggregate success-rates report once per run.
+
+        Replaces the removed ``test_success_rates_suite`` orchestrator
+        (EXEC-001): each scenario is collected once, and the report still
+        aggregates every per-test result.
+        """
+        if cls._class_t0 is None:
+            return
+        elapsed = (datetime.now(UTC) - cls._class_t0).total_seconds()
+        report = {
+            "test_case": "TC-KPI-05",
+            "scenario": "service_success_rates_by_alert_type",
+            "elapsed_seconds": elapsed,
+            "results": cls._class_results,
+            "success": all(r.get("ok", False) for r in cls._class_results),
+        }
+        report_file = Path("results") / "TC-KPI-05_success_rates_report.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
+        report_file.write_text(json.dumps(report, indent=2, default=str))
+        print(f"TC-KPI-05 + Report saved: {report_file}")
 
     def setup_method(self, method):
         super().setup_method(method)
         self.t0 = datetime.now(UTC)
         self.analyzer = KPIAnalyzer(StatisticalCalculator())
-        self._results = []
+        self._results = type(self)._class_results
 
     def _log(self, msg: str):
         ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
@@ -122,33 +153,6 @@ class TestServiceSuccessRates(E2EBaseTest):
             "✓ Service success rates calculation validated - logic correct and thresholds met"
         )
 
-    def _step_save_report(self, elapsed: float):
-        report = {
-            "test_case": "TC-KPI-05",
-            "scenario": "service_success_rates_by_alert_type",
-            "elapsed_seconds": elapsed,
-            "results": self._results,
-            "success": all(r.get("ok", False) for r in self._results),
-        }
-        report_file = Path("results") / "TC-KPI-05_success_rates_report.json"
-        report_file.parent.mkdir(parents=True, exist_ok=True)
-        report_file.write_text(json.dumps(report, indent=2, default=str))
-        self._log(f"+ Report saved: {report_file}")
-
-    def test_success_rates_suite(self):
-        """Run service success rates test suite."""
-        self._log("=== TC-KPI-05: SERVICE SUCCESS RATES E2E TEST STARTED ===")
-
-        self.test_service_success_rates_by_alert_type()
-
-        # Validate that results were collected and all passed
-        assert len(self._results) > 0, "No service success rate results were recorded"
-        failed = [r for r in self._results if not r.get("ok", False)]
-        assert (
-            not failed
-        ), f"{len(failed)}/{len(self._results)} service success rate checks failed: {failed}"
-
-        elapsed = (datetime.now(UTC) - self.t0).total_seconds()
-        self._log(f"Elapsed: {elapsed:.1f}s")
-        self._log("=== TC-KPI-05 COMPLETED ===")
-        self._step_save_report(elapsed)
+    # EXEC-001: the former test_success_rates_suite orchestrator was removed.
+    # Aggregate reporting now lives in teardown_class; each scenario is
+    # collected exactly once by pytest.

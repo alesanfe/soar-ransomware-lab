@@ -7,8 +7,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import requests
-
 
 class EvidenceMixin:
     """Mixin for exporting evidence artifacts."""
@@ -86,7 +84,10 @@ class EvidenceMixin:
     def export_thehive_case(self) -> None:
         """Export TheHive case data as evidence."""
         try:
-            cases = self.thehive.search_cases()
+            # Newest-first bounded page — an unbounded list costs ~13 s per
+            # teardown once hundreds of cases accumulate (same BUG-046
+            # pattern) and the filters below only care about recent cases.
+            cases = self.thehive.search_cases(sort=["-createdAt"], range_="0-200")
             # Filter to cases related to this correlation_id
             relevant = [
                 c
@@ -133,7 +134,7 @@ class EvidenceMixin:
         es_docs: dict[str, Any] = {}
         for index in ["soar-alerts", "soar-metrics"]:
             try:
-                r = requests.post(
+                r = self.s.post(
                     f"{es_url}/{index}/_search",
                     json={
                         "query": {
@@ -146,7 +147,6 @@ class EvidenceMixin:
                     },
                     auth=es_auth,
                     timeout=10,
-                    verify=False,
                 )
                 if r.status_code == 200:
                     es_docs[index] = r.json().get("hits", {}).get("hits", [])
@@ -162,10 +162,9 @@ class EvidenceMixin:
         exec_id = getattr(self, "execution_id", None)
         if exec_id:
             try:
-                r = requests.get(
-                    f"{os_url}/workflowexecution-000001/_doc/{exec_id}",
+                r = self.s.get(
+                    f"{os_url}/workflowexecution/_doc/{exec_id}",
                     timeout=10,
-                    verify=False,
                 )
                 if r.status_code == 200:
                     os_docs["execution"] = r.json().get("_source", {})

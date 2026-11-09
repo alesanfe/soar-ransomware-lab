@@ -86,12 +86,12 @@ class TestDockerPartialFailure:
         # Simulate Shuffle failure
         mock_containers["shuffle"].status = "exited"
 
-        # Simulate automatic restart
-        with patch.object(docker_client, "containers") as mock_docker_containers:
-            mock_container = Mock()
-            mock_container.restart.return_value = None
-            mock_docker_containers.get.return_value = mock_container
-
+        # Simulate automatic restart. DockerClient.containers is a read-only
+        # property returning a ContainerCollection, so patch its `get` method
+        # instead of the property itself.
+        mock_container = Mock()
+        mock_container.restart.return_value = None
+        with patch.object(docker_client.containers, "get", return_value=mock_container):
             # Restart service
             mock_container.restart()
 

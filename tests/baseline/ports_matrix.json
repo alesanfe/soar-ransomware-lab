@@ -68,7 +68,7 @@
     "compose_file": "infra\\docker\\compose\\docker-compose.core.yml",
     "service": "thehive",
     "container_name": "${COMPOSE_PROJECT_NAME:-soar}_thehive",
-    "image": "thehiveproject/thehive:3.5.2-1",
+    "image": "strangebee/thehive:5.7.8-1",
     "profiles": [
       "default"
     ],

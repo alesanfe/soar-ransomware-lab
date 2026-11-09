@@ -175,11 +175,32 @@ class TestBaseHTTPClient:
         """Test health check with successful response."""
         with patch.object(BaseHTTPClient, "_build_session") as mock_build:
             mock_session = Mock()
-            mock_session.get.return_value = Mock()
+            mock_session.get.return_value = Mock(status_code=200)
             mock_build.return_value = mock_session
 
             client = BaseHTTPClient("http://example.com")
             assert client.health_check() is True
+
+    def test_health_check_4xx_is_alive(self):
+        """4xx means the app answered — it is alive (e.g. auth required)."""
+        with patch.object(BaseHTTPClient, "_build_session") as mock_build:
+            mock_session = Mock()
+            mock_session.get.return_value = Mock(status_code=401)
+            mock_build.return_value = mock_session
+
+            client = BaseHTTPClient("http://example.com")
+            assert client.health_check() is True
+
+    @pytest.mark.parametrize("code", [500, 502, 503])
+    def test_health_check_5xx_is_down(self, code):
+        """5xx means the server answered but is unhealthy — counts as down."""
+        with patch.object(BaseHTTPClient, "_build_session") as mock_build:
+            mock_session = Mock()
+            mock_session.get.return_value = Mock(status_code=code)
+            mock_build.return_value = mock_session
+
+            client = BaseHTTPClient("http://example.com")
+            assert client.health_check() is False
 
     def test_health_check_failure(self):
         """Test health check with failed response."""
