@@ -571,7 +571,7 @@ def analyze_linting() -> dict[str, Any]:
 
 def analyze_security() -> dict[str, Any]:
     """L3b — Seguridad via bandit."""
-    bandit_config = PROJECT_ROOT / ".bandit"
+    bandit_config = PROJECT_ROOT / "bandit.yaml"
     cmd = [sys.executable, "-m", "bandit", "-r", str(SRC_DIR), "-f", "json", "-q"]
     if bandit_config.exists():
         cmd.extend(["-c", str(bandit_config)])
@@ -608,7 +608,7 @@ def analyze_docstrings() -> dict[str, Any]:
         timeout=60,
     )
     # Parse output: "RESULT: PASSED (minimum: 80.0%, actual: 91.1%)"
-    # Or: "actual: 91.1%"
+    # e.g. Or: actual: 91.1%
     match = re.search(r"actual:\s*(\d+\.?\d*)%", stdout)
     if match:
         pct = float(match.group(1))
@@ -621,7 +621,7 @@ def analyze_docstrings() -> dict[str, Any]:
             pct = 0
 
     # Also try to get covered/total from the TOTAL row in verbose output:
-    # "| TOTAL | 1018 | 54 | 964 | 94.7% |"
+    # e.g. | TOTAL | 1018 | 54 | 964 | 94.7% |
     total_match = re.search(r"\|\s*TOTAL\s*\|\s*(\d+)\s*\|\s*\d+\s*\|\s*(\d+)\s*\|", stdout)
     if total_match:
         total = int(total_match.group(1))
@@ -1054,7 +1054,7 @@ def generate_report(
     lines.append("## Layer 1 — Core (Production Code)")
     lines.append("")
 
-    # L1a: Architecture
+    # Section L1a — Architecture
     arch = l1.get("L1a", {})
     lines.append("### L1a — Architecture (import-linter)")
     lines.append("")
@@ -1076,7 +1076,7 @@ def generate_report(
         lines.append("> Not available")
     lines.append("")
 
-    # L1b: Complexity
+    # Section L1b — Complexity
     comp = l1.get("L1b", {})
     lines.append("### L1b — Complexity (radon cc)")
     lines.append("")
@@ -1098,7 +1098,7 @@ def generate_report(
         lines.append(f"> {comp.get('message', 'Not available')}")
     lines.append("")
 
-    # L1c: Typing
+    # Section L1c — Typing
     typ = l1.get("L1c", {})
     lines.append("### L1c — Typing (mypy)")
     lines.append("")

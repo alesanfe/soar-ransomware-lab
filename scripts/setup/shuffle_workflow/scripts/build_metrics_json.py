@@ -1,5 +1,7 @@
 # Embedded script: build_metrics_json
 # Builds the metrics document for Elasticsearch indexing.
+"""Shuffle node: build the soar-metrics document (score, verdict, MTTR)."""
+
 import json
 import logging
 import time
@@ -7,6 +9,9 @@ import time
 logger = logging.getLogger(__name__)
 
 alert_id = """$exec.alert_id"""
+trace_id = """$exec.trace_id"""
+if not isinstance(trace_id, str) or trace_id.startswith("$"):
+    trace_id = ""
 # Use normalize_inputs for optional fields
 norm_raw = r"""$normalize_inputs.message"""
 norm = {}
@@ -28,8 +33,7 @@ mttr_raw = r"""$calc_mttr.message"""
 try:
     _mttr_obj = json.loads(mttr_raw)
     mttr_seconds = (
-        float(_mttr_obj.get("mttr_seconds", 0))
-        if isinstance(_mttr_obj, dict) else float(mttr_raw)
+        float(_mttr_obj.get("mttr_seconds", 0)) if isinstance(_mttr_obj, dict) else float(mttr_raw)
     )
 except Exception:
     try:
@@ -49,7 +53,15 @@ if not timestamp:
 thehive_case_id = ""
 try:
     _hive = json.loads(r"""$thehive_create_case""")
-    _body = _hive.get("body", _hive) if isinstance(_hive, dict) else {}
+    # Script-node results nest under "message"; the old HTTP node placed the
+    # case at top-level "body". Accept both shapes.
+    _body = (
+        _hive.get("body")
+        or (isinstance(_hive.get("message"), dict) and _hive["message"].get("body"))
+        or _hive
+        if isinstance(_hive, dict)
+        else {}
+    )
     thehive_case_id = _body.get("_id", _body.get("id", "")) if isinstance(_body, dict) else ""
 except Exception:
     pass
@@ -117,7 +129,6 @@ containment_time = 0.0
 node_timings = {}
 for _node_label in [
     "normalize_inputs",
-    "build_case_json",
     "thehive_create_case",
     "thehive_obs_hash",
     "thehive_obs_ip",
@@ -146,6 +157,7 @@ for _node_label in [
 
 doc = {
     "alert_id": alert_id,
+    "trace_id": trace_id,
     "alert_type": alert_type,
     "severity": severity,
     "mttr_seconds": mttr_seconds,

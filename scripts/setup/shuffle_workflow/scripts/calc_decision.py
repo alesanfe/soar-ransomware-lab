@@ -14,8 +14,10 @@
 #   - Network Watcher: +5-20 based on suspicious connections
 #   - Loki: +10-30 based on ransomware indicator patterns
 #
-# Verdict: malicious | suspicious | safe | unknown
-# Decision: contain (score>=80 or malicious) | observe
+# Verdict values: malicious, suspicious, safe, unknown.
+# Decision values: contain (score>=80 or malicious), observe.
+"""Shuffle node: compute the decision score (0-100) and verdict."""
+
 import ast
 import json
 import logging
@@ -188,6 +190,7 @@ elif isinstance(_mitre_val, str) and _mitre_val:
     except Exception:
         try:
             import ast as _ast
+
             mitre = _ast.literal_eval(_mitre_val)
         except Exception:
             mitre = [_mitre_val]

@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # ── Action IDs (stable identifiers Shuffle depends on) ────────────────────────
 ACT_NORMALIZE = "act_normalize_inputs"
-ACT_BUILD_CASE_JSON = "act_build_case_json"
+ACT_BUILD_CASE_JSON = "act_build_case_json"  # legacy id, node fused into normalize_inputs
 ACT_THEHIVE = "act_thehive_create_case"
 ACT_THEHIVE_TASK = "act_thehive_add_task"
 ACT_VERIFY_TASK = "act_verify_task"
@@ -63,7 +63,7 @@ ACT_MARK_FP = "act_mark_false_positive"
 ACT_UPDATE_INPROGRESS = "act_update_inprogress"
 ACT_NOTIFY_CRITICAL = "act_notify_critical"
 ACT_NOTIFY_INFO = "act_notify_info"
-ACT_BUILD_HIVE_SUMMARY = "act_build_hive_summary"
+ACT_BUILD_HIVE_SUMMARY = "act_build_hive_summary"  # legacy id — node fused into calc_mttr
 ACT_ENRICH_CASE = "act_enrich_case"
 
 TRIGGER_NODE = "webhook_trigger"
@@ -133,32 +133,20 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             pos(250, 0),
             ctx.app_id_shuffle_tools,
         ),
-        # ── Node 0b. build_case_json ─────────────────────────────────────────
+        # ── Node 1. TheHive: dedup-or-create case ────────────────────────────
+        # Was a plain HTTP POST /api/v1/case; retried webhook sends minted a
+        # second execution for the same alert_id and duplicated cases (TC-26).
+        # Now a script node that returns an existing case carrying the same
+        # alert_id instead of creating a duplicate. Node name unchanged so
+        # `$thehive_create_case.message.body._id` downstream refs keep working.
         execute_python_action(
-            ACT_BUILD_CASE_JSON,
-            "build_case_json",
-            load("build_case_json"),
-            pos(300, -50),
-            ctx.app_id_shuffle_tools,
-        ),
-        # ── Node 1. TheHive: create case ─────────────────────────────────────
-        action(
             ACT_THEHIVE,
             "thehive_create_case",
-            "http",
-            "1.0.0",
-            "POST",
-            [
-                param("url", f"{config.THEHIVE_INT}/api/case"),
-                param(
-                    "headers",
-                    f"Content-Type: application/json\nAuthorization: Bearer {ctx.thehive_key}",
-                ),
-                param("body", "$build_case_json.message"),
-                param("timeout", "120"),
-            ],
+            load("dedup_or_create_case")
+            .replace("__THEHIVE_INT__", config.THEHIVE_INT)
+            .replace("__THEHIVE_KEY__", ctx.thehive_key),
             pos(300, 0),
-            app_id=ctx.app_id_http,
+            ctx.app_id_shuffle_tools,
         ),
         # ── Node 2c. calc_task_title ─────────────────────────────────────────
         execute_python_action(
@@ -173,11 +161,12 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_THEHIVE_OBS_HASH,
             "thehive_obs_hash",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param(
-                    "url", f"{config.THEHIVE_INT}/api/case/$thehive_create_case.body._id/artifact"
+                    "url",
+                    f"{config.THEHIVE_INT}/api/v1/case/$thehive_create_case.message.body._id/observable",
                 ),
                 param(
                     "headers",
@@ -199,11 +188,12 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_THEHIVE_OBS_IP,
             "thehive_obs_ip",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param(
-                    "url", f"{config.THEHIVE_INT}/api/case/$thehive_create_case.body._id/artifact"
+                    "url",
+                    f"{config.THEHIVE_INT}/api/v1/case/$thehive_create_case.message.body._id/observable",
                 ),
                 param(
                     "headers",
@@ -225,10 +215,12 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_THEHIVE_TASK,
             "thehive_add_task",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
-                param("url", f"{config.THEHIVE_INT}/api/case/$thehive_create_case.body._id/task"),
+                param(
+                    "url", f"{config.THEHIVE_INT}/api/v1/case/$thehive_create_case.message.body._id/task"
+                ),
                 param(
                     "headers",
                     f"Content-Type: application/json\nAuthorization: Bearer {ctx.thehive_key}",
@@ -250,7 +242,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_CORTEX_HASH,
             "cortex_hash",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.hash_analyzer_id}/run"),
@@ -271,7 +263,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_CORTEX_HASH_VIRUSSHARE,
             "cortex_hash_virusshare",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.hash_virusshare_id}/run"),
@@ -300,7 +292,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_CORTEX_IP,
             "cortex_ip",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_analyzer_id}/run"),
@@ -321,7 +313,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_CORTEX_IP_DSHIELD,
             "cortex_ip_dshield",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_dshield_id}/run"),
@@ -342,7 +334,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_CORTEX_IP_IPAPI,
             "cortex_ip_ipapi",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_ipapi_id}/run"),
@@ -363,7 +355,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_CORTEX_IP_MNEMONIC_PDNS,
             "cortex_ip_mnemonic_pdns",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_mnemonic_pdns_id}/run"),
@@ -384,7 +376,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_CORTEX_IP_GOOGLEDNS,
             "cortex_ip_googledns",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_googledns_id}/run"),
@@ -413,7 +405,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_MISP_CREATE,
             "misp_create",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.MISP_INT}/events"),
@@ -441,7 +433,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_MISP,
             "misp_search",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.MISP_INT}/attributes/restSearch"),
@@ -478,7 +470,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_ES,
             "es_index",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.ES_INT}/soar-alerts/_doc/$exec.alert_id"),
@@ -532,33 +524,30 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             pos(1400, 0),
             ctx.app_id_shuffle_tools,
         ),
-        # ── Node 30. build_hive_summary ──────────────────────────────────────
-        execute_python_action(
-            ACT_BUILD_HIVE_SUMMARY,
-            "build_hive_summary",
-            load("build_hive_summary"),
-            pos(1700, 0),
-            ctx.app_id_shuffle_tools,
-        ),
         # ── Node 31. TheHive: enrich case ────────────────────────────────────
+        # build_hive_summary is fused into calc_mttr (2026-11-07) — the node
+        # emits {"mttr_seconds", "summary"}; summary arrives JSON-escaped so
+        # it can be embedded inside this JSON body safely.
         action(
             ACT_ENRICH_CASE,
             "enrich_case",
             "http",
-            "1.0.0",
+            "1.4.0",
             "PATCH",
             [
-                param("url", f"{config.THEHIVE_INT}/api/case/$thehive_create_case.body._id"),
+                param("url", f"{config.THEHIVE_INT}/api/v1/case/$thehive_create_case.message.body._id"),
                 param(
                     "headers",
                     f"Content-Type: application/json\nAuthorization: Bearer {ctx.thehive_key}",
                 ),
                 param(
                     "body",
-                    '{"description": "$build_hive_summary.message",'
+                    '{"description": "$calc_mttr.message.summary",'
                     ' "tags": ["ransomware", "soar-lab", "analyzed",'
                     ' "tenzir", "network-watcher", "redis", "loki",'
-                    ' "mttr-calculated"]}',
+                    ' "mttr-calculated",'
+                    ' "alert_id:$normalize_inputs.message.alert_id",'
+                    ' "trace_id:$normalize_inputs.message.trace_id"]}',
                 ),
                 param("timeout", "120"),
             ],
@@ -579,7 +568,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_INDEX_METRICS,
             "es_index_metrics",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.ES_INT}/soar-metrics/_doc/$exec.alert_id"),
@@ -598,7 +587,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_TENZIR_ANALYZE,
             "tenzir_analyze",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.TENZIR_URL}/api/v0/pipeline/create"),
@@ -621,7 +610,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_TENZIR_SERVE,
             "tenzir_serve",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.TENZIR_URL}/api/v0/serve"),
@@ -642,7 +631,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_NETWORK_WATCH,
             "network_watch",
             "http",
-            "1.0.0",
+            "1.4.0",
             "GET",
             [
                 param(
@@ -661,11 +650,19 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_REDIS_CACHE,
             "redis_cache",
             "http",
-            "1.0.0",
+            "1.4.0",
             "POST",
             [
                 param("url", f"{config.API_URL}/api/v1/cache/ioc"),
-                param("headers", "Content-Type: application/json"),
+                param(
+                    "headers",
+                    "Content-Type: application/json"
+                    + (
+                        f"\nX-Service-Token: {config.INTERNAL_SERVICE_TOKEN}"
+                        if config.INTERNAL_SERVICE_TOKEN
+                        else ""
+                    ),
+                ),
                 param(
                     "body",
                     '{"key": "ioc:$exec.hash", "value": "$exec.alert_id", "ttl_seconds": 3600}',
@@ -681,7 +678,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             ACT_LOKI_SEARCH,
             "loki_search",
             "http",
-            "1.0.0",
+            "1.4.0",
             "GET",
             [
                 param(
@@ -742,15 +739,19 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
         execute_python_action(
             ACT_CONTAINMENT,
             "containment",
-            load("containment"),
+            load("containment").replace("__SERVICE_TOKEN__", config.INTERNAL_SERVICE_TOKEN),
             pos(1500, -200),
             ctx.app_id_shuffle_tools,
         ),
         # ── N8. update_inprogress (malicious branch) ─────────────────────────
+        # PATCHes the case New -> InProgress; needs the same TheHive
+        # placeholder substitution as mark_false_positive.
         execute_python_action(
             ACT_UPDATE_INPROGRESS,
             "update_inprogress",
-            load("update_inprogress"),
+            load("update_inprogress")
+            .replace("__THEHIVE_INT__", config.THEHIVE_INT)
+            .replace("__THEHIVE_KEY__", ctx.thehive_key),
             pos(1550, -200),
             ctx.app_id_shuffle_tools,
         ),
@@ -825,10 +826,8 @@ def build_branches(ctx: WorkflowContext) -> list[dict[str, Any]]:
     branches_list = [
         # Webhook → normalize inputs
         branch("br_wh_normalize", TRIGGER_NODE, ACT_NORMALIZE),
-        # Normalize → build case JSON
-        branch("br_normalize_build", ACT_NORMALIZE, ACT_BUILD_CASE_JSON),
-        # JSON built → create case
-        branch("br_build_thehive", ACT_BUILD_CASE_JSON, ACT_THEHIVE),
+        # Normalize (case JSON fused inline) → create case
+        branch("br_normalize_thehive", ACT_NORMALIZE, ACT_THEHIVE),
         # Case created → observables and task in PARALLEL
         branch("br_hive_obs_hash", ACT_THEHIVE, ACT_THEHIVE_OBS_HASH),
         branch("br_hive_obs_ip", ACT_THEHIVE, ACT_THEHIVE_OBS_IP),
@@ -842,7 +841,10 @@ def build_branches(ctx: WorkflowContext) -> list[dict[str, Any]]:
         branch("br_hive_cortex_ip_googledns", ACT_THEHIVE, ACT_CORTEX_IP_GOOGLEDNS),
         branch("br_hive_cortex_ip_ipapi", ACT_THEHIVE, ACT_CORTEX_IP_IPAPI),
         branch("br_hive_misp_create", ACT_THEHIVE, ACT_MISP_CREATE),
-        branch("br_misp_create_search", ACT_MISP_CREATE, ACT_MISP),
+        # misp_search reads $exec.hash — NOT $misp_create — so it fans out
+        # from thehive in parallel with event creation (verified 2026-11-07:
+        # the create→search chain only added ~6s of ceremonial ordering).
+        branch("br_hive_misp_search", ACT_THEHIVE, ACT_MISP),
         branch("br_hive_build_es", ACT_THEHIVE, ACT_BUILD_ES_JSON),
         # Case created → advanced analysis
         branch("br_hive_tenzir", ACT_THEHIVE, ACT_TENZIR_ANALYZE),
@@ -865,22 +867,23 @@ def build_branches(ctx: WorkflowContext) -> list[dict[str, Any]]:
         branch("br_network_verify", ACT_NETWORK_WATCH, ACT_VERIFY_NETWORK),
         branch("br_redis_verify", ACT_REDIS_CACHE, ACT_VERIFY_REDIS),
         branch("br_loki_verify", ACT_LOKI_SEARCH, ACT_VERIFY_LOKI),
-        # Verifications → calculate decision (N6)
+        # Verification nodes stay live as leaf checks (their results land in
+        # the execution doc for metrics/KPIs), but they no longer gate the
+        # decision: calc_decision consumes RAW node outputs ($cortex_hash,
+        # $cortex_ip, $cortex_ip_*, $misp_search, $tenzir_serve,
+        # $network_watch, $loki_search) — verified 2026-11-07 — so the join
+        # binds on the real data deps and drops ~13s of verify dispatch
+        # latency from the critical path.
         branch("br_obs_hash_verify", ACT_THEHIVE_OBS_HASH, ACT_VERIFY_OBS_HASH),
-        branch("br_verify_obs_hash_decision", ACT_VERIFY_OBS_HASH, ACT_CALC_DECISION),
         branch("br_obs_ip_verify", ACT_THEHIVE_OBS_IP, ACT_VERIFY_OBS_IP),
-        branch("br_verify_obs_ip_decision", ACT_VERIFY_OBS_IP, ACT_CALC_DECISION),
         branch("br_task_verify", ACT_THEHIVE_TASK, ACT_VERIFY_TASK),
-        branch("br_verify_task_decision", ACT_VERIFY_TASK, ACT_CALC_DECISION),
-        branch("br_verify_hash_decision", ACT_VERIFY_CORTEX_HASH, ACT_CALC_DECISION),
-        branch("br_verify_ip_decision", ACT_VERIFY_CORTEX_IP, ACT_CALC_DECISION),
-        branch("br_verify_misp_decision", ACT_VERIFY_MISP, ACT_CALC_DECISION),
-        branch("br_verify_es_decision", ACT_VERIFY_ES, ACT_CALC_DECISION),
-        # New analysis → calculate decision
-        branch("br_verify_tenzir_decision", ACT_VERIFY_TENZIR, ACT_CALC_DECISION),
-        branch("br_verify_network_decision", ACT_VERIFY_NETWORK, ACT_CALC_DECISION),
-        branch("br_verify_redis_decision", ACT_VERIFY_REDIS, ACT_CALC_DECISION),
-        branch("br_verify_loki_decision", ACT_VERIFY_LOKI, ACT_CALC_DECISION),
+        # Raw data deps → calculate decision (N6 join barrier)
+        branch("br_hash_decision", ACT_CORTEX_HASH, ACT_CALC_DECISION),
+        branch("br_ip_decision", ACT_CORTEX_IP, ACT_CALC_DECISION),
+        branch("br_misp_decision", ACT_MISP, ACT_CALC_DECISION),
+        branch("br_tenzir_decision", ACT_TENZIR_SERVE, ACT_CALC_DECISION),
+        branch("br_network_decision", ACT_NETWORK_WATCH, ACT_CALC_DECISION),
+        branch("br_loki_decision", ACT_LOKI_SEARCH, ACT_CALC_DECISION),
         # New Cortex analyzers → calculate decision (no individual verification)
         branch("br_cortex_hash_virusshare_decision", ACT_CORTEX_HASH_VIRUSSHARE, ACT_CALC_DECISION),
         branch("br_cortex_ip_dshield_decision", ACT_CORTEX_IP_DSHIELD, ACT_CALC_DECISION),
@@ -894,16 +897,24 @@ def build_branches(ctx: WorkflowContext) -> list[dict[str, Any]]:
         # Both branches are unconditional; each downstream node performs its
         # own internal guard against $calc_decision.message.decision.
         branch("br_decision_contain", ACT_CALC_DECISION, ACT_CONTAINMENT),
+        # Parallel tail (data-verified 2026-11-07): notify_critical reads
+        # $calc_decision/$exec/$thehive_create_case — NOT $update_inprogress —
+        # so it can fan out after containment alongside update_inprogress,
+        # saving one ~3s dispatch hop on the malicious path.
         branch("br_contain_inprogress", ACT_CONTAINMENT, ACT_UPDATE_INPROGRESS),
-        branch("br_inprogress_notify", ACT_UPDATE_INPROGRESS, ACT_NOTIFY_CRITICAL),
+        branch("br_contain_notify", ACT_CONTAINMENT, ACT_NOTIFY_CRITICAL),
         branch("br_notify_critical_mttr", ACT_NOTIFY_CRITICAL, ACT_CALC_MTTR),
         branch("br_decision_observe", ACT_CALC_DECISION, ACT_MARK_FP),
         branch("br_fp_notify_info", ACT_MARK_FP, ACT_NOTIFY_INFO),
         branch("br_notify_info_mttr", ACT_NOTIFY_INFO, ACT_CALC_MTTR),
-        # Calculate MTTR → build summary → enrich case → build metrics → index metrics
-        branch("br_mttr_summary", ACT_CALC_MTTR, ACT_BUILD_HIVE_SUMMARY),
-        branch("br_summary_enrich", ACT_BUILD_HIVE_SUMMARY, ACT_ENRICH_CASE),
-        branch("br_enrich_metrics_json", ACT_ENRICH_CASE, ACT_BUILD_METRICS_JSON),
+        # Calculate MTTR → build summary → enrich case.
+        # build_metrics_json reads $calc_mttr/$calc_decision/$exec/$thehive_*/
+        # $cortex_*/$misp_search/$containment — NOT $enrich_case — so the
+        # metrics path fans out from calc_mttr in parallel with the
+        # summary→enrich branch, saving ~2 sequential dispatch hops.
+        # calc_mttr (mttr+summary fused) → enrich case & metrics in parallel
+        branch("br_mttr_enrich", ACT_CALC_MTTR, ACT_ENRICH_CASE),
+        branch("br_mttr_metrics_json", ACT_CALC_MTTR, ACT_BUILD_METRICS_JSON),
         branch("br_metrics_json_index", ACT_BUILD_METRICS_JSON, ACT_INDEX_METRICS),
     ]
 

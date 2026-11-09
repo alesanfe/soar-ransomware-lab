@@ -29,6 +29,7 @@ IMAGES = [
     "ELASTICSEARCH_IMAGE",
     "OPENSEARCH_IMAGE",
     "OPENSEARCH_DASHBOARDS_IMAGE",
+    "DOCKER_PROXY_IMAGE",
     "MISP_CORE_IMAGE",
     "MISP_MODULES_IMAGE",
     "POSTGRES_IMAGE",
@@ -36,6 +37,10 @@ IMAGES = [
     "LOKI_IMAGE",
     "PROMTAIL_IMAGE",
 ]
+
+# Images built locally by this repo (infra/docker/images/); no registry
+# digest exists — verify the local image is present instead.
+LOCAL_IMAGES = {"ORBORUS_IMAGE"}
 
 
 def load_env(env_path: Path) -> dict[str, str]:
@@ -56,12 +61,33 @@ def get_digest(image: str) -> str | None:
     try:
         result = subprocess.run(
             [
-                "docker", "buildx", "imagetools", "inspect",
-                image, "--format", "{{.Manifest.Digest}}",
+                "docker",
+                "buildx",
+                "imagetools",
+                "inspect",
+                image,
+                "--format",
+                "{{.Manifest.Digest}}",
             ],
             capture_output=True,
             text=True,
             timeout=30,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception as e:
+        print(f"  ERROR: {e}", file=sys.stderr)
+    return None
+
+
+def get_local_digest(image: str) -> str | None:
+    """Get the RepoDigest/sha256 id of a locally built image."""
+    try:
+        result = subprocess.run(
+            ["docker", "image", "inspect", image, "--format", "{{.Id}}"],
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -99,6 +125,15 @@ def main() -> int:
         if not image:
             print(f"  {var_name}: NOT SET")
             results.append((var_name, "", None))
+            continue
+        if var_name in LOCAL_IMAGES:
+            local = get_local_digest(image)
+            if local:
+                print(f"  {var_name}: {image} -> local {local[:19]}...")
+                results.append((var_name, image, local))
+            else:
+                print(f"  {var_name}: {image} -> LOCAL IMAGE MISSING")
+                results.append((var_name, image, None))
             continue
         digest = get_digest(image)
         if digest:

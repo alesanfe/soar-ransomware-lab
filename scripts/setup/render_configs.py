@@ -124,7 +124,8 @@ def main() -> int:
         help="Directory to write rendered configs",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose logging",
     )

@@ -1,3 +1,5 @@
+"""Debug: inspect a Shuffle workflow definition and node wiring."""
+
 import json
 import logging
 import os

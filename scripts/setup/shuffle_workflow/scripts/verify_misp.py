@@ -1,5 +1,7 @@
 # Embedded script: verify_misp
 # Verifies the MISP search response (non-critical, handles truncation).
+"""Shuffle node: process MISP search results."""
+
 import json
 import logging
 import re

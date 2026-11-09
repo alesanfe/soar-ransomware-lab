@@ -1,1 +1,1 @@
-
+"""Report generators package."""

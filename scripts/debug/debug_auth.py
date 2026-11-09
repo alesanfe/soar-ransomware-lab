@@ -1,3 +1,5 @@
+"""Debug: probe API auth endpoints and token flow."""
+
 import json
 import logging
 import os

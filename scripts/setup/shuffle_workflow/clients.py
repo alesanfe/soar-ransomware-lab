@@ -143,8 +143,7 @@ def validate_api_key(session: requests.Session) -> str:
             if _probe.status_code == 200:
                 _existing = _current.replace(f"{AUTH_BEARER_PREFIX} ", "")
                 logger.debug(
-                    "validate_api_key: existing Bearer token works"
-                    " — not generating a new one"
+                    "validate_api_key: existing Bearer token works" " — not generating a new one"
                 )
                 return _existing
         except Exception as exc:

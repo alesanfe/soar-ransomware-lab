@@ -90,7 +90,7 @@ def _validate_thehive_key(key):
     """Return True if the key is accepted by TheHive."""
     try:
         r = requests.get(
-            f"{THEHIVE_URL}/api/user/admin",
+            f"{THEHIVE_URL}/api/v1/user/current",
             headers={HEADER_AUTHORIZATION: f"{AUTH_BEARER_PREFIX} {key}"},
             timeout=10,
         )
@@ -123,7 +123,7 @@ def restore_thehive_credentials(api_key):
             # Generate new key
             auth = base64.b64encode(f"{THEHIVE_ADMIN_USER}:{THEHIVE_ADMIN_PASS}".encode()).decode()
             r = requests.post(
-                f"{THEHIVE_URL}/api/user/{THEHIVE_ADMIN_USER}/key/renew",
+                f"{THEHIVE_URL}/api/v1/user/{THEHIVE_ADMIN_USER}/key/renew",
                 data="{}",
                 headers={
                     HEADER_AUTHORIZATION: f"{AUTH_BASIC_PREFIX} {auth}",

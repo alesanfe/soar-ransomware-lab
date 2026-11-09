@@ -1,5 +1,7 @@
 # Embedded script: verify_obs_hash
 # Verifies that TheHive hash observable was created.
+"""Shuffle node: confirm the hash observable registered."""
+
 import json
 import logging
 

@@ -59,7 +59,9 @@ def create_grafana_datasource():
 
     # Create datasource
     try:
-        response = requests.post(url, json=datasource_config, auth=auth, verify=False, timeout=10)  # nosec B501
+        response = requests.post(
+            url, json=datasource_config, auth=auth, verify=False, timeout=10
+        )  # nosec B501
     except Exception as e:
         logger.error(f"Could not create Grafana datasource: {e}")
         return None
@@ -87,12 +89,19 @@ def create_grafana_dashboard():
     dashboard_json = None
     for candidate in [
         Path("/app/infra/docker/compose/logging/kpi-dashboard.json"),
-        Path(__file__).parent.parent.parent / "infra" / "docker" / "compose" / "logging" / "kpi-dashboard.json",
+        Path(__file__).parent.parent.parent
+        / "infra"
+        / "docker"
+        / "compose"
+        / "logging"
+        / "kpi-dashboard.json",
     ]:
         if candidate.exists():
             try:
                 dashboard_json = json.loads(candidate.read_text(encoding="utf-8"))
-                logger.info(f"Loaded dashboard JSON from {candidate} ({len(dashboard_json.get('panels', []))} panels)")
+                logger.info(
+                    f"Loaded dashboard JSON from {candidate} ({len(dashboard_json.get('panels', []))} panels)"
+                )
                 break
             except Exception as e:
                 logger.warning(f"Could not parse {candidate}: {e}")
@@ -171,7 +180,9 @@ def create_grafana_dashboard():
         pass
 
     try:
-        response = requests.post(url, json=dashboard_config, auth=auth, verify=False, timeout=10)  # nosec B501
+        response = requests.post(
+            url, json=dashboard_config, auth=auth, verify=False, timeout=10
+        )  # nosec B501
     except Exception as e:
         logger.error(f"Could not create Grafana dashboard: {e}")
         return None

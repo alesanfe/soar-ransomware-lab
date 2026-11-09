@@ -20,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE = ROOT / ".env.full"
 
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 # Service definitions: (name, URL or docker-filter, requires_basic_auth, expected_code)
@@ -50,12 +51,20 @@ def basic_auth_header(username: str, password: str) -> str:
 
 
 def http_check(
-    name: str, url: str, auth: tuple[str, str] | None = None, expected: int | None = None
+    name: str,
+    url: str,
+    auth: tuple[str, str] | None = None,
+    expected: int | None = None,
+    ca_bundle: str | None = None,
 ) -> bool:
     try:
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+        if ca_bundle and os.path.exists(ca_bundle):
+            # Real TLS verification against the lab-internal CA (MISP-001).
+            ctx = ssl.create_default_context(cafile=ca_bundle)
+        else:
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
         req = urllib.request.Request(url, method="GET")
         if auth:
             req.add_header("Authorization", basic_auth_header(auth[0], auth[1]))
@@ -105,6 +114,7 @@ def build_url(protocol: str, port_var: str, path: str = "") -> str:
             "SHUFFLE_API_PORT": "5001",
             "SHUFFLE_UI_PORT": "8081",
             "ELASTICSEARCH_PORT": "8200",
+            "OPENSEARCH_PORT": "8201",
             "MISP_PORT": "8083",
             "GRAFANA_PORT": "8084",
         }
@@ -117,10 +127,11 @@ def main():
     ok = True
 
     print("=== Core SOAR Services ===")
-    ok &= http_check("TheHive", build_url("http", "THEHIVE_HTTP_PORT", "/api/status"))
+    ok &= http_check("TheHive", build_url("http", "THEHIVE_HTTP_PORT", "/api/v1/status/public"))
     ok &= http_check("Cortex", build_url("http", "CORTEX_HTTP_PORT", "/api/status"))
     ok &= http_check("Shuffle", build_url("http", "SHUFFLE_API_PORT", "/api/v1/health"))
     ok &= http_check("Elasticsearch", build_url("http", "ELASTICSEARCH_PORT", "_cluster/health"))
+    ok &= http_check("OpenSearch", build_url("http", "OPENSEARCH_PORT", "_cluster/health"))
 
     print()
     print("=== API & Management ===")
@@ -129,7 +140,13 @@ def main():
 
     print()
     print("=== Threat Intelligence ===")
-    ok &= http_check("MISP", build_url("http", "MISP_PORT"))
+    lab_ca = os.environ.get(
+        "LAB_CA_BUNDLE",
+        os.path.join(
+            os.path.dirname(__file__), "..", "..", "infra", "docker", "config", "certs", "ca.crt"
+        ),
+    )
+    ok &= http_check("MISP", build_url("https", "MISP_PORT"), ca_bundle=lab_ca)
 
     print()
     print("=== Observability ===")

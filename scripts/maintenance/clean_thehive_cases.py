@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""Clean old TheHive cases to prevent Elasticsearch performance degradation.
+"""Clean old TheHive cases so each E2E run starts from a clean baseline.
 
-TheHive uses an internal Elasticsearch index for cases and observables.
-When hundreds of cases accumulate from repeated E2E test runs, TheHive's
-ES queries slow down and eventually time out (30s SocketTimeoutException),
-causing workflow nodes like ``thehive_obs_hash`` to return HTTP 500.
-
-This script deletes all TheHive cases (or keeps the last ``--keep`` cases)
-so that each E2E run starts from a clean baseline.
+TheHive 5 stores data in JanusGraph (BerkeleyJE) — not Elasticsearch — so
+cleanup is a pure API loop: list cases via ``search_cases`` and delete each
+via ``DELETE /api/v1/case/{id}`` (a real delete in TH5, not soft-delete).
 
 Usage (inside container):
     python /app/scripts/maintenance/clean_thehive_cases.py [--keep N]
@@ -108,7 +104,7 @@ def main() -> int:
         try:
             client.delete_case(cid)
             deleted += 1
-            # Small delay to avoid overwhelming TheHive's ES
+            # Small delay to avoid overwhelming TheHive's JanusGraph backend
             if deleted % 10 == 0:
                 print(f"  ... deleted {deleted}/{len(to_delete)}")
                 time.sleep(0.5)

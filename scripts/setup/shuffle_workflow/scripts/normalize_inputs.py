@@ -7,6 +7,8 @@
 #
 # Subsequent nodes reference $normalize_inputs.message.<field> for optional
 # fields and $exec.<field> for required fields.
+"""Shuffle node: validate and normalize alert fields (severity, IoCs)."""
+
 import json
 import logging
 import re
@@ -89,6 +91,7 @@ if severity < 1 or severity > 3:
 normalized = {
     "severity": severity,
     "alert_id": _get_field("alert_id"),
+    "trace_id": exec_data.get("trace_id", ""),
     "alert_type": _get_field("alert_type", "ransomware"),
     "hostname": _get_field("hostname"),
     "src_ip": _get_field("src_ip"),
@@ -116,5 +119,59 @@ normalized = {
     "malware_type": exec_data.get("malware_type", ""),
     "malware_family": exec_data.get("malware_family", ""),
     "iocs_count": exec_data.get("iocs_count", ""),
+}
+
+# Build the TheHive case JSON inline (fused from build_case_json — removes
+# one ~3s sequential dispatch hop on the workflow critical path).
+mitre_raw = str(normalized.get("mitre_techniques", ""))
+mitre_list = []
+try:
+    mitre_list = json.loads(mitre_raw)
+    if not isinstance(mitre_list, list):
+        mitre_list = [mitre_list]
+except Exception:
+    try:
+        import ast
+
+        mitre_list = ast.literal_eval(mitre_raw)
+        if not isinstance(mitre_list, list):
+            mitre_list = [mitre_list]
+    except Exception:
+        pass
+if not mitre_list:
+    mitre_list = [x.strip() for x in mitre_raw.strip("[]").split(",") if x.strip()]
+mitre_str = ", ".join(str(m) for m in mitre_list) if mitre_list else "N/A"
+hostname = normalized.get("hostname") or exec_data.get("hostname", "")
+alert_id = normalized.get("alert_id") or exec_data.get("alert_id", "")
+trace_id = normalized.get("trace_id") or exec_data.get("trace_id", "")
+if not isinstance(trace_id, str) or trace_id.startswith("$"):
+    trace_id = ""
+hash_val = normalized.get("hash") or exec_data.get("hash", "")
+src_ip = normalized.get("src_ip") or exec_data.get("src_ip", "")
+alert_type = normalized.get("alert_type") or exec_data.get("alert_type", "")
+if not alert_type or str(alert_type).startswith("$"):
+    alert_type = "ransomware"
+alert_type_str = str(alert_type).replace("_", " ").title()
+normalized["case"] = {
+    "title": f"{alert_type_str}: {hostname} - {alert_id} | MITRE: {mitre_str}",
+    "description": (
+        f"Alert: {alert_id} | Trace: {trace_id} | Type: {alert_type} | Host: {hostname}"
+        f" | Hash: {hash_val} | IP: {src_ip} | MITRE: {mitre_str}"
+    ),
+    "severity": severity,
+    "tlp": 2,
+    "tags": [
+        "ransomware",
+        "soar-lab",
+        "automated",
+        alert_type,
+        f"alert_id:{alert_id}",
+    ]
+    + ([f"trace_id:{trace_id}"] if trace_id else [])
+    + (
+        ["priority:critical", "urgent"]
+        if severity >= 3
+        else (["priority:high"] if severity == 2 else [])
+    ),
 }
 print(json.dumps(normalized))

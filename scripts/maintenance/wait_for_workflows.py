@@ -22,7 +22,7 @@ def count_finished() -> tuple[int, int]:
     """Return (finished_count, total_count) from OpenSearch workflowexecution index."""
     try:
         r = requests.post(
-            f"{OS_URL}/workflowexecution-000001/_count",
+            f"{OS_URL}/workflowexecution/_count",
             json={"query": {"terms": {"status": ["FINISHED", "ABORTED", "FAILED"]}}},
             verify=False,
             timeout=15,
@@ -35,7 +35,7 @@ def count_finished() -> tuple[int, int]:
 
     try:
         r2 = requests.get(
-            f"{OS_URL}/workflowexecution-000001/_count",
+            f"{OS_URL}/workflowexecution/_count",
             verify=False,
             timeout=15,
         )

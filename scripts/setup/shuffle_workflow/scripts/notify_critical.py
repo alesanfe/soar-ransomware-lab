@@ -1,5 +1,7 @@
 # Embedded script: notify_critical
 # Notify critical (malicious branch).
+"""Shuffle node: build the CRITICAL notification payload."""
+
 import json
 import logging
 import time
@@ -7,7 +9,7 @@ import time
 logger = logging.getLogger(__name__)
 alert_id = r"""$exec.alert_id"""
 hostname = r"""$exec.hostname"""
-case_id = r"""$thehive_create_case.body._id"""
+case_id = r"""$thehive_create_case.message.body._id"""
 decision_raw = r"""$calc_decision.message"""
 try:
     d = json.loads(decision_raw)

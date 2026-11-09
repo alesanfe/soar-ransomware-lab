@@ -406,12 +406,35 @@ def ensure_es_indices() -> None:
         logger.warning("could not create soar-metrics: %s", _e)
 
 
+def _env_or_file(key: str, default: str = "") -> str:
+    """Read *key* from the process env, falling back to .env.container / .env.full.
+
+    Setup scripts run inside the api container, whose env block does not
+    include every credential (e.g. GRAFANA_ADMIN_PASSWORD lives only in
+    .env.container). Without the fallback the dashboard import auths with
+    an empty password and gets HTTP 401.
+    """
+    value = os.environ.get(key)
+    if value:
+        return value
+    for env_path in ("/app/.env.container", "/app/.env.full", ".env.container", ".env.full"):
+        try:
+            with open(env_path, encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if line.startswith(f"{key}="):
+                        return line.split("=", 1)[1].strip().strip('"').strip("'")
+        except OSError:
+            continue
+    return default
+
+
 def import_grafana_dashboard() -> None:
     """Import the Grafana KPI dashboard."""
     logger.info("Importing Grafana KPI dashboard...")
     grafana_url = os.environ.get("GRAFANA_URL", "http://grafana:3000")
-    grafana_user = os.environ.get("GRAFANA_ADMIN_USER", "admin")
-    grafana_pass = os.environ.get("GRAFANA_ADMIN_PASSWORD", "")
+    grafana_user = _env_or_file("GRAFANA_ADMIN_USER", "admin")
+    grafana_pass = _env_or_file("GRAFANA_ADMIN_PASSWORD")
 
     if os.path.exists("/app/infra/docker/compose/logging/kpi-dashboard.json"):
         kpi_dashboard_path = "/app/infra/docker/compose/logging/kpi-dashboard.json"
@@ -428,10 +451,38 @@ def import_grafana_dashboard() -> None:
     try:
         with open(kpi_dashboard_path) as f:
             dashboard = json.load(f)
+        # The dashboard ships via Grafana provisioning; the API refuses to
+        # overwrite provisioned dashboards (HTTP 400). If it already exists
+        # the import is a no-op.
+        uid = dashboard.get("uid")
+        if uid:
+            existing = requests.get(
+                f"{grafana_url}/api/dashboards/uid/{uid}",
+                auth=(grafana_user, grafana_pass),
+                timeout=10,
+                verify=False,
+            )
+            if existing.status_code == 200:
+                logger.info(
+                    "KPI dashboard already present (uid=%s, provisioned=%s) — skipping import",
+                    uid,
+                    existing.json().get("meta", {}).get("provisioned"),
+                )
+                return
+        # /api/dashboards/db requires the {"dashboard": {...}} envelope;
+        # the file stores the bare dashboard model (provisioning format).
+        payload = (
+            dashboard
+            if "dashboard" in dashboard
+            else {
+                "dashboard": dashboard,
+                "overwrite": True,
+            }
+        )
         grafana_response = requests.post(
             f"{grafana_url}/api/dashboards/db",
             auth=(grafana_user, grafana_pass),
-            json=dashboard,
+            json=payload,
             headers={HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON},
             timeout=15,
             verify=False,

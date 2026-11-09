@@ -1,5 +1,7 @@
 # Embedded script: verify_tenzir
 # Verifies the Tenzir analysis response (non-critical).
+"""Shuffle node: process Tenzir network events."""
+
 import json
 import logging
 

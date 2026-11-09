@@ -150,22 +150,52 @@ if r_installed and r_installed.ok:
             a.get("workerDefinitionId") or a.get("analyzerDefinitionId") or a.get("name")
         ] = a
 
+# Avoid analyzers that require external API keys or credentials
+CREDENTIAL_NAMES = {"api_key", "key", "username", "password", "token", "secret"}
+GLOBAL_ITEMS = ("max_tlp", "max_pap", "proxy_http", "proxy_https", "auto_extract_artifacts")
+
+# Analyzers invoked directly by the E2E suite (TC-01 hash verification,
+# KPI-06 common-analyzer check) that the generic free-filter would drop
+# because they declare non-credential required config — e.g. FileInfo_8_0's
+# `manalyze_enable` boolean toggle. These get installed with their declared
+# defaultValue for each required item.
+FORCE_INSTALL_IDS = {"FileInfo_8_0"}
+
+
+def _required_defaults(d):
+    """Return resolved values for required non-global config items, or None.
+
+    A required item is resolvable when it declares a ``defaultValue`` or is a
+    plain boolean (defaults to False). Unresolvable items (free-form strings,
+    lists without defaults) return None so the analyzer is skipped.
+    """
+    out = {}
+    for c in d.get("configurationItems", []):
+        if not c.get("required") or c.get("name") in GLOBAL_ITEMS:
+            continue
+        if "defaultValue" in c:
+            out[c["name"]] = c["defaultValue"]
+        elif c.get("type") == "boolean":
+            out[c["name"]] = False
+        else:
+            return None
+    return out
+
+
 free_analyzers = []
 for d in definitions:
     config_items = d.get("configurationItems", [])
-    # Avoid analyzers that require external API keys or credentials
-    excluded_names = {"api_key", "key", "username", "password", "token", "secret"}
     # Filter required items, excluding common global options
     required_items = [
         c
         for c in config_items
-        if c.get("required", False)
-        and c.get("name")
-        not in ("max_tlp", "max_pap", "proxy_http", "proxy_https", "auto_extract_artifacts")
+        if c.get("required", False) and c.get("name") not in GLOBAL_ITEMS
     ]
 
     # If any remaining required item looks like a credential, skip it
-    if required_items and any(c.get("name", "").lower() in excluded_names for c in required_items):
+    if required_items and any(
+        c.get("name", "").lower() in CREDENTIAL_NAMES for c in required_items
+    ):
         continue
 
     # De-duplicate: If we have multiple analyzers for the same function,
@@ -176,11 +206,23 @@ for d in definitions:
 
     if not required_items:
         free_analyzers.append(d)
+    elif d.get("id") in FORCE_INSTALL_IDS:
+        defaults = _required_defaults(d)
+        if defaults is not None:
+            d["_extra_config"] = defaults
+            free_analyzers.append(d)
+            logger.info(f"  [FORCED] {d['id']} (required config resolved to defaults)")
+        else:
+            logger.warning(
+                f"  [SKIP] {d['id']} is E2E-required but has unresolvable required config"
+            )
 
 logger.info(f"Total definitions: {len(definitions)}")
 logger.info(f"Analyzers without required config: {len(free_analyzers)}")
 
-USEFUL_TYPES = {"hash", "ip", "domain", "url", "mail"}
+# "file" included so FileInfo_8_0 (dataTypeList=["file"]) is not
+# silently filtered out — the E2E TC-01 hash verification runs it.
+USEFUL_TYPES = {"hash", "ip", "domain", "url", "mail", "file"}
 useful = [a for a in free_analyzers if set(a.get("dataTypeList", [])) & USEFUL_TYPES]
 
 logger.info(f"\nInstalling {len(useful)} useful analyzers...")
@@ -198,6 +240,7 @@ for a in useful:
             "check_tlp": False,
             "check_pap": False,
             "auto_extract_artifacts": False,
+            **a.get("_extra_config", {}),
         },
     }
     ri = cortex_request(
@@ -234,13 +277,14 @@ with open("tests/e2e/fixtures/ioc_samples.json") as f:
 malicious_cases = ioc_data.get("malicious_test_cases", [])
 malicious = {
     "hash": (
-        list({c.get("hash", "") for c in malicious_cases if c.get("hash")})[0]
+        min({c.get("hash", "") for c in malicious_cases if c.get("hash")})
         if malicious_cases
         else ""
     ),
     "ips": list({c.get("ip", "") for c in malicious_cases if c.get("ip")}),
     "domains": list({c.get("domain", "") for c in malicious_cases if c.get("domain")}),
     "urls": list({c.get("url", "") for c in malicious_cases if c.get("url")}),
+    "mails": list({c.get("mail", "") for c in malicious_cases if c.get("mail")}),
 }
 
 logger.info("Waiting for MISP API key to be accepted...")
@@ -308,6 +352,17 @@ for url in malicious.get("urls", []):
             "category": "External analysis",
             "value": url,
             "comment": "Malicious URL",
+            "to_ids": True,
+        }
+    )
+
+for mail in malicious.get("mails", []):
+    event_payload["Event"]["Attribute"].append(
+        {
+            "type": "email-src",
+            "category": "Payload delivery",
+            "value": mail,
+            "comment": "Malicious sender",
             "to_ids": True,
         }
     )

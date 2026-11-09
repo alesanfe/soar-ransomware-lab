@@ -1,1 +1,1 @@
-
+"""Safety checks package."""

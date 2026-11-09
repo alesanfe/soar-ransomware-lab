@@ -59,7 +59,7 @@ def preserve_thehive_credentials():
     # Verify that the key is valid. TheHive 5 accepts Bearer token.
     try:
         r = requests.get(
-            f"{THEHIVE_URL}/api/user/current",
+            f"{THEHIVE_URL}/api/v1/user/current",
             headers={HEADER_AUTHORIZATION: f"{AUTH_BEARER_PREFIX} {THEHIVE_API_KEY}"},
             timeout=10,
         )

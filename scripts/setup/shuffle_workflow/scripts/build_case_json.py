@@ -1,5 +1,7 @@
 # Embedded script: build_case_json
 # Builds the TheHive case JSON from normalized inputs.
+"""Shuffle node: build the TheHive case JSON payload."""
+
 import json
 import logging
 
@@ -37,6 +39,9 @@ if not mitre_list:
 mitre_str = ", ".join(str(m) for m in mitre_list) if mitre_list else "N/A"
 hostname = _norm.get("hostname", "") or """$exec.hostname"""
 alert_id = _norm.get("alert_id", "") or """$exec.alert_id"""
+trace_id = _norm.get("trace_id", "") or """$exec.trace_id"""
+if not isinstance(trace_id, str) or trace_id.startswith("$"):
+    trace_id = ""
 hash_val = _norm.get("hash", "") or """$exec.hash"""
 src_ip = _norm.get("src_ip", "") or """$exec.src_ip"""
 alert_type = _norm.get("alert_type", "") or """$exec.alert_type"""
@@ -47,12 +52,19 @@ alert_type_str = alert_type.replace("_", " ").title()
 case = {
     "title": f"{alert_type_str}: {hostname} - {alert_id} | MITRE: {mitre_str}",
     "description": (
-        f"Alert: {alert_id} | Type: {alert_type} | Host: {hostname} | Hash: {hash_val}"
-        f" | IP: {src_ip} | MITRE: {mitre_str}"
+        f"Alert: {alert_id} | Trace: {trace_id} | Type: {alert_type} | Host: {hostname}"
+        f" | Hash: {hash_val} | IP: {src_ip} | MITRE: {mitre_str}"
     ),
     "severity": severity,
     "tlp": 2,
-    "tags": ["ransomware", "soar-lab", "automated", alert_type, f"alert_id:{alert_id}"]
+    "tags": [
+        "ransomware",
+        "soar-lab",
+        "automated",
+        alert_type,
+        f"alert_id:{alert_id}",
+    ]
+    + ([f"trace_id:{trace_id}"] if trace_id else [])
     + (
         ["priority:critical", "urgent"]
         if severity >= 3

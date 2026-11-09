@@ -1,5 +1,7 @@
 # Embedded script: calc_task_title
 # Calculates a conditional task title based on severity.
+"""Shuffle node: compute the investigation task title."""
+
 import json
 import logging
 

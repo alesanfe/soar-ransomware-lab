@@ -1,5 +1,7 @@
 # Embedded script: verify_cortex_ip
 # Verifies the Cortex IP job response (non-critical).
+"""Shuffle node: extract taxonomies from the Cortex IP job."""
+
 import ast
 import json
 import logging

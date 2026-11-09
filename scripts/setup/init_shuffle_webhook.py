@@ -44,9 +44,11 @@ except ImportError:
     import fix_org_users
 
 # ── Import the shuffle_workflow package ────────────────────────────────────────
+# isort: off
 try:
     from .shuffle_workflow import (
         clients,
+        config,
         cortex_setup,
         credentials,
         es_fixes,
@@ -55,20 +57,20 @@ try:
         workflow_actions,
         workflow_definition,
     )
-    from .shuffle_workflow import config as wf_config
 except ImportError:
     # Running as a standalone script (not inside the package)
-    from shuffle_workflow import (
-        clients,  # type: ignore[no-redef]
-        cortex_setup,  # type: ignore[no-redef]
-        credentials,  # type: ignore[no-redef]
-        es_fixes,  # type: ignore[no-redef]
-        shuffle_setup,  # type: ignore[no-redef]
-        test_mode,  # type: ignore[no-redef]
-        workflow_actions,  # type: ignore[no-redef]
-        workflow_definition,  # type: ignore[no-redef]
-    )
-    from shuffle_workflow import config as wf_config  # type: ignore[no-redef]
+    from shuffle_workflow import clients  # type: ignore[no-redef]
+    from shuffle_workflow import config  # type: ignore[no-redef]
+    from shuffle_workflow import cortex_setup  # type: ignore[no-redef]
+    from shuffle_workflow import credentials  # type: ignore[no-redef]
+    from shuffle_workflow import es_fixes  # type: ignore[no-redef]
+    from shuffle_workflow import shuffle_setup  # type: ignore[no-redef]
+    from shuffle_workflow import test_mode  # type: ignore[no-redef]
+    from shuffle_workflow import workflow_actions  # type: ignore[no-redef]
+    from shuffle_workflow import workflow_definition  # type: ignore[no-redef]
+# isort: on
+
+wf_config = config
 
 # Re-expose ShuffleClient at the module level so that integration tests
 # can patch it via ``patch("scripts.setup.init_shuffle_webhook.ShuffleClient")``.
@@ -201,8 +203,7 @@ def init_shuffle_webhook():
     # ── 18. Compute webhook URLs ───────────────────────────────────────────────
     webhook_url_internal = f"{wf_config.SHUFFLE_URL}/api/v1/hooks/webhook_{trigger_id}"
     _external_base = (
-        wf_config.SHUFFLE_URL
-        .replace("shuffle-backend", "localhost")
+        wf_config.SHUFFLE_URL.replace("shuffle-backend", "localhost")
         .replace("soar_shuffle_backend", "localhost")
         .replace("shuffle-frontend", "localhost")
         .replace("soar_shuffle_frontend", "localhost")

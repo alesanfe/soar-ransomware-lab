@@ -28,10 +28,7 @@ from soar_lab.common.constants import (
 
 from . import config
 from .utils import action, branch, param, pos
-from .workflow_actions import (
-    ACT_CALC_DECISION,
-    ACT_THEHIVE,
-)
+from .workflow_actions import ACT_THEHIVE
 
 logger = logging.getLogger(__name__)
 
@@ -295,27 +292,35 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
         elif ip_ans:
             ip_analyzer_id = _get_id(ip_ans[0])
         logger.info("[cortex] Selected IP analyzer: %s", ip_analyzer_id)
-        virusshare = [a for a in hash_ans if "Virusshare" in a["name"]]
+        virusshare = sorted(
+            (a for a in hash_ans if "Virusshare" in a["name"]), key=lambda x: x["name"]
+        )
         if virusshare:
             hash_virusshare_id = _get_id(virusshare[0])
             has_hash_virusshare = True
             logger.info("[cortex] Selected Virusshare analyzer: %s", hash_virusshare_id)
-        dshield = [a for a in ip_ans if "DShield_lookup" in a["name"]]
+        dshield = sorted(
+            (a for a in ip_ans if "DShield_lookup" in a["name"]), key=lambda x: x["name"]
+        )
         if dshield:
             ip_dshield_id = _get_id(dshield[0])
             has_ip_dshield = True
             logger.info("[cortex] Selected DShield analyzer: %s", ip_dshield_id)
-        mnemonic_pdns = [a for a in ip_ans if "Mnemonic_pDNS_Public" in a["name"]]
+        mnemonic_pdns = sorted(
+            (a for a in ip_ans if "Mnemonic_pDNS_Public" in a["name"]), key=lambda x: x["name"]
+        )
         if mnemonic_pdns:
             ip_mnemonic_pdns_id = _get_id(mnemonic_pdns[0])
             has_ip_mnemonic_pdns = True
             logger.info("[cortex] Selected Mnemonic pDNS analyzer: %s", ip_mnemonic_pdns_id)
-        googledns = [a for a in ip_ans if "GoogleDNS_resolve" in a["name"]]
+        googledns = sorted(
+            (a for a in ip_ans if "GoogleDNS_resolve" in a["name"]), key=lambda x: x["name"]
+        )
         if googledns:
             ip_googledns_id = _get_id(googledns[0])
             has_ip_googledns = True
             logger.info("[cortex] Selected GoogleDNS analyzer: %s", ip_googledns_id)
-        ipapi = [a for a in ip_ans if "IP-API" in a["name"]]
+        ipapi = sorted((a for a in ip_ans if "IP-API" in a["name"]), key=lambda x: x["name"])
         if ipapi:
             ip_ipapi_id = _get_id(ipapi[0])
             has_ip_ipapi = True
@@ -326,6 +331,17 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
     # Dynamically wire any remaining *installed* Cortex analyzer
     dynamic_cortex_actions: list[dict[str, Any]] = []
     dynamic_cortex_branches: list[dict[str, Any]] = []
+
+    def _base_name(n: str) -> str:
+        """Strip the version suffix (``_1_0``, ``_4_0``) from analyzer names.
+
+        Installed analyzer instances carry version-suffixed names
+        (``GoogleDNS_resolve_1_0_0``) while wired/skip lists use base names
+        (``GoogleDNS_resolve``). Exact-name matching let skipped analyzers
+        get dynamically wired anyway (BUG-072).
+        """
+        return re.sub(r"_\d+(?:_\d+)*$", "", n)
+
     try:
         wired_names = {
             "Virusshare",
@@ -338,10 +354,15 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
             wired_names.add(hash_ans[0]["name"])
         if ip_ans:
             wired_names.add(ip_ans[0]["name"])
+        wired_bases = {_base_name(n) for n in wired_names}
+        skip_bases = {_base_name(n) for n in _SKIP_DYNAMIC_NAMES}
         dyn_pos_y = -260
         for a in all_analyzers:
             name = a.get("name", "")
-            if not name or name in wired_names or name in _SKIP_DYNAMIC_NAMES:
+            if not name:
+                continue
+            base = _base_name(name)
+            if name in wired_names or base in wired_bases or base in skip_bases:
                 continue
             dtypes = a.get("dataTypeList", [])
             if "domain" in dtypes:
@@ -367,7 +388,7 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
                     aid=aid,
                     name=f"cortex_dyn_{slug}",
                     app_name="http",
-                    app_version="1.0.0",
+                    app_version="1.4.0",
                     app_id=app_id_http,
                     action_name="POST",
                     params=[
@@ -387,9 +408,12 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
                 )
             )
             dynamic_cortex_branches.append(branch(f"br_hive_cortex_dyn_{slug}", ACT_THEHIVE, aid))
-            dynamic_cortex_branches.append(
-                branch(f"br_cortex_dyn_{slug}_decision", aid, ACT_CALC_DECISION)
-            )
+            # No aid→CALC_DECISION edge: calc_decision only reads the four
+            # static IP analyzers ($cortex_ip_dshield/_mnemonic_pdns/
+            # _googledns/_ipapi) — verified by $ref audit 2026-11-07.
+            # Wiring every dyn analyzer into the join forced the decision to
+            # wait ~7s for enrichment results it never consumes; results
+            # still land in the execution doc for metrics/KPIs.
         if dynamic_cortex_actions:
             logger.info(
                 "  [cortex] Dynamically wired %d additional installed analyzer(s): %s",

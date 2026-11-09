@@ -27,7 +27,7 @@ def discover_suites():
 
 def suite_to_target(suite):
     if suite.startswith("TC-KPI-"):
-        return f"test-e2e-kpi{suite.split(chr(45))[-1].zfill(2)}"
+        return f"test-e2e-kpi-{suite.split(chr(45))[-1].zfill(2)}"
     return f"test-e2e-tc{suite.split(chr(45))[-1].zfill(2)}"
 
 
@@ -101,10 +101,16 @@ def cmd_validate(_args):
 
 def _prepare_suites():
     suites = discover_suites()
-    start = int(os.environ.get("E2E_SUITE_START", "0"))
+    try:
+        start = int(os.environ.get("E2E_SUITE_START", "0"))
+    except ValueError:
+        logger.warning("Ignoring non-numeric E2E_SUITE_START=%r", os.environ["E2E_SUITE_START"])
+        start = 0
     if start:
-        logger.info(f"Skipping first {start} suite(s); starting from {suites[start]}")
-        suites = suites[start:]
+        skipped = suites[start:]
+        first = skipped[0] if skipped else "<none>"
+        logger.info(f"Skipping first {start} suite(s); starting from {first}")
+        suites = skipped
     return suites
 
 

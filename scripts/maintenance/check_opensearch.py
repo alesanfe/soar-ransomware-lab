@@ -1,3 +1,5 @@
+"""Check OpenSearch cluster/index health for the lab."""
+
 import json
 import logging
 import os

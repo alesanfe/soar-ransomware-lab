@@ -134,6 +134,17 @@ def parse(path: str = "src/soar_lab tests") -> dict:
         "unused variable 'mock_",
         # pytestmark module-level variable (used by pytest framework)
         "unused variable 'pytestmark'",
+        # pytest autouse fixtures (invoked by the framework, not by name)
+        "unused function '_ensure_coverage_xml'",
+        # FastAPI routes registered via decorators inside test modules
+        "unused function 'resource'",
+        "unused function 'contain'",
+        "unused function 'protected'",
+        "unused function 'static_file'",
+        "unused function 'echo_trace'",
+        "unused function 'log_test'",
+        # Mock spec attributes assigned on test doubles
+        "unused attribute 'run_suite_async'",
     )
     items = [item for item in items if not item["description"].startswith(_fp_patterns)]
 

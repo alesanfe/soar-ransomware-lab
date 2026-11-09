@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -172,8 +171,18 @@ def main() -> int:
         pass
     try:
         requests.post(
-            "http://opensearch:9200/workflowexecution-000001/_delete_by_query",
-            json={"query": {"term": {"execution_id": execution_id}}},
+            "http://opensearch:9200/workflowexecution/_delete_by_query",
+            json={
+                "query": {
+                    "bool": {
+                        "should": [
+                            {"term": {"execution_id": execution_id}},
+                            {"term": {"execution_id.keyword": execution_id}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                }
+            },
             timeout=30,
         )
     except Exception:
@@ -189,10 +198,15 @@ def main() -> int:
                 break
         if thehive_key:
             for retry in range(3):
-                r = requests.get(
-                    "http://thehive:9000/api/case",
+                r = requests.post(
+                    "http://thehive:9000/api/v1/query",
                     headers={"Authorization": f"Bearer {thehive_key}"},
-                    params={"range": "all"},
+                    json={
+                        "query": [
+                            {"_name": "listCase"},
+                            {"_name": "page", "from": 0, "to": 1000},
+                        ]
+                    },
                     timeout=15,
                 )
                 if r.status_code != 200:
@@ -206,7 +220,7 @@ def main() -> int:
                         case_id = case.get("_id") or case.get("id")
                         try:
                             requests.delete(
-                                f"http://thehive:9000/api/case/{case_id}",
+                                f"http://thehive:9000/api/v1/case/{case_id}",
                                 headers={"Authorization": f"Bearer {thehive_key}"},
                                 timeout=15,
                             )

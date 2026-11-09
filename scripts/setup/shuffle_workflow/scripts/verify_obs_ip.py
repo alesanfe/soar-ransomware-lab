@@ -1,5 +1,7 @@
 # Embedded script: verify_obs_ip
 # Verifies that TheHive IP observable was created.
+"""Shuffle node: confirm the IP observable registered."""
+
 import json
 import logging
 

@@ -10,12 +10,17 @@
 #   - Loki: log entries with timestamps and matched ransomware patterns
 #   - Redis: cache details
 #   - Decision: score, verdict, decision, and contributing factors
+"""Shuffle node: build the executive summary used to enrich the case."""
+
 import json
 import logging
 
 logger = logging.getLogger(__name__)
 
 alert_id = """$exec.alert_id"""
+trace_id = """$exec.trace_id"""
+if not isinstance(trace_id, str) or trace_id.startswith("$"):
+    trace_id = ""
 hostname = """$exec.hostname"""
 src_ip = """$exec.src_ip"""
 hash_val = """$exec.hash"""
@@ -24,7 +29,8 @@ try:
     _mttr_obj = json.loads(mttr_raw)
     mttr = (
         str(_mttr_obj.get("mttr_seconds", mttr_raw))
-        if isinstance(_mttr_obj, dict) else str(mttr_raw)
+        if isinstance(_mttr_obj, dict)
+        else str(mttr_raw)
     )
 except Exception:
     mttr = mttr_raw.strip() if mttr_raw else "N/A"
@@ -78,6 +84,7 @@ parts.append("")
 parts.append("| Field | Value |")
 parts.append("|-------|-------|")
 parts.append(f"| **Alert ID** | {alert_id} |")
+parts.append(f"| **Trace ID** | `{trace_id}` |")
 parts.append(f"| **Hostname** | {hostname} |")
 parts.append(f"| **Source IP** | {src_ip} |")
 parts.append(f"| **File Hash** | `{hash_val}` |")

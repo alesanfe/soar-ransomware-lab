@@ -380,9 +380,7 @@ def sync_apikey() -> None:
 
     # Find the admin user in users_v2
     try:
-        _sr = requests.get(
-            f"{_es}/users_v2/_search?size=100", headers=_h, timeout=10, verify=False
-        )
+        _sr = requests.get(f"{_es}/users_v2/_search?size=100", headers=_h, timeout=10, verify=False)
         _hits = _sr.json().get("hits", {}).get("hits", []) if _sr.status_code == 200 else []
     except Exception as _e:
         logger.warning("[apikey-sync] Could not read users_v2: %s", _e)
@@ -434,15 +432,15 @@ def sync_apikey() -> None:
                         timeout=10,
                         verify=False,
                     )
-                    logger.info(
-                        "[apikey-sync] Synced apikey in organization %s", _org_hit["_id"]
-                    )
+                    logger.info("[apikey-sync] Synced apikey in organization %s", _org_hit["_id"])
     except Exception as _e:
         logger.warning("[apikey-sync] Error syncing organizations: %s", _e)
 
     requests.post(
         f"{_es}/users_v2,users,organizations/_refresh",
-        headers=_h, timeout=5, verify=False,
+        headers=_h,
+        timeout=5,
+        verify=False,
     )
     if _fixed:
         logger.info("[apikey-sync] %d user(s) updated — DB now matches .env.full", _fixed)
@@ -455,24 +453,17 @@ def update_env_file(key: str, value: str) -> None:
 
     Used when ``validate_api_key`` generates a new Shuffle API key that
     must be persisted back to the environment file so that Orborus and
-    the ``soar_api`` keepalive loop use the same key.
+    the ``soar_api`` keepalive loop use the same key. Propagates to the
+    derived ``.env.container`` snapshot so in-container consumers do not
+    keep a stale key (BUG-062).
     """
-    import re
+    try:
+        from scripts.setup import env_files
+    except ImportError:
+        import env_files  # type: ignore[no-redef]
 
-    env_path = config.ENV_FILE
-    if not os.path.exists(env_path):
-        logger.warning("[env-update] %s not found — skipping", env_path)
+    written = env_files.update_env_files({key: value}, env_file=config.ENV_FILE)
+    if not written:
+        logger.warning("[env-update] %s not found — skipping", config.ENV_FILE)
         return
-
-    with open(env_path, encoding="utf-8") as f:
-        content = f.read()
-
-    pattern = re.compile(rf"^{re.escape(key)}=.*$", re.MULTILINE)
-    if pattern.search(content):
-        new_content = pattern.sub(f"{key}={value}", content)
-    else:
-        new_content = content.rstrip("\n") + f"\n{key}={value}\n"
-
-    with open(env_path, "w", encoding="utf-8") as f:
-        f.write(new_content)
-    logger.info("[env-update] %s updated in %s", key, env_path)
+    logger.info("[env-update] %s updated in %s", key, ", ".join(str(p) for p in written))

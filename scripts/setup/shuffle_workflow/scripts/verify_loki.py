@@ -1,5 +1,7 @@
 # Embedded script: verify_loki
 # Verifies the Loki search response (non-critical).
+"""Shuffle node: process relevant Loki log lines."""
+
 import json
 import logging
 

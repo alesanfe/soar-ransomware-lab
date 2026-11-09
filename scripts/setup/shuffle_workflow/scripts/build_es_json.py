@@ -1,5 +1,7 @@
 # Embedded script: build_es_json
 # Builds the Elasticsearch document from all available data.
+"""Shuffle node: build the soar-alerts ES document."""
+
 import json
 import logging
 
@@ -17,6 +19,9 @@ try:
 except Exception:
     _norm2 = {}
 alert_id = _norm2.get("alert_id", "") or """$exec.alert_id"""
+trace_id = _norm2.get("trace_id", "") or """$exec.trace_id"""
+if not isinstance(trace_id, str) or trace_id.startswith("$"):
+    trace_id = ""
 hostname = _norm2.get("hostname", "") or """$exec.hostname"""
 src_ip = _norm2.get("src_ip", "") or """$exec.src_ip"""
 hash_val = _norm2.get("hash", "") or """$exec.hash"""
@@ -83,6 +88,7 @@ mitre_tactics = _to_str(mitre_tactics)
 doc = {
     "alert_id": alert_id,
     "alert_type": alert_type,
+    "trace_id": trace_id,
     "hostname": hostname,
     "src_ip": src_ip,
     "hash": hash_val,
@@ -112,8 +118,18 @@ if user_name and isinstance(user_name, str) and not user_name.startswith("$"):
 if file_path and isinstance(file_path, str) and not file_path.startswith("$"):
     # Redact sensitive path components (e.g. .ssh, id_rsa, .aws, .gnupg)
     # before indexing to prevent leaking private key paths in ES.
-    _sensitive_patterns = [".ssh", "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519",
-                           ".aws", "credentials", ".gnupg", ".kube", ".docker"]
+    _sensitive_patterns = [
+        ".ssh",
+        "id_rsa",
+        "id_dsa",
+        "id_ecdsa",
+        "id_ed25519",
+        ".aws",
+        "credentials",
+        ".gnupg",
+        ".kube",
+        ".docker",
+    ]
     _redacted = file_path
     for _pat in _sensitive_patterns:
         if _pat in _redacted.lower():
@@ -139,19 +155,23 @@ if isinstance(url_val, str) and url_val and not url_val.startswith("$"):
 
 # Multi-IoC fields (from TC-33 infostealer/forensics payloads)
 _ioc_list_fields = [
-    "all_hashes", "all_urls", "all_domains", "all_ips",
-    "telegram_bot_id", "telegram_chat_id",
-    "actor_github", "actor_telegram",
-    "malware_type", "malware_family",
+    "all_hashes",
+    "all_urls",
+    "all_domains",
+    "all_ips",
+    "telegram_bot_id",
+    "telegram_chat_id",
+    "actor_github",
+    "actor_telegram",
+    "malware_type",
+    "malware_family",
 ]
 for _f in _ioc_list_fields:
     _v = norm.get(_f, "")
-    if isinstance(_v, list):
-        doc[_f] = _v
-    elif isinstance(_v, str) and _v and not _v.startswith("$"):
+    if isinstance(_v, list) or isinstance(_v, str) and _v and not _v.startswith("$"):
         doc[_f] = _v
 
-# iocs_count (integer)
+# field iocs_count (integer)
 _iocs_count = norm.get("iocs_count", "")
 if isinstance(_iocs_count, int):
     doc["iocs_count"] = _iocs_count

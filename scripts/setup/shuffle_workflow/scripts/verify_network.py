@@ -1,5 +1,7 @@
 # Embedded script: verify_network
 # Verifies the Network Watcher response (non-critical).
+"""Shuffle node: process Network Watcher connections."""
+
 import json
 import logging
 

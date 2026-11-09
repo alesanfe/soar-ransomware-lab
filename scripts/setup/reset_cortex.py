@@ -47,7 +47,14 @@ ORG_ADMIN_AUTH = (
 ES_USER = os.environ.get("ELASTIC_USERNAME", "elastic")
 ES_PASS = os.environ.get("ELASTIC_PASSWORD", "")
 ES_AUTH = base64.b64encode(f"{ES_USER}:{ES_PASS}".encode()).decode() if ES_PASS else ""
-ENV_FILE = ".env.full"
+ENV_FILE = next(
+    (
+        p
+        for p in ["/app/.env.full", ".env.full", "/app/.env.container", ".env.container", ".env"]
+        if os.path.exists(p)
+    ),
+    ".env.full",
+)
 
 if not ADMIN_PASS:
     # Just a sanity check; we will try to load from .env.full in main()
@@ -404,15 +411,21 @@ def update_env_file(api_key):
     logger.info(f"Updating {ENV_FILE}...")
     try:
         with open(ENV_FILE, encoding="utf-8") as f:
-            content = f.read()
-        content = re.sub(r"CORTEX_ADMIN_USER=.*", f"CORTEX_ADMIN_USER={ORG_ADMIN_USER}", content)
-        content = re.sub(
-            r"CORTEX_ADMIN_PASSWORD=.*", f"CORTEX_ADMIN_PASSWORD={ADMIN_PASS}", content
+            f.read()
+        try:
+            from scripts.setup import env_files
+        except ImportError:
+            import env_files  # type: ignore[no-redef]
+
+        written = env_files.update_env_files(
+            {
+                "CORTEX_ADMIN_USER": ORG_ADMIN_USER,
+                "CORTEX_ADMIN_PASSWORD": ADMIN_PASS,
+                "CORTEX_API_KEY": api_key,
+            },
+            env_file=ENV_FILE,
         )
-        content = re.sub(r"CORTEX_API_KEY=.*", f"CORTEX_API_KEY={api_key}", content)
-        with open(ENV_FILE, "w", encoding="utf-8") as f:
-            f.write(content)
-        logger.info("  Done.")
+        logger.info("  Done." if written else f"  Warning: {ENV_FILE} not found.")
     except OSError as e:
         logger.warning(f"  Warning: Could not update {ENV_FILE}: {e}")
         logger.warning("  API key generated but not saved to file.")
@@ -521,6 +534,20 @@ def main():
 
     api_key = generate_orgadmin_api_key()
     update_env_file(api_key)
+    if api_key:
+        # Persist where the host can sync it back to .env.full — .env files
+        # may be mounted read-only or absent inside this container.
+        for out in (
+            "/app/runtime/results/cortex_api_key.txt",
+            "runtime/results/cortex_api_key.txt",
+        ):
+            try:
+                with open(out, "w") as fh:
+                    fh.write(api_key)
+                logger.info("  Key written to %s", out)
+                break
+            except OSError:
+                continue
 
     print("\n" + "=" * 60)
     print("Done!")

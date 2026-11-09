@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import os
 import urllib.request
 from pathlib import Path
 
@@ -69,11 +70,29 @@ def save_env(path: Path, updates: dict[str, str]) -> bool:
 
 
 def es_url_and_auth(env: dict[str, str]) -> tuple[str, tuple[str, str] | None]:
-    url = env.get("SHUFFLE_OPENSEARCH_URL") or env.get("OPENSEARCH_URL") or "http://opensearch:9200"
+    url = (
+        os.environ.get("SHUFFLE_OPENSEARCH_URL")
+        or os.environ.get("OPENSEARCH_URL")
+        or env.get("SHUFFLE_OPENSEARCH_URL")
+        or env.get("OPENSEARCH_URL")
+        or "http://opensearch:9200"
+    )
     if not url.startswith("http"):
         url = "http://" + url
-    user = env.get("SHUFFLE_OPENSEARCH_USERNAME") or env.get("OPENSEARCH_USERNAME") or ""
-    passwd = env.get("SHUFFLE_OPENSEARCH_PASSWORD") or env.get("OPENSEARCH_PASSWORD") or ""
+    user = (
+        os.environ.get("SHUFFLE_OPENSEARCH_USERNAME")
+        or os.environ.get("OPENSEARCH_USERNAME")
+        or env.get("SHUFFLE_OPENSEARCH_USERNAME")
+        or env.get("OPENSEARCH_USERNAME")
+        or ""
+    )
+    passwd = (
+        os.environ.get("SHUFFLE_OPENSEARCH_PASSWORD")
+        or os.environ.get("OPENSEARCH_PASSWORD")
+        or env.get("SHUFFLE_OPENSEARCH_PASSWORD")
+        or env.get("OPENSEARCH_PASSWORD")
+        or ""
+    )
     auth = (user, passwd) if user and passwd else None
     return url, auth
 

@@ -50,7 +50,7 @@ def main():
 
     # Create index template for replicas=0 and fast writes
     # NOTE: refresh_interval MUST be short (1s, the ES default) because
-    # TheHive/Cortex use refresh=wait_for on index operations.  With
+    # Cortex uses refresh=wait_for on index operations.  With
     # refresh_interval=30s, ES can take up to 30s to respond, which
     # exactly matches the Apache HttpAsyncClient socket timeout (30s)
     # and causes SocketTimeoutException on every write.
@@ -81,7 +81,12 @@ def main():
         },
         "mappings": {
             "dynamic_templates": [
-                {"strings_as_keywords": {"match_mapping_type": "string", "mapping": {"type": "keyword"}}}
+                {
+                    "strings_as_keywords": {
+                        "match_mapping_type": "string",
+                        "mapping": {"type": "keyword"},
+                    }
+                }
             ],
             "properties": {
                 "Name": {"type": "keyword"},
@@ -117,7 +122,12 @@ def main():
         },
         "mappings": {
             "dynamic_templates": [
-                {"strings_as_keywords": {"match_mapping_type": "string", "mapping": {"type": "keyword"}}}
+                {
+                    "strings_as_keywords": {
+                        "match_mapping_type": "string",
+                        "mapping": {"type": "keyword"},
+                    }
+                }
             ],
             "properties": {
                 "authgroup": {"type": "keyword"},
@@ -138,16 +148,9 @@ def main():
     r = requests.put(f"{es_url}/_template/soar_workflowqueue", auth=auth, json=wq_tpl)
     logger.info(f"[ES wq template] {r.status_code} {r.text[:80]}")
 
-    # Set default search timeout to 60s (prevents TheHive SocketTimeoutException)
-    # NOTE: disabled — this setting does NOT affect /_cluster/health/{index}
-    # which has its own 30s timeout. The real fix is pre-creating indices.
-    # print("Setting search.default_search_timeout=60s...")
-    # r = requests.put(
-    #     f"{es_url}/_cluster/settings",
-    #     auth=auth,
-    #     json={"persistent": {"search.default_search_timeout": "60s"}},
-    # )
-    # print(f"[ES search timeout] {r.status_code} {r.text[:80]}")
+    # NOTE: search.default_search_timeout was tried and removed — it does
+    # NOT affect /_cluster/health/{index}, which has its own 30s timeout.
+    # The real fix is pre-creating indices.
 
     # Update existing indices
     logger.info("Updating existing indices to replicas=0 and fast writes...")
@@ -186,6 +189,50 @@ def main():
                     logger.info(f"  OS Updated {idx}")
                 except Exception as e:
                     logger.warning(f"  OS Failed to update {idx}: {e}")
+
+        # Shuffle's `workflowexecution-*` template does NOT map
+        # `execution_argument` → dynamic mapping yields `text` (+`.keyword`
+        # subfield), which silently breaks the term-level wildcard lookups
+        # the lab uses to correlate executions with alert ids (rollover to
+        # -000002 exposed this). Install OUR OWN higher-priority template
+        # so indices created later map it as keyword; and, when Shuffle's
+        # template already exists, merge the field into it too.
+        logger.info("OS: ensuring keyword mappings on workflowexecution indices ...")
+        kw_tpl = {
+            # `workflowexecution` (plain) must be included — Shuffle creates a
+            # flat index on some versions instead of the rollover form.
+            "index_patterns": ["workflowexecution", "workflowexecution-*"],
+            "priority": 250,  # beats Shuffle's own template (priority 200)
+            "template": {
+                "mappings": {
+                    "properties": {
+                        "execution_argument": {"type": "keyword", "ignore_above": 8192},
+                        "execution_id": {"type": "keyword", "ignore_above": 8192},
+                        "workflow_id": {"type": "keyword", "ignore_above": 8192},
+                        "status": {"type": "keyword"},
+                        "started_at": {"type": "date"},
+                        "completed_at": {"type": "date"},
+                    }
+                }
+            },
+        }
+        r = requests.put(
+            f"{os_url}/_index_template/soar_workflowexecution_kw", json=kw_tpl, timeout=15
+        )
+        logger.info(f"[OS wf-exec own template] {r.status_code} {r.text[:80]}")
+        try:
+            cur = requests.get(
+                f"{os_url}/_index_template/shuffle-workflowexecution", timeout=10
+            ).json()
+            tpl = cur["index_templates"][0]["index_template"]
+            props = tpl["template"].setdefault("mappings", {}).setdefault("properties", {})
+            props["execution_argument"] = {"type": "keyword", "ignore_above": 8192}
+            r = requests.put(
+                f"{os_url}/_index_template/shuffle-workflowexecution", json=tpl, timeout=15
+            )
+            logger.info(f"[OS wf-exec merge] {r.status_code} {r.text[:80]}")
+        except Exception as exc:  # best-effort — Shuffle template may not exist yet
+            logger.warning(f"workflowexecution shuffle-template merge skipped: {exc}")
     except Exception as e:
         logger.warning(f"Could not connect to OpenSearch: {e}")
 
@@ -218,33 +265,11 @@ def main():
     # `mapper_parsing_exception: Can't get text on a START_OBJECT`.
     # The relations were extracted from the TheHive 3.5.2 and Cortex 3.2.0
     # JAR files by decompiling the ModelDef/ChildModelDef classes.
-    logger.info("Pre-creating TheHive and Cortex indices...")
+    logger.info("Pre-creating the Cortex index...")
 
-    # TheHive 3.5.2 relations (from ES template + decompiled model classes):
-    #   case        -> [dummy-case, case_task, case_artifact]
-    #   case_task   -> [case_task_log, dummy-case_task]
-    #   case_task_log -> [dummy-case_task_log]
-    #   alert       -> [dummy-alert]
-    #   audit       -> [dummy-audit]
-    #   user        -> [dummy-user]
-    #   caseTemplate -> [dummy-caseTemplate]
-    #   dashboard   -> [dummy-dashboard]
-    #   sequence    -> [dummy-sequence]
-    #   datastore   -> [dummy-datastore]
-    #   dblist      -> [dblistitem, dummy-dblist]
-    thehive_relations = {
-        "case": ["dummy-case", "case_task", "case_artifact"],
-        "case_task": ["case_task_log", "dummy-case_task"],
-        "case_task_log": ["dummy-case_task_log"],
-        "alert": ["dummy-alert"],
-        "audit": ["dummy-audit"],
-        "user": ["dummy-user"],
-        "caseTemplate": ["dummy-caseTemplate"],
-        "dashboard": ["dummy-dashboard"],
-        "sequence": ["dummy-sequence"],
-        "datastore": ["dummy-datastore"],
-        "dblist": ["dblistitem", "dummy-dblist"],
-    }
+    # NOTE: TheHive 5 no longer stores data in Elasticsearch — it uses
+    # embedded JanusGraph/BerkeleyJE + Lucene, so the legacy the_hive_17
+    # join-field index (TheHive 3.x elastic4play) is not pre-created here.
 
     # Cortex 3.2.0 relations (from decompiled model classes):
     #   organization -> [dummy-organization, worker]
@@ -267,7 +292,6 @@ def main():
     }
 
     pre_indices = {
-        "the_hive_17": thehive_relations,
         "cortex_6": cortex_relations,
     }
     for idx_name, relations in pre_indices.items():

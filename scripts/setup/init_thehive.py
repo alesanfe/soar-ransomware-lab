@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """
-init_thehive.py - Initialises TheHive 3.x index and admin user.
+init_thehive.py - Initialises TheHive 5.x (API v1).
 
-Root cause of the elastic4play join field bug (same as Cortex):
-  elastic4play stores `relations` as a plain string for root entities and as
-  an object for child entities. ES 7.x cannot handle both types in one field.
-  Fix: pre-create an ES index template that declares `relations` as a proper
-  join field with dummy children for each root type.
+TheHive 5 is self-contained: JanusGraph (BerkeleyJE) storage + Lucene index,
+so no Elasticsearch index template or join-field hack is needed.
 
-  Additionally, TheHive 3.x auth-by-key requires `status`, `key`, `login`,
-  and `password` to be mapped as `keyword` (not `text`) so that term queries
-  work correctly during authentication.
+Bootstrap flow (fresh instance):
+  1. Wait for GET /api/v1/status (public).
+  2. Authenticate as the built-in admin  admin@thehive.local:secret.
+  3. Set the admin password to THEHIVE_ADMIN_PASSWORD.
+  4. Renew the admin API key and persist it to .env.full (THEHIVE_API_KEY).
+  5. Inject CORTEX_API_KEY into the mounted application.conf and restart
+     TheHive so the cortex connector picks it up.
 
 Usage:
-  python init_thehive.py           # idempotent — only creates what is missing
-  python init_thehive.py --reset   # deletes the_hive_17 index and recreates all
+  python init_thehive.py           # idempotent
+  python init_thehive.py --reset   # re-set password + renew key unconditionally
 """
 
 import base64
@@ -22,12 +23,10 @@ import json
 import logging
 import os
 import re
-import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
-from pathlib import Path
 
 from soar_lab.common.constants import (
     AUTH_BASIC_PREFIX,
@@ -38,450 +37,357 @@ from soar_lab.common.constants import (
 
 logger = logging.getLogger(__name__)
 
-ES_URL = os.environ.get("ELASTICSEARCH_URL", os.environ.get("ES_URL", "http://elasticsearch:9200"))
 THEHIVE_URL = os.environ.get("THEHIVE_URL", "http://thehive:9000")
 CORTEX_URL = os.environ.get("CORTEX_URL", "http://cortex:9001")
-ES_INDEX = "the_hive"
-ADMIN_USER = os.environ.get("THEHIVE_ADMIN_USER", "admin")
+# TheHive 5 logins are email-format. THEHIVE_ADMIN_USER is the org-admin that
+# owns cases/alerts for the lab (built-in admin@thehive.local is a platform
+# superadmin without manageCase/* permissions — bootstrap only).
+ADMIN_USER = os.environ.get("THEHIVE_ADMIN_USER", "analyst@soar.local")
 ADMIN_PASS = os.environ.get("THEHIVE_ADMIN_PASSWORD", "")
-ADMIN_AUTH = base64.b64encode(f"{ADMIN_USER}:{ADMIN_PASS}".encode()).decode()
-ES_USER = os.environ.get("ELASTIC_USERNAME", "elastic")
-ES_PASS = os.environ.get("ELASTIC_PASSWORD", "")
-ES_AUTH = base64.b64encode(f"{ES_USER}:{ES_PASS}".encode()).decode() if ES_PASS else ""
-ENV_FILE = ".env.full"
-
-if not ADMIN_PASS:
-    # Just a sanity check; we will try to load from .env.full in main()
-    pass
-
-THEHIVE_INDEX_TEMPLATE = {
-    "index_patterns": ["the_hive_*"],
-    "settings": {"number_of_shards": 5, "number_of_replicas": 0},
-    "mappings": {
-        "dynamic_templates": [
-            {
-                "strings": {
-                    "match_mapping_type": "string",
-                    "mapping": {
-                        "type": "text",
-                        "fielddata": True,
-                        "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
-                    },
-                }
-            }
-        ],
-        "properties": {
-            "relations": {
-                "type": "join",
-                "relations": {
-                    "case": ["case_task", "case_artifact", "dummy-case"],
-                    "case_task": ["case_task_log", "dummy-case_task"],
-                    "case_task_log": ["dummy-case_task_log"],
-                    "case_artifact": ["dummy-case_artifact"],
-                    "caseTemplate": ["dummy-caseTemplate"],
-                    "alert": ["dummy-alert"],
-                    "user": ["dummy-user"],
-                    "dashboard": ["dummy-dashboard"],
-                    "audit": ["dummy-audit"],
-                    "sequence": ["dummy-sequence"],
-                    "dblist": ["dblistitem"],
-                },
-            },
-            "key": {"type": "keyword"},
-            "password": {"type": "keyword"},
-            "status": {"type": "keyword"},
-            "login": {"type": "keyword"},
-            "flag": {"type": "boolean"},
-            "tlp": {"type": "integer"},
-            "pap": {"type": "integer"},
-            "severity": {"type": "integer"},
-            "caseId": {"type": "integer"},
-            "startDate": {"type": "date"},
-            "endDate": {"type": "date"},
-            "createdAt": {"type": "date"},
-            "updatedAt": {"type": "date"},
-            "date": {"type": "date"},
-            "order": {"type": "integer"},
-            "ioc": {"type": "boolean"},
-            "sighted": {"type": "boolean"},
-            "ignoreSimilarity": {"type": "boolean"},
-            "dblist": {"type": "keyword"},
-        },
-    },
-}
+ORG_NAME = os.environ.get("THEHIVE_ORG", "soar")
+DEFAULT_ADMIN_USER = "admin@thehive.local"
+DEFAULT_ADMIN_PASS = "secret"
+ENV_FILE = next(
+    (
+        p
+        for p in ["/app/.env.full", ".env.full", "/app/.env.container", ".env.container", ".env"]
+        if os.path.exists(p) and os.access(p, os.W_OK)
+    ),
+    ".env.full",
+)
 
 
-def es_request(method, path, body=None):
-    url = f"{ES_URL}/{path}"
-    data = json.dumps(body).encode() if body else None
-    headers = {HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON}
-    if ES_AUTH:
-        headers[HEADER_AUTHORIZATION] = f"{AUTH_BASIC_PREFIX} {ES_AUTH}"
+def _auth_header(user: str, password: str) -> dict[str, str]:
+    creds = base64.b64encode(f"{user}:{password}".encode()).decode()
+    return {
+        HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON,
+        HEADER_AUTHORIZATION: f"{AUTH_BASIC_PREFIX} {creds}",
+    }
+
+
+def thehive_request(method: str, path: str, body=None, user: str = "", password: str = ""):
+    """Call TheHive 5 ``/api/v1/...``. ``path`` excludes the ``/api/v1`` prefix."""
+    url = f"{THEHIVE_URL}/api/v1/{path.lstrip('/')}"
+    data = json.dumps(body).encode() if body is not None else None
+    headers = _auth_header(user, password) if user else {HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON}
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
     try:
-        with urllib.request.urlopen(req) as resp:  # nosec B310
-            return json.loads(resp.read())
-    except urllib.error.HTTPError as e:
-        return {"error": json.loads(e.read())}
-    except Exception as e:
-        return {"error": str(e)}
-
-
-def thehive_request(method, path, body=None, auth=None):
-    url = f"{THEHIVE_URL}/api/{path}"
-    data = json.dumps(body).encode() if body else None
-    headers = {HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON}
-    if auth:
-        headers[HEADER_AUTHORIZATION] = f"{AUTH_BASIC_PREFIX} {auth}"
-    req = urllib.request.Request(url, data=data, method=method, headers=headers)
-    try:
-        with urllib.request.urlopen(req) as resp:  # nosec B310
-            return json.loads(resp.read())
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
+            raw = resp.read()
+            return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
         try:
-            return {"error": json.loads(e.read())}
+            return {"error": json.loads(e.read()), "http": e.code}
         except Exception:
-            return {"error": e.reason}
+            return {"error": e.reason, "http": e.code}
     except Exception as e:
         return {"error": str(e)}
 
 
-def wait_for_es(timeout=120):
-    logger.info("Waiting for Elasticsearch...")
-    headers = {HEADER_AUTHORIZATION: f"{AUTH_BASIC_PREFIX} {ES_AUTH}"} if ES_AUTH else {}
-    for _ in range(timeout):
-        try:
-            req = urllib.request.Request(f"{ES_URL}/_cluster/health", headers=headers)
-            with urllib.request.urlopen(req, timeout=2) as r:  # nosec B310
-                data = json.loads(r.read())
-                # Accept any status (green, yellow, red) as long as ES is responding
-                if data.get("status") in ("green", "yellow", "red"):
-                    logger.info(f" ready (status: {data.get('status')}).")
-                    return True
-        except Exception as _e:
-            logging.debug("ES not ready: %s", _e)
-        logger.debug(".")
-        time.sleep(1)
-    logger.warning(" TIMEOUT")
-    return False
-
-
-def wait_for_thehive(timeout=180):
-    logger.info("Waiting for TheHive...")
-    for _ in range(timeout):
-        try:
-            with urllib.request.urlopen(f"{THEHIVE_URL}/api/status", timeout=2) as r:  # nosec B310
-                if r.status == 200:
-                    # Double check: sometimes status is 200 but backend is not ready
-                    body = r.read().decode()
-                    if "OK" in body.upper() or "version" in body.lower():
-                        logger.info(" ready.")
-                        time.sleep(2)  # Grace period
-                        return True
-        except Exception as _e:
-            logging.debug("TheHive not ready: %s", _e)
-        logger.debug(".")
-        time.sleep(2)
-    logger.warning(" TIMEOUT")
-    return False
-
-
-def index_exists():
-    result = es_request("GET", f"{ES_INDEX}/_count")
-    return "error" not in result and "count" in result
-
-
-def delete_index():
-    logger.info(f"Deleting indices matching '{ES_INDEX}*'...")
-    result = es_request("DELETE", f"{ES_INDEX}*")
-    if result.get("acknowledged"):
-        logger.info("  Deleted.")
-    elif "index_not_found" in str(result):
-        logger.info("  Did not exist, skipping.")
-    else:
-        logger.info(f"  Result: {result}")
-
-
-def create_index_template():
-    logger.info("Creating ES index template for TheHive (join field + keyword fix)...")
-    result = es_request("PUT", "_template/thehive_template", THEHIVE_INDEX_TEMPLATE)
-    if result.get("acknowledged"):
-        logger.info("  Template created.")
-    else:
-        logger.info(f"  Result: {result}")
-
-
-def wait_for_admin_auth(timeout=120):
-    logger.info("  Waiting for admin authentication")
+def wait_for_thehive(timeout: int = 300) -> bool:
+    logger.info("Waiting for TheHive (GET /api/v1/status/public)...")
     deadline = time.time() + timeout
     while time.time() < deadline:
-        result = thehive_request("GET", f"user/{ADMIN_USER}", auth=ADMIN_AUTH)
-        if "error" not in result:
-            logger.info(" ready.")
-            return True
-        logger.debug(".")
-        time.sleep(2)
+        try:
+            with urllib.request.urlopen(
+                f"{THEHIVE_URL}/api/v1/status/public", timeout=5
+            ) as r:  # nosec B310
+                if r.status == 200:
+                    logger.info("  ready.")
+                    time.sleep(2)  # Grace period for user/index bootstrap
+                    return True
+        except Exception as exc:
+            logger.debug("TheHive not ready: %s", exc)
+        time.sleep(3)
     logger.warning(" TIMEOUT")
     return False
 
 
-def create_admin_user():
-    logger.info(f"Ensuring admin user '{ADMIN_USER}' exists...")
-    for attempt in range(1, 6):
-        result = thehive_request(
-            "POST",
-            "user",
-            {
-                "login": ADMIN_USER,
-                "name": "Admin",
-                "password": ADMIN_PASS,
-                "roles": ["read", "write", "admin"],
-            },
-        )
-        if "error" not in result:
-            logger.info(f"  Created: {result.get('_id')}")
-            return wait_for_admin_auth()
-
-        err = str(result)
-        # Check if already exists or auth works
-        if wait_for_admin_auth(timeout=5):
-            logger.info("  Admin user already exists and credentials are valid.")
+def wait_for_admin_auth(user: str, password: str, timeout: int = 120) -> bool:
+    logger.info("  Waiting for admin authentication (%s)", user)
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        result = thehive_request("GET", "user/current", user=user, password=password)
+        if "error" not in result and result.get("_id"):
+            logger.info("  auth OK.")
             return True
-
-        logger.warning(f"  Attempt {attempt}/5 failed: {err[:100]}...")
-        if attempt < 5:
-            time.sleep(5)
-
-    logger.warning("  Warning: Admin user creation might have failed, but continuing setup...")
-    return True  # Allow other steps to proceed
+        time.sleep(3)
+    logger.warning(" TIMEOUT")
+    return False
 
 
-def generate_api_key():
-    logger.info(f"Generating API key for {ADMIN_USER}...")
-    # Retry logic for generating API key
-    max_retries = 5
-    retry_delay = 5
-    for attempt in range(max_retries):
-        url = f"{THEHIVE_URL}/api/user/{ADMIN_USER}/key/renew"
-        req = urllib.request.Request(
-            url,
-            data=b"{}",
-            method="POST",
-            headers={
-                HEADER_AUTHORIZATION: f"{AUTH_BASIC_PREFIX} {ADMIN_AUTH}",
-                HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON,
-            },
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
-                raw = resp.read().decode().strip().strip('"')
-                if len(raw) > 10:
-                    logger.info("  API key generated")
-                    return raw
-        except Exception as e:
-            logger.error(f"  ERROR: {e}")
-            if attempt < max_retries - 1:
-                logger.info(
-                    f"  Retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})"
-                )
-                time.sleep(retry_delay)
-                continue
-    logger.error("  Failed to generate API key after multiple retries.")
+def admin_identity(user: str, password: str) -> str | None:
+    """Resolve the admin user ``_id`` via /user/current."""
+    result = thehive_request("GET", "user/current", user=user, password=password)
+    if isinstance(result, dict) and result.get("_id"):
+        return str(result["_id"])
     return None
 
 
-def populate_observable_types(auth):
-    logger.info("Populating observable data types...")
-    types = [
-        "domain",
-        "file",
-        "filename",
-        "fqdn",
-        "hash",
-        "ip",
-        "mail",
-        "mail_subject",
-        "other",
-        "regexp",
-        "registry",
-        "uri_path",
-        "url",
-        "user-agent",
-    ]
-    added = 0
-    for t in types:
-        url = f"{THEHIVE_URL}/api/list/list_artifactDataType"
-        data = json.dumps({"value": t}).encode()
-        req = urllib.request.Request(
-            url,
-            data=data,
-            method="POST",
-            headers={
-                HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON,
-                HEADER_AUTHORIZATION: f"{AUTH_BASIC_PREFIX} {auth}",
-            },
-        )
-        try:
-            with urllib.request.urlopen(req):  # nosec B310
-                added += 1
-        except urllib.error.HTTPError as e:
-            body = e.read().decode()
-            if "AlreadyExist" in body or "ConflictError" in body:
-                added += 1
-            else:
-                logger.warning(f"  WARN {t}: {e.code} {body[:80]}")
-        except Exception as ex:
-            logger.warning(f"  WARN {t}: {ex}")
-    logger.info(f"  Observable types registered: {added}/{len(types)}")
-
-
-def update_env_file(api_key):
-    if not api_key or not os.path.exists(ENV_FILE):
-        return
-    logger.info(f"Updating {ENV_FILE}...")
-    try:
-        with open(ENV_FILE) as f:
-            content = f.read()
-        content = re.sub(r"THEHIVE_API_KEY=.*", f"THEHIVE_API_KEY={api_key}", content)
-        with open(ENV_FILE, "w") as f:
-            f.write(content)
-        logger.info("  Done.")
-    except OSError as e:
-        logger.warning(f"  Warning: Could not update {ENV_FILE}: {e}")
-        logger.warning("  API key generated but not saved to file.")
-
-
-def configure_cortex():
-    """Write the Cortex API key into thehive.conf and restart thehive to load
-    it."""
-    cortex_key = ""
-    if os.path.exists(ENV_FILE):
-        m = re.search(r"^CORTEX_API_KEY=(.+)$", open(ENV_FILE).read(), re.MULTILINE)
-        if m:
-            cortex_key = m.group(1).strip()
-    if not cortex_key:
-        cortex_key = os.environ.get("CORTEX_API_KEY", "")
-    if not cortex_key:
-        logger.info("  [cortex] No CORTEX_API_KEY available; skipping Cortex configuration.")
-        return
-
-    conf_path = Path("/app/infra/docker/config/thehive.application.conf/thehive.conf")
-    if not conf_path.exists():
-        logger.info(f"  [cortex] {conf_path} not mounted; skipping Cortex configuration.")
-        return
-
-    try:
-        config = json.loads(conf_path.read_text(encoding="utf-8"))
-        # TheHive 3.5.2 entrypoint generates cortex.cortex1.url/key from TH_CORTEX_* env vars.
-        # The included application.conf is loaded after, so we must override the same
-        # HOCON path to ensure host, port and key are correct.
-        config["cortex"] = {"cortex1": {"url": CORTEX_URL, "key": cortex_key}}
-        conf_path.write_text(json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8")
-        logger.info("  [cortex] Updated thehive.conf with Cortex key.")
-    except Exception as e:
-        logger.error(f"  [cortex] ERROR updating thehive.conf: {e}")
-        return
-
-    thehive_container = os.environ.get("THEHIVE_CONTAINER", "soar_thehive")
-    try:
-        logger.info(f"  [cortex] Restarting {thehive_container} to load Cortex config...")
-        subprocess.run(["docker", "restart", thehive_container], check=True, timeout=60)  # nosec B603 B607
-        logger.info("  [cortex] Restart command issued.")
-    except Exception as e:
-        logger.error(f"  [cortex] ERROR restarting {thehive_container}: {e}")
-        return
-
-    if not wait_for_thehive():
-        logger.warning("  [cortex] WARN: TheHive did not become ready after restart.")
-        return
-
-    try:
-        with urllib.request.urlopen(f"{THEHIVE_URL}/api/status", timeout=10) as r:  # nosec B310
-            status = json.loads(r.read())
-        cortex = status.get("connectors", {}).get("cortex", {})
-        logger.info(f"  [cortex] TheHive connector status: {cortex.get('status', 'unknown')}")
-    except Exception as e:
-        logger.warning(f"  [cortex] Could not verify TheHive status: {e}")
-
-
-def ensure_thehive_index():
-    logger.info(f"Ensuring TheHive index {ES_INDEX} exists...")
-    result = es_request("GET", f"{ES_INDEX}/_count")
-    if "count" in result:
-        logger.info("  Index already exists.")
+def ensure_organisation(auth_user: str, auth_pass: str) -> bool:
+    """Ensure the lab organisation exists (requires platform admin)."""
+    existing = thehive_request(
+        "POST",
+        "query",
+        {
+            "query": [
+                {"_name": "listOrganisation"},
+                {"_name": "filter", "_eq": {"_field": "name", "_value": ORG_NAME}},
+            ]
+        },
+        user=auth_user,
+        password=auth_pass,
+    )
+    if isinstance(existing, list) and existing:
+        logger.info("  Organisation '%s' already exists.", ORG_NAME)
         return True
-    # TheHive 3.x uses specific mappings, but creating the index shell is often enough
-    # for it to start its own migrations without 520 errors.
-    result = es_request("PUT", ES_INDEX, {})
-    if result.get("acknowledged"):
-        logger.info("  Index created.")
+    result = thehive_request(
+        "POST",
+        "organisation",
+        {"name": ORG_NAME, "description": "SOAR lab organisation"},
+        user=auth_user,
+        password=auth_pass,
+    )
+    if "error" not in result or "already" in str(result).lower():
+        logger.info("  Organisation '%s' ready.", ORG_NAME)
         return True
-    if "resource_already_exists" in str(result):
-        return True
-    logger.warning(f"  Warning: Could not create index: {result}")
+    logger.error("  Failed to create organisation: %s", result)
     return False
 
 
-def main():
+def ensure_org_user(auth_user: str, auth_pass: str) -> str | None:
+    """Ensure ADMIN_USER exists as org-admin of ORG_NAME; return its _id."""
+    existing = thehive_request(
+        "POST",
+        "query",
+        {
+            "query": [
+                {"_name": "listUser"},
+                {"_name": "filter", "_eq": {"_field": "login", "_value": ADMIN_USER}},
+            ]
+        },
+        user=auth_user,
+        password=auth_pass,
+    )
+    if isinstance(existing, list) and existing:
+        uid = str(existing[0].get("_id", ""))
+        logger.info("  User '%s' already exists (%s).", ADMIN_USER, uid)
+        return uid or None
+    result = thehive_request(
+        "POST",
+        "user",
+        {
+            "login": ADMIN_USER,
+            "name": "SOC Analyst",
+            "profile": "org-admin",
+            "organisation": ORG_NAME,
+        },
+        user=auth_user,
+        password=auth_pass,
+    )
+    uid = result.get("_id") if isinstance(result, dict) else None
+    if uid:
+        logger.info("  Created org-admin user '%s' (%s).", ADMIN_USER, uid)
+        return str(uid)
+    logger.error("  Failed to create org user: %s", result)
+    return None
+
+
+def set_admin_password(user_id: str, password: str, auth_user: str, auth_pass: str) -> bool:
+    """PUT /user/{id}/password/set requires org-admin privileges."""
+    result = thehive_request(
+        "POST",
+        f"user/{user_id}/password/set",
+        {"password": password},
+        user=auth_user,
+        password=auth_pass,
+    )
+    # TheHive 5 returns 204 (empty body → {}) on success
+    if "error" not in result:
+        logger.info("  Admin password set.")
+        return True
+    logger.error("  password/set failed: %s", result)
+    return False
+
+
+def renew_api_key(user_id: str, auth_user: str, auth_pass: str) -> str | None:
+    """POST /user/{id}/key/renew — returns the raw key as text/plain."""
+    url = f"{THEHIVE_URL}/api/v1/user/{user_id}/key/renew"
+    for attempt in range(1, 6):
+        req = urllib.request.Request(
+            url, data=b"{}", method="POST", headers=_auth_header(auth_user, auth_pass)
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
+                key = resp.read().decode().strip().strip('"')
+                if len(key) > 10:
+                    logger.info("  API key generated.")
+                    return key
+                logger.warning("  key/renew attempt %d/5: unexpected body %r", attempt, key[:40])
+        except Exception as e:
+            logger.warning("  key/renew attempt %d/5 failed: %s", attempt, str(e)[:120])
+        time.sleep(5)
+    logger.error("  Failed to generate API key.")
+    return None
+
+
+def update_env_file(api_key: str) -> None:
+    if not api_key or not os.path.exists(ENV_FILE):
+        return
+    logger.info("Updating %s...", ENV_FILE)
+    try:
+        try:
+            from scripts.setup import env_files
+        except ImportError:
+            import env_files  # type: ignore[no-redef]
+
+        written = env_files.update_env_files(
+            {"THEHIVE_API_KEY": api_key, "THEHIVE_ADMIN_USER": ADMIN_USER},
+            env_file=ENV_FILE,
+        )
+        logger.info("  Done." if written else f"  Warning: {ENV_FILE} not found.")
+    except OSError as e:
+        logger.warning("  Warning: Could not update %s: %s", ENV_FILE, e)
+
+
+def configure_cortex() -> None:
+    """Report the Cortex connector status.
+
+    The connector key is injected via the ``CORTEX_API_KEY`` container env
+    (resolved by ``${?CORTEX_API_KEY}`` in application.conf), so a key
+    rotation only requires ``docker compose up -d thehive`` — no rewrite,
+    no restart from here.
+    """
+    try:
+        status = thehive_request("GET", "status", user=ADMIN_USER, password=ADMIN_PASS)
+        cortex = (status or {}).get("connectors", {}).get("cortex", {})
+        servers = cortex.get("servers", [])
+        names = [s.get("name") for s in servers]
+        logger.info(
+            "  [cortex] connector status=%s servers=%s",
+            cortex.get("status", "unknown"),
+            names or "-",
+        )
+    except Exception as e:
+        logger.warning("  [cortex] Could not verify TheHive status: %s", e)
+
+
+def main() -> None:
     global ADMIN_PASS
-    global ADMIN_AUTH
     force_reset = "--reset" in sys.argv
 
-    # Try to load secrets from .env.full if not set
-    if not os.environ.get("THEHIVE_ADMIN_PASSWORD") and os.path.exists(ENV_FILE):
+    if not ADMIN_PASS and os.path.exists(ENV_FILE):
         with open(ENV_FILE) as f:
             content = f.read()
             m = re.search(r"^THEHIVE_ADMIN_PASSWORD=(.+)$", content, re.MULTILINE)
             if m:
                 ADMIN_PASS = m.group(1).strip().strip('"')
-                ADMIN_AUTH = base64.b64encode(f"{ADMIN_USER}:{ADMIN_PASS}".encode()).decode()
-
-    if not ADMIN_PASS:
-        logger.error(
-            "[ERROR] Missing THEHIVE_ADMIN_PASSWORD. Set it in .env.full "
-            "or as an environment variable and retry."
-        )
-        sys.exit(1)
 
     print("=" * 60)
-    print("TheHive Init Script" if not force_reset else "TheHive Reset Script")
+    print("TheHive 5 Init Script" if not force_reset else "TheHive 5 Reset Script")
     print("=" * 60)
-
-    if not wait_for_es():
-        logger.error("ERROR: Elasticsearch is not running.")
-        sys.exit(1)
-
-    create_index_template()
-
-    if force_reset:
-        delete_index()
-        logger.info("Index deleted — full setup will run.")
-    elif not index_exists():
-        logger.info("Index does not exist — full setup will run.")
-    else:
-        logger.info(f"Index {ES_INDEX} already exists — will only ensure user exists.")
-
-    ensure_thehive_index()
 
     if not wait_for_thehive():
         logger.error("ERROR: TheHive is not running. Start containers first.")
         sys.exit(1)
 
-    if not create_admin_user():
-        logger.error("ERROR: TheHive admin initialization failed.")
+    # 1) Try configured credentials; fall back to bootstrap admin/secret.
+    auth_user, auth_pass = ADMIN_USER, ADMIN_PASS
+    if ADMIN_PASS and wait_for_admin_auth(ADMIN_USER, ADMIN_PASS, timeout=10):
+        logger.info("Configured org-user credentials are valid.")
+    elif ADMIN_PASS and wait_for_admin_auth(DEFAULT_ADMIN_USER, ADMIN_PASS, timeout=10):
+        logger.info("Built-in admin uses the configured password already.")
+        auth_user, auth_pass = DEFAULT_ADMIN_USER, ADMIN_PASS
+    elif wait_for_admin_auth(DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS, timeout=30):
+        logger.info("Using TheHive bootstrap credentials (admin@thehive.local/secret).")
+        auth_user, auth_pass = DEFAULT_ADMIN_USER, DEFAULT_ADMIN_PASS
+    else:
+        logger.error("ERROR: cannot authenticate to TheHive with any admin credential.")
         sys.exit(1)
-    api_key = generate_api_key()
+
+    if auth_user == ADMIN_USER:
+        # Org user already authenticates → org/user bootstrap already done.
+        org_user_id = admin_identity(ADMIN_USER, ADMIN_PASS)
+        if not org_user_id:
+            logger.error("ERROR: could not resolve org user id.")
+            sys.exit(1)
+    else:
+        # Fresh bootstrap: set platform-admin password away from 'secret'.
+        bootstrap_id = admin_identity(auth_user, auth_pass)
+        if not bootstrap_id:
+            logger.error("ERROR: could not resolve admin user id.")
+            sys.exit(1)
+        if ADMIN_PASS:
+            if set_admin_password(bootstrap_id, ADMIN_PASS, auth_user, auth_pass):
+                auth_pass = ADMIN_PASS
+
+        # Organisation + org-admin case user (platform admin lacks manageCase/*)
+        if not ensure_organisation(auth_user, auth_pass):
+            sys.exit(1)
+        org_user_id = ensure_org_user(auth_user, auth_pass)
+        if not org_user_id:
+            sys.exit(1)
+        if ADMIN_PASS:
+            set_admin_password(org_user_id, ADMIN_PASS, auth_user, auth_pass)
+
+    # 4) API key for the org user — this is what THEHIVE_API_KEY must hold
+    #    (the platform-admin key cannot create cases). Renewing rotates the
+    #    key, so only do it when no valid key is configured.
+    existing_key = os.environ.get("THEHIVE_API_KEY", "")
+    if existing_key and not force_reset:
+        # Bearer probe — thehive_request only does Basic; do it directly.
+        req = urllib.request.Request(
+            f"{THEHIVE_URL}/api/v1/user/current",
+            headers={
+                HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON,
+                HEADER_AUTHORIZATION: f"Bearer {existing_key}",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as r:  # nosec B310
+                key_valid = r.status == 200
+        except urllib.error.HTTPError as e:
+            key_valid = False
+            logger.debug("  existing key probe HTTP %s", e.code)
+        except Exception:
+            key_valid = False
+        if key_valid:
+            logger.info("  Existing THEHIVE_API_KEY is valid — skipping renewal.")
+            api_key = existing_key
+        else:
+            logger.info("  Existing THEHIVE_API_KEY invalid/missing — renewing.")
+            api_key = None
+    else:
+        api_key = None
     if not api_key:
-        logger.error("ERROR: TheHive API key generation failed.")
-        sys.exit(1)
+        api_key = renew_api_key(org_user_id, auth_user, auth_pass)
+        if not api_key:
+            logger.error("ERROR: TheHive API key generation failed.")
+            sys.exit(1)
+        # Persist where the host can sync it back to .env.full — no env
+        # file is writable from inside this container.
+        for out in (
+            "/app/runtime/results/thehive_api_key.txt",
+            "runtime/results/thehive_api_key.txt",
+        ):
+            try:
+                with open(out, "w") as fh:
+                    fh.write(api_key)
+                logger.info("  Key written to %s", out)
+                break
+            except OSError:
+                continue
     update_env_file(api_key)
-    populate_observable_types(ADMIN_AUTH)
+
+    # 5) Cortex connector key
+    ADMIN_PASS = ADMIN_PASS or auth_pass
     configure_cortex()
 
     print("\n" + "=" * 60)
     print("Done!")
     print(f"  URL:        {THEHIVE_URL}")
-    print(f"  Login:      {ADMIN_USER} / <redacted>")
+    print(f"  Org:        {ORG_NAME}")
+    print(f"  Case user:  {ADMIN_USER} / <redacted>")
     print("  Bearer key: configured" if api_key else "")
     print("=" * 60)
 

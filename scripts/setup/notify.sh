@@ -10,7 +10,7 @@ set -u
 # Configuration
 RUNTIME_DIR="${RUNTIME_DIR:-./runtime}"
 LOG_FILE="${LOG_FILE:-${RUNTIME_DIR}/logs/notify.log}"
-THEHIVE_URL="${THEHIVE_URL:-http://localhost:9000}"
+THEHIVE_URL="${THEHIVE_URL:-http://localhost:8100}"
 THEHIVE_API_KEY="${THEHIVE_API_KEY:-change-this-api-key}"
 SMTP_SERVER="${SMTP_SERVER:-localhost:25}"
 SMTP_FROM="${SMTP_FROM:-soar-lab@example.com}"
@@ -60,13 +60,13 @@ update_thehive_case() {
     
     if [ "$SIMULATION_MODE" = "true" ]; then
         log "[SIMULATION] Updating TheHive case $case_id"
-        log "[SIMULATION] PATCH /api/case/$case_id"
+        log "[SIMULATION] PATCH /api/v1/case/$case_id"
         log "[SIMULATION] Status: $status"
         log "[SIMULATION] Message: $message"
         log "[SIMULATION] TheHive case updated successfully"
     else
         # Real TheHive API call
-        curl -X PATCH "$THEHIVE_URL/api/case/$case_id" \
+        curl -X PATCH "$THEHIVE_URL/api/v1/case/$case_id" \
              -H "Authorization: Bearer $THEHIVE_API_KEY" \
              -H "Content-Type: application/json" \
              -d "{\"status\": \"$status\", \"summary\": \"$message\"}" \

@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 #
 # SOAR Ransomware Lab - Certificate Generation Script
 # This script generates SSL/TLS certificates for secure communications
@@ -6,10 +6,14 @@
 
 set -euo pipefail
 
+# Git Bash (MSYS) rewrites -subj "/C=US/..." as a Windows path and openssl
+# rejects the mangled DN — opt out of path conversion for this script.
+export MSYS_NO_PATHCONV=1
+
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CERT_DIR="${CERT_DIR:-$(dirname "$SCRIPT_DIR")/../certs}"
-LOG_DIR="${LOG_DIR:-/var/log/soar-lab}"
+CERT_DIR="${CERT_DIR:-$SCRIPT_DIR/../../infra/docker/config/certs}"
+LOG_DIR="${LOG_DIR:-$CERT_DIR/.logs}"
 LOG_FILE="${LOG_DIR}/gen_certs.log"
 
 # Certificate settings
@@ -86,7 +90,10 @@ CN = $hostname
 emailAddress = $EMAIL
 
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
+# TLS 1.3/ECDHE require digitalSignature on the server cert — without it
+# Chromium aborts with ERR_SSL_KEY_USAGE_INCOMPATIBLE even when the CA is
+# trusted or https errors are ignored.
+keyUsage = digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 

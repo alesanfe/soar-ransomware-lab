@@ -1,13 +1,14 @@
 # Embedded script: update_inprogress
-# Confirm case stays active/Open (malicious branch).
-# NOTE: TheHive 5's case.status enum only accepts Open/Resolved/Deleted.
-# "InProgress" is not a valid case status and PATCHing it always returns
-# HTTP 400 AttributeCheckingError. Cases are already created with
-# status=Open, so no PATCH is needed here; the case simply remains Open
-# (active) while under containment, and mark_false_positive PATCHes it
-# to Resolved/FalsePositive on the benign branch instead.
+# Move case New -> InProgress on the malicious (contain) branch.
+# TheHive 5 case statuses are configurable vertices: New / InProgress
+# (open stages) and TruePositive / FalsePositive / Indeterminate /
+# Duplicated / Other (Closed stage). "Open"/"Resolved" are NOT valid
+# values in this deployment — PATCHing them returns 400.
+"""Shuffle node: transition the case to InProgress (malicious branch)."""
+
 import json
 import logging
+import urllib.request
 
 logger = logging.getLogger(__name__)
 decision_raw = r"""$calc_decision.message""".strip()
@@ -26,17 +27,26 @@ if decision != "contain":
         )
     )
 else:
-    case_id = r"""$thehive_create_case.body._id"""
-    print(
-        json.dumps(
-            {
-                "success": True,
-                "status": "Open",
-                "case_id": case_id,
-                "reason": (
-                    "TheHive case.status only supports Open/Resolved/Deleted;"
-                    " case remains Open (active) during containment"
-                ),
-            }
-        )
+    case_id = r"""$thehive_create_case.message.body._id"""
+    url = "__THEHIVE_INT__/api/v1/case/" + case_id
+    body = json.dumps({"status": "InProgress"}).encode()
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json", "Authorization": "Bearer __THEHIVE_KEY__"},
+        method="PATCH",
     )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            print(
+                json.dumps(
+                    {
+                        "success": True,
+                        "status": "InProgress",
+                        "case_id": case_id,
+                        "http_status": resp.status,
+                    }
+                )
+            )
+    except Exception as e:
+        logger.error(json.dumps({"success": False, "exception": str(e)}))

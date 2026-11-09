@@ -1,5 +1,7 @@
 # Embedded script: verify_redis
 # Verifies the Redis cache response (non-critical).
+"""Shuffle node: confirm the IoC cached in Redis."""
+
 import json
 import logging
 

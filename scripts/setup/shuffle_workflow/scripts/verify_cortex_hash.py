@@ -1,5 +1,7 @@
 # Embedded script: verify_cortex_hash
 # Verifies the Cortex hash job response (non-critical).
+"""Shuffle node: extract taxonomies from the Cortex hash job."""
+
 import ast
 import json
 import logging

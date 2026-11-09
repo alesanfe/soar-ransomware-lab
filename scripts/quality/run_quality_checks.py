@@ -78,7 +78,7 @@ def run_interrogate(path: str = "src/") -> dict:
     )
     output = result.stdout + result.stderr
     # Parse coverage percentage from the RESULT line:
-    #   "RESULT: PASSED (minimum: 80.0%, actual: 85.0%)"
+    #   e.g. RESULT: PASSED (minimum: 80.0%, actual: 85.0%)
     coverage = 0.0
     import re
 
@@ -89,7 +89,7 @@ def run_interrogate(path: str = "src/") -> dict:
         except ValueError:
             pass
     # Parse covered/total from the TOTAL row:
-    #   "| TOTAL | 1018 | 54 | 964 | 94.7% |"
+    #   e.g. | TOTAL | 1018 | 54 | 964 | 94.7% |
     total = 0
     covered = 0
     total_match = re.search(r"\|\s*TOTAL\s*\|\s*(\d+)\s*\|\s*\d+\s*\|\s*(\d+)\s*\|", output)

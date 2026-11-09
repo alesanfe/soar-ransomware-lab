@@ -1,5 +1,7 @@
 # Embedded script: verify_es
 # Verifies that Elasticsearch indexed the alert document.
+"""Shuffle node: confirm the alert document indexed in Elasticsearch."""
+
 import json
 import logging
 

@@ -10,7 +10,7 @@ and throttling new legitimate executions.
 This script performs a three-step cleanup:
 
 1.  **OpenSearch purge** — delete every document from the
-    ``workflowexecution-000001`` and ``workflowqueue-shuffle`` indices.
+    ``workflowexecution`` and ``workflowqueue-shuffle`` indices.
 2.  **API abort** — call ``DELETE /api/v1/executions/<id>`` for every
     execution still marked ``EXECUTING`` across all workflows.
 3.  **Worker removal** — ``docker rm -f`` every ``worker-*`` and
@@ -81,9 +81,22 @@ _API_KEY = os.environ.get(
 _SHUFFLE_URL = os.environ.get("SHUFFLE_BACKEND_URL", "http://shuffle-backend:5001")
 
 _EXECUTION_INDICES = (
-    "workflowexecution-000001",
+    "workflowexecution*",
     "workflowqueue-shuffle",
 )
+
+
+def _status_filter(value: str) -> dict:
+    """status is keyword on rollover indices but text+keyword on the flat
+    `workflowexecution` index — match either form."""
+    return {
+        "bool": {
+            "should": [
+                {"term": {"status": value}},
+                {"term": {"status.keyword": value}},
+            ]
+        }
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -104,16 +117,16 @@ def _purge_opensearch() -> dict[str, int]:
     auth = (_ES_USER, _ES_PASS)
     headers = {HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON}
 
-    # Only delete non-FINISHED executions from workflowexecution-000001
+    # Only delete non-FINISHED executions from workflowexecution
     stale_query = {
         "query": {
             "bool": {
                 "should": [
-                    {"term": {"status": "EXECUTING"}},
-                    {"term": {"status": "ABORTED"}},
-                    {"term": {"status": "FAILED"}},
+                    _status_filter("EXECUTING"),
+                    _status_filter("ABORTED"),
+                    _status_filter("FAILED"),
                 ],
-                "must_not": [{"term": {"status": "FINISHED"}}],
+                "must_not": [_status_filter("FINISHED")],
             }
         }
     }
@@ -121,7 +134,7 @@ def _purge_opensearch() -> dict[str, int]:
     for index in _EXECUTION_INDICES:
         try:
             # workflowqueue-shuffle: purge all (only pending items)
-            # workflowexecution-000001: only purge stale (not FINISHED)
+            # workflowexecution: only purge stale (not FINISHED)
             query = {"query": {"match_all": {}}} if index == "workflowqueue-shuffle" else stale_query
             r = requests.post(
                 f"{_ES_URL}/{index}/_delete_by_query",

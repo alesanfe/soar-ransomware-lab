@@ -1,5 +1,7 @@
 # Embedded script: mark_false_positive
 # Mark case as FalsePositive (benign branch).
+"""Shuffle node: mark the case FalsePositive (benign branch)."""
+
 import json
 import logging
 import urllib.request
@@ -21,9 +23,9 @@ if decision != "observe":
         )
     )
 else:
-    case_id = r"""$thehive_create_case.body._id"""
-    url = "__THEHIVE_INT__/api/case/" + case_id
-    body = json.dumps({"status": "Resolved", "resolutionStatus": "FalsePositive"}).encode()
+    case_id = r"""$thehive_create_case.message.body._id"""
+    url = "__THEHIVE_INT__/api/v1/case/" + case_id
+    body = json.dumps({"status": "FalsePositive"}).encode()
     req = urllib.request.Request(
         url,
         data=body,

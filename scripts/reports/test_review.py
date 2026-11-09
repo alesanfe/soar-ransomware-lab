@@ -75,7 +75,7 @@ def get_test_markers(filepath: Path) -> list[str]:
     # @pytest.mark.NAME
     for m in re.finditer(r"@pytest\.mark\.(\w+)", content):
         markers.add(m.group(1))
-    # pytestmark = [pytest.mark.NAME]
+    # also matches pytestmark = [pytest.mark.NAME]
     for m in re.finditer(r"pytest\.mark\.(\w+)", content):
         markers.add(m.group(1))
     return sorted(markers)
