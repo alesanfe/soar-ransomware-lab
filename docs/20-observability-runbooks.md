@@ -162,13 +162,18 @@ Docker**, no el host C:. Dos capas distintas:
    `docker image prune -a -f` (imágenes sin contenedor — recuperables vía
    pull/build; en la migración de 2026-11-09 liberó 8.57GB).
 2. **Host C: / VHDX hinchado**: WSL2 no devuelve espacio liberado dentro del
-   VHDX automáticamente. Compactación manual (requiere parar Docker):
-   - `wsl --shutdown`
-   - `Optimize-VHD -Path "$env:LOCALAPPDATA\Docker\wsl\disk\docker_data.vhdx" -Mode Full`
-     (PowerShell admin; Hyper-V tools), o `diskpart` → `compact vdisk`.
-3. `runtime/data/` conserva los bind dirs pre-migración como respaldo de
-   rollback (~1.5GB) — purgables solo tras validar que los named volumes
-   funcionan en producción unas semanas.
+   VHDX automáticamente. Script guardado:
+   `powershell -ExecutionPolicy Bypass -File scripts\maintenance\compact_vhdx.ps1`
+   — verifica que Docker/WSL están parados antes de compactar (rechaza si
+   el VHDX está en uso) y con `-AutoStop` baja el stack + WSL, compacta y
+   rearranca Docker Desktop. Equivale a `wsl --shutdown` +
+   `Optimize-VHD -Mode Full` (o `diskpart compact vdisk` si no hay
+   Hyper-V tools). Requiere PowerShell elevado y downtime del stack.
+3. Los bind dirs pre-migración ya NO viven en `runtime/data/` — archivados
+   a `runtime/backups/legacy/*.tar.gz` vía
+   `python scripts/maintenance/archive_legacy_data.py` (verifica el tarball
+   antes de borrar el origen; `--dry-run`/`--keep` disponibles). Borrar los
+   tarballs tras validar los named volumes unas semanas.
 
 ### RB-09 — Object storage S3 (SeaweedFS) caído o corrupto
 
@@ -184,9 +189,14 @@ refused` a `s3:8333`.
 4. Credenciales: `iam.config.json` (`infra/docker/config/seaweedfs/`) debe
    coincidir con `S3_ACCESS_KEY`/`S3_SECRET_KEY` del `.env` — un rotate de
    secretos exige actualizar el file IAM.
-5. Datos: `soar_s3_data` es un named volume — `make down` normal lo
-   conserva; `down -v` borra chunks/bloques (logs/trazas históricos).
+5. Datos: `soar_s3_data` y `soar_s3_vol2_data` son named volumes —
+   `make down` normal los conserva; `down -v` borra chunks/bloques
+   (logs/trazas históricos).
 6. Puerto S3 interno: `8333` (no publicado al host — intencional).
+7. Réplica (RB-14): si `s3-vol2` cae, las escrituras nuevas **fallan** —
+   placement `010` exige la otra réplica. Levantar `s3-vol2` primero;
+   si hay volúmenes under-replicated:
+   `echo "lock; volume.fix.replication -apply; unlock" | weed shell -master=127.0.0.1:9333`.
 
 ### RB-10 — Migración bind-mount → named volume (procedimiento)
 
@@ -226,6 +236,63 @@ devuelve `success=false` con `status_code` 5xx.
 - Renovar el cert: firmar un nuevo `soar.local.csr` con `ca.key` (mismo
   procedimiento que `gen_certs.sh` server cert) — **no** regenerar la CA
   (invalidaría los certs desplegados, p.ej. MISP en `soar_api`).
+
+### RB-13 — TLS interno del stack de observabilidad (GRAF-D10)
+
+Desde 2026-11-10, **toda la superficie HTTP de observabilidad es TLS** con
+certs firmados por la CA del lab (`infra/docker/config/certs/`):
+
+| Servicio | Listener TLS | Verifican contra CA |
+|----------|-------------|---------------------|
+| loki:3100 | `server.http_tls_config` (loki-config.yml) | promtail (`tls_config.ca_file`), grafana ds (`secureJsonData.tlsCACert`), prometheus scrape, API health |
+| tempo:3200 | `server.http_tls_config` (tempo.yaml) | grafana ds tempo + tempo-json |
+| prometheus:9090 | `--web.config.file` → `prometheus-web.yml` | tempo remote_write (`tls_config.ca_file`), grafana ds, self-scrape |
+| grafana:3000 | `GF_SERVER_PROTOCOL=https` | nginx edge (`proxy_ssl_verify on`), prometheus scrape |
+
+- Certs: `infra/docker/config/certs/{loki,tempo,prometheus,grafana}.{crt,key}`,
+  CN=<servicio> + SANs `<svc>`, `soar_<svc>`, `localhost`, `127.0.0.1`
+  (730 días). Regenerar con la misma receta SAN contra `ca.{crt,key}`.
+- El CA PEM va **embebido** en `grafana-datasources.yml.template`
+  (`secureJsonData.tlsCACert`) — es material público (solo `ca.key` es
+  secreto). Tras regenerar la CA hay que actualizar el PEM en el template.
+- Healthchecks de container: `wget --no-check-certificate` (busybox no puede
+  pinar CA) — ejercitan handshake TLS; la verificación real la hacen los
+  consumidores.
+- **Superficie residual en claro** (decisión documentada): OTLP gRPC
+  otel-collector→tempo:4317, ES/OpenSearch (xpack security off en lab),
+  api:8000, grafana-renderer callback (el renderer usa
+  `IGNORE_HTTPS_ERRORS=true` porque Chromium NSS no conoce la CA — el
+  tráfico va cifrado igualmente).
+- API health checks: `health_check_ssl_config` en settings pinna
+  `/app/certs/ca.crt` para loki/grafana/misp — `requests.verify` acepta
+  path de bundle (http_client `VerifySSL = bool | str`).
+- Verificación: `docker exec soar_api curl --cacert /app/certs/ca.crt https://loki:3100/ready` (200). El curl del **host** falla con Schannel
+  (la CA no está en el store de Windows) — es esperado, no un bug.
+
+### RB-14 — Replicación S3 (SeaweedFS 2 racks, placement 010)
+
+Topología: `s3` (master+volume+rack1+filer+S3 gw) + `s3-vol2` (volume,
+rack2). `-master.defaultReplication=010` → cada fichero nuevo se escribe
+en **dos racks**. Backfill histórico ya ejecutado
+(`volume.configure.replication -collectionPattern="*" -replication=010` +
+`volume.fix.replication -apply`).
+
+- Estado: `docker exec soar_s3 sh -c 'echo "volume.list" | weed shell -master=127.0.0.1:9333'` — cada volumen debe existir en rack1 **y** rack2.
+- `volume.fix.replication` (sin -apply) reporta under-replicated — debe
+  salir vacío.
+- **Límite honesto**: protege contra caída de un volumen-contenedor, NO
+  contra caída del host/WSL ni del filer/S3-gateway (single-instance).
+  HA real = despliegue multi-host o S3 gestionado externo — fuera del
+  alcance del lab.
+- `s3-vol2 -max=64` limita slots; `free:0` rompería escrituras nuevas —
+  subir `-max` si el uso crece (los volúmenes lab son <1MB).
+
+### RB-15 — Datos legacy y compactación VHDX
+
+- Bind dirs antiguos: archivados en `runtime/backups/legacy/*.tar.gz`
+  por `scripts/maintenance/archive_legacy_data.py` (tar→verify→remove).
+- VHDX: `scripts/maintenance/compact_vhdx.ps1 [-AutoStop]` — compactación
+  segura con guardas (rechaza si Docker/WSL sigue activo).
 
 ## 4. Validación
 

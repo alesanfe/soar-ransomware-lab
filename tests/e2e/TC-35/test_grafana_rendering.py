@@ -270,7 +270,7 @@ class TestGrafanaRendering(E2EBaseTest):
     # saturation coverage (GRAF-OBS-02)
     # ---------------------------------------------------------------
     def test_prometheus_targets_up(self):
-        r = self.s.get("http://prometheus:9090/api/v1/targets?state=active", timeout=15)
+        r = self.s.get("https://prometheus:9090/api/v1/targets?state=active", timeout=15)
         assert r.status_code == 200, f"prometheus /targets -> {r.status_code}"
         targets = r.json()["data"]["activeTargets"]
         health = {t["labels"]["job"]: t["health"] for t in targets}
@@ -281,7 +281,7 @@ class TestGrafanaRendering(E2EBaseTest):
     def test_elasticsearch_exporter_scraped(self):
         """GRAF-029: ES cluster health must be observable via the exporter."""
         r = self.s.get(
-            "http://prometheus:9090/api/v1/query",
+            "https://prometheus:9090/api/v1/query",
             params={"query": "elasticsearch_cluster_health_status"},
             timeout=15,
         )
@@ -327,7 +327,7 @@ class TestGrafanaRendering(E2EBaseTest):
     def test_no_rule_stuck_in_error_state(self):
         """GRAF-021 metamonitoring: no rule may sit in error/nodata persistently."""
         r = self.s.get(
-            "http://prometheus:9090/api/v1/query",
+            "https://prometheus:9090/api/v1/query",
             params={"query": 'grafana_alerting_alerts{state=~"error|nodata"}'},
             timeout=15,
         )
@@ -377,7 +377,7 @@ class TestGrafanaRendering(E2EBaseTest):
     # ---------------------------------------------------------------
     def test_spanmetrics_p99_resolves(self):
         r = self.s.get(
-            "http://prometheus:9090/api/v1/query",
+            "https://prometheus:9090/api/v1/query",
             params={
                 "query": (
                     "histogram_quantile(0.99, "

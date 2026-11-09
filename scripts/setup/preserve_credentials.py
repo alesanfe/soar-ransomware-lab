@@ -39,7 +39,7 @@ CREDENTIALS_FILE = Path("/app/reports/validation/results/credentials_backup.json
 # Service URLs (use Docker Compose service names, not container names)
 THEHIVE_URL = os.environ.get("THEHIVE_URL", "http://thehive:9000")
 CORTEX_URL = os.environ.get("CORTEX_URL", "http://cortex:9001")
-GRAFANA_URL = os.environ.get("GRAFANA_URL", "http://grafana:3000")
+GRAFANA_URL = os.environ.get("GRAFANA_URL", "https://grafana:3000")
 SHUFFLE_URL = os.environ.get("SHUFFLE_BACKEND_URL", "http://shuffle-backend:5001")
 
 # Current credentials

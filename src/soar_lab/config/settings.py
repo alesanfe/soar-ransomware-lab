@@ -309,14 +309,23 @@ class Settings:
             "nginx_container": os.getenv("NGINX_CONTAINER", "soar_nginx"),
             "redis_health_url": os.getenv("REDIS_HEALTH_URL", "tcp://redis:6379"),
             "redis_container": os.getenv("REDIS_CONTAINER", "soar_redis"),
-            "loki_health_url": os.getenv("LOKI_HEALTH_URL", "http://loki:3100/ready"),
+            "loki_health_url": os.getenv("LOKI_HEALTH_URL", "https://loki:3100/ready"),
             "loki_container": os.getenv("LOKI_CONTAINER", "soar_loki"),
-            "grafana_health_url": os.getenv("GRAFANA_HEALTH_URL", "http://grafana:3000/api/health"),
+            "grafana_health_url": os.getenv(
+                "GRAFANA_HEALTH_URL", "https://grafana:3000/api/health"
+            ),
             "grafana_container": os.getenv("GRAFANA_CONTAINER", "soar_grafana"),
             "promtail_health_url": os.getenv("PROMTAIL_HEALTH_URL", "http://promtail:9080/"),
             "promtail_container": os.getenv("PROMTAIL_CONTAINER", "soar_promtail"),
             "misp_health_url": os.getenv("MISP_HEALTH_URL", "https://misp:443/users/heartbeat"),
             "misp_container": os.getenv("MISP_CONTAINER", "soar_misp"),
+            # GRAF-D10: services serving lab-CA certs need the CA pinned here —
+            # requests accepts a bundle path in verify=.
+            "health_check_ssl_config": {
+                "loki": "/app/certs/ca.crt",
+                "grafana": "/app/certs/ca.crt",
+                "misp": "/app/certs/ca.crt",
+            },
         }
 
     def _load_config(self) -> dict[str, Any]:

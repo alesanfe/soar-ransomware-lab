@@ -18,12 +18,11 @@ networks:
         - subnet: 10.100.0.0/16
 
 volumes:
+  # GRAF-D6/GRAF-D8: real named volume (VM ext4), not a Windows bind-mount —
+  # OpenSearch indexing fsync latency on the shared host fs was the measured
+  # cause of "timeout awaiting response headers" → Shuffle backend 500s.
   opensearch_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/opensearch
 
 services:
   opensearch:

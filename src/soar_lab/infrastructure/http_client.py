@@ -23,6 +23,10 @@ logger = get_logger(__name__)
 _POOL_CONNECTIONS = 4
 _POOL_MAXSIZE = 4
 
+# requests accepts bool | str for verify (CA bundle path for internal
+# lab-CA services — GRAF-D10).
+VerifySSL = bool | str
+
 
 class AioHTTPClient:
     """Async facade over a pooled ``requests.Session``.
@@ -35,18 +39,19 @@ class AioHTTPClient:
     FastAPI shutdown hook).
     """
 
-    def __init__(self, default_timeout: int = 5, default_verify_ssl: bool = True) -> None:
+    def __init__(self, default_timeout: int = 5, default_verify_ssl: VerifySSL = True) -> None:
         """Initialize the HTTP client.
 
         Args:
             default_timeout: Default request timeout in seconds
-            default_verify_ssl: Default SSL verification setting
+            default_verify_ssl: Default SSL verification setting — bool
+                or a CA bundle path (``requests.verify`` contract)
         """
         self.default_timeout = default_timeout
         self.default_verify_ssl = default_verify_ssl
-        self._sessions: dict[bool, requests.Session] = {}
+        self._sessions: dict[VerifySSL, requests.Session] = {}
 
-    def _pooled_session(self, verify_ssl: bool) -> requests.Session:
+    def _pooled_session(self, verify_ssl: VerifySSL) -> requests.Session:
         """Return the pooled session for this SSL mode, creating it lazily."""
         session = self._sessions.get(verify_ssl)
         if session is None:
@@ -58,7 +63,7 @@ class AioHTTPClient:
             self._sessions[verify_ssl] = session
         return session
 
-    async def _session(self, verify_ssl: bool) -> requests.Session:
+    async def _session(self, verify_ssl: VerifySSL) -> requests.Session:
         """Return the pooled session (async-compat accessor).
 
         Kept for backwards compatibility with callers that ``await``
@@ -91,7 +96,7 @@ class AioHTTPClient:
             return None
         return timeout
 
-    def _do_get(self, url: str, timeout: float | None, verify_ssl: bool) -> requests.Response:
+    def _do_get(self, url: str, timeout: float | None, verify_ssl: VerifySSL) -> requests.Response:
         """Blocking GET — runs in a worker thread via ``asyncio.to_thread``."""
         return self._pooled_session(verify_ssl).get(
             url,
@@ -99,14 +104,14 @@ class AioHTTPClient:
             timeout=self._resolve_timeout(timeout),
         )
 
-    async def get(self, url: str, timeout: float | None = None, verify_ssl: bool = True) -> int:
+    async def get(self, url: str, timeout: float | None = None, verify_ssl: VerifySSL = True) -> int:
         """Perform a GET request and return status code.
 
         Args:
             url: URL to request
             timeout: Request timeout in seconds; ``None`` uses the
                 default, ``0``/negative disables the timeout
-            verify_ssl: Whether to verify SSL certificates
+            verify_ssl: ``True``/``False`` or a CA bundle path to pin
 
         Returns:
             HTTP status code
@@ -121,7 +126,7 @@ class AioHTTPClient:
             raise
 
     async def get_json(
-        self, url: str, timeout: float | None = None, verify_ssl: bool = True
+        self, url: str, timeout: float | None = None, verify_ssl: VerifySSL = True
     ) -> dict[str, Any]:
         """Perform a GET request and return JSON response.
 
@@ -129,7 +134,7 @@ class AioHTTPClient:
             url: URL to request
             timeout: Request timeout in seconds; ``None`` uses the
                 default, ``0``/negative disables the timeout
-            verify_ssl: Whether to verify SSL certificates
+            verify_ssl: ``True``/``False`` or a CA bundle path to pin
 
         Returns:
             JSON response as dict
@@ -150,7 +155,7 @@ class AioHTTPClient:
         payload: dict[str, Any] | None,
         headers: dict[str, str] | None,
         timeout: float | None,
-        verify_ssl: bool,
+        verify_ssl: VerifySSL,
     ) -> requests.Response:
         """Blocking POST — runs in a worker thread via ``asyncio.to_thread``."""
         return self._pooled_session(verify_ssl).post(
@@ -166,7 +171,7 @@ class AioHTTPClient:
         payload: dict[str, Any] | None = None,
         headers: dict[str, str] | None = None,
         timeout: float | None = None,
-        verify_ssl: bool = True,
+        verify_ssl: VerifySSL = True,
     ) -> tuple[int, dict[str, Any]]:
         """Perform a POST request and return ``(status_code, body)``.
 

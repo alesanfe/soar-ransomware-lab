@@ -921,7 +921,7 @@ específicas y credenciales.
 | **TheHive** | `<http://localhost:8100/`> | `/thehive/` | admin / contraseña generada por `init_thehive.py` (ver logs) | API key: `THEHIVE_API_KEY` |
 | **Cortex** | `<http://localhost:8101/`> | `/cortex/` | admin / contraseña generada por `reset_cortex.py` (ver logs) | API key: `CORTEX_API_KEY` |
 | **MISP** | `<http://localhost:8083/`> | No soportado | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD` | Acceso directo obligatorio |
-| **Grafana** | `<http://localhost:8084/`> | No soportado | admin / `GRAFANA_ADMIN_PASSWORD` | Datasource Elasticsearch en `soar-metrics` |
+| **Grafana** | `<https://localhost:8084/`> | No soportado | admin / `GRAFANA_ADMIN_PASSWORD` | Datasource Elasticsearch en `soar-metrics` |
 | **Docs Site** | `<http://localhost:8086/`> | No soportado | - | Docusaurus / docs-site |
 | **Elasticsearch** | `<http://localhost:8200/`> | No expuesto | `elastic` / `ELASTIC_PASSWORD` | Interno `<http://elasticsearch:9200`> |
 | **Nginx Health** | - | `/nginx-health` | - | Healthcheck del proxy |
@@ -1095,7 +1095,7 @@ Tras ejecutar `make up` (o el equivalente `docker compose -f ... up -d`), desde 
 
 4. **Grafana**
  ```bash
- curl -sf <http://localhost:8084/api/health>
+ curl -sf <https://localhost:8084/api/health>
  ```
 
 5. **Network Watcher**
@@ -1402,7 +1402,7 @@ Grafana se conecta a `logging_net` y `soar_net` para poder consultar `elasticsea
 | Lab API | 8000 | `<http://localhost:8000`> (Swagger en `<http://localhost:8000/docs`>) | `/api/` — Swagger vía Nginx: `<https://soar.local/api/docs`> y `<https://soar.local/api/openapi.json`>. No usar `<https://soar.local:8000/docs`> (Nginx no escucha en 8000). |
 | Shuffle UI | 8081 | `<http://localhost:8081`> | No soportado (SPA con rutas absolutas) |
 | MISP | 8083 | `<http://localhost:8083`> | No soportado |
-| Grafana | 8084 | `<http://localhost:8084`> | No soportado |
+| Grafana | 8084 | `<https://localhost:8084`> | No soportado |
 | Docs Site | 8086 | `<http://localhost:8086`> | No soportado |
 | TheHive | 8100 | `<http://localhost:8100`> | `/thehive/` |
 | Cortex | 8101 | `<http://localhost:8101`> | `/cortex/` |
@@ -1671,7 +1671,7 @@ docker compose ps
 curl -k <https://soar.local/nginx-health>
 curl -k <https://soar.local/api/health>
 curl <http://localhost:8000/health>
-curl <http://localhost:8084/api/health>
+curl <https://localhost:8084/api/health>
 
 # Swagger / OpenAPI de la Lab API
 curl -k <https://soar.local/api/openapi.json> | head -c 200
@@ -1684,7 +1684,7 @@ make validate-credentials
 cat reports/validation/results/webhook_info.json | python -m json.tool
 
 # Comprobar que los logs llegan a Loki
-curl <http://localhost:8084/api/datasources>
+curl <https://localhost:8084/api/datasources>
 
 # Ver actividad del network-watcher
 docker logs -f soar_network_watcher
@@ -1787,7 +1787,7 @@ Dominio local canónico: `soar.local` → `127.0.0.1` (añadir al archivo hosts,
 | MISP | `${MISP_PORT:-8083}` | `80` | HTTP/HTTPS | `<http://localhost:8083`> | No | `soar_misp` | MISP no soporta subpath proxy. |
 | MISP DB | — | `3306` | SQL | — | No | `soar_misp_db` | MariaDB 10.11; solo red interna. |
 | Redis | `${REDIS_PORT:-6379}` | `6379` | Redis | `redis://localhost:6379` | No | `soar_redis` | Requiere `REDIS_PASSWORD` si está configurada. |
-| Grafana | `${GRAFANA_PORT:-8084}` | `3000` | HTTP | `<http://localhost:8084`> | No | `soar_grafana` | Data source Elasticsearch configurado vía provisioning. |
+| Grafana | `${GRAFANA_PORT:-8084}` | `3000` | HTTPS | `<https://localhost:8084`> | No | `soar_grafana` | Data source Elasticsearch configurado vía provisioning. |
 | Grafana DB (PostgreSQL) | — | `5432` | SQL | — | No | `soar_grafana_db` | Solo `logging_net`. |
 | Loki | — | `3100` | HTTP | — | No | `soar_loki` | Solo red interna (`logging_net`). |
 | Promtail | — | — | HTTP | — | No | `soar_promtail` | Descubre contenedores por socket Docker. |
@@ -1853,7 +1853,7 @@ La API FastAPI expone los siguientes puertos de entrada principales. Todos se ac
 # Desde el host
 curl -k <https://soar.local/nginx-health>
 curl <http://localhost:8000/health>
-curl <http://localhost:8084/api/health>
+curl <https://localhost:8084/api/health>
 
 # Desde otro contenedor (por ejemplo, el propio API)
 docker exec -it soar_api sh -c 'wget -qO- <http://elasticsearch:9200/_cluster/health'>
@@ -2448,7 +2448,7 @@ Para evitar certificados expirados en despliegues automatizados, se recomienda:
 
 #### 1. Resumen
 
-El laboratorio centraliza logs de todos los contenedores Docker en **Loki** mediante **Promtail**, y los visualiza en **Grafana** (`<http://localhost:8084`>). Además, la API de gestión expone un endpoint WebSocket (`/ws/logs`) para streaming de logs en tiempo real.
+El laboratorio centraliza logs de todos los contenedores Docker en **Loki** mediante **Promtail**, y los visualiza en **Grafana** (`<https://localhost:8084`>). Además, la API de gestión expone un endpoint WebSocket (`/ws/logs`) para streaming de logs en tiempo real.
 
 ---
 
@@ -2499,7 +2499,7 @@ docker logs -f soar_promtail
 
 #### 4. Grafana y dashboards
 
-- URL: `<http://localhost:8084`>
+- URL: `<https://localhost:8084`>
 - Credenciales por defecto: `admin` / `${GRAFANA_ADMIN_PASSWORD}` (sobrescribir en `.env.full`).
 - Data source Elasticsearch se provisiona automáticamente en `/etc/grafana/provisioning/datasources/grafana-datasources.yml`.
 - Dashboards provisionados desde `/etc/grafana/provisioning/dashboards/grafana-kpi-dashboard.yml`.
@@ -2508,7 +2508,7 @@ La contraseña del data source de Elasticsearch debe coincidir con `ELASTIC_PASS
 
 ```bash
 # Probar datasource
-curl -u admin:${GRAFANA_ADMIN_PASSWORD} <http://localhost:8084/api/datasources>
+curl -u admin:${GRAFANA_ADMIN_PASSWORD} <https://localhost:8084/api/datasources>
 ```
 
 ---
@@ -2558,7 +2558,7 @@ Para reproducir las visualizaciones principales sin depender de capturas de pant
 
 #### 7.1 Grafana — dashboard KPI
 
-1. Acceder a `<http://localhost:8084`>.
+1. Acceder a `<https://localhost:8084`>.
 2. Seleccionar el dashboard provisionado `SOAR Ransomware KPI`.
 3. El panel *MTTR* usa la consulta ES:
  ```json
@@ -2612,7 +2612,7 @@ Comandos útiles:
 
 ```bash
 # Logs de todos los servicios SOAR filtrados por contenedor en Loki
-open <http://localhost:8084/explore?orgId=1&left=%7B%22datasource%22:%22loki%22%7D>
+open <https://localhost:8084/explore?orgId=1&left=%7B%22datasource%22:%22loki%22%7D>
 
 # Logs de un contenedor específico
 docker logs -f soar_shuffle_backend
@@ -3574,11 +3574,11 @@ docker exec soar_api python /app/scripts/setup/init_thehive.py
 **Grafana:**
 ```bash
 # Grafana usa credenciales por defecto admin/<GRAFANA_ADMIN_PASSWORD> en primer inicio (ver .env.full)
-# Acceder a <http://localhost:8084> y cambiar contraseña
+# Acceder a <https://localhost:8084> y cambiar contraseña
 # O reiniciar el contenedor para forzar reconfiguración
 docker restart soar_grafana
 # Esperar 30 segundos
-# Acceder a <http://localhost:8084> con admin/<GRAFANA_ADMIN_PASSWORD>
+# Acceder a <https://localhost:8084> con admin/<GRAFANA_ADMIN_PASSWORD>
 ```
 
 **Cortex:**
@@ -6169,7 +6169,7 @@ curl -s -u "elastic:${ELASTIC_PASSWORD}" \
  }'
 
 # 3. Verificar dashboard de Grafana
-# Acceder a <http://localhost:8084> y seleccionar "SOAR Ransomware KPI"
+# Acceder a <https://localhost:8084> y seleccionar "SOAR Ransomware KPI"
 ```
 
 **Interpretación de las cifras documentadas**:

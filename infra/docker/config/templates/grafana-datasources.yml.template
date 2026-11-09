@@ -4,9 +4,10 @@ datasources:
     uid: loki
     type: loki
     access: proxy
-    url: ${LOKI_URL:-http://loki:3100}
+    url: ${LOKI_URL:-https://loki:3100}
     jsonData:
       maxLines: 1000
+      tlsAuthWithCACert: true
       derivedFields:
         - name: TraceID
           matcherRegex: '"trace_id":\s*"?([0-9a-f]{32})"?'
@@ -14,6 +15,45 @@ datasources:
           datasourceUid: tempo
     isDefault: true
     editable: true
+    secureJsonData:
+      tlsCACert: |
+        -----BEGIN CERTIFICATE-----
+        MIIGZTCCBE2gAwIBAgIUZYXpr0c5BbE68IuJjPQyi75ZvDUwDQYJKoZIhvcNAQEL
+        BQAwgbkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH
+        DA1TYW4gRnJhbmNpc2NvMRwwGgYDVQQKDBNTT0FSIFJhbnNvbXdhcmUgTGFiMRYw
+        FAYDVQQLDA1TZWN1cml0eSBUZWFtMR8wHQYDVQQDDBZTT0FSIFJhbnNvbXdhcmUg
+        TGFiIENBMSYwJAYJKoZIhvcNAQkBFhdzZWN1cml0eUBzb2FyLWxhYi5sb2NhbDAe
+        Fw0yNjExMDgxOTI0MzVaFw0zNjExMDUxOTI0MzVaMIG5MQswCQYDVQQGEwJVUzET
+        MBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEcMBoG
+        A1UECgwTU09BUiBSYW5zb213YXJlIExhYjEWMBQGA1UECwwNU2VjdXJpdHkgVGVh
+        bTEfMB0GA1UEAwwWU09BUiBSYW5zb213YXJlIExhYiBDQTEmMCQGCSqGSIb3DQEJ
+        ARYXc2VjdXJpdHlAc29hci1sYWIubG9jYWwwggIiMA0GCSqGSIb3DQEBAQUAA4IC
+        DwAwggIKAoICAQDLxIcHxrG9Uvi86NrhfXc+jVXlBmKV8dkzPlaipGodt2nJ2OAR
+        D9DwQGDlwUvLv3dFMIw/n0yusjV+p8uOG+9DSdy4+6yXZP+0PGq6NLdrh5XW93FO
+        /kYbJUtltlAVa9Naem5u6K5F3dMXtZRP/WM+G8ekW9H19RiRgiYAABEf0nyaK+Gb
+        Vv8uiiQEAnpR6UeR5mF6Rs3O1b5UTy95ySXI6E/iaRLudZQArzGEqE+PbSUqADTc
+        fQHc8i+eCj8BgJ5RTvCwP0VISsHypFfvjzuQN6yS7LSOIUbk7zSrSgHHE3us6cf7
+        8XNdmmb9ya/SO+vli7bLN2sLc9kNp0kMnezquEzqrCVwELPsfBV6slA+2DnIgsL9
+        rTlWZPqfnDUapHOpQ/bU4wPyICAPp2eqC2FuArjzeknwo8Yatj0WBhYM9lshBbFw
+        YhfThHj0j0p8323IDiiSNl+YAnEZNFszl2RHzfCPvT6i1dyPp8iGrp4mFyeRjPyi
+        4ctii+Z9zGkaSGEgMsQOFiutDKKocQ9qpeFZUFmLLejXlLSmAyc42TZoTQxdwo/A
+        vhyAhVmGuSLiFbB0o0muB65rgSbp0+MFYrm5BjYvZNCyIqBFgEuLqUPPy9fzkWXj
+        /VP1Cm/aFuIyMuvWNzxGRrZm5UV8/lrzbsrTF8jAWqdQ4QgS2VnHS8obfQIDAQAB
+        o2MwYTAdBgNVHQ4EFgQUA/IoRVwf1fiquIJ2wK3g8dHmnZIwHwYDVR0jBBgwFoAU
+        A/IoRVwf1fiquIJ2wK3g8dHmnZIwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8E
+        BAMCAQYwDQYJKoZIhvcNAQELBQADggIBAGHcXp4DoKoagGlFZzFXoJkRBKoQ+mHm
+        M28Hd/89Nk4GvYrm5WcxsDC9tL9h7sn4IEVW2R8pIRFNlFRaLxFpjL5RictcatV8
+        W6fgPvF0yhBNPX09aaHiIlEXM4NhPctytEDVIKEv1r9X25+xXP6LlgLaVwcAMu0+
+        dJyVU4H4zXnsBMhp6efsIx62SXXQ0o/VlBujEmd9UEnwqQHZhtdilOAXMqx7sB4j
+        9xUp3OST2eGMu6NmALSbKIwrMdv9RiOg1lvKWs1ewIiK/yRGo4HBczYZM5tRDBL7
+        enEOgdpN82gYEAPC4xN2mOZ7GJ8eO9Cqk3Fx+o5CY5EHj14PbJowVVOt4mkkXQQj
+        qd56PFEOMWWSOPRPolR4b8e2ymjR89XtvEPimdiBwm6XOVXwzNiF+OhEqiZNOWVk
+        d0ISiErSlNSbTZiCITJWC4FcN8L9cYQtgnshKHw+EwzMJXgvfyUmSK67XtbjpnbQ
+        8lRlAnzLRgvQAsSQhekEQBz1C3AU+rGFxL7RPbJZNGxt6qmHGtjsZFP3vRFIj/+A
+        xZRUehrX8YmBzZ0BToEpuvBDuY8DB5hH+3fjYDLMGuZjVOuQP7iKj5V2pCiWw4Ps
+        BbTk6W+FkHExf3gqbDZ7g1Nn3Bu6ZFWhkbzbw0WoRIkleDDJbqZzIY5HOpVZzHnh
+        k6t9pwK5qFPC
+        -----END CERTIFICATE-----
   - name: Elasticsearch
     uid: elasticsearch
     type: elasticsearch
@@ -34,9 +74,10 @@ datasources:
     uid: tempo
     type: tempo
     access: proxy
-    url: ${TEMPO_URL:-http://tempo:3200}
+    url: ${TEMPO_URL:-https://tempo:3200}
     editable: true
     jsonData:
+      tlsAuthWithCACert: true
       tracesToLogsV2:
         datasourceUid: loki
         spanStartTimeShift: "-5m"
@@ -46,23 +87,143 @@ datasources:
         query: '{container_name=~".+"} |~ `__trace_id__`'
       serviceMap:
         datasourceUid: prometheus
+    secureJsonData:
+      tlsCACert: |
+        -----BEGIN CERTIFICATE-----
+        MIIGZTCCBE2gAwIBAgIUZYXpr0c5BbE68IuJjPQyi75ZvDUwDQYJKoZIhvcNAQEL
+        BQAwgbkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH
+        DA1TYW4gRnJhbmNpc2NvMRwwGgYDVQQKDBNTT0FSIFJhbnNvbXdhcmUgTGFiMRYw
+        FAYDVQQLDA1TZWN1cml0eSBUZWFtMR8wHQYDVQQDDBZTT0FSIFJhbnNvbXdhcmUg
+        TGFiIENBMSYwJAYJKoZIhvcNAQkBFhdzZWN1cml0eUBzb2FyLWxhYi5sb2NhbDAe
+        Fw0yNjExMDgxOTI0MzVaFw0zNjExMDUxOTI0MzVaMIG5MQswCQYDVQQGEwJVUzET
+        MBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEcMBoG
+        A1UECgwTU09BUiBSYW5zb213YXJlIExhYjEWMBQGA1UECwwNU2VjdXJpdHkgVGVh
+        bTEfMB0GA1UEAwwWU09BUiBSYW5zb213YXJlIExhYiBDQTEmMCQGCSqGSIb3DQEJ
+        ARYXc2VjdXJpdHlAc29hci1sYWIubG9jYWwwggIiMA0GCSqGSIb3DQEBAQUAA4IC
+        DwAwggIKAoICAQDLxIcHxrG9Uvi86NrhfXc+jVXlBmKV8dkzPlaipGodt2nJ2OAR
+        D9DwQGDlwUvLv3dFMIw/n0yusjV+p8uOG+9DSdy4+6yXZP+0PGq6NLdrh5XW93FO
+        /kYbJUtltlAVa9Naem5u6K5F3dMXtZRP/WM+G8ekW9H19RiRgiYAABEf0nyaK+Gb
+        Vv8uiiQEAnpR6UeR5mF6Rs3O1b5UTy95ySXI6E/iaRLudZQArzGEqE+PbSUqADTc
+        fQHc8i+eCj8BgJ5RTvCwP0VISsHypFfvjzuQN6yS7LSOIUbk7zSrSgHHE3us6cf7
+        8XNdmmb9ya/SO+vli7bLN2sLc9kNp0kMnezquEzqrCVwELPsfBV6slA+2DnIgsL9
+        rTlWZPqfnDUapHOpQ/bU4wPyICAPp2eqC2FuArjzeknwo8Yatj0WBhYM9lshBbFw
+        YhfThHj0j0p8323IDiiSNl+YAnEZNFszl2RHzfCPvT6i1dyPp8iGrp4mFyeRjPyi
+        4ctii+Z9zGkaSGEgMsQOFiutDKKocQ9qpeFZUFmLLejXlLSmAyc42TZoTQxdwo/A
+        vhyAhVmGuSLiFbB0o0muB65rgSbp0+MFYrm5BjYvZNCyIqBFgEuLqUPPy9fzkWXj
+        /VP1Cm/aFuIyMuvWNzxGRrZm5UV8/lrzbsrTF8jAWqdQ4QgS2VnHS8obfQIDAQAB
+        o2MwYTAdBgNVHQ4EFgQUA/IoRVwf1fiquIJ2wK3g8dHmnZIwHwYDVR0jBBgwFoAU
+        A/IoRVwf1fiquIJ2wK3g8dHmnZIwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8E
+        BAMCAQYwDQYJKoZIhvcNAQELBQADggIBAGHcXp4DoKoagGlFZzFXoJkRBKoQ+mHm
+        M28Hd/89Nk4GvYrm5WcxsDC9tL9h7sn4IEVW2R8pIRFNlFRaLxFpjL5RictcatV8
+        W6fgPvF0yhBNPX09aaHiIlEXM4NhPctytEDVIKEv1r9X25+xXP6LlgLaVwcAMu0+
+        dJyVU4H4zXnsBMhp6efsIx62SXXQ0o/VlBujEmd9UEnwqQHZhtdilOAXMqx7sB4j
+        9xUp3OST2eGMu6NmALSbKIwrMdv9RiOg1lvKWs1ewIiK/yRGo4HBczYZM5tRDBL7
+        enEOgdpN82gYEAPC4xN2mOZ7GJ8eO9Cqk3Fx+o5CY5EHj14PbJowVVOt4mkkXQQj
+        qd56PFEOMWWSOPRPolR4b8e2ymjR89XtvEPimdiBwm6XOVXwzNiF+OhEqiZNOWVk
+        d0ISiErSlNSbTZiCITJWC4FcN8L9cYQtgnshKHw+EwzMJXgvfyUmSK67XtbjpnbQ
+        8lRlAnzLRgvQAsSQhekEQBz1C3AU+rGFxL7RPbJZNGxt6qmHGtjsZFP3vRFIj/+A
+        xZRUehrX8YmBzZ0BToEpuvBDuY8DB5hH+3fjYDLMGuZjVOuQP7iKj5V2pCiWw4Ps
+        BbTk6W+FkHExf3gqbDZ7g1Nn3Bu6ZFWhkbzbw0WoRIkleDDJbqZzIY5HOpVZzHnh
+        k6t9pwK5qFPC
+        -----END CERTIFICATE-----
   - name: Prometheus
     uid: prometheus
     type: prometheus
     access: proxy
-    url: ${PROMETHEUS_URL:-http://prometheus:9090}
+    url: ${PROMETHEUS_URL:-https://prometheus:9090}
     editable: true
     jsonData:
       timeInterval: 15s
+      tlsAuthWithCACert: true
       exemplarTraceIdDestinations:
         - datasourceUid: tempo
           name: trace_id
+    secureJsonData:
+      tlsCACert: |
+        -----BEGIN CERTIFICATE-----
+        MIIGZTCCBE2gAwIBAgIUZYXpr0c5BbE68IuJjPQyi75ZvDUwDQYJKoZIhvcNAQEL
+        BQAwgbkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH
+        DA1TYW4gRnJhbmNpc2NvMRwwGgYDVQQKDBNTT0FSIFJhbnNvbXdhcmUgTGFiMRYw
+        FAYDVQQLDA1TZWN1cml0eSBUZWFtMR8wHQYDVQQDDBZTT0FSIFJhbnNvbXdhcmUg
+        TGFiIENBMSYwJAYJKoZIhvcNAQkBFhdzZWN1cml0eUBzb2FyLWxhYi5sb2NhbDAe
+        Fw0yNjExMDgxOTI0MzVaFw0zNjExMDUxOTI0MzVaMIG5MQswCQYDVQQGEwJVUzET
+        MBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEcMBoG
+        A1UECgwTU09BUiBSYW5zb213YXJlIExhYjEWMBQGA1UECwwNU2VjdXJpdHkgVGVh
+        bTEfMB0GA1UEAwwWU09BUiBSYW5zb213YXJlIExhYiBDQTEmMCQGCSqGSIb3DQEJ
+        ARYXc2VjdXJpdHlAc29hci1sYWIubG9jYWwwggIiMA0GCSqGSIb3DQEBAQUAA4IC
+        DwAwggIKAoICAQDLxIcHxrG9Uvi86NrhfXc+jVXlBmKV8dkzPlaipGodt2nJ2OAR
+        D9DwQGDlwUvLv3dFMIw/n0yusjV+p8uOG+9DSdy4+6yXZP+0PGq6NLdrh5XW93FO
+        /kYbJUtltlAVa9Naem5u6K5F3dMXtZRP/WM+G8ekW9H19RiRgiYAABEf0nyaK+Gb
+        Vv8uiiQEAnpR6UeR5mF6Rs3O1b5UTy95ySXI6E/iaRLudZQArzGEqE+PbSUqADTc
+        fQHc8i+eCj8BgJ5RTvCwP0VISsHypFfvjzuQN6yS7LSOIUbk7zSrSgHHE3us6cf7
+        8XNdmmb9ya/SO+vli7bLN2sLc9kNp0kMnezquEzqrCVwELPsfBV6slA+2DnIgsL9
+        rTlWZPqfnDUapHOpQ/bU4wPyICAPp2eqC2FuArjzeknwo8Yatj0WBhYM9lshBbFw
+        YhfThHj0j0p8323IDiiSNl+YAnEZNFszl2RHzfCPvT6i1dyPp8iGrp4mFyeRjPyi
+        4ctii+Z9zGkaSGEgMsQOFiutDKKocQ9qpeFZUFmLLejXlLSmAyc42TZoTQxdwo/A
+        vhyAhVmGuSLiFbB0o0muB65rgSbp0+MFYrm5BjYvZNCyIqBFgEuLqUPPy9fzkWXj
+        /VP1Cm/aFuIyMuvWNzxGRrZm5UV8/lrzbsrTF8jAWqdQ4QgS2VnHS8obfQIDAQAB
+        o2MwYTAdBgNVHQ4EFgQUA/IoRVwf1fiquIJ2wK3g8dHmnZIwHwYDVR0jBBgwFoAU
+        A/IoRVwf1fiquIJ2wK3g8dHmnZIwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8E
+        BAMCAQYwDQYJKoZIhvcNAQELBQADggIBAGHcXp4DoKoagGlFZzFXoJkRBKoQ+mHm
+        M28Hd/89Nk4GvYrm5WcxsDC9tL9h7sn4IEVW2R8pIRFNlFRaLxFpjL5RictcatV8
+        W6fgPvF0yhBNPX09aaHiIlEXM4NhPctytEDVIKEv1r9X25+xXP6LlgLaVwcAMu0+
+        dJyVU4H4zXnsBMhp6efsIx62SXXQ0o/VlBujEmd9UEnwqQHZhtdilOAXMqx7sB4j
+        9xUp3OST2eGMu6NmALSbKIwrMdv9RiOg1lvKWs1ewIiK/yRGo4HBczYZM5tRDBL7
+        enEOgdpN82gYEAPC4xN2mOZ7GJ8eO9Cqk3Fx+o5CY5EHj14PbJowVVOt4mkkXQQj
+        qd56PFEOMWWSOPRPolR4b8e2ymjR89XtvEPimdiBwm6XOVXwzNiF+OhEqiZNOWVk
+        d0ISiErSlNSbTZiCITJWC4FcN8L9cYQtgnshKHw+EwzMJXgvfyUmSK67XtbjpnbQ
+        8lRlAnzLRgvQAsSQhekEQBz1C3AU+rGFxL7RPbJZNGxt6qmHGtjsZFP3vRFIj/+A
+        xZRUehrX8YmBzZ0BToEpuvBDuY8DB5hH+3fjYDLMGuZjVOuQP7iKj5V2pCiWw4Ps
+        BbTk6W+FkHExf3gqbDZ7g1Nn3Bu6ZFWhkbzbw0WoRIkleDDJbqZzIY5HOpVZzHnh
+        k6t9pwK5qFPC
+        -----END CERTIFICATE-----
   - name: Tempo Search
     uid: tempo-json
     type: marcusolsson-json-datasource
     access: proxy
-    url: ${TEMPO_URL:-http://tempo:3200}
+    url: ${TEMPO_URL:-https://tempo:3200}
     editable: true
+    jsonData:
+      tlsAuthWithCACert: true
+    secureJsonData:
+      tlsCACert: |
+        -----BEGIN CERTIFICATE-----
+        MIIGZTCCBE2gAwIBAgIUZYXpr0c5BbE68IuJjPQyi75ZvDUwDQYJKoZIhvcNAQEL
+        BQAwgbkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH
+        DA1TYW4gRnJhbmNpc2NvMRwwGgYDVQQKDBNTT0FSIFJhbnNvbXdhcmUgTGFiMRYw
+        FAYDVQQLDA1TZWN1cml0eSBUZWFtMR8wHQYDVQQDDBZTT0FSIFJhbnNvbXdhcmUg
+        TGFiIENBMSYwJAYJKoZIhvcNAQkBFhdzZWN1cml0eUBzb2FyLWxhYi5sb2NhbDAe
+        Fw0yNjExMDgxOTI0MzVaFw0zNjExMDUxOTI0MzVaMIG5MQswCQYDVQQGEwJVUzET
+        MBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEcMBoG
+        A1UECgwTU09BUiBSYW5zb213YXJlIExhYjEWMBQGA1UECwwNU2VjdXJpdHkgVGVh
+        bTEfMB0GA1UEAwwWU09BUiBSYW5zb213YXJlIExhYiBDQTEmMCQGCSqGSIb3DQEJ
+        ARYXc2VjdXJpdHlAc29hci1sYWIubG9jYWwwggIiMA0GCSqGSIb3DQEBAQUAA4IC
+        DwAwggIKAoICAQDLxIcHxrG9Uvi86NrhfXc+jVXlBmKV8dkzPlaipGodt2nJ2OAR
+        D9DwQGDlwUvLv3dFMIw/n0yusjV+p8uOG+9DSdy4+6yXZP+0PGq6NLdrh5XW93FO
+        /kYbJUtltlAVa9Naem5u6K5F3dMXtZRP/WM+G8ekW9H19RiRgiYAABEf0nyaK+Gb
+        Vv8uiiQEAnpR6UeR5mF6Rs3O1b5UTy95ySXI6E/iaRLudZQArzGEqE+PbSUqADTc
+        fQHc8i+eCj8BgJ5RTvCwP0VISsHypFfvjzuQN6yS7LSOIUbk7zSrSgHHE3us6cf7
+        8XNdmmb9ya/SO+vli7bLN2sLc9kNp0kMnezquEzqrCVwELPsfBV6slA+2DnIgsL9
+        rTlWZPqfnDUapHOpQ/bU4wPyICAPp2eqC2FuArjzeknwo8Yatj0WBhYM9lshBbFw
+        YhfThHj0j0p8323IDiiSNl+YAnEZNFszl2RHzfCPvT6i1dyPp8iGrp4mFyeRjPyi
+        4ctii+Z9zGkaSGEgMsQOFiutDKKocQ9qpeFZUFmLLejXlLSmAyc42TZoTQxdwo/A
+        vhyAhVmGuSLiFbB0o0muB65rgSbp0+MFYrm5BjYvZNCyIqBFgEuLqUPPy9fzkWXj
+        /VP1Cm/aFuIyMuvWNzxGRrZm5UV8/lrzbsrTF8jAWqdQ4QgS2VnHS8obfQIDAQAB
+        o2MwYTAdBgNVHQ4EFgQUA/IoRVwf1fiquIJ2wK3g8dHmnZIwHwYDVR0jBBgwFoAU
+        A/IoRVwf1fiquIJ2wK3g8dHmnZIwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8E
+        BAMCAQYwDQYJKoZIhvcNAQELBQADggIBAGHcXp4DoKoagGlFZzFXoJkRBKoQ+mHm
+        M28Hd/89Nk4GvYrm5WcxsDC9tL9h7sn4IEVW2R8pIRFNlFRaLxFpjL5RictcatV8
+        W6fgPvF0yhBNPX09aaHiIlEXM4NhPctytEDVIKEv1r9X25+xXP6LlgLaVwcAMu0+
+        dJyVU4H4zXnsBMhp6efsIx62SXXQ0o/VlBujEmd9UEnwqQHZhtdilOAXMqx7sB4j
+        9xUp3OST2eGMu6NmALSbKIwrMdv9RiOg1lvKWs1ewIiK/yRGo4HBczYZM5tRDBL7
+        enEOgdpN82gYEAPC4xN2mOZ7GJ8eO9Cqk3Fx+o5CY5EHj14PbJowVVOt4mkkXQQj
+        qd56PFEOMWWSOPRPolR4b8e2ymjR89XtvEPimdiBwm6XOVXwzNiF+OhEqiZNOWVk
+        d0ISiErSlNSbTZiCITJWC4FcN8L9cYQtgnshKHw+EwzMJXgvfyUmSK67XtbjpnbQ
+        8lRlAnzLRgvQAsSQhekEQBz1C3AU+rGFxL7RPbJZNGxt6qmHGtjsZFP3vRFIj/+A
+        xZRUehrX8YmBzZ0BToEpuvBDuY8DB5hH+3fjYDLMGuZjVOuQP7iKj5V2pCiWw4Ps
+        BbTk6W+FkHExf3gqbDZ7g1Nn3Bu6ZFWhkbzbw0WoRIkleDDJbqZzIY5HOpVZzHnh
+        k6t9pwK5qFPC
+        -----END CERTIFICATE-----
   - name: SOAR API
     uid: soar-api
     type: marcusolsson-json-datasource

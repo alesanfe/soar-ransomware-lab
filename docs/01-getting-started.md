@@ -369,7 +369,7 @@ curl <http://localhost:8101/api/health>
 curl <http://localhost:8000/health>
 
 # Verificar Grafana
-curl <http://localhost:8084/api/health>
+curl <https://localhost:8084/api/health>
 
 # Verificar Nginx (HTTP→HTTPS)
 curl -I <http://localhost>
@@ -406,7 +406,7 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 
 4. **Credenciales de acceso:**
    - Usa los valores de `.env.full` para los usuarios/contraseñas.
-   - Realiza al menos un login en: Web Management (`<https://soar.local`>), Shuffle (`<http://localhost:8081`>), TheHive (`<http://localhost:8100`>) y Grafana (`<http://localhost:8084`>).
+   - Realiza al menos un login en: Web Management (`<https://soar.local`>), Shuffle (`<http://localhost:8081`>), TheHive (`<http://localhost:8100`>) y Grafana (`<https://localhost:8084`>).
    - (Opcional) Valida la sincronización de credenciales:
 
      ```bash
@@ -439,7 +439,7 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 | Lab API (OpenAPI JSON) | `<http://localhost:8000/openapi.json`> | — | — |
 | Shuffle UI | `<http://localhost:8081`> | No soportado (SPA con rutas absolutas) | `SHUFFLE_DEFAULT_USERNAME` / `SHUFFLE_DEFAULT_PASSWORD` |
 | MISP | `<http://localhost:8083`> | No soportado | `MISP_ADMIN_EMAIL` / `MISP_ADMIN_PASSWORD` |
-| Grafana | `<http://localhost:8084`> | No soportado | `admin` / `${GRAFANA_ADMIN_PASSWORD}` |
+| Grafana | `<https://localhost:8084`> | No soportado | `admin` / `${GRAFANA_ADMIN_PASSWORD}` |
 | Docs Site | `<http://localhost:8086`> | No soportado | Sin autenticación |
 | TheHive | `<http://localhost:8100`> | `/thehive/` | `admin` / contraseña generada por `init_thehive.py` (ver `.env.full`) |
 | Cortex | `<http://localhost:8101`> | `/cortex/` | `admin` / contraseña generada por `reset_cortex.py` (ver `.env.full`) |
@@ -448,6 +448,7 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 
 > **Notas de acceso:**
 > - El acceso recomendado para usuarios es `<https://soar.local`> (requiere `127.0.0.1 soar.local` en el archivo `hosts` y confianza en `soar.local.crt`).
+> - Grafana sirve HTTPS en `:8084` con certificado de la CA del lab (GRAF-D10) — el navegador mostrará aviso hasta instalar `infra/docker/config/certs/ca.crt` en el trust store (o usar la entrada nginx `https://soar.local:8444`).
 > - Nginx escucha en 80 (redirección a HTTPS) y 443 (proxy inverso a Web Management).
 > - Los puertos directos (`8081`, `8083`, `8084`, `8085`, `8086`, `8100`, `8101`, `8202`) son accesibles directamente sin pasar por Nginx. El dashboard de OpenSearch requiere HTTPS (`<https://localhost:8202`>).
 > - El despliegue incluye **Elasticsearch 7.10.2** para TheHive/Cortex/KPI y **OpenSearch 2.10.0** para Shuffle (con OpenSearch Dashboards en el puerto 8202). Ver `docs/02-architecture.md`.
@@ -483,7 +484,7 @@ Tras ejecutar `make up`, usa este checklist para confirmar que el despliegue es 
 2. Abrir `<http://localhost:8085`> (Web Management) para verificar el estado
 3. `make simulate` — envía alertas de prueba al SOAR
 4. Verificar casos creados en TheHive (`<http://localhost:8100`>)
-5. Verificar KPIs en Grafana (`<http://localhost:8084`>)
+5. Verificar KPIs en Grafana (`<https://localhost:8084`>)
 6. `make metrics` — genera `runtime/results/kpis.csv` con métricas
 
 #### 3.5.1 Comandos principales
@@ -656,7 +657,7 @@ Características principales:
 
 **Grafana**
 
-- **URL:** `<http://localhost:8084`>
+- **URL:** `<https://localhost:8084`>
 - **Credenciales:** `admin` / `${GRAFANA_ADMIN_PASSWORD}`
 - **Descripción:** Plataforma de visualización de métricas. Permite crear dashboards con KPIs del sistema SOAR. Integra automáticamente con Elasticsearch para visualizar métricas de alertas procesadas, tiempos de respuesta, tasas de éxito y más.
 

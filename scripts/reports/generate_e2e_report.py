@@ -57,9 +57,9 @@ if INSIDE_CONTAINER:
     DEFAULT_OUTPUT = Path("/app/reports/e2e")
     ES_URL = os.environ.get("ELASTICSEARCH_URL", "http://elasticsearch:9200")
     OS_URL = os.environ.get("SHUFFLE_OPENSEARCH_URL", "http://opensearch:9200")
-    LOKI_URL = os.environ.get("LOKI_URL", "http://loki:3100")
+    LOKI_URL = os.environ.get("LOKI_URL", "https://loki:3100")
     PROMTAIL_URL = os.environ.get("PROMTAIL_URL", "http://promtail:9080")
-    GRAFANA_URL = os.environ.get("GRAFANA_URL", "http://grafana:3000")
+    GRAFANA_URL = os.environ.get("GRAFANA_URL", "https://grafana:3000")
     API_URL = os.environ.get("API_URL", "http://api:8000")
     RESULTS_DIR = Path("/app/reports/validation/results")
 else:
@@ -71,6 +71,11 @@ else:
     GRAFANA_URL = os.environ.get("GRAFANA_URL", "http://localhost:3000")
     API_URL = os.environ.get("API_URL", "http://localhost:8000")
     RESULTS_DIR = REPO_ROOT / "reports" / "validation" / "results"
+
+# GRAF-D10: loki/grafana serve lab-CA certs — pin the CA when it is mounted
+# (inside soar_api at /app/certs/ca.crt); fall back to no-verify on host runs.
+_CA_BUNDLE = Path("/app/certs/ca.crt")
+_REQUESTS_VERIFY: bool | str = str(_CA_BUNDLE) if _CA_BUNDLE.exists() else False
 
 
 def _load_env() -> dict:
@@ -1335,7 +1340,7 @@ def _floki_01_health(result: dict) -> None:
     """Sub-block 1 of fetch_loki_metrics."""
     # Health
     try:
-        r = requests.get(f"{LOKI_URL}/ready", timeout=10)
+        r = requests.get(f"{LOKI_URL}/ready", timeout=10, verify=_REQUESTS_VERIFY)
         result["ready"] = r.text.strip()
     except Exception as exc:
         result["ready"] = f"error: {exc}"
@@ -1346,8 +1351,7 @@ def _floki_02_labels(result: dict, now_ns: str, start_ns: str) -> None:
     # Labels
     try:
         r = requests.get(
-            f"{LOKI_URL}/loki/api/v1/labels", params={"start": start_ns, "end": now_ns}, timeout=15
-        )
+            f"{LOKI_URL}/loki/api/v1/labels", params={"start": start_ns, "end": now_ns}, timeout=15, verify=_REQUESTS_VERIFY)
         if r.status_code == 200:
             result["labels"] = r.json().get("data", [])
     except Exception as exc:
@@ -1361,8 +1365,7 @@ def _floki_03_log_volume_by_compose_serv(result: dict, now_ns: str) -> None:
     try:
         query = 'sum by (compose_service) (count_over_time({compose_service=~".+"}[1h]))'
         r = requests.get(
-            f"{LOKI_URL}/loki/api/v1/query", params={"query": query, "time": now_ns}, timeout=15
-        )
+            f"{LOKI_URL}/loki/api/v1/query", params={"query": query, "time": now_ns}, timeout=15, verify=_REQUESTS_VERIFY)
         if r.status_code == 200:
             data = r.json()
             streams = []
@@ -1384,8 +1387,7 @@ def _floki_04_log_volume_by_container_la(result: dict, now_ns: str) -> None:
     try:
         query = 'sum by (container) (count_over_time({container=~".+"}[1h]))'
         r = requests.get(
-            f"{LOKI_URL}/loki/api/v1/query", params={"query": query, "time": now_ns}, timeout=15
-        )
+            f"{LOKI_URL}/loki/api/v1/query", params={"query": query, "time": now_ns}, timeout=15, verify=_REQUESTS_VERIFY)
         if r.status_code == 200:
             data = r.json()
             streams = []
@@ -1406,8 +1408,7 @@ def _floki_05_error_logs_by_container_la(result: dict, now_ns: str) -> None:
     try:
         query = 'sum by (container) (count_over_time({container=~".+"} |= "ERROR"[1h]))'
         r = requests.get(
-            f"{LOKI_URL}/loki/api/v1/query", params={"query": query, "time": now_ns}, timeout=15
-        )
+            f"{LOKI_URL}/loki/api/v1/query", params={"query": query, "time": now_ns}, timeout=15, verify=_REQUESTS_VERIFY)
         if r.status_code == 200:
             data = r.json()
             errors = []
@@ -1429,8 +1430,7 @@ def _floki_06_warning_logs_by_container_(result: dict, now_ns: str) -> None:
     try:
         query = 'sum by (container) (count_over_time({container=~".+"} |= "WARN"[1h]))'
         r = requests.get(
-            f"{LOKI_URL}/loki/api/v1/query", params={"query": query, "time": now_ns}, timeout=15
-        )
+            f"{LOKI_URL}/loki/api/v1/query", params={"query": query, "time": now_ns}, timeout=15, verify=_REQUESTS_VERIFY)
         if r.status_code == 200:
             data = r.json()
             warns = []
@@ -1459,7 +1459,7 @@ def _floki_07_log_volume_time_series_las(result: dict, now_ns: str) -> None:
                 "end": str(int(time.time())),
                 "step": "3600",
             },
-            timeout=20,
+            timeout=20, verify=_REQUESTS_VERIFY,
         )
         if r.status_code == 200:
             data = r.json().get("data", {}).get("result", [])
@@ -1480,7 +1480,7 @@ def _floki_08_key_loki_metrics_from_metr(result: dict) -> None:
     """Sub-block 8 of fetch_loki_metrics."""
     # Key Loki metrics from /metrics
     try:
-        r = requests.get(f"{LOKI_URL}/metrics", timeout=15)
+        r = requests.get(f"{LOKI_URL}/metrics", timeout=15, verify=_REQUESTS_VERIFY)
         lines = r.text.splitlines()
         metrics = {}
         for line in lines:
@@ -1556,14 +1556,14 @@ def fetch_grafana_info() -> dict:
 
     # Health
     try:
-        r = requests.get(f"{GRAFANA_URL}/api/health", timeout=10)
+        r = requests.get(f"{GRAFANA_URL}/api/health", timeout=10, verify=_REQUESTS_VERIFY)
         result["health"] = r.json() if r.status_code == 200 else {"status": r.status_code}
     except Exception as exc:
         result["health"] = {"error": str(exc)}
 
     # Datasources
     try:
-        r = requests.get(f"{GRAFANA_URL}/api/datasources", headers=headers, timeout=15)
+        r = requests.get(f"{GRAFANA_URL}/api/datasources", headers=headers, timeout=15, verify=_REQUESTS_VERIFY)
         if r.status_code == 200:
             result["datasources"] = [
                 {"name": ds.get("name", ""), "type": ds.get("type", ""), "url": ds.get("url", "")}
@@ -1576,8 +1576,7 @@ def fetch_grafana_info() -> dict:
     # Dashboards with panels
     try:
         r = requests.get(
-            f"{GRAFANA_URL}/api/search?type=dash-db&limit=20", headers=headers, timeout=15
-        )
+            f"{GRAFANA_URL}/api/search?type=dash-db&limit=20", headers=headers, timeout=15, verify=_REQUESTS_VERIFY)
         if r.status_code == 200:
             dashboards = []
             for d in r.json():
@@ -1585,8 +1584,7 @@ def fetch_grafana_info() -> dict:
                 title = d.get("title", "")
                 panels = []
                 r2 = requests.get(
-                    f"{GRAFANA_URL}/api/dashboards/uid/{uid}", headers=headers, timeout=15
-                )
+                    f"{GRAFANA_URL}/api/dashboards/uid/{uid}", headers=headers, timeout=15, verify=_REQUESTS_VERIFY)
                 if r2.status_code == 200:
                     dash = r2.json().get("dashboard", {})
                     for p in dash.get("panels", []):
@@ -1620,8 +1618,7 @@ def fetch_grafana_panel_images(output_dir: Path) -> dict:
     # Get dashboard to find panel IDs
     try:
         r = requests.get(
-            f"{GRAFANA_URL}/api/dashboards/uid/soar-kpi-main", headers=headers, timeout=15
-        )
+            f"{GRAFANA_URL}/api/dashboards/uid/soar-kpi-main", headers=headers, timeout=15, verify=_REQUESTS_VERIFY)
         if r.status_code != 200:
             result["error"] = f"Dashboard API returned {r.status_code}"
             return result
@@ -1664,7 +1661,7 @@ def fetch_grafana_panel_images(output_dir: Path) -> dict:
         )
 
         try:
-            r = requests.get(render_url, headers=headers, timeout=60)
+            r = requests.get(render_url, headers=headers, timeout=60, verify=_REQUESTS_VERIFY)
             if r.status_code == 200 and len(r.content) > 1000:
                 filepath.write_bytes(r.content)
                 result["panels"][pid] = {

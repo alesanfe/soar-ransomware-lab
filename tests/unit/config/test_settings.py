@@ -24,6 +24,7 @@ class TestSettings:
             "CORTEX_HTTP_PORT",
             "SHUFFLE_UI_PORT",
             "SHUFFLE_API_PORT",
+            "RETENTION_DAYS",
         ]:
             if var in os.environ:
                 del os.environ[var]

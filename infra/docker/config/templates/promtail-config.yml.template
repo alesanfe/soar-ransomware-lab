@@ -1,8 +1,15 @@
 server:
   http_listen_port: 9080
 
+# Root FS is read-only under the hardened overlay — positions live on the
+# /tmp tmpfs (ephemeral by design: a restart re-scans current logs).
+positions:
+  filename: /tmp/positions.yaml
+
 clients:
-  - url: ${LOKI_URL:-http://loki:3100}/loki/api/v1/push
+  - url: ${LOKI_URL:-https://loki:3100}/loki/api/v1/push
+    tls_config:
+      ca_file: /etc/promtail/ca.crt
 
 scrape_configs:
   - job_name: docker-logs

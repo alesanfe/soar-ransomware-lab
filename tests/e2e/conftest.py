@@ -346,14 +346,14 @@ if _inside_container:
     TENZIR_URL = "http://tenzir-node:5160/api/v0/status"
     NETWORK_WATCHER_URL = "http://network-watcher:8080"
     REDIS_URL = "redis://redis:6379"
-    LOKI_URL = "http://loki:3100"
+    LOKI_URL = "https://loki:3100"
     ELASTICSEARCH_URL = "http://elasticsearch:9200"
 else:
     # On host, use localhost with exposed ports
     TENZIR_URL = "http://localhost:15160/api/v0/status"
     NETWORK_WATCHER_URL = "http://localhost:15130"  # If exposed, otherwise skip
     REDIS_URL = "redis://localhost:6379"  # If exposed, otherwise skip
-    LOKI_URL = "http://localhost:3100"  # If exposed, otherwise skip
+    LOKI_URL = "https://localhost:3100"  # If exposed, otherwise skip
     ELASTICSEARCH_URL = "http://localhost:19200"
 
 # Tenzir export URL (base without /status)

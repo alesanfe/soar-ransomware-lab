@@ -272,7 +272,7 @@ datasources:
     uid: tempo
     type: tempo
     access: proxy
-    url: http://tempo:3200
+    url: https://tempo:3200
     editable: true
     jsonData:
       tracesToLogsV2:
@@ -300,7 +300,7 @@ datasources:
 
     rendered = template.replace("<ELASTIC_PASSWORD>", elastic_password)
     for placeholder, value in {
-        "{loki_url}": os.environ.get("LOKI_URL", "http://loki:3100"),
+        "{loki_url}": os.environ.get("LOKI_URL", "https://loki:3100"),
         "{es_url}": os.environ.get("ELASTICSEARCH_URL", "http://elasticsearch:9200"),
         "{elastic_user}": os.environ.get("ELASTIC_USERNAME", "elastic"),
         "{api_url}": os.environ.get("API_URL", "http://api:8000"),

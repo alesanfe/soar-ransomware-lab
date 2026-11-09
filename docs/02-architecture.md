@@ -456,6 +456,7 @@ sequenceDiagram
 | `loki` | grafana/loki:2.9.10 | — (interno) | logging_net |
 | `promtail` | grafana/promtail:2.9.9 | — (interno) | logging_net |
 | `s3` | chrislusf/seaweedfs:4.53 | — (interno, S3 :8333) | logging_net |
+| `s3-vol2` | chrislusf/seaweedfs:4.53 | — (interno, volume rack2) | logging_net |
 | `s3-init` | chrislusf/seaweedfs:4.53 | one-shot (buckets) | logging_net |
 | `grafana` | grafana/grafana:10.3.4 | `${GRAFANA_PORT:-8084}:3000` | logging_net, soar_net |
 | `grafana` (TLS vía nginx) | — | `127.0.0.1:${GRAFANA_TLS_PORT:-8444}:8444` | soar_net, logging_net |
@@ -491,17 +492,20 @@ sequenceDiagram
 | `loki_data` | loki | Índice boltdb-shipper/WAL (chunks van a S3 — GRAF-D5) |
 | `tempo_data` | tempo | WAL local de Tempo (bloques van a S3 — GRAF-D5) |
 | `prometheus_data` | prometheus | TSDB de métricas |
-| `s3_data` | s3 (SeaweedFS) | Object storage S3: chunks de Loki + bloques de Tempo |
+| `s3_data` | s3 (SeaweedFS) | Object storage S3: chunks de Loki + bloques de Tempo (rack1) |
+| `s3_vol2_data` | s3-vol2 (SeaweedFS) | Réplica 010 de los volúmenes S3 (rack2) |
 | `grafana_data` | grafana | Configuración y dashboards de Grafana |
 | `grafana_db_data` | grafana-db | Base de datos PostgreSQL de Grafana |
 
 > **Named volumes (GRAF-D6, 2026-11-09)**: los volúmenes de datos del stack
 > de observabilidad (`es_data`, `loki_data`, `tempo_data`, `prometheus_data`,
-> `grafana_data`, `grafana_db_data`, `s3_data`) son named volumes reales de
+> `grafana_data`, `grafana_db_data`, `s3_data`, `s3_vol2_data`,
+> `opensearch_data`) son named volumes reales de
 > Docker (ext4 del VHDX), no bind-mounts de `runtime/data/`. Beneficios: IO
 > 10-50× más rápido que el filesystem compartido de Windows, y los exporters
-> de disco miden el disco Docker (no el host C:). El histórico de Loki/Tempo
-> anterior al corte a S3 permanece en `runtime/data/` como rollback.
+> de disco miden el disco Docker (no el host C:). Los bind dirs históricos
+> se archivaron a `runtime/backups/legacy/*.tar.gz`
+> (`scripts/maintenance/archive_legacy_data.py`).
 > Procedimiento de migración: docs/20 RB-10.
 
 #### Stack Tecnológico
@@ -522,7 +526,7 @@ sequenceDiagram
 **Tecnologías de seguridad**
 
 - **Autenticación**: JWT con `PyJWT`, algoritmo `HS256`
-- **Cifrado en tránsito**: TLS 1.2/1.3 vía Nginx con certificados autofirmados
+- **Cifrado en tránsito**: TLS 1.2/1.3 vía Nginx (borde) + TLS interno en el stack de observabilidad (Loki/Tempo/Prometheus/Grafana con certs de la CA del lab — GRAF-D10, RB-13)
 - **Escaneo de vulnerabilidades**: Trivy en CI (`.github/workflows/ci.yml`, job `security-scan`)
 - **Gestión de secretos**: Variables de entorno `.env.full`; generación mediante `soar-lab generate-secrets`
 
@@ -569,7 +573,7 @@ principales: DMZ, Aplicación, Datos y Gestión.
 | DMZ / segmentación de red real | Simulado | Diagramas conceptuales; contenedores comparten Docker networks |
 | Contención de endpoints | Simulado | Acciones de contención son notificaciones/logs; no aísla endpoints reales sin agente EDR |
 | Erradicación / recuperación automatizada | Simulado | Backups y métricas reales; la erradicación real no se ejecuta |
-| Cifrado en tránsito (TLS) | Parcial | TLS en Nginx y OpenSearch; tráfico interno Docker mayoritariamente HTTP |
+| Cifrado en tránsito (TLS) | Parcial | TLS en Nginx, observabilidad interna (Loki/Tempo/Prometheus/Grafana) y MISP/OpenSearch edge; residual en claro: OTLP gRPC, ES/OS, api:8000 (RB-13) |
 | Cifrado en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch |
 
 ### 3.2 Aplicaciones y componentes
@@ -1938,7 +1942,7 @@ Los principios de seguridad fundamentales que guían el diseño y operación del
 | DMZ / segmentación de red | Simulado | Diagramas conceptuales; sin zonas de red reales entre contenedores |
 | Contención real de endpoints | Simulado | `scripts/setup/notify.sh` registra notificaciones; no hay agente EDR ni aislamiento de red real |
 | Escaneo de vulnerabilidades | Implementado (script + CI) | `scripts/` y `.github/workflows/ci.yml` (`aquasecurity/trivy-action@master`, `scan-type: fs`) |
-| TLS/SSL en tránsito | Parcial | Certificados autofirmados vía Nginx (`soar.local.crt`); tráfico interno entre contenedores es mayoritariamente HTTP |
+| TLS/SSL en tránsito | Parcial | CA del lab en `infra/docker/config/certs/` — Nginx edge (`soar.local.crt`) + stack de observabilidad interno (Loki/Tempo/Prometheus/Grafana verificados con CA — GRAF-D10); residual en claro: OTLP gRPC, ES/OS, api:8000 |
 | Encriptación en reposo | Parcial / No verificado | Depende de configuración de Elasticsearch/OpenSearch en Compose |
 | Network Watcher | Implementado | `src/soar_lab/infrastructure/network_watcher/` conecta workers de Shuffle a `soar_net` |
 | Logging centralizado | Implementado | Loki + Promtail + Grafana (`infra/docker/compose/logging/docker-compose.logging.yml`) |

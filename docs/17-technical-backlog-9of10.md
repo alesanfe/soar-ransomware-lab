@@ -1834,6 +1834,39 @@ se atacó con fixes reales verificados — detalle en docs/19 §"Quinta revisió
   `generate_env.py`/`rotate_secrets.py` (el archivo que generaban nunca se
   montaba — la fuente real es `config/templates/`→`runtime/config/`).
 
+### 3.38 Cierre de deuda residual post-3.37 (2026-11-10)
+
+La lista residual de §3.37 quedó ejecutada — evidencia en docs/19
+§"Sexta revisión":
+
+- **TLS interno (GRAF-D10 completo)**: loki/tempo/prometheus/grafana HTTPS
+  con certs de la CA del lab (`certs/{loki,tempo,prometheus,grafana}.{crt,key}`).
+  Verifican: promtail→loki (`tls_config.ca_file`), grafana→4 datasources
+  (`secureJsonData.tlsCACert` PEM embebido en template), prometheus→4 jobs
+  (`scheme: https` + `ca_file`), tempo→prometheus remote_write, API health
+  (`health_check_ssl_config` pinna `/app/certs/ca.crt`; nuevo tipo
+  `VerifySSL = bool | str` en `http_client`), nginx 8444→grafana
+  (`proxy_ssl_verify on` + `proxy_ssl_trusted_certificate`). Superficie
+  residual en claro documentada: OTLP gRPC, ES/OS, api:8000 (RB-13).
+  `curl --cacert` (sin -k) → 200 en los 4 endpoints; **TC-35 17/17** en 187s.
+- **Replicación S3**: `s3-vol2` (volume, rack2, `-max=64`) +
+  `-master.defaultReplication=010`. Backfill ejecutado:
+  `volume.configure.replication -collectionPattern="*"` +
+  `volume.fix.replication -apply` → 35 vols por rack, 0 under-replicated
+  (RB-14). Límite: filer/gateway single-instance, mismo host.
+- **VHDX**: `scripts/maintenance/compact_vhdx.ps1` — guardas (rechaza si
+  Docker/WSL activo), Optimize-VHD o diskpart, `-AutoStop` para el ciclo
+  completo (RB-08/RB-15).
+- **Historial fs loki/tempo**: `archive_legacy_data.py` ejecutado — 6 dirs,
+  1837 ficheros, ~255MB → `runtime/backups/legacy/*.tar.gz` verificados
+  (141MB); orígenes borrados.
+- **Shuffle 5xx — causa raíz eliminada**: `opensearch_data` era bind-mount
+  Windows → migrado a `soar_opensearch_data` (397 execs conservados,
+  yellow single-node). Burst 15 alertas: 0 timeouts, 0 persist-failures,
+  0 5xx API. Antes: `timeout awaiting response headers` recurrentes.
+- **Promtail**: `positions.filename: /tmp/positions.yaml` — fin de errores
+  `read-only file system` (tmpfs ephemeral by design).
+
 ## 6. Referencias
 
 - `docs/16-formal-audit-iso25040.md` — auditoría y gates de origen.

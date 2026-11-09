@@ -432,7 +432,7 @@ def _env_or_file(key: str, default: str = "") -> str:
 def import_grafana_dashboard() -> None:
     """Import the Grafana KPI dashboard."""
     logger.info("Importing Grafana KPI dashboard...")
-    grafana_url = os.environ.get("GRAFANA_URL", "http://grafana:3000")
+    grafana_url = os.environ.get("GRAFANA_URL", "https://grafana:3000")
     grafana_user = _env_or_file("GRAFANA_ADMIN_USER", "admin")
     grafana_pass = _env_or_file("GRAFANA_ADMIN_PASSWORD")
 

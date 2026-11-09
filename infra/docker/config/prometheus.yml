@@ -21,20 +21,31 @@ scrape_configs:
       - targets: ["cadvisor:8080"]
         labels: {service: cadvisor}
 
+  # GRAF-D10: loki/tempo/grafana/prometheus serve TLS with lab-CA certs —
+  # scheme https + ca_file pin on every internal scrape.
   - job_name: loki
     metrics_path: /metrics
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/ca.crt
     static_configs:
       - targets: ["loki:3100"]
         labels: {service: loki}
 
   - job_name: tempo
     metrics_path: /metrics
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/ca.crt
     static_configs:
       - targets: ["tempo:3200"]
         labels: {service: tempo}
 
   - job_name: grafana
     metrics_path: /metrics
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/ca.crt
     static_configs:
       - targets: ["grafana:3000"]
         labels: {service: grafana}
@@ -46,6 +57,9 @@ scrape_configs:
         labels: {service: otel-collector}
 
   - job_name: prometheus
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/ca.crt
     static_configs:
       - targets: ["localhost:9090"]
         labels: {service: prometheus}

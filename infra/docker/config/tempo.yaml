@@ -2,6 +2,11 @@
 # local blocks on a bind volume; lab retention is short on purpose.
 server:
   http_listen_port: 3200
+  # GRAF-D10: internal TLS — Grafana/Tempo-search datasources and Prometheus
+  # verify against the lab CA (/etc/tempo/tls/ca.crt).
+  http_tls_config:
+    cert_file: /etc/tempo/tls/tempo.crt
+    key_file: /etc/tempo/tls/tempo.key
 
 distributor:
   receivers:
@@ -31,8 +36,10 @@ metrics_generator:
   storage:
     path: /var/tempo/generator/wal
     remote_write:
-      - url: http://prometheus:9090/api/v1/write
+      - url: https://prometheus:9090/api/v1/write
         send_exemplars: true
+        tls_config:
+          ca_file: /etc/tempo/tls/ca.crt
 
 overrides:
   defaults:

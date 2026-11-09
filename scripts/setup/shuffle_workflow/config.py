@@ -40,7 +40,7 @@ SHUFFLE_DATA_PASS = os.environ.get("SHUFFLE_OPENSEARCH_PASSWORD", "")
 THEHIVE_URL = os.environ.get("THEHIVE_URL", "http://thehive:9000")
 CORTEX_URL = os.environ.get("CORTEX_URL", "http://cortex:9001")
 MISP_URL = os.environ.get("MISP_URL", "https://misp")
-LOKI_URL = os.environ.get("LOKI_URL", "http://loki:3100")
+LOKI_URL = os.environ.get("LOKI_URL", "https://loki:3100")
 API_URL = os.environ.get("API_URL", "http://api:8000")
 TENZIR_URL = os.environ.get("TENZIR_URL", "http://tenzir-node:5160")
 # Shared token for service-to-service calls into the SOAR API (SOAR-011).

@@ -222,3 +222,41 @@ Toda la deuda "aceptada" de la cuarta revisión se ha atacado con fixes reales v
 - **BUG-GRAF-20**: `common.storage` de Loki 2.9 acepta UN solo backend — `filesystem`+`s3` simultáneos = crash. `filesystem` eliminado (sin ruler desplegado no hace falta `rules_directory`).
 - **BUG-GRAF-21**: `delete_request_store_bucket_name` no existe en compactor 2.9 — eliminado (usa `bucketnames` del S3 común).
 - **BUG-GRAF-22**: test contract — `test_multiple_sends` y `test_batch_mixed_success_failure` asumían 500 terminal; reescritos al contrato retry (exhaustión determinista).
+
+## Sexta revisión — cierre de deuda residual post-quinta (2026-11-10)
+
+La deuda residual de la quinta revisión se ha atacado por completo, de nuevo
+con fixes verificados en el stack vivo, no con documentación:
+
+| Ítem residual | Resolución | Evidencia |
+|---------------|------------|-----------|
+| **TLS interno** (solo borde) | **Cerrado** — loki/tempo/prometheus/grafana sirven HTTPS con certs de la CA del lab (`infra/docker/config/certs/{svc}.{crt,key}`, SANs svc+`soar_`svc+localhost+127.0.0.1). Consumidores que verifican CA: promtail→loki push, grafana→4 datasources (`secureJsonData.tlsCACert`), prometheus→4 scrapes https+`ca_file`, tempo→prometheus remote_write, API health checks (`health_check_ssl_config` con `/app/certs/ca.crt`; `http_client.VerifySSL = bool \| str`), nginx 8444→grafana con `proxy_ssl_verify on`. Prometheus expone TLS vía `--web.config.file` + `prometheus-web.yml`. Residual en claro documentado (RB-13): OTLP gRPC :4317, ES/OS (xpack off), api:8000, renderer `IGNORE_HTTPS_ERRORS` (NSS de Chromium no conoce la CA — tráfico igualmente cifrado). | `curl --cacert ca.crt` (sin -k) → 200 en los 4 endpoints; `volume.list`→scrape targets 8/8 up; render p20/p17/p2 PNG reales; tempo-json `/api/search` devuelve trazas por proxy; TC-35 **17/17** en 187s sobre TLS |
+| **HA: replicación S3** | **Mitigado a datos** — `s3-vol2` (volume, rack2) + `-master.defaultReplication=010`: cada fichero nuevo en 2 racks. Backfill histórico ejecutado: `volume.configure.replication -collectionPattern="*" -replication=010` + `volume.fix.replication -apply` → 35 vols/rack, 0 under-replicated. Límite honesto (RB-14): tolera caída de un volumen-contenedor; el filer/S3-gateway sigue single-instance y no protege contra caída de host/WSL. | `volume.list`: vols 22-29+ con `ReplicaPlacement:010` en rack1 **y** rack2; `fix.replication` simulación → vacío |
+| **VHDX compaction** | **Automatizada con guardas** — `scripts/maintenance/compact_vhdx.ps1`: localiza el VHDX (`docker_data.vhdx`/`ext4.vhdx`), **rechaza** si Docker/WSL sigue activo, compacta con `Optimize-VHD -Mode Full` o `diskpart` fallback, y con `-AutoStop` baja el stack+WSL y rearranca Docker Desktop. El downtime sigue siendo real (proceso), pero la operación ya no es manual ad-hoc. | Script commiteado (RB-08/RB-15) |
+| **Historial fs loki/tempo** | **Resuelto** — `scripts/maintenance/archive_legacy_data.py`: tar.gz→verificación (nº miembros ≥ nº ficheros)→borrado del origen, `--dry-run`/`--keep`. Ejecutado: 6 dirs (opensearch/grafana/loki/tempo/prometheus/elasticsearch, ~255MB) → `runtime/backups/legacy/*.tar.gz` verificados (141MB). | Log de archivado: 1837 ficheros, tarballs listados OK; `runtime/data/` solo conserva bind-mounts vivos |
+| **Shuffle 5xx (causa raíz)** | **Cerrado a nivel infra** — causa real identificada y eliminada: `opensearch_data` era **bind-mount Windows** (I/O de C:) → `net/http: timeout awaiting response headers` al persistir ejecuciones. Migrado a named volume `soar_opensearch_data` con `cp -a` (397 docs conservados, cluster yellow esperado single-node). Burst de verificación: 15 alertas, +20 execs indexados, **0 timeouts/persist-failures en logs, 0 5xx en API**. Index put ~20ms tras warm. El retry del sender queda como defensa en profundidad para transitorios upstream (no enmascara — mide). | Antes: timeouts repetidos al guardar execs; después: 0 en 2h+burst |
+| **Promtail positions RO** | **Cerrado** — `positions.filename: /tmp/positions.yaml` (tmpfs writable del overlay hardened); los errores `read-only file system` desaparecen. El re-scan post-restart sigue siendo decisión documentada (ephemeral). | `docker logs soar_promtail` sin `positions` errors |
+
+### Bugs reales encontrados en esta pasada
+
+- **`weed server` volume slots**: `s3-vol2 -max=0` (modo standby, 0 volúmenes) → `-max=64` (los vols lab son <1MB; `free:0` rompería escrituras).
+- **`volume.configure.replication` por ID no aplica** — la receta correcta es `-collectionPattern="*"` + `fix.replication -apply`.
+- **`requests` verify**: el contrato `bool|str` del cliente existía implícito — tipado formalizado (`VerifySSL`) para que `health_check_ssl_config` pueda pinar la CA por servicio.
+- **Test isolation**: `test_retention_days_default` leía `RETENTION_DAYS=30` de `.env` — el fixture ahora lo limpia (bug pre-existente, no de la TLS).
+- **Grafana datasource TLS**: `secureJsonData.tlsCACert` requiere el PEM embebido en el template (no admite path) — CA PEM inline (material público, documentado).
+
+### Deuda residual FINAL (estructural, honesta)
+
+- Filer/S3-gateway single-instance (proceso); volúmenes 1-21 del pre-replication era están replicados pero todo vive en el mismo host.
+- OTLP gRPC, ES/OS, api:8000 y el callback del renderer siguen en claro dentro de la red compose (RB-13) — cubrir esas superficies exige mTLS completo en apps de terceros (ES xpack, OTel receivers), fuera del perímetro razonable del lab.
+- La CA del lab no está en el trust store de Windows (Schannel marca error 60 desde host) — acción del operador, documentada.
+- `soar.local:8444` usa el mismo cert que antes; rotación CA = regenerar los 5 certs + PEM del template (RB-13).
+- TC-28/TC-KPI-06 etc. usan `get_service_url` ya actualizadas — suites no-Grafana no re-corridas esta pasada (TC-35 es la que ejerce el perímetro TLS).
+
+### Nota (sexta revisión)
+
+TLS ya no es "solo el borde": cada salto HTTP de observabilidad está cifrado
+y verificado por CA (medible: `-k` ya no es necesario dentro del stack).
+El stack conserva la nota **9.5/10**: los residuos que quedan son de
+arquitectura de laboratorio (single-host, third-party mTLS), no deudas de
+implementación.

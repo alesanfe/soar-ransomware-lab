@@ -19,13 +19,15 @@ class HTTPHealthCheckAdapter:
     def __init__(
         self,
         http_client: HTTPClient,
-        verify_ssl_config: dict[str, bool] | None = None,
+        verify_ssl_config: dict[str, bool | str] | None = None,
     ) -> None:
         """Initialize the HTTP health check adapter.
 
         Args:
             http_client: HTTPClient instance (injected dependency)
-            verify_ssl_config: Optional dict mapping service names to SSL verification settings
+            verify_ssl_config: Optional dict mapping service names to SSL
+                verification settings — ``True``/``False`` or a CA bundle
+                path (GRAF-D10 internal TLS pins the lab CA).
         """
         if not http_client:
             raise ValueError("http_client is required for HTTPHealthCheckAdapter")
