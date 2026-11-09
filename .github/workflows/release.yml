@@ -1,0 +1,108 @@
+name: Release
+
+# SC2 — SLSA Level 3 provenance + cosign keyless signing for every
+# project-built image, published on version tags. Consumers can verify:
+#   cosign verify ghcr.io/<owner>/<image>@sha256:... \
+#     --certificate-identity-regexp=... --certificate-oidc-issuer=...
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: soar-api, dockerfile: apps/api/Dockerfile, context: . }
+          - { name: soar-docs-site, dockerfile: apps/docs-site/Dockerfile, context: . }
+          - { name: soar-web-management, dockerfile: apps/web-management/Dockerfile, context: apps/web-management }
+          - { name: shuffle-worker-patched, dockerfile: infra/docker/images/worker/Dockerfile, context: infra/docker/images/worker }
+          - { name: shuffle-orborus-patched, dockerfile: infra/docker/images/orborus/Dockerfile, context: infra/docker/images/orborus }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55 # v2
+
+      - name: Log in to GHCR
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@369eb591f4297d6f8e4c7a2b2d35f7d7f0f6f3a4 # v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push (with provenance attestation)
+        id: push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # buildkit emits SLSA provenance + SBOM attestations inline
+          provenance: mode=max
+          sbom: true
+
+      - name: CycloneDX SBOM (python deps)
+        if: matrix.name == 'soar-api'
+        run: |
+          pip install cyclonedx-bom
+          pip install -e .
+          cyclonedx-py environment --of JSON -o sbom-python.json
+      - name: Upload SBOM
+        if: matrix.name == 'soar-api'
+        uses: actions/upload-artifact@b7d0e84a10a4e2f97d1ba5af9f1c25f22b1f6c99 # v4
+        with:
+          name: sbom-${{ github.ref_name }}
+          path: sbom-python.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3
+        with:
+          # Pinned to v2 — `verify-attestation --type slsaprovenance`
+          # was replaced by a new CLI surface in cosign 3.x.
+          cosign-release: "v2.5.3"
+
+      - name: Keyless sign the image digest
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          cosign sign --yes "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${DIGEST}"
+
+      - name: Verify the signature (self-check gate)
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          cosign verify "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${DIGEST}" \
+            --certificate-identity-regexp="https://github.com/${{ github.repository }}/.github/workflows/release.yml@.*" \
+            --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+
+      - name: Verify SLSA provenance attestation (self-check gate)
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          cosign verify-attestation \
+            --type slsaprovenance \
+            --certificate-identity-regexp="https://github.com/${{ github.repository }}/.github/workflows/release.yml@.*" \
+            --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+            "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${DIGEST}"

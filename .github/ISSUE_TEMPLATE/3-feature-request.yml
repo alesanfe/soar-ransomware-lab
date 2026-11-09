@@ -25,4 +25,3 @@ body:
       description: "Add any other context or additional information about the problem here."
     validations:
       required: false
-

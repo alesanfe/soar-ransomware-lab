@@ -1,0 +1,47 @@
+name: Scorecard
+
+# OpenSSF Scorecard — publishes supply-chain security posture to
+# api.scorecard.dev and the Code Scanning dashboard. SUP-02 target: >=8.5.
+
+on:
+  branch_protection_rule:
+  push:
+    branches: ["main"]
+  schedule:
+    - cron: "30 1 * * 1" # weekly, Monday 01:30 UTC
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+          fail_on_publish_error: true
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@b7d0e84a10a4e2f97d1ba5af9f1c25f22b1f6c99 # v4
+        with:
+          name: scorecard-sarif
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload to code-scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@b7b84b636b4f90c9b31da1bc5f72bfadd5b31410 # v3
+        with:
+          sarif_file: results.sarif

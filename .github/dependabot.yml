@@ -1,0 +1,37 @@
+version: 2
+# SC3 — automated dependency bumps across every ecosystem in the repo.
+# Base images are version-pinned in Dockerfiles; dependabot proposes
+# bump PRs instead of silently floating tags.
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "docker"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/infra/docker/images/cortex"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/infra/docker/images/orborus"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/apps/docs-site"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
