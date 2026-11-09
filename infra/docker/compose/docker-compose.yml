@@ -4,8 +4,10 @@ name: soar-lab
 # This file defines networks, volumes, and elasticsearch service
 #
 # Usage:
-#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml -f compose/docker-compose.api.yml up -d
-#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml -f compose/docker-compose.api.yml -f compose/logging/docker-compose.logging.yml up -d
+#   docker compose --env-file ../../.env.full -f compose/docker-compose.yml
+#     -f compose/docker-compose.core.yml -f compose/docker-compose.misp.yml
+#     -f compose/docker-compose.api.yml up -d
+#   (add `-f compose/logging/docker-compose.logging.yml` for the logging stack)
 #
 # Compose files:
 #   - compose/docker-compose.yml         (networks, volumes, elasticsearch)
@@ -58,6 +60,12 @@ volumes:
       type: none
       o: bind
       device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/thehive/files
+  thehive_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/thehive/data
   cortex_data:
     driver: local
     driver_opts:
@@ -151,7 +159,7 @@ services:
     volumes:
       - es_data:/usr/share/elasticsearch/data
     ports:
-      - "${ELASTICSEARCH_PORT:-19200}:9200"
+      - "127.0.0.1:${ELASTICSEARCH_PORT:-19200}:9200"
     networks:
       - soar_net
       - ti_net

@@ -1,0 +1,43 @@
+diff --git a/orborus.go b/orborus.go
+index e18ec15..b72433c 100755
+--- a/orborus.go
++++ b/orborus.go
+@@ -4669,6 +4669,38 @@ func zombiecheck(ctx context.Context, workerTimeout int, sensorMode shuffle.Sens
+ 		}
+ 	}
+ 
++	// Orphan sweep: warmapp-* containers (SHUFFLE_WARM_APPS docker mode)
++	// carry no labels and escape the generic zombie logic above. When
++	// their sibling worker-<execid> container is gone, the warmapp is
++	// dead weight — its netns anchor no longer exists. Reap it here.
++	// warmapp names end with execId[:12] ("1f491b4b-5d6").
++	{
++		liveExec := map[string]bool{}
++		for _, c := range containers {
++			for _, n := range c.Names {
++				if strings.HasPrefix(n, "/worker-") {
++					id := strings.TrimPrefix(n, "/worker-")
++					if len(id) >= 12 {
++						liveExec[id[:12]] = true
++					}
++				}
++			}
++		}
++		for _, c := range containers {
++			for _, n := range c.Names {
++				if !strings.HasPrefix(n, "/warmapp-") || len(n) < 12 {
++					continue
++				}
++				cand := n[len(n)-12:]
++				if !liveExec[cand] {
++					log.Printf("[INFO] Removing orphaned warmapp container %s (no worker-%s*)", n, cand)
++					removeContainers = append(removeContainers, c.ID)
++					containerNames[c.ID] = n
++				}
++			}
++		}
++	}
++
+ 	// FIXME - add killing of apps with same execution ID too
+ 	log.Printf("[INFO] Should STOP and remove %d containers.", len(stopContainers))
+ 	var options container.StopOptions

@@ -1,0 +1,22 @@
+From: SOAR Lab <local>
+Date: 2026-11-08
+Subject: orborus: pass SHUFFLE_WARM_APPS to docker-mode workers
+
+Worker patch 0004 adds opt-in warm per-image app servers sharing the
+worker netns (dispatch via HTTP /api/v1/run instead of one-shot
+container per action). This propagates the flag through the docker
+worker env so it can be toggled from .env.
+
+diff --git a/orborus.go b/orborus.go
+index c7e697e..e18ec15 100755
+--- a/orborus.go
++++ b/orborus.go
+@@ -3318,6 +3318,8 @@
+ 				fmt.Sprintf("SHUFFLE_ALLOW_PACKAGE_INSTAL=%s", os.Getenv("SHUFFLE_ALLOW_PACKAGE_INSTALL")),
+ 				// Perf: pass through worker dispatch poll override (see images/worker patch 0001)
+ 				fmt.Sprintf("SHUFFLE_WORKER_POLL_TIME=%s", os.Getenv("SHUFFLE_WORKER_POLL_TIME")),
++				// Perf: opt-in warm app servers per image (see images/worker patch 0004)
++				fmt.Sprintf("SHUFFLE_WARM_APPS=%s", os.Getenv("SHUFFLE_WARM_APPS")),
+ 			}
+ 
+ 			//log.Printf("Running worker with proxy? %s", os.Getenv("SHUFFLE_PASS_WORKER_PROXY"))

@@ -1,0 +1,13 @@
+diff --git a/orborus.go b/orborus.go
+index c7e697e..bc9cc1f 100755
+--- a/orborus.go
++++ b/orborus.go
+@@ -4613,7 +4613,7 @@ func zombiecheck(ctx context.Context, workerTimeout int, sensorMode shuffle.Sens
+ 	removeContainers := []string{}
+ 	log.Printf("[INFO] Baseimage: %s, Workertimeout: %d", baseimagename, int64(workerTimeout))
+ 	//baseString := `/bin/sh -c 'python app.py --log-level DEBUG'`
+-	baseString := `python app.py`
++	baseString := `__NO_MATCH__`
+ 	for _, container := range containers {
+ 		// Skip random containers. Only handle things related to Shuffle.
+ 		if !strings.Contains(container.Image, baseimagename) && !strings.Contains(container.Command, baseString) && !strings.Contains(container.Command, "walkoff") && container.Command != "./worker" {

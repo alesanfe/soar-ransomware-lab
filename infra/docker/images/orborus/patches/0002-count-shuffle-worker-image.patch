@@ -1,0 +1,13 @@
+diff --git a/orborus.go b/orborus.go
+index c7e697e..0fbd0f1 100755
+--- a/orborus.go
++++ b/orborus.go
+@@ -4549,7 +4549,7 @@ func getRunningWorkers(ctx context.Context, workerTimeout int) int {
+ 
+ 		for _, container := range containers {
+ 			// Skip random containers. Only handle things related to Shuffle.
+-			if !strings.Contains(container.Image, baseimagename) {
++			if !strings.Contains(container.Image, baseimagename) && !strings.Contains(container.Image, "shuffle-worker") {
+ 				shuffleFound := false
+ 				for _, item := range container.Labels {
+ 					if item == "shuffle" {

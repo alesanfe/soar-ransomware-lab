@@ -101,11 +101,19 @@ services:
              && chmod -R 750 /var/www/MISP/app/Config
              && exec /entrypoint.sh"
     ports:
-      - "${MISP_PORT:-8083}:80"
+      # Host port maps to the TLS listener — BASE_URL is https://…:8083.
+      # Publishing :80 instead produced an http→https redirect that lost
+      # the port and made the web UI unreachable from the host.
+      - "127.0.0.1:${MISP_PORT:-8083}:443"
     volumes:
       - misp_files:/var/www/MISP/app/files
       - misp_logs:/var/www/MISP/app/tmp/logs
       - misp_configs:/var/www/MISP/app/Config
+      # Internal-PKI server cert (MISP-001): CA-signed cert+chain replaces
+      # the image's self-signed bootstrap. Regenerate with `make certs`
+      # (scripts/setup/gen_certs.sh misp -> infra/docker/config/certs/).
+      - ../../../infra/docker/config/certs/misp-full.pem:/etc/nginx/certs/cert.pem:ro
+      - ../../../infra/docker/config/certs/misp.key:/etc/nginx/certs/key.pem:ro
     networks:
       - soar_net
     healthcheck:

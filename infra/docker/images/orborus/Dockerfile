@@ -1,47 +1,63 @@
 # syntax=docker/dockerfile:1
+# checkov:skip=CKV_DOCKER_2: healthcheck is defined in docker-compose.yml
+# checkov:skip=CKV_DOCKER_3: DinD — needs root to reach mounted docker.sock
 # Patched Shuffle Orborus for docker mode concurrency.
-# Clones the upstream v2.2.1 tag and applies a small patch so that
-# /api/v1/workflows/queue is polled with ?amount=<maxConcurrency> even in
-# docker mode. This lets Orborus fetch multiple pending executions in one
-# poll and start worker containers concurrently.
-FROM golang:1.24-alpine AS builder
+#
+# Supply-chain (DK-P0-023 / DK-P1-022 / DK-P1-024):
+#   * Source pinned to the exact commit that tag v2.2.1 resolves to, and the
+#     build FAILS if the checkout is not that commit — a retargeted tag can no
+#     longer slip different code into the image.
+#   * Builder image pinned by digest; go.mod requires go 1.25.0, so the pinned
+#     golang:1.25-alpine satisfies it WITHOUT GOTOOLCHAIN=auto (no undeclared
+#     toolchain downloads during the build).
+#   * The five local modifications are formal unified-diff patches applied
+#     with `git apply --check` — a silent partial application or an upstream
+#     drift in the patched regions now fails the build instead of producing a
+#     differently-behaving binary.
+FROM golang:1.25-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59 AS builder
 
+# Commit that refs/tags/v2.2.1 resolved to on 2026-11-06
+# (git ls-remote https://github.com/Shuffle/orborus refs/tags/v2.2.1).
 ARG ORBORUS_VERSION=v2.2.1
-ENV GOTOOLCHAIN=auto
+ARG ORBORUS_COMMIT=da2e2c42d7f8dba64b94cc4b7d94d2664dc19366
 
 RUN apk add --no-cache git ca-certificates
 
 WORKDIR /src
-RUN git clone --depth 1 --branch ${ORBORUS_VERSION} https://github.com/Shuffle/orborus.git .
+RUN git init . && \
+    git remote add origin https://github.com/Shuffle/orborus.git && \
+    git fetch --depth 1 origin ${ORBORUS_COMMIT} && \
+    git checkout --detach FETCH_HEAD && \
+    test "$(git rev-parse HEAD)" = "${ORBORUS_COMMIT}" || { \
+        echo "FATAL: tag ${ORBORUS_VERSION} no longer resolves to ${ORBORUS_COMMIT}"; \
+        echo "Source drift detected — refusing to build unverified code."; \
+        exit 1; \
+    }
 
-# Patch 1: request up to maxConcurrency executions per queue poll in any mode.
-RUN sed -i 's/if maxConcurrency < 50 && (swarmConfig == "run" || swarmConfig == "swarm") {/if maxConcurrency < 50 {/' orborus.go && \
-    sed -i 's/fullUrl += "?amount=50"/fullUrl += fmt.Sprintf("?amount=%d", maxConcurrency)/' orborus.go
-
-# Patch 2: ensure getRunningWorkers counts the ghcr.io shuffle-worker image,
-# not only the legacy docker.io frikky/shuffle name.
-RUN sed -i 's/if !strings.Contains(container.Image, baseimagename) {/if !strings.Contains(container.Image, baseimagename) \&\& !strings.Contains(container.Image, "shuffle-worker") {/' orborus.go
-
-# Patch 3: force worker containers to use the Docker Hub app image base
-# (frikky/shuffle:<app>_<version>) regardless of the base image name used by
-# orborus for cleanup/counting.
-RUN sed -i 's|fmt.Sprintf("SHUFFLE_BASE_IMAGE_NAME=%s", os.Getenv("SHUFFLE_BASE_IMAGE_NAME"))|"SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle"|g' orborus.go && \
-    sed -i 's|fmt.Sprintf("SHUFFLE_BASE_IMAGE_NAME=%s", baseimagename)|"SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle"|g' orborus.go
-
-# Patch 4: prevent zombiecheck from treating app containers (python app.py)
-# as worker containers to clean up.
-RUN sed -i 's|baseString := `python app.py`|baseString := `__NO_MATCH__`|' orborus.go
-
-# Patch 5: attach worker containers to the configured Docker app network
-# (SHUFFLE_APP_NETWORK, e.g. soar_net) instead of sharing the orborus
-# container's network namespace. This gives each worker its own network
-# stack/DNS resolver and prevents NameResolutionError storms under load.
-RUN sed -i 's|hostConfig.NetworkMode = container.NetworkMode(fmt.Sprintf("container:%s", containerId))|networkMode := os.Getenv("SHUFFLE_APP_NETWORK"); if len(networkMode) == 0 { networkMode = fmt.Sprintf("container:%s", containerId) }; hostConfig.NetworkMode = container.NetworkMode(networkMode)|' orborus.go
+# Local patches (verified: git apply --check, then applied in order).
+# 0001 poll ?amount=<maxConcurrency> in every mode, not only swarm run modes
+# 0002 count ghcr.io shuffle-worker containers as workers (not only frikky/*)
+# 0003 force worker base image frikky/shuffle:<app>_<version>
+# 0004 zombiecheck must not treat app containers (python app.py) as workers
+# 0005 attach workers to SHUFFLE_APP_NETWORK instead of container netns
+# 0006 pass SHUFFLE_WORKER_POLL_TIME through to docker-mode worker env
+# 0007 pass SHUFFLE_WORKER_POLL_TIME + SHUFFLE_WORKER_SERVER_URL through to
+#      swarm-mode worker service env (upstream hardcodes the env list)
+# 0008 pass SHUFFLE_WARM_APPS through to spawned workers
+# 0009 zombiecheck also reaps orphaned warmapp-* containers whose sibling
+#      worker-<execid> is gone (they have no labels and leak unbounded)
+# 0010 zombiecheck reaps EXITED ghcr.io/thehive-project/* analyzer
+#      containers — Cortex DinD leaves one residue per analysis forever
+#      (the "Orborus analyzer leak" `make clean-containers` worked around)
+COPY patches/ ./patches/
+RUN for p in patches/*.patch; do \
+        git apply --check "$p" && git apply "$p" || exit 1; \
+    done && rm -rf patches
 
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /orborus .
 
-FROM alpine:3.20
+FROM alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /orborus /orborus
 ENTRYPOINT ["/orborus"]

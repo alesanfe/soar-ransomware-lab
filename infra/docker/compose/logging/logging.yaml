@@ -11,15 +11,18 @@ formatters:
   standard:
     format: '%(asctime)s [%(levelname)8s] %(name)s: %(message)s'
     datefmt: '%Y-%m-%d %H:%M:%S'
-  
+
   detailed:
     format: '%(asctime)s [%(levelname)8s] %(name)s [%(filename)s:%(lineno)d] - %(message)s'
     datefmt: '%Y-%m-%d %H:%M:%S'
-  
+
   json:
-    format: '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s", "module": "%(module)s", "function": "%(funcName)s", "line": %(lineno)d}'
+    format: >-
+      {"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s",
+      "message": "%(message)s", "module": "%(module)s", "function": "%(funcName)s",
+      "line": %(lineno)d}
     datefmt: '%Y-%m-%dT%H:%M:%S'
-  
+
   security:
     format: '%(asctime)s [SECURITY] %(name)s: %(message)s [IP: %(client_ip)s, User: %(user)s]'
     datefmt: '%Y-%m-%d %H:%M:%S'
@@ -29,11 +32,11 @@ filters:
   security_filter:
     class: logging.Filter
     name: security
-  
+
   performance_filter:
     class: logging.Filter
     name: performance
-  
+
   audit_filter:
     class: logging.Filter
     name: audit

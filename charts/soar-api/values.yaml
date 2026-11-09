@@ -1,0 +1,104 @@
+# soar-api chart defaults — lab-grade, production-shaped.
+# Override per environment; secrets never live here (use secretEnvRefs).
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/soar-lab/soar-api
+  tag: "1.4.0"
+  pullPolicy: IfNotPresent
+  # cosign-verified digest — pin in production:
+  # digest: sha256:...
+
+service:
+  type: ClusterIP
+  port: 8000
+
+env:
+  FASTAPI_ENV: production
+  API_HOST: 0.0.0.0
+  API_PORT: "8000"
+  LOG_FORMAT: json
+  LOG_LEVEL: INFO
+  OTEL_ENABLED: "0"
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  OTEL_SERVICE_NAME: soar-api
+  # Bulkhead isolation (RES-03)
+  SOAR_BULKHEAD_CONCURRENT: "10"
+  SOAR_BULKHEAD_QUEUED: "50"
+  SOAR_BULKHEAD_TIMEOUT: "5"
+
+# External dependencies — endpoints the API reaches out to.
+integrations:
+  redisUrl: redis://redis:6379/0
+  thehiveUrl: http://thehive:9000
+  cortexUrl: http://cortex:9001
+  mispUrl: https://misp
+  elasticsearchUrl: http://elasticsearch:9200
+  shuffleBackendUrl: http://shuffle-backend:5001
+
+# Secrets come from pre-existing Secrets (created out-of-band or via
+# external-secrets); each item becomes an env var from secretKeyRef.
+secretEnvRefs:
+  - name: soar-api-secrets
+    keys:
+      - API_AUTH_SECRET
+      - THEHIVE_API_KEY
+      - CORTEX_API_KEY
+      - MISP_API_KEY
+      - REDIS_PASSWORD
+      - ELASTIC_PASSWORD
+      - INTERNAL_SERVICE_TOKEN
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+probes:
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+# /tmp is the only writable path the app needs at runtime (uvicorn pid,
+# tmp uploads); results/logs are sidecar-collected in this lab.
+tmpVolume:
+  enabled: true
+  sizeLimit: 128Mi
+
+networkPolicy:
+  enabled: true
+  ingressCidrs:
+    - 0.0.0.0/0 # tighten to the ingress/controller CIDR in production
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+serviceAccount:
+  create: true
+  name: soar-api
+  automountToken: false

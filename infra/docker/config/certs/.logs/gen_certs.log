@@ -1,0 +1,20 @@
+2026-11-08 20:23:50 [INFO] Created directories: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs, /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs/.logs
+2026-11-08 20:23:50 [INFO] Starting certificate generation
+2026-11-08 20:23:51 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
+2026-11-08 20:23:51 [INFO] Hostnames: misp
+2026-11-08 20:23:51 [INFO] Generating CA certificate
+2026-11-08 20:24:00 [INFO] Created directories: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs, /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs/.logs
+2026-11-08 20:24:00 [INFO] Starting certificate generation
+2026-11-08 20:24:00 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
+2026-11-08 20:24:00 [INFO] Hostnames: misp
+2026-11-08 20:24:00 [INFO] Generating CA certificate
+2026-11-08 20:24:03 [INFO] Created directories: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs, /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs/.logs
+2026-11-08 20:24:03 [INFO] Starting certificate generation
+2026-11-08 20:24:03 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
+2026-11-08 20:24:03 [INFO] Hostnames: misp
+2026-11-08 20:24:03 [INFO] Generating CA certificate
+2026-11-08 20:24:19 [INFO] Created directories: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs, /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs/.logs
+2026-11-08 20:24:19 [INFO] Starting certificate generation
+2026-11-08 20:24:19 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
+2026-11-08 20:24:19 [INFO] Hostnames: misp
+2026-11-08 20:24:19 [INFO] Generating CA certificate

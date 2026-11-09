@@ -1,0 +1,41 @@
+--- a/functions/onprem/worker/worker.go
++++ b/functions/onprem/worker/worker.go
+@@ -3415,6 +3415,38 @@
+ 	//	log.Printf("[DEBUG][%s] There may have been an issue in transaction queue. Result lengths: %d vs %d. Should check which exists the base results, but not in entire execution, then append.", workflowExecution.ExecutionId, len(results), len(workflowExecution.Results))
+ 	//}
+ 
++	// Docker mode: ParsedExecutionResult already persisted the merged execution
++	// via its internal SetWorkflowExecution. The cache re-read + a second
++	// Fixexecution+Marshal+SetCache here only added ~15-40ms of redundant work
++	// per result and held the app's send_result for the whole block. Fire
++	// dispatch + finish-validation async and ack now. Swarm keeps the
++	// synchronous flow below.
++	if os.Getenv("SHUFFLE_SWARM_CONFIG") != "run" && os.Getenv("SHUFFLE_SWARM_CONFIG") != "swarm" {
++		snapshotKey := fmt.Sprintf("workflowexecution_%s_action_snapshot", workflowExecution.ExecutionId)
++		if _, snapErr := shuffle.GetCache(ctx, snapshotKey); snapErr != nil {
++			if payload, marshalErr := json.Marshal(workflowExecution.Workflow.Actions); marshalErr == nil {
++				_ = shuffle.SetCache(ctx, snapshotKey, payload, 3600)
++			}
++		}
++
++		fixedExecution, _ := shuffle.Fixexecution(ctx, *workflowExecution)
++		go handleExecutionResult(fixedExecution)
++		go func(we shuffle.WorkflowExecution) {
++			if shuffle.ValidateFinished(ctx, -1, we) {
++				shutdownData, mErr := json.Marshal(we)
++				if mErr != nil {
++					log.Printf("[ERROR] Failed marshalling shutdowndata during set: %s", mErr)
++				} else {
++					sendResult(we, shutdownData)
++				}
++			}
++		}(fixedExecution)
++
++		resp.WriteHeader(200)
++		resp.Write([]byte(fmt.Sprintf(`{"success": true}`)))
++		return
++	}
++
+ 	// Validating that action results hasn't changed
+ 	// Handled using cachhing, so actually pretty fast
+ 	cacheKey := fmt.Sprintf("workflowexecution_%s", workflowExecution.ExecutionId)

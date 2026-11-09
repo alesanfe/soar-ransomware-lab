@@ -1,0 +1,15 @@
+diff --git a/orborus.go b/orborus.go
+index c7e697e..61ecf4a 100755
+--- a/orborus.go
++++ b/orborus.go
+@@ -2565,8 +2565,8 @@ func mainLoop() {
+ 	fullUrl := fmt.Sprintf("%s/api/v1/workflows/queue", baseUrl)
+ 
+ 	// Increases default concurrency to 50 for swarm
+-	if maxConcurrency < 50 && (swarmConfig == "run" || swarmConfig == "swarm") {
+-		fullUrl += "?amount=50"
++	if maxConcurrency < 50 {
++		fullUrl += fmt.Sprintf("?amount=%d", maxConcurrency)
+ 	}
+ 
+ 	if len(os.Getenv("SHUFFLE_ORBORUS_PULL_TIME")) > 0 {

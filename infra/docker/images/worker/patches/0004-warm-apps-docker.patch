@@ -1,0 +1,237 @@
+diff --git a/functions/onprem/worker/worker.go b/functions/onprem/worker/worker.go
+index fb7b3e5..7877cfb 100644
+--- a/functions/onprem/worker/worker.go
++++ b/functions/onprem/worker/worker.go
+@@ -70,6 +70,22 @@ var kubernetesNamespace = os.Getenv("KUBERNETES_NAMESPACE")
+ 
+ var executionCount int64
+ 
++// Warm app servers (SHUFFLE_WARM_APPS): one long-lived app container per
++// image sharing this worker's netns, dispatched via HTTP instead of a
++// one-shot container per action. The ready channel is CLOSED once the
++// cold start resolves so every concurrent and subsequent caller unblocks
++// (a buffered send would be consumed by the first waiter only).
++type warmAppServer struct {
++	id    string
++	port  int
++	err   error
++	ready chan struct{}
++}
++
++var warmAppServers = map[string]*warmAppServer{}
++var warmAppMutex sync.Mutex
++var warmPrewarmOnce sync.Once
++
+ var baseimagename = os.Getenv("SHUFFLE_BASE_IMAGE_NAME")
+ 
+ // var baseimagename = "registry.hub.docker.com/frikky/shuffle"
+@@ -413,6 +431,10 @@ func setWorkflowExecution(ctx context.Context, workflowExecution shuffle.Workflo
+ func shutdown(workflowExecution shuffle.WorkflowExecution, nodeId string, reason string, handleResultSend bool) {
+ 	log.Printf("[DEBUG][%s] Shutdown (%s) started with reason %#v. Result amount: %d. ResultsSent: %d, Send result: %#v, Parent: %#v", workflowExecution.ExecutionId, workflowExecution.Status, reason, len(workflowExecution.Results), requestsSent, handleResultSend, workflowExecution.ExecutionParent)
+ 
++	// Remove long-lived warm app containers sharing this worker's netns;
++	// they would be orphaned otherwise (they share our network stack).
++	cleanupWarmApps()
++
+ 	// This is an escape hatch for development only
+ 	// Typically meant to be used when you aren't sure how to make a workflow run in bad scenarios, and want to rapidly debug it.
+ 	if shutdownDisabled == "true" {
+@@ -874,8 +896,187 @@ func deployk8sApp(image string, identifier string, env []string) error {
+ 
+ //** ENDREMOVE ***/
+ 
++// ensureWarmAppServer returns the port of a long-lived app server container
++// for the given image sharing this worker's network namespace (same as
++// one-shot app containers), creating it on first use. Concurrent callers
++// for the same image wait on the entry's ready channel so each image pays
++// a single cold start, and creations for different images run in parallel.
++// The app image's built-in server mode is enabled via
++// SHUFFLE_APP_EXPOSED_PORT + SHUFFLE_SWARM_CONFIG=run, identical to the
++// swarm service spec.
++func ensureWarmAppServer(ctx context.Context, cli *dockerclient.Client, image string, workflowExecution shuffle.WorkflowExecution) (int, error) {
++	warmAppMutex.Lock()
++	if ref, ok := warmAppServers[image]; ok {
++		warmAppMutex.Unlock()
++		<-ref.ready
++		if ref.err != nil {
++			return 0, ref.err
++		}
++		return ref.port, nil
++	}
++	ref := &warmAppServer{ready: make(chan struct{})}
++	warmAppServers[image] = ref
++	warmAppMutex.Unlock()
++
++	listener, err := getAvailablePort()
++	if err != nil {
++		ref.err = err
++		close(ref.ready)
++		return 0, err
++	}
++	port := listener.Addr().(*net.TCPAddr).Port
++	listener.Close()
++	ref.port = port
++
++	sanitized := strings.NewReplacer("/", "-", ":", "-", "_", "-").Replace(image)
++	containerName := fmt.Sprintf("warmapp-%s-%s", sanitized, workflowExecution.ExecutionId[:12])
++	waitressThreads := os.Getenv("SHUFFLE_APP_SDK_WAITRESS_THREADS")
++	if len(waitressThreads) == 0 {
++		// Parallel actions on one warm server exceed the SDK default of 8.
++		waitressThreads = "32"
++	}
++	config := &container.Config{
++		Image: image,
++		Env: []string{
++			fmt.Sprintf("SHUFFLE_APP_EXPOSED_PORT=%d", port),
++			"SHUFFLE_SWARM_CONFIG=run",
++			fmt.Sprintf("CALLBACK_URL=%s", appCallbackUrl),
++			fmt.Sprintf("BASE_URL=%s", appCallbackUrl),
++			fmt.Sprintf("SHUFFLE_LOGS_DISABLED=%s", logsDisabled),
++			fmt.Sprintf("SHUFFLE_APP_SDK_WAITRESS_THREADS=%s", waitressThreads),
++		},
++	}
++	hostConfig := &container.HostConfig{
++		NetworkMode: container.NetworkMode(fmt.Sprintf("container:worker-%s", workflowExecution.ExecutionId)),
++		AutoRemove:  true,
++		LogConfig: container.LogConfig{
++			Type:    "json-file",
++			Config:  map[string]string{"max-size": "10m"},
++		},
++	}
++
++	cont, err := cli.ContainerCreate(ctx, config, hostConfig, nil, nil, containerName)
++	if err != nil {
++		ref.err = err
++		close(ref.ready)
++		return 0, err
++	}
++	ref.id = cont.ID
++	if err = cli.ContainerStart(ctx, cont.ID, container.StartOptions{}); err != nil {
++		cli.ContainerRemove(ctx, cont.ID, container.RemoveOptions{Force: true})
++		ref.err = err
++		close(ref.ready)
++		return 0, err
++	}
++
++	// Wait for waitress to accept connections (cold python boot ~1-3s).
++	// Any HTTP response (even 404) means the server is up.
++	appUrl := fmt.Sprintf("http://127.0.0.1:%d/", port)
++	client := &http.Client{Timeout: 2 * time.Second}
++	deadline := time.Now().Add(20 * time.Second)
++	for {
++		resp, derr := client.Get(appUrl)
++		if derr == nil {
++			resp.Body.Close()
++			break
++		}
++		if time.Now().After(deadline) {
++			cli.ContainerRemove(ctx, cont.ID, container.RemoveOptions{Force: true})
++			ref.err = fmt.Errorf("warm app %s not ready after 20s", image)
++			close(ref.ready)
++			return 0, ref.err
++		}
++		time.Sleep(200 * time.Millisecond)
++	}
++
++	log.Printf("[INFO][%s] Warm app server for %s ready on 127.0.0.1:%d", workflowExecution.ExecutionId, image, port)
++	close(ref.ready)
++	return port, nil
++}
++
++// prewarmAppImages eagerly creates warm app servers for every unique app
++// image in the workflow so per-image cold-starts overlap the earliest
++// actions instead of landing on the critical path later.
++func prewarmAppImages(cli *dockerclient.Client, workflowExecution shuffle.WorkflowExecution) {
++	seen := map[string]bool{}
++	for _, act := range workflowExecution.Workflow.Actions {
++		parsed := strings.Replace(strings.ToLower(act.AppName), " ", "-", -1)
++		if parsed == "ai-agent" {
++			parsed = "shuffle-ai"
++		}
++		if len(parsed) == 0 || len(act.AppVersion) == 0 {
++			continue
++		}
++		img := fmt.Sprintf("%s:%s_%s", baseimagename, parsed, act.AppVersion)
++		img = strings.ReplaceAll(img, " ", "-")
++		if seen[img] {
++			continue
++		}
++		seen[img] = true
++		go ensureWarmAppServer(context.Background(), cli, img, workflowExecution)
++	}
++}
++
++// dropWarmAppServer removes a warm app entry (e.g. its container died) so
++// the next dispatch recreates it. The port match guards against deleting
++// a healthier entry recreated concurrently.
++func dropWarmAppServer(image string, port int) {
++	warmAppMutex.Lock()
++	defer warmAppMutex.Unlock()
++	if cur, ok := warmAppServers[image]; ok && cur.port == port {
++		delete(warmAppServers, image)
++	}
++}
++
++// cleanupWarmApps force-removes all warm app server containers registered
++// by this worker. Called on shutdown so nothing outlives the execution.
++// Entries still being created are awaited via their ready channel first.
++func cleanupWarmApps() {
++	warmAppMutex.Lock()
++	if len(warmAppServers) == 0 {
++		warmAppMutex.Unlock()
++		return
++	}
++	servers := warmAppServers
++	warmAppServers = map[string]*warmAppServer{}
++	warmAppMutex.Unlock()
++
++	ctx := context.Background()
++	dockercli, err := dockerclient.NewEnvClient()
++	if err != nil {
++		return
++	}
++	for image, ref := range servers {
++		<-ref.ready
++		if len(ref.id) == 0 {
++			continue
++		}
++		log.Printf("[DEBUG] Removing warm app container for %s", image)
++		dockercli.ContainerRemove(ctx, ref.id, container.RemoveOptions{Force: true, RemoveVolumes: true})
++	}
++}
++
+ // Deploys the internal worker whenever something happens
+ func deployApp(cli *dockerclient.Client, image string, identifier string, env []string, workflowExecution shuffle.WorkflowExecution, action shuffle.Action) error {
++	// Warm apps: dispatch to a per-image app server (waitress /api/v1/run)
++	// sharing this worker's netns — ~0.1s/hop vs ~4.5s for spawn+boot.
++	if os.Getenv("SHUFFLE_WARM_APPS") == "true" && os.Getenv("SHUFFLE_SWARM_CONFIG") != "run" && os.Getenv("SHUFFLE_SWARM_CONFIG") != "swarm" {
++		warmPrewarmOnce.Do(func() {
++			go prewarmAppImages(cli, workflowExecution)
++		})
++		port, werr := ensureWarmAppServer(context.Background(), cli, image, workflowExecution)
++		if werr == nil {
++			if err := sendAppRequest(context.Background(), baseUrl, "127.0.0.1", port, &action, &workflowExecution, image, 0); err == nil {
++				return nil
++			} else {
++				log.Printf("[WARNING][%s] Warm dispatch to %s failed (%s) - dropping server and falling back to container", workflowExecution.ExecutionId, image, err)
++				dropWarmAppServer(image, port)
++			}
++		} else {
++			log.Printf("[WARNING][%s] Warm app for %s failed (%s) - falling back to per-action container", workflowExecution.ExecutionId, image, werr)
++		}
++	}
++
+ 	// if isKubernetes == "true" {
+ 	// 	if len(os.Getenv("KUBERNETES_NAMESPACE")) > 0 {
+ 	// 		kubernetesNamespace = os.Getenv("KUBERNETES_NAMESPACE")
+@@ -3668,6 +3832,10 @@
+ 	log.Printf("[DEBUG] Starting webserver (2) on port %d with hostname: %s", port, hostname)
+ 	appCallbackUrl = fmt.Sprintf("http://%s:%d", hostname, port)
+ 
++	if os.Getenv("SHUFFLE_WARM_APPS") == "true" {
++		os.Setenv("SHUFFLE_WORKER_SERVER_URL", fmt.Sprintf("http://127.0.0.1:%d", port))
++	}
++
+ 	log.Printf("[INFO] NEW WORKER HOSTNAME: %s", appCallbackUrl)
+ 	return listener
+ }

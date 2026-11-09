@@ -1,0 +1,35 @@
+diff --git a/orborus.go b/orborus.go
+index c7e697e..cec85f1 100755
+--- a/orborus.go
++++ b/orborus.go
+@@ -738,7 +738,7 @@ func deployServiceWorkers(image string) {
+ 					fmt.Sprintf("DEBUG_MEMORY=%s", os.Getenv("DEBUG_MEMORY")),
+ 					fmt.Sprintf("SHUFFLE_APP_SDK_TIMEOUT=%s", os.Getenv("SHUFFLE_APP_SDK_TIMEOUT")),
+ 					fmt.Sprintf("SHUFFLE_MAX_SWARM_NODES=%s", os.Getenv("SHUFFLE_MAX_SWARM_NODES")),
+-					fmt.Sprintf("SHUFFLE_BASE_IMAGE_NAME=%s", os.Getenv("SHUFFLE_BASE_IMAGE_NAME")),
++					"SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle",
+ 					fmt.Sprintf("SHUFFLE_APP_REQUEST_TIMEOUT=%s", os.Getenv("SHUFFLE_APP_REQUEST_TIMEOUT")),
+ 				},
+ 				//Hosts: []string{
+@@ -1277,10 +1277,10 @@ func deployK8sWorker(image string, identifier string, env []string) error {
+ 	}
+ 
+ 	if len(os.Getenv("SHUFFLE_BASE_IMAGE_NAME")) > 0 {
+-		env = append(env, fmt.Sprintf("SHUFFLE_BASE_IMAGE_NAME=%s", os.Getenv("SHUFFLE_BASE_IMAGE_NAME")))
++		env = append(env, "SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle")
+ 	} else {
+ 		log.Printf("[INFO] SHUFFLE_BASE_IMAGE_NAME is not set. Defaulting to %s", baseimagename)
+-		env = append(env, fmt.Sprintf("SHUFFLE_BASE_IMAGE_NAME=%s", baseimagename))
++		env = append(env, "SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle")
+ 	}
+ 
+ 	if len(os.Getenv("REGISTRY_URL")) > 0 {
+@@ -3313,7 +3313,7 @@ func mainLoop() {
+ 				fmt.Sprintf("SHUFFLE_PASS_APP_PROXY=%s", os.Getenv("SHUFFLE_PASS_APP_PROXY")),
+ 				fmt.Sprintf("SHUFFLE_SWARM_CONFIG=%s", os.Getenv("SHUFFLE_SWARM_CONFIG")),
+ 				fmt.Sprintf("SHUFFLE_LOGS_DISABLED=%s", os.Getenv("SHUFFLE_LOGS_DISABLED")),
+-				fmt.Sprintf("SHUFFLE_BASE_IMAGE_NAME=%s", os.Getenv("SHUFFLE_BASE_IMAGE_NAME")),
++				"SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle",
+ 				fmt.Sprintf("SHUFFLE_ALLOW_PACKAGE_INSTAL=%s", os.Getenv("SHUFFLE_ALLOW_PACKAGE_INSTALL")),
+ 			}
+ 

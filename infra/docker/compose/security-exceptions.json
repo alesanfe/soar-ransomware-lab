@@ -1,0 +1,41 @@
+{
+  "_comment": "Registry of accepted deviations from validate_compose_security.py. Every entry needs a reason and an expiry; an expired exception counts as a violation again. Review before the expiry date.",
+  "docker-socket-proxy": {
+    "no-direct-docker-socket": {
+      "reason": "It IS the restricted proxy — mounts the host socket :ro and exposes only the whitelisted verb groups (CONTAINERS/NETWORKS/INFO/EVENTS/PING/EXEC/POST). Removing the mount removes the control.",
+      "expires": "2099-01-01"
+    },
+    "cap-drop-all": {
+      "reason": "cap_drop ALL breaks the proxy's unix-socket connect() on Docker Desktop (haproxy 503 SC--) — needs DAC_OVERRIDE-equivalent access to the mounted socket. Effective controls: verb whitelist + socket :ro + no-new-privileges.",
+      "expires": "2027-05-06"
+    },
+    "healthcheck": {
+      "reason": "tecnativa/docker-socket-proxy (haproxy) ships no healthcheck tooling; liveness is covered by `depends_on: service_started` + a dead proxy failing consumers fast. Revisit if a probe exists upstream.",
+      "expires": "2027-05-06"
+    }
+  },
+  "cortex": {
+    "no-direct-docker-socket": {
+      "reason": "RESIDUAL (SOAR-012): analyzer runner spawns sibling containers via the raw socket. Migrating to a per-consumer restricted proxy is DK-P0-006 — until then this is an accepted, documented risk inside an isolated lab network.",
+      "expires": "2027-05-06"
+    }
+  },
+  "shuffle-backend": {
+    "no-direct-docker-socket": {
+      "reason": "RESIDUAL (SOAR-012): app execution spawns worker containers. Same DK-P0-006 migration pending.",
+      "expires": "2027-05-06"
+    }
+  },
+  "orborus": {
+    "no-direct-docker-socket": {
+      "reason": "RESIDUAL (SOAR-012): spawns/cleans shuffle-worker containers. Same DK-P0-006 migration pending.",
+      "expires": "2027-05-06"
+    }
+  },
+  "promtail": {
+    "no-direct-docker-socket": {
+      "reason": "Read-only mount for Docker service-discovery of container logs; no write verb possible over an ro socket. Could move behind the proxy when its discovery API coverage is verified.",
+      "expires": "2027-05-06"
+    }
+  }
+}

@@ -1,0 +1,360 @@
+name: soar-lab-hardened
+
+# === Hardened profile — compose override (SOAR-012/013/014/015/016) ===
+#
+# Opt-in overlay applied AFTER the base files:
+#   make up HARDENED=1
+# or manually:
+#   docker compose -p soar $(all base -f files) \
+#       -f infra/docker/compose/docker-compose.hardened.yml --env-file .env up -d
+#
+# What changes vs the lab profile:
+#   * docker-socket-proxy limits Docker API verbs for api + network-watcher
+#     (cortex / shuffle-backend / orborus keep the raw socket — they spawn
+#     worker and analyzer containers; documented residual risk, SOAR-012).
+#   * API runs as a non-root UID and has no /var/run/docker.sock mount.
+#   * Redis runs as the image's redis user (no entrypoint chown).
+#   * Orborus loses seccomp:unconfined -> Docker default seccomp profile.
+#   * Global no-new-privileges + cap_drop where the service can tolerate it.
+#
+# Env vars honoured (set in .env or exported):
+#   API_UID / API_GID      numeric UID/GID for the API process (1000:1000)
+#   SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY=false   -> enforce TLS verify (needs
+#                          a CA OpenSearch trusts; see docs/04-operations.md)
+#   SHUFFLE_SWAGGER_ENABLED=false             -> disable Shuffle swagger
+#   TENZIR_WEB_MODE=<prod-mode>               -> Tenzir without --mode=dev
+#   API_DOCS_ENABLED=false|spec|true          -> API swagger surface
+#
+# NOTE: !reset requires Docker Compose >= 2.24.
+
+services:
+  # --- Restricted Docker API proxy (SOAR-012) ---
+  docker-socket-proxy:
+    image: ${DOCKER_PROXY_IMAGE:-tecnativa/docker-socket-proxy:v0.4.1}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_docker_proxy
+    environment:
+      # Whitelist the minimum verb groups the consumers need.
+      CONTAINERS: "1"
+      NETWORKS: "1"
+      INFO: "1"
+      EVENTS: "1"
+      PING: "1"
+      EXEC: "1"        # network_watcher seeds docker.sock into workers
+      POST: "1"        # api restarts containers during failure drills
+      IMAGES: "1"      # SEC-03: DinD workers inspect/pull Shuffle app images
+      # Explicitly OFF (default): BUILD, VOLUMES, AUTH, SECRETS, SWARM,
+      # SERVICES, NODES, TASKS, PLUGINS, SYSTEM, DISTRIBUTION.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - soar_net
+    # NOTE: cap_drop ALL breaks the proxy's unix-socket connect() on Docker
+    # Desktop (haproxy returns 503 SC--). Needs DAC_OVERRIDE-equivalent access
+    # to the mounted socket — verb whitelist + socket :ro + no-new-privileges
+    # remain the effective controls.
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          pids: 128
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api:
+    # Non-root user (SOAR-014). docker.sock is gone — Docker API access goes
+    # through the restricted proxy via DOCKER_HOST.
+    user: "${API_UID:-1000}:${API_GID:-1000}"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+      - API_DOCS_ENABLED=${API_DOCS_ENABLED:-spec}
+      - API_REQUIRE_AUTH=${API_REQUIRE_AUTH:-true}
+      # Hardened rate-limit budgets (lab uses 300/30/60)
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-100}
+      - RATE_LIMIT_AUTH_PER_MINUTE=${RATE_LIMIT_AUTH_PER_MINUTE:-10}
+      - RATE_LIMIT_CONTAIN_PER_MINUTE=${RATE_LIMIT_CONTAIN_PER_MINUTE:-30}
+    volumes: !override
+      - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/results:/app/runtime/results
+      - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/backups:/app/runtime/backups
+      - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/logs:/app/runtime/logs
+      - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/coverage:/app/runtime/coverage
+      - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/api:/app/runtime/data
+      - ../../../reports/validation/results:/app/reports/validation/results
+      - ../../../reports/perf:/app/reports/perf
+      - ../../../src:/app/src
+      - ../../../tests:/app/tests
+      - ../../../scripts:/app/scripts
+      - ../../../pytest.ini:/app/pytest.ini
+      - ../../../.coveragerc:/app/.coveragerc
+      - ../../../bandit.yaml:/app/bandit.yaml
+      - ../../../pyproject.toml:/app/pyproject.toml
+      # Internal CA for TLS verification of lab services (MISP-001).
+      - ../../../infra/docker/config/certs/ca.crt:/app/certs/ca.crt:ro
+      - ../../../docs:/app/docs:ro
+      - ../../../detections:/app/detections
+      - ../../../.env.example:/app/.env.example:ro
+      - ../../../.env.container:/app/.env.container:ro
+      - ../../../infra:/app/infra:ro
+    depends_on:
+      docker-socket-proxy:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          pids: 256  # uvicorn workers + pytest subprocesses during in-container runs
+
+  network-watcher:
+    environment:
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+      # SEC-03 residual: when WATCHER_DOCKER_SOCKET_INJECT=true re-enables the
+      # worker socat forward (Cortex DinD flow), it must target the restricted
+      # proxy — never the raw daemon socket (worker -> daemon root).
+      - DOCKER_PROXY_HOST=docker-socket-proxy
+      - DOCKER_PROXY_PORT=2375
+    volumes: !reset []
+    depends_on:
+      docker-socket-proxy:
+        condition: service_started
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          pids: 128
+    cap_drop: [ALL]
+
+  redis:
+    # Image's redis user instead of root; drop the chown bootstrap (SOAR-014)
+    user: "redis"
+    entrypoint: [ "sh", "-c",
+                  "rm -f /data/temp-*.rdb /data/appendonly.aof* 2>/dev/null;
+                  exec docker-entrypoint.sh redis-server --requirepass \"${REDIS_PASSWORD}\" --appendonly no --save \"\"" ]
+    deploy:
+      resources:
+        limits:
+          pids: 128
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  orborus:
+    # Drop seccomp:unconfined -> Docker's default seccomp profile (SOAR-013).
+    # security_opt is a LIST: plain YAML appends to the base value, so
+    # !override is required to actually remove seccomp:unconfined — a plain
+    # list silently keeps the unconfined flag (BUG-053 pattern, caught by
+    # validate_compose_security.py).
+    # If worker spawning breaks, document the failing syscall and ship a
+    # custom profile under infra/docker/seccomp/orborus.json instead.
+    security_opt: !override
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          pids: 256
+
+  thehive:
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          pids: 1024  # JVM + ES client threads
+
+  cortex:
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          pids: 1024  # JVM + analyzer subprocess spawner
+
+  # === Runtime hardening sweep (DK-P1-009/010/011/012) ===
+  # pids_limit values are calibrated with ~2-4x headroom over steady state
+  # (measured via `docker stats` during KPI runs); JVM/indexer services get
+  # larger budgets. cap_drop: ALL applies where the image needs no kernel
+  # capability — exceptions are documented in security-exceptions.json.
+
+  elasticsearch:
+    deploy:
+      resources:
+        limits:
+          pids: 2048  # JVM thread pools
+    security_opt:
+      - no-new-privileges:true
+
+  opensearch:
+    deploy:
+      resources:
+        limits:
+          pids: 2048
+    security_opt:
+      - no-new-privileges:true
+
+  opensearch-dashboards:
+    deploy:
+      resources:
+        limits:
+          pids: 512
+    security_opt:
+      - no-new-privileges:true
+
+  shuffle-frontend:
+    deploy:
+      resources:
+        limits:
+          pids: 128
+    security_opt:
+      - no-new-privileges:true
+
+  shuffle-backend:
+    deploy:
+      resources:
+        limits:
+          pids: 512  # Go worker + app runner supervision
+    security_opt:
+      - no-new-privileges:true
+
+  tenzir-node:
+    deploy:
+      resources:
+        limits:
+          pids: 512
+    security_opt:
+      - no-new-privileges:true
+
+  misp-db:
+    deploy:
+      resources:
+        limits:
+          pids: 512  # mariadb
+    security_opt:
+      - no-new-privileges:true
+
+  misp-modules:
+    deploy:
+      resources:
+        limits:
+          pids: 256
+    security_opt:
+      - no-new-privileges:true
+
+  misp:
+    deploy:
+      resources:
+        limits:
+          pids: 1024  # apache + php-fpm + background workers
+    security_opt:
+      - no-new-privileges:true
+
+  grafana-db:
+    deploy:
+      resources:
+        limits:
+          pids: 512  # postgres
+    security_opt:
+      - no-new-privileges:true
+
+  grafana:
+    deploy:
+      resources:
+        limits:
+          pids: 256
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  grafana-renderer:
+    deploy:
+      resources:
+        limits:
+          pids: 256
+    cap_drop: [ALL]  # renderer runs chrome with --no-sandbox upstream
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+
+  loki:
+    deploy:
+      resources:
+        limits:
+          pids: 256
+    security_opt:
+      - no-new-privileges:true
+
+  promtail:
+    deploy:
+      resources:
+        limits:
+          pids: 128
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      # positions file is ephemeral by design in the lab — a restart re-scans
+      # current containers instead of replaying stale offsets
+      - /tmp:size=32m
+
+  docs-site:
+    deploy:
+      resources:
+        limits:
+          pids: 128
+    cap_drop: [ALL]
+    cap_add:
+      - CHOWN   # nginx entrypoint chowns tmpfs-backed cache dirs
+      - SETUID  # master spawns workers that drop to nginx uid/gid
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m
+      # nginx writes its PID + temp paths under /var — keep the read-only
+      # root FS and give it a scratch tmpfs (static site, no Docusaurus
+      # runtime cache needed anymore).
+      - /var/cache/nginx:size=16m
+      - /var/run:size=8m
+      - /var/tmp:size=8m
+
+  nginx:
+    deploy:
+      resources:
+        limits:
+          pids: 128
+    cap_drop: [ALL]
+    cap_add:
+      - NET_BIND_SERVICE  # master binds :80/:443
+      - CHOWN             # entrypoint chowns tmpfs-backed cache dirs
+      - SETUID            # master spawns workers that drop to nginx uid/gid
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:size=32m
+      - /var/run:size=8m
+      - /tmp:size=16m
+
+  web-management:
+    deploy:
+      resources:
+        limits:
+          pids: 128
+    cap_drop: [ALL]
+    cap_add:
+      - NET_BIND_SERVICE  # serves on :80
+      - CHOWN             # nginx entrypoint chowns /var/cache/nginx temp dirs
+      - SETUID            # master spawns workers that drop to nginx uid/gid
+      - SETGID
+    security_opt:
+      - no-new-privileges:true

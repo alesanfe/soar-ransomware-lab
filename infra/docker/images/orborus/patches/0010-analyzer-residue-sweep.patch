@@ -1,0 +1,37 @@
+diff --git a/orborus.go b/orborus.go
+index b72433c..c08563f 100644
+--- a/orborus.go
++++ b/orborus.go
+@@ -4701,6 +4701,32 @@ func zombiecheck(ctx context.Context, workerTimeout int, sensorMode shuffle.Sens
+ 		}
+ 	}
+ 
++	// Analyzer residue sweep: Cortex runs its analyzers as sibling
++	// containers (ghcr.io/thehive-project/*) on this same daemon via
++	// DinD, and never removes them after exit — `docker ps -a` grows
++	// ~1-2 per workflow execution forever. They carry no labels and
++	// random names, so nothing else reaps them. Exited ones are dead
++	// weight: Cortex collects stdout synchronously before the process
++	// ends. Only remove containers whose image is under the analyzer
++	// namespace AND that already exited — running ones are in-flight.
++	{
++		for _, c := range containers {
++			if !strings.HasPrefix(c.Image, "ghcr.io/thehive-project/") {
++				continue
++			}
++			if c.State == "running" {
++				continue
++			}
++			name := c.ID[:12]
++			if len(c.Names) > 0 {
++				name = c.Names[0]
++			}
++			log.Printf("[INFO] Removing exited analyzer container %s (%s)", name, c.Image)
++			removeContainers = append(removeContainers, c.ID)
++			containerNames[c.ID] = name
++		}
++	}
++
+ 	// FIXME - add killing of apps with same execution ID too
+ 	log.Printf("[INFO] Should STOP and remove %d containers.", len(stopContainers))
+ 	var options container.StopOptions

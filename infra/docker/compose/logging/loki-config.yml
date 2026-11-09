@@ -27,6 +27,17 @@ schema_config:
         prefix: index_
         period: 24h
 
+limits_config:
+  retention_period: 720h
+
+compactor:
+  working_directory: /var/lib/loki/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+  delete_request_store: filesystem
+
 # By default, Loki will send anonymous, but uniquely identifiable usage statistics to Grafana Labs.
 # To disable statistics, set analytics.reporting_enabled to false
 analytics:

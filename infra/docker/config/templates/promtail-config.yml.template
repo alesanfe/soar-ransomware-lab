@@ -29,6 +29,20 @@ scrape_configs:
       - source_labels: [ '__meta_docker_container_label_com_docker_compose_project' ]
         regex: '(.+)'
         target_label: compose_project
+    # Redact secrets that upstream images print in plain logs before
+    # they reach Loki (MISP entrypoint echoes redis/admin creds at
+    # boot; Shuffle logs webhook token in hook URLs). The raw docker
+    # logs still contain them — see docs/10 residual risk.
+    pipeline_stages:
+      - replace:
+          expression: "(?i)(auth=)[^\\s&]+"
+          replace: "${1}<REDACTED>"
+      - replace:
+          expression: "(?i)((?:password|api.?key|admin key|secret|token)(?:\\D{0,25}?[\"'\\]]\\s*|\\s*[=:]\\s*))([A-Za-z0-9+/=_-]{8,})"
+          replace: "${1}<REDACTED>"
+      - replace:
+          expression: "(/api/v1/hooks/)[A-Za-z0-9._~%-]+"
+          replace: "${1}<REDACTED>"
 
   - job_name: system-logs
     static_configs:

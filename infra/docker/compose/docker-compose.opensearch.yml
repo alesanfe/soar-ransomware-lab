@@ -33,6 +33,10 @@ services:
       - cluster.name=soar-opensearch
       - node.name=soar-opensearch
       - discovery.type=single-node
+      # Lab: disk watermark blocks index creation on shared Windows disks
+      # (C: at >90% trips flood_stage) — disable the threshold, monitor via
+      # `make check-disk` instead of blocking writes.
+      - cluster.routing.allocation.disk.threshold_enabled=false
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true"
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}
@@ -47,7 +51,7 @@ services:
     volumes:
       - opensearch_data:/usr/share/opensearch/data
     ports:
-      - "${OPENSEARCH_PORT:-19201}:9200"
+      - "127.0.0.1:${OPENSEARCH_PORT:-19201}:9200"
     networks:
       - soar_net
     healthcheck:
@@ -78,7 +82,7 @@ services:
       - OPENSEARCH_HOSTS=["${SHUFFLE_OPENSEARCH_URL:-http://opensearch:9200}"]
       - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
     ports:
-      - "${OPENSEARCH_DASHBOARDS_PORT:-5602}:5601"
+      - "127.0.0.1:${OPENSEARCH_DASHBOARDS_PORT:-5602}:5601"
     networks:
       - soar_net
     depends_on:

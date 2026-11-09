@@ -1,0 +1,13 @@
+diff --git a/orborus.go b/orborus.go
+--- a/orborus.go
++++ b/orborus.go
+@@ -739,5 +739,9 @@
+ 					fmt.Sprintf("SHUFFLE_APP_SDK_TIMEOUT=%s", os.Getenv("SHUFFLE_APP_SDK_TIMEOUT")),
+ 					fmt.Sprintf("SHUFFLE_MAX_SWARM_NODES=%s", os.Getenv("SHUFFLE_MAX_SWARM_NODES")),
+ 					"SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle",
++					// Perf: pass through worker dispatch poll + callback override so
++					// swarm worker tasks honor the same tuning as docker workers.
++					fmt.Sprintf("SHUFFLE_WORKER_POLL_TIME=%s", os.Getenv("SHUFFLE_WORKER_POLL_TIME")),
++					fmt.Sprintf("SHUFFLE_WORKER_SERVER_URL=%s", os.Getenv("SHUFFLE_WORKER_SERVER_URL")),
+ 					fmt.Sprintf("SHUFFLE_APP_REQUEST_TIMEOUT=%s", os.Getenv("SHUFFLE_APP_REQUEST_TIMEOUT")),
+ 				},

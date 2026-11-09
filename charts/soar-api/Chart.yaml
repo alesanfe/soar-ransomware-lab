@@ -1,0 +1,16 @@
+apiVersion: v2
+name: soar-api
+description: |-
+  SOAR Ransomware Lab API — hexagonal FastAPI service (ingest, admission
+  queue, integrations, metrics). Deploys the API workload only; external
+  integrations (TheHive, Cortex, MISP, Elasticsearch, Redis) are expected
+  as reachable endpoints configured via values.
+type: application
+version: 0.1.0
+appVersion: "1.4.0"
+keywords:
+  - soar
+  - security-orchestration
+  - ransomware-lab
+maintainers:
+  - name: SOAR Lab Team

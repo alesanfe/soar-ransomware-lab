@@ -9,8 +9,10 @@ services:
     image: ${REDIS_IMAGE:-redis:7-alpine}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_redis
     user: root
-    entrypoint: [ "sh", "-c", "chown -R redis:redis /data && rm -f /data/temp-*.rdb /data/appendonly.aof* && exec docker-entrypoint.sh redis-server --requirepass \"${REDIS_PASSWORD}\" --appendonly no --save \"\"" ]
-    command: [ ]
+    entrypoint: [ "sh", "-c",
+                  "chown -R redis:redis /data && rm -f /data/temp-*.rdb /data/appendonly.aof*
+                  && exec docker-entrypoint.sh redis-server --requirepass \"${REDIS_PASSWORD}\" --appendonly no --save \"\"" ]
+    command: []
     volumes:
       - redis_data:/data
     networks:
@@ -38,24 +40,29 @@ services:
         max-file: "3"
 
   thehive:
-    image: ${THEHIVE_IMAGE:-thehiveproject/thehive:3.5.2-1}
+    image: ${THEHIVE_IMAGE:-strangebee/thehive:5.7.8-1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_thehive
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
     ports:
-      - "${THEHIVE_HTTP_PORT:-9000}:9000"
+      - "127.0.0.1:${THEHIVE_HTTP_PORT:-9000}:9000"
+    environment:
+      # Entrypoint-generated Cortex connector (cortex0)
+      - TH_CORTEX_HOSTNAMES=${CORTEX_HOSTNAME:-cortex}
+      - TH_CORTEX_PROTO=${CORTEX_PROTO:-http}
+      - TH_CORTEX_PORT=${CORTEX_PORT:-9001}
+      - TH_CORTEX_KEYS=${CORTEX_API_KEY:-}
+      - THEHIVE_SECRET=${THEHIVE_SECRET:-}
     volumes:
       - thehive_files:/opt/thp/thehive/files
+      - thehive_data:/opt/thp/thehive/data
       - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/config/thehive.conf:/etc/thehive/application.conf:ro
     networks:
       - soar_net
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:9000/api/status || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9000/api/v1/status/public || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 10
-      start_period: 180s
+      start_period: 300s
     restart: unless-stopped
     deploy:
       resources:
@@ -80,7 +87,7 @@ services:
       elasticsearch:
         condition: service_healthy
     ports:
-      - "${CORTEX_HTTP_PORT:-19001}:9001"
+      - "127.0.0.1:${CORTEX_HTTP_PORT:-19001}:9001"
     volumes:
       - cortex_data:/var/lib/cortex
       - /var/run/docker.sock:/var/run/docker.sock
@@ -113,10 +120,15 @@ services:
     image: ${SHUFFLE_FRONTEND_IMAGE:-ghcr.io/shuffle/shuffle-frontend:2.2.1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_frontend
     ports:
-      - "${SHUFFLE_UI_PORT:-8081}:80"
+      - "127.0.0.1:${SHUFFLE_UI_PORT:-8081}:80"
     environment:
       BACKEND_HOSTNAME: shuffle-backend
       SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
+    volumes:
+      # SHF-001: template with Docker-DNS resolver so a backend restart
+      # (new container IP) does not leave the UI in "waiting for
+      # database" — upstream resolves per request, no frontend restart.
+      - ../../../infra/docker/config/shuffle-frontend/nginx.conf.tmpl:/etc/nginx/nginx.conf.tmpl:ro
     networks:
       - soar_net
       - ti_net
@@ -124,7 +136,9 @@ services:
       shuffle-backend:
         condition: service_started
     healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:80 || exit 1" ]
+      # SHF-008: probe the PROXIED backend, not just nginx — catches the
+      # stale-upstream / "waiting for database" mode this service had.
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:80/api/v1/health || exit 1" ]
       interval: 15s
       timeout: 5s
       start_period: 60s
@@ -150,7 +164,7 @@ services:
     environment:
       SHUFFLE_ELASTIC: "true"
       SHUFFLE_OPENSEARCH_URL: ${SHUFFLE_OPENSEARCH_URL:-http://opensearch:9200}
-      SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "true"
+      SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "${SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY:-true}"
       SHUFFLE_OPENSEARCH_USERNAME: ${OPENSEARCH_USERNAME:-admin}
       SHUFFLE_OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
       OUTER_HOSTNAME: ${OUTER_HOSTNAME:-host.docker.internal}
@@ -161,7 +175,7 @@ services:
       SHUFFLE_DEFAULT_USERNAME: ${SHUFFLE_DEFAULT_USERNAME:-admin}
       SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD}
       SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY}
-      SHUFFLE_SWAGGER_ENABLED: "true"
+      SHUFFLE_SWAGGER_ENABLED: "${SHUFFLE_SWAGGER_ENABLED:-true}"
       SHUFFLE_AUTH_MODE: "multi"
       SHUFFLE_HEALTHCHECK_DISABLED: "true"
       SHUFFLE_DISABLE_RERUN_AND_ABORT: "true"
@@ -171,7 +185,7 @@ services:
       - shuffle_files:/shuffle-files
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "${SHUFFLE_API_PORT:-15001}:5001"
+      - "127.0.0.1:${SHUFFLE_API_PORT:-15001}:5001"
     networks:
       - soar_net
       - ti_net
@@ -179,7 +193,11 @@ services:
       opensearch:
         condition: service_healthy
     healthcheck:
-      disable: true
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://localhost:5001/api/v1/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
     restart: unless-stopped
     deploy:
       resources:
@@ -203,7 +221,7 @@ services:
     ports:
       - "${NETWORK_WATCHER_PORT:-15130}:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - soar_net
     healthcheck:
@@ -231,7 +249,9 @@ services:
     image: ${TENZIR_IMAGE:-tenzir/tenzir:v6.8.1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_tenzir_node
     entrypoint: [ "tenzir-node" ]
-    command: [ "--commands=web server --mode=dev --bind=0.0.0.0" ]
+    # TENZIR_WEB_MODE: "dev" (lab default, relaxed) — set to a production
+    # mode via .env.hardened / environment for hardened profile (SOAR-016)
+    command: [ "--commands=web server --mode=${TENZIR_WEB_MODE:-dev} --bind=0.0.0.0" ]
     ports:
       - "${TENZIR_API_PORT:-15160}:5160"
       - "${TENZIR_LOG_PORT:-15140}:1514"
@@ -277,9 +297,46 @@ services:
       SHUFFLE_APP_SDK_URL: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
       SHUFFLE_STATS_DISABLED: true
       SHUFFLE_LOGS_DISABLED: true
-      SHUFFLE_SWARM_CONFIG: docker
+      # swarm mode: `run` despliega workers+apps como servicios replicados y
+      # CALIENTES sobre un overlay compartido — elimina el spawn+boot por nodo
+      # (~4-7 s/hop residual tras PERF-004). Requiere `docker swarm init` y el
+      # overlay attachable `soar_swarm` con los servicios del lab conectados
+      # por alias (thehive/cortex/opensearch/...). Default docker: revertible.
+      SHUFFLE_SWARM_CONFIG: ${SHUFFLE_SWARM_CONFIG:-docker}
+      SHUFFLE_SWARM_NETWORK_NAME: ${SHUFFLE_SWARM_NETWORK_NAME:-}
       CLEANUP: true
-      SHUFFLE_WORKER_IMAGE: ghcr.io/shuffle/shuffle-worker:2.2.1
+      # Canonical upstream flag (upstream .env); CLEANUP above is the legacy
+      # alias — 2370 stopped worker containers accumulated while only the
+      # alias was set.
+      SHUFFLE_CONTAINER_AUTO_CLEANUP: "true"
+      SHUFFLE_WORKER_IMAGE: ${SHUFFLE_WORKER_IMAGE:-soar_shuffle-worker:2.2.1-patched}
+      # Perf: passed through to spawned workers (orborus patch 0006). Worker
+      # upstream sleeps 5s between dispatch poll cycles; 1s removes ~4s of idle
+      # per sequential dependency hop (see images/worker patch 0001).
+      SHUFFLE_WORKER_POLL_TIME: "1"
+      # Perf: warm per-image app servers inside the worker netns (worker
+      # patch 0004, orborus patch 0008). Dispatch becomes POST to
+      # 127.0.0.1:<port>/api/v1/run (~0.1s) instead of container
+      # spawn+boot (~4.5s/hop). Set SHUFFLE_WARM_APPS=false in .env to
+      # revert to per-action containers.
+      SHUFFLE_WARM_APPS: ${SHUFFLE_WARM_APPS:-true}
+      # Perf (upstream documented vars, 2026-11-07):
+      # PULL_TIME — Orborus job-queue poll interval (default 2s); 1s halves
+      #   the submit→dispatch component of workflow latency.
+      # APP_REPLICAS — warm app containers kept per app (upstream default 3;
+      #   unset locally meant cold spawn per node dispatch, ~3s/hop tax).
+      # AUTO_IMAGE_DOWNLOAD — skip image pull checks on spawn; images are
+      #   pinned and already present.
+      SHUFFLE_ORBORUS_PULL_TIME: "1"
+      SHUFFLE_APP_REPLICAS: ${SHUFFLE_APP_REPLICAS:-1}
+      # SCALE_REPLICAS — worker service replicas (swarm mode). Workers are
+      # ephemeral per execution (task exits after finish → Exited(2)); >1
+      # replica keeps a warm task for the next execution and a live
+      # /api/v1/streams endpoint while the previous task dies — kills the
+      # app-side send_result 10s timeouts at the tail of each run.
+      SHUFFLE_SCALE_REPLICAS: ${SHUFFLE_SCALE_REPLICAS:-1}
+      SHUFFLE_WORKER_SERVER_URL: ${SHUFFLE_WORKER_SERVER_URL:-}
+      SHUFFLE_AUTO_IMAGE_DOWNLOAD: "false"
       SHUFFLE_PIPELINE_AUTH: ${SHUFFLE_DEFAULT_APIKEY}
       SHUFFLE_PIPELINE_URL: ${TENZIR_URL:-http://tenzir-node:5160}
       SHUFFLE_APP_NETWORK: soar_net

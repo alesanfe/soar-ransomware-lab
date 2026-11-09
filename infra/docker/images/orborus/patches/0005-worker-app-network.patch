@@ -1,0 +1,22 @@
+diff --git a/orborus.go b/orborus.go
+index c7e697e..f53d1c7 100755
+--- a/orborus.go
++++ b/orborus.go
+@@ -1677,7 +1677,7 @@ func deployWorker(image string, identifier string, env []string, executionReques
+ 	}
+ 
+ 	if isKubernetes != "true" {
+-		hostConfig.NetworkMode = container.NetworkMode(fmt.Sprintf("container:%s", containerId))
++		networkMode := os.Getenv("SHUFFLE_APP_NETWORK"); if len(networkMode) == 0 { networkMode = fmt.Sprintf("container:%s", containerId) }; hostConfig.NetworkMode = container.NetworkMode(networkMode)
+ 
+ 		if strings.ToLower(cleanupEnv) == "true" {
+ 			hostConfig.AutoRemove = true
+@@ -3761,7 +3761,7 @@ func createAndStartTenzirNode(ctx context.Context, containerName, imageName stri
+ 	// conflicting options: hostname and the network mode
+ 	/*
+ 		if isKubernetes != "true" && os.Getenv("SHUFFLE_SWARM_CONFIG") != "run" {
+-			hostConfig.NetworkMode = container.NetworkMode(fmt.Sprintf("container:%s", containerId))
++			networkMode := os.Getenv("SHUFFLE_APP_NETWORK"); if len(networkMode) == 0 { networkMode = fmt.Sprintf("container:%s", containerId) }; hostConfig.NetworkMode = container.NetworkMode(networkMode)
+ 		}
+ 	*/
+ 

@@ -1,0 +1,32 @@
+From: SOAR Lab <local>
+Date: 2026-11-08
+Subject: worker: async dispatch inside setWorkflowExecution
+
+setWorkflowExecution calls handleExecutionResult (decide + child
+dispatch) synchronously. Since callers include the /api/v1/streams
+handler, every app-side send_result POST blocked on the full dispatch
+cycle, exceeding the app SDK 10s read timeout under parallel fanout -
+Read timeouts, retry storms, duplicate deliveries.
+
+State is durable in cache before this point and handleExecutionResult
+recomputes from it, so dispatch can run in a goroutine. Callers never
+consumed the dispatch (void function); the FINISHED path still
+validates + shuts down synchronously, so the last result cannot orphan
+pending children.
+diff --git a/functions/onprem/worker/worker.go b/functions/onprem/worker/worker.go
+index fb7b3e5..79fd7a3 100644
+--- a/functions/onprem/worker/worker.go
++++ b/functions/onprem/worker/worker.go
+@@ -279,7 +279,11 @@ func setWorkflowExecution(ctx context.Context, workflowExecution shuffle.Workflo
+ 		return err
+ 	}
+ 
+-	handleExecutionResult(workflowExecution)
++	// Dispatch asynchronously: the execution state is durable in cache and
++	// decide recomputes from it. Holding callers (incl. the /api/v1/streams
++	// handler response) for the full dispatch cycle caused app-side 10s
++	// send_result timeouts and retry storms under parallel fanout.
++	go handleExecutionResult(workflowExecution)
+ 	validated := shuffle.ValidateFinished(ctx, -1, workflowExecution)
+ 	if validated {
+ 		shutdownData, err := json.Marshal(workflowExecution)

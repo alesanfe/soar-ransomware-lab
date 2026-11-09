@@ -1,0 +1,12 @@
+diff --git a/orborus.go b/orborus.go
+--- a/orborus.go
++++ b/orborus.go
+@@ -3313,6 +3313,8 @@
+ 				fmt.Sprintf("SHUFFLE_LOGS_DISABLED=%s", os.Getenv("SHUFFLE_LOGS_DISABLED")),
+ 				"SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle",
+ 				fmt.Sprintf("SHUFFLE_ALLOW_PACKAGE_INSTAL=%s", os.Getenv("SHUFFLE_ALLOW_PACKAGE_INSTALL")),
++				// Perf: pass through worker dispatch poll override (see images/worker patch 0001)
++				fmt.Sprintf("SHUFFLE_WORKER_POLL_TIME=%s", os.Getenv("SHUFFLE_WORKER_POLL_TIME")),
+ 			}
+ 
+ 			//log.Printf("Running worker with proxy? %s", os.Getenv("SHUFFLE_PASS_WORKER_PROXY"))

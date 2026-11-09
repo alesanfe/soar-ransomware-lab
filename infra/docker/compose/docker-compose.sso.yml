@@ -1,0 +1,143 @@
+# SSO overlay (AUTH-*): Keycloak IdP + oauth2-proxy gateways.
+#
+# Optional — the default stack keeps working without it. Enable with:
+#   docker compose -f docker-compose.yml -f docker-compose.core.yml \
+#     -f docker-compose.api.yml -f docker-compose.misp.yml \
+#     -f docker-compose.opensearch.yml -f logging/docker-compose.logging.yml \
+#     -f docker-compose.sso.yml up -d
+#
+# Entry points once enabled:
+#   http://localhost:8088  → SSO-gated Web Management console
+#   http://localhost:8089  → SSO-gated Shuffle frontend
+#   http://localhost:8087  → Keycloak admin (realm "soar")
+#
+# The direct service ports remain reachable (loopback only) — the SSO
+# gateways are the authenticated front doors, not a hard network lock.
+# Grafana gains native OIDC via GF_OAUTH_ENABLED=true in .env.full.
+
+services:
+  keycloak:
+    image: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.0}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_keycloak
+    command: >
+      start-dev
+      --import-realm
+      --hostname=http://localhost:8087
+      --hostname-strict=false
+      --http-enabled=true
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+      KC_LOG_LEVEL: INFO
+      KC_HTTP_MANAGEMENT_PORT: 9000
+    volumes:
+      - ../config/keycloak/soar-realm.json:/opt/keycloak/data/import/soar-realm.json:ro
+    ports:
+      - "127.0.0.1:${KEYCLOAK_PORT:-8087}:8080"
+    networks:
+      - soar_net
+    healthcheck:
+      # KC26 serves /health on the management port (9000), not :8080.
+      test: ["CMD-SHELL",
+             "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n' >&3
+             && head -1 <&3 | grep -q 200"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  oauth2-proxy-web:
+    image: ${OAUTH2_PROXY_IMAGE:-quay.io/oauth2-proxy/oauth2-proxy:v7.7.1}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_oauth2_web
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      web-management:
+        condition: service_started
+    environment:
+      OAUTH2_PROXY_PROVIDER: oidc
+      # Split-host OIDC: the browser reaches Keycloak on localhost:8087
+      # (its advertised hostname → iss claim) while the proxy uses the
+      # in-network backchannel keycloak:8080 for token/JWKS calls.
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://localhost:8087/realms/soar
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_LOGIN_URL: http://localhost:8087/realms/soar/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/soar/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/soar/protocol/openid-connect/certs
+      OAUTH2_PROXY_CLIENT_ID: soar-proxy
+      OAUTH2_PROXY_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-soar-lab-oidc-secret}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET:-soarlab-cookie-secret-32bytes-XX}
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:8088/oauth2/callback
+      OAUTH2_PROXY_UPSTREAMS: http://web-management:80
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_SCOPE: "openid profile email"
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      OAUTH2_PROXY_PASS_USER_HEADERS: "true"
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+    ports:
+      - "127.0.0.1:8088:4180"
+    networks:
+      - soar_net
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  oauth2-proxy-shuffle:
+    image: ${OAUTH2_PROXY_IMAGE:-quay.io/oauth2-proxy/oauth2-proxy:v7.7.1}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_oauth2_shuffle
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      shuffle-frontend:
+        condition: service_started
+    environment:
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://localhost:8087/realms/soar
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_LOGIN_URL: http://localhost:8087/realms/soar/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/soar/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/soar/protocol/openid-connect/certs
+      OAUTH2_PROXY_CLIENT_ID: soar-proxy
+      OAUTH2_PROXY_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-soar-lab-oidc-secret}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET:-soarlab-cookie-secret-32bytes-XX}
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:8089/oauth2/callback
+      OAUTH2_PROXY_UPSTREAMS: http://shuffle-frontend:80
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_SCOPE: "openid profile email"
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      OAUTH2_PROXY_PASS_USER_HEADERS: "true"
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      # Shuffle is a heavy SPA — allow larger headers/longer upstream waits.
+      OAUTH2_PROXY_UPSTREAM_TIMEOUT: 60s
+    ports:
+      - "127.0.0.1:8089:4180"
+    networks:
+      - soar_net
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

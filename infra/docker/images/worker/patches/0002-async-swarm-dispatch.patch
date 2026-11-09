@@ -1,0 +1,66 @@
+From: SOAR Lab <local>
+Date: 2026-11-08
+Subject: worker: async swarm dispatch after durable result merge
+
+In swarm mode, handleWorkflowQueue (the /api/v1/streams handler) ran
+ValidateFinished + handleExecutionResult (full decide + child dispatch
++ backend sendResult) synchronously BEFORE writing the HTTP response.
+Under parallel fanout each app-side send_result POST waited seconds for
+the transaction, exceeding the app SDK 10s read timeout - producing
+Read timeouts, retry storms and duplicate action deliveries around
+every dependency hop.
+
+The result is already durable at that point (setWorkflowExecution ran,
+cache + backend updated). Move the decide/dispatch block to a goroutine
+so the POST returns immediately after the merge; children still get
+dispatched from current cached state inside handleExecutionResult.
+Scope: the block is already gated by SHUFFLE_SWARM_CONFIG == run|swarm,
+so Docker-mode semantics are unchanged. Duplicate dispatches are still
+deduped by the existing "result already found (PRE REQUEST)" checks.
+
+diff --git a/functions/onprem/worker/worker.go b/functions/onprem/worker/worker.go
+index fb7b3e5..ee42b72 100644
+--- a/functions/onprem/worker/worker.go
++++ b/functions/onprem/worker/worker.go
+@@ -3246,21 +3246,28 @@ func runWorkflowExecutionTransaction(ctx context.Context, attempts int64, workfl
+ 
+ 		/*** STARTREMOVE ***/
+ 		if os.Getenv("SHUFFLE_SWARM_CONFIG") == "run" || os.Getenv("SHUFFLE_SWARM_CONFIG") == "swarm" {
+-			finished := shuffle.ValidateFinished(ctx, -1, *workflowExecution)
+-			if !finished {
+-				if debug {
+-					log.Printf("[DEBUG][%s] Handling next node since it's not finished!", workflowExecution.ExecutionId)
+-				}
++			// Dispatch + finish-detection asynchronously: the result is
++			// durable already (setWorkflowExecution above) and decide
++			// recomputes from cached state - holding the HTTP response for
++			// the whole dispatch cycle caused app-side 10s send_result
++			// timeouts and retry storms under parallel fanout.
++			go func(execCopy shuffle.WorkflowExecution) {
++				finished := shuffle.ValidateFinished(ctx, -1, execCopy)
++				if !finished {
++					if debug {
++						log.Printf("[DEBUG][%s] Handling next node since it's not finished!", execCopy.ExecutionId)
++					}
+ 
+-				handleExecutionResult(*workflowExecution)
+-			} else {
+-				shutdownData, err := json.Marshal(workflowExecution)
+-				if err != nil {
+-					log.Printf("[ERROR] Failed marshalling shutdowndata during set: %s", err)
+-				}
++					handleExecutionResult(execCopy)
++				} else {
++					shutdownData, err := json.Marshal(&execCopy)
++					if err != nil {
++						log.Printf("[ERROR] Failed marshalling shutdowndata during set: %s", err)
++					}
+ 
+-				sendResult(*workflowExecution, shutdownData)
+-			}
++					sendResult(execCopy, shutdownData)
++				}
++			}(*workflowExecution)
+ 		}
+ 		/*** ENDREMOVE ***/
+ 	} else {

@@ -1,0 +1,41 @@
+# Victim container for atomic-test execution (F2).
+#
+# An allowlisted lab victim (soar.victim=true → containable via
+# POST /api/v1/contain mode=enforce). Runs atomic-style test techniques
+# via `scripts/maintenance/run_atomic.py`, emitting tagged telemetry to
+# stdout — Promtail/Loki ships it to the detection path, so the lab
+# exercises real telemetry, not only synthetic webhook alerts.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.victim.yml up -d victim-sim
+
+services:
+  victim-sim:
+    image: ${VICTIM_IMAGE:-python:3.11-slim}
+    container_name: victim_sim
+    labels:
+      soar.victim: "true"
+    command: ["sleep", "infinity"]
+    networks:
+      - soar_net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+
+networks:
+  soar_net:
+    external: true
+    name: soar_net

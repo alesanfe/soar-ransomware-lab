@@ -1,0 +1,101 @@
+--- a/functions/onprem/worker/worker.go
++++ b/functions/onprem/worker/worker.go
+@@ -84,6 +84,14 @@
+ 
+ var warmAppServers = map[string]*warmAppServer{}
+ var warmAppMutex sync.Mutex
++
++// dispatchedActions dedupes action dispatches within this worker (each
++// execution has exactly one worker in docker mode).
++var dispatchedActions sync.Map
++
++// actionSnapshotCache memoizes the per-execution action snapshot so
++// restoreActionConfig does not re-read it from the cache per dispatch.
++var actionSnapshotCache sync.Map
+ var warmPrewarmOnce sync.Once
+ 
+ var baseimagename = os.Getenv("SHUFFLE_BASE_IMAGE_NAME")
+@@ -137,15 +145,21 @@
+ 	}
+ 
+ 	cacheKey := fmt.Sprintf("workflowexecution_%s_action_snapshot", executionID)
+-	cacheDataRaw, err := shuffle.GetCache(ctx, cacheKey)
+-	if err != nil {
+-		return
+-	}
+-
+ 	originalActions := []shuffle.Action{}
+-	cacheData := []byte(cacheDataRaw.([]uint8))
+-	if err := json.Unmarshal(cacheData, &originalActions); err != nil {
+-		return
++	if snapshot, ok := actionSnapshotCache.Load(executionID); ok {
++		originalActions = snapshot.([]shuffle.Action)
++	} else {
++		cacheDataRaw, err := shuffle.GetCache(ctx, cacheKey)
++		if err != nil {
++			return
++		}
++
++		cacheData := []byte(cacheDataRaw.([]uint8))
++		if err := json.Unmarshal(cacheData, &originalActions); err != nil {
++			return
++		}
++
++		actionSnapshotCache.Store(executionID, originalActions)
+ 	}
+ 
+ 	original := shuffle.Action{}
+@@ -4655,23 +4669,40 @@
+ 	// ctx = context.Background()
+ 
+ 	// Sleep between 0 and 250 ms for randomness so no same worker check at same time (same as cloud)
+-	rand.Seed(time.Now().UnixNano())
+-	randMs := rand.Intn(250)
+-	time.Sleep(time.Duration(randMs) * time.Millisecond)
++	// Skipped in docker mode: one worker dispatches per execution.
++	if os.Getenv("SHUFFLE_SWARM_CONFIG") == "run" || os.Getenv("SHUFFLE_SWARM_CONFIG") == "swarm" {
++		rand.Seed(time.Now().UnixNano())
++		randMs := rand.Intn(250)
++		time.Sleep(time.Duration(randMs) * time.Millisecond)
++	}
+ 
+ 	newExecId := fmt.Sprintf("%s_%s", workflowExecution.ExecutionId, action.ID)
+-	_, err = shuffle.GetCache(ctx, newExecId)
+-	if err == nil {
+-		log.Printf("[DEBUG] Result for %s already found (PRE REQUEST) - returning", newExecId)
+-		return nil
+-	}
++	if os.Getenv("SHUFFLE_SWARM_CONFIG") != "run" && os.Getenv("SHUFFLE_SWARM_CONFIG") != "swarm" {
++		// Docker mode: a single worker dispatches per execution, so there is
++		// no multi-worker race to jitter for. Dedupe in-process and skip the
++		// 0-250ms random sleep plus one cache round-trip per action.
++		if _, loaded := dispatchedActions.LoadOrStore(newExecId, struct{}{}); loaded {
++			log.Printf("[DEBUG] Result for %s already found (PRE REQUEST) - returning", newExecId)
++			return nil
++		}
+ 
+-	cacheData := []byte("1")
+-	err = shuffle.SetCache(ctx, newExecId, cacheData, 30)
+-	if err != nil {
+-		log.Printf("[WARNING] Failed setting cache for action %s: %s", newExecId, err)
++		go func(key string) {
++			_ = shuffle.SetCache(context.Background(), key, []byte("1"), 30)
++		}(newExecId)
+ 	} else {
+-		//log.Printf("[DEBUG][%s] Adding %s to cache (%#v)", workflowExecution.ExecutionId, newExecId, action.Name)
++		_, err = shuffle.GetCache(ctx, newExecId)
++		if err == nil {
++			log.Printf("[DEBUG] Result for %s already found (PRE REQUEST) - returning", newExecId)
++			return nil
++		}
++
++		cacheData := []byte("1")
++		err = shuffle.SetCache(ctx, newExecId, cacheData, 30)
++		if err != nil {
++			log.Printf("[WARNING] Failed setting cache for action %s: %s", newExecId, err)
++		} else {
++			//log.Printf("[DEBUG][%s] Adding %s to cache (%#v)", workflowExecution.ExecutionId, newExecId, action.Name)
++		}
+ 	}
+ 
+ 	client := shuffle.GetExternalClient(streamUrl)

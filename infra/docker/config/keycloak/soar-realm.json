@@ -1,0 +1,119 @@
+{
+  "realm": "soar",
+  "enabled": true,
+  "displayName": "SOAR Ransomware Lab",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionMaxLifespan": 28800,
+  "roles": {
+    "realm": [
+      {
+        "name": "platform-admin",
+        "description": "Full platform administration"
+      },
+      {
+        "name": "soc-analyst-l2",
+        "description": "Analyst with response capabilities"
+      },
+      {
+        "name": "soc-analyst-l1",
+        "description": "Triage, read-only alerts/cases"
+      },
+      {
+        "name": "responder",
+        "description": "Execute containment/remediation actions"
+      },
+      {
+        "name": "auditor",
+        "description": "Read-only access to all operational data"
+      },
+      {
+        "name": "infra-operator",
+        "description": "Operate infrastructure, no case data"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "soar-proxy",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "soar-lab-oidc-secret",
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8088/oauth2/callback",
+        "http://localhost:8089/oauth2/callback",
+        "http://localhost:8084/login/generic_oauth"
+      ],
+      "webOrigins": [
+        "http://localhost:8088",
+        "http://localhost:8089",
+        "http://localhost:8084"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@soar.local",
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "soar-admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "platform-admin",
+        "auditor"
+      ],
+      "requiredActions": [],
+      "emailVerified": true
+    },
+    {
+      "username": "analyst",
+      "enabled": true,
+      "email": "analyst@soar.local",
+      "firstName": "SOC",
+      "lastName": "Analyst",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "soar-analyst",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "soc-analyst-l2"
+      ],
+      "requiredActions": [],
+      "emailVerified": true
+    }
+  ]
+}

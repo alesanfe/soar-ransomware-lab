@@ -1,0 +1,29 @@
+From: SOAR Lab <local>
+Date: 2026-11-07
+Subject: worker: make dispatch poll interval configurable via SHUFFLE_WORKER_POLL_TIME
+
+Upstream hardcodes `sleepTime = 5` in main(), so every execution-init /
+stream-result poll cycle sleeps 5s. On workflows with several sequential
+dependency hops this is the dominant idle time (~5s per hop). Make the
+interval configurable; values < 1 or unparsable are ignored and the
+upstream default of 5s is kept.
+
+--- a/functions/onprem/worker/worker.go
++++ b/functions/onprem/worker/worker.go
+@@ -4993,7 +4993,15 @@
+ 
+ 	//log.Printf("[INFO] Setting up worker environment")
+ 	sleepTime = 5
+-	client := shuffle.GetExternalClient(baseUrl)
++	if pollEnv := os.Getenv("SHUFFLE_WORKER_POLL_TIME"); pollEnv != "" {
++		if pollSeconds, convErr := strconv.Atoi(pollEnv); convErr == nil && pollSeconds >= 1 {
++			sleepTime = pollSeconds
++			log.Printf("[INFO] Worker poll interval set to %ds via SHUFFLE_WORKER_POLL_TIME", pollSeconds)
++		} else {
++			log.Printf("[WARNING] Ignoring invalid SHUFFLE_WORKER_POLL_TIME=%q (need integer >= 1)", pollEnv)
++		}
++	}
++	client := shuffle.GetExternalClient(baseUrl)
+ 
+ 	if timezone == "" {
+ 		timezone = "Europe/Amsterdam"

@@ -38,7 +38,18 @@
               "type": "count"
             }
           ],
-          "bucketAggs": []
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "metric_type",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "1"
+              }
+            }
+          ]
         }
       ],
       "fieldConfig": {
@@ -60,7 +71,9 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "values": false,
+          "fields": ""
         }
       },
       "gridPos": {
@@ -96,7 +109,18 @@
               "field": "mttr_seconds"
             }
           ],
-          "bucketAggs": []
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "metric_type",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "1"
+              }
+            }
+          ]
         }
       ],
       "fieldConfig": {
@@ -128,7 +152,9 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "values": false,
+          "fields": ""
         }
       },
       "gridPos": {
@@ -163,7 +189,18 @@
               "type": "count"
             }
           ],
-          "bucketAggs": []
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "metric_type",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "1"
+              }
+            }
+          ]
         }
       ],
       "fieldConfig": {
@@ -194,6 +231,15 @@
         "w": 5,
         "x": 10,
         "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false,
+          "fields": ""
+        }
       }
     },
     {
@@ -224,10 +270,22 @@
                 "percents": [
                   "50"
                 ]
-              }
+              },
+              "meta": {}
             }
           ],
-          "bucketAggs": []
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "field": "@timestamp",
+              "settings": {
+                "interval": "auto",
+                "minDocCount": 0,
+                "trimEdges": 0
+              }
+            }
+          ]
         }
       ],
       "fieldConfig": {
@@ -259,7 +317,9 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "values": false,
+          "fields": ""
         }
       },
       "gridPos": {
@@ -297,10 +357,22 @@
                 "percents": [
                   "90"
                 ]
-              }
+              },
+              "meta": {}
             }
           ],
-          "bucketAggs": []
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "field": "@timestamp",
+              "settings": {
+                "interval": "auto",
+                "minDocCount": 0,
+                "trimEdges": 0
+              }
+            }
+          ]
         }
       ],
       "fieldConfig": {
@@ -332,7 +404,9 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "values": false,
+          "fields": ""
         }
       },
       "gridPos": {
@@ -636,7 +710,7 @@
       "id": 7,
       "title": "Grafico 4.3 — Alertas por Severidad (distribucion SOAR)",
       "description": "Desglose por severidad: 1=Low, 2=Medium, 3=Critical. Refleja la distribucion de riesgo.",
-      "type": "barchart",
+      "type": "piechart",
       "datasource": {
         "type": "elasticsearch",
         "uid": "${DS_ELASTICSEARCH}"
@@ -664,9 +738,9 @@
               "type": "terms",
               "field": "severity",
               "settings": {
-                "size": "5",
-                "order": "asc",
-                "orderBy": "_term"
+                "size": "10",
+                "order": "desc",
+                "orderBy": "1"
               }
             }
           ]
@@ -718,6 +792,30 @@
         "w": 8,
         "x": 8,
         "y": 12
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false,
+          "fields": ""
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ],
+          "showLegend": true
+        },
+        "pieType": "donut",
+        "labels": []
       }
     },
     {
@@ -855,7 +953,18 @@
               "field": "mttr_seconds"
             }
           ],
-          "bucketAggs": []
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "metric_type",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "1"
+              }
+            }
+          ]
         },
         {
           "refId": "MIN",
@@ -874,7 +983,20 @@
               "field": "mttr_seconds"
             }
           ],
-          "bucketAggs": []
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "filters",
+              "settings": {
+                "filters": [
+                  {
+                    "query": "*",
+                    "label": "Total"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ],
       "fieldConfig": {
@@ -887,7 +1009,9 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "values": false,
+          "fields": ""
         },
         "orientation": "horizontal"
       },
@@ -1007,7 +1131,7 @@
       "id": 14,
       "title": "Tasa de Éxito por Severidad",
       "description": "Porcentaje de alertas con caso creado en TheHive desglosado por severidad",
-      "type": "barchart",
+      "type": "piechart",
       "datasource": {
         "type": "elasticsearch",
         "uid": "${DS_ELASTICSEARCH}"
@@ -1026,7 +1150,8 @@
           "metrics": [
             {
               "id": "1",
-              "type": "count"
+              "type": "avg",
+              "field": "success"
             }
           ],
           "bucketAggs": [
@@ -1035,9 +1160,9 @@
               "type": "terms",
               "field": "severity",
               "settings": {
-                "order": "asc",
-                "orderBy": "_term",
-                "size": "5"
+                "size": "10",
+                "order": "desc",
+                "orderBy": "1"
               }
             }
           ]
@@ -1054,6 +1179,29 @@
         "w": 12,
         "x": 12,
         "y": 24
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false,
+          "fields": ""
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ],
+          "showLegend": true
+        },
+        "pieType": "donut",
+        "labels": []
       }
     },
     {
