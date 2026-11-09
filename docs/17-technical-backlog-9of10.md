@@ -1764,6 +1764,41 @@ corregidos en la ventana:
 TC-00→04 = 21 PASS previos). Evidencia: `reports/perf/e2e-rerun-status.txt`,
 `e2e-rerun2-status.txt`, logs por test en `e2e-rerun{,2}-logs/`.
 
+### 3.36 Backlog GRAF-E1..E12 ejecutado (2026-11-09, cont.) — observabilidad a 9.5
+
+Ejecución completa del backlog priorizado de observabilidad (60+ items).
+Detalle y evidencias en `docs/19-eval-observability-stack.md` §"Backlog GRAF
+ejecutado" y runbooks en `docs/20-observability-runbooks.md`. Resumen:
+
+- **Dominio canónico anti-self-match** aplicado a dashboards Y alert rules
+  (`compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"`);
+  guardas: `scripts/quality/validate_dashboards.py` (estático, 0 violations)
+  + TC-35 `test_error_query_excludes_observability_stack` (E2E).
+- **Legacy eliminado**: `grafana-dashboard-soar-kpis.json` borrado;
+  `kpi-dashboard.json` es la fuente única (TC-KPI-02 migrado).
+- **Ventanas temporales**: `timeFrom: 30d` en agregaciones KPI; macros
+  `${__from:date:seconds}`/`${__to:date:seconds}` verificados interpolando en
+  `urlPath` del JSON datasource (tabla de trazas respeta rango global).
+- **Nuevas capacidades con datos reales**: DLQ/Redis Streams lag, alert-rule
+  state (alertlist + timeline + metamonitoring `grafana_rule_eval_error`),
+  ES cluster health vía `elasticsearch-exporter` (`job=elasticsearch`,
+  `{color=green}=1`), p50/p95/p99 reales con `histogram_quantile` sobre
+  `traces_spanmetrics_latency_bucket` (p99≈29ms medido).
+- **Contrato operativo de alertas**: 10 reglas con `severity`
+  (critical/warning/info), `team: soar-ops` y `runbook` → docs/20 RB-01..07.
+  Alerting real verificado: 21 notificaciones `firing` + 1 `resolved`
+  entregadas al webhook del API.
+- **Tests**: TC-35 ampliado 11→17 tests (17/17 verde): render de los 49
+  paneles, exporter scraped+green, reglas provisionadas/sanidad, anti
+  self-match, p99, descripciones.
+- **Defectos corregidos**: YAML `summary:` empezando por `>` (crash-loop de
+  Grafana), flag inexistente `--es.ca-skip-verify` del exporter, label
+  `color` vs `status` en la query de cluster health (test).
+- **Hallazgo real**: filesystem de datos ES al ~94% (6% libre) — riesgo
+  flood-stage documentado en RB-03.
+- **SLOs + ownership + retención** documentados (AGENTS.md §Observability,
+  docs/20 §4.3). GRAF-062 (vista exec-by-exec) no ejecutado: P3 justificado.
+
 ## 6. Referencias
 
 - `docs/16-formal-audit-iso25040.md` — auditoría y gates de origen.

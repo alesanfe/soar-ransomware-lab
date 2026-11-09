@@ -1,185 +1,609 @@
-# Provisioned Grafana alert rules (GRAF-003).
-# Evaluated every minute against Loki/Elasticsearch. Notifications route
-# through the provisioned contact point "soar-api-webhook"
-# (contact-points.yml) to POST /api/v1/alerts/grafana on the SOAR API,
-# which counts them and logs them to Loki — the delivery loop is
-# verifiable end-to-end (TC-35).
 apiVersion: 1
-
 groups:
-  - orgId: 1
-    name: soar-error-and-pipeline
-    folder: SOAR Alerts
-    interval: 1m
-    rules:
-      - uid: soar_high_error_log_rate
-        title: High error log rate across SOAR services
-        condition: B
-        for: 5m
-        noDataState: OK
-        execErrState: Error
-        labels:
-          severity: warning
-          source: loki
-        annotations:
-          summary: More than 20 error/exception lines in the last 5m across all containers.
-          runbook_url: https://github.com/alesanfe/soar-ransomware-lab/blob/main/docs/04-operations.md
-        data:
-          - refId: A
-            datasourceUid: loki
-            relativeTimeRange: {from: 900, to: 0}
-            model:
-              datasource: {type: loki, uid: loki}
-              editorMode: code
-              expr: sum(count_over_time({compose_project=~".+", compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"} |~ "(?i)error|exception|traceback|fatal" [5m]))
-              instant: true
-              intervalMs: 1000
-              maxDataPoints: 43200
-              queryType: instant
-              refId: A
-          - refId: B
-            datasourceUid: __expr__
-            relativeTimeRange: {from: 900, to: 0}
-            model:
-              conditions:
-                - evaluator: {params: [20], type: gt}
-                  operator: {type: and}
-                  query: {params: [A]}
-                  reducer: {params: [], type: last}
-                  type: query
-              datasource: {type: __expr__, uid: __expr__}
-              expression: A
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: B
-              type: classic_conditions
-
-      - uid: soar_api_error_burst
-        title: Error burst in SOAR API logs
-        condition: B
-        for: 2m
-        noDataState: OK
-        execErrState: Error
-        labels:
-          severity: critical
-          service: api
-        annotations:
-          summary: API logged >10 error lines in the last 5m — pipeline may be failing.
-        data:
-          - refId: A
-            datasourceUid: loki
-            relativeTimeRange: {from: 900, to: 0}
-            model:
-              datasource: {type: loki, uid: loki}
-              editorMode: code
-              expr: sum(count_over_time({compose_service="api"} |~ "(?i)error|exception|traceback" [5m]))
-              instant: true
-              intervalMs: 1000
-              maxDataPoints: 43200
-              queryType: instant
-              refId: A
-          - refId: B
-            datasourceUid: __expr__
-            relativeTimeRange: {from: 900, to: 0}
-            model:
-              conditions:
-                - evaluator: {params: [10], type: gt}
-                  operator: {type: and}
-                  query: {params: [A]}
-                  reducer: {params: [], type: last}
-                  type: query
-              datasource: {type: __expr__, uid: __expr__}
-              expression: A
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: B
-              type: classic_conditions
-
-      - uid: soar_workflow_failure_rate
-        title: Elevated workflow failure rate (Elasticsearch)
-        condition: B
-        for: 5m
-        noDataState: OK
-        execErrState: Error
-        labels:
-          severity: warning
-          source: elasticsearch
-        annotations:
-          summary: soar-metrics shows >5 failed workflow executions in the last 15m.
-        data:
-          - refId: A
-            datasourceUid: elasticsearch
-            relativeTimeRange: {from: 900, to: 0}
-            model:
-              datasource: {type: elasticsearch, uid: elasticsearch}
-              query: 'decision.keyword:"BLOCK"'
-              alias: "failed executions"
-              bucketAggs:
-                - type: date_histogram
-                  field: "@timestamp"
-                  id: "2"
-                  settings: {interval: auto, min_doc_count: 0, trimEdges: 0}
-              metrics:
-                - type: count
-                  id: "1"
-              refId: A
-              timeField: "@timestamp"
-              intervalMs: 1000
-              maxDataPoints: 43200
-          - refId: B
-            datasourceUid: __expr__
-            relativeTimeRange: {from: 900, to: 0}
-            model:
-              conditions:
-                - evaluator: {params: [5], type: gt}
-                  operator: {type: and}
-                  query: {params: [A]}
-                  reducer: {params: [], type: max}
-                  type: query
-              datasource: {type: __expr__, uid: __expr__}
-              expression: A
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: B
-              type: classic_conditions
-
-      - uid: soar_loki_ingest_stalled
-        title: Loki log ingest stalled
-        condition: B
-        for: 10m
-        noDataState: Alerting
-        execErrState: Error
-        labels:
-          severity: warning
-          source: loki
-        annotations:
-          summary: Zero log lines ingested in the last 10m — Promtail/Loki may be down.
-        data:
-          - refId: A
-            datasourceUid: loki
-            relativeTimeRange: {from: 900, to: 0}
-            model:
-              datasource: {type: loki, uid: loki}
-              editorMode: code
-              expr: sum(count_over_time({compose_project=~".+"}[10m]))
-              instant: true
-              intervalMs: 1000
-              maxDataPoints: 43200
-              queryType: instant
-              refId: A
-          - refId: B
-            datasourceUid: __expr__
-            relativeTimeRange: {from: 900, to: 0}
-            model:
-              conditions:
-                - evaluator: {params: [1], type: lt}
-                  operator: {type: and}
-                  query: {params: [A]}
-                  reducer: {params: [], type: last}
-                  type: query
-              datasource: {type: __expr__, uid: __expr__}
-              expression: A
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: B
-              type: classic_conditions
+- orgId: 1
+  name: soar-error-and-pipeline
+  folder: SOAR Alerts
+  interval: 1m
+  rules:
+  - uid: soar_high_error_log_rate
+    title: High error log rate across SOAR services
+    condition: B
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: loki
+      team: soar-ops
+    annotations:
+      summary: More than 20 error/exception lines in the last 5m across all containers.
+      runbook_url: https://github.com/alesanfe/soar-ransomware-lab/blob/main/docs/04-operations.md
+      runbook: docs/20-observability-runbooks.md#RB-04
+    data:
+    - refId: A
+      datasourceUid: loki
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        datasource:
+          type: loki
+          uid: loki
+        editorMode: code
+        expr: sum(count_over_time({compose_project=~".+", compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"} |~ "(?i)error|exception|traceback|fatal" [5m]))
+        instant: true
+        intervalMs: 1000
+        maxDataPoints: 43200
+        queryType: instant
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 20
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: soar_api_error_burst
+    title: Error burst in SOAR API logs
+    condition: B
+    for: 2m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+      service: api
+      team: soar-ops
+    annotations:
+      summary: API logged >10 error lines in the last 5m — pipeline may be failing.
+      runbook: docs/20-observability-runbooks.md#RB-04
+    data:
+    - refId: A
+      datasourceUid: loki
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        datasource:
+          type: loki
+          uid: loki
+        editorMode: code
+        expr: sum(count_over_time({compose_service="api"} |~ "(?i)error|exception|traceback" [5m]))
+        instant: true
+        intervalMs: 1000
+        maxDataPoints: 43200
+        queryType: instant
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 10
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: soar_workflow_failure_rate
+    title: Elevated workflow failure rate (Elasticsearch)
+    condition: B
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: elasticsearch
+      team: soar-ops
+    annotations:
+      summary: soar-metrics shows >5 failed workflow executions in the last 15m.
+      runbook: docs/20-observability-runbooks.md#RB-04
+    data:
+    - refId: A
+      datasourceUid: elasticsearch
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        datasource:
+          type: elasticsearch
+          uid: elasticsearch
+        query: decision.keyword:"BLOCK"
+        alias: failed executions
+        bucketAggs:
+        - type: date_histogram
+          field: '@timestamp'
+          id: '2'
+          settings:
+            interval: auto
+            min_doc_count: 0
+            trimEdges: 0
+        metrics:
+        - type: count
+          id: '1'
+        refId: A
+        timeField: '@timestamp'
+        intervalMs: 1000
+        maxDataPoints: 43200
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 5
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: max
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: soar_loki_ingest_stalled
+    title: Loki log ingest stalled
+    condition: B
+    for: 10m
+    noDataState: Alerting
+    execErrState: Error
+    labels:
+      severity: warning
+      source: loki
+      team: soar-ops
+    annotations:
+      summary: Zero log lines ingested in the last 10m — Promtail/Loki may be down.
+      runbook: docs/20-observability-runbooks.md#RB-07
+    data:
+    - refId: A
+      datasourceUid: loki
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        datasource:
+          type: loki
+          uid: loki
+        editorMode: code
+        expr: sum(count_over_time({compose_project=~".+"}[10m]))
+        instant: true
+        intervalMs: 1000
+        maxDataPoints: 43200
+        queryType: instant
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+- orgId: 1
+  name: soar-pipeline-and-infra
+  folder: SOAR Alerts
+  interval: 1m
+  rules:
+  - uid: soar_dlq_not_empty
+    title: Admission DLQ not empty
+    condition: B
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+      source: prometheus
+      component: redis-streams
+      team: soar-ops
+    annotations:
+      summary: soar_queue_dlq_size > 0 for 10m — dead-lettered admissions need reprocessing (runbook 20).
+      runbook: docs/20-observability-runbooks.md#RB-01
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: soar_queue_dlq_size
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: soar_stream_lag_high
+    title: Redis Streams consumer lag high
+    condition: B
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: redis-streams
+      team: soar-ops
+    annotations:
+      summary: Consumer lag > 50 pending for 10m — admission consumer stalled (runbook 20).
+      runbook: docs/20-observability-runbooks.md#RB-02
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: soar_queue_consumer_lag
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 50
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: soar_admission_dead_rate
+    title: Admissions dead-lettering
+    condition: B
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: info
+      source: prometheus
+      component: admission
+      team: soar-ops
+    annotations:
+      summary: Admissions being dead-lettered — rate(soar_admission_dead_total) > 0 for 10m.
+      runbook: docs/20-observability-runbooks.md#RB-05
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: rate(soar_admission_dead_total[10m])
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: es_cluster_red
+    title: Elasticsearch cluster RED
+    condition: B
+    for: 2m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+      source: elasticsearch
+      component: storage
+      team: soar-ops
+    annotations:
+      summary: ES cluster health is red — a primary shard is unassigned (runbook 20).
+      runbook: docs/20-observability-runbooks.md#RB-03
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: sum(elasticsearch_cluster_health_status{color="red"})
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: es_unassigned_shards
+    title: Elasticsearch unassigned shards
+    condition: B
+    for: 15m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: elasticsearch
+      component: storage
+      team: soar-ops
+    annotations:
+      summary: More than 5 unassigned shards for 15m — single-node replica yellow is benign, beyond that investigate.
+      runbook: docs/20-observability-runbooks.md#RB-03
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: elasticsearch_cluster_health_unassigned_shards
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 5
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: grafana_rule_eval_error
+    title: Alert rules in error/nodata state
+    condition: B
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: grafana
+      component: metamonitoring
+      team: soar-ops
+    annotations:
+      summary: Grafana rules evaluating to error or nodata — the alerting system itself is degraded (GRAF-021).
+      runbook: docs/20-observability-runbooks.md#RB-05
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: sum(grafana_alerting_alerts{state=~"error|nodata"})
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions

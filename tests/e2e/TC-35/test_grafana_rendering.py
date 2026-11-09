@@ -277,3 +277,129 @@ class TestGrafanaRendering(E2EBaseTest):
         assert "soar-api" in health, f"soar-api job missing (jobs: {sorted(health)})"
         down = {j: h for j, h in health.items() if h != "up"}
         assert not down, f"prometheus targets down: {down}"
+
+    def test_elasticsearch_exporter_scraped(self):
+        """GRAF-029: ES cluster health must be observable via the exporter."""
+        r = self.s.get(
+            "http://prometheus:9090/api/v1/query",
+            params={"query": "elasticsearch_cluster_health_status"},
+            timeout=15,
+        )
+        assert r.status_code == 200, f"prom query -> {r.status_code}"
+        result = r.json()["data"]["result"]
+        assert result, "elasticsearch_cluster_health_status absent — exporter not scraped"
+        green = [s for s in result if s["metric"].get("color") == "green"]
+        assert green and float(green[0]["value"][1]) == 1.0, (
+            f"ES cluster not green: {[(s['metric'].get('color'), s['value']) for s in result]}"
+        )
+
+    # ---------------------------------------------------------------
+    # alert rules state + metamonitoring (GRAF-018/019/020)
+    # ---------------------------------------------------------------
+    def test_alert_rules_provisioned_and_evaluating(self):
+        r = self.gs.get(f"{self.grafana}/api/v1/provisioning/alert-rules", timeout=15)
+        r.raise_for_status()
+        rules = r.json()
+        uids = {rule["uid"] for rule in rules}
+        expected = {
+            "soar_high_error_log_rate",
+            "soar_api_error_burst",
+            "soar_workflow_failure_rate",
+            "soar_loki_ingest_stalled",
+            "soar_dlq_not_empty",
+            "soar_stream_lag_high",
+            "soar_admission_dead_rate",
+            "es_cluster_red",
+            "es_unassigned_shards",
+            "grafana_rule_eval_error",
+        }
+        missing = expected - uids
+        assert not missing, f"alert rules missing: {missing} (found: {sorted(uids)})"
+        for rule in rules:
+            assert rule.get("for"), f"rule {rule['uid']} has no 'for' duration"
+            assert rule.get("annotations", {}).get("summary"), (
+                f"rule {rule['uid']} missing summary annotation"
+            )
+            assert rule.get("labels", {}).get("severity"), (
+                f"rule {rule['uid']} missing severity label (GRAF-049)"
+            )
+
+    def test_no_rule_stuck_in_error_state(self):
+        """GRAF-021 metamonitoring: no rule may sit in error/nodata persistently."""
+        r = self.s.get(
+            "http://prometheus:9090/api/v1/query",
+            params={"query": 'grafana_alerting_alerts{state=~"error|nodata"}'},
+            timeout=15,
+        )
+        assert r.status_code == 200
+        bad = [
+            f"{s['metric'].get('alertname', s['metric'])}={s['metric'].get('state')}"
+            for s in r.json()["data"]["result"]
+            if float(s["value"][1]) > 0
+        ]
+        assert not bad, f"rules in error/nodata state: {bad}"
+
+    # ---------------------------------------------------------------
+    # self-match regression (GRAF-039/056 — BUG-GRAF-13/14 guard)
+    # ---------------------------------------------------------------
+    def test_error_query_excludes_observability_stack(self):
+        """The domain-filtered error query must not return loki/grafana lines."""
+        loki = self.get_service_url("loki").rstrip("/")
+        expr = (
+            '{compose_service=~".+", '
+            'compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"}'
+            ' |~ "(?i)error|exception|traceback|fatal"'
+        )
+        r = self.s.get(
+            f"{loki}/loki/api/v1/query_range",
+            params={
+                "query": expr,
+                "start": int((time.time() - 900) * 1e9),
+                "end": int(time.time() * 1e9),
+                "limit": 50,
+            },
+            timeout=15,
+        )
+        assert r.status_code == 200, f"loki query_range -> {r.status_code}"
+        # log queries return streams under "stream"; metric queries under "metric"
+        obs_hits = [
+            (s.get("stream", s.get("metric", {})).get("compose_service"), len(s["values"]))
+            for s in r.json()["data"]["result"]
+            if s.get("stream", s.get("metric", {})).get("compose_service")
+            in {"loki", "grafana", "prometheus", "cadvisor", "tempo", "promtail"}
+        ]
+        assert not obs_hits, (
+            f"self-match regression: domain-filtered query still returns observability logs {obs_hits}"
+        )
+
+    # ---------------------------------------------------------------
+    # latency histograms (GRAF-033/036)
+    # ---------------------------------------------------------------
+    def test_spanmetrics_p99_resolves(self):
+        r = self.s.get(
+            "http://prometheus:9090/api/v1/query",
+            params={
+                "query": (
+                    "histogram_quantile(0.99, "
+                    "sum(rate(traces_spanmetrics_latency_bucket[5m])) by (le))"
+                )
+            },
+            timeout=15,
+        )
+        assert r.status_code == 200
+        result = r.json()["data"]["result"]
+        assert result and float(result[0]["value"][1]) >= 0, "p99 quantile absent — spanmetrics broken?"
+
+    # ---------------------------------------------------------------
+    # panel documentation contract (GRAF-044)
+    # ---------------------------------------------------------------
+    def test_all_panels_have_descriptions(self):
+        missing = []
+        for uid in sorted(EXPECTED_DASHBOARDS):
+            dash = self._dashboard(uid)
+            for p in dash.get("panels", []):
+                if p.get("type") in ("row", "text"):
+                    continue
+                if not p.get("description"):
+                    missing.append(f"{uid}/panel{p.get('id')} ({p.get('title','?')[:30]})")
+        assert not missing, "panels without description:\n" + "\n".join(missing)

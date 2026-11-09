@@ -1,11 +1,38 @@
 {
  "annotations": {
-  "list": []
+  "list": [
+   {
+    "builtIn": 1,
+    "datasource": {
+     "type": "grafana",
+     "uid": "-- Grafana --"
+    },
+    "enable": true,
+    "hide": false,
+    "iconColor": "rgba(255, 96, 96, 1)",
+    "name": "Alert state changes",
+    "type": "alert"
+   }
+  ]
  },
  "editable": false,
  "fiscalYearStartMonth": 0,
  "graphTooltip": 1,
- "links": [],
+ "links": [
+  {
+   "asDropdown": true,
+   "icon": "external link",
+   "includeVars": true,
+   "keepTime": true,
+   "tags": [
+    "soar"
+   ],
+   "targetBlank": false,
+   "title": "SOAR dashboards",
+   "tooltip": "",
+   "type": "dashboards"
+  }
+ ],
  "panels": [
   {
    "datasource": {
@@ -70,7 +97,8 @@
     }
    ],
    "title": "Log volume by service",
-   "type": "timeseries"
+   "type": "timeseries",
+   "description": "Volumen de líneas de log por servicio (rate 1m). Detecta servicios mudos o ruidosos. Excluye nada — incluye stack de observabilidad."
   },
   {
    "datasource": {
@@ -138,7 +166,8 @@
     }
    ],
    "title": "Error rate by service (errors/s)",
-   "type": "timeseries"
+   "type": "timeseries",
+   "description": "Errores/s por servicio SOAR. El stack de observabilidad (loki, grafana, prometheus...) está excluido del dominio — BUG-GRAF-13: sus propias líneas de query hacían self-match (~92% del total)."
   },
   {
    "datasource": {
@@ -205,7 +234,8 @@
     }
    ],
    "title": "Errors in range",
-   "type": "stat"
+   "type": "stat",
+   "description": "Conteo de errores reales de aplicación en el rango seleccionado (sin observabilidad). 0 = sano."
   },
   {
    "datasource": {
@@ -272,7 +302,8 @@
     }
    ],
    "title": "Warnings in range",
-   "type": "stat"
+   "type": "stat",
+   "description": "Warnings de aplicación en el rango (sin observabilidad — BUG-GRAF-14)."
   },
   {
    "datasource": {
@@ -335,7 +366,8 @@
     }
    ],
    "title": "Workflow events in range",
-   "type": "stat"
+   "type": "stat",
+   "description": "Eventos de workflow/ejecución del api en el rango."
   },
   {
    "datasource": {
@@ -398,7 +430,8 @@
     }
    ],
    "title": "Alert ingest events in range",
-   "type": "stat"
+   "type": "stat",
+   "description": "Eventos de ingesta de alertas del api en el rango."
   },
   {
    "datasource": {
@@ -429,13 +462,14 @@
       "uid": "loki"
      },
      "editorMode": "code",
-     "expr": "{compose_service=~\"$service\"} |~ \"(?i)error|exception|traceback|fatal\"",
+     "expr": "{compose_service=~\"$service\"} |~ \"(?i)error|exception|traceback|fatal\" !~ \"MultiAuthSrv|o\\.e\\.c\\.Authenticated|Authentication using API key|Use of initial user|AuthenticationError\"",
      "queryType": "range",
      "refId": "A"
     }
    ],
    "title": "Recent errors ($service)",
-   "type": "logs"
+   "type": "logs",
+   "description": "Últimas líneas de error reales del servicio seleccionado en $service. Excluye spam repetitivo de auth-failures de ES (visibles como conteo en 'ES auth failures')."
   },
   {
    "datasource": {
@@ -472,7 +506,81 @@
     }
    ],
    "title": "Workflow / alert pipeline events",
-   "type": "logs"
+   "type": "logs",
+   "description": "Eventos del pipeline workflow/alert de api y shuffle-backend."
+  },
+  {
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "description": "Conteo de auth-failures de Elasticsearch/infra (o.e.s.a.*, o.e.c.*) en el rango — ruido real pero repetitivo, separado del panel de detalle (GRAF-016).",
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 50
+       },
+       {
+        "color": "red",
+        "value": 200
+       }
+      ]
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "gridPos": {
+    "h": 6,
+    "w": 6,
+    "x": 0,
+    "y": 24
+   },
+   "id": 9,
+   "options": {
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto",
+    "orientation": "auto",
+    "percentChangeColorMode": "standard",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "showPercentChange": false,
+    "textMode": "auto",
+    "wideLayout": true
+   },
+   "pluginVersion": "10.3.4",
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "sum(count_over_time({compose_project=~\".+\"} |~ \"(?i)(authentication failure|authenticationerror|api key is not supported|use of initial user)\" [$__range]))",
+     "queryType": "range",
+     "refId": "A"
+    }
+   ],
+   "title": "ES auth failures in range (noise class)",
+   "type": "stat"
   }
  ],
  "refresh": "30s",
@@ -521,6 +629,6 @@
  "timezone": "browser",
  "title": "SOAR Logs & Errors",
  "uid": "soar-logs",
- "version": 54,
+ "version": 55,
  "weekStart": ""
 }

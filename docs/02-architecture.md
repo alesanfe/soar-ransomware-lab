@@ -1084,8 +1084,13 @@ infra/docker/compose/logging/
 ├── logging.yaml # configuración de logging
 ├── loki-config.yml # archivo de referencia; compose usa la config por defecto de la imagen
 ├── grafana-kpi-dashboard.yml # provisioning del dashboard
-├── kpi-dashboard.json # definición del dashboard de KPIs
-└── grafana-dashboard-soar-kpis.json # dashboard alternativo de KPIs SOAR
+├── kpi-dashboard.json # dashboard de KPIs (fuente única de verdad)
+├── logs-dashboard.json # dashboard de logs/errores con filtro de dominio canónico
+├── traces-dashboard.json # dashboard de trazas (Tempo via JSON datasource)
+├── saturation-dashboard.json # saturación: colas, DLQ, alertas, ES, latencias
+├── alert-rules.yml # reglas de alerta Grafana (severity + runbook + owner)
+├── grafana-contact-points.yml # contact point webhook -> SOAR API
+└── grafana-datasources.yml # datasources provisionados (ES, Loki, Tempo, Prometheus, API)
 ```
 
 #### Iniciar servicios

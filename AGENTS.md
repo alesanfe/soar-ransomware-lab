@@ -248,3 +248,31 @@ La tesis (TFM) vive en `docs/thesis/`. Sus archivos markdown son la fuente de ve
 - **Healthchecks `localhost` vs IPv6**: en imágenes alpine donde el servidor bindea solo IPv4 (`0.0.0.0:PORT`), `wget/curl http://localhost:PORT` falla con "connection refused" porque `localhost` resuelve a `::1` — el contenedor queda `unhealthy` aunque sirva tráfico real. Usar `127.0.0.1` explícito en el healthcheck (bug real en docs-site estático).
 - **Coverage gate en tests parciales**: el `pytest.ini` raíz inyecta `--cov` con `fail_under=80` — cualquier corrida de un solo fichero (lint, oráculo) falla por cobertura aunque los tests pasen. Usar `make e2e-lint` o añadir `--no-cov` a corridas parciales (convención ya usada en el Makefile).
 - **Analyzer residue (DinD)**: los analyzers de Cortex dejan contenedores `exited` con nombres aleatorios que nunca se auto-eliminan (`container prune until=1h` no los alcanza bajo carga continua). Orborus patch `0010-analyzer-residue-sweep` los reapa por namespace de imagen (`thehive-project/*`, `cortexneurons/*`) en cada zombiecheck.
+- **Self-match en queries LogQL de errores (BUG-GRAF-13/14)**: Loki/Promtail loguean el *texto literal* de las queries → un `|~ "(?i)error|exception|traceback"` sin filtro de dominio se matchea a sí mismo (medido: 2982 hits de `loki` vs 0 de `api` en 30m, 92% ruido). Toda query de errores/logs debe excluir el stack de observabilidad con `compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"` o usar la variable `$service` del dashboard logs. Guardas: `scripts/quality/validate_dashboards.py` (estático) + TC-35 `test_error_query_excludes_observability_stack` (E2E).
+- **Dashboard legacy eliminado (GRAF-011/012)**: `grafana-dashboard-soar-kpis.json` (formato export, nunca se provisionaba) fue borrado — la fuente única de verdad de cada dashboard es `infra/docker/compose/logging/<nombre>-dashboard.json`. TC-KPI-02 usa `kpi-dashboard.json` como fallback de import.
+- **Alert rules con contrato operativo**: toda regla en `alert-rules.yml` lleva `labels.severity` (critical/warning/info), `labels.team: soar-ops` y `annotations.runbook` → `docs/20-observability-runbooks.md#RB-NN`. Cuidado YAML: un `summary:` que empiece por `>` rompe el parse (entrecomillar).
+- **ES disk watermark**: el filesystem de datos de Elasticsearch se observó al ~94% usado (6% libre) — panel "ES disk / heap pressure" en `soar-saturation`. <10% libre activa watermarks (85/90/95%) → índices read-only. Liberar con `docker system prune` o borrando índices prescindibles.
+- **`$__interval` sí se interpola en render** (a diferencia de `$__rate_interval`) — resuelto client-side antes del dispatch. Y `${__from:date:seconds}`/`${__to:date:seconds}` SÍ se interpolan dentro de `urlPath` del JSON datasource (la tabla de trazas respeta el rango global).
+
+## Observability stack checklist (GRAF-043)
+
+Al tocar dashboards/alertas/datasources del stack Grafana:
+
+1. **Editar** `infra/docker/compose/logging/*-dashboard.json` — bump `"version"` (el provisioner es version-gated) y añadir `description` a cada panel nuevo.
+2. **Queries de logs** deben llevar el filtro de dominio canónico `compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"` (o la variable `$service` — no introducir regex duplicadas nuevas).
+3. **Validación estática**: `python scripts/quality/validate_dashboards.py` → 0 violations.
+4. **Reglas nuevas**: `labels.severity` + `labels.team: soar-ops` + `annotations.runbook` apuntando a `docs/20-observability-runbooks.md`.
+5. **Recreate**: `docker compose -f infra/docker/compose/docker-compose.yml -f infra/docker/compose/logging/docker-compose.logging.yml --env-file .env.full up -d --force-recreate grafana`.
+6. **E2E**: `pytest tests/e2e/TC-35` (17 tests: render de TODOS los paneles, targets, ES exporter, reglas, anti-self-match, p99, descripciones).
+7. **Criterio de panel nuevo** (GRAF-DoD): cada panel debe responder una pregunta operativa concreta — no añadir paneles por volumen.
+
+### SLOs del pipeline (GRAF-061)
+
+| Señal | SLO lab | Alerta asociada |
+|-------|---------|-----------------|
+| Error log rate (app, dominio filtrado) | < 20 líneas/5m | `soar_high_error_log_rate` |
+| DLQ depth | 0 mensajes | `soar_dlq_not_empty` |
+| Stream consumer lag | < 50 msgs sostenido | `soar_stream_lag_high` |
+| ES cluster health | green | `es_cluster_red` |
+| Span latency p99 (spanmetrics) | < 1 s | panel sat-20 (sin alerta: lab) |
+| Loki ingest | > 0 con servicios vivos | `soar_loki_ingest_stalled` |

@@ -123,11 +123,12 @@
      "method": "GET",
      "queryParams": "",
      "refId": "A",
-     "urlPath": "/api/search?tags=service.name%3Dsoar-api&limit=20"
+     "urlPath": "/api/search?tags=service.name%3Dsoar-api&limit=20&start=${__from:date:seconds}&end=${__to:date:seconds}"
     }
    ],
    "title": "Recent traces — soar-api",
-   "type": "table"
+   "type": "table",
+   "description": "Últimas trazas de soar-api desde Tempo (via JSON datasource /api/search). Respeta el rango temporal global. Click en traceID abre la traza completa."
   }
  ],
  "refresh": "30s",
@@ -148,7 +149,7 @@
  "timezone": "browser",
  "title": "SOAR Traces (Tempo)",
  "uid": "soar-traces",
- "version": 55,
+ "version": 56,
  "weekStart": "",
  "description": "Distributed traces exported by soar-api via OTel (OBS-01). Rendered via Tempo /api/search through the JSON datasource because Grafana 10.3.4's Tempo backend only supports queryType=traceId. Click a traceID to open it in Explore with log correlation."
 }

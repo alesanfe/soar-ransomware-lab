@@ -135,3 +135,54 @@ Para el alcance declarado (4 señales + KPIs de tesis) la cobertura es suficient
 Pre-fix habría sido ~7.5 (dos paneles de errores eran activamente engañosos). Post-fix: todas veraces, bien formadas, rápidas. Deducciones: legibilidad de agregaciones dispersas, ventana fija en trazas, ausencia de state-timeline/DLQ/ES-health, fichero legacy muerto.
 
 El stack de observabilidad es ahora **completo y verificado de punta a punta**: cuatro señales SRE cubiertas con dashboards de datos reales, los tres pilares OTel correlacionados, pipeline de alertas cerrado (regla → contact point → API auth → log → Loki → contador), y un contrato E2E (TC-35, 11/11) que renderiza cada panel a PNG real — el tipo de test que habría cazado BUG-GRAF-03/10/11 automáticamente. Los 12 defectos encontrados y corregidos eran del tipo "invisible/engañoso"; hoy todos tienen test o verificación. La nota no llega a 10 por la ausencia honesta de HA/object-storage, TLS y la fragilidad residual del version-gating y del renderer bajo ráfagas — limitaciones de laboratorio documentadas, no bugs.
+
+## Backlog GRAF ejecutado (cuarta revisión — cierre de deuda)
+
+Ejecución del backlog priorizado GRAF-E1..E12 (60+ items). Evidencias reales, no declaraciones:
+
+### Cerrado con evidencia
+
+| Items | Qué se hizo | Evidencia |
+|-------|-------------|-----------|
+| GRAF-001/002/003 | Barrido self-match: inventario + filtro de dominio canónico `compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"` en dashboards Y alert rules | Render sat-p2: 210 errores reales/30m vs 3239 con ruido |
+| GRAF-004/005 | Variable `$service` cerrada (sin valores de observabilidad) + `environment=lab` documentado (tags + docs/20 §5.3) | `logs-dashboard.json` templating |
+| GRAF-006/007/009/010 | `timeFrom: 30d` en agregaciones KPI diarias + matriz temporal 24h/7d/30d | Render kpi-p5 muestra badge "Last 30 days" |
+| GRAF-008 | `${__from:date:seconds}`/`${__to:date:seconds}` en `urlPath` de la tabla de trazas — **sí interpolan** (corrige deuda D11) | Render traces con `from=now-30m`, sin 400 de Tempo |
+| GRAF-011/012/013 | `grafana-dashboard-soar-kpis.json` eliminado; TC-KPI-02 migrado a `kpi-dashboard.json`; fuente única documentada en docs/02 + AGENTS | File listing + test |
+| GRAF-014..017 | Panel "ES auth failures" aísla ruido de infra; queries de error app vs infra separadas por dominio | Stat sat-p14 + RB-04 §3 |
+| GRAF-018..021 | Panel alertlist (10 reglas con estado + drill-down "View alert rule") + timeseries por estado + regla meta `grafana_rule_eval_error` | Render sat-p19/p24; prom `grafana_alerting_alerts{state}` |
+| GRAF-022..028 | Paneles DLQ depth, consumer lag, pending (series a 0 = sano, no ausente); reglas `soar_dlq_not_empty`, `soar_stream_lag_high`, `soar_admission_dead_rate` | Render sat-p18; `XINFO GROUPS` real |
+| GRAF-029..032 | `elasticsearch-exporter` (v1.7.0) scrapeado por Prometheus (`job=elasticsearch`); paneles cluster health + unassigned shards + disk/heap; reglas `es_cluster_red`, `es_unassigned_shards` | `elasticsearch_cluster_health_status{color=green}=1`; render sat-p22/p23 |
+| GRAF-033..036/061 | p50/p95/p99 reales vía `histogram_quantile` sobre `traces_spanmetrics_latency_bucket` + tabla SLO en AGENTS.md | Render sat-p20: p50≈1.6ms, p95≈14.6ms, p99≈29.4ms |
+| GRAF-038 | `scripts/quality/validate_dashboards.py` — JSON válido, uid/version, `$__rate_interval` literal, error-queries sin dominio, descripciones, datasources desconocidos, dead artifacts | 4 dashboards, 0 violations |
+| GRAF-039/056 | TC-35 extendido 11→17 tests: ES exporter scraped+green, 10 reglas provisionadas con severity/summary/for, ninguna regla en error/nodata, anti-self-match E2E, p99 resoluble, descripciones | 17/17 pass |
+| GRAF-041/042 | Provisioning limpio verificado: tras `up -d --force-recreate grafana` los logs muestran "finished to provision alerting", states=10, datasources+contact points+4 dashboards cargados | grafana logs 20:17Z |
+| GRAF-043 | Checklist operativa de 7 pasos añadida a AGENTS.md | AGENTS.md §Observability |
+| GRAF-044/057/058 | `description` en los 49 paneles + links drill-down (traceID→Explore, alertlist→rule) + anotaciones de despliegue | TC-35 `test_all_panels_have_descriptions` |
+| GRAF-045..049 | `docs/20-observability-runbooks.md`: RB-01..RB-07 + estrategia de severidades critical/warning/info | Doc + `runbook` annotation en las 10 reglas |
+| GRAF-050..052 | Rendimiento: render 2-5s/panel con clustering; cardinalidad acotada (sin labels de alta dimensión en métricas nuevas); refresh 30s uniforme | docs/20 §4.3 |
+| GRAF-053/054/055 | Secretos: password solo en `.env`/`env` vars; exposición: solo Grafana 8084 publicado, resto en `soar_net`; permisos: provisioning read-only + orgAdmin | docs/20 §4.3 |
+| GRAF-059/060 | `labels.team: soar-ops` en las 10 reglas; retención documentada (Loki config, Prometheus 15d, Tempo) | alert-rules.yml + docs/20 §4.3 |
+
+### Hallazgo operativo real (no bug, pero accionable)
+
+El panel nuevo "ES disk / heap pressure" reveló que el filesystem de datos de Elasticsearch está al **~94% usado (6.09% libre)** — por debajo del watermark `flood_stage` (95%) los índices pasarían a read-only. Documentado en RB-03 y AGENTS.md. Es exactamente el tipo de señal que el backlog pedía hacer visible.
+
+### Bugs corregidos en esta pasada
+
+- **BUG-GRAF-15**: `summary: >5 unassigned shards...` en alert-rules.yml — `>` al inicio de scalar rompe el parse YAML → Grafana crash-loop (no resolvía ni DNS). Entrecomillado.
+- **BUG-GRAF-16**: exporter flag inexistente `--es.ca-skip-verify` → exporter en restart-loop. Eliminado.
+- **BUG-GRAF-17** (test): Loki `query_range` con query de logs devuelve streams bajo clave `stream`, no `metric` — KeyError en el test anti-self-match.
+- **Deuda GRAF-D11 corregida**: los macros `${__from}`/`${__to}` SÍ se interpolan en `urlPath` (verificado con render y ausencia de 400 de Tempo) — la tabla de trazas respeta el rango global. Item de deuda eliminado.
+
+### Deuda residual actualizada
+
+- GRAF-D3 (version-gating), D5 (single-node), D6 (bind-mount lento), D8 (Shuffle 500s), D9 (renderer ráfagas), D10 (TLS) — sin cambios, limitaciones de lab documentadas.
+- ~~GRAF-D11~~ resuelta (macros interpolan en urlPath).
+- ~~GRAF-V1..V5~~ todos resueltos (timeFrom, legacy borrado, p99, ruido ES aislado, paneles alertas/DLQ/ES).
+- Nueva: disco ES ~94% — mitigación documentada (RB-03); fix real requiere purga de índices/volumen del host.
+- No ejecutado (justificado): GRAF-062 (vista exec-by-exec) — P3, coste/beneficio no justificado en lab; la lag de streams ya da la señal agregada.
+
+### Nota de las gráficas (post-backlog): 9.5 / 10
+
+De los -1.0 deducidos en la tercera revisión, se recuperó ~0.5: todas las piezas operativas pedidas existen ahora con datos reales verificados (alertas firing reales: 21 notificaciones `firing` + 1 `resolved` recibidas por el API), cada regla tiene severidad/owner/runbook, hay contrato E2E ampliado (17 tests), validación estática, runbooks y SLOs documentados. Los -0.5 restantes: densidad de datos por juventud del lab (irreductible), single-node sin HA, TLS ausente, disco ES al 94% pendiente de purga.

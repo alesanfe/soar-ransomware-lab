@@ -70,21 +70,23 @@ class TestKPIDashboard(E2EBaseTest):
                 dashboard_uid = soar_dashboard.get("uid")
             else:
                 self._log("  + SOAR dashboard not found, will import")
-                # Import dashboard
+                # Import dashboard — the provisioned kpi-dashboard.json is the
+                # source of truth (the legacy grafana-dashboard-soar-kpis.json
+                # export was removed, GRAF-012).
                 dashboard_path = (
                     self.repo_root
                     / "infra"
                     / "docker"
                     / "compose"
                     / "logging"
-                    / "grafana-dashboard-soar-kpis.json"
+                    / "kpi-dashboard.json"
                 )
                 if dashboard_path.exists():
-                    with open(dashboard_path) as f:
+                    with open(dashboard_path, encoding="utf-8") as f:
                         dashboard_config = json.load(f)
 
                     import_data = {
-                        "dashboard": dashboard_config["dashboard"],
+                        "dashboard": dashboard_config,
                         "overwrite": True,
                         "message": "Imported via TC-KPI-02",
                     }

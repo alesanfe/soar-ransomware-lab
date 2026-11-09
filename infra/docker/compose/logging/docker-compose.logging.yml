@@ -371,6 +371,45 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # elasticsearch-exporter exposes cluster health (status, unassigned
+  # shards, disk watermarks, heap, rejections) as Prometheus metrics —
+  # feeds the ES health panels and alerts (GRAF-029..031).
+  elasticsearch-exporter:
+    image: ${ES_EXPORTER_IMAGE:-prometheuscommunity/elasticsearch-exporter:v1.7.0}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch_exporter
+    command:
+      - "--es.uri=http://elasticsearch:9200"
+      - "--es.clusterinfo.interval=30s"
+      - "--es.timeout=10s"
+    environment:
+      ES_USERNAME: ${ELASTIC_USERNAME:-elastic}
+      ES_PASSWORD: ${ELASTIC_PASSWORD:-}
+    networks:
+      - logging_net
+      - soar_net
+    expose:
+      - "9114"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:9114/healthz || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 configs:
   grafana_dashboards:
     file: logging/grafana-kpi-dashboard.yml
