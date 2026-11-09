@@ -23,6 +23,7 @@ security = HTTPBearer()
 _optional_security = HTTPBearer(auto_error=False)
 
 SERVICE_TOKEN_HEADER = "X-Service-Token"  # pragma: allowlist secret
+SERVICE_TOKEN_AUTH_SCHEME = "service-token"  # Authorization: Service-Token <tok>
 
 
 def create_get_current_user(auth_service) -> object:
@@ -93,6 +94,16 @@ def _service_token_scope(request: Request, config_provider: Any) -> tuple[str | 
     the stale credential.
     """
     token = request.headers.get(SERVICE_TOKEN_HEADER)
+    if not token:
+        # GRAF-ALERT-RX: Grafana's webhook sender cannot attach arbitrary
+        # headers, but it natively supports ``Authorization: <scheme>
+        # <credentials>``. ``Service-Token`` is accepted as an equivalent
+        # transport for the same shared secret (non-Bearer schemes pass
+        # HTTPBearer(auto_error=False) as ``None`` credentials).
+        authz = request.headers.get("Authorization", "")
+        scheme, _, credential = authz.partition(" ")
+        if scheme.lower() == SERVICE_TOKEN_AUTH_SCHEME and credential.strip():
+            token = credential.strip()
     if not token:
         return None, False
     token_b = token.encode("utf-8")

@@ -31,3 +31,6 @@ service:
   telemetry:
     logs:
       level: info
+    metrics:
+      # Prometheus scrapes the collector's own pipeline metrics.
+      address: 0.0.0.0:8888

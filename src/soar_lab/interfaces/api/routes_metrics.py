@@ -155,4 +155,17 @@ def register_metrics_route(app_instance: FastAPI) -> None:
                     labels={"error": err[:80].replace('"', "'").replace("\\", "/")},
                 )
 
+        # --- GRAF-ALERT-RX: notifications received from Grafana --------
+        from .routes_grafana_alerts import grafana_alert_counters
+
+        for alert_status, count in sorted(grafana_alert_counters().items()):
+            _metric(
+                lines,
+                "soar_grafana_alert_notifications_total",
+                count,
+                "Alertmanager notifications received from Grafana by status.",
+                mtype="counter",
+                labels={"status": alert_status},
+            )
+
         return PlainTextResponse("\n".join(lines) + "\n", media_type=_CONTENT_TYPE)

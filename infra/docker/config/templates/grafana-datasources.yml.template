@@ -45,7 +45,24 @@ datasources:
         customQuery: true
         query: '{container_name=~".+"} |~ `__trace_id__`'
       serviceMap:
-        datasourceUid: tempo
+        datasourceUid: prometheus
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: ${PROMETHEUS_URL:-http://prometheus:9090}
+    editable: true
+    jsonData:
+      timeInterval: 15s
+      exemplarTraceIdDestinations:
+        - datasourceUid: tempo
+          name: trace_id
+  - name: Tempo Search
+    uid: tempo-json
+    type: marcusolsson-json-datasource
+    access: proxy
+    url: ${TEMPO_URL:-http://tempo:3200}
+    editable: true
   - name: SOAR API
     uid: soar-api
     type: marcusolsson-json-datasource

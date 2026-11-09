@@ -1,7 +1,9 @@
 # Provisioned Grafana alert rules (GRAF-003).
-# Evaluated every minute against Loki/Elasticsearch. Rules fire in the
-# UI (Alerting > Alert rules). Notification routing is intentionally
-# out of scope — the lab evaluates rules without external receivers.
+# Evaluated every minute against Loki/Elasticsearch. Notifications route
+# through the provisioned contact point "soar-api-webhook"
+# (contact-points.yml) to POST /api/v1/alerts/grafana on the SOAR API,
+# which counts them and logs them to Loki — the delivery loop is
+# verifiable end-to-end (TC-35).
 apiVersion: 1
 
 groups:

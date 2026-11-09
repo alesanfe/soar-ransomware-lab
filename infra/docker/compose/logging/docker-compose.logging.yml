@@ -68,6 +68,9 @@ services:
       # "SOAR API" datasource (type=json) needs this community plugin; without
       # it the provisioned datasource fails with "Unable to find datasource plugin".
       - GF_INSTALL_PLUGINS=marcusolsson-json-datasource
+      # GRAF-ALERT-RX: the provisioned webhook contact point expands
+      # $INTERNAL_SERVICE_TOKEN into the X-Service-Token header.
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN}
     networks:
       - logging_net
       - soar_net
@@ -87,6 +90,10 @@ services:
         target: /etc/grafana/provisioning/dashboards/traces-dashboard.json
       - source: grafana_alerting
         target: /etc/grafana/provisioning/alerting/alert-rules.yml
+      - source: grafana_contacts
+        target: /etc/grafana/provisioning/alerting/contact-points.yml
+      - source: saturation_dashboard_json
+        target: /etc/grafana/provisioning/dashboards/saturation-dashboard.json
     restart: unless-stopped
     depends_on:
       grafana-db:
@@ -119,6 +126,14 @@ services:
   grafana-renderer:
     image: ${GRAFANA_RENDERER_IMAGE:-grafana/grafana-image-renderer:3.10.4}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_grafana_renderer
+    environment:
+      # Chromium is RAM-hungry on heavy panels (trace tables); clustered
+      # mode keeps a small browser pool so sequential renders do not
+      # degrade into ReadTimeouts after ~25 panels (TC-35 render sweep).
+      ENABLE_METRICS: "true"
+      RENDERING_MODE: "clustered"
+      RENDERING_CLUSTERING_MAX_CONCURRENCY: "2"
+      RENDERING_CLUSTERING_TIMEOUT: "180"
     networks:
       - logging_net
     restart: unless-stopped
@@ -131,11 +146,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 1G
+          cpus: '2.0'
+          memory: 2G
         reservations:
           cpus: '0.5'
-          memory: 256M
+          memory: 512M
     logging:
       driver: "json-file"
       options:
@@ -252,6 +267,9 @@ services:
       - "3200"
       - "4317"
       - "4318"
+    depends_on:
+      prometheus:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:3200/ready || exit 1" ]
@@ -273,6 +291,86 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # === Saturation metrics (GRAF-OBS-02) ===
+  # Prometheus scrapes the API /metrics exposition, cAdvisor container
+  # stats and the observability backends; Tempo remote-writes derived
+  # span/service-graph metrics. Feeds the "SOAR Saturation" dashboard.
+
+  prometheus:
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v2.53.5}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+      - "--storage.tsdb.retention.size=2GB"
+      - "--enable-feature=remote-write-receiver"
+      - "--enable-feature=exemplar-storage"
+    volumes:
+      - ../config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - logging_net
+      - soar_net
+    expose:
+      - "9090"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:9090/-/ready || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cadvisor:
+    image: ${CADVISOR_IMAGE:-gcr.io/cadvisor/cadvisor:v0.49.1}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - logging_net
+    expose:
+      - "8080"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/healthz || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 configs:
   grafana_dashboards:
     file: logging/grafana-kpi-dashboard.yml
@@ -282,8 +380,12 @@ configs:
     file: logging/logs-dashboard.json
   traces_dashboard_json:
     file: logging/traces-dashboard.json
+  saturation_dashboard_json:
+    file: logging/saturation-dashboard.json
   grafana_alerting:
     file: logging/alert-rules.yml
+  grafana_contacts:
+    file: logging/grafana-contact-points.yml
 
 networks:
   logging_net:
@@ -318,3 +420,9 @@ volumes:
       type: none
       o: bind
       device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/tempo
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/prometheus

@@ -69,6 +69,7 @@ from .models import (
     VerifyAuthResponse,
 )
 from .routes_analytics import register_analytics_routes
+from .routes_grafana_alerts import register_grafana_alert_routes
 from .routes_ingest import register_ingest_routes
 from .routes_metrics import register_metrics_route
 from .routes_services import register_service_routes
@@ -793,6 +794,7 @@ def _register_routes(app_instance: FastAPI) -> None:
     register_ingest_routes(app_instance)
     register_taxii_routes(app_instance)
     register_metrics_route(app_instance)
+    register_grafana_alert_routes(app_instance)
 
 
 def _filter_docs_portal(html: str, ui_enabled: bool) -> str:

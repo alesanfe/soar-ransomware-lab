@@ -1,0 +1,38 @@
+# Provisioned Grafana contact point + notification policy (GRAF-ALERT-RX).
+#
+# Alert notifications are delivered to the SOAR API itself
+# (POST /api/v1/alerts/grafana, authenticated with X-Service-Token),
+# where they are counted and emitted as structured logs -> Loki.
+# The built-in grafana-default-email receiver is left unused, which also
+# removes the recurring "SMTP not configured" evaluation errors.
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: soar-api-webhook
+    receivers:
+      - uid: soar-api-webhook-receiver
+        type: webhook
+        settings:
+          url: http://api:8000/api/v1/alerts/grafana
+          httpMethod: POST
+          # Grafana 10.3 webhook sender ignores settings.headers; the
+          # Authorization transport is first-class. The API accepts
+          # "Authorization: Service-Token <token>" as equivalent to the
+          # X-Service-Token header (auth.py _service_token_scope).
+          authorization_scheme: "Service-Token"
+          authorization_credentials: "$INTERNAL_SERVICE_TOKEN"
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: soar-api-webhook
+    group_by: ["grafana_folder", "alertname"]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      - receiver: soar-api-webhook
+        continue: true
+        matchers:
+          - severity =~ ".*"
