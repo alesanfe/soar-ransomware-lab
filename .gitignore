@@ -20,6 +20,7 @@ venv/
 # Environment files with secrets
 .env
 .env.full
+.env.container
 
 # Grafana datasource provisioning (generated from .template, contains ELASTIC_PASSWORD)
 infra/docker/compose/logging/grafana-datasources.yml
@@ -59,3 +60,14 @@ tests/tests/
 # Word temp files
 ~$*.docx
 ~*.tmp
+backups/
+
+# TLS private keys / certificate bundles (WEB-TLS-001) — certs are
+# generated per-deployment; the .crt public cert may stay tracked.
+*.key
+*.pfx
+*.p12
+*.csr
+*.srl
+*.pem
+infra/docker/config/nginx/ssl/*.key

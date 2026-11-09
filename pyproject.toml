@@ -13,14 +13,29 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.100.0,<0.140",
     "uvicorn>=0.23.0,<0.50",
+    # PERF: C-extensions for the ASGI server — uvloop (libuv event loop,
+    # no Windows wheels → platform marker) + httptools (llhttp parser).
+    # uvicorn --loop auto selects uvloop automatically when installed.
+    "uvloop>=0.19,<0.22; sys_platform != 'win32'",
+    "httptools>=0.6,<0.7",
     "pydantic>=2.0.0,<3.0",
     "redis>=4.0.0,<9.0",
     "docker>=6.0.0,<8.0",
     "psutil>=5.9.0,<8.0",
     "PyJWT>=2.8.0,<3.0",
-    "passlib[bcrypt]>=1.7.4,<2.0",
-    "aiohttp>=3.9.0,<4.0",
     "python-dotenv>=1.0.0,<2.0",
+    # Imported directly by src/ — must not rely on transitive resolution
+    # (fawltydeps check_undeclared).
+    "requests>=2.31,<3.0",
+    "starlette>=0.40,<2.0",
+    "urllib3>=2.0,<3.0",
+    "pyyaml>=6.0.0,<7.0",
+    # O1: distributed tracing (enabled via OTEL_ENABLED=1; spans export
+    # over OTLP/HTTP — FastAPI + requests auto-instrumented).
+    "opentelemetry-sdk>=1.37.0,<2.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.37.0,<2.0",
+    "opentelemetry-instrumentation-fastapi>=0.58b0,<0.59",
+    "opentelemetry-instrumentation-requests>=0.58b0,<0.59",
 ]
 
 [project.optional-dependencies]
@@ -40,10 +55,20 @@ test = [
     "pytest-asyncio>=0.21.0,<2.0",
     "pytest-mock>=3.10.0,<4.0",
     "pytest-timeout>=2.1.0,<3.0",
+    "pytest-xdist>=3.5.0,<4.0",
+    "pytest-randomly>=3.15.0,<4.0",
     "requests-mock>=1.11.0,<2.0",
     "redis>=4.6.0,<9.0",
-    "httpx>=0.27.0,<0.30",
-    "pyyaml>=6.0.0,<7.0",
+    # Imported by tests/quality + scripts/ci helpers (fawltydeps).
+    "click>=8.0,<9.0",
+    "packaging>=23.0,<27.0",
+    "hypothesis>=6.100.0,<7.0",
+    # Property-based OpenAPI contract fuzzing against the live API
+    # (tests/integration/test_schemathesis_fuzz.py, requires_docker).
+    "schemathesis>=4.30,<5.0",
+    # aiohttp is used ONLY by the load/stress test harnesses under
+    # tests/performance — production code is mono-stack on requests.
+    "aiohttp>=3.9.0,<4.0",
 ]
 quality = [
     "ruff>=0.1.0,<1.0",
@@ -60,11 +85,76 @@ quality = [
     "pydoclint>=0.0.10,<1.0",
     "flake8-pyproject>=1.2.0,<2.0",
     "mutmut>=3.0.0,<4.0",
+    "interrogate>=1.5.0,<2.0",
+    "import-linter>=2.0.0,<3.0",
+    "pip-audit>=2.6.0,<3.0",
 ]
 reports = [
     "matplotlib>=3.8.0,<4.0",
     "numpy>=1.26.0,<3.0",
 ]
+
+[tool.fawltydeps]
+actions = ["check_undeclared", "check_unused"]
+# Scope to maintained project code — infra/docker/cortex-analyzers contains
+# vendored analyzer sources (cortexutils, cybox, pymisp, ...) shipped inside
+# their own Docker images, and runtime/ + artifacts/ hold service data dirs.
+code = ["src", "tests", "scripts", "apps/api"]
+deps = ["pyproject.toml"]
+ignore_undeclared = [
+    # Local sibling-module imports (scripts/*, tests/e2e/base/*) resolved
+    # via sys.path at runtime — not installed packages.
+    "base", "build_dataset", "helpers", "calculate_quality_score",
+    "score_evidence",
+    "parse_bandit", "parse_coverage", "parse_vulture",
+    "scan_secrets", "shuffle_workflow", "workflow_validator",
+    # The project's own packages (installed via `pip install -e .`).
+    "soar_lab", "scripts",
+    # Auxiliary tooling used by scripts/perf + e2e — intentionally not
+    # package deps (playwright needs its own browser install step).
+    "locust", "playwright",
+]
+ignore_unused = [
+    # flake8 plugins — loaded by flake8 itself, never imported.
+    "flake8-bandit", "flake8-bugbear", "flake8-comprehensions",
+    "flake8-docstrings", "flake8-isort", "flake8-pyproject",
+    "flake8-pytest-style", "flake8-quotes",
+    # pytest plugins — provide fixtures/plugins, no direct import needed.
+    "pytest-asyncio", "pytest-mock", "pytest-randomly",
+    "pytest-timeout", "pytest-xdist", "requests-mock",
+    # uvicorn runtime extras — selected by presence, not imported.
+    "uvloop", "httptools",
+    # Quality/reporting tools — executed as CLIs, not imported.
+    "bandit", "black", "flake8", "isort", "mypy", "pre-commit", "ruff",
+    "interrogate", "mutmut", "pip-audit", "pydoclint", "radon",
+    "vulture", "import-linter",
+    # Imported lazily inside report generators (fawltydeps misses
+    # function-level imports in scripts/reports/*).
+    "matplotlib", "numpy",
+    # Loaded via pytest.importorskip("schemathesis") in
+    # tests/integration/test_schemathesis_fuzz.py — a dynamic import
+    # fawltydeps cannot see.
+    "schemathesis",
+]
+
+[tool.tryceratops]
+# Style-only rules disabled (same posture as ruff's TRY defaults):
+# TRY003 long messages in raise — idiomatic in this codebase (context-rich
+#   error text beats generic exception subclasses for a lab tool).
+# TRY300/TRY301 "move to else block" — readability preference.
+# TRY004 prefer TypeError — sites reviewed: ValueError is the conventional
+#   choice for *data* validation (json/HTTPException/TimeoutError cases).
+# TRY101 too many try blocks — arbitrary count, not actionable.
+ignore = ["TRY003", "TRY300", "TRY301", "TRY004", "TRY101"]
+
+[tool.pydocstyle]
+# Google convention matches the project's `Args:`/`Returns:` docstrings.
+# D1xx presence checks are owned by interrogate + pydoclint — pydocstyle
+# only gates docstring *style* (structure/content rules).
+convention = "google"
+# D202 (blank line after docstring) is left to the author's taste —
+# both forms are readable and black accepts either.
+add-ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D202"]
 
 [project.scripts]
 soar-lab = "soar_lab.interfaces.api.cli:main"
@@ -213,6 +303,37 @@ disable_error_code = [
     "import-untyped",
 ]
 
+# mypy-strict ratchet: leaf modules (no framework deps) are checked in
+# full strict mode — new code there must be fully annotated. Expand the
+# module list as strictness is rolled out; do NOT relax the global config.
+# mypy-strict ratchet: leaf modules (no framework deps) are checked
+# under the strict flag-set — new code there must be fully annotated.
+# NOTE: `strict = true` is NOT used in overrides — in this mypy version it
+# leaks to every module; the individual strict flags apply per-module.
+# Expand the module list as strictness is rolled out; do NOT relax the
+# global config.
+[[tool.mypy.overrides]]
+module = [
+    "soar_lab.common.*",
+    "soar_lab.domain.statistics",
+    "soar_lab.domain.statistical_calculator",
+]
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_reexport = true
+strict_equality = true
+warn_unreachable = true
+warn_no_return = true
+disable_error_code = []
+
 [tool.coverage.run]
 source = ["src/soar_lab"]
 branch = true
@@ -239,8 +360,27 @@ exclude_lines = [
 ]
 
 [tool.mutmut]
-source_paths = ["src/soar_lab/"]
+source_paths = ["src/soar_lab/security/", "src/soar_lab/resilience/", "src/soar_lab/domain/"]
 pytest_add_cli_args = ["-q", "--tb=no", "--timeout=30", "--no-cov", "-o", "addopts=", "-o", "pythonpath=.", "-p", "no:cacheprovider"]
 pytest_add_cli_args_test_selection = ["tests/unit/"]
-do_not_mutate = ["src/soar_lab/__init__.py", "*/scripts/*", "*/tests/*"]
-also_copy = ["scripts/"]
+# `*/ports/*` holds only Protocol `...` stubs — mutating declarations cannot
+# produce observable behavior differences (equivalent mutants by construction)
+do_not_mutate = ["src/soar_lab/__init__.py", "*/scripts/*", "*/tests/*", "*/ports/*"]
+# Full src tree must be copied so mutants/src/soar_lab is a regular package that
+# shadows any installed copy — otherwise the trampoline modules are never imported
+also_copy = ["scripts/", "src/", "detections/", ".env.example"]
+# -1 = unlimited depth (0 would record zero trampoline hits → "no tests found")
+dependency_tracking_depth = -1
+
+[tool.vulture]
+# Dead-code gate (M3): run in CI as
+#   vulture src/soar_lab --min-confidence 80
+# These names are intentional: abstract/protocol signature params and
+# the __exit__ protocol arguments must exist even when unused.
+ignore_names = ["unit", "size_bytes", "test_result", "exc_type", "exc_val", "exc_tb"]
+paths = ["src/soar_lab"]
+min_confidence = 80
+
+[tool.pydoclint]
+# Constructor args are documented on __init__ docstrings (project style).
+allow-init-docstring = true

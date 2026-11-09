@@ -1,0 +1,68 @@
+src\soar_lab\application\use_cases\alert_admission.py:105:17 [FURB123]: Replace `dict(alert)` with `alert.copy()`
+src\soar_lab\application\use_cases\attack_coverage.py:35:9 [FURB138]: Consider using list comprehension
+src\soar_lab\application\use_cases\attack_coverage.py:147:18 [FURB173]: Replace `{**stats, ...}` with `stats | {...}`
+src\soar_lab\application\use_cases\auth_service.py:50:16 [FURB173]: Replace `{..., ..., **kv}` with `{...} | {...} | kv`
+src\soar_lab\application\use_cases\auth_service.py:54:17 [FURB173]: Replace `{**body, ..., ...}` with `body | {...} | {...}`
+src\soar_lab\application\use_cases\auth_service.py:318:28 [FURB102]: Replace `x.startswith(y) or x.startswith(z)` with `x.startswith((y, z))`
+src\soar_lab\application\use_cases\backup_service.py:93:30 [FURB118]: Replace `lambda x: x["_mtime"]` with `operator.itemgetter("_mtime")`
+src\soar_lab\application\use_cases\backup_service.py:201:17 [FURB107]: Replace `try: ... except FileNotFoundError: pass` with `with suppress(FileNotFoundError): ...`
+src\soar_lab\application\use_cases\node_timings.py:66:9 [FURB184]: Assignment statement should be chained
+src\soar_lab\application\use_cases\sigma_eval.py:87:9 [FURB107]: Replace `try: ... except (TypeError, ValueError): pass` with `with suppress(TypeError, ValueError): ...`
+src\soar_lab\common\runtime.py:42:20 [FURB159]: Replace `value.strip().strip("\"").strip("'")` with `value.strip().strip('"\'')`
+src\soar_lab\common\runtime.py:55:5 [FURB107]: Replace `try: ... except OSError: pass` with `with suppress(OSError): ...`
+src\soar_lab\config\logging.py:100:9 [FURB107]: Replace `try: ... except Exception: pass` with `with suppress(Exception): ...`
+src\soar_lab\config\webhook.py:60:9 [FURB113]: Replace `candidates.append(...); candidates.append(...)` with `candidates.extend((..., ...))`
+src\soar_lab\domain\statistics.py:70:16 [FURB173]: Replace `{..., ..., ..., ..., ..., ..., ..., ..., ..., ..., **percentiles([])}` with `{...} | {...} | {...} | {...} | {...} | {...} | {...} | {...} | {...} | {...} | percentiles([])`
+src\soar_lab\domain\statistics.py:96:12 [FURB173]: Replace `{..., ..., ..., ..., ..., ..., ..., ..., ..., ..., **percentiles(s)}` with `{...} | {...} | {...} | {...} | {...} | {...} | {...} | {...} | {...} | {...} | percentiles(s)`
+src\soar_lab\infrastructure\cleanup_service.py:152:29 [FURB118]: Replace `lambda item: item[0]` with `operator.itemgetter(0)`
+src\soar_lab\infrastructure\filesystem_storage.py:97:17 [FURB144]: Replace `os.unlink(x)` with `Path(x).unlink()`
+src\soar_lab\infrastructure\filesystem_storage.py:139:16 [FURB155]: Replace `os.path.getsize(x)` with `Path(x).stat().st_size`
+src\soar_lab\infrastructure\filesystem_storage.py:178:14 [FURB117]: Replace `open(metadata_file, "w")` with `metadata_file.open("w")`
+src\soar_lab\infrastructure\filesystem_storage.py:190:14 [FURB117]: Replace `open(log_file, "a")` with `log_file.open("a")`
+src\soar_lab\infrastructure\in_memory_alert_repository.py:40:18 [FURB123]: Replace `str(severity)` with `severity`
+src\soar_lab\infrastructure\integrations\misp\client.py:114:9 [FURB184]: Assignment statement should be chained
+src\soar_lab\infrastructure\integrations\shuffle\client.py:110:9 [FURB107]: Replace `try: ... except Exception: pass` with `with suppress(Exception): ...`
+src\soar_lab\infrastructure\integrations\shuffle\client.py:114:9 [FURB107]: Replace `try: ... except Exception: pass` with `with suppress(Exception): ...`
+src\soar_lab\infrastructure\integrations\shuffle\client.py:124:9 [FURB107]: Replace `try: ... except Exception: pass` with `with suppress(Exception): ...`
+src\soar_lab\infrastructure\integrations\thehive\client.py:254:9 [FURB113]: Replace `ops.append(...); ops.append(...)` with `ops.extend((..., ...))`
+src\soar_lab\infrastructure\integrations\thehive\client.py:304:9 [FURB113]: Replace `ops.append(...); ops.append(...)` with `ops.extend((..., ...))`
+src\soar_lab\infrastructure\messaging\admission_worker.py:126:31 [FURB140]: Replace `f(...) for ... in x` with `starmap(f, x)`
+src\soar_lab\infrastructure\messaging\admission_worker.py:135:31 [FURB140]: Replace `f(...) for ... in x` with `starmap(f, x)`
+src\soar_lab\infrastructure\messaging\redis_streams_queue.py:124:22 [FURB143]: Replace `groups or []` with `groups`
+src\soar_lab\infrastructure\messaging\redis_streams_queue.py:258:22 [FURB143]: Replace `groups or []` with `groups`
+src\soar_lab\infrastructure\messaging\send_alert.py:41:13 [FURB107]: Replace `try: ... except Exception: pass` with `with suppress(Exception): ...`
+src\soar_lab\infrastructure\network_watcher\_handler.py:140:13 [FURB125]: Return is redundant here
+src\soar_lab\infrastructure\network_watcher\network_watcher.py:66:28 [FURB102]: Replace `x.startswith(y) or x.startswith(z)` with `x.startswith((y, z))`
+src\soar_lab\infrastructure\network_watcher\network_watcher.py:302:16 [FURB141]: Replace `os.path.exists(x)` with `Path(x).exists()`
+src\soar_lab\infrastructure\network_watcher\network_watcher.py:304:16 [FURB146]: Replace `os.path.isfile(x)` with `Path(x).is_file()`
+src\soar_lab\infrastructure\network_watcher\network_watcher.py:566:13 [FURB107]: Replace `try: ... except Exception: pass` with `with suppress(Exception): ...`
+src\soar_lab\infrastructure\persistence\sqlite_alert_repository.py:224:13 [FURB138]: Consider using list comprehension
+src\soar_lab\infrastructure\persistence\sqlite_alert_repository.py:315:13 [FURB138]: Consider using list comprehension
+src\soar_lab\infrastructure\persistence\sqlite_alert_repository.py:398:13 [FURB138]: Consider using list comprehension
+src\soar_lab\infrastructure\persistence\sqlite_alert_repository.py:449:17 [FURB123]: Replace `int(hours)` with `hours`
+src\soar_lab\infrastructure\persistence\sqlite_alert_repository.py:484:17 [FURB123]: Replace `int(hours)` with `hours`
+src\soar_lab\infrastructure\persistence\sqlite_alert_repository.py:494:13 [FURB138]: Consider using list comprehension
+src\soar_lab\infrastructure\tar_backup_driver.py:21:12 [FURB141]: Replace `os.path.exists(x)` with `Path(x).exists()`
+src\soar_lab\infrastructure\tar_backup_driver.py:21:37 [FURB155]: Replace `os.path.getsize(x)` with `Path(x).stat().st_size`
+src\soar_lab\infrastructure\tar_backup_driver.py:137:12 [FURB141]: Replace `os.path.exists(x)` with `Path(x).exists()`
+src\soar_lab\infrastructure\validate_credentials.py:59:10 [FURB117]: Replace `open(p, "utf-8")` with `p.open("utf-8")`
+src\soar_lab\infrastructure\validate_credentials.py:80:10 [FURB117]: Replace `open(env_path, "utf-8")` with `env_path.open("utf-8")`
+src\soar_lab\infrastructure\websocket_manager.py:51:27 [FURB123]: Replace `list(self.active_connections)` with `self.active_connections.copy()`
+src\soar_lab\interfaces\api\auth.py:135:35 [FURB143]: Replace `client_ip or ""` with `client_ip`
+src\soar_lab\interfaces\api\composition.py:230:5 [FURB184]: Return statement should be chained
+src\soar_lab\interfaces\api\lifecycle.py:150:21 [FURB107]: Replace `try: ... except TimeoutError: pass` with `with suppress(TimeoutError): ...`
+src\soar_lab\interfaces\api\lifecycle.py:206:17 [FURB107]: Replace `try: ... except TimeoutError: pass` with `with suppress(TimeoutError): ...`
+src\soar_lab\interfaces\api\lifecycle.py:268:21 [FURB107]: Replace `try: ... except TimeoutError: pass` with `with suppress(TimeoutError): ...`
+src\soar_lab\interfaces\api\main.py:620:21 [FURB143]: Replace `user_info or {}` with `user_info`
+src\soar_lab\interfaces\api\middleware\rate_limit.py:203:17 [FURB107]: Replace `try: ... except ValueError: pass` with `with suppress(ValueError): ...`
+src\soar_lab\interfaces\api\routes_metrics.py:42:5 [FURB113]: Replace `lines.append(...); lines.append(...)` with `lines.extend((..., ...))`
+src\soar_lab\interfaces\api\routes_services.py:173:9 [FURB184]: Assignment statement should be chained
+src\soar_lab\interfaces\api\routes_services.py:194:9 [FURB184]: Assignment statement should be chained
+src\soar_lab\interfaces\api\routes_soar.py:505:9 [FURB184]: Assignment statement should be chained
+src\soar_lab\resilience\timeout.py:34:9 [FURB107]: Replace `try: ... except Exception: pass` with `with suppress(Exception): ...`
+src\soar_lab\security\secret_generator.py:52:25 [FURB123]: Replace `list(password)` with `password.copy()`
+src\soar_lab\security\secret_generator.py:72:13 [FURB113]: Replace `key.append(...); key.append(...)` with `key.extend((..., ...))`
+src\soar_lab\security\secret_generator.py:84:20 [FURB123]: Replace `list(key)` with `key.copy()`
+src\soar_lab\simulator\dataset_replay.py:118:21 [FURB173]: Replace `{**alert, ...}` with `alert | {...}`
+src\soar_lab\simulator\dataset_replay.py:120:18 [FURB123]: Replace `bool(send(alert))` with `send(alert)`
+src\soar_lab\simulator\simulate_alerts.py:57:13 [FURB107]: Replace `try: ... except Exception: pass` with `with suppress(Exception): ...`

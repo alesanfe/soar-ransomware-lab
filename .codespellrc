@@ -1,0 +1,10 @@
+[codespell]
+# Real English typos are fixed; this list covers:
+#  - Spanish vocabulary used intentionally in comments/docs (bilingual repo)
+#  - domain tokens: aNULL (OpenSSL cipher), appy.exe (Pulsar RAT sample),
+#    NotIn (ast class), nd (node-dict var), ANS (ANSI), pase/asume/oficial etc.
+ignore-words-list = aceptable,accesible,algoritmos,alignement,alternar,alternativos,ambiguos,amplitud,analisis,anual,anull,aplicable,appy,aprox,argumentos,aspectos,asume,ans,autor,auxiliar,branche,candidats,caracteres,clases,cliente,colector,colateral,comando,comandos,comercial,complet,complets,componentes,composants,conector,confidencial,confirmacion,contener,controles,convencional,copie,detecte,diagrama,diagramas,dimensiones,doble,dominante,excede,explicite,extensiones,falso,fase,fases,fiel,foto,funcion,funcional,hace,historial,ignora,importan,imposible,inicial,inmutable,inmutables,instale,leve,manifiesto,mata,medias,mesure,mis,momento,montajes,mot,nd,normales,notin,oficial,pares,pase,percentil,persisten,posible,potencial,previos,profesional,propage,recommandation,relevante,requiere,responde,responsable,reste,secuencial,ser,simular,termine,ue,utiliza,validador,valide,variante,variantes,varios,vectores,visibles,visuales
+# Vendored/generated/binary-adjacent content is out of scope.
+skip = *.min.js,*.json,*.lock,*.svg,*.map,*.log,*.go,*.png,*.jpg,*.ico,*.woff*,*/node_modules/*,./node_modules/*,*/build/*,*/assets/*,*/fixtures/*,*/thesis/*,./artifacts/*,./runtime/*,./backups/*,./reports/*,./.git/*,./datasets/*
+quiet-level = 7
+count =

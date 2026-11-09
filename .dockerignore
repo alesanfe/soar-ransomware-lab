@@ -39,9 +39,14 @@ runtime/results/
 runtime/backups/
 runtime/data/
 reports/
-# Keep chart images for docs-site Dockerfile
+# Keep chart images + the report markdown rendered by docs-site's navbar
+# (quality, test-review, holistic, e2e) for the docs-site Dockerfile.
 !reports/e2e/charts/
 !reports/e2e/charts/**
+!reports/e2e/e2e_report.md
+!reports/quality/quality-summary.md
+!reports/test-review/test_review_report.md
+!reports/holistic/holistic_review_report.md
 
 # Ignore data directories at root level, but keep src/soar_lab/data/ for code
 /data/

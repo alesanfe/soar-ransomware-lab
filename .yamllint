@@ -1,0 +1,42 @@
+extends: default
+
+# Out of scope: vendored dependencies, runtime-generated data, backups and
+# generated reports — none of them are maintained project YAML.
+ignore: |
+  .git/
+  artifacts/
+  backups/
+  runtime/
+  reports/
+  node_modules/
+  apps/docs-site/build/
+  # Helm chart templates embed Go template directives — not plain YAML.
+  charts/**/templates/
+
+rules:
+  # compose files use [ "CMD-SHELL", ... ] flow arrays with inner spaces —
+  # an established idiom in this repo, not an error.
+  brackets:
+    max-spaces-inside: 1
+    min-spaces-inside: 0
+    max-spaces-inside-empty: 0
+    min-spaces-inside-empty: 0
+  # `- { name: x }` flow mappings with single inner spaces are the
+  # standard GitHub Actions / compose idiom.
+  braces:
+    max-spaces-inside: 1
+    min-spaces-inside: 0
+    max-spaces-inside-empty: 0
+    min-spaces-inside-empty: 0
+  document-start: disable
+  # healthcheck/env entries are long shell one-liners; wrapping them hurts
+  # readability more than the length itself.
+  line-length:
+    max: 160
+  # `on`/`off`/`yes` unquoted are valid compose values; booleans are quoted.
+  truthy:
+    allowed-values: ["true", "false", "on", "off"]
+    check-keys: false
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: disable

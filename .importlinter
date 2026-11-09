@@ -1,0 +1,33 @@
+[importlinter]
+root_package = soar_lab
+include_external_packages = True
+
+# ARC-002/006 — architectural fitness contracts enforced in CI.
+# Hexagonal rule: dependencies point inward only.
+
+[importlinter:contract:domain-isolation]
+name = Domain is standalone (no infra, interfaces or frameworks)
+type = forbidden
+source_modules =
+    soar_lab.domain
+forbidden_modules =
+    soar_lab.infrastructure
+    soar_lab.interfaces
+    soar_lab.application
+    soar_lab.config
+    requests
+    fastapi
+    pydantic
+ignore_imports =
+
+[importlinter:contract:application-no-infrastructure]
+name = Application must not import infrastructure or web frameworks
+type = forbidden
+source_modules =
+    soar_lab.application
+forbidden_modules =
+    soar_lab.infrastructure
+    soar_lab.interfaces
+    requests
+    fastapi
+ignore_imports =

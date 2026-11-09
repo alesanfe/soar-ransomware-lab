@@ -21,6 +21,8 @@
   "MD046": false,
   "MD050": false,
   "MD051": false,
+  "MD055": false,
+  "MD060": false,
   "ignores": [
     "docs/thesis/reports/**/*.md",
     "apps/docs-site/node_modules/**/*"

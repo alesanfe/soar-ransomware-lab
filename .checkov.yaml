@@ -1,0 +1,23 @@
+# Checkov IaC security scan.
+#
+# Scope: project-owned Dockerfiles only. The compose framework is
+# intentionally not enabled — the lab deliberately runs privileged services
+# (DinD workers, host-network simulators, bind-mounted docker.sock) and every
+# CKV_COMPOSE_* finding would be a false positive by design.
+#
+# CKV_DOCKER_2 (HEALTHCHECK) and CKV_DOCKER_3 (USER) are skipped inline,
+# per-Dockerfile, only where they genuinely do not apply (DinD images that
+# need root for the mounted docker.sock; overlay images that inherit the
+# upstream analyzer's user; healthchecks live in docker-compose.yml).
+
+framework:
+  - dockerfile
+
+directory:
+  - infra/docker/images
+  - infra/docker/cortex-analyzers
+  - apps
+
+download-external-modules: false
+compact: true
+quiet: true

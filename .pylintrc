@@ -1,0 +1,45 @@
+[MAIN]
+py-version = 3.11
+ignore-paths = .*/tests/.*
+
+[MESSAGES CONTROL]
+# Disabled checks reflect deliberate project conventions:
+# - Defensive `except Exception` guards around optional integrations are the
+#   documented error-handling style for this lab (bandit B110/B112 skipped too).
+# - f-string logging is the project convention.
+# - `...` bodies are the Protocol/abstract stub idiom.
+# - Signature breadth (too-many-*) and complexity are gated by radon/xenon
+#   thresholds, not pylint heuristics; docstrings are gated by interrogate.
+# - Env-var getter methods (API_HOST(), JWT_SECRET_KEY()) intentionally use
+#   uppercase names matching their configuration keys.
+# - `except (KeyboardInterrupt|CancelledError): raise` is the required
+#   pass-through pattern before a broad `except Exception`.
+disable =
+    broad-exception-caught,
+    logging-fstring-interpolation,
+    unnecessary-ellipsis,
+    missing-function-docstring,
+    missing-class-docstring,
+    missing-module-docstring,
+    too-few-public-methods,
+    too-many-arguments,
+    too-many-positional-arguments,
+    too-many-locals,
+    too-many-instance-attributes,
+    too-many-return-statements,
+    too-many-statements,
+    too-many-branches,
+    too-many-nested-blocks,
+    too-many-public-methods,
+    unused-argument,
+    protected-access,
+    invalid-name,
+    global-statement,
+    try-except-raise,
+    duplicate-code,
+    consider-using-f-string,
+    fixme,
+    line-too-long,
+
+[FORMAT]
+max-line-length = 100

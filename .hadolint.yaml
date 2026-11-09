@@ -1,0 +1,21 @@
+# hadolint — Dockerfile linting.
+#
+# Runs through the official Docker image (no native Windows binary):
+#   cat <Dockerfile> | docker run --rm -i hadolint/hadolint:v2.12.0-debian hadolint -
+#
+# Ignored rules are listed with their rationale. Supply-chain integrity in
+# this repo comes from digest-pinned base images, commit-pinned source
+# checkouts and SHA256-verified bootstraps (see Dockerfile headers) — not
+# from distro package version pins, which break reproducible builds when the
+# apt/apk repos rotate versions.
+
+ignored:
+  - DL3008 # apt-get version pinning — repo rotation breaks builds; digests pin the base
+  - DL3018 # apk version pinning — same rationale
+  - DL3013 # pip pin — installs the project itself (.[extras]); deps locked via requirements.lock
+  - DL3059 # consecutive RUN — deliberate layer separation, documented per Dockerfile
+  - DL3006 # parametrized FROM (analyzer-patch): pinned via ARG default + caller tag list
+  - SC2015 # A && B || C idiom — reviewed in apk fetch fallback
+  - SC2102 # glob-range notice — pip extras specifier, not a shell glob issue
+
+failure-threshold: warning
