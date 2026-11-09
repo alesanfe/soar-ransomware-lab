@@ -1,0 +1,17 @@
+title: Known ransomware C2 indicators
+id: soar-lab-0002
+status: experimental
+description: Alerts whose source IP or domain matches ransomware C2 infra.
+logsource:
+  product: soar-lab
+detection:
+  selection_ip:
+    data.source_ip|contains:
+      - "185.220.101"
+      - "194.165.16"
+  selection_domain:
+    data.domain|endswith:
+      - ".onion"
+      - ".bit"
+  condition: 1 of selection_*
+level: critical

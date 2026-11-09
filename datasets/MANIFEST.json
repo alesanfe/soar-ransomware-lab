@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "dataset": "soar-ransomware-alerts-v1.jsonl",
+  "seed": 20261108,
+  "counts": {
+    "malicious": 70,
+    "benign": 30,
+    "total": 100
+  },
+  "jsonl_sha256": "37c293af6786f6cbed7316a47adf2d97f09afe5c23ab1223c9923ee41eb17fed",
+  "generated_by": "scripts/maintenance/build_dataset.py",
+  "fixed_epoch": "2026-01-01T00:00:00Z",
+  "anonymization": {
+    "src_ip": "RFC 5737 TEST-NET-1/2/3",
+    "domain": "*.soar-dataset.example.com (RFC 2606)",
+    "hash": "synthetic sha256(seed, family, index)",
+    "hostname": "ws-lab-*/srv-lab-*"
+  },
+  "reproduce": "python scripts/maintenance/build_dataset.py --out datasets\\soar-ransomware-alerts-v1.jsonl --malicious 70 --benign 30 --seed 20261108"
+}

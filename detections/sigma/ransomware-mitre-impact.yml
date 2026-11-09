@@ -1,0 +1,15 @@
+title: Ransomware impact techniques observed
+id: soar-lab-0001
+status: experimental
+description: Alerts tagged with ATT&CK impact-stage techniques.
+logsource:
+  product: soar-lab
+  category: alert
+detection:
+  selection:
+    data.mitre_techniques|contains:
+      - T1486
+      - T1490
+      - T1491
+  condition: selection
+level: high
