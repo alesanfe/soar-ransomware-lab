@@ -9,6 +9,13 @@ __all__ = [
     "ConfigurationError",
     "ValidationError",
     "IntegrationError",
+    "IntegrationTimeoutError",
+    "IntegrationAuthError",
+    "IntegrationAuthorizationError",
+    "IntegrationUnavailableError",
+    "IntegrationRateLimitError",
+    "IntegrationPayloadError",
+    "RetryableError",
     "BackupError",
     "KPIError",
     "AuthError",
@@ -36,6 +43,39 @@ class IntegrationError(SOARError):
         super().__init__(f"[{service}] {message}")
 
 
+class IntegrationTimeoutError(IntegrationError):
+    """The integration did not answer within the configured timeout."""
+
+
+class IntegrationAuthError(IntegrationError):
+    """The integration rejected credentials (HTTP 401)."""
+
+
+class IntegrationAuthorizationError(IntegrationError):
+    """Credentials are valid but lack permission (HTTP 403)."""
+
+
+class RetryableError(IntegrationError):
+    """Transient failure that is safe to retry (5xx, throttling).
+
+    Marker subclass: callers with a retry policy can check
+    ``isinstance(exc, RetryableError)`` instead of guessing from status
+    codes. Non-retryable failures (auth, payload) must NOT inherit this.
+    """
+
+
+class IntegrationUnavailableError(RetryableError):
+    """The integration cannot be reached (connection/DNS refused)."""
+
+
+class IntegrationRateLimitError(RetryableError):
+    """The integration throttled the request (HTTP 429)."""
+
+
+class IntegrationPayloadError(IntegrationError):
+    """The integration answered but the payload is not usable."""
+
+
 class BackupError(SOARError):
     """Raised for backup/restore operation failures."""
 
@@ -55,7 +95,7 @@ class AuthError(SOARError):
 class SubprocessError(SOARError):
     """Raised when a subprocess command fails."""
 
-    def __init__(self, cmd: list, returncode: int, stderr: str = "") -> None:
+    def __init__(self, cmd: list[str], returncode: int, stderr: str = "") -> None:
         self.cmd = cmd
         self.returncode = returncode
         self.stderr = stderr

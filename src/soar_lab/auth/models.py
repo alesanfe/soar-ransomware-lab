@@ -23,15 +23,23 @@ class Permission(Enum):
 
 
 class Role(Enum):
-    """Roles used by the SOAR RBAC system."""
+    """Roles used by the SOAR RBAC system.
+
+    AUTH-003 privilege order: ``ADMIN > OPERATOR > ANALYST > VIEWER``.
+    ``READONLY`` is the legacy name for the viewer tier.
+    """
 
     ADMIN = "admin"
+    OPERATOR = "operator"
     ANALYST = "analyst"
+    VIEWER = "viewer"
     READONLY = "readonly"
 
 
 @dataclass
 class User:
+    """Authenticated user record (subject + roles)."""
+
     id: str = ""
     username: str = ""
     role: Role = field(default=Role.READONLY)

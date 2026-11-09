@@ -5,6 +5,7 @@ Manages WebSocket connections for real-time log streaming.
 This is infrastructure - handles WebSocket protocol details.
 """
 
+import json
 from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -40,14 +41,17 @@ class ConnectionManager:
 
     async def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a message to all active connections."""
-        import json
-
-        message_str = json.dumps(message)
-        for connection in self.active_connections:
+        try:
+            message_str = json.dumps(message)
+        except (TypeError, ValueError) as e:
+            # A non-serializable payload must not kill the broadcast loop.
+            logger.warning(f"Skipping non-serializable broadcast message: {e}")
+            return
+        for connection in self.active_connections.copy():
             try:
                 await connection.send_text(message_str)
             except WebSocketDisconnect:
-                self.active_connections.remove(connection)
+                self.disconnect(connection)
             except Exception as e:
                 logger.warning(f"Error sending message to connection: {e}")
-                self.active_connections.remove(connection)
+                self.disconnect(connection)

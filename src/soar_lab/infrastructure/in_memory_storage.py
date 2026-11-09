@@ -78,15 +78,11 @@ class InMemoryStorage:
     def list_files(self, directory: str, pattern: str = "*") -> list[str]:
         """List files in directory with pattern."""
         if pattern == "*":
-            return [f for f in self._store.keys() if f.startswith(directory)]
-        return [
-            f
-            for f in self._store.keys()
-            if f.startswith(directory) and pattern.replace("*", "") in f
-        ]
+            return [f for f in self._store if f.startswith(directory)]
+        return [f for f in self._store if f.startswith(directory) and pattern.replace("*", "") in f]
 
-    def get_file_info(self, path: str) -> dict[str, Any]:
-        """Get file information."""
+    def get_file_info(self, path: str) -> dict[str, Any] | None:
+        """Get file information, or ``None`` when the path is unknown."""
         return self._file_info.get(path, None)
 
     def delete_file(self, path: str) -> bool:

@@ -6,8 +6,6 @@ Dedicated client for MISP threat intelligence platform.
 
 from typing import Any
 
-import requests
-
 from soar_lab.common.constants import (
     CONTENT_TYPE_JSON,
     HEADER_ACCEPT,
@@ -29,7 +27,7 @@ class MISPClient(BaseHTTPClient):
         base_url: str,
         api_key: str,
         config_provider: Any | None = None,
-        verify_ssl: bool = True,
+        verify_ssl: bool | str = True,
     ) -> None:
         if config_provider:
             url = base_url or config_provider.get("misp_url")
@@ -58,32 +56,25 @@ class MISPClient(BaseHTTPClient):
         return headers
 
     def get(self, path: str, **kwargs: Any) -> Any:
-        """Perform a MISP API GET without replacing its JSON Accept header.
+        """Perform a MISP API GET preserving its JSON Accept header.
+
+        P0.1: this used to call ``self._session.get`` directly, which
+        bypassed the circuit breaker, the ``X-Request-ID`` trace headers
+        and the retry policy every other client shares. Now it delegates
+        to :meth:`BaseHTTPClient.get`, only pinning ``Accept`` to JSON
+        (the base impl defaults GET to ``Accept: */*``).
 
         Args:
             path: API path relative to the MISP base URL.
-            **kwargs: Additional keyword arguments forwarded to the
-                underlying ``requests.Session.get`` call (e.g. ``params``).
+            **kwargs: Forwarded to ``BaseHTTPClient.get`` (e.g. ``params``).
 
         Returns:
             dict: The parsed JSON response body, or an empty dict if the
             response has no content.
-
-        Raises:
-            IntegrationError: If an HTTP error or generic request error occurs.
-            requests.ConnectionError: If the connection to MISP fails.
-            requests.Timeout: If the request times out.
         """
-        try:
-            response = self._session.get(self._url(path), timeout=self.timeout, **kwargs)
-            response.raise_for_status()
-            return response.json() if response.content else {}
-        except requests.HTTPError as exc:
-            raise IntegrationError(self.__class__.__name__, str(exc)) from exc
-        except (requests.ConnectionError, requests.Timeout) as exc:
-            raise IntegrationError(self.__class__.__name__, str(exc)) from exc
-        except requests.RequestException as exc:
-            raise IntegrationError(self.__class__.__name__, str(exc)) from exc
+        headers = dict(kwargs.pop("headers", None) or {})
+        headers[HEADER_ACCEPT] = CONTENT_TYPE_JSON
+        return super().get(path, headers=headers, **kwargs)
 
     @staticmethod
     def _normalize_response(response: Any) -> list[dict[str, Any]]:
@@ -98,48 +89,45 @@ class MISPClient(BaseHTTPClient):
             if isinstance(item, dict)
         ]
 
-    def _search_by_value(self, value: str, type_attribute: str | None) -> list[dict[str, Any]]:
+    def _search_by_value(
+        self, value: str, type_attribute: str | None, limit: int
+    ) -> list[dict[str, Any]]:
         """Search events by IOC value using /events/restSearch."""
-        try:
-            payload: dict[str, Any] = {"returnFormat": "json", "value": value, "limit": 10}
-            if type_attribute:
-                payload["type"] = type_attribute
-            result = self.post("/events/restSearch", data=payload)
-            response = result.get("response", result.get("Event", []))
-            events = self._normalize_response(response)
-            if events:
-                return events
-        except Exception as exc:
-            logger.debug("search_events /events/restSearch failed for %s: %s", value, exc)
-        return []
+        payload: dict[str, Any] = {"returnFormat": "json", "value": value, "limit": limit}
+        if type_attribute:
+            payload["type"] = type_attribute
+        result = self.post("/events/restSearch", data=payload)
+        response = result.get("response", result.get("Event", []))
+        return self._normalize_response(response)
 
-    def _search_by_attributes(self, value: str, type_attribute: str | None) -> list[dict[str, Any]]:
+    def _search_by_attributes(
+        self, value: str, type_attribute: str | None, limit: int
+    ) -> list[dict[str, Any]]:
         """Search events by attribute value using /attributes/restSearch with.
 
         includeEvent.
         """
-        try:
-            payload = {"returnFormat": "json", "value": value, "includeEvent": 1, "limit": 10}
-            if type_attribute:
-                payload["type"] = type_attribute
-            result = self.post("/attributes/restSearch", data=payload)
-            attributes = result.get("response", {}).get("Attribute", [])
-            if not isinstance(attributes, list) or not attributes:
-                return []
-            events = {}
-            for attribute in attributes:
-                if not isinstance(attribute, dict):
-                    continue
-                event_id = attribute.get("event_id")
-                if not event_id or event_id in events:
-                    continue
-                event = self.get_event(str(event_id))
-                if isinstance(event, dict) and event.get("id") == event_id:
-                    events[event_id] = event
-            return [{"Event": event} for event in events.values()] if events else []
-        except Exception as exc:
-            logger.debug("search_events /attributes/restSearch failed for %s: %s", value, exc)
-        return []
+        payload = {"returnFormat": "json", "value": value, "includeEvent": 1, "limit": limit}
+        if type_attribute:
+            payload["type"] = type_attribute
+        attributes = (
+            self.post("/attributes/restSearch", data=payload)
+            .get("response", {})
+            .get("Attribute", [])
+        )
+        if not isinstance(attributes, list) or not attributes:
+            return []
+        events = {}
+        for attribute in attributes:
+            if not isinstance(attribute, dict):
+                continue
+            event_id = attribute.get("event_id")
+            if not event_id or event_id in events:
+                continue
+            event = self.get_event(str(event_id))
+            if isinstance(event, dict) and event.get("id") == event_id:
+                events[event_id] = event
+        return [{"Event": event} for event in events.values()] if events else []
 
     def _search_by_tags(self, tags: Any, **kwargs: Any) -> list[dict[str, Any]]:
         """Search events by tags using /events/restSearch."""
@@ -156,6 +144,7 @@ class MISPClient(BaseHTTPClient):
         value: str | None = None,
         type_attribute: str | None = None,
         tags: Any | None = None,
+        limit: int = 10,
         **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """Search MISP events matching an IOC value or tags.
@@ -167,17 +156,39 @@ class MISPClient(BaseHTTPClient):
                 "ip-dst" or "sha256".
             tags: A tag name or list of tag names to search by. Used only
                 when ``value`` is ``None``.
+            limit: Max events per endpoint query (was hardcoded to 10,
+                silently truncating large IOC histories).
             **kwargs: Additional keyword arguments forwarded to the
                 tag-based search payload.
 
         Returns:
             list: A list of event dicts (each typically wrapped under an
             ``"Event"`` key). Returns an empty list if no matches are found.
+
+        Raises:
+            IntegrationError: When *both* search endpoints fail — a MISP
+                outage must propagate, not masquerade as "IOC not found"
+                (false negative by design is not allowed).
         """
         if value:
-            return self._search_by_value(value, type_attribute) or self._search_by_attributes(
-                value, type_attribute
-            )
+            first_error: IntegrationError | None = None
+            try:
+                events = self._search_by_value(value, type_attribute, limit)
+            except IntegrationError as exc:
+                logger.debug(
+                    "search_events /events/restSearch failed for %s, trying attributes: %s",
+                    value,
+                    exc,
+                )
+                first_error, events = exc, []
+            if events:
+                return events
+            try:
+                return self._search_by_attributes(value, type_attribute, limit)
+            except IntegrationError as exc:
+                if first_error is not None:
+                    raise first_error from exc
+                raise
         return self._search_by_tags(tags, **kwargs)
 
     def get_event(self, event_id: str) -> dict[str, Any]:
@@ -418,5 +429,6 @@ class MISPClient(BaseHTTPClient):
         try:
             self.get("/users/heartbeat")
             return True
-        except Exception:
+        except Exception as exc:
+            logger.debug("MISP health check failed: %s", exc)
             return False

@@ -94,8 +94,8 @@ class StorageProvider(Protocol):
         """List files in directory with pattern."""
         ...
 
-    def get_file_info(self, path: str) -> dict[str, Any]:
-        """Get file information."""
+    def get_file_info(self, path: str) -> dict[str, Any] | None:
+        """Get file information, or ``None`` when the path does not exist."""
         ...
 
     def delete_file(self, path: str) -> bool:
@@ -141,6 +141,14 @@ class BackupDriver(Protocol):
 
     def extract(self, archive_path: str, dest_dir: str) -> None:
         """Extract a backup archive."""
+        ...
+
+    def verify(self, archive_path: str) -> None:
+        """Integrity-check a backup archive without extracting it.
+
+        Implementations should validate container structure (``tar -tzf``)
+        and the sidecar SHA-256 when present; raise on failure.
+        """
         ...
 
 
@@ -377,11 +385,106 @@ class TokenProviderInterface(Protocol):
     """
 
     def create_token(
-        self, username: str, secret: str, expiration_minutes: int, algorithm: str
+        self,
+        username: str,
+        secret: str,
+        expiration_minutes: int,
+        algorithm: str,
+        extra_claims: dict[str, Any] | None = None,
     ) -> str:
         """Create a token for the given username."""
         ...
 
     def verify_token(self, token: str, secret: str, algorithm: str) -> dict[str, Any]:
         """Verify a token and return the payload."""
+        ...
+
+
+class EventQueue(Protocol):
+    """Durable event queue for asynchronous admission (PERF-001).
+
+    Producer semantics: ``enqueue`` persists the event before the caller
+    returns, so an acknowledged admission survives a process crash.
+    Consumer semantics: entries are delivered to a consumer group and must
+    be explicitly ``ack``ed after successful processing; un-acked entries
+    can be recovered via ``claim_stale`` after a restart, and poisoned
+    entries are moved to a dead-letter queue via ``dead_letter``.
+    """
+
+    async def enqueue(self, event: dict[str, Any]) -> str:
+        """Persist an event and return its queue entry id."""
+        ...
+
+    async def depth(self) -> int:
+        """Current stream length — used for PERF-003 backpressure."""
+        ...
+
+    async def read(
+        self, group: str, consumer: str, count: int, block_ms: int
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Read up to ``count`` new entries for ``consumer`` in ``group``.
+
+        Returns ``(entry_id, event)`` pairs. Entries stay pending until
+        ``ack``ed.
+        """
+        ...
+
+    async def claim_stale(
+        self, group: str, consumer: str, min_idle_ms: int
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Claim pending entries idle longer than ``min_idle_ms`` (recovery)."""
+        ...
+
+    async def ack(self, group: str, entry_id: str) -> None:
+        """Acknowledge successful processing of ``entry_id``."""
+        ...
+
+    async def dead_letter(self, entry: dict[str, Any], reason: str) -> None:
+        """Move a poisoned entry to the dead-letter queue with ``reason``."""
+        ...
+
+    async def ensure_group(self, group: str) -> None:
+        """Create the consumer group if it does not exist."""
+        ...
+
+
+class AdmissionStore(Protocol):
+    """Persistent record of each admitted alert and its lifecycle state."""
+
+    async def create(self, record: dict[str, Any]) -> None:
+        """Persist a new admission record (must contain ``admission_id``)."""
+        ...
+
+    async def update(self, admission_id: str, fields: dict[str, Any]) -> None:
+        """Merge ``fields`` into the record for ``admission_id``."""
+        ...
+
+    async def get(self, admission_id: str) -> dict[str, Any] | None:
+        """Return the admission record or ``None`` when unknown."""
+        ...
+
+    async def find_by_key(self, idempotency_key: str) -> str | None:
+        """Return the admission_id bound to ``idempotency_key``, if any."""
+        ...
+
+    async def bind_key(self, idempotency_key: str, admission_id: str) -> None:
+        """Bind ``idempotency_key`` to ``admission_id`` (create-once)."""
+        ...
+
+    async def try_bind_key(self, idempotency_key: str, admission_id: str) -> str | None:
+        """Atomically bind ``idempotency_key`` → ``admission_id`` (IDEMP-001).
+
+        Returns the ALREADY-BOUND admission_id when the key existed (the
+        caller must treat that as an idempotent replay), or ``None`` when
+        THIS call won the bind. Implemented as ``SET key val NX`` — a
+        single atomic operation, no find-then-bind race.
+        """
+        ...
+
+    async def unbind_key(self, idempotency_key: str, admission_id: str) -> None:
+        """Release a key won by ``try_bind_key`` after a failed enqueue.
+
+        Compensation: without this, the key would point to a phantom
+        admission forever. Only unbinds if still bound to ``admission_id``.
+        """
         ...

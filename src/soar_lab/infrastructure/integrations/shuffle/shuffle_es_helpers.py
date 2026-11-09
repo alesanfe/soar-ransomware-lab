@@ -2,7 +2,7 @@
 """Elasticsearch / OpenSearch helper functions for the Shuffle SOAR client.
 
 These utilities handle direct queries against Shuffle's internal
-OpenSearch datastore (the ``workflowexecution-000001`` index) so the
+OpenSearch datastore (the ``workflowexecution`` index) so the
 client can bypass the Shuffle API's 100-entry execution-history cap.
 Credential resolution for that datastore lives here too.  They are split
 out of ``shuffle_helpers.py`` to keep each module focused and its
@@ -11,19 +11,25 @@ maintainability index high.
 
 from __future__ import annotations
 
-import os
+import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import requests
+from requests.adapters import HTTPAdapter
 
 from soar_lab.common.constants import (
     DEFAULT_OPENSEARCH_HOST_URL,
     DEFAULT_OPENSEARCH_URL,
     DEFAULT_SHUFFLE_PROBE_TIMEOUT,
+    DEFAULT_SHUFFLE_QUICK_TIMEOUT,
     SHUFFLE_EXECUTION_INDEX,
 )
+from soar_lab.common.opensearch import id_terms_filter
+from soar_lab.common.runtime import repo_root, resolve_secret
+from soar_lab.common.trace_context import get_trace_id
 from soar_lab.config.logging import get_logger
+from soar_lab.security.tls_config import verify_tls
 
 if TYPE_CHECKING:  # pragma: no cover - import only for type checkers
     from soar_lab.infrastructure.integrations.shuffle.client import ShuffleClient
@@ -33,50 +39,62 @@ logger = get_logger(__name__)
 # OpenSearch index that stores every Shuffle workflow execution.
 _EXECUTION_INDEX = SHUFFLE_EXECUTION_INDEX
 
+# BL-HTTP-006: one pooled session for every OpenSearch datastore query —
+# raw ``requests.get()`` created a fresh TCP(+TLS) handshake per call.
+_ES_SESSION: requests.Session | None = None
+_ES_SESSION_LOCK = threading.Lock()
+
+
+def _es_session() -> requests.Session:
+    """Return the shared pooled session for OpenSearch queries.
+
+    Auth and TLS verification stay per-request (``auth=``/``verify=``
+    kwargs) so one session safely serves every credential combination.
+    The current request's trace ID is propagated per call (BL-HTTP-008).
+    """
+    global _ES_SESSION
+    if _ES_SESSION is None:
+        with _ES_SESSION_LOCK:
+            if _ES_SESSION is None:
+
+                session = requests.Session()
+                adapter = HTTPAdapter(pool_connections=4, pool_maxsize=8)
+                # nosemgrep: request-session-with-http -- mount prefix, not a request
+                session.mount("http://", adapter)
+                session.mount("https://", adapter)
+                _ES_SESSION = session
+
+    trace_id = get_trace_id()
+    if trace_id:
+        _ES_SESSION.headers["X-Request-ID"] = trace_id
+    else:
+        _ES_SESSION.headers.pop("X-Request-ID", None)
+    return _ES_SESSION
+
 
 def read_env_credentials() -> tuple[str, str, str]:
     """Read OpenSearch URL/username/password from env vars and ``.env.full``.
 
-    The lookup checks process environment variables first, then falls back to
-    a ``.env.full`` file in the working directory or the repository root.
+    Environment wins; the ``.env.full`` fallback resolves against the
+    repository root (``common.runtime.repo_root()``, never the CWD) and
+    parses strictly ``KEY=value`` per key — comments, partial names and
+    quote-wrapped values handled by the shared ``dotenv_lookup``.
 
     Returns:
         A ``(url, username, password)`` tuple; entries are empty strings when
         the corresponding value is not found.
     """
-    es_url = os.environ.get("SHUFFLE_OPENSEARCH_URL", "")
-    es_user = os.environ.get(
-        "SHUFFLE_OPENSEARCH_USERNAME", os.environ.get("OPENSEARCH_USERNAME", "")
+    env_file = repo_root() / ".env.full"
+    # Tiered resolution (env -> Docker secrets -> dotenv) via the central
+    # resolver; the specific SHUFFLE_* names alias to the generic
+    # OPENSEARCH_* ones within each tier.
+    es_url = resolve_secret("SHUFFLE_OPENSEARCH_URL", env_file=env_file)
+    es_user = resolve_secret(
+        "SHUFFLE_OPENSEARCH_USERNAME", "OPENSEARCH_USERNAME", env_file=env_file
     )
-    es_pass = os.environ.get(
-        "SHUFFLE_OPENSEARCH_PASSWORD", os.environ.get("OPENSEARCH_PASSWORD", "")
+    es_pass = resolve_secret(
+        "SHUFFLE_OPENSEARCH_PASSWORD", "OPENSEARCH_PASSWORD", env_file=env_file
     )
-
-    env_files = [Path(".env.full"), Path(__file__).parent.parent.parent.parent / ".env.full"]
-    key_map = {
-        "SHUFFLE_OPENSEARCH_URL": "url",
-        "OPENSEARCH_USERNAME": "user",
-        "OPENSEARCH_PASSWORD": "pass",  # nosec B105  # key name, not a secret
-        "SHUFFLE_OPENSEARCH_USERNAME": "user",
-        "SHUFFLE_OPENSEARCH_PASSWORD": "pass",  # nosec B105  # key name, not a secret
-    }
-    for env_file in env_files:
-        if not env_file.exists():
-            continue
-        for line in env_file.read_text(encoding="utf-8", errors="replace").splitlines():
-            if line.startswith("#") or "=" not in line:
-                continue
-            key, _, val = line.partition("=")
-            target = key_map.get(key.strip())
-            if not target:
-                continue
-            val = val.strip()
-            if target == "url" and not es_url:
-                es_url = val
-            elif target == "user" and not es_user:
-                es_user = val
-            elif target == "pass" and not es_pass:
-                es_pass = val
     return es_url, es_user, es_pass
 
 
@@ -86,7 +104,7 @@ def get_es_connection() -> tuple[str, tuple[str, str] | None, bool]:
     datastore.
 
     Shuffle stores workflow executions, users and hooks in its own OpenSearch
-    index (``workflowexecution-000001``), separate from the project's
+    index (``workflowexecution``), separate from the project's
     Elasticsearch indices (``soar-alerts``, ``soar-metrics``).
 
     Returns:
@@ -104,7 +122,58 @@ def get_es_connection() -> tuple[str, tuple[str, str] | None, bool]:
         es_url = DEFAULT_OPENSEARCH_URL if in_docker else DEFAULT_OPENSEARCH_HOST_URL
 
     auth = (es_user, es_pass) if es_user and es_pass else None
-    return es_url, auth, False
+    # The internal datastore ships a self-signed cert, so verification stays
+    # off by default — but SHUFFLE_OPENSEARCH_VERIFY_TLS=1 now hardens it
+    # without a code change (BL-SEC-004).
+
+    return es_url, auth, verify_tls("shuffle-opensearch", default=False)
+
+
+def _es_search(query: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """Run a ``_search`` against the executions index and return raw hits.
+
+    Shared transport for the two execution lookups — POST (not GET-with-
+    body, which some proxies drop), pooled session, ``None`` on failure
+    so callers can fall back to the Shuffle API.
+    """
+    try:
+        es_url, auth, verify = get_es_connection()
+        resp = _es_session().post(
+            f"{es_url}/{_EXECUTION_INDEX}/_search",
+            json=query,
+            auth=auth,
+            timeout=DEFAULT_SHUFFLE_PROBE_TIMEOUT,
+            verify=verify,
+        )
+        resp.raise_for_status()
+        return resp.json().get("hits", {}).get("hits", [])
+    except Exception as exc:
+        logger.debug("ES execution search failed: %s", exc)
+        return None
+
+
+def fetch_first_user_source() -> dict[str, Any] | None:
+    """Return the first document in Shuffle's ``users`` index, or ``None``.
+
+    Bounded to ``size=1`` — the callers only need the active user, so a
+    naked ``_search`` (which fetches up to the index default of 10 and
+    grows unbounded as users accumulate) wasted bandwidth per call.
+    """
+    try:
+        es_url, auth, verify = get_es_connection()
+        resp = _es_session().get(
+            f"{es_url}/users/_search?size=1",
+            auth=auth,
+            timeout=DEFAULT_SHUFFLE_QUICK_TIMEOUT,
+            verify=verify,
+        )
+        if resp.status_code == 200:
+            hits = resp.json().get("hits", {}).get("hits", [])
+            if hits:
+                return dict(hits[0].get("_source", {}))
+    except Exception as exc:
+        logger.debug("users index lookup failed: %s", exc)
+    return None
 
 
 def es_lookup_execution(
@@ -121,30 +190,18 @@ def es_lookup_execution(
     Returns:
         The matching execution dict, or ``None`` when not found in OpenSearch.
     """
-    try:
-        es_url, auth, verify = get_es_connection()
-        source = ["execution_id", "status", "workflow_id", "started_at", "completed_at"]
-        if include_results:
-            source.append("results")
-        query: dict[str, Any] = {
-            "query": {"terms": {"execution_id": [execution_id]}},
-            "sort": [{"started_at": {"order": "desc"}}],
-            "size": 1,
-            "_source": source,
-        }
-        resp = requests.get(
-            f"{es_url}/{_EXECUTION_INDEX}/_search",
-            json=query,
-            auth=auth,
-            timeout=DEFAULT_SHUFFLE_PROBE_TIMEOUT,
-            verify=verify,
-        )
-        resp.raise_for_status()
-        hits = resp.json().get("hits", {}).get("hits", [])
-        if hits:
-            return dict(hits[0].get("_source", {}))
-    except Exception as exc:
-        logger.debug("get_execution ES lookup failed: %s", exc)
+    source = ["execution_id", "status", "workflow_id", "started_at", "completed_at"]
+    if include_results:
+        source.append("results")
+    query: dict[str, Any] = {
+        "query": id_terms_filter("execution_id", [execution_id]),
+        "sort": [{"started_at": {"order": "desc"}}],
+        "size": 1,
+        "_source": source,
+    }
+    hits = _es_search(query)
+    if hits:
+        return dict(hits[0].get("_source", {}))
     return None
 
 
@@ -166,39 +223,18 @@ def es_workflow_executions(
         A list of execution dicts (most recent first), or ``None`` when
         OpenSearch is unavailable so the caller can fall back to the API.
     """
-    try:
-        es_url, auth, verify = get_es_connection()
-        must: list[dict[str, Any]] = [{"term": {"workflow_id": workflow_id}}]
-        if execution_ids:
-            must.append({"terms": {"execution_id": execution_ids}})
-        if execution_ids:
-            source = [
-                "execution_id",
-                "status",
-                "workflow_id",
-                "results",
-                "started_at",
-                "completed_at",
-            ]
-        else:
-            source = ["execution_id", "status", "workflow_id", "started_at", "completed_at"]
-        query: dict[str, Any] = {
-            "query": {"bool": {"must": must}},
-            "sort": [{"started_at": {"order": "desc"}}],
-            "size": len(execution_ids) if execution_ids else 1000,
-            "_source": source,
-        }
-        resp = requests.get(
-            f"{es_url}/{_EXECUTION_INDEX}/_search",
-            json=query,
-            auth=auth,
-            timeout=DEFAULT_SHUFFLE_PROBE_TIMEOUT,
-            verify=verify,
-        )
-        resp.raise_for_status()
-        hits = resp.json().get("hits", {}).get("hits", [])
-        if hits:
-            return [hit["_source"] for hit in hits]
-    except Exception as exc:
-        logger.debug("ES execution lookup failed: %s", exc)
+    must: list[dict[str, Any]] = [id_terms_filter("workflow_id", [workflow_id])]
+    source = ["execution_id", "status", "workflow_id", "started_at", "completed_at"]
+    if execution_ids:
+        must.append(id_terms_filter("execution_id", execution_ids))
+        source.append("results")
+    query: dict[str, Any] = {
+        "query": {"bool": {"must": must}},
+        "sort": [{"started_at": {"order": "desc"}}],
+        "size": len(execution_ids) if execution_ids else 1000,
+        "_source": source,
+    }
+    hits = _es_search(query)
+    if hits:
+        return [hit["_source"] for hit in hits]
     return None

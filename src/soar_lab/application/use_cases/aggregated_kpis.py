@@ -57,7 +57,7 @@ class AggregatedKpisUseCase:
         kpis_by_type = self._kpi_analyzer.calculate_kpis_by_alert_type(metrics_data, hours)
         service_kpis = self._kpi_analyzer.calculate_service_integration_kpis(metrics_data, hours)
 
-        mttr_values = self._extract_mttr_values(metrics_data)
+        mttr_values = self._extract_mttr_values(metrics_data, hours)
         mttr_stats = {}
         if mttr_values:
             mttr_stats = self._statistical_calculator.calculate_statistical_metrics(mttr_values)
@@ -72,15 +72,18 @@ class AggregatedKpisUseCase:
         }
 
     @staticmethod
-    def _extract_mttr_values(metrics_data: list[dict[str, Any]]) -> list[float]:
+    def _extract_mttr_values(metrics_data: list[dict[str, Any]], hours: int = 24) -> list[float]:
         """Extract MTTR values from metrics data.
 
         Args:
             metrics_data: List of metric documents from Elasticsearch.
+            hours: Analysis window; MTTR values beyond it are impossible
+                and excluded.
 
         Returns:
             list[float]: Extracted MTTR values in seconds.
         """
+        max_mttr = hours * 3600
         mttr_values: list[float] = []
         for metric in metrics_data:
             mttr_field = metric.get("mttr_seconds", {})
@@ -89,7 +92,8 @@ class AggregatedKpisUseCase:
                 if "MTTR:" in mttr_str:
                     with suppress(ValueError, IndexError):
                         mttr = float(mttr_str.split("MTTR:")[1].split("s")[0].strip())
-                        mttr_values.append(mttr)
-            elif isinstance(mttr_field, (int, float)):
+                        if 0 < mttr <= max_mttr:
+                            mttr_values.append(mttr)
+            elif isinstance(mttr_field, (int, float)) and 0 < mttr_field <= max_mttr:
                 mttr_values.append(mttr_field)
         return mttr_values

@@ -8,7 +8,7 @@ from soar_lab.common.constants import ALERT_ID_PATTERN
 from soar_lab.config.schemas.actions import ContainmentAction
 from soar_lab.config.schemas.alerts import RansomwareAlert
 from soar_lab.config.schemas.backup import BackupReport
-from soar_lab.config.schemas.enums import AlertType, SeverityLevel
+from soar_lab.config.schemas.enums import AlertType
 from soar_lab.config.schemas.files import AffectedFile
 from soar_lab.config.schemas.hashes import FileHash, NetworkEvent
 from soar_lab.config.schemas.health import HealthCheck
@@ -24,10 +24,11 @@ from soar_lab.config.schemas.validators import (
     validate_webhook_payload,
 )
 from soar_lab.config.schemas.webhook import WebhookPayload
+from soar_lab.domain.models import AlertSeverity
 
 __all__ = [
     "ALERT_ID_PATTERN",
-    "SeverityLevel",
+    "AlertSeverity",
     "AlertType",
     "NetworkEvent",
     "FileHash",

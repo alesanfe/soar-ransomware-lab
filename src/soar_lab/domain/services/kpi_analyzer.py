@@ -8,7 +8,23 @@ and contains no orchestration or I/O logic.
 from datetime import UTC, datetime
 from typing import Any
 
+from soar_lab.domain.models import AlertSeverity
 from soar_lab.domain.ports import StatisticalCalculatorInterface
+
+
+def _extract_mttr(mttr_field: Any) -> float:
+    """Extract an MTTR seconds value from a dict or numeric field."""
+    if isinstance(mttr_field, dict):
+        mttr_str = mttr_field.get("message", "")
+        if "MTTR:" in mttr_str:
+            try:
+                return float(mttr_str.split("MTTR:")[1].split("s")[0].strip())
+            except (ValueError, IndexError):
+                return 0
+        return 0
+    if isinstance(mttr_field, (int, float)):
+        return mttr_field
+    return 0
 
 
 class KPIAnalyzer:
@@ -141,22 +157,11 @@ class KPIAnalyzer:
         """
         # Group by alert type
         kpis_by_type = {}
+        max_mttr = hours * 3600  # MTTR beyond the window is physically impossible
         for metric in metrics_data:
             alert_type = metric.get("alert_type", "unknown")
-            mttr_field = metric.get("mttr_seconds", 0)
+            mttr = _extract_mttr(metric.get("mttr_seconds", 0))
             severity = metric.get("severity", 0)
-
-            # Extract MTTR value from dictionary if needed
-            mttr = 0
-            if isinstance(mttr_field, dict):
-                mttr_str = mttr_field.get("message", "")
-                if "MTTR:" in mttr_str:
-                    try:
-                        mttr = float(mttr_str.split("MTTR:")[1].split("s")[0].strip())
-                    except (ValueError, IndexError):
-                        mttr = 0
-            elif isinstance(mttr_field, (int, float)):
-                mttr = mttr_field
 
             if alert_type not in kpis_by_type:
                 kpis_by_type[alert_type] = {
@@ -167,10 +172,10 @@ class KPIAnalyzer:
                 }
 
             kpis_by_type[alert_type]["count"] += 1
-            if mttr:
+            if 0 < mttr <= max_mttr:
                 kpis_by_type[alert_type]["mttr_values"].append(mttr)
             kpis_by_type[alert_type]["severity_sum"] += severity
-            if severity == 3:
+            if severity >= AlertSeverity.CRITICAL:
                 kpis_by_type[alert_type]["critical_count"] += 1
 
         # Calculate statistics for each type

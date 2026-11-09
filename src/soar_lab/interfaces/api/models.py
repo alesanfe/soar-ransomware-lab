@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Response
 from fastapi.responses import JSONResponse
@@ -243,7 +243,31 @@ class ContainmentRequest(BaseModel):
     alert_id: str = Field(..., description="Alert identifier")
     case_id: str = Field(..., description="TheHive case identifier")
     hostname: str = Field(..., description="Target hostname to contain")
-    mode: str = Field(default="simulated", description="Containment mode")
+    mode: Literal["simulated", "enforce"] = Field(
+        default="simulated",
+        description=(
+            "Containment mode. CFG-016/017: Literal, not free str — a typo "
+            "like 'enforc' used to silently downgrade to 'simulated', so an "
+            "operator believed containment ran when nothing happened. "
+            "Invalid values now fail validation with 422."
+        ),
+    )
+    target_container: str | None = Field(
+        default=None,
+        description=(
+            "Container name to contain when mode='enforce'. Only used in "
+            "enforce mode; the container must be allowlisted (label "
+            "'soar.victim=true' or SOAR_CONTAIN_ALLOW_PREFIX name prefix)."
+        ),
+    )
+    approval_id: str | None = Field(
+        default=None,
+        description=(
+            "F4 analyst-in-the-loop: when SOAR_CONTAIN_REQUIRE_APPROVAL=1 "
+            "the endpoint parks the request and the workflow retries with "
+            "the issued approval_id once an analyst approves it."
+        ),
+    )
 
 
 class ContainmentResponse(BaseModel):
@@ -255,6 +279,14 @@ class ContainmentResponse(BaseModel):
     hostname: str = Field(..., description="Target hostname")
     actions: list[str] = Field(default_factory=list, description="Actions performed")
     timestamp: str = Field(..., description="ISO format timestamp")
+    evidence: dict | None = Field(
+        default=None,
+        description="Before/after docker state when mode='enforce' executed.",
+    )
+    approval_id: str | None = Field(
+        default=None,
+        description="Approval ticket id when status='pending_approval'.",
+    )
 
 
 class IocCacheRequest(BaseModel):

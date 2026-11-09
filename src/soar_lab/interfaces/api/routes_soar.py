@@ -11,6 +11,7 @@ from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException
 
+from soar_lab.application.use_cases.decision_explainer import DecisionExplainer
 from soar_lab.common.constants import (
     SERVICE_CORTEX,
     SERVICE_ELASTICSEARCH,
@@ -19,10 +20,34 @@ from soar_lab.common.constants import (
     SERVICE_THEHIVE,
 )
 from soar_lab.config.logging import get_logger
+from soar_lab.domain.services.cortex_job_classifier import summarize_jobs
+from soar_lab.infrastructure.integrations.shuffle.execution_index import (
+    ShuffleExecutionIndex,
+)
 
 __all__ = ["register_soar_routes"]
 
 logger = get_logger(__name__)
+
+
+def _decision_explainer(app_instance: FastAPI) -> Any:
+    """Build (and cache) the DecisionExplainer use case on app state.
+
+    The OpenSearch URL is the only config it needs — read lazily so the
+    endpoint degrades to 503 instead of breaking app startup.
+    """
+    explainer = getattr(app_instance.state, "decision_explainer", None)
+    if explainer is None:
+        cp = getattr(app_instance.state, "config_provider", None)
+        os_url = cp.get("SHUFFLE_OPENSEARCH_URL") if cp is not None else None
+        if not os_url:
+            raise HTTPException(
+                status_code=503,
+                detail="Decision explainer unavailable (SHUFFLE_OPENSEARCH_URL unset)",
+            ) from None
+        explainer = DecisionExplainer(ShuffleExecutionIndex(str(os_url)))
+        app_instance.state.decision_explainer = explainer
+    return explainer
 
 
 def _make_client_getter(app_instance: FastAPI, attr: str, label: str) -> Callable[[], Any]:
@@ -47,7 +72,7 @@ def _register_thehive_routes(app_instance: FastAPI, get_thehive_client: Callable
     """Register all TheHive integration endpoints."""
 
     @app_instance.get("/soar/thehive/cases")
-    async def thehive_list_cases(thehive: Any = Depends(get_thehive_client)) -> Any:
+    def thehive_list_cases(thehive: Any = Depends(get_thehive_client)) -> Any:
         """List all TheHive cases (no 10-item limit).
 
         Args:
@@ -67,7 +92,7 @@ def _register_thehive_routes(app_instance: FastAPI, get_thehive_client: Callable
             raise _service_error("TheHive", "list_cases", e) from e
 
     @app_instance.get("/soar/thehive/cases/{case_id}")
-    async def thehive_get_case(case_id: str, thehive: Any = Depends(get_thehive_client)) -> Any:
+    def thehive_get_case(case_id: str, thehive: Any = Depends(get_thehive_client)) -> Any:
         """Get a single TheHive case by ID.
 
         Args:
@@ -86,7 +111,7 @@ def _register_thehive_routes(app_instance: FastAPI, get_thehive_client: Callable
             raise _service_error("TheHive", "get_case", e) from e
 
     @app_instance.get("/soar/thehive/cases/{case_id}/observables")
-    async def thehive_get_observables(
+    def thehive_get_observables(
         case_id: str,
         thehive: Any = Depends(get_thehive_client),
     ) -> Any:
@@ -110,7 +135,7 @@ def _register_thehive_routes(app_instance: FastAPI, get_thehive_client: Callable
             raise _service_error("TheHive", "get_observables", e) from e
 
     @app_instance.get("/soar/thehive/cases/{case_id}/tasks")
-    async def thehive_get_tasks(case_id: str, thehive: Any = Depends(get_thehive_client)) -> Any:
+    def thehive_get_tasks(case_id: str, thehive: Any = Depends(get_thehive_client)) -> Any:
         """List tasks for a TheHive case.
 
         Args:
@@ -130,8 +155,8 @@ def _register_thehive_routes(app_instance: FastAPI, get_thehive_client: Callable
             raise _service_error("TheHive", "list_tasks", e) from e
 
     @app_instance.get("/soar/thehive/health")
-    async def thehive_health(thehive: Any = Depends(get_thehive_client)) -> Any:
-        """TheHive reachability check.
+    def thehive_health(thehive: Any = Depends(get_thehive_client)) -> Any:
+        """Check TheHive reachability.
 
         Args:
             thehive: The TheHive client dependency.
@@ -147,7 +172,7 @@ def _register_cortex_routes(app_instance: FastAPI, get_cortex_client: Callable[[
     """Register all Cortex integration endpoints."""
 
     @app_instance.get("/soar/cortex/analyzers")
-    async def cortex_list_analyzers(
+    def cortex_list_analyzers(
         data_type: str | None = None, cortex: Any = Depends(get_cortex_client)
     ) -> Any:
         """List Cortex analyzers, optionally filtered by data_type.
@@ -173,7 +198,7 @@ def _register_cortex_routes(app_instance: FastAPI, get_cortex_client: Callable[[
             raise _service_error("Cortex", "list_analyzers", e) from e
 
     @app_instance.get("/soar/cortex/jobs")
-    async def cortex_list_jobs(
+    def cortex_list_jobs(
         start: int = 0,
         count: int = 10,
         cortex: Any = Depends(get_cortex_client),
@@ -197,8 +222,37 @@ def _register_cortex_routes(app_instance: FastAPI, get_cortex_client: Callable[[
         except Exception as e:
             raise _service_error("Cortex", "list_jobs", e) from e
 
+    @app_instance.get("/soar/cortex/jobs/summary")
+    def cortex_jobs_summary(
+        count: int = 100,
+        cortex: Any = Depends(get_cortex_client),
+    ) -> Any:
+        """Classified summary of recent analyzer jobs (CTX-001).
+
+        Aggregates jobs into ``success``, ``expected_no_data``,
+        ``analyzer_error`` and ``infrastructure_failure`` categories so
+        an operator can separate platform incidents from empty lookups.
+        Registered before ``/jobs/{job_id}`` so the literal ``summary``
+        path is not captured as a job id.
+
+        Args:
+            count: Maximum number of recent jobs to classify.
+            cortex: The Cortex client dependency.
+
+        Returns:
+            dict: Totals, per-category and per-analyzer breakdowns and a
+            list of flagged (non-benign) failures.
+        """
+        try:
+            jobs = cortex.list_jobs(start=0, count=count)
+            if isinstance(jobs, dict):
+                jobs = jobs.get("jobs", [])
+            return summarize_jobs(list(jobs))
+        except Exception as e:
+            raise _service_error("Cortex", "jobs_summary", e) from e
+
     @app_instance.get("/soar/cortex/jobs/{job_id}")
-    async def cortex_get_job(job_id: str, cortex: Any = Depends(get_cortex_client)) -> Any:
+    def cortex_get_job(job_id: str, cortex: Any = Depends(get_cortex_client)) -> Any:
         """Get status and result of a Cortex job.
 
         Args:
@@ -217,7 +271,7 @@ def _register_cortex_routes(app_instance: FastAPI, get_cortex_client: Callable[[
             raise _service_error("Cortex", "get_job", e) from e
 
     @app_instance.get("/soar/cortex/jobs/{job_id}/report")
-    async def cortex_get_job_report(job_id: str, cortex: Any = Depends(get_cortex_client)) -> Any:
+    def cortex_get_job_report(job_id: str, cortex: Any = Depends(get_cortex_client)) -> Any:
         """Get full report of a completed Cortex job.
 
         Args:
@@ -236,7 +290,7 @@ def _register_cortex_routes(app_instance: FastAPI, get_cortex_client: Callable[[
             raise _service_error("Cortex", "get_job_report", e) from e
 
     @app_instance.get("/soar/cortex/health")
-    async def cortex_health(cortex: Any = Depends(get_cortex_client)) -> Any:
+    def cortex_health(cortex: Any = Depends(get_cortex_client)) -> Any:
         """Cortex reachability check.
 
         Args:
@@ -253,7 +307,7 @@ def _register_misp_routes(app_instance: FastAPI, get_misp_client: Callable[[], A
     """Register all MISP integration endpoints."""
 
     @app_instance.get("/soar/misp/attributes")
-    async def misp_search_attributes(
+    def misp_search_attributes(
         value: str | None = None,
         attr_type: str | None = None,
         limit: int = 50,
@@ -280,7 +334,7 @@ def _register_misp_routes(app_instance: FastAPI, get_misp_client: Callable[[], A
             raise _service_error("MISP", "search_attributes", e) from e
 
     @app_instance.get("/soar/misp/events")
-    async def misp_list_events(limit: int = 20, misp: Any = Depends(get_misp_client)) -> Any:
+    def misp_list_events(limit: int = 20, misp: Any = Depends(get_misp_client)) -> Any:
         """List recent MISP events.
 
         Args:
@@ -300,7 +354,7 @@ def _register_misp_routes(app_instance: FastAPI, get_misp_client: Callable[[], A
             raise _service_error("MISP", "list_events", e) from e
 
     @app_instance.get("/soar/misp/events/{event_id}")
-    async def misp_get_event(event_id: str, misp: Any = Depends(get_misp_client)) -> Any:
+    def misp_get_event(event_id: str, misp: Any = Depends(get_misp_client)) -> Any:
         """Get a specific MISP event by ID.
 
         Args:
@@ -319,7 +373,7 @@ def _register_misp_routes(app_instance: FastAPI, get_misp_client: Callable[[], A
             raise _service_error("MISP", "get_event", e) from e
 
     @app_instance.get("/soar/misp/health")
-    async def misp_health(misp: Any = Depends(get_misp_client)) -> Any:
+    def misp_health(misp: Any = Depends(get_misp_client)) -> Any:
         """MISP reachability check.
 
         Args:
@@ -336,7 +390,7 @@ def _register_shuffle_routes(app_instance: FastAPI, get_shuffle_client: Callable
     """Register all Shuffle integration endpoints."""
 
     @app_instance.get("/soar/shuffle/workflows")
-    async def shuffle_list_workflows(shuffle: Any = Depends(get_shuffle_client)) -> Any:
+    def shuffle_list_workflows(shuffle: Any = Depends(get_shuffle_client)) -> Any:
         """List all Shuffle workflows.
 
         Args:
@@ -355,7 +409,7 @@ def _register_shuffle_routes(app_instance: FastAPI, get_shuffle_client: Callable
             raise _service_error("Shuffle", "list_workflows", e) from e
 
     @app_instance.get("/soar/shuffle/workflows/{workflow_id}")
-    async def shuffle_get_workflow(
+    def shuffle_get_workflow(
         workflow_id: str,
         shuffle: Any = Depends(get_shuffle_client),
     ) -> Any:
@@ -377,7 +431,7 @@ def _register_shuffle_routes(app_instance: FastAPI, get_shuffle_client: Callable
             raise _service_error("Shuffle", "get_workflow", e) from e
 
     @app_instance.get("/soar/shuffle/workflows/{workflow_id}/executions")
-    async def shuffle_get_executions(
+    def shuffle_get_executions(
         workflow_id: str,
         shuffle: Any = Depends(get_shuffle_client),
     ) -> Any:
@@ -401,7 +455,7 @@ def _register_shuffle_routes(app_instance: FastAPI, get_shuffle_client: Callable
             raise _service_error("Shuffle", "get_executions", e) from e
 
     @app_instance.get("/soar/shuffle/workflows/{workflow_id}/executions/{execution_id}")
-    async def shuffle_get_execution(
+    def shuffle_get_execution(
         workflow_id: str, execution_id: str, shuffle: Any = Depends(get_shuffle_client)
     ) -> Any:
         """Get a specific Shuffle workflow execution.
@@ -428,8 +482,32 @@ def _register_shuffle_routes(app_instance: FastAPI, get_shuffle_client: Callable
         except Exception as e:
             raise _service_error("Shuffle", "get_execution", e) from e
 
+    @app_instance.get("/soar/shuffle/decisions")
+    def shuffle_recent_decisions(limit: int = 20) -> Any:
+        """List the most recent executions with their verdict payload (SOAR-01).
+
+        Each entry carries ``decision`` — the ``calc_decision`` node's
+        score/verdict/decision/factors — or ``null`` while the execution
+        is still pre-verdict.
+        """
+        explainer = _decision_explainer(app_instance)
+        return {"count": limit, "executions": explainer.recent(limit)}
+
+    @app_instance.get("/soar/shuffle/executions/{execution_id}/decision")
+    def shuffle_execution_decision(execution_id: str) -> Any:
+        """Explain why one execution reached its verdict (SOAR-01).
+
+        Returns the ``calc_decision`` payload — score, verdict, decision
+        and the contributing factors — extracted from the execution's
+        OpenSearch record.
+        """
+        record = _decision_explainer(app_instance).explain(execution_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Execution not found") from None
+        return record
+
     @app_instance.get("/soar/shuffle/health")
-    async def shuffle_health(shuffle: Any = Depends(get_shuffle_client)) -> Any:
+    def shuffle_health(shuffle: Any = Depends(get_shuffle_client)) -> Any:
         """Shuffle reachability check.
 
         Args:
@@ -446,7 +524,7 @@ def _register_es_routes(app_instance: FastAPI, get_elasticsearch_client: Callabl
     """Register all Elasticsearch integration endpoints."""
 
     @app_instance.get("/soar/elasticsearch/count")
-    async def es_count(
+    def es_count(
         index: str | None = None,
         es: Any = Depends(get_elasticsearch_client),
     ) -> Any:
@@ -471,7 +549,7 @@ def _register_es_routes(app_instance: FastAPI, get_elasticsearch_client: Callabl
             raise _service_error("Elasticsearch", "count", e) from e
 
     @app_instance.get("/soar/elasticsearch/latest")
-    async def es_latest(
+    def es_latest(
         size: int = 10, index: str | None = None, es: Any = Depends(get_elasticsearch_client)
     ) -> Any:
         """Return the most recent documents from soar-alerts.
@@ -495,7 +573,7 @@ def _register_es_routes(app_instance: FastAPI, get_elasticsearch_client: Callabl
             raise _service_error("Elasticsearch", "latest", e) from e
 
     @app_instance.get("/soar/elasticsearch/health")
-    async def es_health(es: Any = Depends(get_elasticsearch_client)) -> Any:
+    def es_health(es: Any = Depends(get_elasticsearch_client)) -> Any:
         """Elasticsearch cluster health.
 
         Args:
@@ -521,7 +599,7 @@ def _register_status_route(app_instance: FastAPI) -> None:
     """Register the aggregated SOAR status endpoint."""
 
     @app_instance.get("/soar/status")
-    async def soar_status() -> Any:
+    def soar_status() -> Any:
         """Aggregated health check across all SOAR integration clients.
 
         Returns:

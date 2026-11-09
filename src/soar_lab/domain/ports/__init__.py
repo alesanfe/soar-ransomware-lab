@@ -9,11 +9,13 @@ This module re-exports all ports from submodules for backward compatibility.
 
 # Re-export infrastructure ports
 from .infrastructure import (
+    AdmissionStore,
     BackupDriver,
     BackupStorageProvider,
     CacheInterface,
     ChecksumService,
     ConfigProvider,
+    EventQueue,
     FileSystemInterface,
     HealthCheckInterface,
     HTTPClient,
@@ -61,6 +63,8 @@ __all__ = [
     "StorageProvider",
     "BackupStorageProvider",
     "BackupDriver",
+    "EventQueue",
+    "AdmissionStore",
     "TestRunner",
     "LogReader",
     "ConfigProvider",

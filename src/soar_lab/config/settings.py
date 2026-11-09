@@ -5,6 +5,7 @@ Single source of truth for all configuration across the project.
 """
 
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -18,18 +19,59 @@ from soar_lab.common.constants import (
     DEFAULT_TEST_TIMEOUT,
     JWT_ALGORITHM_DEFAULT,
 )
+from soar_lab.common.exceptions import ConfigurationError
 from soar_lab.config.logging import get_logger
+from soar_lab.config.schema import validate_config_dict
 
 __all__ = ["Settings", "create_settings"]
 
-# Load environment variables
-# Load .env first, then .env.full with override=True to ensure E2E test URLs take precedence
+# Load environment variables — CFG-031/032 (12-Factor):
+# precedence is: real environment > .env.full > .env > code defaults.
+#
+# Legacy deviation: .env.full used to be loaded with override=True so
+# regenerated keys (init_thehive.py writes fresh THEHIVE_API_KEY into
+# .env.full) won over stale shell vars. That inverts 12-Factor — a real
+# env var must always win. The lab workflow that needs file-wins can
+# opt in explicitly with SOAR_DOTENV_OVERRIDE=1. Test suites keep their
+# own override=True in tests/conftest.py, unaffected by this.
 load_dotenv()
 env_file = Path(__file__).parent.parent.parent.parent / ".env.full"
 if env_file.exists():
-    load_dotenv(env_file, override=True)
+    _dotenv_strong = os.environ.get("SOAR_DOTENV_OVERRIDE", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    load_dotenv(env_file, override=_dotenv_strong)
 
 logger = get_logger(__name__)
+
+# CFG-BOOT-001 — keys whose absence makes the deployment non-functional.
+# Resolved through the config provider (``cp.get``) so the same list
+# applies to Settings and dict-style providers alike.
+REQUIRED_CONFIG_KEYS: tuple[str, ...] = (
+    "elastic_password",
+    "thehive_secret",
+    "thehive_api_key",
+    "cortex_secret",
+    "cortex_api_key",
+    "siem_webhook_token",
+)
+# JWT signs auth tokens — either key satisfies the requirement.
+JWT_CONFIG_KEYS: tuple[str, ...] = ("jwt_secret_key", "api_auth_secret")
+
+
+def missing_required_keys(cp: Any) -> list[str]:
+    """Return the required config keys absent from provider ``cp``.
+
+    ``cp`` is any object with ``.get(key)`` — Settings, dict provider
+    or the composition-root config provider. An empty list means the
+    deployment has every mandatory credential configured.
+    """
+    missing = [key for key in REQUIRED_CONFIG_KEYS if not cp.get(key)]
+    if not any(cp.get(key) for key in JWT_CONFIG_KEYS):
+        missing.append("jwt_secret_key (or api_auth_secret)")
+    return missing
 
 
 class Settings:
@@ -38,6 +80,12 @@ class Settings:
     def __init__(self) -> None:
         """Initialize the Settings by loading configuration from environment."""
         self._config = self._load_config()
+        # C2: schema-validate the merged dict at boot — range/type
+        # errors surface here with field names, not mid-request.
+        try:
+            validate_config_dict(self._config)
+        except Exception as exc:
+            raise ConfigurationError(f"Invalid configuration: {exc}") from exc
         self._backup_dir_override = None  # For testing purposes
 
     # ------------------------------------------------------------------
@@ -78,7 +126,8 @@ class Settings:
         """JWT signing secret key."""
         jwt_secret = self._config.get("jwt_secret_key")
         api_secret = self._config.get("api_auth_secret")
-        return jwt_secret or api_secret or "change-this-in-production-use-32-chars"
+        # Fail closed: a public hardcoded fallback would let anyone forge tokens.
+        return jwt_secret or api_secret
 
     @property
     def JWT_ALGORITHM(self) -> str:
@@ -118,17 +167,15 @@ class Settings:
     TEST_TIMEOUT_SECONDS: int = DEFAULT_TEST_TIMEOUT
     TEST_COVERAGE_PATH: str = "src/soar_lab"
 
-    def _load_config(self) -> dict[str, Any]:
-        """Load configuration from environment variables."""
-        base_dir_str = os.getenv("BASE_DIR")
-        if not base_dir_str:
-            raise ValueError("BASE_DIR environment variable must be set")
-        base_dir = Path(base_dir_str)
+    # ------------------------------------------------------------------
+    # Config sections — each returns a fragment merged by _load_config.
+    # Keep env-var names and defaults byte-identical when editing.
+    # ------------------------------------------------------------------
 
-        config = {
-            # === Base Directory (for PathService) ===
-            "base_dir": str(base_dir),
-            # === API Configuration ===
+    @staticmethod
+    def _api_config() -> dict[str, Any]:
+        """API host/auth/JWT/CORS and the Redis cache URL."""
+        return {
             "api_host": os.getenv("API_HOST", "127.0.0.1"),
             "api_port": int(os.getenv("API_PORT", "8000")),
             "web_ui_user": os.getenv("WEB_UI_USER"),
@@ -141,9 +188,16 @@ class Settings:
                 "CORS_ORIGINS", "http://localhost:8086,http://localhost:8081"
             ),
             "redis_url": os.getenv("REDIS_URL"),
-            # === Project Configuration ===
+            # Deployment profile — "production" turns on fail-fast config
+            # validation at boot (CFG-BOOT-001).
+            "environment": os.getenv("SOAR_ENV", "development"),
+        }
+
+    @staticmethod
+    def _service_config() -> dict[str, Any]:
+        """Compose project name, published ports and service base URLs."""
+        return {
             "project_name": os.getenv("COMPOSE_PROJECT_NAME", "soar"),
-            # === Network Configuration ===
             "thehive_port": int(os.getenv("THEHIVE_HTTP_PORT", "9000")),
             "cortex_port": int(os.getenv("CORTEX_HTTP_PORT", "9001")),
             "shuffle_ui_port": int(os.getenv("SHUFFLE_UI_PORT", "8081")),
@@ -151,22 +205,28 @@ class Settings:
             "elasticsearch_port": int(os.getenv("ELASTICSEARCH_PORT", "9201")),
             "misp_port": int(os.getenv("MISP_PORT", "8083")),
             "http_port": int(os.getenv("HTTP_PORT", "80")),
-            # === Service URLs (single source of truth) ===
             "thehive_url": os.getenv("THEHIVE_URL", "http://thehive:9000"),
             "cortex_url": os.getenv("CORTEX_URL", "http://cortex:9001"),
             "shuffle_url": os.getenv("SHUFFLE_URL", DEFAULT_SHUFFLE_BACKEND_URL),
-            "misp_url": os.getenv("MISP_URL", "http://misp:80"),
+            # MISP in this stack serves HTTPS with a self-signed cert — the
+            # http:80 default was BUG-070. Keep the source default aligned
+            # with what base_client rewrites.
+            "misp_url": os.getenv("MISP_URL", "https://misp:443"),
             "elasticsearch_url": os.getenv(
                 "ES_URL", os.getenv("ELASTICSEARCH_URL", DEFAULT_ELASTICSEARCH_URL)
             ),
             "shuffle_webhook_url": os.getenv(
                 "SHUFFLE_WEBHOOK_URL", "http://localhost:5001/api/v1/hooks"
             ),
-            # === Security Configuration ===
+        }
+
+    @staticmethod
+    def _security_config() -> dict[str, Any]:
+        """Credentials, service tokens, thresholds and datastore logins."""
+        return {
             "elastic_security_enabled": os.getenv("ELASTIC_SECURITY_ENABLED", "true").lower()
             == "true",
             "elastic_password": os.getenv("ELASTIC_PASSWORD", ""),
-            # === Authentication ===
             "thehive_secret": os.getenv("THEHIVE_SECRET", ""),
             "thehive_api_key": os.getenv("THEHIVE_API_KEY", ""),
             "cortex_secret": os.getenv("CORTEX_SECRET", ""),
@@ -175,38 +235,55 @@ class Settings:
             "shuffle_password": os.getenv("SHUFFLE_DEFAULT_PASSWORD", ""),
             "shuffle_api_key": os.getenv("SHUFFLE_DEFAULT_APIKEY", ""),
             "misp_api_key": os.getenv("MISP_API_KEY", ""),
-            # === Security Tokens ===
             "siem_webhook_token": os.getenv("SIEM_WEBHOOK_TOKEN", ""),
             "edr_sim_token": os.getenv("EDR_SIM_TOKEN", ""),
             "firewall_sim_token": os.getenv("FIREWALL_SIM_TOKEN", ""),
-            # === Decision Thresholds ===
             "decision_score_threshold": int(os.getenv("DECISION_SCORE_THRESHOLD", "80")),
-            # === Database Configuration ===
             "postgres_user": os.getenv("POSTGRES_USER", "thehive"),
             "postgres_password": os.getenv("POSTGRES_PASSWORD", ""),
             "postgres_db": os.getenv("POSTGRES_DB", "thehive"),
             "redis_password": os.getenv("REDIS_PASSWORD", ""),
-            # === Logging Configuration ===
+        }
+
+    @staticmethod
+    def _logging_config(base_dir: Path) -> dict[str, Any]:
+        """Log level/format/destination (``log_dir`` derives from base dir)."""
+        return {
             "log_level": os.getenv("LOG_LEVEL", "INFO"),
             "log_format": os.getenv("LOG_FORMAT", "json"),
             "log_dir": os.getenv("LOG_DIR", str(base_dir / "runtime" / "logs" / "soar")),
-            # === Performance Configuration ===
+        }
+
+    @staticmethod
+    def _performance_config() -> dict[str, Any]:
+        """Analyzer concurrency, rate limits and health-check timing."""
+        return {
             "max_concurrent_analyzers": int(os.getenv("MAX_CONCURRENT_ANALYZERS", "3")),
             "analyzer_timeout": int(os.getenv("ANALYZER_TIMEOUT", "30")),
             "analyzer_retries": int(os.getenv("ANALYZER_RETRIES", "1")),
-            # === Rate Limiting ===
             "webhook_rate_limit": int(os.getenv("WEBHOOK_RATE_LIMIT", "60")),
             "webhook_payload_max_size": int(os.getenv("WEBHOOK_PAYLOAD_MAX_SIZE", "65536")),
-            # === Health Check Configuration ===
             "health_check_interval": os.getenv("HEALTH_CHECK_INTERVAL", "30s"),
             "health_check_timeout": os.getenv("HEALTH_CHECK_TIMEOUT", "10s"),
             "health_check_retries": int(os.getenv("HEALTH_CHECK_RETRIES", "3")),
-            # === Backup Configuration ===
+        }
+
+    @staticmethod
+    def _backup_config(base_dir: Path) -> dict[str, Any]:
+        """Backup location, retention and compression."""
+        return {
             "backup_dir": os.getenv("BACKUP_DIR", str(base_dir / "runtime" / "backups")),
             "retention_days": int(os.getenv("RETENTION_DAYS", "7")),
             "compress_backups": os.getenv("COMPRESS", "true").lower() == "true",
-            # === Service Health Check URLs and Containers ===
-            "thehive_health_url": os.getenv("THEHIVE_HEALTH_URL", "http://thehive:9000/api/health"),
+        }
+
+    @staticmethod
+    def _health_endpoints_config() -> dict[str, Any]:
+        """Per-service health URL + container name pairs."""
+        return {
+            "thehive_health_url": os.getenv(
+                "THEHIVE_HEALTH_URL", "http://thehive:9000/api/v1/status/public"
+            ),
             "thehive_container": os.getenv("THEHIVE_CONTAINER", "soar_thehive"),
             "cortex_health_url": os.getenv("CORTEX_HEALTH_URL", "http://cortex:9001/"),
             "cortex_container": os.getenv("CORTEX_CONTAINER", "soar_cortex"),
@@ -230,7 +307,7 @@ class Settings:
             "elasticsearch_container": os.getenv("ELASTICSEARCH_CONTAINER", "soar_elasticsearch"),
             "nginx_health_url": os.getenv("NGINX_HEALTH_URL", "http://nginx:80/"),
             "nginx_container": os.getenv("NGINX_CONTAINER", "soar_nginx"),
-            "redis_health_url": os.getenv("REDIS_HEALTH_URL", "http://redis:6379/"),
+            "redis_health_url": os.getenv("REDIS_HEALTH_URL", "tcp://redis:6379"),
             "redis_container": os.getenv("REDIS_CONTAINER", "soar_redis"),
             "loki_health_url": os.getenv("LOKI_HEALTH_URL", "http://loki:3100/ready"),
             "loki_container": os.getenv("LOKI_CONTAINER", "soar_loki"),
@@ -238,10 +315,33 @@ class Settings:
             "grafana_container": os.getenv("GRAFANA_CONTAINER", "soar_grafana"),
             "promtail_health_url": os.getenv("PROMTAIL_HEALTH_URL", "http://promtail:9080/"),
             "promtail_container": os.getenv("PROMTAIL_CONTAINER", "soar_promtail"),
-            "misp_health_url": os.getenv("MISP_HEALTH_URL", "http://misp:80/users/heartbeat"),
+            "misp_health_url": os.getenv("MISP_HEALTH_URL", "https://misp:443/users/heartbeat"),
             "misp_container": os.getenv("MISP_CONTAINER", "soar_misp"),
         }
 
+    def _load_config(self) -> dict[str, Any]:
+        """Load configuration from environment variables.
+
+        CFG-034: ``BASE_DIR`` is optional — it resolves to the repo root
+        derived from this file's location (``src/soar_lab/config`` → up 3).
+        In Docker that yields ``/app``, matching the baked layout. The env
+        var remains an explicit override; a totally absent BASE_DIR no
+        longer kills ``import soar_lab.interfaces.api``.
+        """
+        base_dir_str = os.getenv("BASE_DIR")
+        base_dir = Path(base_dir_str) if base_dir_str else Path(__file__).resolve().parents[3]
+
+        config: dict[str, Any] = {"base_dir": str(base_dir)}
+        for section in (
+            self._api_config,
+            self._service_config,
+            self._security_config,
+            self._performance_config,
+            self._health_endpoints_config,
+        ):
+            config.update(section())
+        config.update(self._logging_config(base_dir))
+        config.update(self._backup_config(base_dir))
         return config
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -256,28 +356,50 @@ class Settings:
         """Set configuration value."""
         self._config[key] = value
 
-    def get_all(self) -> dict[str, Any]:
-        """Get all configuration."""
-        return self._config.copy()
+    # BL-SEC-011 / BL-CFG: keys whose values are credentials. ``get_all``
+    # redacts them by default so a config dump (debug endpoint, support
+    # bundle, log line) can never serialize secrets in plaintext.
+    _SENSITIVE_KEY_RE = re.compile(
+        r"(password|passwd|secret|token|api_?key|apikey|private_?key|credential)",
+        re.IGNORECASE,
+    )
+    _REDACTED = "***REDACTED***"
 
-    def validate(self) -> bool:
-        """Validate configuration."""
-        required_keys = [
-            "elastic_password",
-            "thehive_secret",
-            "thehive_api_key",
-            "cortex_secret",
-            "cortex_api_key",
-            "siem_webhook_token",
-        ]
+    def get_all(self, redact: bool = True) -> dict[str, Any]:
+        """Get all configuration.
 
-        missing_keys = []
-        for key in required_keys:
-            if not self.get(key):
-                missing_keys.append(key)
+        Args:
+            redact: when True (default) values under secret-looking keys
+                are replaced with ``***REDACTED***``. Pass ``redact=False``
+                only for internal consumers that truly need plaintext —
+                never for anything that may reach logs or a response body.
+        """
+        if not redact:
+            return self._config.copy()
+        return {
+            k: (self._REDACTED if self._SENSITIVE_KEY_RE.search(k) and v else v)
+            for k, v in self._config.items()
+        }
+
+    def get_redacted(self) -> dict[str, Any]:
+        """Explicit alias for ``get_all(redact=True)`` for config dumps."""
+        return self.get_all(redact=True)
+
+    def validate(self, strict: bool = False) -> bool:
+        """Validate configuration.
+
+        With ``strict=False`` (default) missing keys only log a warning.
+        With ``strict=True`` a ``ConfigurationError`` is raised instead —
+        used at boot when ``SOAR_CONFIG_STRICT``/``SOAR_ENV=production``
+        demands fail-fast startup.
+        """
+        missing_keys = missing_required_keys(self)
 
         if missing_keys:
-            logger.warning(f"Missing required configuration: {', '.join(missing_keys)}")
+            message = f"Missing required configuration: {', '.join(missing_keys)}"
+            if strict:
+                raise ConfigurationError(message)
+            logger.warning(message)
             return False
 
         return True

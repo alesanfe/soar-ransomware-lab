@@ -5,6 +5,7 @@ wrapping the existing Settings class to provide configuration through
 dependency injection instead of global access.
 """
 
+import os
 from typing import Any
 
 from soar_lab.config.settings import Settings
@@ -50,7 +51,11 @@ class InfrastructureConfigProvider:
         if isinstance(cfg, dict) and key in cfg:
             return self._settings._config[key]
 
-        return default
+        # Fall back to the raw environment for env-var-style keys (e.g.
+        # RATE_LIMIT_PER_MINUTE) that have no dedicated Settings property —
+        # otherwise configured values are silently replaced by defaults.
+
+        return os.environ.get(key, default)
 
     def get_service_urls(self) -> dict[str, Any]:
         """Get service URLs configuration.

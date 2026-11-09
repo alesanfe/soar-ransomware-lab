@@ -16,6 +16,8 @@ import os
 import sys
 from pathlib import Path
 
+import requests
+
 from soar_lab.common.constants import (
     DEFAULT_ELASTICSEARCH_URL,
     DEFAULT_ES_SEARCH_SIZE,
@@ -23,6 +25,13 @@ from soar_lab.common.constants import (
     ENV_ELASTIC_PASSWORD,
     METRICS_INDEX,
 )
+from soar_lab.config.settings import create_settings
+from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
+from soar_lab.domain.statistical_calculator import StatisticalCalculator
+from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
+from soar_lab.infrastructure.kpi_formatter import CSVKPIFormatter
+from soar_lab.infrastructure.log_parser import ExecutionLogParser
+from soar_lab.infrastructure.path_service import PathService
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +39,9 @@ logger = logging.getLogger(__name__)
 def _fetch_mttr_from_es(es_url: str, es_user: str, es_pass: str) -> list:
     """Fetch mttr_seconds values from soar-metrics Elasticsearch index."""
     try:
-        import requests as _req
 
         auth = (es_user, es_pass) if es_user else None
-        r = _req.get(
+        r = requests.get(
             f"{es_url}/{METRICS_INDEX}/_search",
             auth=auth,
             timeout=DEFAULT_ES_TIMEOUT,
@@ -118,7 +126,7 @@ def _parse_log_data(log_file, log_parser, stat_calc):
     if not log_path.exists():
         logger.warning(f"[calc_kpis] Log file not found: {log_path}")
         logger.warning(
-            "[calc_kpis] Run 'make test-malicious' or 'make test-benign' " "first to generate logs."
+            "[calc_kpis] Run 'make test-malicious' or 'make test-benign' first to generate logs."
         )
         sys.exit(1)
 
@@ -134,10 +142,9 @@ def _parse_log_data(log_file, log_parser, stat_calc):
 def _enrich_from_es(metrics, es_url, es_user, es_pass):
     """Enrich metrics with aggregated ES data if available."""
     try:
-        import requests as _req
 
         auth = (es_user, es_pass) if es_user else None
-        r_agg = _req.get(
+        r_agg = requests.get(
             f"{es_url}/{METRICS_INDEX}/_search",
             auth=auth,
             timeout=DEFAULT_ES_TIMEOUT,
@@ -206,14 +213,6 @@ def main() -> None:
     sys.path.insert(0, str(base_dir / "src"))
     os.environ.setdefault("BASE_DIR", str(base_dir))
     os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
-
-    from soar_lab.config.settings import create_settings
-    from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
-    from soar_lab.domain.statistical_calculator import StatisticalCalculator
-    from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
-    from soar_lab.infrastructure.kpi_formatter import CSVKPIFormatter
-    from soar_lab.infrastructure.log_parser import ExecutionLogParser
-    from soar_lab.infrastructure.path_service import PathService
 
     settings = create_settings()
     config_provider = InfrastructureConfigProvider(settings)

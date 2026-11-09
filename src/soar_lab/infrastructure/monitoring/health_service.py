@@ -63,8 +63,8 @@ class HealthService:
         for service_name, service_config in services_config.items():
             try:
                 status[service_name] = await self.check_service(service_name, service_config)
-            except Exception as e:
-                logger.error(f"Error checking service {service_name}: {e}")
+            except Exception:
+                logger.exception(f"Error checking service {service_name}")
                 status[service_name] = False
 
         for client_name, client in self._soar_clients.items():
@@ -72,8 +72,8 @@ class HealthService:
                 continue
             try:
                 status[client_name] = client.health_check()
-            except Exception as e:
-                logger.error(f"Error checking SOAR client {client_name}: {e}")
+            except Exception:
+                logger.exception(f"Error checking SOAR client {client_name}")
                 status[client_name] = False
 
         return status
@@ -87,6 +87,6 @@ class HealthService:
         try:
             # Delegate to injected system metrics dependency
             return self.system_metrics.get_hardware_metrics()
-        except Exception as e:
-            logger.error(f"Error getting system metrics: {e}")
+        except Exception:
+            logger.exception("Error getting system metrics")
             raise

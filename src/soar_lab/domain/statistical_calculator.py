@@ -4,10 +4,11 @@ This module contains pure statistical calculations without any infrastructure de
 following the Single Responsibility Principle and hexagonal architecture.
 """
 
-import math
 import statistics
 from datetime import datetime
 from typing import Any
+
+from soar_lab.domain.statistics import percentile as _canonical_percentile
 
 
 class StatisticalCalculator:
@@ -49,22 +50,12 @@ class StatisticalCalculator:
         mean_time = statistics.mean(valid_times)
         median_time = statistics.median(valid_times)
 
-        # Calculate percentiles
-        sorted_times = sorted(valid_times)
-        n = len(sorted_times)
-
-        # p50: median
-        p50 = statistics.median(sorted_times)
-
-        # p90: nearest-rank method
-        def _nearest_rank(p: float) -> float:
-            idx = min(math.ceil(n * p) - 1, n - 1)
-            idx = max(idx, 0)
-            return sorted_times[idx]
-
-        p90 = _nearest_rank(0.9)
-        p95 = _nearest_rank(0.95)
-        p99 = _nearest_rank(0.99)
+        # Percentiles via the canonical statistical core (M-001):
+        # single definition, single algorithm — linear interpolation.
+        p50 = statistics.median(sorted(valid_times))
+        p90 = _canonical_percentile(valid_times, 90)
+        p95 = _canonical_percentile(valid_times, 95)
+        p99 = _canonical_percentile(valid_times, 99)
 
         # Standard deviation
         std_dev = statistics.stdev(valid_times) if len(valid_times) > 1 else 0.0
@@ -155,13 +146,11 @@ class StatisticalCalculator:
                 alert_steps, started_keys, passed_keys
             )
 
-        # Last fallback: consecutive Step 1 timestamps give inter-arrival time
-        step1_keys = [
-            k for k in alert_steps if "Sending" in k or "STEP 1" in k or "alert" in k.lower()
-        ]
-        if step1_keys:
-            return StatisticalCalculator._inter_arrival_times(alert_steps, step1_keys)
-
+        # M-005: REMOVED the inter-arrival fallback. Consecutive Step-1
+        # arrival deltas measure *arrival rate*, not execution time —
+        # reporting them as execution times produced silently wrong MTTR.
+        # Uncomputable now means an empty list (metric not computable),
+        # never a semantically different measurement.
         return []
 
     @staticmethod
@@ -197,10 +186,14 @@ class StatisticalCalculator:
         ]
 
     @staticmethod
-    def _inter_arrival_times(
+    def inter_arrival_times(
         alert_steps: dict[str, list[datetime]], step1_keys: list[str]
     ) -> list[float]:
-        """Calculate inter-arrival times from consecutive Step 1 timestamps."""
+        """Inter-arrival times from consecutive Step 1 timestamps.
+
+        Kept as an explicit, honestly-named API for arrival-rate analysis.
+        It is NO LONGER used as a substitute for execution times (M-005).
+        """
         all_ts = sorted([ts for k in step1_keys for ts in alert_steps[k]])
         return [
             (all_ts[i + 1] - all_ts[i]).total_seconds()

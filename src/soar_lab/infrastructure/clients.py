@@ -7,6 +7,10 @@ Injectable for testing (call set_redis / set_docker to override).
 
 from typing import Protocol
 
+import docker
+import redis
+import redis.asyncio
+
 from soar_lab.config.logging import get_logger
 
 __all__ = [
@@ -37,7 +41,6 @@ class GatewayIPStrategy:
 
     def connect(self, socket_path: str) -> object | None:
         try:
-            import docker
 
             client = docker.DockerClient(base_url=f"tcp://{self.gateway_ip}:2375", version="auto")
             client.ping()
@@ -53,7 +56,6 @@ class UnixSocketStrategy:
 
     def connect(self, socket_path: str) -> object | None:
         try:
-            import docker
 
             client = docker.DockerClient(base_url=f"unix://{socket_path}", version="auto")
             client.ping()
@@ -69,7 +71,6 @@ class DefaultFromEnvStrategy:
 
     def connect(self, socket_path: str) -> object | None:
         try:
-            import docker
 
             # Use docker.from_env without modifying os.environ
             # If DOCKER_HOST is set in environment, docker.from_env will use it
@@ -85,7 +86,6 @@ class DefaultFromEnvStrategy:
 def create_redis_client(config_provider=None) -> object | None:
     """Create and return a Redis client from ConfigProvider."""
     try:
-        import redis
 
         if not config_provider:
             raise ValueError("config_provider must be supplied to create_redis_client")
@@ -102,6 +102,27 @@ def create_redis_client(config_provider=None) -> object | None:
         return client
     except Exception as exc:
         logger.warning(f"Redis connection failed: {exc}")
+        return None
+
+
+async def create_async_redis_client(config_provider=None) -> object | None:
+    """Create an ``redis.asyncio`` client for the admission queue (PERF-001)."""
+    try:
+
+        if not config_provider:
+            raise ValueError("config_provider must be supplied to create_async_redis_client")
+
+        redis_url = config_provider.get("REDIS_URL")
+        if not redis_url:
+            logger.warning("REDIS_URL not set — async admission queue disabled")
+            return None
+
+        client = redis.asyncio.from_url(redis_url)
+        await client.ping()
+        logger.info("Connected to Redis (async)")
+        return client
+    except Exception as exc:
+        logger.warning(f"Async Redis connection failed: {exc}")
         return None
 
 
@@ -137,6 +158,6 @@ def create_docker_client(config_provider=None) -> object | None:
         logger.error("All Docker connection methods failed")
         return None
 
-    except Exception as exc:
-        logger.error(f"Docker connection failed: {exc}")
+    except Exception:
+        logger.exception("Docker connection failed")
         return None

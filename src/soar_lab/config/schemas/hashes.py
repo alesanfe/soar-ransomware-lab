@@ -1,7 +1,7 @@
 """Network event and file hash Pydantic models."""
 
 from pydantic import BaseModel, Field
-from pydantic.networks import IPv4Address
+from pydantic.networks import IPvAnyAddress
 
 __all__ = ["NetworkEvent", "FileHash"]
 
@@ -9,8 +9,8 @@ __all__ = ["NetworkEvent", "FileHash"]
 class NetworkEvent(BaseModel):
     """Network event model."""
 
-    src_ip: IPv4Address = Field(..., description="Source IP address")
-    dst_ip: IPv4Address | None = Field(None, description="Destination IP address")
+    src_ip: IPvAnyAddress = Field(..., description="Source IP address (v4/v6)")
+    dst_ip: IPvAnyAddress | None = Field(None, description="Destination IP address (v4/v6)")
     src_port: int | None = Field(None, ge=1, le=65535, description="Source port")
     dst_port: int | None = Field(None, ge=1, le=65535, description="Destination port")
     protocol: str | None = Field(None, pattern=r"^(TCP|UDP|ICMP)$", description="Network protocol")

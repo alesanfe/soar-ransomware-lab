@@ -13,10 +13,10 @@ exported here so the public API of this module stays unchanged.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import threading
 import time
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import requests
@@ -32,11 +32,13 @@ from soar_lab.common.constants import (
     HEADER_AUTHORIZATION,
 )
 from soar_lab.common.exceptions import IntegrationError
+from soar_lab.common.runtime import repo_root, resolve_secret
 from soar_lab.config.logging import get_logger
 from soar_lab.infrastructure.integrations.shuffle.shuffle_es_helpers import (
     _EXECUTION_INDEX,
     es_lookup_execution,
     es_workflow_executions,
+    fetch_first_user_source,
     get_es_connection,
     read_env_credentials,
 )
@@ -50,22 +52,21 @@ logger = get_logger(__name__)
 def load_password() -> str:
     """Read ``SHUFFLE_DEFAULT_PASSWORD`` from the environment or ``.env.full``.
 
-    Returns:
+    The ``.env.full`` lookup resolves against the repository root derived
+    from ``common.runtime.repo_root()`` (never the CWD) and parses lines
+    strictly as ``KEY=value`` — commented lines and similarly-named
+    variables no longer match. Returns:
         The password string, or an empty string when it cannot be resolved.
     """
     pw = os.environ.get("SHUFFLE_DEFAULT_PASSWORD", "")
     if pw:
         return pw
     try:
-        candidates = (Path(".env.full"), Path(__file__).parent.parent.parent.parent / ".env.full")
-        for env_file in candidates:
-            if env_file.exists():
-                for line in env_file.read_text(encoding="utf-8", errors="replace").splitlines():
-                    if "SHUFFLE_DEFAULT_PASSWORD" in line and "=" in line:
-                        return line.split("=", 1)[1].strip()
+        return resolve_secret("SHUFFLE_DEFAULT_PASSWORD", env_file=repo_root() / ".env.full")
     except Exception as exc:
+        # nosemgrep: python-logger-credential-disclosure -- logs exception only
         logger.debug("Could not load Shuffle password: %s", exc)
-    return ""
+        return ""
 
 
 def do_login(client: ShuffleClient) -> bool:
@@ -82,11 +83,13 @@ def do_login(client: ShuffleClient) -> bool:
     if not (username and password):
         return False
     try:
-        resp = requests.post(
+        # Route through the client's pooled session (BL-HTTP-006) — verify,
+        # headers and connection reuse all come from it; the module-level
+        # requests.post() bypassed pooling AND the configured verify flag.
+        resp = client._session.post(
             client._url("/api/v1/login"),
             json={"username": username, "password": password},
             timeout=DEFAULT_SHUFFLE_PROBE_TIMEOUT,
-            verify=client._session.verify,
         )
         logger.debug("Shuffle login: HTTP %s", resp.status_code)
         return resp.status_code == 200
@@ -110,23 +113,13 @@ def set_org_id_header(client: ShuffleClient) -> None:
     """
     if client._session.headers.get("Org-Id"):
         return
-    try:
-        es_url, auth, verify = get_es_connection()
-        resp = requests.get(
-            f"{es_url}/users/_search",
-            auth=auth,
-            timeout=DEFAULT_SHUFFLE_QUICK_TIMEOUT,
-            verify=verify,
-        )
-        if resp.status_code == 200:
-            hits = resp.json().get("hits", {}).get("hits", [])
-            if hits:
-                org_id = hits[0]["_source"].get("active_org", {}).get("id", "")
-                if org_id:
-                    client._session.headers["Org-Id"] = org_id
-                    logger.debug("Shuffle Org-Id header set from OpenSearch: %s", org_id)
-    except Exception as exc:
-        logger.debug("Could not set Org-Id header: %s", exc)
+    source = fetch_first_user_source()
+    if not source:
+        return
+    org_id = source.get("active_org", {}).get("id", "")
+    if org_id:
+        client._session.headers["Org-Id"] = org_id
+        logger.debug("Shuffle Org-Id header set from OpenSearch: %s", org_id)
 
 
 def fetch_real_apikey() -> str:
@@ -139,23 +132,13 @@ def fetch_real_apikey() -> str:
     Returns:
         The apikey string, or ``""`` when it cannot be retrieved.
     """
-    try:
-        es_url, auth, verify = get_es_connection()
-        resp = requests.get(
-            f"{es_url}/users/_search?size=1",
-            auth=auth,
-            timeout=DEFAULT_SHUFFLE_QUICK_TIMEOUT,
-            verify=verify,
-        )
-        if resp.status_code == 200:
-            hits = resp.json().get("hits", {}).get("hits", [])
-            if hits:
-                key = hits[0]["_source"].get("apikey", "")
-                if key:
-                    logger.debug("fetch_real_apikey from OpenSearch: %s...", str(key)[:8])
-                    return str(key)
-    except Exception as exc:
-        logger.debug("fetch_real_apikey error: %s", exc)
+    source = fetch_first_user_source()
+    if not source:
+        return ""
+    key = source.get("apikey", "")
+    if key:
+        logger.debug("fetch_real_apikey from OpenSearch: %s...", str(key)[:8])
+        return str(key)
     return ""
 
 
@@ -177,6 +160,7 @@ def warm_cache(client: ShuffleClient) -> None:
         )
         bearer_ok = probe.status_code == 200
     except Exception as exc:
+        # nosemgrep: python-logger-credential-disclosure -- logs exception only
         logger.debug("Bearer token probe failed: %s", exc)
 
     if not bearer_ok:
@@ -186,11 +170,9 @@ def warm_cache(client: ShuffleClient) -> None:
             f"{AUTH_BEARER_PREFIX} ", ""
         )
         if real_key and real_key != current:
-            logger.debug(
-                "Shuffle apikey healed from %s... to %s...",
-                client._session.headers.get(HEADER_AUTHORIZATION, "")[-8:],
-                real_key[-8:],
-            )
+            old_fp = hashlib.sha256(current.encode()).hexdigest()[:12]
+            new_fp = hashlib.sha256(real_key.encode()).hexdigest()[:12]
+            logger.debug("Shuffle apikey healed (fp:%s -> fp:%s)", old_fp, new_fp)
             client._session.headers[HEADER_AUTHORIZATION] = f"{AUTH_BEARER_PREFIX} {real_key}"
         # One login to warm the in-memory cache for the (now correct) apikey.
         do_login(client)
@@ -328,7 +310,7 @@ def api_workflow_executions(
     """
     url = client._url(
         f"/api/v1/workflows/{workflow_id}/executions"
-        f"?limit=DEFAULT_SHUFFLE_WORKFLOW_EXECUTIONS_LIMIT"
+        f"?limit={DEFAULT_SHUFFLE_WORKFLOW_EXECUTIONS_LIMIT}"
     )
     last_exc: Exception | None = None
     for attempt in range(retries + 1):

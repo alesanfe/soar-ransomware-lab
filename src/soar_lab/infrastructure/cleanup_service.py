@@ -5,11 +5,14 @@ retention policies, preventing artifact accumulation from hiding real
 code problems.
 """
 
+import os
 from datetime import UTC, datetime, timedelta
+from operator import itemgetter
 from pathlib import Path
 from typing import Any
 
 from soar_lab.config.logging import get_logger
+from soar_lab.domain.ports import ConfigProvider
 
 __all__ = ["CleanupService"]
 
@@ -19,7 +22,7 @@ logger = get_logger(__name__)
 class CleanupService:
     """Service for cleaning up old artifacts based on retention policies."""
 
-    def __init__(self, path_service: object, config_provider: object | None = None) -> None:
+    def __init__(self, path_service: object, config_provider: ConfigProvider | None = None) -> None:
         """Initialize the cleanup service.
 
         Args:
@@ -31,68 +34,139 @@ class CleanupService:
         self._path_service = path_service
         self._config_provider = config_provider
 
-    def cleanup_old_artifacts(self, retention_days: int = None) -> dict[str, int]:
+    def cleanup_old_artifacts(
+        self,
+        retention_days: int | None = None,
+        *,
+        dry_run: bool = False,
+        min_keep: int = 1,
+    ) -> dict[str, int]:
         """Clean up artifacts older than retention_days.
 
+        Retention resolution is single-sourced: explicit parameter >
+        ``config_provider.get("retention_days")`` > ``RETENTION_DAYS``
+        environment variable > 30-day fallback. No duplicate literal
+        defaults.
+
         Args:
-            retention_days: Number of days to retain (defaults to
-                config_provider RETENTION_DAYS or 30)
+            retention_days: Number of days to retain (defaults to the
+                resolution chain above).
+            dry_run: When ``True``, only count what *would* be removed;
+                no file is deleted.
+            min_keep: Newest files per directory that are never deleted
+                regardless of age (active-guard: the latest backup/result
+                is always kept).
 
         Returns:
-            Dict with cleanup counts: backups_cleaned, results_cleaned, logs_cleaned
+            Dict with cleanup counts plus ``errors`` (failed deletions,
+            never silently dropped) and ``skipped`` (files kept by the
+            active-guard).
         """
-        if retention_days is None and self._config_provider:
-            retention_days = self._config_provider.get("retention_days", 30)
-        elif retention_days is None:
-            retention_days = 30
+        if retention_days is None:
+            retention_days = self._resolve_retention_days()
         cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
 
-        backups_cleaned = self._cleanup_directory(
-            self._path_service.backup_dir, cutoff_date, "*.tar.gz"
+        backups = self._cleanup_directory(
+            self._path_service.backup_dir,
+            cutoff_date,
+            "*.tar.gz",
+            dry_run=dry_run,
+            min_keep=min_keep,
         )
-        results_cleaned = self._cleanup_directory(
-            self._path_service.results_dir, cutoff_date, "*.json"
+        results = self._cleanup_directory(
+            self._path_service.results_dir,
+            cutoff_date,
+            "*.json",
+            dry_run=dry_run,
+            min_keep=min_keep,
         )
-        logs_cleaned = self._cleanup_directory(self._path_service.logs_dir, cutoff_date, "*.log")
+        logs = self._cleanup_directory(
+            self._path_service.logs_dir,
+            cutoff_date,
+            "*.log",
+            dry_run=dry_run,
+            min_keep=min_keep,
+        )
 
-        logger.info(
-            f"Cleanup completed: {backups_cleaned} backups, "
-            f"{results_cleaned} results, {logs_cleaned} logs removed"
-        )
-
-        return {
-            "backups_cleaned": backups_cleaned,
-            "results_cleaned": results_cleaned,
-            "logs_cleaned": logs_cleaned,
+        outcome = {
+            "backups_cleaned": backups["cleaned"],
+            "results_cleaned": results["cleaned"],
+            "logs_cleaned": logs["cleaned"],
+            "errors": backups["errors"] + results["errors"] + logs["errors"],
+            "skipped": backups["skipped"] + results["skipped"] + logs["skipped"],
         }
+        logger.info(
+            f"Cleanup {'(dry-run) ' if dry_run else ''}completed: "
+            f"{outcome['backups_cleaned']} backups, {outcome['results_cleaned']} results, "
+            f"{outcome['logs_cleaned']} logs removed, "
+            f"{outcome['errors']} errors, {outcome['skipped']} kept by active-guard"
+        )
+        return outcome
 
-    def _cleanup_directory(self, directory: Path, cutoff_date: datetime, pattern: str) -> int:
-        """Clean up files in directory older than cutoff_date.
+    def _resolve_retention_days(self) -> int:
+        """Resolve the effective retention period (single source)."""
+        if self._config_provider:
+            value = self._config_provider.get("retention_days")
+            if value is not None:
+                return int(value)
+        return int(os.getenv("RETENTION_DAYS", "30"))
+
+    def _cleanup_directory(
+        self,
+        directory: Path,
+        cutoff_date: datetime,
+        pattern: str,
+        *,
+        dry_run: bool,
+        min_keep: int,
+    ) -> dict[str, int]:
+        """Clean up files in *directory* older than *cutoff_date*.
 
         Args:
-            directory: Directory to clean
-            cutoff_date: Cutoff date for file age
-            pattern: File pattern to match
+            directory: Directory to clean.
+            cutoff_date: Cutoff date for file age.
+            pattern: File pattern to match.
+            dry_run: Count without deleting.
+            min_keep: Newest files (by mtime) to always keep.
 
         Returns:
-            Number of files cleaned
+            Dict with ``cleaned``, ``errors`` and ``skipped`` counts.
         """
+        outcome = {"cleaned": 0, "errors": 0, "skipped": 0}
         if not directory.exists():
-            return 0
+            return outcome
 
-        cleaned_count = 0
-
+        candidates: list[tuple[float, Path]] = []
         for file_path in directory.glob(pattern):
             try:
-                file_mtime = datetime.fromtimestamp(file_path.stat().st_mtime, tz=UTC)
-                if file_mtime < cutoff_date:
-                    file_path.unlink()
-                    cleaned_count += 1
-                    logger.debug(f"Removed old artifact: {file_path}")
-            except Exception as e:
-                logger.warning(f"Failed to remove {file_path}: {e}")
+                mtime = file_path.stat().st_mtime
+            except OSError as exc:
+                outcome["errors"] += 1
+                logger.warning(f"Failed to stat {file_path}: {exc}")
+                continue
+            if datetime.fromtimestamp(mtime, tz=UTC) < cutoff_date:
+                candidates.append((mtime, file_path))
 
-        return cleaned_count
+        # Active-guard: keep the newest ``min_keep`` expired files so the
+        # most recent backup/result is never deleted purely by age.
+        candidates.sort(key=itemgetter(0), reverse=True)
+        outcome["skipped"] = min(min_keep, len(candidates))
+        deletable = candidates[min_keep:] if min_keep else candidates
+
+        for _, file_path in deletable:
+            if dry_run:
+                outcome["cleaned"] += 1
+                logger.debug(f"[dry-run] Would remove old artifact: {file_path}")
+                continue
+            try:
+                file_path.unlink()
+                outcome["cleaned"] += 1
+                logger.debug(f"Removed old artifact: {file_path}")
+            except OSError as exc:
+                outcome["errors"] += 1
+                logger.warning(f"Failed to remove {file_path}: {exc}")
+
+        return outcome
 
     def get_artifact_stats(self) -> dict[str, Any]:
         """Get statistics about artifact storage.
@@ -131,8 +205,8 @@ class CleanupService:
 
         for file_path in directory.glob(pattern):
             try:
-                count += 1
                 total_size += file_path.stat().st_size
+                count += 1
             except Exception:
                 continue
 

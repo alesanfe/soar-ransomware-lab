@@ -2,16 +2,27 @@
 
 from __future__ import annotations
 
+import builtins
 import signal
 import threading
 from collections.abc import Callable
+from contextlib import suppress
 from typing import Any, Self
 
-__all__ = ["TimeoutError", "TimeoutHandler", "timeout_context"]
+__all__ = ["OperationTimeoutError", "TimeoutError", "TimeoutHandler", "timeout_context"]
 
 
-class TimeoutError(Exception):
-    """Raised when an operation exceeds its configured timeout."""
+class OperationTimeoutError(builtins.TimeoutError):
+    """Raised when an operation exceeds its configured timeout.
+
+    Subclasses the builtin ``TimeoutError`` so ``except TimeoutError``
+    catches domain timeouts, asyncio/socket timeouts and this error
+    uniformly — no ambiguity with the builtin name.
+    """
+
+
+# Backwards-compatible alias for existing ``from ... import TimeoutError``.
+TimeoutError = OperationTimeoutError  # pylint: disable=redefined-builtin
 
 
 def _run_callback_safely(callback: Callable[[], None] | None) -> None:
@@ -21,10 +32,8 @@ def _run_callback_safely(callback: Callable[[], None] | None) -> None:
         callback: Optional callable to invoke, or None.
     """
     if callback is not None:
-        try:
+        with suppress(Exception):
             callback()
-        except Exception:
-            pass
 
 
 def _handle_timeout(
@@ -77,21 +86,21 @@ class TimeoutHandler:
     def execute_with_timeout(
         self,
         func: Callable,
+        *args,
         timeout: float | None = None,
         cleanup: Callable[[], None] | None = None,
         on_timeout: Callable[[], None] | None = None,
-        *args,
         **kwargs,
     ) -> Any:
         """Execute *func* in a background thread with an enforced deadline.
 
         Args:
             func: Callable to execute.
+            *args: Positional arguments forwarded to *func*.
             timeout: Timeout in seconds for this call; falls back to the
                 handler default when None.
             cleanup: Optional callback invoked if the operation times out.
             on_timeout: Optional callback invoked if the operation times out.
-            *args: Positional arguments forwarded to *func*.
             **kwargs: Keyword arguments forwarded to *func*.
 
         Returns:

@@ -4,11 +4,13 @@
 Single source of truth for IP, hash, alert and path validation.
 """
 
+import ipaddress
 import re
 from pathlib import Path
 from typing import Any
 
 from soar_lab.common.exceptions import ValidationError
+from soar_lab.domain.models import AlertSeverity
 
 __all__ = [
     "IPValidator",
@@ -19,24 +21,27 @@ __all__ = [
 
 
 class IPValidator:
-    """Validates IPv4 addresses."""
+    """Validates IPv4 and IPv6 addresses (CFG-048).
 
-    _IPV4_RE = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
+    Uses the stdlib ``ipaddress`` module instead of a regex — zone IDs
+    (``fe80::1%eth0``) and compressed forms are handled correctly.
+    """
 
     @staticmethod
     def validate(ip: Any) -> bool:
-        """Return True if *ip* is a valid IPv4 address string."""
-        return (
-            bool(ip)
-            and isinstance(ip, str)
-            and bool(m := IPValidator._IPV4_RE.match(ip))
-            and all(0 <= int(g) <= 255 for g in m.groups())
-        )
+        """Return True if *ip* is a valid IPv4 or IPv6 address string."""
+        if not ip or not isinstance(ip, str):
+            return False
+        try:
+            ipaddress.ip_address(ip)
+        except ValueError:
+            return False
+        return True
 
     @classmethod
     def assert_valid(cls, ip: str) -> None:
         if not cls.validate(ip):
-            raise ValidationError(f"Invalid IPv4 address: {ip!r}")
+            raise ValidationError(f"Invalid IP address: {ip!r}")
 
 
 class HashValidator:
@@ -50,11 +55,12 @@ class HashValidator:
 
         strings.
         """
+        # An all-decimal string is a perfectly valid hex digest — the old
+        # ``isdigit()`` exclusion rejected real hashes.
         return (
             hash_value is not None
             and isinstance(hash_value, str)
             and bool(HashValidator._HASH_RE.match(hash_value))
-            and not hash_value.isdigit()
         )
 
     @classmethod
@@ -68,7 +74,9 @@ class AlertValidator:
 
     REQUIRED_FIELDS = ("alert_id", "hostname", "hash", "src_ip", "timestamp")
     FULL_REQUIRED_FIELDS = ("alert_id", "hostname", "src_ip", "hash", "severity", "event_type")
-    VALID_SEVERITIES = (0, 1, 2, 3)
+    # CFG-002: derive from the canonical domain enum — the old tuple
+    # accepted 0 (contract violation) and rejected 4 (CRITICAL).
+    VALID_SEVERITIES = tuple(s.value for s in AlertSeverity)
     HOSTNAME_RE = re.compile(r"^.{1,255}$", re.UNICODE)
 
     @classmethod

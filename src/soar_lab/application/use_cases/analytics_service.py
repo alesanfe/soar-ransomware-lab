@@ -86,8 +86,8 @@ class AnalyticsService:
                 "process": proc_stats,
                 "timestamp": datetime.now(UTC).isoformat(),
             }
-        except Exception as e:
-            logger.error(f"Error getting comprehensive system stats: {e}")
+        except Exception:
+            logger.exception("Error getting comprehensive system stats")
             raise
 
     def _get_application_stats(self) -> dict[str, Any]:
@@ -117,8 +117,8 @@ class AnalyticsService:
                 "backups": {"completed": completed_backups},
                 "tests": {"avg_coverage_24h": round(avg_coverage, 2) if avg_coverage else 0},
             }
-        except Exception as e:
-            logger.error(f"Error getting application stats: {e}")
+        except Exception:
+            logger.exception("Error getting application stats")
             raise
 
     def get_performance_kpis(self, hours: int = 24) -> dict[str, Any]:
@@ -136,8 +136,8 @@ class AnalyticsService:
 
             # Delegate calculation to KPIAnalyzer (pure calculation)
             return self.kpi_analyzer.calculate_performance_kpis(test_results, hours)
-        except Exception as e:
-            logger.error(f"Error calculating performance KPIs: {e}")
+        except Exception:
+            logger.exception("Error calculating performance KPIs")
             raise
 
     def get_health_score(self) -> dict[str, Any]:
@@ -164,8 +164,8 @@ class AnalyticsService:
                 disk_percent=_pct(hw_metrics.get("disk", 0)),
                 test_coverage=app_stats["tests"]["avg_coverage_24h"],
             )
-        except Exception as e:
-            logger.error(f"Error calculating health score: {e}")
+        except Exception:
+            logger.exception("Error calculating health score")
             return {"score": 0.0, "status": "unknown"}
 
     # MTTR and KPI Calculation Methods (Consolidated from calc_kpis.py)
@@ -183,8 +183,8 @@ class AnalyticsService:
             if log_content is None:
                 return {}
             return self.log_parser.parse(log_content)
-        except Exception as e:
-            logger.error(f"Error parsing execution logs: {e}")
+        except Exception:
+            logger.exception("Error parsing execution logs")
             raise
 
     def calculate_mttr_metrics(self, log_file_path: str | None = None) -> dict[str, Any]:
@@ -215,8 +215,8 @@ class AnalyticsService:
             # Delegate calculation to KPIAnalyzer (pure calculation)
             return self.kpi_analyzer.calculate_mttr_metrics(execution_times)
 
-        except Exception as e:
-            logger.error(f"Error calculating MTTR metrics: {e}")
+        except Exception:
+            logger.exception("Error calculating MTTR metrics")
             return {"p50": 0.0, "p90": 0.0, "mean": 0.0, "count": 0}
 
     def save_kpis_to_csv(self, metrics: dict[str, Any], output_path: str | None = None) -> None:
@@ -242,8 +242,8 @@ class AnalyticsService:
 
             logger.info(f"KPIs saved to {output_path}")
 
-        except Exception as e:
-            logger.error(f"Error saving KPIs to CSV: {e}")
+        except Exception:
+            logger.exception("Error saving KPIs to CSV")
             raise
 
     def get_comprehensive_kpis(self, log_file_path: str | None = None) -> dict[str, Any]:
@@ -274,8 +274,8 @@ class AnalyticsService:
                 health_score=health_score,
             )
 
-        except Exception as e:
-            logger.error(f"Error getting comprehensive KPIs: {e}")
+        except Exception:
+            logger.exception("Error getting comprehensive KPIs")
             raise
 
     def get_kpis_by_alert_type(self, hours: int = 24) -> dict[str, Any]:
@@ -299,7 +299,7 @@ class AnalyticsService:
                 "by_alert_type": {},
             }
         except Exception as e:
-            logger.error(f"Error calculating KPIs by alert type: {e}")
+            logger.exception("Error calculating KPIs by alert type")
             return {"error": str(e)}
 
     def get_service_integration_kpis(self, hours: int = 24) -> dict[str, Any]:
@@ -323,5 +323,5 @@ class AnalyticsService:
                 "services": {},
             }
         except Exception as e:
-            logger.error(f"Error calculating service integration KPIs: {e}")
+            logger.exception("Error calculating service integration KPIs")
             return {"error": str(e)}

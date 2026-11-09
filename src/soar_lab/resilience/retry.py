@@ -60,7 +60,9 @@ class RetryPolicy:
         """
         if max_retries is not None and max_attempts is not None:
             raise ValueError("Specify only one of max_retries or max_attempts")
-        self.max_retries = max_retries if max_retries is not None else (max_attempts or 3)
+        self.max_retries = (
+            max_retries if max_retries is not None else max(0, (max_attempts or 4) - 1)
+        )
         self.base_delay = base_delay if delay is None else delay
         self.strategy = strategy
         self.jitter_factor = jitter_factor
@@ -98,6 +100,11 @@ class RetryPolicy:
         Returns:
             True if the error is retryable and not in the non-retryable set.
         """
+        # RES-002: exceptions carrying ``retryable = False`` (e.g.
+        # CircuitOpenError) are never retried — retrying would defeat
+        # the protection that raised them.
+        if getattr(error, "retryable", True) is False:
+            return False
         return not isinstance(error, self.non_retryable_errors) and isinstance(
             error, self.retryable_errors
         )
@@ -152,7 +159,7 @@ class RetryPolicy:
         last_error = None
         for attempt in range(self.max_retries + 1):
             if start_time is not None and time.time() - start_time >= self.timeout:
-                raise Exception("Retry timeout exceeded")
+                raise TimeoutError("Retry timeout exceeded")
             try:
                 return func(*args, **kwargs)
             except Exception as error:

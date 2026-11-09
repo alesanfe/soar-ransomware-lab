@@ -11,6 +11,7 @@ import os
 import random
 import sys
 import time
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from soar_lab.common.constants import (
     SHUFFLE_WEBHOOK_TEMPLATE,
     WEBHOOK_INFO_PATHS,
 )
+from soar_lab.domain.models import AlertSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +55,7 @@ def _get_default_webhook() -> str:
     ]
     for path in candidates:
         if path.exists():
-            try:
+            with suppress(Exception):
                 data = json.loads(path.read_text(encoding="utf-8"))
                 if _inside_container():
                     url = data.get("webhook_url") or data.get("webhook_url_host")
@@ -61,8 +63,6 @@ def _get_default_webhook() -> str:
                     url = data.get("webhook_url_host") or data.get("webhook_url")
                 if url:
                     return url
-            except Exception:
-                pass
 
     # 3. Fallback: SIEM_WEBHOOK_TOKEN (puede ser stale tras reset)
     token = os.environ.get("SIEM_WEBHOOK_TOKEN")
@@ -77,7 +77,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
     """Genera una alerta de ransomware maliciosa con IoCs realistas.
 
     Uses canonical field names expected by the SOAR workflow:
-    - severity: int (1=low, 2=medium, 3=high/critical)
+    - severity: int (AlertSeverity: 1=LOW, 2=MEDIUM, 3=HIGH, 4=CRITICAL)
     - hash: SHA256 hash
     - hostname: endpoint hostname
     - mitre_techniques: list of MITRE ATT&CK technique IDs
@@ -105,7 +105,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486"],
             "tactics": ["Impact"],
             "hash": "ed01ebfbc9eb5bbea545af4d01bf5f107166184ded876d9e1168d6588e7dc4cb",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "Locky",
@@ -113,7 +113,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486"],
             "tactics": ["Impact"],
             "hash": "5f7e1c6e2b8d4a3f9c1b6e7d8a9f0c2b4e6d8a0f2c4e6b8d0a2f4c6e8b0d2f4",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "Ryuk",
@@ -121,7 +121,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1059"],
             "tactics": ["Impact", "Execution"],
             "hash": "3f9b1d2e5c8a4b7f0d3e6c9a2b5f8d1e4c7a0b3d6e9f2c5a8b1d4e7f0a3c6b9",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "Maze",
@@ -129,7 +129,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1567"],
             "tactics": ["Impact", "Exfiltration"],
             "hash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "REvil",
@@ -137,7 +137,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486"],
             "tactics": ["Impact"],
             "hash": "f0e1d2c3b4a5968778695a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "Conti",
@@ -145,7 +145,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1059"],
             "tactics": ["Impact", "Execution"],
             "hash": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "BlackBasta",
@@ -153,7 +153,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1567"],
             "tactics": ["Impact", "Exfiltration"],
             "hash": "9f8e7d6c5b4a392817061524f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "Royal",
@@ -161,7 +161,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1027"],
             "tactics": ["Impact", "Defense Evasion"],
             "hash": "7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "Play",
@@ -169,7 +169,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486"],
             "tactics": ["Impact"],
             "hash": "4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         # === LockBit 3.0 (CISA AA23-075A, AA23-325A) ===
         {
@@ -178,7 +178,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1480.001", "T1491.001", "T1027"],
             "tactics": ["Impact", "Defense Evasion"],
             "hash": "f34dd8449b9b03fedde335f8be51bdc7f96cda29a2dde176c3db667ba0713c6f",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "LockBit Black",
@@ -186,7 +186,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1556.006", "T1563", "T1539"],
             "tactics": ["Impact", "Credential Access"],
             "hash": "a18a6bacc0d8b1dd4544cdf1e178a98a36b575b5be8b307c27c65455b1307616",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         # === ALPHV/BlackCat (CISA AA23-353A) ===
         {
@@ -195,7 +195,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1491", "T1567", "T1059.001"],
             "tactics": ["Impact", "Exfiltration", "Execution"],
             "hash": "c64300cf8bacc4e42e74715edf3f8c3287a780c9c0a38b0d9675d01e7e231f16",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "ALPHV BlackCat Linux",
@@ -203,7 +203,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1567", "T1078"],
             "tactics": ["Impact", "Exfiltration"],
             "hash": "bbfe7289de6ab1f374d0bcbeecf31cad2333b0928ea883ca13b9e733b58e27b1",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         # === Akira (CISA AA24-109A, Unit42 2024-02-27) ===
         {
@@ -220,7 +220,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             ],
             "tactics": ["Initial Access", "Execution", "Defense Evasion"],
             "hash": "08207409e1d789aea68419b04354184490ce46339be071c6c185c75ab9d08cba",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         {
             "name": "Akira Megazord",
@@ -228,7 +228,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1566.002", "T1133"],
             "tactics": ["Impact", "Initial Access"],
             "hash": "2727c73f3069457e9ad2197b3cda25aec864a2ab8da3c2790264d06e13d45c3d",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         # === RansomHub (CISA AA24-242A) ===
         {
@@ -257,7 +257,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
                 "Lateral Movement",
             ],
             "hash": "3552dda80bd6875c1ed1273ca7562c9ace3de2f757266dae70f60bf204089a4a",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         # === Rhysida (CISA AA23-319A) ===
         {
@@ -266,7 +266,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1567", "T1059.003"],
             "tactics": ["Impact", "Exfiltration", "Execution"],
             "hash": "6633fa85bb234a75927b23417313e51a4c155e12f71da3959e168851a600b010",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         # === Brain Cipher (LockBit 3.0 variant, 2024) ===
         {
@@ -275,7 +275,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1486", "T1562.001", "T1491.001"],
             "tactics": ["Impact", "Defense Evasion"],
             "hash": "eb82946fa0de261e92f8f60aa878c9fef9ebb34fdababa66995403b110118b12",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
         },
         # === GMinst4ll InfoStealer + Pulsar RAT (TC-33 forensic) ===
         {
@@ -284,7 +284,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1566.002", "T1059.001", "T1547.001"],
             "tactics": ["Initial Access", "Execution", "Persistence"],
             "hash": "a75def5353a7d9cb08949f144bebcdb894650ff75c941d9713eb40433c9d580a",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
             "alert_type": "infostealer",
             "event_type": "infostealer_detection",
         },
@@ -294,7 +294,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1056.001", "T1102", "T1567.002"],
             "tactics": ["Credential Access", "Command and Control", "Exfiltration"],
             "hash": "5b20cb36abbacc69ee5d0c7008f1ad081db2767625659b4bb8eba6ecc511bd2a",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
             "alert_type": "rat",
             "event_type": "rat_detection",
         },
@@ -304,7 +304,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1562.001", "T1547.001"],
             "tactics": ["Defense Evasion", "Persistence"],
             "hash": "e861568c8c88b45ed8f969e31da8fbf0cc6cc4a8466e255ef21c446178463875",
-            "severity": 2,
+            "severity": int(AlertSeverity.MEDIUM),
             "alert_type": "trojan",
             "event_type": "trojan_detection",
         },
@@ -314,7 +314,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "techniques": ["T1102", "T1059"],
             "tactics": ["Command and Control", "Execution"],
             "hash": "2a867741dd5193e34df41a1af1f9d85e3f7d26287d4810b03b261e9b012c990a",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
             "alert_type": "rat",
             "event_type": "rat_detection",
         },
@@ -432,7 +432,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "stage": "encryption",
             "event_type": "ransomware_detection",
             "process": "encryptor.exe",
-            "severity": 2,
+            "severity": int(AlertSeverity.MEDIUM),
             "techniques": ["T1486", "T1059"],
             "tactics": ["Impact", "Execution"],
         },
@@ -440,7 +440,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "stage": "exfiltration",
             "event_type": "data_exfiltration",
             "process": "exfil.exe",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
             "techniques": ["T1041", "T1567"],
             "tactics": ["Exfiltration"],
         },
@@ -448,7 +448,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "stage": "ransom_note",
             "event_type": "ransomware_detection",
             "process": "ransom_note.txt",
-            "severity": 3,
+            "severity": int(AlertSeverity.HIGH),
             "techniques": ["T1486"],
             "tactics": ["Impact"],
         },
@@ -460,7 +460,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
     file_hash = family["hash"]
     alert_type = family.get("alert_type", "ransomware")
     event_type = family.get("event_type", "ransomware_detection")
-    severity = family.get("severity", 3)
+    severity = family.get("severity", int(AlertSeverity.HIGH))
 
     # 20% chance: use a ransomware stage from TC-09 instead of family default
     if random.random() < 0.2:
@@ -541,18 +541,20 @@ def send_alert(alert: dict, webhook_url: str, max_retries: int = 3) -> tuple[boo
             if resp.status_code == 500 and attempt < max_retries - 1:
                 wait = (attempt + 1) * 10  # 10s, 20s, 30s
                 logger.warning(
-                    f"         ⚠️  HTTP {resp.status_code}, reintentando en {wait}s (intento {attempt+1}/{max_retries})..."
+                    f"         ⚠️  HTTP {resp.status_code}, reintentando en {wait}s "
+                    f"(intento {attempt+1}/{max_retries})..."
                 )
                 time.sleep(wait)
                 continue
             return False, resp.status_code
-        except Exception as e:
-            logger.error(f"Error enviando alerta: {e}")
+        except Exception:
+            logger.exception("Error enviando alerta")
             last_status = 0
             if attempt < max_retries - 1:
                 wait = (attempt + 1) * 10
                 logger.warning(
-                    f"         ⚠️  Timeout, reintentando en {wait}s (intento {attempt+1}/{max_retries})..."
+                    f"         ⚠️  Timeout, reintentando en {wait}s "
+                    f"(intento {attempt+1}/{max_retries})..."
                 )
                 time.sleep(wait)
                 continue

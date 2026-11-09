@@ -133,8 +133,9 @@ def create_handler(client: docker.DockerClient) -> type[BaseHTTPRequestHandler]:
                 return
             self._write_json(404, {"error": "not found"})
 
-        def log_message(self, format: str, *args: object) -> None:
+        def log_message(
+            self, format: str, *args: object  # pylint: disable=redefined-builtin
+        ) -> None:
             """Suppress default request logging."""
-            return
 
     return Handler

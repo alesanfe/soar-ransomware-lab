@@ -2,9 +2,9 @@
 """SOAR Ransomware Lab - TheHive Client.
 
 Dedicated client for TheHive incident management platform.
+Targets the TheHive 5 API under ``/api/v1`` (query API for listings).
 """
 
-import json
 from contextlib import suppress
 from typing import Any
 
@@ -56,7 +56,7 @@ class TheHiveClient(BaseHTTPClient):
             TheHive API response.
         """
         logger.info("Creating alert in TheHive: %s", alert.get("title", "unknown"))
-        return dict(self.post("/api/alert", data=alert))
+        return dict(self.post("/api/v1/alert", data=alert))
 
     def create_case(
         self,
@@ -109,7 +109,7 @@ class TheHiveClient(BaseHTTPClient):
                 payload["template"] = template
         payload.update(kwargs)
         logger.info("Creating case in TheHive: %s", payload.get("title", "unknown"))
-        return dict(self.post("/api/case", data=payload))
+        return self._alias(dict(self.post("/api/v1/case", data=payload)))
 
     def get_case(self, case_id: str) -> dict[str, Any]:
         """Retrieve a case by ID.
@@ -123,7 +123,7 @@ class TheHiveClient(BaseHTTPClient):
         Raises:
             Exception: If the underlying HTTP request fails.
         """
-        return dict(self.get(f"/api/case/{case_id}"))
+        return self._alias(dict(self.get(f"/api/v1/case/{case_id}")))
 
     def update_case(self, case_id: str, **kwargs: Any) -> dict[str, Any]:
         """Update an existing case by ID.
@@ -140,7 +140,7 @@ class TheHiveClient(BaseHTTPClient):
             Exception: If the underlying HTTP request fails.
         """
         logger.info("Updating case %s", case_id)
-        return self.patch(f"/api/case/{case_id}", data=kwargs)
+        return self.patch(f"/api/v1/case/{case_id}", data=kwargs)
 
     def delete_case(self, case_id: str) -> dict[str, Any]:
         """Delete a case by ID.
@@ -154,7 +154,7 @@ class TheHiveClient(BaseHTTPClient):
         Raises:
             Exception: If the underlying HTTP request fails.
         """
-        return dict(self.delete(f"/api/case/{case_id}"))
+        return dict(self.delete(f"/api/v1/case/{case_id}"))
 
     def add_observable(
         self, case_id: str, observable: dict[str, Any] | None = None, **kwargs: Any
@@ -182,7 +182,16 @@ class TheHiveClient(BaseHTTPClient):
         payload.setdefault("sighted", False)
         payload.setdefault("tags", [])
         payload.setdefault("message", "")
-        return dict(self.post(f"/api/case/{case_id}/artifact", data=payload))
+        result = self.post(f"/api/v1/case/{case_id}/observable", data=payload)
+        # TheHive 5 returns a list of created observables on full success and
+        # a multi-status {"success": [...], "failure": [...]} on partials.
+        if isinstance(result, list):
+            return self._alias(dict(result[0])) if result else {}
+        if isinstance(result, dict) and "success" in result:
+            if result["success"]:
+                return self._alias(dict(result["success"][0]))
+            raise RuntimeError(f"TheHive observable creation failed: {result.get('failure', [])}")
+        return self._alias(dict(result))
 
     def create_observable(
         self, case_id: str, data_type: str = "", data: str = "", **kwargs: Any
@@ -209,6 +218,57 @@ class TheHiveClient(BaseHTTPClient):
             **kwargs,
         )
 
+    @staticmethod
+    def _page(range_: str) -> tuple[int, int]:
+        """Parse "0-50" style ranges into (from, to) for the query API."""
+        try:
+            start, end = range_.split("-", 1)
+            return max(0, int(start)), max(0, int(end))
+        except (ValueError, AttributeError):
+            return 0, 1000
+
+    def _query(self, operations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Run a TheHive 5 query-API call: POST /api/v1/query {"query": [...]}."""
+        result = self.post("/api/v1/query", data={"query": operations})
+        return result if isinstance(result, list) else []
+
+    @staticmethod
+    def _alias(entity: dict[str, Any]) -> dict[str, Any]:
+        """Expose TH3-compatible field aliases on a TH5 entity dict.
+
+        TheHive 5 identifies entities by ``_id`` and numbers cases with
+        ``number``; lab code written against TheHive 3 reads ``id`` /
+        ``caseId``. Aliases are set only when absent so callers get one
+        stable field name regardless of the backend version.
+        """
+        if isinstance(entity, dict):
+            if "id" not in entity and "_id" in entity:
+                entity["id"] = entity["_id"]
+            if "caseId" not in entity and "number" in entity:
+                entity["caseId"] = entity["number"]
+            for plain, underscored in (
+                ("createdAt", "_createdAt"),
+                ("updatedAt", "_updatedAt"),
+                ("createdBy", "_createdBy"),
+                ("updatedBy", "_updatedBy"),
+            ):
+                if plain not in entity and underscored in entity:
+                    entity[plain] = entity[underscored]
+            cf = entity.get("customFields")
+            if isinstance(cf, list):
+                # TH5 returns customFields as [{name, type, <value-key>, ...}]
+                # entries; TH3 consumers read {name: {<value-key>: value}}.
+                entity["customFields"] = {
+                    item["name"]: {k: v for k, v in item.items() if k != "name"}
+                    for item in cf
+                    if isinstance(item, dict) and "name" in item
+                }
+        return entity
+
+    def _alias_list(self, entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Apply :meth:`_alias` to every entity in a result list."""
+        return [self._alias(e) for e in entities]
+
     def list_cases(
         self,
         range_: str = "0-1000",
@@ -218,21 +278,43 @@ class TheHiveClient(BaseHTTPClient):
 
         Args:
             range_: Pagination range, e.g. "0-1000", "0-50".
-            sort: Optional sort spec, e.g. ["-caseId"] for newest first.
+            sort: Optional sort spec, e.g. ["-createdAt"] for newest first.
 
         Returns:
             List of case dicts.
         """
-        params: dict[str, Any] = {"range": range_}
-        if sort:
-            params["sort"] = json.dumps(sort) if isinstance(sort, list) else sort
-        # TheHive 3.5 /api/case with GET and a range query returns a list of cases
-        result = self.get("/api/case", params=params)
-        if not isinstance(result, list):
-            return []
+        from_, to = self._page(range_)
+        ops: list[dict[str, Any]] = [{"_name": "listCase"}]
+        ops.extend(
+            (
+                {"_name": "sort", "_fields": self._sort_fields(sort)},
+                {"_name": "page", "from": from_, "to": to},
+            )
+        )
+        result = self._query(ops)
         # TheHive performs soft-delete; "Deleted" cases must be filtered out
         # so that case-counting logic in tests is not skewed by stale cases.
-        return [c for c in result if c.get("status") != "Deleted"]
+        return self._alias_list([c for c in result if c.get("status") != "Deleted"])
+
+    @staticmethod
+    def _sort_fields(sort: list | str | None) -> list[dict[str, str]]:
+        """Translate ["-createdAt"]/"-createdAt" into query-API sort fields."""
+        # TheHive 5 case number field is `number`; `caseId` does not exist.
+        _ALIASES = {"caseId": "number", "createdAt": "_createdAt", "updatedAt": "_updatedAt"}
+        if not sort:
+            return [{"number": "desc"}]
+        if isinstance(sort, str):
+            sort = [sort]
+        fields = []
+        for spec in sort:
+            spec = str(spec)
+            if spec.startswith("-"):
+                fields.append({_ALIASES.get(spec[1:], spec[1:]): "desc"})
+            elif spec.startswith("+"):
+                fields.append({_ALIASES.get(spec[1:], spec[1:]): "asc"})
+            else:
+                fields.append({_ALIASES.get(spec, spec): "asc"})
+        return fields or [{"number": "desc"}]
 
     def search_cases(
         self,
@@ -243,26 +325,29 @@ class TheHiveClient(BaseHTTPClient):
         """Search cases using TheHive's list/search endpoint.
 
         Args:
-            query: TheHive filter dict (empty dict = all cases).
+            query: Optional TheHive 5 filter operation, e.g.
+                ``{"_name": "filter", "_eq": {"_field": "status",
+                "_value": "Indeterminate"}}`` or a plain ``{field: value}``
+                equality dict.
             range_: Pagination range, e.g. "0-1000", "0-50".
-            sort: Optional sort spec, e.g. ["-caseId"] for newest first.
+            sort: Optional sort spec, e.g. ["-createdAt"] for newest first.
 
         Returns:
             List of case dicts.
         """
-        if query or sort or range_ != "0-1000":
-            data: dict[str, Any] = {"query": query or {}}
-            if sort:
-                data["sort"] = sort
-            if range_ != "0-1000":
-                data["range"] = range_
-            result = self.post("/api/case/_search", data=data)
-            if not isinstance(result, list):
-                return []
-            # Filter soft-deleted cases (see list_cases for rationale)
-            return [c for c in result if c.get("status") != "Deleted"]
-        # Fall back to plain list endpoint for all cases
-        return self.list_cases(range_=range_)
+        from_, to = self._page(range_)
+        ops: list[dict[str, Any]] = [{"_name": "listCase"}]
+        if query:
+            ops.append({"_name": "filter", **query})
+        ops.extend(
+            (
+                {"_name": "sort", "_fields": self._sort_fields(sort)},
+                {"_name": "page", "from": from_, "to": to},
+            )
+        )
+        result = self._query(ops)
+        # Filter soft-deleted cases (see list_cases for rationale)
+        return self._alias_list([c for c in result if c.get("status") != "Deleted"])
 
     def get_case_observables(self, case_id: str) -> list[dict[str, Any]]:
         """Return observables attached to a TheHive case.
@@ -279,15 +364,19 @@ class TheHiveClient(BaseHTTPClient):
             Exception: If the underlying HTTP request fails.
         """
         logger.info("Listing observables for case %s", case_id)
-        result = self.post(
-            f"/api/case/{case_id}/artifact/_search", data={"query": {}, "range": "all"}
+        return self._alias_list(
+            self._query(
+                [
+                    {"_name": "getCase", "idOrName": case_id},
+                    {"_name": "observables"},
+                ]
+            )
         )
-        return result if isinstance(result, list) else []
 
     def close_case(
         self, case_id: str, resolution: str = "TruePositive", summary: str = ""
     ) -> dict[str, Any]:
-        """Close a case by updating its status to Resolved.
+        """Close a case by updating its status to a Closed-stage status.
 
         Args:
             case_id: The unique identifier of the case to close.
@@ -302,14 +391,13 @@ class TheHiveClient(BaseHTTPClient):
             Exception: If the underlying HTTP request fails.
         """
         logger.info("Closing TheHive case %s", case_id)
+        # TheHive 5 case status is a vertex value (New, InProgress,
+        # TruePositive, FalsePositive, Indeterminate, Duplicated, Other) —
+        # closing means setting a Closed-stage status directly.
         return dict(
-            self.post(
-                f"/api/case/{case_id}",
-                data={
-                    "status": "Resolved",
-                    "resolutionStatus": resolution,
-                    "summary": summary,
-                },
+            self.patch(
+                f"/api/v1/case/{case_id}",
+                data={"status": resolution, "summary": summary},
             )
         )
 
@@ -327,14 +415,22 @@ class TheHiveClient(BaseHTTPClient):
         Raises:
             Exception: If the underlying HTTP request fails.
         """
-        result = self.post(f"/api/case/{case_id}/task/_search", data={"query": {}, "range": "all"})
-        return result if isinstance(result, list) else []
+        return self._alias_list(
+            self._query(
+                [
+                    {"_name": "getCase", "idOrName": case_id},
+                    {"_name": "tasks"},
+                ]
+            )
+        )
 
     def get_version(self) -> dict[str, Any]:
         """Return TheHive version and status information.
 
         Returns:
-            dict: TheHive status with version, services, etc.
+            dict: TheHive status with ``versions`` (``TheHive``, ``Play``…)
+            and public ``config`` — served by the unauthenticated
+            ``/api/status`` endpoint.
         """
         return dict(self.get("/api/status"))
 
@@ -413,14 +509,20 @@ class TheHiveClient(BaseHTTPClient):
         Returns:
             bool: ``True`` if ``current_version`` is greater than or equal to
             ``minimum_version``, ``False`` otherwise or if either version is
-            unparseable.
+            unparsable.
         """
 
         def parse(v: str) -> Any:
             return [int(x) for x in v.split(".") if x.isdigit()]
 
         try:
-            return bool(parse(current_version) >= parse(minimum_version))
+            cur, minimum = parse(current_version), parse(minimum_version)
+            if not cur or not minimum:
+                return False
+            width = max(len(cur), len(minimum))
+            cur += [0] * (width - len(cur))
+            minimum += [0] * (width - len(minimum))
+            return bool(cur >= minimum)
         except ValueError:
             return False
 
@@ -428,10 +530,10 @@ class TheHiveClient(BaseHTTPClient):
         """Check if TheHive is reachable.
 
         Returns:
-            bool: True if ``/api/health`` responds, False on error.
+            bool: True if ``/api/v1/status/public`` responds, False on error.
         """
         try:
-            self.get("/api/health")
+            self.get("/api/v1/status/public")
             return True
         except Exception as exc:
             logger.debug("TheHive health check failed: %s", exc)

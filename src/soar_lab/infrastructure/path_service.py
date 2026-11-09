@@ -3,11 +3,15 @@
 import os
 from pathlib import Path
 
+from soar_lab.domain.ports import ConfigProvider
+
 
 class PathService:
     """Centralized path management for SOAR Lab."""
 
-    def __init__(self, base_dir: Path | None = None, config_provider: object | None = None) -> None:
+    def __init__(
+        self, base_dir: Path | None = None, config_provider: ConfigProvider | None = None
+    ) -> None:
         """Initialize path service.
 
         Args:
@@ -42,48 +46,52 @@ class PathService:
 
         self._config_provider = config_provider
 
+    def _cfg(self, key: str, default: str) -> str:
+        """Read a config override, tolerating a missing provider."""
+        if self._config_provider is None:
+            return default
+        return self._config_provider.get(key, default)
+
     @property
     def runtime_dir(self) -> Path:
         """Get runtime directory (data, logs, results, backups)."""
-        return Path(self._config_provider.get("runtime_dir", str(self.base_dir / "runtime")))
+        return Path(self._cfg("runtime_dir", str(self.base_dir / "runtime")))
 
     @property
     def logs_dir(self) -> Path:
         """Get logs directory."""
-        return Path(self._config_provider.get("logs_dir", str(self.runtime_dir / "logs")))
+        return Path(self._cfg("logs_dir", str(self.runtime_dir / "logs")))
 
     @property
     def results_dir(self) -> Path:
         """Get results directory."""
-        return Path(self._config_provider.get("results_dir", str(self.runtime_dir / "results")))
+        return Path(self._cfg("results_dir", str(self.runtime_dir / "results")))
 
     @property
     def coverage_dir(self) -> Path:
         """Get coverage directory."""
-        return Path(self._config_provider.get("coverage_dir", str(self.runtime_dir / "coverage")))
+        return Path(self._cfg("coverage_dir", str(self.runtime_dir / "coverage")))
 
     @property
     def coverage_file(self) -> Path:
         """Get coverage.json file path."""
         default_path = self.coverage_dir / "coverage.json"
-        return Path(self._config_provider.get("coverage_path", str(default_path)))
+        return Path(self._cfg("coverage_path", str(default_path)))
 
     @property
     def backup_dir(self) -> Path:
         """Get backup directory."""
-        return Path(self._config_provider.get("BACKUP_DIR", str(self.runtime_dir / "backups")))
+        return Path(self._cfg("BACKUP_DIR", str(self.runtime_dir / "backups")))
 
     @property
     def scripts_dir(self) -> Path:
         """Get scripts directory."""
-        return Path(self._config_provider.get("scripts_dir", str(self.base_dir / "scripts")))
+        return Path(self._cfg("scripts_dir", str(self.base_dir / "scripts")))
 
     @property
     def docker_dir(self) -> Path:
         """Get docker directory."""
-        return Path(
-            self._config_provider.get("docker_dir", str(self.base_dir / "infra" / "docker"))
-        )
+        return Path(self._cfg("docker_dir", str(self.base_dir / "infra" / "docker")))
 
     @property
     def notify_log_file(self) -> Path:

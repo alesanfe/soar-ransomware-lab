@@ -53,17 +53,20 @@ class NodeTimingsUseCase:
         """
         now_ms = int(time.time() * 1000)
         hours_ago_ms = now_ms - hours * 3600 * 1000
-        result = self._es.search(
-            query={
-                "bool": {
-                    "must": [{"term": {"metric_type": "node_timings"}}],
-                    "filter": [{"range": {"@timestamp": {"gte": hours_ago_ms}}}],
-                }
-            },
-            index=METRICS_INDEX,
-            size=DEFAULT_ANALYTICS_SEARCH_SIZE,
+        hits = (
+            self._es.search(
+                query={
+                    "bool": {
+                        "must": [{"term": {"metric_type": "node_timings"}}],
+                        "filter": [{"range": {"@timestamp": {"gte": hours_ago_ms}}}],
+                    }
+                },
+                index=METRICS_INDEX,
+                size=DEFAULT_ANALYTICS_SEARCH_SIZE,
+            )
+            .get("hits", {})
+            .get("hits", [])
         )
-        hits = result.get("hits", {}).get("hits", [])
         aggregated = []
         for h in hits:
             src = h.get("_source", {})

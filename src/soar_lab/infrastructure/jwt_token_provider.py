@@ -15,7 +15,7 @@ try:
     from jwt.exceptions import InvalidTokenError
 except ImportError:
     logger = get_logger(__name__)
-    logger.error("PyJWT is required but not installed")
+    logger.exception("PyJWT is required but not installed")
     raise ImportError("PyJWT is required for JWT authentication") from None
 
 logger = get_logger(__name__)
@@ -25,7 +25,12 @@ class JWTTokenProvider:
     """JWT token provider using PyJWT library."""
 
     def create_token(
-        self, username: str, secret: str, expiration_minutes: int, algorithm: str
+        self,
+        username: str,
+        secret: str,
+        expiration_minutes: int,
+        algorithm: str,
+        extra_claims: dict[str, Any] | None = None,
     ) -> str:
         """Create a JWT token for the given username.
 
@@ -34,6 +39,9 @@ class JWTTokenProvider:
             secret: Secret key for signing
             expiration_minutes: Token expiration time in minutes
             algorithm: JWT algorithm (e.g., HS256)
+            extra_claims: Additional claims merged into the payload
+                (AUTH-003: e.g. ``{"role": "analyst"}``). Reserved claims
+                (``sub``/``iat``/``exp``) cannot be overridden.
 
         Returns:
             Encoded JWT token string
@@ -46,10 +54,13 @@ class JWTTokenProvider:
                 "exp": now + timedelta(minutes=expiration_minutes),
                 "scope": "access",
             }
+            for claim, value in (extra_claims or {}).items():
+                if claim not in ("sub", "iat", "exp", "scope"):
+                    payload[claim] = value
             token = jwt.encode(payload, secret, algorithm=algorithm)
             return token
         except Exception as e:
-            logger.error(f"Error creating JWT token: {e}")
+            logger.exception("Error creating JWT token")
             raise AuthError("Failed to create authentication token", 500) from e
 
     def verify_token(self, token: str, secret: str, algorithm: str) -> dict[str, Any]:
@@ -71,7 +82,12 @@ class JWTTokenProvider:
             username: str = payload.get("sub")
             if username is None:
                 raise AuthError("Invalid token payload", 401)
-            return {"user": username, "method": "jwt", "exp": payload.get("exp")}
+            return {
+                "user": username,
+                "method": "jwt",
+                "exp": payload.get("exp"),
+                "role": payload.get("role"),
+            }
         except InvalidTokenError as e:
             logger.warning(f"JWT verification failed: {e}")
             raise AuthError("Invalid authentication credentials", 401) from e

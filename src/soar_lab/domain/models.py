@@ -7,7 +7,7 @@ of Pydantic to avoid framework coupling in the domain layer.
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Any
 
 __all__ = [
@@ -19,8 +19,13 @@ __all__ = [
 ]
 
 
-class AlertSeverity(Enum):
-    """Alert severity levels."""
+class AlertSeverity(IntEnum):
+    """Canonical alert severity (CFG-001) — TheHive/MISP scale 1..4.
+
+    Single source of truth: validators, KPI aggregation, ingest schema
+    and generators MUST derive their accepted range from this enum.
+    IntEnum so ``severity == AlertSeverity.HIGH`` works on raw ints.
+    """
 
     LOW = 1
     MEDIUM = 2

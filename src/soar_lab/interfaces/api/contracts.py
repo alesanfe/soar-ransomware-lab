@@ -1,6 +1,7 @@
 """API contracts: rate limits, request/response models, and validation."""
 
 # pylint: disable=too-many-instance-attributes
+from dataclasses import dataclass, field
 from typing import Any
 
 from soar_lab.common.constants import (
@@ -20,49 +21,62 @@ __all__ = [
 ]
 
 
+def _default_rate_limit() -> dict[str, int]:
+    return {
+        "requests_per_minute": DEFAULT_RATE_LIMIT_PER_MINUTE,
+        "requests_per_hour": DEFAULT_RATE_LIMIT_PER_HOUR,
+        "requests_per_day": DEFAULT_RATE_LIMIT_PER_DAY,
+    }
+
+
+def _default_error_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "error": {"type": "string"},
+            "code": {"type": ["integer", "string"]},
+            "message": {"type": "string"},
+        },
+    }
+
+
+_FALSY_FALLBACKS: dict[str, Any] = {
+    "endpoints": dict,
+    "schema": dict,
+    "deprecated_versions": list,
+    "deprecated_endpoints": dict,
+    "required_headers": lambda: [HEADER_CONTENT_TYPE],
+    "rate_limit": _default_rate_limit,
+    "error_schema": _default_error_schema,
+    "migration_guides": dict,
+}
+
+
+@dataclass
 class ServiceContract:
     """Describes the contract for a single integration service."""
 
-    def __init__(
-        self,
-        name: str = "",
-        service_name: str = "",
-        version: str = "",
-        endpoints: dict[str, Any] | None = None,
-        schema: dict[str, Any] | None = None,
-        supported_versions: list[str] | None = None,
-        deprecated_versions: list[str] | None = None,
-        deprecated_endpoints: dict[str, str] | None = None,
-        required_headers: list[str] | None = None,
-        rate_limit: dict[str, int] | None = None,
-        error_schema: dict[str, Any] | None = None,
-        migration_guides: dict[str, str] | None = None,
-    ) -> None:
-        self.name = name or service_name
-        self.service_name = service_name or name
-        self.version = version
-        self.endpoints = endpoints or {}
-        self.schema = schema or {}
-        self.supported_versions = (
-            supported_versions or [version] if version else [DEFAULT_API_VERSION]
-        )
-        self.deprecated_versions = deprecated_versions or []
-        self.deprecated_endpoints = deprecated_endpoints or {}
-        self.required_headers = required_headers or [HEADER_CONTENT_TYPE]
-        self.rate_limit = rate_limit or {
-            "requests_per_minute": DEFAULT_RATE_LIMIT_PER_MINUTE,
-            "requests_per_hour": DEFAULT_RATE_LIMIT_PER_HOUR,
-            "requests_per_day": DEFAULT_RATE_LIMIT_PER_DAY,
-        }
-        self.error_schema = error_schema or {
-            "type": "object",
-            "properties": {
-                "error": {"type": "string"},
-                "code": {"type": ["integer", "string"]},
-                "message": {"type": "string"},
-            },
-        }
-        self.migration_guides = migration_guides or {}
+    name: str = ""
+    service_name: str = ""
+    version: str = ""
+    endpoints: dict[str, Any] = field(default_factory=dict)
+    schema: dict[str, Any] = field(default_factory=dict)
+    supported_versions: list[str] | None = None
+    deprecated_versions: list[str] = field(default_factory=list)
+    deprecated_endpoints: dict[str, str] = field(default_factory=dict)
+    required_headers: list[str] = field(default_factory=lambda: [HEADER_CONTENT_TYPE])
+    rate_limit: dict[str, int] = field(default_factory=_default_rate_limit)
+    error_schema: dict[str, Any] = field(default_factory=_default_error_schema)
+    migration_guides: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.name = self.name or self.service_name
+        self.service_name = self.service_name or self.name
+        if self.supported_versions is None:
+            self.supported_versions = [self.version] if self.version else [DEFAULT_API_VERSION]
+        for attr, factory in _FALSY_FALLBACKS.items():
+            if not getattr(self, attr):
+                setattr(self, attr, factory())
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ServiceContract":

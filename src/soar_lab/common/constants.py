@@ -123,7 +123,7 @@ METRICS_INDEX = "soar-metrics"
 ALERTS_INDEX = "soar-alerts"
 
 # Shuffle execution index (managed by Shuffle/OpenSearch internally)
-SHUFFLE_EXECUTION_INDEX = "workflowexecution-000001"
+SHUFFLE_EXECUTION_INDEX = "workflowexecution"
 
 # ---------------------------------------------------------------------------
 # Service names (used as dict keys, log tags, health-check identifiers)
@@ -217,31 +217,31 @@ SECRET_LENGTH_WEBHOOK_TOKEN = 64
 # ---------------------------------------------------------------------------
 # Environment variable names (used in validate_credentials, cli, etc.)
 # ---------------------------------------------------------------------------
-ENV_ELASTIC_PASSWORD = "ELASTIC_PASSWORD"
-ENV_THEHIVE_API_KEY = "THEHIVE_API_KEY"
-ENV_CORTEX_API_KEY = "CORTEX_API_KEY"
-ENV_SHUFFLE_API_KEY = "SHUFFLE_DEFAULT_APIKEY"
-ENV_JWT_SECRET_KEY = "JWT_SECRET_KEY"
+ENV_ELASTIC_PASSWORD = "ELASTIC_PASSWORD"  # pragma: allowlist secret
+ENV_THEHIVE_API_KEY = "THEHIVE_API_KEY"  # pragma: allowlist secret
+ENV_CORTEX_API_KEY = "CORTEX_API_KEY"  # pragma: allowlist secret
+ENV_SHUFFLE_API_KEY = "SHUFFLE_DEFAULT_APIKEY"  # pragma: allowlist secret
+ENV_JWT_SECRET_KEY = "JWT_SECRET_KEY"  # pragma: allowlist secret
 ENV_JWT_ALGORITHM = "JWT_ALGORITHM"
 ENV_JWT_EXPIRATION_MINUTES = "JWT_EXPIRATION_MINUTES"
-ENV_POSTGRES_PASSWORD = "POSTGRES_PASSWORD"
-ENV_REDIS_PASSWORD = "REDIS_PASSWORD"
-ENV_SHUFFLE_DEFAULT_PASSWORD = "SHUFFLE_DEFAULT_PASSWORD"
-ENV_SIEM_WEBHOOK_TOKEN = "SIEM_WEBHOOK_TOKEN"
-ENV_EDR_SIM_TOKEN = "EDR_SIM_TOKEN"
-ENV_FIREWALL_SIM_TOKEN = "FIREWALL_SIM_TOKEN"
-ENV_THEHIVE_SECRET = "THEHIVE_SECRET"
-ENV_CORTEX_SECRET = "CORTEX_SECRET"
+ENV_POSTGRES_PASSWORD = "POSTGRES_PASSWORD"  # pragma: allowlist secret
+ENV_REDIS_PASSWORD = "REDIS_PASSWORD"  # pragma: allowlist secret
+ENV_SHUFFLE_DEFAULT_PASSWORD = "SHUFFLE_DEFAULT_PASSWORD"  # pragma: allowlist secret
+ENV_SIEM_WEBHOOK_TOKEN = "SIEM_WEBHOOK_TOKEN"  # pragma: allowlist secret
+ENV_EDR_SIM_TOKEN = "EDR_SIM_TOKEN"  # pragma: allowlist secret
+ENV_FIREWALL_SIM_TOKEN = "FIREWALL_SIM_TOKEN"  # pragma: allowlist secret
+ENV_THEHIVE_SECRET = "THEHIVE_SECRET"  # pragma: allowlist secret
+ENV_CORTEX_SECRET = "CORTEX_SECRET"  # pragma: allowlist secret
 ENV_SHUFFLE_PIPELINE_AUTH = "SHUFFLE_PIPELINE_AUTH"
-ENV_MISP_DB_ROOT_PASSWORD = "MISP_DB_ROOT_PASSWORD"
-ENV_MISP_DB_PASSWORD = "MISP_DB_PASSWORD"
-ENV_MISP_ADMIN_PASSWORD = "MISP_ADMIN_PASSWORD"
+ENV_MISP_DB_ROOT_PASSWORD = "MISP_DB_ROOT_PASSWORD"  # pragma: allowlist secret
+ENV_MISP_DB_PASSWORD = "MISP_DB_PASSWORD"  # pragma: allowlist secret
+ENV_MISP_ADMIN_PASSWORD = "MISP_ADMIN_PASSWORD"  # pragma: allowlist secret
 ENV_MISP_ENCRYPTION_KEY = "MISP_ENCRYPTION_KEY"
 ENV_MISP_SALT = "MISP_SALT"
-ENV_GRAFANA_ADMIN_PASSWORD = "GRAFANA_ADMIN_PASSWORD"
-ENV_GRAFANA_DB_PASSWORD = "GRAFANA_DB_PASSWORD"
-ENV_WEB_UI_PASSWORD = "WEB_UI_PASSWORD"
-ENV_API_AUTH_SECRET = "API_AUTH_SECRET"
+ENV_GRAFANA_ADMIN_PASSWORD = "GRAFANA_ADMIN_PASSWORD"  # pragma: allowlist secret
+ENV_GRAFANA_DB_PASSWORD = "GRAFANA_DB_PASSWORD"  # pragma: allowlist secret
+ENV_WEB_UI_PASSWORD = "WEB_UI_PASSWORD"  # pragma: allowlist secret
+ENV_API_AUTH_SECRET = "API_AUTH_SECRET"  # pragma: allowlist secret
 
 # Tuple of all critical credential env vars (for validate_credentials)
 CRITICAL_CREDENTIAL_ENV_VARS = (

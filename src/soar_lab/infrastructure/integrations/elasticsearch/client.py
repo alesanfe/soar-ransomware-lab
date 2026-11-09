@@ -4,6 +4,7 @@
 Dedicated client for Elasticsearch (soar-alerts index).
 """
 
+import os
 from typing import Any
 
 from soar_lab.common.constants import ALERTS_INDEX, ENV_ELASTIC_PASSWORD
@@ -75,8 +76,6 @@ class ElasticsearchClient(BaseHTTPClient):
     @staticmethod
     def _resolve_auth(username: str | None, password: str | None) -> tuple[str, str]:
         """Resolve Basic Auth credentials from args or environment."""
-        import os
-
         _username = username or os.environ.get("ELASTIC_USERNAME", "elastic")
         if not password or password == _TEST_PLACEHOLDER:
             _password = os.environ.get(ENV_ELASTIC_PASSWORD, "")
@@ -148,7 +147,7 @@ class ElasticsearchClient(BaseHTTPClient):
         return self._IndicesWrapper(self)
 
     def info(self) -> dict[str, Any]:
-        """Return Elasticsearch cluster info (GET /).
+        """Return cluster metadata from ``GET /``.
 
         Returns:
             dict[str, Any]: Cluster info response from Elasticsearch.
@@ -296,17 +295,10 @@ class ElasticsearchClient(BaseHTTPClient):
             IntegrationError: If the delete request fails.
         """
         idx = index or self.index
-        try:
-            resp = self._session.delete(
-                self._url(f"/{idx}/_doc/{doc_id}"),
-                timeout=self.timeout,
-            )
-            resp.raise_for_status()
-            return resp.json() if resp.content else {}
-        except Exception as exc:
-            from soar_lab.common.exceptions import IntegrationError
-
-            raise IntegrationError(self.__class__.__name__, str(exc)) from exc
+        # Route through the breakered DELETE pipeline — typed errors
+        # (404→payload, 5xx→unavailable) instead of a flattened
+        # IntegrationError (BL-ES-003 / BL-ERR-004).
+        return dict(self.delete(f"/{idx}/_doc/{doc_id}"))
 
     def delete_index(self, index: str | None = None) -> bool:
         """Delete an entire index.
@@ -352,9 +344,11 @@ class ElasticsearchClient(BaseHTTPClient):
         """
         idx = index or self.index
         payload = partial_doc if partial_doc is not None else (document or {})
-        params = ["retry_on_conflict=10"]
+        # retry_on_conflict=None must OMIT the param — the old code always
+        # sent =10 because it overwrote a literal default instead.
+        params: list[str] = []
         if retry_on_conflict is not None:
-            params = [f"retry_on_conflict={retry_on_conflict}"]
+            params.append(f"retry_on_conflict={retry_on_conflict}")
         if refresh:
             params.append("refresh=true")
         path = f"/{idx}/_update/{doc_id}?" + "&".join(params)
@@ -374,10 +368,13 @@ class ElasticsearchClient(BaseHTTPClient):
         Returns:
             List of ``_source`` dicts from the most recent hits.
         """
-        # Note: alert_id is a text field, cannot sort. Return most recent by query order.
+        # P0.3: "latest" must actually sort — match_all query order is
+        # insertion order of segments, NOT recency. ``unmapped_type``
+        # keeps the query working on indices lacking the field.
         result = self.search(
             size=size,
             index=index,
+            sort=[{"@timestamp": {"order": "desc", "unmapped_type": "date"}}],
         )
         return [h.get("_source", {}) for h in result.get("hits", {}).get("hits", [])]
 
@@ -425,7 +422,7 @@ class ElasticsearchClient(BaseHTTPClient):
         """
         idx = index or self.index
         body = build_bulk_body(documents, idx, doc_id_field)
-        return execute_bulk(self._session, self.base_url, idx, body, refresh, self.timeout)
+        return execute_bulk(self.post_raw, idx, body, refresh)
 
     def scroll_search(
         self,
@@ -446,7 +443,9 @@ class ElasticsearchClient(BaseHTTPClient):
             Document ``_source`` dicts.
         """
         idx = index or self.index
-        yield from scroll_search_generator(self.post, idx, query, size, scroll)
+        yield from scroll_search_generator(
+            self.post, idx, query, size, scroll, delete_fn=self.delete
+        )
 
     def cluster_health(self) -> dict[str, Any]:
         """Return Elasticsearch cluster health.

@@ -1,23 +1,11 @@
 """Structured logging utility with sensitive-data redaction and trace ID injection."""
 
-import json
 import logging
 from typing import Any
 
+from soar_lab.common.trace_context import get_trace_id
+
 __all__ = ["StructuredLogger"]
-
-
-def _get_trace_id() -> str | None:
-    """Return the current trace ID from the request context, if any.
-
-    Imports lazily to avoid a circular dependency at module load time.
-    """
-    try:
-        from soar_lab.interfaces.api.middleware import get_trace_id
-
-        return get_trace_id()
-    except Exception:
-        return None
 
 
 class StructuredLogger:
@@ -80,15 +68,19 @@ class StructuredLogger:
         context: dict[str, Any] | None = kwargs.pop("context", None)
         extra: dict[str, Any] | None = kwargs.pop("extra", None)
 
-        if level < self._level and level != logging.DEBUG:
+        if not self._logger.isEnabledFor(level):
             return
 
-        payload_extra: dict[str, Any] = dict(extra) if extra else {}
+        # Both ``extra`` and ``context`` get redacted — a secret passed
+        # through extra= used to ship in clear text.
+        payload_extra: dict[str, Any] = self._redact(dict(extra)) if extra else {}
         if context is not None:
             payload_extra["context"] = self._redact(context)
 
-        # Automatically inject trace_id when available (request scope)
-        trace_id = _get_trace_id()
+        # Inject trace_id as a record attribute so correlation survives
+        # non-JSON formatters and record-level inspection (caplog, filters).
+        # The canonical _JsonFormatter additionally reads the contextvar.
+        trace_id = get_trace_id()
         if trace_id is not None and "trace_id" not in payload_extra:
             payload_extra["trace_id"] = trace_id
 
@@ -100,15 +92,14 @@ class StructuredLogger:
             logging.CRITICAL: self._logger.critical,
         }.get(level, self._logger.info)
 
+        # BL-OBS-002: the message stays a plain string — structured fields
+        # travel in the record's ``extra`` namespace so the canonical
+        # _JsonFormatter emits ONE JSON object (no double-encoding) and the
+        # SecretRedactorFilter can scrub the context before it ships.
         if payload_extra:
-            payload = json.dumps({"message": msg, **payload_extra})
+            level_method(msg, extra=payload_extra, **kwargs)
         else:
-            payload = msg
-
-        if payload_extra:
-            level_method(payload, extra=payload_extra, **kwargs)
-        else:
-            level_method(payload, **kwargs)
+            level_method(msg, **kwargs)
 
     def debug(self, msg: str, **kwargs: Any) -> None:
         """Log a DEBUG-level structured message.

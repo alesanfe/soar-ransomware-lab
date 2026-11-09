@@ -48,10 +48,10 @@ class PayloadSanitizer:
                     continue
                 if blacklist is not None and key in blacklist:
                     continue
-                result[key] = self.sanitize(value, whitelist, blacklist, max_length)
+                result[key] = self.sanitize(value, None, blacklist, max_length)
             return result
         if isinstance(payload, list):
-            return [self.sanitize(item, whitelist, blacklist, max_length) for item in payload]
+            return [self.sanitize(item, None, blacklist, max_length) for item in payload]
         if isinstance(payload, str):
             return self._sanitize_string(payload, max_length)
         return payload
@@ -62,10 +62,15 @@ class PayloadSanitizer:
         value = self._NULL_BYTE_RE.sub("", value)
         value = self._CONTROL_RE.sub("", value)
         value = unicodedata.normalize("NFKC", value)
-        value = self._SCRIPT_TAG_RE.sub("", value)
-        value = self._DROP_TABLE_RE.sub("", value)
-        value = self._ON_EVENT_RE.sub("", value)
-        value = self._JS_PROTOCOL_RE.sub("", value)
+        # Removal passes can CREATE the very pattern they strip (e.g.
+        # "<scr<script></script>ipt>" -> "<script>"), so repeat to fixpoint.
+        prev = None
+        while prev != value:
+            prev = value
+            value = self._SCRIPT_TAG_RE.sub("", value)
+            value = self._DROP_TABLE_RE.sub("", value)
+            value = self._ON_EVENT_RE.sub("", value)
+            value = self._JS_PROTOCOL_RE.sub("", value)
         if len(value) > max_length:
             value = value[:max_length]
         return value

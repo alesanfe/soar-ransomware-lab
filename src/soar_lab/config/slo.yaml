@@ -1,0 +1,23 @@
+# Service Level Objectives for the SOAR lab (O2).
+#
+# Each SLO names a metric path inside the aggregated-KPI payload, a
+# comparator and a target. `/analytics/slo` evaluates them per request;
+# Grafana can consume that JSON for a compliance panel.
+#
+# comparator: "lte" (actual <= target), "gte" (actual >= target)
+slos:
+  - name: mttr_p50_seconds
+    description: Median MTTR stays under the lab target.
+    metric: mttr_statistics.p50
+    comparator: lte
+    target: 120
+  - name: mttr_p95_seconds
+    description: Tail MTTR bounded — worst-case response still fast.
+    metric: mttr_statistics.p95
+    comparator: lte
+    target: 300
+  - name: alerts_processed_min
+    description: Window processes a minimum alert volume.
+    metric: total_alerts
+    comparator: gte
+    target: 1

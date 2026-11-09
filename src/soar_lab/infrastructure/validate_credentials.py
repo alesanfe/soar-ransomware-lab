@@ -56,7 +56,7 @@ def _read_text(p: Path) -> str:
     """
     if not p.exists():
         return ""
-    with open(p, encoding="utf-8") as f:
+    with p.open(encoding="utf-8") as f:
         return f.read()
 
 
@@ -77,7 +77,7 @@ def parse_env_file(env_path: Path) -> dict[str, str]:
     if not env_path.exists():
         logger.error(f"ERROR: File {env_path} not found")
         return {}
-    with open(env_path, encoding="utf-8") as f:
+    with env_path.open(encoding="utf-8") as f:
         return {
             k.strip(): v.strip()
             for raw in f
@@ -87,7 +87,7 @@ def parse_env_file(env_path: Path) -> dict[str, str]:
 
 
 def extract_defaults_from_docker_compose(compose_path: Path) -> dict[str, str]:
-    """Extract default env var values from docker-compose files.
+    r"""Extract default env var values from docker-compose files.
 
     Scans for ``${VAR_NAME:-default_value}`` patterns and returns a
     mapping of variable names to their default values.
@@ -171,42 +171,32 @@ def _sync_config_file(cp: Path, ev: dict[str, str]) -> list[str]:
 def _get_file_lists(rr: Path) -> tuple[list[Path], list[Path], list[Path]]:
     """Return (docker_compose_files, python_scripts, config_files).
 
-    Builds the three lists of files that need to be validated against
-    the .env.full credentials, using path components relative to the
-    repository root.
+    P0.6: discover files instead of hardcoding paths. The previous list
+    pointed at ``src/soar_lab/scripts/setup`` and
+    ``infrastructure/external/integrations/cortex_client.py`` — both
+    nonexistent, so every Python check silently became a "file not
+    found" warning while validation still returned True.
 
-    The docker-compose files are located in the ``infra/docker/compose``
-    directory, Python scripts in ``src/soar_lab/scripts/setup``, and
-    config files in ``infra/docker`` with application-specific subdirs.
+    Discovery now uses ``Path.rglob`` against the canonical locations:
+    compose files under ``infra/docker/compose``, Python scripts under
+    ``scripts/``, and TheHive/Cortex configs under ``infra/docker`` and
+    ``runtime/config``.
     """
     cd = rr / "infra" / "docker" / "compose"
-    dc = [cd / f"docker-compose.{n}.yml" for n in ("core", "misp", "api")] + [
-        cd / "logging" / "docker-compose.logging.yml"
-    ]
-    sd = rr / "src" / "soar_lab" / "scripts" / "setup"
-    py = [
-        sd / f"{n}.py"
-        for n in (
-            "init_thehive",
-            "init_shuffle_webhook",
-            "fix_org_users",
-            "reset_cortex",
-            "setup_analyzers_and_iocs",
-        )
-    ] + [
-        rr
-        / "src"
-        / "soar_lab"
-        / "infrastructure"
-        / "external"
-        / "integrations"
-        / "cortex_client.py"
-    ]
-    cd2 = rr / "infra" / "docker"
-    cf = [
-        cd2 / "thehive.application.conf" / "thehive.conf",
-        cd2 / "cortex.application.conf" / "cortex.conf",
-    ]
+    dc = sorted(cd.rglob("docker-compose*.yml")) if cd.is_dir() else []
+
+    scripts_root = rr / "scripts"
+    py = (
+        sorted(p for p in scripts_root.rglob("*.py") if not p.name.startswith("_"))
+        if scripts_root.is_dir()
+        else []
+    )
+
+    cf: list[Path] = []
+    for conf_root in (rr / "infra" / "docker", rr / "runtime" / "config"):
+        if conf_root.is_dir():
+            cf.extend(sorted(conf_root.rglob("thehive.conf")))
+            cf.extend(sorted(conf_root.rglob("cortex.conf")))
     return dc, py, cf
 
 
@@ -293,6 +283,15 @@ def validate_credentials() -> bool:
     logger.info(f"[OK] Read {len(ev)} variables from .env.full")
 
     dc, py, cf = _get_file_lists(rr)
+    # P0.6: an empty discovery list is suspicious — the old hardcoded
+    # lists turned stale paths into warnings and still passed. Fail loudly
+    # if we expected files and found none, so a moved directory can't
+    # masquerade as "nothing to validate".
+    empty_warnings = [
+        f"Discovery found no files under {label} — credential checks skipped"
+        for label, found in (("infra/docker/compose", dc), ("scripts/", py))
+        if not found
+    ]
     cv = list(CRITICAL_CREDENTIAL_ENV_VARS)
     errors = [
         f".env.full: {var} contains a placeholder or weak value"
@@ -312,7 +311,7 @@ def validate_credentials() -> bool:
         else:
             cw.append(f"File not found: {c}")
 
-    return _report_results(errors, dw + pw + cw, di + pi + ci)
+    return _report_results(errors + empty_warnings, dw + pw + cw, di + pi + ci)
 
 
 if __name__ == "__main__":

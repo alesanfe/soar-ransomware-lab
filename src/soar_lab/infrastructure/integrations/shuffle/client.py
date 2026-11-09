@@ -4,10 +4,16 @@
 Dedicated client for Shuffle SOAR orchestration.
 """
 
+import os
 import threading
+from contextlib import suppress
 from typing import Any
 
+import requests
+from requests.adapters import HTTPAdapter as _HTTPAdapter
+
 from soar_lab.common.constants import AUTH_BEARER_PREFIX, HEADER_AUTHORIZATION
+from soar_lab.common.exceptions import IntegrationError
 from soar_lab.config.logging import get_logger
 from soar_lab.infrastructure.integrations.base_client import BaseHTTPClient
 from soar_lab.infrastructure.integrations.shuffle import shuffle_helpers as helpers
@@ -72,10 +78,8 @@ class ShuffleClient(BaseHTTPClient):
 
         self._keepalive_thread: threading.Thread | None = None
         self._session.headers["Connection"] = "close"
-        import requests as _req
-        from requests.adapters import HTTPAdapter as _HTTPAdapter
 
-        self._webhook_session = _req.Session()
+        self._webhook_session = requests.Session()
         self._webhook_session.verify = verify_ssl
         _webhook_adapter = _HTTPAdapter(
             pool_connections=DEFAULT_SHUFFLE_POOL_SIZE, pool_maxsize=DEFAULT_SHUFFLE_POOL_SIZE
@@ -84,9 +88,8 @@ class ShuffleClient(BaseHTTPClient):
         self._webhook_session.mount("https://", _webhook_adapter)
         self._keepalive_stop = threading.Event()
         # Skip eager network init in test/CI contexts to avoid NameResolution errors.
-        import os as _os
 
-        if _os.environ.get("SOAR_SKIP_EAGER_INIT") not in ("1", "true", "yes"):
+        if os.environ.get("SOAR_SKIP_EAGER_INIT") not in ("1", "true", "yes"):
             self._keepalive_thread = threading.Thread(target=self._keepalive_loop, daemon=True)
             self._keepalive_thread.start()
             self._warm_cache()
@@ -105,24 +108,18 @@ class ShuffleClient(BaseHTTPClient):
             self._keepalive_thread.join(timeout=5)
             self._keepalive_thread = None
         # Close requests sessions to release socket connections
-        try:
+        with suppress(Exception):
             self._session.close()
-        except Exception:
-            pass
-        try:
+        with suppress(Exception):
             self._webhook_session.close()
-        except Exception:
-            pass
 
     def __del__(self) -> None:
         """Best-effort cleanup of the keepalive thread on garbage.
 
         collection.
         """
-        try:
+        with suppress(Exception):
             self.close()
-        except Exception:
-            pass
 
     # ------------------------------------------------------------------
     # Internal helpers (thin wrappers around shuffle_helpers functions)
@@ -218,19 +215,16 @@ class ShuffleClient(BaseHTTPClient):
             IntegrationError: If the webhook request fails with an HTTPError
                 or RequestException.
         """
-        import requests as _req
-
-        from soar_lab.common.exceptions import IntegrationError
-
-        s = _req.Session()
-        s.verify = self._session.verify
+        # P0.5: reuse the shared webhook session — a fresh Session() per
+        # call leaked a connection pool/socket on every alert forwarded.
+        s = self._webhook_session
         try:
             resp = s.post(webhook_url, json=payload, timeout=timeout)
             resp.raise_for_status()
             return resp.json() if resp.content else {}
-        except _req.HTTPError as exc:
+        except requests.HTTPError as exc:
             raise IntegrationError(self.__class__.__name__, str(exc)) from exc
-        except _req.RequestException as exc:
+        except requests.RequestException as exc:
             raise IntegrationError(self.__class__.__name__, str(exc)) from exc
 
     def send_webhook(
@@ -290,8 +284,9 @@ class ShuffleClient(BaseHTTPClient):
                 timeout=DEFAULT_SHUFFLE_WORKFLOW_EXECUTION_TIMEOUT,
             )
             return resp.ok
-        except Exception:
-            return False
+        except requests.RequestException as exc:
+            # P0.2: transport failure is infrastructure, not "no".
+            raise self._translate_error(exc) from exc
 
     def list_workflows(self) -> list[dict[str, Any]]:
         """Return list of workflows.
@@ -346,8 +341,14 @@ class ShuffleClient(BaseHTTPClient):
         es_result = helpers.es_workflow_executions(workflow_id, execution_ids)
         if es_result:
             return es_result
-        # Fallback to API if ES is unavailable.
-        return helpers.api_workflow_executions(self, workflow_id, retries, retry_delay)
+        # Fallback to API if ES is unavailable. The executions endpoint is
+        # org-scoped and 401s for the lab apikey, so a transient ES miss must
+        # not be surfaced as a hard failure — callers poll this in a loop.
+        try:
+            return helpers.api_workflow_executions(self, workflow_id, retries, retry_delay)
+        except Exception as exc:
+            logger.warning("workflow executions API fallback failed: %s", exc)
+            return []
 
     def get_execution(
         self,
@@ -395,8 +396,9 @@ class ShuffleClient(BaseHTTPClient):
                 timeout=self.timeout,
             )
             return resp.ok
-        except Exception:
-            return False
+        except requests.RequestException as exc:
+            # Bad credentials -> resp.ok False; transport failure -> raise.
+            raise self._translate_error(exc) from exc
 
     def delete_workflow(self, workflow_id: str) -> bool:
         """Delete a workflow by ID.
@@ -413,8 +415,9 @@ class ShuffleClient(BaseHTTPClient):
                 timeout=self.timeout,
             )
             return resp.ok
-        except Exception:
-            return False
+        except requests.RequestException as exc:
+            # HTTP-level failure -> resp.ok False; transport failure -> raise.
+            raise self._translate_error(exc) from exc
 
     def execute_workflow(self, workflow_id: str, data: dict[str, Any]) -> dict[str, Any]:
         """Trigger a workflow execution with the provided payload.
@@ -437,5 +440,6 @@ class ShuffleClient(BaseHTTPClient):
         try:
             self.get("/api/v1/health")
             return True
-        except Exception:
+        except Exception as exc:
+            logger.debug("Shuffle health check failed: %s", exc)
             return False

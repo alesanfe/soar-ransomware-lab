@@ -6,14 +6,31 @@ exceeded.
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import requests
+
 from soar_lab.common.constants import (
     DEFAULT_KPI_FETCH_TIMEOUT,
     DEFAULT_KPI_SEARCH_SIZE,
     METRICS_INDEX,
 )
 from soar_lab.config.logging import get_logger
+from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
+from soar_lab.domain.statistical_calculator import StatisticalCalculator
 
 logger = get_logger(__name__)
+
+# BL-HTTP-006: shared pooled session for alert webhooks — module-level
+# ``requests.post()`` created a fresh connection per alert.
+_ALERTS_SESSION: Any = None
+
+
+def _alerts_session() -> Any:
+    """Lazily create the pooled webhook session (import-free at module load)."""
+    global _ALERTS_SESSION
+    if _ALERTS_SESSION is None:
+
+        _ALERTS_SESSION = requests.Session()
+    return _ALERTS_SESSION
 
 
 class KPIAlertManager:
@@ -57,9 +74,12 @@ class KPIAlertManager:
             metrics = results.get("hits", {}).get("hits", [])
 
             mttr_values = []
+            # Same physical bound as KPIAnalyzer: an MTTR longer than the
+            # observation window is a corrupt document, not a real latency.
+            max_mttr = hours * 3600
             for hit in metrics:
                 mttr = hit.get("_source", {}).get("mttr_seconds", 0)
-                if mttr:
+                if isinstance(mttr, (int, float)) and 0 < mttr <= max_mttr:
                     mttr_values.append(mttr)
 
             if not mttr_values:
@@ -88,7 +108,7 @@ class KPIAlertManager:
             }
 
         except Exception as e:
-            logger.error(f"Error checking MTTR threshold: {e}")
+            logger.exception("Error checking MTTR threshold")
             return {"status": "error", "message": str(e)}
 
     def check_service_health(self, hours: int = 1) -> dict[str, Any]:
@@ -101,8 +121,6 @@ class KPIAlertManager:
             Dict with alert status
         """
         try:
-            from soar_lab.domain.services.kpi_analyzer import KPIAnalyzer
-            from soar_lab.domain.statistical_calculator import StatisticalCalculator
 
             # Get metrics data from ES
             query = {
@@ -146,7 +164,7 @@ class KPIAlertManager:
             return {"status": "ok", "message": "All services healthy"}
 
         except Exception as e:
-            logger.error(f"Error checking service health: {e}")
+            logger.exception("Error checking service health")
             return {"status": "error", "message": str(e)}
 
     def check_health_score(self) -> dict[str, Any]:
@@ -190,7 +208,7 @@ class KPIAlertManager:
             }
 
         except Exception as e:
-            logger.error(f"Error checking health score: {e}")
+            logger.exception("Error checking health score")
             return {"status": "error", "message": str(e)}
 
     def check_all_thresholds(self, hours: int = 1) -> dict[str, Any]:
@@ -230,9 +248,9 @@ class KPIAlertManager:
             return
 
         try:
-            import requests
-
-            requests.post(self.webhook_url, json=alert, timeout=DEFAULT_KPI_FETCH_TIMEOUT)
+            # BL-HTTP-006: pooled module session instead of a fresh
+            # connection per alert.
+            _alerts_session().post(self.webhook_url, json=alert, timeout=DEFAULT_KPI_FETCH_TIMEOUT)
             logger.info(f"Alert sent: {alert.get('message')}")
-        except Exception as e:
-            logger.error(f"Failed to send alert: {e}")
+        except Exception:
+            logger.exception("Failed to send alert")

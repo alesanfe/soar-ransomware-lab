@@ -13,11 +13,10 @@ The resulting data is used to:
 
 from __future__ import annotations
 
+import base64
 import json
 from datetime import UTC, datetime
 from typing import Any
-
-import requests
 
 from soar_lab.common.constants import (
     AUTH_BASIC_PREFIX,
@@ -30,6 +29,7 @@ from soar_lab.common.constants import (
     METRICS_INDEX,
     SHUFFLE_EXECUTION_INDEX,
 )
+from soar_lab.common.opensearch import id_terms_filter
 from soar_lab.config.logging import get_logger
 
 logger = get_logger(__name__)
@@ -47,6 +47,7 @@ class NodeTimingExtractor:
         elasticsearch_user: str = "elastic",
         elasticsearch_pass: str | None = None,
         metrics_index: str = METRICS_INDEX,
+        http_post=None,
     ) -> None:
         """Initialize the extractor with OpenSearch and Elasticsearch.
 
@@ -60,6 +61,9 @@ class NodeTimingExtractor:
             elasticsearch_user: Elasticsearch username (default ``elastic``).
             elasticsearch_pass: Elasticsearch password (None to skip auth).
             metrics_index: Target ES index for node-timing documents.
+            http_post: Injected HTTP POST callable (ARC-001 — the
+                composition root passes ``requests.post``; the application
+                layer must not import ``requests`` itself).
         """
         self.os_url = opensearch_url.rstrip("/")
         self.os_auth = (
@@ -74,6 +78,15 @@ class NodeTimingExtractor:
             else ""
         )
         self.metrics_index = metrics_index
+        self._http_post = http_post
+
+    def _post(self, *args, **kwargs):
+        """HTTP POST via the injected adapter (ARC-001)."""
+        if self._http_post is None:
+            raise RuntimeError(
+                "http_post adapter not injected — wire requests.post at the composition root"
+            )
+        return self._http_post(*args, **kwargs)
 
     def _os_headers(self) -> dict[str, str]:
         """Build HTTP headers for OpenSearch requests with optional auth."""
@@ -101,12 +114,12 @@ class NodeTimingExtractor:
         body = json.dumps(
             {
                 "size": 1,
-                "query": {"term": {"execution_id": execution_id}},
+                "query": id_terms_filter("execution_id", [execution_id]),
                 "_source": True,
             }
         ).encode()
         try:
-            r = requests.post(
+            r = self._post(
                 f"{self.os_url}/{SHUFFLE_EXECUTION_INDEX}/_search",
                 data=body,
                 headers=self._os_headers(),
@@ -138,58 +151,27 @@ class NodeTimingExtractor:
         # OpenSearch/Shuffle stores workflow started_at/completed_at as epoch
         # seconds (e.g. 1723848000). Node-level started_at/completed_at inside
         # results[] are stored as epoch milliseconds.
-        wf_start_s = float(wf_start)
-        wf_end_s = float(wf_end)
+        try:
+            wf_start_s = float(wf_start)
+            wf_end_s = float(wf_end)
+        except (TypeError, ValueError):
+            wf_start_s = wf_end_s = 0.0
+            wf_parse_error = True
+        else:
+            wf_parse_error = False
         wf_duration = round(wf_end_s - wf_start_s, 3) if wf_end_s and wf_start_s else 0
 
         results = execution.get("results", [])
-        nodes: dict[str, dict[str, Any]] = {}
-        for r in results:
-            if not isinstance(r, dict):
-                continue
-            action = r.get("action", {})
-            label = action.get("label", "?") if isinstance(action, dict) else "?"
-            start_ms = r.get("started_at", 0)
-            end_ms = r.get("completed_at", 0)
-            status = r.get("status", "")
-            if start_ms and end_ms:
-                # Node timestamps are in milliseconds
-                start_s = start_ms / 1000.0
-                end_s = end_ms / 1000.0
-                duration_s = round(end_s - start_s, 3)
-                start_offset = round(start_s - wf_start_s, 3)
-                nodes[label] = {
-                    "start_offset_s": start_offset,
-                    "duration_s": duration_s,
-                    "status": status,
-                }
+        nodes, invalid_timings, duplicate_labels = self._collect_node_timings(
+            results, wf_start_s, wf_parse_error
+        )
 
         # Identify slowest nodes
         sorted_nodes = sorted(nodes.items(), key=lambda x: x[1].get("duration_s", 0), reverse=True)
         slowest = [{"label": lbl} | info for lbl, info in sorted_nodes[:10]]
 
         # Identify parallel groups (nodes that start within 2s of each other)
-        parallel_groups: list[dict[str, Any]] = []
-        sorted_by_start = sorted(nodes.items(), key=lambda x: x[1].get("start_offset_s", 0))
-        current_group: list[str] = []
-        current_group_start = -1
-        for lbl, info in sorted_by_start:
-            offset = info.get("start_offset_s", 0)
-            if current_group_start < 0 or abs(offset - current_group_start) <= 2:
-                current_group.append(lbl)
-                if current_group_start < 0:
-                    current_group_start = offset
-            else:
-                if len(current_group) > 1:
-                    parallel_groups.append(
-                        {"nodes": current_group.copy(), "start_offset_s": current_group_start}
-                    )
-                current_group = [lbl]
-                current_group_start = offset
-        if len(current_group) > 1:
-            parallel_groups.append(
-                {"nodes": current_group.copy(), "start_offset_s": current_group_start}
-            )
+        parallel_groups = _parallel_groups(nodes)
 
         return {
             "execution_id": exec_id,
@@ -200,8 +182,70 @@ class NodeTimingExtractor:
             "nodes": nodes,
             "slowest_nodes": slowest,
             "parallel_groups": parallel_groups,
+            "data_quality": {
+                "invalid_node_timings": invalid_timings,
+                "duplicate_labels": duplicate_labels,
+                "wf_timestamp_parse_error": wf_parse_error,
+            },
             "extracted_at": datetime.now(UTC).isoformat(),
         }
+
+    @staticmethod
+    def _collect_node_timings(
+        results: list[Any], wf_start_s: float, wf_parse_error: bool
+    ) -> tuple[dict[str, dict[str, Any]], int, int]:
+        """Collect per-label node timings from execution ``results``.
+
+        Returns ``(nodes, invalid_timings, duplicate_labels)``.
+        """
+        nodes: dict[str, dict[str, Any]] = {}
+        # M-018/019: entries failing temporal validation (end < start,
+        # negative duration — clock corruption) are discarded and COUNTED,
+        # never silently merged into the measurement.
+        invalid_timings = 0
+        duplicate_labels = 0
+        for r in results:
+            if not isinstance(r, dict) or wf_parse_error:
+                continue
+            action = r.get("action", {})
+            label = action.get("label", "?") if isinstance(action, dict) else "?"
+            start_ms = r.get("started_at", 0)
+            end_ms = r.get("completed_at", 0)
+            status = r.get("status", "")
+            if not (start_ms and end_ms):
+                continue
+            # Node timestamps are in milliseconds
+            try:
+                start_s = start_ms / 1000.0
+                end_s = end_ms / 1000.0
+            except TypeError:
+                continue
+            if end_s < start_s:  # M-018/019: corrupt clock — reject
+                invalid_timings += 1
+                continue
+            duration_s = round(end_s - start_s, 3)
+            start_offset = round(start_s - wf_start_s, 3)
+            if label in nodes:
+                # M-016: repeated label (retries, fan-out) — accumulate
+                # occurrences instead of overwriting the first one.
+                entry = nodes[label]
+                entry["occurrences"] += 1
+                entry["durations_s"].append(duration_s)
+                entry["statuses"].append(status)
+                entry["status"] = status  # latest run
+                entry["duration_s"] = round(sum(entry["durations_s"]), 3)
+                entry["start_offset_s"] = min(entry["start_offset_s"], start_offset)
+                duplicate_labels += 1
+            else:
+                nodes[label] = {
+                    "start_offset_s": start_offset,
+                    "duration_s": duration_s,
+                    "status": status,
+                    "occurrences": 1,
+                    "durations_s": [duration_s],
+                    "statuses": [status],
+                }
+        return nodes, invalid_timings, duplicate_labels
 
     def index_timings(self, timings: dict[str, Any], alert_id: str = "") -> bool:
         """Index per-node timing data into soar-metrics index.
@@ -222,7 +266,7 @@ class NodeTimingExtractor:
         } | timings
         body = json.dumps(doc).encode()
         try:
-            r = requests.post(
+            r = self._post(
                 f"{self.es_url}/{self.metrics_index}/_doc",
                 data=body,
                 headers=self._es_headers(),
@@ -253,6 +297,30 @@ class NodeTimingExtractor:
         return timings
 
 
+def _parallel_groups(nodes: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Group node labels that start within 2s of each other."""
+    groups: list[dict[str, Any]] = []
+    sorted_by_start = sorted(nodes.items(), key=lambda x: x[1].get("start_offset_s", 0))
+    current_group: list[str] = []
+    current_group_start = -1.0
+    for lbl, info in sorted_by_start:
+        offset = info.get("start_offset_s", 0)
+        if current_group_start < 0 or abs(offset - current_group_start) <= 2:
+            current_group.append(lbl)
+            if current_group_start < 0:
+                current_group_start = offset
+        else:
+            if len(current_group) > 1:
+                groups.append(
+                    {"nodes": current_group.copy(), "start_offset_s": current_group_start}
+                )
+            current_group = [lbl]
+            current_group_start = offset
+    if len(current_group) > 1:
+        groups.append({"nodes": current_group.copy(), "start_offset_s": current_group_start})
+    return groups
+
+
 def base64_b64encode(s: bytes) -> str:
     """Base64-encode bytes and return a UTF-8 string (helper for HTTP Basic.
 
@@ -264,6 +332,4 @@ def base64_b64encode(s: bytes) -> str:
     Returns:
         str: Base64-encoded UTF-8 string suitable for ``Authorization`` headers.
     """
-    import base64
-
     return base64.b64encode(s).decode()

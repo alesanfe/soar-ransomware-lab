@@ -4,6 +4,10 @@
 Dedicated client for Cortex analysis engine.
 """
 
+import base64
+import re
+import time
+from http.cookiejar import CookieJar
 from typing import Any
 
 from soar_lab.common.constants import (
@@ -18,6 +22,11 @@ from soar_lab.config.logging import get_logger
 from soar_lab.infrastructure.integrations.base_client import BaseHTTPClient
 
 logger = get_logger(__name__)
+
+# Cortex internal analyzer ids are 32-hex strings; anything else
+# (e.g. "FileInfo_8_0") is a name/workerDefinitionId that must be
+# resolved — POST /api/analyzer/{ref}/run only accepts internal ids.
+_ANALYZER_ID_RE = re.compile(r"^[0-9a-fA-F]{32}$")
 
 
 class CortexClient(BaseHTTPClient):
@@ -52,6 +61,8 @@ class CortexClient(BaseHTTPClient):
 
         self._admin_user = admin_user or "admin"
         self._admin_password = admin_password or ""
+        self._config_provider = config_provider
+        self._analyzer_ref_cache: dict[str, str] = {}
         super().__init__(base_url=url, api_key=key, verify_ssl=verify_ssl, timeout=timeout)
         # Cortex uses Play Framework sessions via CORTEX_SESSION cookie.
         # When we send Basic Auth on every request, the cookie conflicts with
@@ -59,7 +70,6 @@ class CortexClient(BaseHTTPClient):
         # persistence since we authenticate statelessly with Basic Auth.
         self._session.cookies.clear()
         # Use a cookie policy that rejects all cookies from Cortex
-        from http.cookiejar import CookieJar
 
         class _NoCookieJar(CookieJar):
             def set_cookie(self, _cookie: Any) -> None:
@@ -72,8 +82,6 @@ class CortexClient(BaseHTTPClient):
 
         credentials.
         """
-        import base64
-
         headers = {HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON, HEADER_ACCEPT: CONTENT_TYPE_JSON}
         # Prefer Basic auth with admin credentials (works with all Cortex versions)
         if self._admin_password:
@@ -101,6 +109,37 @@ class CortexClient(BaseHTTPClient):
         result = self.post("/api/analyzer/_search", data=payload)
         return result if isinstance(result, list) else []
 
+    def _resolve_analyzer_id(self, analyzer_ref: str) -> str:
+        """Resolve an analyzer name/workerDefinitionId to its internal id.
+
+        Args:
+            analyzer_ref: Internal 32-hex id, analyzer name, or
+                workerDefinitionId (e.g. ``FileInfo_8_0``).
+
+        Returns:
+            The internal analyzer id usable with ``/api/analyzer/{id}/run``.
+            Returns ``analyzer_ref`` unchanged when it already looks like an
+            internal id or no match is found — the API then reports the real
+            not-found error.
+        """
+        if _ANALYZER_ID_RE.match(analyzer_ref):
+            return analyzer_ref
+        if analyzer_ref in self._analyzer_ref_cache:
+            return self._analyzer_ref_cache[analyzer_ref]
+        for analyzer in self.list_analyzers():
+            candidates = (
+                analyzer.get("id"),
+                analyzer.get("_id"),
+                analyzer.get("name"),
+                analyzer.get("workerDefinitionId"),
+            )
+            if analyzer_ref in candidates:
+                resolved = analyzer.get("_id") or analyzer.get("id")
+                if resolved:
+                    self._analyzer_ref_cache[analyzer_ref] = resolved
+                    return str(resolved)
+        return analyzer_ref
+
     def run_analyzer(
         self,
         analyzer_id: str,
@@ -110,7 +149,8 @@ class CortexClient(BaseHTTPClient):
         """Submit an observable for analysis.
 
         Args:
-            analyzer_id: ID of the Cortex analyzer.
+            analyzer_id: ID of the Cortex analyzer — internal id, name, or
+                workerDefinitionId (resolved automatically).
             data_type: e.g. "ip", "domain", "hash".
             data: The value to analyze.
 
@@ -118,11 +158,12 @@ class CortexClient(BaseHTTPClient):
             Cortex job creation response.
         """
         logger.info("Running Cortex analyzer %s on %s: %s", analyzer_id, data_type, data)
+        resolved_id = self._resolve_analyzer_id(analyzer_id)
         payload = {
             "dataType": data_type,
             "data": data,
         }
-        return dict(self.post(f"/api/analyzer/{analyzer_id}/run", data=payload))
+        return dict(self.post(f"/api/analyzer/{resolved_id}/run", data=payload))
 
     def get_job(self, job_id: str) -> dict[str, Any]:
         """Get the status of an analyzer job.
@@ -196,8 +237,6 @@ class CortexClient(BaseHTTPClient):
         Returns:
             Final job dict (status may be Success, Failure, or still InProgress on timeout).
         """
-        import time
-
         deadline = time.time() + timeout
         while time.time() < deadline:
             job = self.get_job(job_id)
@@ -261,11 +300,17 @@ class CortexClient(BaseHTTPClient):
             Exception: If the request fails with a non-conflict error.
         """
         if configuration is None:
+            # TLP/PAP enforcement is configuration-driven — relaxing it is a
+            # deliberate security choice, so it must be visible in config
+            # rather than buried in code. Defaults preserve lab behaviour.
+            cfg = getattr(self, "_config_provider", None)
+            check_tlp = bool(cfg.get("cortex_check_tlp", False)) if cfg else False
+            check_pap = bool(cfg.get("cortex_check_pap", False)) if cfg else False
             configuration = {
                 "max_tlp": 3,
                 "max_pap": 3,
-                "check_tlp": False,
-                "check_pap": False,
+                "check_tlp": check_tlp,
+                "check_pap": check_pap,
                 "auto_extract_artifacts": False,
             }
         payload = {"name": definition_id, "configuration": configuration}
@@ -280,5 +325,6 @@ class CortexClient(BaseHTTPClient):
         try:
             self.get("/")
             return True
-        except Exception:
+        except Exception as exc:
+            logger.debug("Cortex health check failed: %s", exc)
             return False

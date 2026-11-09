@@ -42,10 +42,7 @@ def resolve_webhook_url(
     Returns:
         str: Resolved webhook URL, or None if no source is available.
     """
-    if env_url:
-        return env_url
-
-    env_url = os.environ.get("SHUFFLE_WEBHOOK_URL")
+    env_url = env_url or os.environ.get("SHUFFLE_WEBHOOK_URL")
     if env_url:
         return env_url
 
@@ -53,10 +50,19 @@ def resolve_webhook_url(
     if env_token:
         return SHUFFLE_WEBHOOK_TEMPLATE.format(token=env_token)
 
+    return _url_from_webhook_info(base_dir)
+
+
+def _url_from_webhook_info(base_dir: Path | None) -> str | None:
+    """Read the webhook URL from the first usable ``webhook_info.json``."""
     candidates: list[Path] = []
     if base_dir:
-        candidates.append(base_dir / "reports" / "validation" / "results" / "webhook_info.json")
-        candidates.append(base_dir / "webhook_info.json")
+        candidates.extend(
+            (
+                base_dir / "reports" / "validation" / "results" / "webhook_info.json",
+                base_dir / "webhook_info.json",
+            )
+        )
     candidates.extend(Path(p) for p in WEBHOOK_INFO_PATHS)
 
     for path in candidates:

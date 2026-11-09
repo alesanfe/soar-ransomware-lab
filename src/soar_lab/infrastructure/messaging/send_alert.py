@@ -15,12 +15,17 @@ import json
 import os
 import sys
 import time
+from contextlib import suppress
 from pathlib import Path
 
 from soar_lab.common.constants import (
     SHUFFLE_WEBHOOK_DEFAULT,
     WEBHOOK_INFO_PATHS,
 )
+from soar_lab.config.logging import get_logger
+from soar_lab.domain.alert_generator import AlertGenerator
+from soar_lab.infrastructure.http_alert_sender import HTTPAlertSender
+from soar_lab.security.tls_config import verify_tls as _verify_tls
 
 
 def _default_webhook_url(base_dir: Path) -> str:
@@ -34,11 +39,14 @@ def _default_webhook_url(base_dir: Path) -> str:
     ] + [Path(p) for p in WEBHOOK_INFO_PATHS]
     for p in info_paths:
         if p.exists():
-            try:
+            with suppress(Exception):
                 info = json.loads(p.read_text())
+                # Inside a container the internal URL (shuffle-backend)
+                # is the reachable one; on the host use the published
+                # localhost URL.
+                if Path("/.dockerenv").exists():
+                    return info.get("webhook_url", "") or info.get("webhook_url_host", "")
                 return info.get("webhook_url_host", "") or info.get("webhook_url", "")
-            except Exception:
-                pass
     return SHUFFLE_WEBHOOK_DEFAULT
 
 
@@ -98,17 +106,20 @@ def main() -> None:
     os.environ.setdefault("BASE_DIR", str(base_dir))
     os.environ.setdefault("SOAR_SKIP_EAGER_INIT", "1")
 
-    from soar_lab.config.logging import get_logger
-    from soar_lab.domain.alert_generator import AlertGenerator
-    from soar_lab.infrastructure.http_alert_sender import HTTPAlertSender
-
     logger = get_logger(__name__)
 
     # ------------------------------------------------------------------ #
     # Initialize components                                               #
     # ------------------------------------------------------------------ #
     alert_generator = AlertGenerator()
-    sender = HTTPAlertSender(webhook_url=args.webhook_url, api_token=args.api_token)
+    # TLS verification is on by default; ALERT_SENDER_VERIFY_TLS=0/false is an
+    # explicit opt-out for local self-signed development endpoints only.
+    # Resolution is centralized in security.tls_config (BL-SEC-003).
+
+    verify_tls = _verify_tls("ALERT_SENDER")
+    sender = HTTPAlertSender(
+        webhook_url=args.webhook_url, api_token=args.api_token, verify_tls=verify_tls
+    )
 
     # ------------------------------------------------------------------ #
     # Send alerts                                                        #

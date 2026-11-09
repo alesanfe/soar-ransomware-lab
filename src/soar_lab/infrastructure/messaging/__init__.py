@@ -1,1 +1,1 @@
-"""Messaging infrastructure package for event-driven communication."""
+"""Messaging adapters — durable queue and admission worker (PERF-001)."""

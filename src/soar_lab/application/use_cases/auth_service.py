@@ -4,15 +4,81 @@ This service contains authentication and authorization logic as a use
 case, separated from the FastAPI adapter layer.
 """
 
+import hashlib
+import hmac
+import json
+import time
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any
 
+from soar_lab.auth.models import Permission, Role
 from soar_lab.common.constants import JWT_ALGORITHM_DEFAULT
 from soar_lab.common.exceptions import AuthError
 from soar_lab.config.logging import get_logger
-from soar_lab.domain.ports import TokenProviderInterface
+from soar_lab.domain.ports import ConfigProvider, TokenProviderInterface
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class PermissionGrant:
+    """Time-boxed permission grant (SEC-002)."""
+
+    permission: Any
+    granted_at: float
+    expires_at: float
+    granted_by: str = ""
+
+
+@dataclass
+class _AuthAudit:
+    """In-memory auth audit trail (SEC-006-lite) — bounded, per-service.
+
+    S6: every record is chained to the previous one —
+    ``hash = sha256(prev_hash + canonical(event))`` — so editing or
+    deleting a past event breaks every subsequent hash. ``verify()``
+    recomputes the chain; ``chain_tip`` is the external attestation
+    value a SIEM can snapshot periodically.
+    """
+
+    events: list[dict] = field(default_factory=list)
+    _max: int = 1000
+    _tip: str = "0" * 64
+
+    def record(self, action: str, **kv: Any) -> None:
+        body = {"ts": time.time(), "action": action} | kv
+        digest = hashlib.sha256(
+            self._tip.encode() + json.dumps(body, sort_keys=True, default=str).encode()
+        ).hexdigest()
+        event = body | {"prev_hash": self._tip, "hash": digest}
+        self._tip = digest
+        self.events.append(event)
+        if len(self.events) > self._max:
+            # Trimming keeps the chain verifiable from its new head:
+            # the first retained event's prev_hash anchors the rest.
+            del self.events[: len(self.events) - self._max]
+
+    @property
+    def chain_tip(self) -> str:
+        """Current chain head — snapshot this externally to attest the trail."""
+        return self._tip
+
+    def verify(self) -> bool:
+        """Recompute the chain over retained events; False on tamper."""
+        expected_prev = self.events[0]["prev_hash"] if self.events else "0" * 64
+        for event in self.events:
+            body = {k: v for k, v in event.items() if k not in ("prev_hash", "hash")}
+            if event.get("prev_hash") != expected_prev:
+                return False
+            recomputed = hashlib.sha256(
+                expected_prev.encode() + json.dumps(body, sort_keys=True, default=str).encode()
+            ).hexdigest()
+            if event.get("hash") != recomputed:
+                return False
+            expected_prev = recomputed
+        return True
+
 
 # Factory callables injected by the composition root.  Using callables
 # (instead of direct imports) keeps the application layer free of
@@ -45,7 +111,7 @@ class AuthService:
 
     def __init__(
         self,
-        config_provider: object | None = ...,
+        config_provider: ConfigProvider | None = ...,
         token_provider: TokenProviderInterface | None = ...,
     ) -> None:
         """Initialize the authentication service.
@@ -74,6 +140,7 @@ class AuthService:
             token_provider = _default_token_factory()
         self.config_provider = config_provider
         self.token_provider = token_provider
+        self.audit = _AuthAudit()
 
     def _get_auth_secret(self) -> str:
         """Get authentication secret from ConfigProvider."""
@@ -84,12 +151,14 @@ class AuthService:
         )
 
     def _validate_secret_length(self, secret: str) -> None:
-        """Enforce minimum key length when not using a legacy.
+        """Enforce minimum length on the EFFECTIVE secret (SEC-001).
 
-        API_AUTH_SECRET.
+        Previous code skipped the check whenever ``api_auth_secret`` was
+        set — a 5-char legacy secret silently bypassed validation. The
+        effective secret (jwt_secret_key or api_auth_secret fallback) must
+        always be >= 32 chars, whoever provided it.
         """
-        api_secret = self.config_provider.get("api_auth_secret") or ""
-        if not api_secret and len(secret) < 32:
+        if len(secret) < 32:
             raise AuthError("Authentication system not properly configured", 500)
 
     # ------------------------------------------------------------------
@@ -104,18 +173,26 @@ class AuthService:
         Returns:
             True if the user's role is ADMIN.
         """
-        from soar_lab.auth.models import Role
-
         return getattr(user, "role", None) == Role.ADMIN
 
     def has_permission(self, user: Any, permission: Any) -> bool:
-        """Return True if the user has the requested permission."""
-        from soar_lab.auth.models import Permission
+        """Return True if the user has the requested permission.
 
+        Considers permanent permissions plus non-expired temporary grants
+        (SEC-002). Expired grants are pruned and never authorize.
+        """
         if self._is_admin(user):
             return True
         user_perms = set(getattr(user, "permissions", []))
-        return Permission.ALL in user_perms or permission in user_perms
+        if Permission.ALL in user_perms or permission in user_perms:
+            return True
+        # Temporary grants (SEC-002)
+        now = time.time()
+        grants = getattr(user, "temp_permissions", []) or []
+        live = [g for g in grants if g.expires_at > now]
+        if len(live) != len(grants):  # prune expired
+            user.temp_permissions = live
+        return any(g.permission in (permission, Permission.ALL) for g in live)
 
     def check_permission(self, user: Any, permission: Any) -> None:
         """Raise PermissionError if the user does not have the permission."""
@@ -132,69 +209,127 @@ class AuthService:
             user.permissions = user_perms
 
     def revoke_permission(self, user: Any, permission: Any) -> None:
-        """Revoke a permission from a user."""
+        """Revoke a permission from a user (audited, SEC-006)."""
         user_perms = list(getattr(user, "permissions", []))
         if permission in user_perms:
             user_perms.remove(permission)
             user.permissions = user_perms
+            self.audit.record(
+                "revoke", user=getattr(user, "username", "?"), permission=str(permission)
+            )
 
     def grant_temporary_permission(
-        self, user: Any, permission: Any, _duration_seconds: int = 60
-    ) -> None:
-        """Grant a temporary permission to a user (self-granted, no admin.
+        self,
+        user: Any,
+        permission: Any,
+        admin_user: Any = None,
+        duration_seconds: int = 60,
+    ) -> Any:
+        """Grant a REAL temporary permission (SEC-002/003).
 
-        required).
+        Previously this was a permanent, self-granted write to
+        ``user.permissions`` with the duration ignored — a privilege-
+        escalation primitive. Now:
+
+        - requires an admin granter (SEC-003: no self-grants)
+        - expires after ``duration_seconds``
+        - recorded as a ``PermissionGrant`` on ``user.temp_permissions``
+        - audited via structured log (SEC-006-lite)
         """
-        user_perms = list(getattr(user, "permissions", []))
-        if permission not in user_perms:
-            user_perms.append(permission)
-            user.permissions = user_perms
+        if not self._is_admin(admin_user):
+            raise PermissionError("Only admins can grant temporary permissions")
+        grant = PermissionGrant(
+            permission=permission,
+            granted_at=time.time(),
+            expires_at=time.time() + duration_seconds,
+            granted_by=str(getattr(admin_user, "username", "admin")),
+        )
+        grants = list(getattr(user, "temp_permissions", []) or [])
+        grants.append(grant)
+        user.temp_permissions = grants
+        self.audit.record(
+            "grant",
+            user=getattr(user, "username", "?"),
+            permission=str(permission),
+            ttl=duration_seconds,
+            by=grant.granted_by,
+        )
+        logger.info(
+            "perm_grant user=%s permission=%s ttl=%ss by=%s",
+            getattr(user, "username", "?"),
+            permission,
+            duration_seconds,
+            grant.granted_by,
+        )
+        return grant
 
     def get_role_permissions(self, role: Any) -> list[Any]:
         """Return the default permissions associated with a role."""
-        from soar_lab.auth.models import Permission, Role
-
         if role == Role.ADMIN:
             return list(Permission)
+        if role == Role.OPERATOR:
+            return [
+                Permission.READ_ALERTS,
+                Permission.READ_CASES,
+                Permission.CREATE_CASES,
+                Permission.UPDATE_CASES,
+            ]
         if role == Role.ANALYST:
             return [
                 Permission.READ_ALERTS,
                 Permission.READ_CASES,
                 Permission.CREATE_CASES,
             ]
-        if role == Role.READONLY:
+        if role in (Role.VIEWER, Role.READONLY):
             return [Permission.READ_ALERTS, Permission.READ_CASES]
         return []
 
+    # AUTH-003: real API-surface role map. Privilege order
+    # ADMIN > OPERATOR > ANALYST > VIEWER/READONLY:
+    #   viewer   → read-only (GET outside admin paths)
+    #   analyst  → + alert submission and IoC caching
+    #   operator → + containment actions and queue/DLQ management
+    #   admin    → + backups, test runner, audit trail, /api/admin*
+    _ADMIN_PREFIXES = (
+        "/backup",
+        "/tests/run",
+        "/api/v1/audit",
+        "/api/v1/config",
+        "/api/admin",
+    )
+    _OPERATOR_PREFIXES = ("/api/v1/contain", "/api/v1/queue")
+    _ANALYST_POST_PREFIXES = ("/api/v1/alerts", "/api/v1/cache/ioc")
+
     def can_access_endpoint(self, user: Any, path: str, method: str) -> bool:
         """Return True if the user may access the given endpoint/method."""
-        from soar_lab.auth.models import Permission, Role
-
         method = method.upper()
         role = getattr(user, "role", None)
 
         if role == Role.ADMIN:
             return True
 
-        is_admin_path = path.startswith("/api/admin")
-        if is_admin_path:
+        if path.startswith(self._ADMIN_PREFIXES):
             return False
 
-        if role == Role.READONLY:
-            return method == "GET"
-
-        if role == Role.ANALYST:
-            if method == "GET":
-                return True
-            if method == "POST" and (
-                path.startswith("/api/cases") or path.startswith("/api/alerts")
-            ):
-                return True
-            return False
-
-        # Fallback: check explicit permissions
-        if method == "GET" and self.has_permission(user, Permission.READ_ALERTS):
+        if path.startswith(("/auth/", "/api/v1/auth/")):
+            # Session bootstrap (ws-ticket, verify) — any authenticated role.
             return True
+
+        if path.startswith(self._OPERATOR_PREFIXES):
+            return role == Role.OPERATOR
+
+        if method == "GET":
+            return role in (
+                Role.VIEWER,
+                Role.READONLY,
+                Role.ANALYST,
+                Role.OPERATOR,
+            ) or self.has_permission(user, Permission.READ_ALERTS)
+
+        if role in (Role.ANALYST, Role.OPERATOR):
+            if path.startswith(self._ANALYST_POST_PREFIXES):
+                return True
+
         if method == "POST" and self.has_permission(user, Permission.CREATE_CASES):
             return True
         return False
@@ -212,7 +347,9 @@ class AuthService:
             logger.error("WEB_UI_USER or WEB_UI_PASSWORD not configured")
             return False
 
-        is_valid = username == env_username and password == env_password
+        is_valid = hmac.compare_digest(
+            username.encode("utf-8"), env_username.encode("utf-8")
+        ) and hmac.compare_digest(password.encode("utf-8"), env_password.encode("utf-8"))
 
         if is_valid:
             logger.info(f"Successful login for user: {username}")
@@ -234,7 +371,14 @@ class AuthService:
         expiration_minutes = self.config_provider.get("JWT_EXPIRATION_MINUTES", 60)
         algorithm = self.config_provider.get("JWT_ALGORITHM", JWT_ALGORITHM_DEFAULT)
 
-        return self.token_provider.create_token(username, secret_key, expiration_minutes, algorithm)
+        role = str(self.config_provider.get("WEB_UI_ROLE", "admin") or "admin")
+        return self.token_provider.create_token(
+            username,
+            secret_key,
+            expiration_minutes,
+            algorithm,
+            extra_claims={"role": role},
+        )
 
     def verify_jwt_token(self, token: str) -> dict[str, Any]:
         """Verify a JWT token and return the payload.

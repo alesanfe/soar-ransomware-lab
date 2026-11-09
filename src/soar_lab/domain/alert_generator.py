@@ -4,6 +4,7 @@ import hashlib
 import random
 import time
 from datetime import UTC, datetime
+from typing import Any
 
 __all__ = ["AlertGenerator"]
 
@@ -24,9 +25,19 @@ class AlertGenerator:
         "172.16.0.5",
     ]
 
-    def __init__(self) -> None:
-        """Initialize the AlertGenerator with a zeroed alert counter."""
+    def __init__(self, seq_offset: int | None = None) -> None:
+        r"""Initialize the AlertGenerator.
+
+        ``_counter`` stays 0-based (deterministic per-instance sequence);
+        the emitted ID adds a random per-instance phase so two generators
+        producing an ID inside the same second do not collide — the
+        ``ALERT-\\d{10}-\\d{4}`` schema pattern leaves only 4 digits of
+        sequence space. ``seq_offset`` pins the phase for tests.
+        """
         self._counter = 0
+        self._seq_offset = (
+            seq_offset if seq_offset is not None else random.randrange(10_000)
+        ) % 10_000
 
     def _id(self) -> str:
         """Generate a unique alert ID using a timestamp and counter.
@@ -35,7 +46,8 @@ class AlertGenerator:
             A string in the form ``ALERT-<timestamp>-<counter>``.
         """
         self._counter += 1
-        return f"ALERT-{int(time.time())}-{self._counter:04d}"
+        seq = (self._seq_offset + self._counter) % 10_000
+        return f"ALERT-{int(time.time())}-{seq:04d}"
 
     def _hash(self, data: str) -> str:
         """Compute a SHA256 hex digest of the given data.
@@ -48,7 +60,7 @@ class AlertGenerator:
         """
         return hashlib.sha256(data.encode()).hexdigest()
 
-    def generate_malicious(self) -> dict[str, any]:
+    def generate_malicious(self) -> dict[str, Any]:
         """Generate a simulated malicious ransomware detection alert.
 
         Returns:
@@ -61,7 +73,7 @@ class AlertGenerator:
             ips=self.MALICIOUS_IPS,
         )
 
-    def generate_benign(self) -> dict[str, any]:
+    def generate_benign(self) -> dict[str, Any]:
         """Generate a simulated benign activity alert.
 
         Returns:
@@ -70,11 +82,11 @@ class AlertGenerator:
         return self._build(
             alert_type="benign",
             event_type="benign_activity",
-            severity=random.choice([0, 1]),
+            severity=1,
             ips=self.BENIGN_IPS,
         )
 
-    def generate(self) -> dict[str, any]:
+    def generate(self) -> dict[str, Any]:
         """Generate a default alert (alias for ``generate_malicious``).
 
         Returns:
@@ -82,7 +94,7 @@ class AlertGenerator:
         """
         return self.generate_malicious()
 
-    def generate_test(self, alert_id: str = None) -> dict[str, any]:
+    def generate_test(self, alert_id: str = None) -> dict[str, Any]:
         """Generate a test alert with an optional custom alert ID.
 
         Args:
@@ -103,13 +115,13 @@ class AlertGenerator:
 
     def _build(
         self, alert_type: str, event_type: str, severity: int, ips: list[str]
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """Build an alert dictionary from the given parameters.
 
         Args:
             alert_type: Type label for the alert (e.g. ``"ransomware"``).
             event_type: Event type label for the alert.
-            severity: Severity level (0–3).
+            severity: Severity level (1–3, matches AlertSeverity enum).
             ips: List of IP addresses to sample from.
 
         Returns:

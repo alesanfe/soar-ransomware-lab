@@ -14,6 +14,7 @@ rule of hexagonal architecture.
 """
 
 from soar_lab.domain.ports import (
+    AdmissionStore,
     AlertRepository,
     BackupDriver,
     BackupRepository,
@@ -22,6 +23,7 @@ from soar_lab.domain.ports import (
     CaseRepository,
     ChecksumService,
     ConfigProvider,
+    EventQueue,
     FileSystemInterface,
     HealthCheckInterface,
     HTTPClient,
@@ -53,6 +55,8 @@ __all__ = [
     "CaseRepository",
     "ChecksumService",
     "ConfigProvider",
+    "EventQueue",
+    "AdmissionStore",
     "FileSystemInterface",
     "HTTPClient",
     "HealthCheckInterface",

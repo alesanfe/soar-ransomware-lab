@@ -25,8 +25,10 @@ class SystemMetricsDriver:
             Dict with hardware metrics including percentages and timestamps
         """
         try:
-            # CPU metrics
-            cpu_percent = psutil.cpu_percent(interval=1)
+            # CPU metrics — interval=None is non-blocking (delta since the
+            # previous call); interval=1 parked the event loop for a full
+            # second on every metrics request.
+            cpu_percent = psutil.cpu_percent(interval=None)
             cpu_count = psutil.cpu_count()
 
             # Memory metrics
@@ -127,15 +129,14 @@ class SystemMetricsDriver:
                     "load_15min": load15,
                     "timestamp": datetime.now(UTC).isoformat(),
                 }
-            else:
-                # Windows doesn't have load averages
-                return {
-                    "load_1min": 0,
-                    "load_5min": 0,
-                    "load_15min": 0,
-                    "timestamp": datetime.now(UTC).isoformat(),
-                    "note": "Load averages not available on Windows",
-                }
+            # Windows doesn't have load averages
+            return {
+                "load_1min": 0,
+                "load_5min": 0,
+                "load_15min": 0,
+                "timestamp": datetime.now(UTC).isoformat(),
+                "note": "Load averages not available on Windows",
+            }
         except Exception as e:
             return {
                 "load_1min": 0,

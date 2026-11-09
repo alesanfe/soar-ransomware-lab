@@ -3,7 +3,11 @@
 import argparse
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 
+import uvicorn
+
+from soar_lab import __version__
 from soar_lab.common.constants import (
     ENV_CORTEX_API_KEY,
     ENV_EDR_SIM_TOKEN,
@@ -26,6 +30,13 @@ from soar_lab.common.constants import (
     SECRET_LENGTH_WEBHOOK_TOKEN,
 )
 from soar_lab.config.logging import configure_from_env
+from soar_lab.config.settings import create_settings
+from soar_lab.data.generate_iocs import IOCPackageGenerator
+from soar_lab.domain.services.ioc_generator import SimulatedIOCGenerator
+from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
+from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
+from soar_lab.interfaces.api.composition import create_app as create_composed_app
+from soar_lab.security.secret_generator import SecretGeneratorService
 
 __all__ = ["configure_from_env", "main"]
 
@@ -66,30 +77,21 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.command == "version":
-        from soar_lab import __version__
 
         print(__version__)
         return 0
 
     if args.command == "api":
-        import uvicorn
-
-        from soar_lab.interfaces.api.composition import create_app as create_composed_app
 
         app_instance = create_composed_app()
         uvicorn.run(app_instance, host=args.host, port=args.port)
         return 0
 
     if args.command == "generate-iocs":
-        from soar_lab.config.settings import create_settings
-        from soar_lab.domain.services.ioc_generator import SimulatedIOCGenerator
-        from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
-        from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
 
         # Create minimal composition for IOC generation
         settings = create_settings()
         config_provider = InfrastructureConfigProvider(settings)
-        from pathlib import Path
 
         base_dir_str = config_provider.get("base_dir")
         if not base_dir_str:
@@ -97,8 +99,6 @@ def main() -> int:
         Path(base_dir_str)
         file_system = FilesystemStorage(config_provider=config_provider)
         ioc_generator = SimulatedIOCGenerator()
-
-        from soar_lab.data.generate_iocs import IOCPackageGenerator
 
         generator = IOCPackageGenerator(ioc_generator, file_system)
         iocs = generator.create_ioc_package(output_file=args.output, count=args.count)
@@ -110,12 +110,6 @@ def main() -> int:
         return 0
 
     if args.command == "generate-secrets":
-        from scripts.setup.generate_secrets import (  # pylint: disable=import-error,no-name-in-module
-            SecretGeneratorService,
-        )
-        from soar_lab.config.settings import create_settings
-        from soar_lab.infrastructure.config_provider import InfrastructureConfigProvider
-        from soar_lab.infrastructure.filesystem_storage import FilesystemStorage
 
         # Create minimal composition for secret generation
         settings = create_settings()

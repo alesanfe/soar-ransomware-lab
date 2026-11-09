@@ -1,17 +1,13 @@
-"""Alert severity and type enumerations."""
+"""Alert type enumeration.
+
+CFG-001: ``SeverityLevel`` (base-0 strings) was removed — the canonical
+severity enum is ``soar_lab.domain.models.AlertSeverity`` (IntEnum 1-4,
+TheHive/MISP scale). Import it from there.
+"""
 
 from enum import Enum
 
-__all__ = ["SeverityLevel", "AlertType"]
-
-
-class SeverityLevel(str, Enum):
-    """Alert severity levels."""
-
-    LOW = "0"
-    MEDIUM = "1"
-    HIGH = "2"
-    CRITICAL = "3"
+__all__ = ["AlertType"]
 
 
 class AlertType(str, Enum):

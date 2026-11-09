@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 from pydantic import ValidationError
-from pydantic.networks import IPv4Address
+from pydantic.networks import IPvAnyAddress
 
 from soar_lab.common.constants import ALERT_ID_PATTERN
 from soar_lab.config.schemas.alerts import RansomwareAlert
@@ -53,9 +53,9 @@ def is_valid_sha256(hash_value: str) -> bool:
 
 
 def is_valid_ip_address(ip_address: str) -> bool:
-    """Check if IP address is valid."""
+    """Check if IP address is valid (IPv4 or IPv6 — CFG-048)."""
     try:
-        IPv4Address(ip_address)
+        IPvAnyAddress(ip_address)
         return True
     except Exception:
         return False

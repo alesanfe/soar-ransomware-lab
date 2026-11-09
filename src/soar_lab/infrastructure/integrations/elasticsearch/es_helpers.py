@@ -7,12 +7,13 @@ the bulk-indexing and scroll-search logic from the main client class.
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from soar_lab.common.constants import CONTENT_TYPE_NDJSON, HEADER_CONTENT_TYPE
+from soar_lab.common.constants import CONTENT_TYPE_NDJSON
+from soar_lab.common.exceptions import IntegrationError
+from soar_lab.config.logging import get_logger
 
-if TYPE_CHECKING:
-    from requests import Session
+logger = get_logger(__name__)
 
 
 def build_bulk_body(
@@ -43,45 +44,53 @@ def build_bulk_body(
 
 
 def execute_bulk(
-    session: Session,
-    url: str,
+    post_fn: Any,
     index: str,
     body: str,
     refresh: bool = False,
-    timeout: int = 10,
 ) -> dict[str, Any]:
     """Send a bulk request to Elasticsearch.
 
     Args:
-        session: requests.Session to use.
-        url: Base URL of the Elasticsearch cluster.
+        post_fn: Callable ``(path, body, content_type) -> dict`` performing
+            the POST — in practice ``ElasticsearchClient.post_raw`` so the
+            request goes through the circuit breaker, typed error
+            translation and trace propagation (BL-HTTP-007).
         index: Target index name.
         body: NDJSON body from ``build_bulk_body``.
         refresh: Whether to refresh the index immediately.
-        timeout: Request timeout in seconds.
 
     Returns:
         Elasticsearch bulk response dict.
 
     Raises:
-        IntegrationError: If the bulk request fails.
+        IntegrationError: If the bulk request fails (transport errors keep
+            the typed hierarchy from ``_translate_error``).
     """
     path = f"/{index}/_bulk"
     if refresh:
         path += "?refresh=true"
-    try:
-        resp = session.post(
-            f"{url}{path}",
-            data=body,
-            headers={HEADER_CONTENT_TYPE: CONTENT_TYPE_NDJSON},
-            timeout=timeout,
+    result = post_fn(path, body, CONTENT_TYPE_NDJSON)
+    result = result or {}
+    # ES returns HTTP 200 even when individual documents fail —
+    # ``errors: true`` with per-item status/reason. Treating that as
+    # success hides partial data loss, so surface it as an error
+    # with the failed ids (truncated, no doc bodies).
+    if result.get("errors"):
+        failed = [
+            item.get("index", {})
+            for item in result.get("items", [])
+            if item.get("index", {}).get("error")
+        ]
+        detail = "; ".join(
+            f"{f.get('_id', '?')}: {f.get('error', {}).get('type', 'unknown')}" for f in failed[:10]
         )
-        resp.raise_for_status()
-        return resp.json() if resp.content else {}
-    except Exception as exc:
-        from soar_lab.common.exceptions import IntegrationError
 
-        raise IntegrationError("ElasticsearchClient", str(exc)) from exc
+        raise IntegrationError(
+            "ElasticsearchClient",
+            f"bulk partial failure ({len(failed)} doc(s)): {detail}",
+        )
+    return result
 
 
 def scroll_search_generator(
@@ -90,8 +99,14 @@ def scroll_search_generator(
     query: dict[str, Any] | None = None,
     size: int = 100,
     scroll: str = "1m",
+    delete_fn: Any = None,
 ) -> Any:
     """Generator that yields hits from a scroll search.
+
+    The server-side scroll context is released in a ``finally`` block via
+    ``DELETE /_search/scroll`` — on exhaustion, on iteration errors and on
+    early termination (``GeneratorExit`` from ``gen.close()`` or GC), so
+    partially-consumed scrolls cannot leak contexts in Elasticsearch.
 
     Args:
         post_fn: Callable that performs POST requests (e.g. ``client.post``).
@@ -99,19 +114,31 @@ def scroll_search_generator(
         query: Elasticsearch DSL query (defaults to ``match_all``).
         size: Number of hits per scroll batch.
         scroll: Scroll context keep-alive.
+        delete_fn: Optional callable performing DELETE requests
+            (e.g. ``client.delete``). When provided, used to clear the
+            scroll context. When ``None``, cleanup is skipped (the
+            keep-alive still bounds server-side lifetime).
 
     Yields:
         Document ``_source`` dicts.
     """
     body: dict[str, Any] = {"query": query or {"match_all": {}}, "size": size}
-    result = post_fn(f"/{index}/_search?scroll={scroll}", data=body)
-    scroll_id = result.get("_scroll_id")
-    hits = result.get("hits", {}).get("hits", [])
-    for hit in hits:
-        yield hit.get("_source", {})
-    while scroll_id and hits:
-        page = post_fn("/_search/scroll", data={"scroll": scroll, "scroll_id": scroll_id})
-        scroll_id = page.get("_scroll_id")
-        hits = page.get("hits", {}).get("hits", [])
+    scroll_id: Any = None
+    try:
+        result = post_fn(f"/{index}/_search?scroll={scroll}", data=body)
+        scroll_id = result.get("_scroll_id")
+        hits = result.get("hits", {}).get("hits", [])
         for hit in hits:
             yield hit.get("_source", {})
+        while scroll_id and hits:
+            page = post_fn("/_search/scroll", data={"scroll": scroll, "scroll_id": scroll_id})
+            scroll_id = page.get("_scroll_id")
+            hits = page.get("hits", {}).get("hits", [])
+            for hit in hits:
+                yield hit.get("_source", {})
+    finally:
+        if scroll_id and delete_fn is not None:
+            try:
+                delete_fn("/_search/scroll", json={"scroll_id": scroll_id})
+            except Exception as exc:  # best-effort cleanup; keep-alive bounds lifetime
+                logger.warning(f"Failed to clear scroll context: {exc}")

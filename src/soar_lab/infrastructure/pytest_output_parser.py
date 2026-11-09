@@ -24,26 +24,25 @@ class PytestOutputParser:
         Returns:
             Dict with passed, failed, skipped, and coverage
         """
-        passed = failed = skipped = 0
-        coverage = 0.0
+        results = {"passed": 0, "failed": 0, "skipped": 0, "coverage": 0.0}
 
         for line in output.split("\n"):
-            # Parse test summary line
-            if "passed" in line or "failed" in line or "skipped" in line:
-                parts = line.split()
-                for i, part in enumerate(parts):
-                    if part.isdigit() and i < len(parts) - 1:
-                        next_word = parts[i + 1].replace(",", "").replace(":", "")
-                        if next_word == "passed":
-                            passed = int(part)
-                        elif next_word == "failed":
-                            failed = int(part)
-                        elif next_word == "skipped":
-                            skipped = int(part)
-            # Parse coverage from TOTAL line
-            elif line.startswith("TOTAL") and "%" in line:
-                parts = line.split()
-                if len(parts) >= 4:
-                    coverage = float(parts[-1].replace("%", ""))
+            self._parse_line(line, results)
 
-        return {"passed": passed, "failed": failed, "skipped": skipped, "coverage": coverage}
+        return results
+
+    @staticmethod
+    def _parse_line(line: str, results: dict) -> None:
+        # Parse test summary line
+        if "passed" in line or "failed" in line or "skipped" in line:
+            parts = line.split()
+            for i, part in enumerate(parts):
+                if part.isdigit() and i < len(parts) - 1:
+                    next_word = parts[i + 1].replace(",", "").replace(":", "")
+                    if next_word in ("passed", "failed", "skipped"):
+                        results[next_word] = int(part)
+        # Parse coverage from TOTAL line
+        elif line.startswith("TOTAL") and "%" in line:
+            parts = line.split()
+            if len(parts) >= 4:
+                results["coverage"] = float(parts[-1].replace("%", ""))
