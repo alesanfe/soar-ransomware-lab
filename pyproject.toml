@@ -12,7 +12,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.100.0,<0.140",
-    "uvicorn>=0.23.0,<0.50",
+    "uvicorn>=0.23.0,<0.55",
     # PERF: C-extensions for the ASGI server — uvloop (libuv event loop,
     # no Windows wheels → platform marker) + httptools (llhttp parser).
     # uvicorn --loop auto selects uvloop automatically when installed.
