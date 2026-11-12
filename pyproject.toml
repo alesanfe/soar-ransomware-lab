@@ -11,7 +11,7 @@ license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.100.0,<0.140",
+    "fastapi>=0.100.0,<0.163",
     "uvicorn>=0.23.0,<0.50",
     # PERF: C-extensions for the ASGI server — uvloop (libuv event loop,
     # no Windows wheels → platform marker) + httptools (llhttp parser).
