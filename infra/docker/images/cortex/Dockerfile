@@ -1,6 +1,6 @@
 # checkov:skip=CKV_DOCKER_2: healthcheck is defined in docker-compose.yml
 # checkov:skip=CKV_DOCKER_3: DinD — needs root to reach mounted docker.sock
-FROM thehiveproject/cortex:3.2.0-1
+FROM thehiveproject/cortex:4.0.0-1
 
 # Install Python dependencies for Cortex analyzers.
 # Supply-chain (DK-P1-021): the pip bootstrap is fetched over HTTPS and
