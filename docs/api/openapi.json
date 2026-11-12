@@ -3,7 +3,7 @@
     "schemas": {
       "AlertIngestSchema": {
         "additionalProperties": true,
-        "description": "VAL-001/002: validated alert envelope (extra fields allowed \u2014 the\nSOAR lab receives heterogeneous simulator/Shuffle payloads).",
+        "description": "CONTRACT-001/003 + INPUT-004: validated alert envelope.\n\n``extra=\"allow\"`` is kept for heterogeneous simulator payloads but\nis now *bounded*: unknown keys are counted and size-capped instead\nof forwarded blindly. Known fields validate against the shared\ncontract in ``contracts/alert.schema.json``.",
         "properties": {
           "alert_id": {
             "anyOf": [
@@ -128,6 +128,12 @@
             ],
             "title": "Mitre Techniques"
           },
+          "schema_version": {
+            "default": "1.0",
+            "maxLength": 16,
+            "title": "Schema Version",
+            "type": "string"
+          },
           "severity": {
             "anyOf": [
               {
@@ -154,6 +160,18 @@
             ],
             "title": "Source"
           },
+          "src_ip": {
+            "anyOf": [
+              {
+                "maxLength": 45,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Src Ip"
+          },
           "title": {
             "anyOf": [
               {
@@ -168,6 +186,47 @@
           }
         },
         "title": "AlertIngestSchema",
+        "type": "object"
+      },
+      "AlertmanagerWebhook": {
+        "additionalProperties": true,
+        "description": "Alertmanager/Grafana notification payload (v4 schema, tolerant).",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/GrafanaAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "commonAnnotations": {
+            "additionalProperties": true,
+            "title": "Commonannotations",
+            "type": "object"
+          },
+          "commonLabels": {
+            "additionalProperties": true,
+            "title": "Commonlabels",
+            "type": "object"
+          },
+          "receiver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receiver"
+          },
+          "status": {
+            "default": "unknown",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "AlertmanagerWebhook",
         "type": "object"
       },
       "BackupInfo": {
@@ -394,6 +453,7 @@
         "type": "object"
       },
       "DlqPurgeResult": {
+        "description": "Result of a dead-letter queue purge operation.",
         "properties": {
           "purged": {
             "title": "Purged",
@@ -404,6 +464,62 @@
           "purged"
         ],
         "title": "DlqPurgeResult",
+        "type": "object"
+      },
+      "GrafanaAlert": {
+        "additionalProperties": true,
+        "description": "Single alert inside an Alertmanager webhook payload.",
+        "properties": {
+          "annotations": {
+            "additionalProperties": true,
+            "title": "Annotations",
+            "type": "object"
+          },
+          "endsAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endsat"
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "labels": {
+            "additionalProperties": true,
+            "title": "Labels",
+            "type": "object"
+          },
+          "startsAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startsat"
+          },
+          "status": {
+            "default": "unknown",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "GrafanaAlert",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -562,6 +678,7 @@
         "type": "object"
       },
       "RedriveRequest": {
+        "description": "Request body for redriving a dead-lettered alert.",
         "properties": {
           "dlq_entry_id": {
             "maxLength": 64,
@@ -742,6 +859,53 @@
         ],
         "title": "VerifyAuthResponse",
         "type": "object"
+      },
+      "WorkflowCallback": {
+        "additionalProperties": false,
+        "description": "CONTRACT-004: signed workflow verdict on a delivered admission.",
+        "properties": {
+          "admission_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Admission Id",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "outcome": {
+            "pattern": "^(accepted|rejected)$",
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "admission_id",
+          "outcome"
+        ],
+        "title": "WorkflowCallback",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -772,6 +936,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "summary": "Root"
@@ -779,7 +951,7 @@
     },
     "/analytics/attack-coverage": {
       "get": {
-        "description": "Get MITRE ATT&CK technique coverage over stored alerts.\n\nArgs:\n    format: ``summary`` for aggregated counts, ``heatmap`` for the\n    coverage\u00d7response matrix per technique, ``navigator`` for a\n    MITRE ATT&CK Navigator layer document (importable via\n    \"Open Existing Layer\" at attack-navigator).\n    limit: Max alerts analysed (bounded server-side).\n\nReturns:\n    dict: Coverage summary or Navigator layer JSON.\n\nRaises:\n    HTTPException: 400 on bad format, 503 when no alert\n    repository is wired, 500 on unexpected failure.",
+        "description": "Get MITRE ATT&CK technique coverage over stored alerts.\n\nArgs:\n    format: ``summary`` for aggregated counts, ``heatmap`` for the\n    coverage\u00d7response matrix per technique, ``navigator`` for a\n    MITRE ATT&CK Navigator layer document (importable via\n    \"Open Existing Layer\" at attack-navigator).\n    limit: Max alerts analysed (bounded server-side).\n\nReturns:\n    dict: Coverage summary or Navigator layer JSON.\n\nRaises:\n    HTTPException: 422 on bad format (schema), 503 when no alert\n    repository is wired, 500 on unexpected failure.",
         "operationId": "get_attack_coverage_analytics_attack_coverage_get",
         "parameters": [
           {
@@ -788,6 +960,11 @@
             "required": false,
             "schema": {
               "default": "summary",
+              "enum": [
+                "summary",
+                "navigator",
+                "heatmap"
+              ],
               "title": "Format",
               "type": "string"
             }
@@ -814,6 +991,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -823,6 +1016,22 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Get Attack Coverage"
@@ -863,6 +1072,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -872,6 +1097,22 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Compare Experiments"
@@ -879,7 +1120,7 @@
     },
     "/analytics/incident-report/{alert_id}": {
       "get": {
-        "description": "Generate a post-incident report for a single alert.\n\nArgs:\n    alert_id: Stored alert identifier.\n    format: ``json`` for the structured report, ``markdown``\n        for a rendered markdown document.\n\nRaises:\n    HTTPException: 400 bad format, 404 unknown alert,\n    503 repository unavailable.",
+        "description": "Generate a post-incident report for a single alert.\n\nArgs:\n    alert_id: Stored alert identifier.\n    format: ``json`` for the structured report, ``markdown``\n        for a rendered markdown document.\n\nRaises:\n    HTTPException: 422 bad format (schema), 404 unknown alert,\n    503 repository unavailable.",
         "operationId": "get_incident_report_analytics_incident_report__alert_id__get",
         "parameters": [
           {
@@ -897,6 +1138,10 @@
             "required": false,
             "schema": {
               "default": "json",
+              "enum": [
+                "json",
+                "markdown"
+              ],
               "title": "Format",
               "type": "string"
             }
@@ -913,6 +1158,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -922,6 +1183,22 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Get Incident Report"
@@ -960,6 +1237,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -969,6 +1262,22 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Get Kpis"
@@ -976,7 +1285,7 @@
     },
     "/analytics/kpis/aggregated": {
       "get": {
-        "description": "Get aggregated KPI metrics from Elasticsearch soar-metrics index.\n\nArgs:\n    hours: The lookback window in hours for aggregating metrics.\n\nReturns:\n    dict: Aggregated KPI metrics including ``period_hours``,\n    ``timestamp``, ``total_alerts``, ``mttr_statistics``,\n    ``by_alert_type`` and ``services``.\n\nRaises:\n    HTTPException: 500 when retrieving or computing aggregated KPIs\n    fails.",
+        "description": "Get aggregated KPI metrics from Elasticsearch soar-metrics index.\n\nArgs:\n    hours: The lookback window in hours for aggregating metrics.\n\nReturns:\n    dict: Aggregated KPI metrics including ``period_hours``,\n    ``timestamp``, ``total_alerts``, ``mttr_statistics``,\n    ``by_alert_type`` and ``services``.\n\nRaises:\n    HTTPException: 503 metrics store unavailable, 500 on other\n    failures.",
         "operationId": "get_aggregated_kpis_analytics_kpis_aggregated_get",
         "parameters": [
           {
@@ -985,6 +1294,8 @@
             "required": false,
             "schema": {
               "default": 24,
+              "maximum": 8760,
+              "minimum": 0,
               "title": "Hours",
               "type": "integer"
             }
@@ -1001,6 +1312,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1010,6 +1337,22 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Get Aggregated Kpis"
@@ -1029,6 +1372,22 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Get Metrics"
@@ -1065,6 +1424,8 @@
             "required": false,
             "schema": {
               "default": 1,
+              "maximum": 8760,
+              "minimum": 0,
               "title": "Hours",
               "type": "integer"
             }
@@ -1081,6 +1442,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1090,6 +1467,22 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Get Node Timings"
@@ -1122,6 +1515,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1131,6 +1540,22 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Get Sigma Matches"
@@ -1138,7 +1563,7 @@
     },
     "/analytics/slo": {
       "get": {
-        "description": "Evaluate declared SLOs (config/slo.yaml) against live KPIs (O2).\n\nGrafana-consumable compliance payload: per-SLO target vs actual\nplus aggregate ``all_met``.\n\nRaises:\n    HTTPException: 500 when KPI retrieval or SLO evaluation fails.",
+        "description": "Evaluate declared SLOs (config/slo.yaml) against live KPIs (O2).\n\nGrafana-consumable compliance payload: per-SLO target vs actual\nplus aggregate ``all_met``.\n\nRaises:\n    HTTPException: 503 metrics store unavailable, 500 when SLO\n    evaluation fails.",
         "operationId": "get_slo_compliance_analytics_slo_get",
         "parameters": [
           {
@@ -1147,6 +1572,8 @@
             "required": false,
             "schema": {
               "default": 24,
+              "maximum": 8760,
+              "minimum": 0,
               "title": "Hours",
               "type": "integer"
             }
@@ -1163,6 +1590,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1172,6 +1615,22 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Get Slo Compliance"
@@ -1212,6 +1671,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1222,6 +1689,118 @@
         "summary": "Admit an alert for asynchronous processing",
         "tags": [
           "ingest"
+        ]
+      }
+    },
+    "/api/v1/alerts/callback": {
+      "post": {
+        "operationId": "workflow_callback_api_v1_alerts_callback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowCallback"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Workflow Callback Api V1 Alerts Callback Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "CONTRACT-004: workflow verdict callback (callback scope + HMAC)",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
+    "/api/v1/alerts/grafana": {
+      "post": {
+        "operationId": "receive_grafana_alert_api_v1_alerts_grafana_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertmanagerWebhook"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Receive Grafana Alert Api V1 Alerts Grafana Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Receive Grafana alert notifications (Alertmanager webhook)",
+        "tags": [
+          "observability"
         ]
       }
     },
@@ -1252,6 +1831,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1261,6 +1856,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1284,6 +1887,8 @@
             "required": false,
             "schema": {
               "default": 200,
+              "maximum": 1000,
+              "minimum": 0,
               "title": "Limit",
               "type": "integer"
             }
@@ -1302,6 +1907,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1311,6 +1932,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1358,6 +1987,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1370,7 +2007,7 @@
     },
     "/api/v1/config": {
       "get": {
-        "description": "Expose the effective config with secrets redacted by default.\n\nRBAC keeps this admin-only (``/api/v1/config`` is in\n``_ADMIN_PREFIXES``); ``Settings.get_all()`` already redacts, so an\naccidental future reclassification cannot leak credentials through\nthis endpoint \u2014 defence in depth, not trust in one layer.",
+        "description": "Expose the effective config with secrets redacted by default.",
         "operationId": "config_dump_api_v1_config_get",
         "responses": {
           "200": {
@@ -1384,6 +2021,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1431,6 +2076,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1455,6 +2108,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1507,6 +2168,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1516,6 +2193,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1568,6 +2253,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1577,6 +2278,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1600,6 +2309,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1621,6 +2338,8 @@
             "required": false,
             "schema": {
               "default": 50,
+              "maximum": 1000,
+              "minimum": 1,
               "title": "Count",
               "type": "integer"
             }
@@ -1639,6 +2358,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1648,6 +2383,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1696,6 +2439,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1724,6 +2475,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1764,6 +2523,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1773,6 +2548,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "summary": "Get Stix Bundle"
@@ -1793,6 +2576,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1821,6 +2612,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1849,6 +2648,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1889,6 +2696,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1898,6 +2721,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -1962,6 +2793,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1971,6 +2818,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -2018,6 +2873,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "summary": "Login"
@@ -2037,6 +2900,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -2063,6 +2934,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -2107,6 +2986,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -2131,6 +3018,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -2175,6 +3070,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [
@@ -2201,6 +3104,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "summary": "Health"
@@ -2222,6 +3133,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "summary": "Health"
@@ -2229,7 +3148,7 @@
     },
     "/health/ready": {
       "get": {
-        "description": "BL-ARCH-003/004: readiness probe \u2014 checks dependencies the API\nactually needs to serve traffic (storage writability and, when\nalert ingestion is enabled, the admission queue). Returns 503\nwith per-check detail when any dependency is unavailable, so\norchestrators stop routing traffic instead of discovering the\noutage as failed requests.",
+        "description": "BL-ARCH-003/004: readiness probe \u2014 check real dependencies.\n\nVerifies storage writability and, when alert ingestion is\nenabled, the admission queue. Returns 503 with per-check detail\nwhen any dependency is unavailable, so orchestrators stop\nrouting traffic instead of discovering the outage as failed\nrequests.",
         "operationId": "readiness_health_ready_get",
         "responses": {
           "200": {
@@ -2243,6 +3162,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "summary": "Readiness"
@@ -2262,6 +3189,14 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "summary": "Get Services Status"
@@ -2300,6 +3235,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2309,6 +3260,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Cortex List Analyzers"
@@ -2328,6 +3303,30 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Cortex Health"
@@ -2370,6 +3369,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2379,9 +3394,114 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Cortex List Jobs"
+      }
+    },
+    "/soar/cortex/jobs/summary": {
+      "get": {
+        "description": "Classified summary of recent analyzer jobs (CTX-001).\n\nAggregates jobs into ``success``, ``expected_no_data``,\n``analyzer_error`` and ``infrastructure_failure`` categories so\nan operator can separate platform incidents from empty lookups.\nRegistered before ``/jobs/{job_id}`` so the literal ``summary``\npath is not captured as a job id.\n\nArgs:\n    count: Maximum number of recent jobs to classify.\n    cortex: The Cortex client dependency.\n\nReturns:\n    dict: Totals, per-category and per-analyzer breakdowns and a\n    list of flagged (non-benign) failures.",
+        "operationId": "cortex_jobs_summary_soar_cortex_jobs_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "count",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Count",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Cortex Jobs Summary Soar Cortex Jobs Summary Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
+          }
+        },
+        "summary": "Cortex Jobs Summary"
       }
     },
     "/soar/cortex/jobs/{job_id}": {
@@ -2410,6 +3530,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2419,6 +3555,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Cortex Get Job"
@@ -2450,6 +3610,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2459,6 +3635,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Cortex Get Job Report"
@@ -2497,6 +3697,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2506,6 +3722,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Es Count"
@@ -2525,6 +3765,30 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Es Health"
@@ -2573,6 +3837,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2582,6 +3862,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Es Latest"
@@ -2646,6 +3950,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2655,6 +3975,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Misp Search Attributes"
@@ -2687,6 +4031,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2696,6 +4056,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Misp List Events"
@@ -2727,6 +4111,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2736,6 +4136,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Misp Get Event"
@@ -2755,6 +4179,30 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Misp Health"
@@ -2787,6 +4235,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2796,6 +4260,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Shuffle Recent Decisions"
@@ -2827,6 +4315,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2836,6 +4340,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Shuffle Execution Decision"
@@ -2855,6 +4383,30 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Shuffle Health"
@@ -2874,6 +4426,30 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Shuffle List Workflows"
@@ -2905,6 +4481,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2914,6 +4506,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Shuffle Get Workflow"
@@ -2945,6 +4561,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2954,6 +4586,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Shuffle Get Executions"
@@ -2994,6 +4650,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3003,6 +4675,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Shuffle Get Execution"
@@ -3022,6 +4718,30 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Soar Status"
@@ -3041,6 +4761,30 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Thehive List Cases"
@@ -3072,6 +4816,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3081,6 +4841,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Thehive Get Case"
@@ -3112,6 +4896,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3121,6 +4921,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Thehive Get Observables"
@@ -3152,6 +4976,22 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Request \u2014 domain validation"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Resource not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3161,6 +5001,30 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Thehive Get Tasks"
@@ -3168,7 +5032,7 @@
     },
     "/soar/thehive/health": {
       "get": {
-        "description": "TheHive reachability check.\n\nArgs:\n    thehive: The TheHive client dependency.\n\nReturns:\n    dict: A mapping with ``service`` and ``reachable`` keys.",
+        "description": "Check TheHive reachability.\n\nArgs:\n    thehive: The TheHive client dependency.\n\nReturns:\n    dict: A mapping with ``service`` and ``reachable`` keys.",
         "operationId": "thehive_health_soar_thehive_health_get",
         "responses": {
           "200": {
@@ -3180,6 +5044,30 @@
               }
             },
             "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Bad Gateway \u2014 downstream service error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Service Unavailable \u2014 dependency down"
           }
         },
         "summary": "Thehive Health"
@@ -3219,6 +5107,14 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Too Many Requests \u2014 rate limit exceeded"
           }
         },
         "security": [

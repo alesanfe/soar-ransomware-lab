@@ -41,8 +41,8 @@ CREDENTIALS_FILE_HOST = Path("reports/validation/results/credentials_backup.json
 CREDENTIALS_FILE = Path("/app/reports/validation/results/credentials_backup.json")
 
 # Service URLs
-THEHIVE_URL = os.environ.get("THEHIVE_URL", "http://thehive:9000")
-CORTEX_URL = os.environ.get("CORTEX_URL", "http://cortex:9001")
+THEHIVE_URL = os.environ.get("THEHIVE_URL", "https://thehive:9443")
+CORTEX_URL = os.environ.get("CORTEX_URL", "https://cortex:9443")
 GRAFANA_URL = os.environ.get("GRAFANA_URL", "https://grafana:3000")
 
 # Credentials for reconfiguration

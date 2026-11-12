@@ -43,7 +43,7 @@ class TestTestService:
             "smoke",
             "all",
         ):
-            service._validate_test_category(cat)
+            assert service._validate_test_category(cat) is None
 
     def test_validate_test_category_invalid(self):
         """Test validation of invalid test category."""

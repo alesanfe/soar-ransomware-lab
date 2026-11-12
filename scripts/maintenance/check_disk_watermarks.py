@@ -20,27 +20,51 @@ without aborting a 40-suite run).
 from __future__ import annotations
 
 import argparse
+import base64
 import json
+import os
+import ssl
 import sys
 import urllib.request
 
 WARN_PCT = 88.0
 CRIT_PCT = 95.0
 
-ES_URL = "http://elasticsearch:9200"
-OS_URL = "http://opensearch:9200"
+ES_URL = os.environ.get("ELASTICSEARCH_URL", "https://elasticsearch:9200")
+OS_URL = os.environ.get("SHUFFLE_OPENSEARCH_URL", "https://opensearch:9200")
+_OS_AUTH = (
+    "Basic "
+    + base64.b64encode(
+        f"{os.environ.get('SHUFFLE_OPENSEARCH_USERNAME', os.environ.get('OPENSEARCH_USERNAME', 'admin'))}:"
+        f"{os.environ.get('SHUFFLE_OPENSEARCH_PASSWORD', os.environ.get('OPENSEARCH_PASSWORD', ''))}".encode()
+    ).decode()
+)
+_ES_AUTH = (
+    "Basic "
+    + base64.b64encode(
+        f"{os.environ.get('ELASTIC_USERNAME', 'elastic')}:"
+        f"{os.environ.get('ELASTIC_PASSWORD', '')}".encode()
+    ).decode()
+)
+_SSL_CTX = ssl.create_default_context(
+    cafile="/app/certs/ca.crt" if os.path.exists("/app/certs/ca.crt") else None
+)
 
 
-def _get_json(url: str, timeout: int = 10) -> object:
-    req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+def _get_json(url: str, timeout: int = 10, auth: str | None = None) -> object:
+    headers = {"Accept": "application/json"}
+    if auth:
+        headers["Authorization"] = auth
+    req = urllib.request.Request(url, headers=headers)
+    ctx = _SSL_CTX if url.startswith("https") else None
+    with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
         return json.loads(resp.read())
 
 
-def check_allocation(name: str, base_url: str) -> list[dict]:
+def check_allocation(name: str, base_url: str, auth: str | None = None) -> list[dict]:
     """Return per-node disk usage for one search backend."""
     try:
-        nodes = _get_json(f"{base_url}/_cat/allocation?v&format=json")
+        nodes = _get_json(f"{base_url}/_cat/allocation?v&format=json", auth=auth)
     except Exception as exc:  # noqa: BLE001
         return [{"backend": name, "node": "?", "disk_pct": -1.0, "error": str(exc)[:120]}]
     out = []
@@ -61,10 +85,10 @@ def check_allocation(name: str, base_url: str) -> list[dict]:
     return out
 
 
-def check_read_only_blocks(base_url: str) -> list[str]:
+def check_read_only_blocks(base_url: str, auth: str | None = None) -> list[str]:
     """Index names currently under ``read_only_allow_delete`` (flood-stage)."""
     try:
-        state = _get_json(f"{base_url}/_cluster/state/blocks")
+        state = _get_json(f"{base_url}/_cluster/state/blocks", auth=auth)
     except Exception:
         return []
     blocks = (state or {}).get("blocks", {}).get("indices", {})
@@ -76,8 +100,10 @@ def main() -> int:
     ap.add_argument("--warn-only", action="store_true")
     args = ap.parse_args()
 
-    nodes = check_allocation("elasticsearch", ES_URL) + check_allocation("opensearch", OS_URL)
-    ro_indices = check_read_only_blocks(OS_URL)
+    nodes = check_allocation("elasticsearch", ES_URL, _ES_AUTH) + check_allocation(
+        "opensearch", OS_URL, _OS_AUTH
+    )
+    ro_indices = check_read_only_blocks(OS_URL, _OS_AUTH)
 
     critical = False
     print("Disk watermarks (search backends share the Docker disk):")

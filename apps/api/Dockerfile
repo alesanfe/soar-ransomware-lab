@@ -4,7 +4,7 @@
 # ── Stage 1: build ────────────────────────────────────────────────────────────
 # Toolchain lives ONLY here — gcc/g++/libpq-dev (and their kernel-header CVEs)
 # never reach the runtime image. All wheels land under /install.
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim@sha256:07d4824036af339fa1b6ef769cc99d9c10a141769538b52b3b597c84f7a7b535 AS builder
 
 WORKDIR /build
 
@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir --upgrade "pip>=26.2" "setuptools>=84.1.0"
 
 # Copy package definition and source first for dependency resolution
 COPY pyproject.toml .
+COPY requirements.lock .
 COPY src ./src
 COPY scripts ./scripts
 
@@ -28,7 +29,10 @@ COPY scripts ./scripts
 # --retries: retry on transient failures
 # quality: ruff, bandit, mutmut, etc. for `make quality` and `make mutation`
 # reports: matplotlib + numpy for chart generation in e2e_report
-RUN pip install --no-cache-dir --timeout 300 --retries 5 --prefix=/install .[test,quality,reports]
+# -c requirements.lock: runtime deps resolve to the audited lock versions
+# (SSDF PW.4 reproducible builds) — extras (test/quality/reports) resolve free.
+RUN pip install --no-cache-dir --timeout 300 --retries 5 --prefix=/install \
+    .[test,quality,reports] -c requirements.lock
 
 # Carry the upgraded build tooling into the runtime prefix too — the base
 # image ships pip 24.0/setuptools 79.x with published CVEs. --ignore-installed
@@ -38,7 +42,7 @@ RUN pip install --no-cache-dir --prefix=/install --ignore-installed \
     "pip>=26.2" "setuptools>=84.1.0" "wheel>=0.45.0"
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
-FROM python:3.11-slim
+FROM python:3.11-slim@sha256:07d4824036af339fa1b6ef769cc99d9c10a141769538b52b3b597c84f7a7b535
 
 # Set working directory
 WORKDIR /app
@@ -101,4 +105,6 @@ EXPOSE 8000
 # state (rate windows, WS tickets) is shared across workers. WebSocket
 # *broadcast fanout* remains per-worker: live-log clients only receive
 # events emitted on their own worker (accepted limitation, ADR-0013).
-CMD ["sh", "-c", "exec uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 8000 --factory --workers ${UVICORN_WORKERS:-1}"]
+# --no-server-header: the banner is added at uvicorn's protocol layer —
+# the middleware's `del headers["server"]` cannot strip it downstream.
+CMD ["sh", "-c", "exec uvicorn soar_lab.interfaces.api.composition:create_app --host 0.0.0.0 --port 8000 --factory --no-server-header --workers ${UVICORN_WORKERS:-1}"]

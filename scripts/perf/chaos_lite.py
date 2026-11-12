@@ -71,15 +71,19 @@ def submit() -> str:
 def execution_state() -> dict | None:
     """Latest execution for this run's alert via OpenSearch."""
     code = (
-        "import json,urllib.request;"
+        "import base64,json,os,ssl,urllib.request;"
+        "ctx=ssl.create_default_context(cafile='/app/certs/ca.crt');"
+        "u=os.environ.get('SHUFFLE_OPENSEARCH_USERNAME','admin');"
+        "pw=os.environ.get('SHUFFLE_OPENSEARCH_PASSWORD','');"
         "q={'query':{'bool':{'should':["
         "{'wildcard':{'execution_argument':'*" + ALERT["alert_id"] + "*'}},"
         "{'wildcard':{'execution_argument.keyword':'*" + ALERT["alert_id"] + "*'}}"
         "],'minimum_should_match':1}},"
         "'size':1,'sort':[{'started_at':{'order':'desc'}}]};"
-        "req=urllib.request.Request('http://opensearch:9200/workflowexecution/_search',"
-        "data=json.dumps(q).encode(),headers={'Content-Type':'application/json'});"
-        "r=json.loads(urllib.request.urlopen(req).read());"
+        "req=urllib.request.Request('https://opensearch:9200/workflowexecution/_search',"
+        "data=json.dumps(q).encode(),headers={'Content-Type':'application/json',"
+        "'Authorization':'Basic '+base64.b64encode((u+':'+pw).encode()).decode()});"
+        "r=json.loads(urllib.request.urlopen(req,context=ctx).read());"
         "h=r['hits']['hits'];"
         "print(json.dumps(h[0]['_source']) if h else '')"
     )

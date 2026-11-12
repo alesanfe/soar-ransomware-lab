@@ -13,6 +13,7 @@ import logging
 
 import requests
 
+from soar_lab.security.tls_config import ca_verify
 from soar_lab.common.constants import (
     AUTH_BASIC_PREFIX,
     CONTENT_TYPE_JSON,
@@ -23,7 +24,9 @@ from soar_lab.common.constants import (
 logger = logging.getLogger(__name__)
 
 
-def fix_organization_users(es_url, es_user, es_pass, verify=False):
+def fix_organization_users(es_url, es_user, es_pass, verify=None):
+    if verify is None:
+        verify = ca_verify()
     """Populate missing id/apikey/username in organizations.users from users
     index."""
     auth = (
@@ -133,7 +136,7 @@ if __name__ == "__main__":
     import os
 
     fix_organization_users(
-        os.environ.get("ELASTICSEARCH_URL", os.environ.get("ES_URL", "http://elasticsearch:9200")),
+        os.environ.get("ELASTICSEARCH_URL", os.environ.get("ES_URL", "https://elasticsearch:9200")),
         os.environ.get("ELASTIC_USERNAME", "elastic"),
         os.environ.get("ELASTIC_PASSWORD", ""),
     )

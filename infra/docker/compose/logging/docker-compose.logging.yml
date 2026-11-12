@@ -16,6 +16,8 @@ services:
     networks:
       - logging_net
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U grafana" ]
       interval: 10s
@@ -42,7 +44,9 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_grafana
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      # OBS-EVAL-003: fail-closed — an unset password must abort the stack,
+      # never fall back to Grafana's built-in admin/admin.
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD required - set in .env}
       - GF_USERS_ALLOW_SIGN_UP=false
       # GRAF-D10: serve HTTPS directly (lab CA) — port 8084 becomes TLS,
       # matching the nginx edge on 8444. Internal consumers verify with ca.crt.
@@ -63,7 +67,9 @@ services:
       - GF_AUTH_GENERIC_OAUTH_ENABLED=${GF_OAUTH_ENABLED:-false}
       - GF_AUTH_GENERIC_OAUTH_NAME=Keycloak
       - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=soar-proxy
-      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=${OIDC_CLIENT_SECRET:-soar-lab-oidc-secret}
+      # OBS-EVAL-003: same fail-open pattern fixed in SSO-EVAL-002 — a
+      # committed default secret defeats the point of the secret.
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=${OIDC_CLIENT_SECRET:?OIDC_CLIENT_SECRET required - set in .env}
       - GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email
       - GF_AUTH_GENERIC_OAUTH_AUTH_URL=http://localhost:${KEYCLOAK_PORT:-8087}/realms/soar/protocol/openid-connect/auth
       - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=http://keycloak:8080/realms/soar/protocol/openid-connect/token
@@ -75,7 +81,9 @@ services:
       - GF_INSTALL_PLUGINS=marcusolsson-json-datasource
       # GRAF-ALERT-RX: the provisioned webhook contact point expands
       # $INTERNAL_SERVICE_TOKEN into the X-Service-Token header.
-      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN}
+      # OBS-EVAL-003: fail-closed — an empty token means alert delivery
+      # fails auth silently instead of failing at config time.
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN required - set in .env}
     networks:
       - logging_net
       - soar_net
@@ -104,6 +112,10 @@ services:
         target: /etc/grafana/provisioning/alerting/contact-points.yml
       - source: saturation_dashboard_json
         target: /etc/grafana/provisioning/dashboards/saturation-dashboard.json
+      - source: slo_dashboard_json
+        target: /etc/grafana/provisioning/dashboards/slo-dashboard.json
+      - source: e2e_quality_dashboard_json
+        target: /etc/grafana/provisioning/dashboards/e2e-quality-dashboard.json
     restart: unless-stopped
     depends_on:
       grafana-db:
@@ -112,6 +124,10 @@ services:
         condition: service_healthy
       grafana-renderer:
         condition: service_started
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     healthcheck:
       test: [ "CMD-SHELL", "curl -f --cacert /etc/grafana/tls/ca.crt https://localhost:3000/api/health || exit 1" ]
       interval: 30s
@@ -143,17 +159,24 @@ services:
     # GRAF-D5: replicaPlacement 010 — every file gets a second copy on a
     # different rack (s3-vol2 below). Data-level redundancy inside the lab
     # host; the filer/S3 gateway stays single-instance (documented RB-14).
-    command: >
-      server -dir=/data -ip=s3 -ip.bind=0.0.0.0
-      -dataCenter=dc1 -rack=rack1
-      -master.defaultReplication=010
-      -s3 -s3.port=8333 -s3.autoCreateBucket
-      -s3.config=/etc/seaweedfs/iam.config.json
+    # OBS-012/013: the IAM file is a template rendered at boot from env
+    # (s3-entrypoint.sh) — a missing/default secret aborts the container.
+    entrypoint: ["/bin/sh", "-eu", "/etc/seaweedfs/s3-entrypoint.sh"]
+    environment:
+      S3_ADMIN_ACCESS_KEY: ${S3_ADMIN_ACCESS_KEY:?S3_ADMIN_ACCESS_KEY required - set in .env}
+      S3_ADMIN_SECRET_KEY: ${S3_ADMIN_SECRET_KEY:?S3_ADMIN_SECRET_KEY required - set in .env}
+      LOKI_S3_ACCESS_KEY: ${LOKI_S3_ACCESS_KEY:?LOKI_S3_ACCESS_KEY required - set in .env}
+      LOKI_S3_SECRET_KEY: ${LOKI_S3_SECRET_KEY:?LOKI_S3_SECRET_KEY required - set in .env}
+      TEMPO_S3_ACCESS_KEY: ${TEMPO_S3_ACCESS_KEY:?TEMPO_S3_ACCESS_KEY required - set in .env}
+      TEMPO_S3_SECRET_KEY: ${TEMPO_S3_SECRET_KEY:?TEMPO_S3_SECRET_KEY required - set in .env}
     volumes:
       - s3_data:/data
       - ../config/seaweedfs/iam.config.json:/etc/seaweedfs/iam.config.json:ro
+      - ../config/seaweedfs/s3-entrypoint.sh:/etc/seaweedfs/s3-entrypoint.sh:ro
     networks:
       - logging_net
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       # S3 root returns 403/404 to anonymous probes even when healthy;
       # master /cluster/status + S3 TCP probe are the reliable signals.
@@ -199,6 +222,10 @@ services:
       IGNORE_HTTPS_ERRORS: "true"
     networks:
       - logging_net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "wget -q -O /dev/null http://localhost:8081/ || exit 1" ]
@@ -237,6 +264,11 @@ services:
     depends_on:
       s3:
         condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    # NOTE: no cap_drop — the SeaweedFS entrypoint su-execs root->seaweed
+    # (needs SETUID/SETGID/CHOWN at boot). no-new-privileges still blocks
+    # privilege escalation; residual risk documented in the backlog.
     healthcheck:
       test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8081/status || exit 1" ]
       interval: 30s
@@ -261,15 +293,24 @@ services:
   # One-shot bucket bootstrap (loki chunks + tempo blocks). -s3.autoCreateBucket
   # only materialises a bucket on first PUT; Loki/Tempo LIST first and die
   # with NoSuchBucket, so the buckets are created explicitly via weed shell.
+  # OBS-008/009: FAIL-CLOSED — `weed shell` reports "already exists" with
+  # rc=0, so the output is parsed; every bucket must then pass a real
+  # write -> read -> delete probe through the filer's /buckets/ path (same
+  # storage the S3 gateway serves). Loki/Tempo depend on
+  # service_completed_successfully, so any failure blocks the pipeline at
+  # boot with a clear log instead of a late NoSuchBucket.
   s3-init:
     image: ${S3_IMAGE:-chrislusf/seaweedfs:4.53}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_s3_init
-    entrypoint: >
-      /bin/sh -c "
-      for b in loki tempo; do
-        echo s3.bucket.create -name $$b | weed shell -master=s3:9333 || true;
-      done;
-      echo 'buckets ready'"
+    entrypoint: ["/bin/sh", "-eu", "/etc/seaweedfs/s3-init.sh"]
+    environment:
+      # Scoped service identities registered via s3.configure (OBS-015).
+      LOKI_S3_ACCESS_KEY: ${LOKI_S3_ACCESS_KEY:?}
+      LOKI_S3_SECRET_KEY: ${LOKI_S3_SECRET_KEY:?}
+      TEMPO_S3_ACCESS_KEY: ${TEMPO_S3_ACCESS_KEY:?}
+      TEMPO_S3_SECRET_KEY: ${TEMPO_S3_SECRET_KEY:?}
+    volumes:
+      - ../config/seaweedfs/s3-init.sh:/etc/seaweedfs/s3-init.sh:ro
     networks:
       - logging_net
     depends_on:
@@ -284,14 +325,20 @@ services:
     # credentials into the committed file.
     command: -config.file=/etc/loki/loki-config.yml -config.expand-env=true
     environment:
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-soar-s3}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-soar-s3-secret-change-me}
+      # OBS-015: per-component identity (loki only, bucket-scoped); the
+      # container-internal names stay S3_* for loki-config.yml expand-env.
+      S3_ACCESS_KEY: ${LOKI_S3_ACCESS_KEY:?LOKI_S3_ACCESS_KEY required - set in .env}
+      S3_SECRET_KEY: ${LOKI_S3_SECRET_KEY:?LOKI_S3_SECRET_KEY required - set in .env}
     networks:
       - logging_net
       - soar_net
     depends_on:
       s3-init:
         condition: service_completed_successfully
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - loki_data:/var/lib/loki
       - ./logging/loki-config.yml:/etc/loki/loki-config.yml:ro
@@ -330,11 +377,18 @@ services:
       - logging_net
       - soar_net
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/config/promtail-config.yml:/etc/promtail/config.yml:ro
       - ../config/certs/ca.crt:/etc/promtail/ca.crt:ro
     depends_on:
       - loki
+      # OBS-EVAL-007: container discovery + log tailing now go through the
+      # restricted proxy — the raw daemon socket mount AND the DAC_OVERRIDE
+      # capability it forced are gone.
+      - docker-socket-proxy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     healthcheck:
       test: [ "CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/9080' || exit 1" ]
       interval: 30s
@@ -371,10 +425,26 @@ services:
     expose:
       - "4318"
       - "4317"
+      - "13133"   # health_check extension (blackbox probes this)
+      - "8888"    # internal telemetry (prometheus scrape)
     depends_on:
       tempo:
         condition: service_started
     restart: unless-stopped
+    # OBS-006: the image is distroless (no shell/wget) — `otelcol validate`
+    # builds the full pipeline (receivers->processors->exporters) and exits
+    # non-zero if any component fails to initialise. External liveness is
+    # additionally probed via blackbox on :13133 (OBS-023).
+    healthcheck:
+      test: [ "CMD", "/otelcol", "validate", "--config=/etc/otel-collector-config.yaml" ]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -395,8 +465,9 @@ services:
     # expand-env injects the S3 credentials into tempo.yaml at boot.
     command: ["-config.file=/etc/tempo.yaml", "-config.expand-env=true"]
     environment:
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-soar-s3}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-soar-s3-secret-change-me}
+      # OBS-015: per-component identity (tempo only, bucket-scoped).
+      S3_ACCESS_KEY: ${TEMPO_S3_ACCESS_KEY:?TEMPO_S3_ACCESS_KEY required - set in .env}
+      S3_SECRET_KEY: ${TEMPO_S3_SECRET_KEY:?TEMPO_S3_SECRET_KEY required - set in .env}
     volumes:
       - ../config/tempo.yaml:/etc/tempo.yaml:ro
       - tempo_data:/var/tempo
@@ -416,6 +487,10 @@ services:
         condition: service_started
       s3-init:
         condition: service_completed_successfully
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "wget -q --no-check-certificate --spider https://127.0.0.1:3200/ready || exit 1" ]
@@ -466,6 +541,10 @@ services:
       - soar_net
     expose:
       - "9090"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
     healthcheck:
       # TCP probe: the busybox bundled in prom/prometheus cannot complete a
@@ -494,7 +573,20 @@ services:
   cadvisor:
     image: ${CADVISOR_IMAGE:-gcr.io/cadvisor/cadvisor:v0.49.1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_cadvisor
-    privileged: true
+    # OBS-021/132: docker_only + 60s housekeeping + trimmed metric set —
+    # a busy lab host (many recreate events) otherwise leaves cAdvisor
+    # permanently behind on its watch backlog and the /metrics scrape
+    # times out (observed live: 'context deadline exceeded').
+    command:
+      - "--docker_only=true"
+      - "--housekeeping_interval=60s"
+      - "--global_housekeeping_interval=60s"
+      - "--disable_metrics=percpu,sched,tcp,udp,diskIO,hugetlb,referenced_memory,cpu_topology,resctrl,advtcp,process"
+    # OBS-EVAL-002: NOT privileged — every mount is already explicit and :ro.
+    # `privileged:true` additionally grants ALL capabilities + every host
+    # device rw, far beyond read-only cgroup/fs metrics collection.
+    security_opt:
+      - no-new-privileges:true
     devices:
       - /dev/kmsg:/dev/kmsg
     volumes:
@@ -535,17 +627,26 @@ services:
     image: ${ES_EXPORTER_IMAGE:-prometheuscommunity/elasticsearch-exporter:v1.7.0}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch_exporter
     command:
-      - "--es.uri=http://elasticsearch:9200"
+      - "--es.uri=https://elasticsearch:9200"
+      - "--es.ca=/certs/ca.crt"
       - "--es.clusterinfo.interval=30s"
       - "--es.timeout=10s"
     environment:
       ES_USERNAME: ${ELASTIC_USERNAME:-elastic}
-      ES_PASSWORD: ${ELASTIC_PASSWORD:-}
+      # OBS-EVAL-003: an empty password makes the exporter scrape ES
+      # unauthenticated (silently empty metrics) — fail at config time.
+      ES_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD required - set in .env}
+    volumes:
+      - ../config/certs/ca.crt:/certs/ca.crt:ro
     networks:
       - logging_net
       - soar_net
     expose:
       - "9114"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:9114/healthz || exit 1" ]
@@ -567,6 +668,56 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Blackbox exporter (OBS-023): Prometheus-driven synthetic probes of the
+  # stack itself — TLS handshake + HTTP status on every endpoint, TCP on
+  # the S3 services, plus probe_ssl_earliest_cert_expiry for the
+  # certificate-expiry alerts (OBS-046/048).
+  blackbox-exporter:
+    image: ${BLACKBOX_IMAGE:-prom/blackbox-exporter:v0.25.0}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_blackbox_exporter
+    command: ["--config.file=/etc/blackbox/blackbox.yml"]
+    volumes:
+      - ../config/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+      - ../config/certs/ca.crt:/etc/blackbox/ca.crt:ro
+    networks:
+      - logging_net
+      # Core probes (thehive/cortex/shuffle/redis/tenzir/watcher) live
+      # on soar_net — without this attachment blackbox cannot resolve
+      # or reach them and every core probe reads 0.
+      - soar_net
+      # MISP backend probes (misp-db:3306, misp-modules:6666) live on the
+      # dedicated misp_internal / misp_db_net planes — same class of attachment.
+      - misp_internal
+      - misp_db_net
+      # TAXII-EVAL-005: the medallion feed lives on ti_net.
+      - ti_net
+    expose:
+      - "9115"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9115/-/healthy || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 configs:
   grafana_dashboards:
     file: logging/grafana-kpi-dashboard.yml
@@ -578,6 +729,10 @@ configs:
     file: logging/traces-dashboard.json
   saturation_dashboard_json:
     file: logging/saturation-dashboard.json
+  slo_dashboard_json:
+    file: logging/slo-dashboard.json
+  e2e_quality_dashboard_json:
+    file: logging/e2e-quality-dashboard.json
   grafana_alerting:
     file: logging/alert-rules.yml
   grafana_contacts:
@@ -589,6 +744,15 @@ networks:
     external: true
   soar_net:
     name: soar_net
+    external: true
+  misp_internal:
+    name: ${COMPOSE_PROJECT_NAME:-soar}_misp_internal
+    external: true
+  misp_db_net:
+    name: ${COMPOSE_PROJECT_NAME:-soar}_misp_db_net
+    external: true
+  ti_net:
+    name: ti_net
     external: true
 
 # GRAF-D6: real named volumes (VM ext4) instead of Windows bind-mounts.

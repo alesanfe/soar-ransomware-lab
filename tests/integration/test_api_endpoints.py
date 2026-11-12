@@ -18,7 +18,7 @@ class TestAPIEndpoints:
     def base_urls(self):
         """Set up test class."""
         return {
-            "thehive": os.getenv("THEHIVE_API_URL", "http://localhost:8100/api/v1"),
+            "thehive": os.getenv("THEHIVE_API_URL", "https://localhost:18100/api/v1"),
             "cortex": os.getenv("CORTEX_API_URL", "http://localhost:9001/api"),
             "shuffle": os.getenv("SHUFFLE_API_URL", "http://localhost:5001"),
         }
@@ -51,21 +51,17 @@ class TestAPIEndpoints:
         """Test TheHive API health check."""
         try:
             response = requests.get(f"{base_urls['thehive']}/status/public", timeout=10)
-
-            # Should return 200, 404 (if endpoint doesn't exist), or 500 (service error)
-            # Any HTTP response is acceptable when service is not running locally
-            assert response.status_code >= 200, f"Unexpected status: {response.status_code}"
-
-            if response.status_code == 200:
-                try:
-                    health_data = response.json()
-                    assert "status" in health_data
-                except (ValueError, json.JSONDecodeError):
-                    # Handle empty or invalid JSON response
-                    pass
-
         except requests.exceptions.RequestException:
-            pass  # TheHive not available, but test continues
+            pytest.skip("TheHive not reachable")
+
+        # /status/public is the unauthenticated health endpoint — when the
+        # service is up it MUST answer 200 with a JSON body containing a
+        # status field (TH-001 in AGENTS.md).
+        assert response.status_code == 200, (
+            f"TheHive /status/public returned {response.status_code}"
+        )
+        health_data = response.json()
+        assert "status" in health_data
 
     def test_thehive_case_creation(self, base_urls, api_keys, test_alert):
         """Test TheHive case creation API."""

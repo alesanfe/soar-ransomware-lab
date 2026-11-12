@@ -21,7 +21,7 @@ class TestWorkflowPerformance:
     def shuffle_client(self):
         """Create Shuffle client for testing."""
         return ShuffleClient(
-            base_url="http://shuffle-backend:5001", api_key="test-key", verify_ssl=False
+            base_url="https://shuffle-backend:5443", api_key="test-key", verify_ssl=False
         )
 
     @pytest.fixture

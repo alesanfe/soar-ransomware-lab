@@ -64,8 +64,7 @@ class TestTraceIdGeneration:
         """Generated trace ID must be a valid UUID4 hex string."""
         resp = client.get("/echo-trace")
         trace_id = resp.headers[TRACE_ID_HEADER]
-        # Should not raise
-        uuid.UUID(hex=trace_id)
+        assert uuid.UUID(hex=trace_id) is not None
 
 
 class TestTraceIdPropagation:

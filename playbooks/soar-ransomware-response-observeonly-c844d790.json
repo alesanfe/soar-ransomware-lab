@@ -1805,7 +1805,7 @@
           "skip_multicheck": false,
           "tags": null,
           "unique_toggled": false,
-          "value": "Content-Type: application/json\nAccept: application/json\nAuthorization: NMtwOgbGGYwtYNZMW747Z5tKhd3bRXs4KieiuyP4",
+          "value": "Content-Type: application/json\nAccept: application/json\nAuthorization: __MISP_API_KEY__",
           "value_replace": null,
           "variant": "STATIC_VALUE"
         },
@@ -1964,7 +1964,7 @@
           "skip_multicheck": false,
           "tags": null,
           "unique_toggled": false,
-          "value": "Content-Type: application/json\nAuthorization: NMtwOgbGGYwtYNZMW747Z5tKhd3bRXs4KieiuyP4",
+          "value": "Content-Type: application/json\nAuthorization: __MISP_API_KEY__",
           "value_replace": null,
           "variant": "STATIC_VALUE"
         },
@@ -3485,7 +3485,7 @@
           "skip_multicheck": false,
           "tags": null,
           "unique_toggled": false,
-          "value": "Content-Type: application/json\nX-Service-Token: 7ee873de8a17ae3e8fd866f301f4ac246afb39a793aea75636ab364cb145ec66",
+          "value": "Content-Type: application/json\nX-Service-Token: __INTERNAL_SERVICE_TOKEN__",
           "value_replace": null,
           "variant": "STATIC_VALUE"
         },

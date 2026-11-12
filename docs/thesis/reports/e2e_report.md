@@ -1093,6 +1093,10 @@ Grafana health: **ok** (v10.3.4)
 > servicios con mayor consumo de memoria (datos indexados).
 > Tenzir muestra el mayor CPU (procesamiento de eventos de red).
 
+## Analyzers Cortex Disponibles
+
+_Datos no disponibles en esta ejecución._
+
 ## Contexto Comparativo con Industria
 
 > **Fuentes:** Mandiant M-Trends 2024, SANS 2024 Detection & Response Survey,
@@ -1128,6 +1132,10 @@ Grafana health: **ok** (v10.3.4)
 > simuladas. En producción, los tiempos serían mayores debido a
 > latencia de red, disponibilidad de servicios externos (Cortex analyzers)
 > y volumen de alertas reales.
+
+## Métricas de Calidad del Software
+
+_Datos no disponibles en esta ejecución._
 
 ## Limitaciones del Laboratorio
 

@@ -208,7 +208,7 @@ def test_service_token_nonascii_returns_false_not_crash():
     request.headers = {"X-Service-Token": "ñoño€"}
     cp = Mock()
     cp.get = lambda k, d=None: {"INTERNAL_SERVICE_TOKEN": "s3cret"}.get(k, d)
-    assert _service_token_scope(request, cp) == (None, False)
+    assert _service_token_scope(request, cp) == (None, False, None)
 
 
 def test_service_token_prev_slot_grants_scope_with_grace_flag():
@@ -223,7 +223,9 @@ def test_service_token_prev_slot_grants_scope_with_grace_flag():
         "INTERNAL_SERVICE_TOKEN": "new-secret",
         "INTERNAL_SERVICE_TOKEN_PREV": "old-secret",
     }.get(k, d)
-    assert _service_token_scope(request, cp) == ("internal", True)
+    _scope, _grace, _fp = _service_token_scope(request, cp)
+    assert (_scope, _grace) == ("internal", True)
+    assert _fp  # AUTH-005: credential fingerprint is always returned
 
 
 def test_service_token_prev_not_accepted_when_slot_empty():
@@ -235,4 +237,4 @@ def test_service_token_prev_not_accepted_when_slot_empty():
     request.headers = {"X-Service-Token": "old-secret"}
     cp = Mock()
     cp.get = lambda k, d=None: {"INTERNAL_SERVICE_TOKEN": "new-secret"}.get(k, d)
-    assert _service_token_scope(request, cp) == (None, False)
+    assert _service_token_scope(request, cp) == (None, False, None)

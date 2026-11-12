@@ -31,11 +31,5 @@
       "reason": "RESIDUAL (SOAR-012): spawns/cleans shuffle-worker containers. Same DK-P0-006 migration pending.",
       "expires": "2027-05-06"
     }
-  },
-  "promtail": {
-    "no-direct-docker-socket": {
-      "reason": "Read-only mount for Docker service-discovery of container logs; no write verb possible over an ro socket. Could move behind the proxy when its discovery API coverage is verified.",
-      "expires": "2027-05-06"
-    }
   }
 }

@@ -36,8 +36,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import base64
 import itertools
 import json
+import os
+import ssl
 import subprocess
 import sys
 import time
@@ -46,8 +49,29 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 OUT_DIR = Path("reports/perf")
-OPENSEARCH = "http://localhost:8201"
+OPENSEARCH = os.environ.get("OPENSEARCH_URL", "https://localhost:19201")
 API = "http://localhost:8000"
+
+
+def _env_value(key: str, default: str = "") -> str:
+    """``.env.full``-first lookup (same precedence as tests/conftest.py)."""
+    env_file = Path(".env.full")
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            if line.startswith(f"{key}="):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return os.environ.get(key, default)
+
+
+_OS_USER = _env_value("OPENSEARCH_USERNAME", "admin")
+_OS_PASS = _env_value("OPENSEARCH_PASSWORD")
+_OS_BASIC = (
+    "Basic " + base64.b64encode(f"{_OS_USER}:{_OS_PASS}".encode()).decode()
+    if _OS_PASS
+    else None
+)
+_REPO_CA = Path("infra/docker/config/certs/ca.crt")
+_SSL_CTX = ssl.create_default_context(cafile=str(_REPO_CA)) if _REPO_CA.exists() else None
 
 
 def _docker(*args: str, timeout: int = 20) -> str:
@@ -90,9 +114,11 @@ def _curl_json(
     hdrs = {"Content-Type": "application/json"}
     if headers:
         hdrs.update(headers)
+    if _OS_BASIC and "opensearch" in url or ":9200" in url or ":19201" in url:
+        hdrs["Authorization"] = _OS_BASIC
     req = urllib.request.Request(url, data=body, headers=hdrs)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX) as resp:
             return json.loads(resp.read())
     except Exception as exc:
         return {"_error": str(exc)[:120]}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soar.lab/contracts/severity.schema.json",
+  "title": "Canonical severity (CONTRACT-001)",
+  "description": "Canonical range 0..4; textual names normalized case/space-insensitively by code (see src/soar_lab/domain/severity.py and normalize_inputs.py).",
+  "oneOf": [
+    {"type": "integer", "minimum": 0, "maximum": 4},
+    {"type": "number", "minimum": 0, "maximum": 4},
+    {
+      "type": "string",
+      "enum": [
+        "informational", "info",
+        "low",
+        "medium", "med", "warning", "warn",
+        "high",
+        "critical", "crit",
+        "0", "1", "2", "3", "4", "0.0", "1.0", "2.0", "3.0", "4.0"
+      ]
+    }
+  ]
+}

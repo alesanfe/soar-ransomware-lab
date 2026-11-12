@@ -31,6 +31,8 @@ Environment variables (only basic credentials that do not rotate):
 The API keys are obtained dynamically from each service at runtime.
 """
 
+import hashlib
+import json
 import logging
 import os
 import sys
@@ -144,7 +146,9 @@ def init_shuffle_webhook():
     cortex_basic = workflow_actions._cortex_basic_auth()
     es_basic = workflow_actions._es_basic_auth()
 
-    analyzer_info = cortex_setup.discover_and_select_analyzers(cortex_basic, app_id_http)
+    analyzer_info = cortex_setup.discover_and_select_analyzers(
+        cortex_basic, app_id_http, app_id_shuffle_tools
+    )
 
     # ── 9. Build the WorkflowContext ───────────────────────────────────────────
     _loki_start_ns = int((time.time() - 7200) * 1e9)
@@ -212,7 +216,13 @@ def init_shuffle_webhook():
     logger.info("  Webhook URL: %s", webhook_url)
 
     # ── 19. Save webhook info for E2E tests ────────────────────────────────────
-    shuffle_setup.save_webhook_info(trigger_id, wf_id, org_id, webhook_url_internal, webhook_url)
+    _wf_hash = hashlib.sha256(
+        json.dumps(wf_def, sort_keys=True, default=str).encode()
+    ).hexdigest()
+    shuffle_setup.save_webhook_info(
+        trigger_id, wf_id, org_id, webhook_url_internal, webhook_url,
+        workflow_hash=_wf_hash,
+    )
 
     # ── 20. Print summary ──────────────────────────────────────────────────────
     print()

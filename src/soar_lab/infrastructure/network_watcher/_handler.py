@@ -36,6 +36,11 @@ def create_handler(client: docker.DockerClient) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         """HTTP handler exposing health and connection inspection endpoints."""
 
+        # Default BaseHTTPRequestHandler replies HTTP/1.0 — compliant
+        # clients (blackbox http_2xx, curl --http1.1 checks) reject it.
+        # Content-Length is always set, so keep-alive is safe.
+        protocol_version = "HTTP/1.1"
+
         def _write_json(self, status: int, body: dict) -> None:
             """Write a JSON response with the given status code and body."""
             payload = json.dumps(body).encode()
@@ -43,7 +48,13 @@ def create_handler(client: docker.DockerClient) -> type[BaseHTTPRequestHandler]:
             self.send_header(HEADER_CONTENT_TYPE, CONTENT_TYPE_JSON)
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
-            self.wfile.write(payload)
+            try:
+                self.wfile.write(payload)
+            except (BrokenPipeError, ConnectionResetError):
+                # Clients that connect-then-close (TCP liveness probes,
+                # aborted curls) disconnect before reading — an expected
+                # event, not an error worth a traceback in the logs.
+                pass
 
         def _handle_health(self) -> None:
             """Handle the ``/health`` endpoint."""

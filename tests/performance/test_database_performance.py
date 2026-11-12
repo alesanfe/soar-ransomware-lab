@@ -21,7 +21,7 @@ class TestDatabasePerformance:
     def es_client(self):
         """Create Elasticsearch client for testing."""
         return ElasticsearchClient(
-            hosts=["http://elasticsearch:9200"], username="elastic", password="test-pass"
+            hosts=["https://elasticsearch:9200"], username="elastic", password=None
         )
 
     def test_query_latency(self, es_client):

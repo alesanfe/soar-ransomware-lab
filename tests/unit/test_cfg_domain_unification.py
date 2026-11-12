@@ -33,7 +33,7 @@ class TestCanonicalSeverity:
 
     def test_validator_derives_from_canonical_enum(self):
         assert AlertValidator.VALID_SEVERITIES == _CANONICAL
-        assert 0 not in AlertValidator.VALID_SEVERITIES
+        assert 0 in AlertValidator.VALID_SEVERITIES  # INFORMATIONAL (CONTRACT-001)
         assert 4 in AlertValidator.VALID_SEVERITIES  # CRITICAL was rejected before
 
     def test_generator_outputs_always_canonical(self):
@@ -66,14 +66,12 @@ class TestCanonicalSeverity:
             RansomwareAlert(**{**base, "severity": AlertSeverity.CRITICAL}).severity
             is AlertSeverity.CRITICAL
         )
-        with pytest.raises(ValidationError):
-            RansomwareAlert(**{**base, "severity": 0})
+        assert RansomwareAlert(**{**base, "severity": 0}).severity is AlertSeverity.INFORMATIONAL
 
     def test_ingest_schema_canonical_bounds(self):
+        AlertIngestSchema(severity=0)  # INFORMATIONAL — canonical 0..4
         AlertIngestSchema(severity=1)
         AlertIngestSchema(severity=4)
-        with pytest.raises(ValidationError):
-            AlertIngestSchema(severity=0)
         with pytest.raises(ValidationError):
             AlertIngestSchema(severity=5)
         with pytest.raises(ValidationError):

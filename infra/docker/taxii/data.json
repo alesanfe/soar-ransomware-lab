@@ -1,0 +1,51 @@
+{
+  "/discovery": {
+    "title": "SOAR Lab TAXII 2.1 Server",
+    "description": "Ransomware IoC feed for the SOAR lab (medallion memory backend)",
+    "contact": "soc@soar.local",
+    "default": "soarlab",
+    "api_roots": ["soarlab"]
+  },
+  "soarlab": {
+    "information": {
+      "title": "SOAR Lab ransomware IoC feed",
+      "description": "STIX 2.1 indicators produced/consumed by the lab",
+      "versions": ["application/vnd.oasis.taxii+json; version=2.1"],
+      "max_content_length": 10485760
+    },
+    "status": [],
+    "collections": [
+      {
+        "id": "52892447-4d7e-4f70-94d0-6b2b7e8b4d0d",
+        "title": "ransomware-iocs",
+        "description": "Ransomware C2 / payload indicators (TEST-NET only)",
+        "can_read": true,
+        "can_write": true,
+        "media_types": ["application/stix+json;version=2.1"],
+        "objects": [
+          {
+            "type": "indicator",
+            "spec_version": "2.1",
+            "id": "indicator--b3f6a1e2-7c4d-4a8f-9e01-2f5c8d9a1b2c",
+            "created": "2026-01-01T00:00:00.000Z",
+            "modified": "2026-01-01T00:00:00.000Z",
+            "name": "tc41-seed-c2-ip",
+            "description": "Seeded ransomware C2 indicator (TEST-NET-2, inert)",
+            "indicator_types": ["malicious-activity"],
+            "pattern": "[ipv4-addr:value = '198.51.100.10']",
+            "pattern_type": "stix",
+            "valid_from": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        "manifest": [
+          {
+            "id": "indicator--b3f6a1e2-7c4d-4a8f-9e01-2f5c8d9a1b2c",
+            "date_added": "2026-01-01T00:00:00.000Z",
+            "version": "2026-01-01T00:00:00.000Z",
+            "media_type": "application/stix+json;version=2.1"
+          }
+        ]
+      }
+    ]
+  }
+}

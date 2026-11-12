@@ -74,3 +74,18 @@ class TestCacheControl:
     def test_non_api_not_marked(self):
         resp = TestClient(_make_app()).get("/docs")
         assert "Cache-Control" not in resp.headers
+
+
+def test_server_header_removed():
+    """A response that carries a `server` header must have it stripped."""
+    from fastapi.responses import JSONResponse
+
+    app = FastAPI()
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    @app.get("/api/v1/srv")
+    async def srv():
+        return JSONResponse({"ok": True}, headers={"server": "uvicorn-leak"})
+
+    resp = TestClient(app).get("/api/v1/srv")
+    assert "server" not in resp.headers

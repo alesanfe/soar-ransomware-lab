@@ -60,13 +60,13 @@ def test_docs_site_is_static_multistage():
 def test_ui_and_data_ports_are_loopback():
     files = {
         "infra/docker/compose/docker-compose.core.yml": [
-            "THEHIVE_HTTP_PORT",
-            "CORTEX_HTTP_PORT",
+            "THEHIVE_HOST_PORT",
+            "CORTEX_HOST_PORT",
             "SHUFFLE_UI_PORT",
             "SHUFFLE_API_PORT",
         ],
         "infra/docker/compose/docker-compose.api.yml": ["WEB_UI_PORT"],
-        "infra/docker/compose/docker-compose.misp.yml": ["MISP_PORT"],
+        "infra/docker/compose/docker-compose.misp.yml": ["MISP_HOST_PORT"],
         "infra/docker/compose/docker-compose.opensearch.yml": [
             "OPENSEARCH_PORT",
             "OPENSEARCH_DASHBOARDS_PORT",
@@ -81,12 +81,15 @@ def test_ui_and_data_ports_are_loopback():
 
 
 def test_ingress_and_lab_ports_stay_public():
-    # nginx edge + lab ingest feeds legitimately stay on 0.0.0.0
+    # nginx edge stays mapped but loopback-bound like the rest of the UI
+    # surface — the lab is reached via localhost, not LAN exposure.
     api = _read("infra/docker/compose/docker-compose.api.yml")
-    assert '"${HTTP_PORT:-80}:80"' in api
-    assert '"${HTTPS_PORT:-443}:443"' in api
+    assert '127.0.0.1:${HTTP_PORT:-80}:80' in api
+    assert '127.0.0.1:${HTTPS_PORT:-443}:443' in api
     core = _read("infra/docker/compose/docker-compose.core.yml")
-    assert "127.0.0.1:${TENZIR" not in core
+    # CORE-SEC-003: Tenzir binds localhost-only on the host — remote
+    # peers reach it over the internal soar_net service name.
+    assert "127.0.0.1:${TENZIR" in core
 
 
 def test_grafana_alert_rules_reference_provisioned_uids():

@@ -71,7 +71,7 @@ def _mini_workflow() -> dict:
                 "app_name": "http",
                 "action_name": "POST",
                 "parameters": [
-                    {"name": "url", "value": "http://thehive:9000/api/v1/case"},
+                    {"name": "url", "value": "https://thehive:9443/api/v1/case"},
                     {"name": "body", "value": "{}"},
                 ],
             },
@@ -116,7 +116,7 @@ class TestCacaoExport:
         pb = export_cacao.convert(_mini_workflow())
         hive = [s for s in pb["workflow"].values() if "thehive" in s.get("name", "")][0]
         assert hive["commands"][0]["type"] == "http-api"
-        assert "POST http://thehive" in hive["commands"][0]["command"]
+        assert "POST https://thehive" in hive["commands"][0]["command"]
 
     def test_python_action_maps_base64_command(self):
         pb = export_cacao.convert(_mini_workflow())

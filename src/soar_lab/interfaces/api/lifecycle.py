@@ -59,6 +59,9 @@ def register_worker_lifecycle(app_instance: FastAPI, cp) -> None:
             app_instance.state.admission_service = AlertAdmissionUseCase(
                 queue=queue,
                 store=store,
+                # CONFIG-001: WEBHOOK_PAYLOAD_MAX_SIZE now actually drives
+                # the admission cap — no more decorative config.
+                max_payload_bytes=int(cp.get("WEBHOOK_PAYLOAD_MAX_SIZE", "262144")),
                 max_queue_depth=int(cp.get("ALERT_INGEST_MAX_DEPTH", "50000")),
             )
             stats = WorkerStats()
@@ -68,8 +71,12 @@ def register_worker_lifecycle(app_instance: FastAPI, cp) -> None:
             # R3 HA: unique consumer per replica (hostname) so N API
             # workers in one consumer group can't double-claim; the
             # Redis lease elects a single leader for recover/redrive.
+            # WORKER-007: the lease TTL must exceed the renewal cadence
+            # (recover_interval_s=60s) — a shorter TTL lets the key
+            # expire mid-cycle, so every "renewal" was really a fresh
+            # acquisition: leadership gaps plus meaningless fence churn.
             consumer_name = f"worker-{socket.gethostname()}"
-            lease = WorkerLease(client, holder=consumer_name)
+            lease = WorkerLease(client, holder=consumer_name, ttl_ms=180_000)
             worker = AdmissionWorker(
                 queue,
                 store,
@@ -79,6 +86,7 @@ def register_worker_lifecycle(app_instance: FastAPI, cp) -> None:
                 concurrency=int(cp.get("ALERT_INGEST_CONCURRENCY", "4")),
                 stats=stats,
                 lease=lease,
+                reconciler=app_instance.state.admission_service.reconcile,
             )
             stop = asyncio.Event()
             app_instance.state.admission_worker_stop = stop
@@ -248,13 +256,14 @@ def register_stale_exec_gc(app_instance: FastAPI, cp) -> None:
         try:
             gc = StaleExecutionGC(
                 os_url=str(os_url),
-                backend_url=str(cp.get("shuffle_url", "http://shuffle-backend:5001")),
+                backend_url=str(cp.get("shuffle_url", "https://shuffle-backend:5443")),
                 api_key=str(cp.get("shuffle_api_key", "") or ""),
                 stale_minutes=float(cp.get("SHUFFLE_STALE_MINUTES", "30")),
             )
             interval_s = max(60.0, float(cp.get("SHUFFLE_STALE_GC_INTERVAL_S", "300")))
             stop = asyncio.Event()
             app_instance.state.stale_gc_stop = stop
+            app_instance.state.stale_gc = gc
 
             async def _loop() -> None:
                 while not stop.is_set():
@@ -262,6 +271,26 @@ def register_stale_exec_gc(app_instance: FastAPI, cp) -> None:
                         await asyncio.to_thread(gc.collect_once)
                     except Exception:
                         logger.exception("Stale-exec GC pass failed")
+                    # DT-02: fill node_timings/execution_id on soar-metrics docs
+                    # the workflow writes before Shuffle exposes results.
+                    if str(cp.get("TIMINGS_BACKFILL_ENABLED", "true")).lower() not in (
+                        "0",
+                        "false",
+                        "off",
+                        "no",
+                    ):
+                        try:
+                            proc = await asyncio.create_subprocess_exec(
+                                "python3",
+                                "/app/scripts/maintenance/backfill_node_timings.py",
+                                "--size",
+                                "100",
+                                stdout=asyncio.subprocess.DEVNULL,
+                                stderr=asyncio.subprocess.DEVNULL,
+                            )
+                            await asyncio.wait_for(proc.wait(), timeout=120)
+                        except Exception:
+                            logger.exception("node_timings backfill pass failed")
                     with suppress(TimeoutError):
                         await asyncio.wait_for(stop.wait(), timeout=interval_s)
 

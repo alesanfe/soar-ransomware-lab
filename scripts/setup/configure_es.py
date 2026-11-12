@@ -11,11 +11,15 @@ import time
 
 import requests
 
+from soar_lab.security.tls_config import ca_verify
+
 logger = logging.getLogger(__name__)
 
-DEFAULT_ES_URL = os.environ.get("ELASTICSEARCH_URL", "http://elasticsearch:9200")
+DEFAULT_ES_URL = os.environ.get("ELASTICSEARCH_URL", "https://elasticsearch:9200")
 DEFAULT_ES_WAIT_TIMEOUT = 4
 DEFAULT_ES_WAIT_RETRIES = 24
+
+verify = ca_verify()
 
 
 def get_auth():
@@ -36,7 +40,7 @@ def main():
     for i in range(DEFAULT_ES_WAIT_RETRIES):
         try:
             r = requests.get(
-                f"{es_url}/_cluster/health", auth=auth, timeout=DEFAULT_ES_WAIT_TIMEOUT
+                f"{es_url}/_cluster/health", auth=auth, verify=verify, timeout=DEFAULT_ES_WAIT_TIMEOUT
             )
             if r.status_code == 200:
                 logger.info(f"Elasticsearch ready after {i * 5}s")
@@ -63,7 +67,7 @@ def main():
             "translog.durability": "request",
         },
     }
-    r = requests.put(f"{es_url}/_template/soar_no_replicas", auth=auth, json=tpl)
+    r = requests.put(f"{es_url}/_template/soar_no_replicas", auth=auth, verify=verify, json=tpl)
     logger.info(f"[ES template] {r.status_code} {r.text[:80]}")
 
     # Pre-create index template for Shuffle's environments index with
@@ -105,7 +109,7 @@ def main():
             },
         },
     }
-    r = requests.put(f"{es_url}/_template/soar_environments", auth=auth, json=env_tpl)
+    r = requests.put(f"{es_url}/_template/soar_environments", auth=auth, verify=verify, json=env_tpl)
     logger.info(f"[ES env template] {r.status_code} {r.text[:80]}")
 
     # Pre-create index template for Shuffle's workflowqueue index with
@@ -145,8 +149,130 @@ def main():
             },
         },
     }
-    r = requests.put(f"{es_url}/_template/soar_workflowqueue", auth=auth, json=wq_tpl)
+    r = requests.put(f"{es_url}/_template/soar_workflowqueue", auth=auth, verify=verify, json=wq_tpl)
     logger.info(f"[ES wq template] {r.status_code} {r.text[:80]}")
+
+    # --- SOAR lab indices: schema control + retention -------------------------
+    # `soar-alerts` and `soar-metrics-*` were historically created by dynamic
+    # mapping (first document wins): every string mapped as bare `text` with no
+    # `keyword` sub-field — so exact-match term queries, aggregations and
+    # sorting on alert_id/status/alert_type/host did not work — and with no
+    # lifecycle policy the indices grew unbounded.  The template below fixes
+    # the mapping for any index (re)created from now on; the live-update block
+    # further down attaches the same policy + keyword sub-fields to the
+    # already-existing indices without a reindex.
+
+    logger.info("Creating ILM policy soar-retention (delete after 90d)...")
+    ilm_policy = {
+        "policy": {
+            "phases": {
+                "hot": {"actions": {}},
+                "delete": {"min_age": "90d", "actions": {"delete": {}}},
+            }
+        }
+    }
+    r = requests.put(
+        f"{es_url}/_ilm/policy/soar-retention", auth=auth, verify=verify, json=ilm_policy
+    )
+    logger.info(f"[ES ilm policy] {r.status_code} {r.text[:80]}")
+
+    kw = {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}}
+    logger.info("Creating index template for soar-alerts/soar-metrics (schema + retention)...")
+    soar_tpl = {
+        "index_patterns": ["soar-alerts*", "soar-metrics-*"],
+        "settings": {
+            "number_of_replicas": 0,
+            "refresh_interval": "1s",
+            "translog.durability": "request",
+            "index.lifecycle.name": "soar-retention",
+        },
+        "mappings": {
+            "dynamic_templates": [
+                {
+                    "strings_as_text_keyword": {
+                        "match_mapping_type": "string",
+                        "mapping": kw,
+                    }
+                }
+            ],
+            "properties": {
+                "alert_id": {"type": "keyword"},
+                "alert_type": {"type": "keyword"},
+                "event_type": {"type": "keyword"},
+                "status": {"type": "keyword"},
+                "source": {"type": "keyword"},
+                "hostname": {"type": "keyword"},
+                "user": {"type": "keyword"},
+                "workflow": {"type": "keyword"},
+                "trace_id": {"type": "keyword"},
+                "src_ip": {"type": "ip"},
+                "domain": {"type": "keyword"},
+                "url": {"type": "keyword"},
+                "hash": {"type": "keyword"},
+                "file_path": {"type": "keyword"},
+                "process_name": {"type": "keyword"},
+                "malware_family": {"type": "keyword"},
+                "malware_type": {"type": "keyword"},
+                "mitre_tactics": {"type": "keyword"},
+                "mitre_techniques": {"type": "keyword"},
+                "all_ips": {"type": "ip"},
+                "all_domains": {"type": "keyword"},
+                "all_urls": {"type": "keyword"},
+                "all_hashes": {"type": "keyword"},
+                "severity": {"type": "long"},
+                "confidence": {"type": "long"},
+                "iocs_count": {"type": "long"},
+                "@timestamp": {"type": "date"},
+                "timestamp": {"type": "date"},
+                "detection_time": {"type": "date"},
+            },
+        },
+    }
+    r = requests.put(f"{es_url}/_template/soar_lab_indices", auth=auth, verify=verify, json=soar_tpl)
+    logger.info(f"[ES soar template] {r.status_code} {r.text[:80]}")
+
+    # Live-update existing soar indices: attach the retention policy and add
+    # `keyword` sub-fields to the dynamically-mapped `text` fields.  Adding
+    # sub-fields is a legal mapping update — no reindex required.  Fields that
+    # would need a *type* change (e.g. src_ip text -> ip) are covered by the
+    # template on the next index (re)creation.
+    for idx in ("soar-alerts", "soar-metrics-v2"):
+        try:
+            exists = requests.get(f"{es_url}/{idx}", auth=auth, verify=verify, timeout=15)
+            if exists.status_code != 200:
+                continue
+            r = requests.put(
+                f"{es_url}/{idx}/_settings",
+                auth=auth,
+                verify=verify,
+                json={"index.lifecycle.name": "soar-retention"},
+                timeout=15,
+            )
+            logger.info(f"  {idx} ilm attach: {r.status_code} {r.text[:80]}")
+            props = (
+                exists.json()
+                .get(idx, {})
+                .get("mappings", {})
+                .get("properties", {})
+            )
+            patch = {
+                name: dict(kw)
+                for name, m in props.items()
+                if m.get("type") == "text" and "keyword" not in m.get("fields", {})
+            }
+            if patch:
+                r = requests.put(
+                    f"{es_url}/{idx}/_mapping",
+                    auth=auth,
+                    verify=verify,
+                    json={"properties": patch},
+                    timeout=15,
+                )
+                logger.info(
+                    f"  {idx} keyword sub-fields (+{len(patch)}): {r.status_code} {r.text[:80]}"
+                )
+        except Exception as e:
+            logger.error(f"  Failed to update {idx}: {e}")
 
     # NOTE: search.default_search_timeout was tried and removed — it does
     # NOT affect /_cluster/health/{index}, which has its own 30s timeout.
@@ -154,13 +280,13 @@ def main():
 
     # Update existing indices
     logger.info("Updating existing indices to replicas=0 and fast writes...")
-    indices = requests.get(f"{es_url}/_cat/indices?h=index", auth=auth).text.split()
+    indices = requests.get(f"{es_url}/_cat/indices?h=index", auth=auth, verify=verify).text.split()
     for idx in indices:
         if idx:
             try:
                 requests.put(
                     f"{es_url}/{idx}/_settings",
-                    auth=auth,
+                    auth=auth, verify=verify,
                     json={
                         "index": {
                             "number_of_replicas": 0,
@@ -174,15 +300,23 @@ def main():
                 logger.error(f"  Failed to update {idx}: {e}")
 
     # Also disable replicas on OpenSearch indices (Shuffle backend uses OS)
-    os_url = os.environ.get("SHUFFLE_OPENSEARCH_URL", "http://opensearch:9200")
+    os_url = os.environ.get("SHUFFLE_OPENSEARCH_URL", "https://opensearch:9200")
+    os_auth = (
+        os.environ.get("SHUFFLE_OPENSEARCH_USERNAME", os.environ.get("OPENSEARCH_USERNAME", "admin")),
+        os.environ.get("SHUFFLE_OPENSEARCH_PASSWORD", os.environ.get("OPENSEARCH_PASSWORD", "")),
+    )
     logger.info(f"Disabling replicas on OpenSearch ({os_url})...")
     try:
-        os_indices = requests.get(f"{os_url}/_cat/indices?h=index", timeout=15).text.split()
+        os_indices = requests.get(
+            f"{os_url}/_cat/indices?h=index", auth=os_auth, verify=verify, timeout=15
+        ).text.split()
         for idx in os_indices:
             if idx:
                 try:
                     requests.put(
                         f"{os_url}/{idx}/_settings",
+                        auth=os_auth,
+                        verify=verify,
                         json={"index": {"number_of_replicas": 0, "refresh_interval": "1s"}},
                         timeout=15,
                     )
@@ -217,18 +351,29 @@ def main():
             },
         }
         r = requests.put(
-            f"{os_url}/_index_template/soar_workflowexecution_kw", json=kw_tpl, timeout=15
+            f"{os_url}/_index_template/soar_workflowexecution_kw",
+            auth=os_auth,
+            verify=verify,
+            json=kw_tpl,
+            timeout=15,
         )
         logger.info(f"[OS wf-exec own template] {r.status_code} {r.text[:80]}")
         try:
             cur = requests.get(
-                f"{os_url}/_index_template/shuffle-workflowexecution", timeout=10
+                f"{os_url}/_index_template/shuffle-workflowexecution",
+                auth=os_auth,
+                verify=verify,
+                timeout=10,
             ).json()
             tpl = cur["index_templates"][0]["index_template"]
             props = tpl["template"].setdefault("mappings", {}).setdefault("properties", {})
             props["execution_argument"] = {"type": "keyword", "ignore_above": 8192}
             r = requests.put(
-                f"{os_url}/_index_template/shuffle-workflowexecution", json=tpl, timeout=15
+                f"{os_url}/_index_template/shuffle-workflowexecution",
+                auth=os_auth,
+                verify=verify,
+                json=tpl,
+                timeout=15,
             )
             logger.info(f"[OS wf-exec merge] {r.status_code} {r.text[:80]}")
         except Exception as exc:  # best-effort — Shuffle template may not exist yet
@@ -296,11 +441,11 @@ def main():
     }
     for idx_name, relations in pre_indices.items():
         try:
-            r = requests.head(f"{es_url}/{idx_name}", auth=auth, timeout=5)
+            r = requests.head(f"{es_url}/{idx_name}", auth=auth, verify=verify, timeout=5)
             if r.status_code == 404:
                 r = requests.put(
                     f"{es_url}/{idx_name}",
-                    auth=auth,
+                    auth=auth, verify=verify,
                     json={
                         "settings": {
                             "number_of_shards": 1,

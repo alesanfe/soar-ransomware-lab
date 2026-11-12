@@ -56,6 +56,51 @@ _WEBHOOK_INFO_PATHS = [
     REPO_ROOT / "reports" / "validation" / "results" / "webhook_info.json",
 ]
 
+from soar_lab.security.tls_config import ca_verify
+
+
+class LabDatastoreAuth:
+    """``requests`` auth that picks OpenSearch vs Elasticsearch credentials
+    by hostname/port — one object covers both datastores on ``self.s`` and on
+    bare ``requests.*`` calls (pass it via ``auth=self.s.auth``).
+
+    Explicit ``Authorization`` headers always win (Bearer tokens for TheHive
+    etc. are untouched)."""
+
+    def __init__(self, env: dict[str, str] | None = None) -> None:
+        env = env or {}
+        self._os = (
+            env.get("SHUFFLE_OPENSEARCH_USERNAME")
+            or env.get("OPENSEARCH_USERNAME", "admin"),
+            env.get("SHUFFLE_OPENSEARCH_PASSWORD")
+            or env.get("OPENSEARCH_PASSWORD", ""),
+        )
+        self._es = (
+            env.get("ELASTIC_USERNAME", "elastic"),
+            env.get("ELASTIC_PASSWORD", ""),
+        )
+
+    def __call__(self, r):
+        from urllib.parse import urlparse
+
+        if r.headers.get("Authorization"):
+            return r
+        u = urlparse(r.url or "")
+        host, port = u.hostname or "", u.port
+        if host == "opensearch" or (host in ("localhost", "127.0.0.1") and port == 19201):
+            creds = self._os
+        elif host == "elasticsearch" or (host in ("localhost", "127.0.0.1") and port == 19200):
+            creds = self._es
+        else:
+            return r
+        if creds[1]:
+            import base64
+
+            r.headers["Authorization"] = "Basic " + base64.b64encode(
+                f"{creds[0]}:{creds[1]}".encode()
+            ).decode()
+        return r
+
 
 class ConfigMixin:
     """Mixin for environment configuration and path resolution."""
@@ -100,6 +145,9 @@ class ConfigMixin:
             "E2E_FAIL_ON_CLEANUP_ERROR",
             "E2E_PRESERVE_REPORT_DATA",
             "E2E_CLEANUP_AFTER_REPORT",
+            # Services whose pre-test health check is skipped (fault-injection
+            # suites like TC-18/TC-36 take services down on purpose).
+            "E2E_SKIP_SERVICES",
             # Observability configuration
             "E2E_VERIFY_OBSERVABILITY",
             "E2E_VERIFY_LOKI",
@@ -176,13 +224,13 @@ class ConfigMixin:
         """
         env = getattr(self, "env", {})
         defaults_container = {
-            "shuffle": "http://shuffle-backend:5001",
+            "shuffle": "https://shuffle-backend:5443",
             "shuffle_frontend": "http://shuffle-frontend:80",
-            "thehive": "http://thehive:9000",
-            "cortex": "http://cortex:9001",
+            "thehive": "https://thehive:9443",
+            "cortex": "https://cortex:9443",
             "misp": "http://misp:80",
-            "es": "http://elasticsearch:9200",
-            "opensearch": "http://opensearch:9200",
+            "es": "https://elasticsearch:9200",
+            "opensearch": "https://opensearch:9200",
             "opensearch_dashboards": "http://opensearch-dashboards:5601",
             "loki": "https://loki:3100",
             "promtail": "http://promtail:9080",
@@ -193,18 +241,18 @@ class ConfigMixin:
             "nginx": "http://nginx:80",
             "nginx_https": "https://nginx:443",
             "docs_site": "http://docs-site:8080",
-            "web_management": "http://web-management:80",
+            "web_management": "http://web-management:8080",
             "redis": "http://redis:6379",
         }
         defaults_host = {
             "shuffle": "http://localhost:5001",
             "shuffle_frontend": "http://localhost:8081",
-            "thehive": "http://localhost:8100",
-            "cortex": "http://localhost:8101",
+            "thehive": "https://localhost:18100",
+            "cortex": "https://localhost:18101",
             "misp": "http://localhost:8083",
-            "es": "http://localhost:8200",
-            "opensearch": "http://localhost:8201",
-            "opensearch_dashboards": "http://localhost:8202",
+            "es": "https://localhost:19200",
+            "opensearch": "https://localhost:19201",
+            "opensearch_dashboards": "http://localhost:19202",
             "loki": "https://localhost:3100",
             "promtail": "http://localhost:9080",
             "grafana": "https://localhost:8084",

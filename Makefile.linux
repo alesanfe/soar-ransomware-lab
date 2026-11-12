@@ -25,16 +25,17 @@ SIEM_PYTHON ?= python3
 .PHONY: test-e2e-tc00 test-e2e-tc00-01 test-e2e-tc00-02 test-e2e-tc00-03 test-e2e-tc00-04 test-e2e-tc01 test-e2e-tc01-01 test-e2e-tc01-02 test-e2e-tc01-03 test-e2e-tc01-04 test-e2e-tc01-05 test-e2e-tc01-06 test-e2e-tc01-07 test-e2e-tc01-08 test-e2e-tc01-09 test-e2e-tc01-10 test-e2e-tc01-11 test-e2e-tc02 test-e2e-tc02-01 test-e2e-tc02-02 test-e2e-tc02-03 test-e2e-tc02-04 test-e2e-tc02-05 test-e2e-tc03 test-e2e-tc03-01 test-e2e-tc04 test-e2e-tc04-01 test-e2e-tc04-02 test-e2e-tc04-03 test-e2e-tc04-04 test-e2e-tc04-05 test-e2e-tc04-06 test-e2e-tc04-07 test-e2e-tc04-08 test-e2e-tc05 test-e2e-tc05-01 test-e2e-tc05-02 test-e2e-tc05-03 test-e2e-tc05-04 test-e2e-tc06 test-e2e-tc06-01 test-e2e-tc06-02 test-e2e-tc07 test-e2e-tc07-01 test-e2e-tc07-02 test-e2e-tc07-03 test-e2e-tc07-04 test-e2e-tc07-05 test-e2e-tc08 test-e2e-tc08-01 test-e2e-tc08-02 test-e2e-tc08-03 test-e2e-tc08-04 test-e2e-tc09 test-e2e-tc09-01 test-e2e-tc09-02 test-e2e-tc09-03 test-e2e-tc09-04 test-e2e-tc09-05 test-e2e-tc09-06 test-e2e-tc09-07 test-e2e-tc10 test-e2e-tc10-01 test-e2e-tc10-02 test-e2e-tc10-03 test-e2e-tc10-04 test-e2e-tc10-05 test-e2e-tc10-06 test-e2e-tc10-07 test-e2e-tc11 test-e2e-tc11-01 test-e2e-tc11-02 test-e2e-tc11-03 test-e2e-tc11-04 test-e2e-tc11-05 test-e2e-tc11-06 test-e2e-tc11-07 test-e2e-tc11-08 test-e2e-tc11-09 test-e2e-tc11-10 test-e2e-tc11-11 test-e2e-tc11-12 test-e2e-tc11-13 test-e2e-tc12 test-e2e-tc12-01 test-e2e-tc12-02 test-e2e-tc12-03 test-e2e-tc12-04 test-e2e-tc12-05 test-e2e-tc12-06 test-e2e-tc12-07 test-e2e-tc12-08 test-e2e-tc12-09 test-e2e-tc12-10 test-e2e-tc13 test-e2e-tc13-01 test-e2e-tc13-02 test-e2e-tc13-03 test-e2e-tc13-04 test-e2e-tc13-05 test-e2e-tc13-06 test-e2e-tc13-07 test-e2e-tc13-08 test-e2e-tc13-09 test-e2e-tc13-10 test-e2e-tc13-11 test-e2e-tc13-12 test-e2e-tc13-13 test-e2e-tc14 test-e2e-tc14-01 test-e2e-tc14-02 test-e2e-tc14-03 test-e2e-tc14-04 test-e2e-tc14-05 test-e2e-tc14-06 test-e2e-tc14-07 test-e2e-tc15 test-e2e-tc15-01 test-e2e-tc15-02 test-e2e-tc15-03 test-e2e-tc15-04 test-e2e-tc15-05 test-e2e-tc15-06 test-e2e-tc16 test-e2e-tc16-01 test-e2e-tc16-02 test-e2e-tc16-03 test-e2e-tc17 test-e2e-tc17-01 test-e2e-tc17-02 test-e2e-tc17-03 test-e2e-tc17-04 test-e2e-tc17-05 test-e2e-tc17-06 test-e2e-tc17-07 test-e2e-tc18 test-e2e-tc18-01 test-e2e-tc18-02 test-e2e-tc18-03 test-e2e-tc19 test-e2e-tc19-01 test-e2e-tc20 test-e2e-tc20-01 test-e2e-tc21 test-e2e-tc21-01 test-e2e-tc21-02 test-e2e-tc22 test-e2e-tc22-01 test-e2e-tc22-02 test-e2e-tc23 test-e2e-tc23-01 test-e2e-tc24 test-e2e-tc24-01 test-e2e-tc24-02 test-e2e-tc24-03 test-e2e-tc24-04 test-e2e-tc25 test-e2e-tc25-01 test-e2e-tc25-02 test-e2e-tc25-03 test-e2e-tc26 test-e2e-tc26-01 test-e2e-tc26-02 test-e2e-tc27 test-e2e-tc27-01 test-e2e-tc27-02 test-e2e-tc28 test-e2e-tc28-01 test-e2e-tc28-02 test-e2e-tc28-03 test-e2e-tc28-04 test-e2e-tc28-05 test-e2e-tc28-06 test-e2e-tc28-07 test-e2e-tc28-08 test-e2e-tc28-09 test-e2e-tc29 test-e2e-tc29-01 test-e2e-tc30 test-e2e-tc30-01 test-e2e-tc30-02 test-e2e-tc31 test-e2e-tc31-01 test-e2e-tc31-02 test-e2e-tc31-03 test-e2e-tc32 test-e2e-tc32-01 test-e2e-kpi-01 test-e2e-kpi-01-01 test-e2e-kpi-02 test-e2e-kpi-02-01 test-e2e-kpi-02-02 test-e2e-kpi-03 test-e2e-kpi-03-01 test-e2e-kpi-04 test-e2e-kpi-04-01 test-e2e-kpi-05 test-e2e-kpi-05-01 test-e2e-tc33 test-e2e-tc33-01 test-e2e-tc33-02 test-e2e-tc33-03 test-e2e-tc33-04 test-e2e-tc33-05 test-e2e-tc33-06 test-e2e-tc33-07 test-e2e-tc33-08 test-e2e-tc33-09 test-e2e-tc33-10 test-e2e-kpi-06 test-e2e-kpi-06-01 test-e2e-kpi-06-02 test-e2e-kpi-06-03 test-e2e-kpi-06-04 test-e2e-kpi-06-05 test-e2e-kpi-06-06 test-e2e-kpi-06-07 test-e2e-kpi-06-08 test-e2e-kpi-06-09 test-e2e-new-features test-e2e-tc14-08 test-e2e-tc14-09 test-e2e-tc14-10 test-e2e-tc25-04
 .PHONY: sync-src sync-tests
 .PHONY: metrics backup restore
+.PHONY: backup-core backup-obs capacity-obs drill-core drill-obs grafana-reload init-tenzir-token rotate-secrets secrets-inventory test-collect test-contract test-coverage-critical test-e2e-a11y validate-workflows verify verify-certs
 .PHONY: clean reset
 .PHONY: certs deps deps-test deps-lint generate-secrets generate-iocs validate-credentials lint lint-fix docs-lint
 .PHONY: quality mutation test-review holistic-review audit-report build-dataset e2e-lint evidence-score load-report chaos-campaign
 .PHONY: logs-service dev-reload dev-shell dev-debug docs-build docs-serve
 .PHONY: simulate simulate-malicious simulate-benign simulate-batch simulate-clean simulate-and-report
 .PHONY: init-webhook clean-shuffle clean-thehive clean-containers check-disk disk-watchdog perf-bottleneck perf-test-report
-.PHONY: flaky-report test-report test-coverage-scripts test-docker test-external test-integration-external export-playbooks build-worker build-orborus test-e2e-tc17-08 test-e2e-tc30-03 test-e2e-tc32-02 test-e2e-tc32-03 test-e2e-tc32-04 test-e2e-tc32-05 test-e2e-tc34 test-e2e-tc34-01 test-e2e-tc34-02 test-e2e-tc34-03 test-e2e-tc34-04 test-e2e-tc34-05 test-e2e-tc34-06 test-e2e-tc34-07
+.PHONY: flaky-report test-report test-coverage-scripts test-docker test-external test-integration-external export-playbooks build-worker build-orborus test-e2e-tc17-08 test-e2e-tc30-03 test-e2e-tc32-02 test-e2e-tc32-03 test-e2e-tc32-04 test-e2e-tc32-05 test-e2e-tc34 test-e2e-tc34-01 test-e2e-tc34-02 test-e2e-tc34-03 test-e2e-tc34-04 test-e2e-tc34-05 test-e2e-tc34-06 test-e2e-tc34-07 test-e2e-tc35 test-e2e-tc36 test-e2e-tc37 test-e2e-tc38 test-e2e-tc39 test-e2e-tc40 test-e2e-tc41 test-e2e-destructive test-e2e-non-destructive
 .PHONY: export-cacao export-stix verify-digests verify-digests-write
 .PHONY: check-grafana check-ui-inventory check-doc-links test-e2e-a11y
-.PHONY: init-opensearch
+.PHONY: init-opensearch misp-update-taxonomies
 
 help:
 	@echo "=========================================="
@@ -135,6 +136,10 @@ verify-digests:
 verify-digests-write:
 	@echo "Generating requirements-docker.lock with image digests..."
 	@python3 scripts/maintenance/verify_image_digests.py --write
+
+misp-update-taxonomies:
+	@echo "Refreshing MISP taxonomies/galaxies/warninglists (admin key from .env)..."
+	@docker exec -e MISP_API_KEY=$$(grep '^MISP_API_KEY=' .env | cut -d= -f2-) soar_api python /app/scripts/maintenance/misp_update_taxonomies.py
 
 up-lab:
 	@echo "WARNING: LAB profile requested — API runs as root with a RW docker socket and relaxed auth. Not for shared/exposed machines."
@@ -243,10 +248,16 @@ init-webhook:
 	@echo "Initializing Shuffle webhook..."
 	@docker ps | grep soar_shuffle_backend >/dev/null 2>&1 || { echo ERROR: Shuffle backend is not running. Start services with 'make up' first; exit 1; }
 	docker exec soar_api python /app/scripts/setup/init_shuffle_webhook.py
+	@$(MAKE) --no-print-directory validate-workflows
+
+validate-workflows:
+	@echo "Validating generated Shuffle workflow (H-01)..."
+	@docker ps | grep soar_api >/dev/null 2>&1 || { echo ERROR: soar_api is not running; exit 1; }
+	docker exec soar_api python /app/scripts/setup/validate_workflows.py
 
 build-worker:
 	@echo "==> Building patched shuffle-worker image (SHUFFLE_WORKER_POLL_TIME support)..."
-	@docker build -t soar_shuffle-worker:2.2.1-patched infra/docker/images/worker
+	@docker build -t soar_shuffle-worker:2.2.1-patched -f infra/docker/images/worker/Dockerfile infra/docker
 
 build-orborus:
 	@echo "==> Building patched orborus image (swarm worker env passthrough)..."
@@ -319,6 +330,16 @@ reset:
 
 sync-src:
 sync-tests:
+test-collect:
+	@echo "Fast gate: compileall + pytest --collect-only..."
+	docker exec -e PYTHONPYCACHEPREFIX=/tmp/pyc_gate soar_api python3 -m compileall -q src tests scripts
+	docker exec soar_api python3 -m pytest tests/unit tests/contract tests/contracts tests/security tests/integration tests/architecture tests/quality tests/atomic tests/baseline tests/general --collect-only -q -o addopts="--no-cov"
+
+test-coverage-critical: sync-src sync-tests
+	@echo "Coverage gate: critical webhook modules >= 95%%..."
+	docker exec soar_api python3 -m pytest tests/unit -q --cov=src/soar_lab --cov-report=json:runtime/coverage/coverage.json
+	docker exec soar_api python3 /app/scripts/quality/check_critical_coverage.py
+
 test-unit: sync-src sync-tests
 	docker exec soar_api python3 -m pytest tests/unit -v --cov=src/soar_lab --cov-report=term --cov-report=json:runtime/coverage/coverage.json --cov-report=html:artifacts/coverage/htmlcov --cov-report=xml:artifacts/coverage/coverage.xml --cov-fail-under=80
 	-docker exec soar_api cp /app/runtime/coverage/coverage.json /app/reports/coverage/coverage.json 2>/dev/null || true
@@ -328,10 +349,19 @@ test-coverage-scripts: sync-src sync-tests
 	docker exec soar_api python3 -m pytest tests/unit -q --cov=scripts --cov-report=term --cov-report=json:runtime/coverage/coverage_scripts.json --cov-fail-under=0
 	-docker exec soar_api cp /app/runtime/coverage/coverage_scripts.json /app/reports/coverage/coverage_scripts.json 2>/dev/null || true
 
+test-contract: sync-src sync-tests
+	@echo "Contract + adversarial webhook tests..."
+	docker exec soar_api python3 -m pytest tests/contract tests/unit/security -v --no-cov
+
+verify: test-collect
+	@echo "verify: lint-gate + unit + security + contract + coverage-gate"
+	docker exec soar_api python3 -m pytest tests/unit tests/contract tests/security -q --cov=src/soar_lab --cov-report=json:runtime/coverage/coverage.json
+	docker exec soar_api python3 /app/scripts/quality/check_critical_coverage.py
+
 test-integration: sync-src sync-tests
 	docker exec soar_api python3 -m pytest tests/integration -v -m 'requires_docker or not requires_docker'
 
-test-e2e: clean-shuffle clean-thehive clean-containers check-disk test-e2e-tc00 test-e2e-tc01 test-e2e-tc02 test-e2e-tc03 test-e2e-tc04 test-e2e-tc05 test-e2e-tc06 test-e2e-tc07 test-e2e-tc08 test-e2e-tc09 test-e2e-tc10 test-e2e-tc11 test-e2e-tc12 test-e2e-tc13 test-e2e-tc14 test-e2e-tc15 test-e2e-tc16 test-e2e-tc17 test-e2e-tc18 test-e2e-tc19 test-e2e-tc20 test-e2e-tc21 test-e2e-tc22 test-e2e-tc23 test-e2e-tc24 test-e2e-tc25 test-e2e-tc26 test-e2e-tc27 test-e2e-tc28 test-e2e-tc29 test-e2e-tc30 test-e2e-tc31 test-e2e-tc32 test-e2e-tc33 test-e2e-tc34 test-e2e-kpi-01 test-e2e-kpi-02 test-e2e-kpi-03 test-e2e-kpi-04 test-e2e-kpi-05 test-e2e-kpi-06
+test-e2e: clean-shuffle clean-thehive clean-containers check-disk test-e2e-tc00 test-e2e-tc01 test-e2e-tc02 test-e2e-tc03 test-e2e-tc04 test-e2e-tc05 test-e2e-tc06 test-e2e-tc07 test-e2e-tc08 test-e2e-tc09 test-e2e-tc10 test-e2e-tc11 test-e2e-tc12 test-e2e-tc13 test-e2e-tc14 test-e2e-tc15 test-e2e-tc16 test-e2e-tc17 test-e2e-tc18 test-e2e-tc19 test-e2e-tc20 test-e2e-tc21 test-e2e-tc22 test-e2e-tc23 test-e2e-tc24 test-e2e-tc25 test-e2e-tc26 test-e2e-tc27 test-e2e-tc28 test-e2e-tc29 test-e2e-tc30 test-e2e-tc31 test-e2e-tc32 test-e2e-tc33 test-e2e-tc34 test-e2e-tc35 test-e2e-tc36 test-e2e-tc37 test-e2e-tc38 test-e2e-tc39 test-e2e-tc40 test-e2e-tc41 test-e2e-kpi-01 test-e2e-kpi-02 test-e2e-kpi-03 test-e2e-kpi-04 test-e2e-kpi-05 test-e2e-kpi-06
 	@echo "All E2E tests completed. Generating report..."
 	@$(MAKE) test-e2e-report
 	@echo "All E2E tests completed. Report at reports/e2e/e2e_report.md"
@@ -339,6 +369,8 @@ test-e2e: clean-shuffle clean-thehive clean-containers check-disk test-e2e-tc00 
 test-e2e-report: sync-src
 	@echo "Generating E2E test report (MD + JSON + charts)..."
 	@mkdir -p reports/e2e
+	@docker cp scripts/maintenance/backfill_node_timings.py soar_api:/app/scripts/maintenance/backfill_node_timings.py 2>/dev/null || true
+	-@docker exec soar_api python3 /app/scripts/maintenance/backfill_node_timings.py --size 500 2>/dev/null || true
 	@docker cp scripts/reports/generate_e2e_report.py soar_api:/app/scripts/reports/generate_e2e_report.py 2>/dev/null || true
 	-@docker exec soar_api python3 /app/scripts/reports/generate_e2e_report.py --output-dir /app/reports/e2e
 	-@docker cp soar_api:/app/reports/e2e/. reports/e2e/ 2>/dev/null || true
@@ -1197,6 +1229,24 @@ test-e2e-kpi-06-09: sync-src sync-tests
 	docker exec soar_api python3 -m pytest "tests/e2e/TC-KPI-06/test_service_health.py::TestServiceHealthValidation::test_cortex_analyzer_images_available" -v --no-cov
 
 
+test-e2e-tc40: sync-src sync-tests
+	@echo "Running TC40: extended safety contracts..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-40/test_extended_safety.py" -v
+	@echo "TC40: completed."
+
+test-e2e-tc41: sync-src sync-tests
+	@echo "Running TC41: TAXII 2.1 feed contract..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-41/test_taxii_feed.py" -v
+	@echo "TC41: completed."
+
+test-e2e-destructive: sync-src sync-tests
+	@echo "Running destructive/resilience e2e subset (nightly gate)..."
+	docker exec soar_api python3 -m pytest tests/e2e -v -m "destructive"
+
+test-e2e-non-destructive: sync-src sync-tests
+	@echo "Running non-destructive e2e subset (merge gate)..."
+	docker exec soar_api python3 -m pytest tests/e2e -v -m "not destructive"
+
 test-e2e-new-features: sync-src sync-tests
 	@echo "Running all new SOAR features tests..."
 	docker exec soar_api python3 -m pytest tests/e2e/TC-10 tests/e2e/TC-11 tests/e2e/TC-12 tests/e2e/TC-13 tests/e2e/TC-14 -v
@@ -1315,6 +1365,32 @@ restore:
 	@curl -sf http://localhost:8000/health >/dev/null 2>&1 || { echo "ERROR: API not available. Start services with 'make up' first" && exit 1; }
 	curl -sf -X POST http://localhost:8000/backup/restore -H "Content-Type: application/json" -d '{"backup_name":"$(BACKUP)"}' | python3 -m json.tool
 
+# Observability stack volumes (grafana/loki/tempo/prometheus/s3) —
+# tar+verify each named volume; drill restores into *_drill scratch
+# volumes (proves restorability without touching live data). OBS-140s.
+backup-obs:
+	bash scripts/maintenance/backup_obs_stack.sh backup
+
+drill-obs:
+	bash scripts/maintenance/backup_obs_stack.sh drill $(DIR)
+
+capacity-obs:
+	bash scripts/maintenance/obs_capacity_report.sh
+
+# Core stack volumes (thehive/cortex/shuffle/redis/tenzir anon vols) —
+# same tar+sha256+scratch-drill pattern as backup-obs. CORE-REL-003/004.
+backup-core:
+	bash scripts/maintenance/backup_core_stack.sh backup
+
+drill-core:
+	bash scripts/maintenance/backup_core_stack.sh drill $(DIR)
+
+# Mint/persist an X-Tenzir-Token for TENZIR_WEB_MODE=server (CORE-SEC-003).
+# Idempotent; re-run `make init-webhook` afterwards so the workflow
+# picks the token up in its Tenzir action headers.
+init-tenzir-token:
+	bash scripts/setup/init_tenzir_token.sh
+
 deps:
 	@echo "Installing Python dependencies..."
 	python3 -m pip install -e .
@@ -1343,6 +1419,18 @@ certs:
 	@mkdir -p infra/docker/config/certs runtime/logs
 	@CERT_DIR=infra/docker/config/certs LOG_DIR=runtime/logs bash scripts/setup/gen_certs.sh misp
 	@cat infra/docker/config/certs/misp.crt infra/docker/config/certs/ca.crt > infra/docker/config/certs/misp-full.pem
+
+verify-certs:
+	@echo "Verifying all lab-CA-issued certificates..."
+	@CERT_DIR=infra/docker/config/certs bash scripts/setup/gen_certs.sh --verify
+
+rotate-secrets:
+	@echo "Rotating lab credentials on the running stack (SEC-002)..."
+	@python3 scripts/setup/rotate_secrets.py
+
+secrets-inventory:
+	@echo "Secret-risk matrix (no values printed)..."
+	@python3 scripts/audit/inventory_secrets.py
 
 generate-secrets:
 	@echo "Generating .env.full and Grafana datasources from templates..."
@@ -1390,8 +1478,8 @@ docs-lint:
 	@echo "==> Running docs-lint (all doc linters + doc generation)..."
 	@echo "  1. markdownlint"
 	-@command -v markdownlint >/dev/null 2>&1 && { markdownlint docs/ || echo "  markdownlint reported issues (non-blocking)"; } || echo "  markdownlint not installed, skipping"
-	@echo "  2. link-checker (lychee)"
-	-@command -v lychee >/dev/null 2>&1 && { lychee --quiet docs/ || echo "  lychee reported issues (non-blocking)"; } || echo "  lychee not installed, skipping"
+	@echo "  2. link-checker (lychee — offline internal links + anchors, blocking)"
+	@command -v lychee >/dev/null 2>&1 && lychee --offline --config lychee.toml docs/ || echo "  lychee not installed, skipping"
 	@echo "  3. docs_quality.py (OpenAPI diff + banned patterns + test inventory)"
 	python3 scripts/ci/docs_quality.py
 	@echo "  4. pytest collect-only"
@@ -1561,3 +1649,31 @@ test-e2e-tc34-06: sync-src sync-tests
 test-e2e-tc34-07: sync-src sync-tests
 	@echo "Running TC-34 (7/7): test_matrix_completeness..."
 	docker exec soar_api python3 -m pytest "tests/e2e/TC-34/test_webhook_contract_matrix.py::TestWebhookContractMatrix::test_matrix_completeness" -v
+
+test-e2e-tc35: sync-src sync-tests
+	@echo "Running TC-35: Grafana rendering & metamonitoring suite..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-35/test_grafana_rendering.py" -v
+	@echo "TC-35: completed."
+
+test-e2e-tc36: sync-src sync-tests
+	@echo "Running TC-36: Observability-backend outage resilience (Loki/OpenSearch/Grafana)..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-36/test_observability_outages.py" -v
+	@echo "TC-36: completed."
+
+test-e2e-tc37: sync-src sync-tests
+	@echo "Running TC37: partial degradation (pause+throttle)..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-37/test_partial_degradation.py" -v
+	@echo "TC37: completed."
+
+test-e2e-tc38: sync-src sync-tests
+	@echo "Running TC38: workflow timeout/GC..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-38/test_workflow_timeouts.py" -v
+	@echo "TC38: completed."
+
+test-e2e-tc39: sync-src sync-tests
+	@echo "Running TC39: safety contracts..."
+	docker exec soar_api python3 -m pytest "tests/e2e/TC-39/test_safety_contracts.py" -v
+	@echo "TC39: completed."
+
+
+

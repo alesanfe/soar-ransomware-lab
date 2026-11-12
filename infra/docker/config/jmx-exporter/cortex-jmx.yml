@@ -1,0 +1,11 @@
+# JMX exporter rules for Cortex 3 (Play Framework).
+# java.lang.* beans are exported by the agent's default rules — only
+# app-level (job/analyzer/responder pool) beans are added here.
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  # Cortex job executor pool metrics (dropwizard)
+  - pattern: "metrics<name=(job|analyzer|responder)\\.(\\w+)><>(\\w+)"
+    name: cortex_$1_$2_$3
+    type: GAUGE

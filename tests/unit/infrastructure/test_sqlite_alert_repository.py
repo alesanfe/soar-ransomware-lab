@@ -530,7 +530,7 @@ class TestClose:
     def test_close_is_noop(self, tmp_path):
         """Test that close() is a no-op and does not raise."""
         repo = SqliteAlertRepository(db_path=str(tmp_path / "close_test.db"))
-        repo.close()  # Should not raise
+        assert repo.close() is None  # Should not raise
 
     def test_del_does_not_raise(self, tmp_path):
         """Test that __del__ does not raise during garbage collection."""

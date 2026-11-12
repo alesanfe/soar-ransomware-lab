@@ -12,6 +12,7 @@ it.
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -54,4 +55,15 @@ def update_env_files(
         for key, value in pairs.items():
             content = _apply(content, key, value)
         target.write_text(content, encoding="utf-8")
+        _chmod_600(target)
     return targets
+
+
+def _chmod_600(path: Path) -> None:
+    """Restrict env files holding real secrets to owner-only (ISO A.8 /
+    NIST 800-57 key protection). Best-effort: no-op where POSIX modes do
+    not apply (Windows NTFS) or the chmod fails."""
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass

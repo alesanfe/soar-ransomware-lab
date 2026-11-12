@@ -46,7 +46,10 @@ class TestShuffleForwardPooling:
         client = MagicMock()
         client.post_json = AsyncMock(return_value=(200, {"execution_id": "e1"}))
         cp = MagicMock()
-        cp.get = MagicMock(return_value="http://sh/hook")
+        cp.get = MagicMock(side_effect=lambda k, d=None: (
+            "http://sh/hook"
+            if k in ("ALERT_INGEST_TARGET_URL", "SHUFFLE_WEBHOOK_URL")
+            else (d or "")))
 
         forward = make_shuffle_forward(cp, http_client=client)
         await forward({"alert_id": "a"})
@@ -60,7 +63,10 @@ class TestShuffleForwardPooling:
         )
 
         cp = MagicMock()
-        cp.get = MagicMock(return_value="http://sh/hook")
+        cp.get = MagicMock(side_effect=lambda k, d=None: (
+            "http://sh/hook"
+            if k in ("ALERT_INGEST_TARGET_URL", "SHUFFLE_WEBHOOK_URL")
+            else (d or "")))
         client = MagicMock()
         client.close = AsyncMock()
         forward = make_shuffle_forward(cp, http_client=client)
@@ -74,7 +80,10 @@ class TestShuffleForwardPooling:
         )
 
         cp = MagicMock()
-        cp.get = MagicMock(return_value="http://sh/hook")
+        cp.get = MagicMock(side_effect=lambda k, d=None: (
+            "http://sh/hook"
+            if k in ("ALERT_INGEST_TARGET_URL", "SHUFFLE_WEBHOOK_URL")
+            else (d or "")))
         client = MagicMock()
         client.close = AsyncMock()
         forward = make_shuffle_forward(cp, http_client=client)
@@ -91,12 +100,15 @@ class TestShuffleForwardPooling:
         client = MagicMock()
         client.post_json = AsyncMock(return_value=(200, {}))
         cp = MagicMock()
-        cp.get = MagicMock(return_value="http://sh/hook")
+        cp.get = MagicMock(side_effect=lambda k, d=None: (
+            "http://sh/hook"
+            if k in ("ALERT_INGEST_TARGET_URL", "SHUFFLE_WEBHOOK_URL")
+            else (d or "")))
 
         forward = make_shuffle_forward(cp, http_client=client)
         await forward({"idempotency_key": "k-1"})
         _, kwargs = client.post_json.call_args
-        assert kwargs["headers"]["X-Idempotency-Key"] == "k-1"
+        assert kwargs["payload"]["idempotency_key"] == "k-1"
 
 
 class TestSettingsRedaction:
@@ -640,7 +652,8 @@ class TestShuffleForwardBranches:
 
     def _cp(self, url="http://sh/hook"):
         cp = MagicMock()
-        cp.get = MagicMock(return_value=url)
+        cp.get = MagicMock(side_effect=lambda k, d=None: (
+            url if k in ("ALERT_INGEST_TARGET_URL", "SHUFFLE_WEBHOOK_URL") else (d or "")))
         return cp
 
     def test_resolve_url_from_config(self):
@@ -702,7 +715,8 @@ class TestShuffleForwardBranches:
             "ok": False,
             "status_code": 500,
             "exec_id": None,
-            "error": "HTTP 500",
+            "error_code": "DOWNSTREAM_5XX",
+            "retryable": True,
         }
 
     @pytest.mark.asyncio
@@ -715,10 +729,10 @@ class TestShuffleForwardBranches:
         client.post_json = AsyncMock(return_value=(200, {"id": "inner-id"}))
 
         forward = make_shuffle_forward(self._cp(), http_client=client)
-        out = await forward({})  # no idem key → no header branch
+        out = await forward({})  # no idem key → field is None in envelope
         assert out["exec_id"] == "inner-id"
         _, kwargs = client.post_json.call_args
-        assert "X-Idempotency-Key" not in kwargs["headers"]
+        assert kwargs["payload"]["idempotency_key"] is None
 
     @pytest.mark.asyncio
     async def test_forward_unparseable_body_keeps_exec_id_none(self):
@@ -747,7 +761,9 @@ class TestShuffleForwardBranches:
         out = await forward({"alert_id": "a"})
         assert out["ok"] is False
         assert out["status_code"] is None
-        assert "dial" in out["error"]
+        # B6/ERROR-001: raw exception text never leaves the forwarder.
+        assert out["error_code"] == "FORWARD_ERROR"
+        assert "error" not in out
 
 
 class TestSendAlertUrlResolution:

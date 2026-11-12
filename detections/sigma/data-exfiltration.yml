@@ -1,0 +1,29 @@
+title: Ransomware staging data exfiltration
+id: soar-lab-0004
+status: experimental
+description: Large outbound transfer or known exfil channel usage prior to encryption
+  (double-extortion staging).
+logsource:
+  product: soar-lab
+detection:
+  selection_channel:
+    data.domain|endswith:
+    - mega.nz
+    - transfer.sh
+    - anonfiles.com
+    - .trycloudflare.com
+  selection_bytes:
+    data.bytes_out|gt:
+    - 500000000
+  condition: 1 of selection_*
+level: high
+tags:
+- attack.exfiltration
+- attack.t1048
+- attack.t1567.002
+falsepositives:
+- Scheduled backups or media uploads to the same transfer services
+- Development tunnels on trycloudflare.com used for testing
+references:
+- https://attack.mitre.org/techniques/T1048/
+- https://attack.mitre.org/techniques/T1567/002/

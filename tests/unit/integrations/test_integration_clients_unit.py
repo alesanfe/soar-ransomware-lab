@@ -41,35 +41,37 @@ __all__ = [
 
 class TestCortexClientInit:
     def test_init_defaults(self):
-        client = CortexClient(base_url="http://cortex:9001", api_key="cortexkey")
-        assert "9001" in client.base_url or "localhost" in client.base_url
+        # Non-localhost URLs pass through unchanged — only localhost:*
+        # is rewritten to Docker service names (see _DOCKER_HOST_MAP).
+        client = CortexClient(base_url="https://cortex:9443", api_key="cortexkey")
+        assert client.base_url == "https://cortex:9443"
 
     def test_init_explicit_url_and_key(self):
-        client = CortexClient(base_url="http://cortex:9001", api_key="mykey")
-        assert client.base_url == "http://cortex:9001"
+        client = CortexClient(base_url="https://cortex:9443", api_key="mykey")
+        assert client.base_url == "https://cortex:9443"
 
     def test_init_strips_trailing_slash(self):
-        client = CortexClient(base_url="http://cortex:9001/", api_key="k")
+        client = CortexClient(base_url="https://cortex:9443/", api_key="k")
         assert not client.base_url.endswith("/")
 
 
 class TestCortexClientListAnalyzers:
     def test_list_analyzers_success(self, requests_mock):
         analyzers = [{"id": "a1", "name": "Abuse_Finder"}]
-        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=analyzers)
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.post("https://cortex:9443/api/analyzer/_search", json=analyzers)
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         result = client.list_analyzers()
         assert result == analyzers
 
     def test_list_analyzers_non_list_response(self, requests_mock):
-        requests_mock.post("http://cortex:9001/api/analyzer/_search", json={"error": "oops"})
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.post("https://cortex:9443/api/analyzer/_search", json={"error": "oops"})
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         result = client.list_analyzers()
         assert result == []
 
     def test_list_analyzers_http_error(self, requests_mock):
-        requests_mock.post("http://cortex:9001/api/analyzer/_search", status_code=500)
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.post("https://cortex:9443/api/analyzer/_search", status_code=500)
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         with pytest.raises(IntegrationError):
             client.list_analyzers()
 
@@ -77,9 +79,9 @@ class TestCortexClientListAnalyzers:
 class TestCortexClientRunAnalyzer:
     def test_run_analyzer_success(self, requests_mock):
         job = {"id": "job-1", "status": "Waiting"}
-        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=[])
-        requests_mock.post("http://cortex:9001/api/analyzer/Abuse_Finder_3_0/run", json=job)
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.post("https://cortex:9443/api/analyzer/_search", json=[])
+        requests_mock.post("https://cortex:9443/api/analyzer/Abuse_Finder_3_0/run", json=job)
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         result = client.run_analyzer("Abuse_Finder_3_0", "ip", "1.2.3.4")
         assert result == job
 
@@ -92,27 +94,27 @@ class TestCortexClientRunAnalyzer:
             }
         ]
         job = {"id": "job-9", "status": "Waiting"}
-        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=analyzers)
+        requests_mock.post("https://cortex:9443/api/analyzer/_search", json=analyzers)
         requests_mock.post(
-            "http://cortex:9001/api/analyzer/e646ef883f7e1a6877f73b0bb8027f9f/run", json=job
+            "https://cortex:9443/api/analyzer/e646ef883f7e1a6877f73b0bb8027f9f/run", json=job
         )
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         result = client.run_analyzer("FileInfo_8_0", "hash", "abc123")
         assert result == job
 
     def test_run_analyzer_sends_correct_payload(self, requests_mock):
-        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=[])
-        requests_mock.post("http://cortex:9001/api/analyzer/Abuse_Finder_3_0/run", json={})
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.post("https://cortex:9443/api/analyzer/_search", json=[])
+        requests_mock.post("https://cortex:9443/api/analyzer/Abuse_Finder_3_0/run", json={})
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         client.run_analyzer("Abuse_Finder_3_0", "domain", "evil.com")
         sent = requests_mock.last_request.json()
         assert sent["dataType"] == "domain"
         assert sent["data"] == "evil.com"
 
     def test_run_analyzer_http_error(self, requests_mock):
-        requests_mock.post("http://cortex:9001/api/analyzer/_search", json=[])
-        requests_mock.post("http://cortex:9001/api/analyzer/X/run", status_code=400)
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.post("https://cortex:9443/api/analyzer/_search", json=[])
+        requests_mock.post("https://cortex:9443/api/analyzer/X/run", status_code=400)
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         with pytest.raises(IntegrationError):
             client.run_analyzer("X", "ip", "1.2.3.4")
 
@@ -120,26 +122,26 @@ class TestCortexClientRunAnalyzer:
 class TestCortexClientGetJob:
     def test_get_job_success(self, requests_mock):
         job = {"id": "job-1", "status": "Success"}
-        requests_mock.get("http://cortex:9001/api/job/job-1", json=job)
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.get("https://cortex:9443/api/job/job-1", json=job)
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         assert client.get_job("job-1") == job
 
     def test_get_job_report_success(self, requests_mock):
         report = {"id": "job-1", "report": {"summary": {}}}
-        requests_mock.get("http://cortex:9001/api/job/job-1/report", json=report)
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.get("https://cortex:9443/api/job/job-1/report", json=report)
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         assert client.get_job_report("job-1") == report
 
 
 class TestCortexClientHealthCheck:
     def test_health_check_true(self, requests_mock):
-        requests_mock.get("http://cortex:9001/", json={})
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.get("https://cortex:9443/", json={})
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         assert client.health_check() is True
 
     def test_health_check_false_on_exception(self, requests_mock):
-        requests_mock.get("http://cortex:9001/", exc=ConnectionError("refused"))
-        client = CortexClient(base_url="http://cortex:9001", api_key="k")
+        requests_mock.get("https://cortex:9443/", exc=ConnectionError("refused"))
+        client = CortexClient(base_url="https://cortex:9443", api_key="k")
         assert client.health_check() is False
 
 

@@ -1,0 +1,70 @@
+# Inventario autorizado de flujos de red (CIS 12.2 / NIST 800-207 §3.2).
+# Fuente de verdad de QUÉ puede hablar con QUÉ. Gate:
+# tests/architecture/test_network_perimeter.py::test_flow_inventory_*
+# Regla: todo puerto publicado y todo flujo interno nuevo DEBE registrarse
+# aquí con propósito. El egress no listado es denegado por diseño
+# (EGRESS_GUARD api / internal:true misp_db_net).
+
+published:
+  # host -> servicio (todos loopback-only — gate test_all_published_ports_loopback)
+  - {port_env: API_PORT,              default: 8000,  service: api,                purpose: "API REST + /metrics"}
+  - {port_env: DOCS_PORT,             default: 8086,  service: docs-site,          purpose: "documentación Docusaurus"}
+  - {port_env: WEB_UI_PORT,           default: 8085,  service: web-management,     purpose: "UI de gestión"}
+  - {port_env: HTTP_PORT,             default: 80,    service: nginx,              purpose: "edge redirect→443 + /nginx-health"}
+  - {port_env: HTTPS_PORT,            default: 443,   service: nginx,              purpose: "edge TLS termination"}
+  - {port_env: GRAFANA_TLS_PORT,      default: 8444,  service: grafana,            purpose: "dashboards TLS"}
+  - {port_env: THEHIVE_HOST_PORT,     default: 8100,  service: thehive,            purpose: "case management TLS"}
+  - {port_env: CORTEX_HOST_PORT,      default: 8101,  service: cortex,             purpose: "analyzers TLS"}
+  - {port_env: SHUFFLE_UI_PORT,       default: 8081,  service: shuffle-frontend,   purpose: "workflow editor"}
+  - {port_env: SHUFFLE_API_PORT,      default: 15001, service: shuffle-backend-tls,purpose: "workflow API TLS"}
+  - {port_env: NETWORK_WATCHER_PORT,  default: 15130, service: network-watcher,    purpose: "inventario conexiones live (GET-only)"}
+  - {port_env: TENZIR_API_PORT,       default: 15160, service: tenzir-node,        purpose: "pipeline API TLS+token"}
+  - {port_env: TENZIR_LOG_PORT,       default: 15140, service: tenzir-node,        purpose: "ingest syslog"}
+  - {port_env: MISP_HOST_PORT,        default: 8083,  service: misp,               purpose: "TI platform TLS"}
+  - {port_env: OPENSEARCH_PORT,       default: 19201, service: opensearch,         purpose: "backend Shuffle TLS"}
+  - {port_env: OPENSEARCH_DASHBOARDS_PORT, default: 5602, service: opensearch-dashboards, purpose: "dashboards backend"}
+  - {port_env: KEYCLOAK_PORT,         default: 8071,  service: keycloak,           purpose: "IdP OIDC TLS"}
+  - {port_env: OAUTH2_WEB_PORT,       default: 8072,  service: oauth2-proxy-web,   purpose: "SSO proxy web-management TLS"}
+  - {port_env: OAUTH2_SHUFFLE_PORT,   default: 8073,  service: oauth2-proxy-shuffle, purpose: "SSO proxy shuffle TLS"}
+  - {port_env: ELASTICSEARCH_PORT,    default: 9200,  service: elasticsearch,      purpose: "alert store TLS"}
+  - {port_env: GRAFANA_PORT,          default: 3000,  service: grafana,            purpose: "dashboards (overlay no-TLS)"}
+
+flows:
+  # src -> dst:port proto tls purpose (flujos internos autorizados)
+  - {src: api,              dst: redis,                port: 6379,  proto: tcp, tls: true,  purpose: "cola admisión + idempotencia + rate-limit"}
+  - {src: api,              dst: elasticsearch,        port: 9200,  proto: tcp, tls: true,  purpose: "repositorio alertas"}
+  - {src: api,              dst: shuffle-backend,      port: 5443,  proto: tcp, tls: true,  purpose: "forward webhook firmado (egress allowlist app-level)"}
+  - {src: api,              dst: thehive,              port: 9443,  proto: tcp, tls: true,  purpose: "casos"}
+  - {src: api,              dst: cortex,               port: 9443,  proto: tcp, tls: true,  purpose: "analyzers"}
+  - {src: api,              dst: misp,                 port: 443,   proto: tcp, tls: true,  purpose: "IoC sync (publisher RBAC)"}
+  - {src: api,              dst: keycloak,             port: 8443,  proto: tcp, tls: true,  purpose: "JWKS/OIDC cuando SSO activo"}
+  - {src: shuffle-backend,  dst: opensearch,           port: 9200,  proto: tcp, tls: true,  purpose: "persistencia workflows"}
+  - {src: orborus,          dst: shuffle-backend,      port: 5001,  proto: tcp, tls: false, purpose: "dispatch — plaintext loopback-only (ingress-guard DROP)"}
+  - {src: misp,             dst: misp-db,              port: 3306,  proto: tcp, tls: false, purpose: "persistencia TI — misp_db_net internal (sin egress)"}
+  - {src: misp,             dst: misp-modules,         port: 6666,  proto: tcp, tls: false, purpose: "enrichment modules"}
+  - {src: misp,             dst: redis,                port: 6379,  proto: tcp, tls: true,  purpose: "background jobs"}
+  - {src: oauth2-proxy-web, dst: keycloak,             port: 8443,  proto: tcp, tls: true,  purpose: "OIDC backchannel token+JWKS"}
+  - {src: oauth2-proxy-shuffle, dst: keycloak,         port: 8443,  proto: tcp, tls: true,  purpose: "OIDC backchannel token+JWKS"}
+  - {src: nginx,            dst: "*",                  port: "*",   proto: tcp, tls: true,  purpose: "edge proxy → upstreams con proxy_ssl_verify"}
+  - {src: promtail,         dst: loki,                 port: 3100,  proto: tcp, tls: true,  purpose: "ship logs (redacción secretos pre-ingesta)"}
+  - {src: prometheus,       dst: "*-exporter|api|blackbox", port: "*", proto: tcp, tls: mixed, purpose: "scrapes + synthetic probes"}
+  - {src: blackbox-exporter,dst: "*",                  port: "*",   proto: tcp, tls: mixed, purpose: "probes http/https/tcp_tls + cert expiry"}
+  - {src: otel-collector,   dst: tempo,                port: 4317,  proto: tcp, tls: true,  purpose: "trazas OTLP"}
+  - {src: grafana,          dst: "prometheus|loki|tempo", port: "*", proto: tcp, tls: true, purpose: "datasources"}
+  - {src: network-watcher,  dst: docker-socket-proxy,  port: 2375,  proto: tcp, tls: false, purpose: "inventario contenedores (proxy whitelisted)"}
+  - {src: netns-guardian,   dst: docker.sock,          port: sock,  proto: unix, tls: false, purpose: "reparación sidecars netns (único actor con socket crudo)"}
+  - {src: taxii,            dst: none,                 port: "-",   proto: "-",   tls: "-",   purpose: "ti_net solamente; seed estático, sin upstreams"}
+
+egress_policy:
+  api:              "EGRESS_GUARD iptables — ACCEPT lo+RFC1918+link-local+conntrack → DROP resto"
+  misp_db_net:      "internal:true — sin gateway NAT, egress imposible"
+  shuffle-backend:  "BACKEND_INGRESS — plaintext 5001 solo loopback, resto DROP"
+  soar_net:         "egress NAT permitido (Cortex analyzers, MISP feeds, Orborus pull) — alcance documentado"
+  tls_inspection:   "NO — deliberado: cert pinning + mTLS romperían con MITM; detección vía metadatos (network-watcher, tenzir)"
+
+networks:
+  soar_net:        {subnet: "10.100.0.0/16", purpose: "plano principal servicios"}
+  ti_net:          {purpose: "threat-intel (taxii, es bridge)"}
+  misp_internal:   {purpose: "misp app ↔ misp-modules (egress legítimo de enrichment)"}
+  misp_db_net:     {internal: true, purpose: "misp ↔ misp-db, sin egress"}
+  logging_net:     {purpose: "plano observabilidad"}

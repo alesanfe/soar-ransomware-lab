@@ -14,7 +14,12 @@ services:
     container_name: victim_sim
     labels:
       soar.victim: "true"
+    # VICTIM-EVAL-001: nobody — atomic simulations never needed root.
+    user: "65534:65534"
     command: ["sleep", "infinity"]
+    # VICTIM-EVAL-002: restart policy — a dead victim silently disabled
+    # containment drills until someone noticed.
+    restart: unless-stopped
     networks:
       - soar_net
     deploy:
@@ -22,8 +27,14 @@ services:
         limits:
           memory: 256M
           cpus: "0.5"
+          # VICTIM-EVAL-003: pids bound — a technique gone fork-bomb can't
+          # starve the daemon.
+          pids: 32
     healthcheck:
-      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      # VICTIM-EVAL-004: verify PID 1 is the sleep supervisor — the old
+      # `python -c exit(0)` proved only that python executes, not that
+      # the container payload is alive.
+      test: ["CMD-SHELL", "python3 -c \"import sys;sys.exit(0 if b'sleep' in open('/proc/1/comm','rb').read() else 1)\""]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -33,7 +44,15 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
+      # mode=1777: techniques run as nobody and write sim artifacts to /tmp.
+      - /tmp:rw,exec,mode=1777
+    logging:
+      # VICTIM-EVAL-005: bounded logs — the atomic telemetry stream is
+      # unbounded without rotation.
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   soar_net:

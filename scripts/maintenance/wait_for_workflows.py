@@ -6,16 +6,26 @@ Usage: python wait_for_workflows.py [--expected N] [--timeout 600] [--poll 10]
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 
 import requests
-import urllib3
 
-urllib3.disable_warnings()
+from soar_lab.common.constants import DEFAULT_ELASTICSEARCH_URL, DEFAULT_OPENSEARCH_URL
+from soar_lab.security.tls_config import ca_verify
 
-OS_URL = "http://opensearch:9200"
-ES_URL = "http://elasticsearch:9200"
+OS_URL = os.environ.get("SHUFFLE_OPENSEARCH_URL", DEFAULT_OPENSEARCH_URL)
+ES_URL = os.environ.get("ES_URL", DEFAULT_ELASTICSEARCH_URL)
+OS_AUTH = (
+    os.environ.get("SHUFFLE_OPENSEARCH_USERNAME", os.environ.get("OPENSEARCH_USERNAME", "admin")),
+    os.environ.get("SHUFFLE_OPENSEARCH_PASSWORD", os.environ.get("OPENSEARCH_PASSWORD", "")),
+)
+ES_AUTH = (
+    os.environ.get("ELASTIC_USERNAME", "elastic"),
+    os.environ.get("ELASTIC_PASSWORD", ""),
+)
+_VERIFY = ca_verify()
 
 
 def count_finished() -> tuple[int, int]:
@@ -24,7 +34,8 @@ def count_finished() -> tuple[int, int]:
         r = requests.post(
             f"{OS_URL}/workflowexecution/_count",
             json={"query": {"terms": {"status": ["FINISHED", "ABORTED", "FAILED"]}}},
-            verify=False,
+            auth=OS_AUTH,
+            verify=_VERIFY,
             timeout=15,
         )
         if r.status_code != 200:
@@ -36,7 +47,8 @@ def count_finished() -> tuple[int, int]:
     try:
         r2 = requests.get(
             f"{OS_URL}/workflowexecution/_count",
-            verify=False,
+            auth=OS_AUTH,
+            verify=_VERIFY,
             timeout=15,
         )
         if r2.status_code != 200:
@@ -51,7 +63,7 @@ def count_finished() -> tuple[int, int]:
 def count_metrics() -> int:
     """Return number of documents in soar-metrics (ES)."""
     try:
-        r = requests.get(f"{ES_URL}/soar-metrics/_count", timeout=15)
+        r = requests.get(f"{ES_URL}/soar-metrics/_count", auth=ES_AUTH, verify=_VERIFY, timeout=15)
         if r.status_code == 200:
             return r.json().get("count", 0)
     except Exception:

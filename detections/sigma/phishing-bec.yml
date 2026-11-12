@@ -1,0 +1,30 @@
+title: Phishing / BEC delivery indicators
+id: soar-lab-0003
+status: experimental
+description: Alerts matching phishing or business-email-compromise patterns (spoofed
+  sender, lookalike domain, credential-harvest URL).
+logsource:
+  product: soar-lab
+detection:
+  selection_domain:
+    data.domain|contains:
+    - login-
+    - -verify
+    - secure-update
+  selection_url:
+    data.url|contains:
+    - credential
+    - password-reset
+    - account-verify
+  condition: 1 of selection_*
+level: high
+tags:
+- attack.initial_access
+- attack.t1566
+- attack.t1534
+falsepositives:
+- Legitimate password-reset or account-verify flows matching keyword patterns
+- Vendor domains containing login- or secure-update tokens
+references:
+- https://attack.mitre.org/techniques/T1566/
+- https://attack.mitre.org/techniques/T1534/

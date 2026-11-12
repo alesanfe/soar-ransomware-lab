@@ -1,0 +1,18 @@
+# Codecov configuration — makes the coverage ratchet explicit (ISO 29119 /
+# SAMM verification). Without this file Codecov applies defaults; pinning
+# them prevents silent drift and documents intent.
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%   # a PR may regress total coverage by at most 1pt
+    patch:
+      default:
+        target: 80%     # new code must meet the project floor
+        threshold: 5%   # tolerance for edge paths hard to reach in unit tests
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+github_checks:
+  annotations: true

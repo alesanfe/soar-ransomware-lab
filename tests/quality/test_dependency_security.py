@@ -66,15 +66,31 @@ def _parse_vulns(data: dict) -> list[dict]:
     return vulns
 
 
+@pytest.fixture(scope="module")
+def env_audit() -> dict:
+    """Single env-wide pip-audit per module — the subprocess bootstraps a
+    venv and queries OSV/PyPI, so calling it per-test quadrupled runtime."""
+    return _run_pip_audit()
+
+
+@pytest.fixture(scope="module")
+def lock_audit() -> dict:
+    """Single pip-audit of requirements.lock per module."""
+    requirements = REQUIREMENTS_LOCK if REQUIREMENTS_LOCK.exists() else None
+    if requirements is None:
+        pytest.skip("requirements.lock not found — cannot audit production deps")
+    return _run_pip_audit(requirements=requirements)
+
+
 @pytest.mark.unit
 @pytest.mark.quality
 class TestDependencySecurity:
     """Dependency vulnerability checks."""
 
-    def test_no_critical_vulnerabilities(self):
+    def test_no_critical_vulnerabilities(self, env_audit):
         """Pip-audit should find 0 critical/high vulnerabilities in direct
         deps."""
-        data = _run_pip_audit()
+        data = env_audit
         vulns = _parse_vulns(data)
         print(f"\npip-audit: {len(vulns)} total vulnerabilities found")
         if vulns:
@@ -85,9 +101,9 @@ class TestDependencySecurity:
         assert isinstance(data, dict), "pip-audit output should be a dict"
         assert "dependencies" in data, "pip-audit output should have 'dependencies' key"
 
-    def test_vulnerabilities_grouped_by_package(self):
+    def test_vulnerabilities_grouped_by_package(self, env_audit):
         """Report vulnerabilities grouped by package — informational."""
-        data = _run_pip_audit()
+        data = env_audit
         vulns = _parse_vulns(data)
         by_pkg: dict[str, list[dict]] = defaultdict(list)
         for v in vulns:
@@ -102,9 +118,9 @@ class TestDependencySecurity:
             vulns
         ), "Grouped count does not match total"
 
-    def test_all_vulnerabilities_have_fix_or_are_known(self):
+    def test_all_vulnerabilities_have_fix_or_are_known(self, env_audit):
         """Check if vulnerabilities have fix versions — informational."""
-        data = _run_pip_audit()
+        data = env_audit
         vulns = _parse_vulns(data)
         without_fix = [v for v in vulns if not v["fix_versions"]]
         with_fix = [v for v in vulns if v["fix_versions"]]
@@ -127,16 +143,17 @@ class TestDependencySecurity:
         ships in containers), not the whole developer environment —
         env-only tooling (virtualenv, sphinx, jupyter...) is reported
         informationally by the other tests in this class."""
+    def test_vulnerability_count_below_threshold(self, lock_audit, env_audit):
         requirements = REQUIREMENTS_LOCK if REQUIREMENTS_LOCK.exists() else None
         if requirements is None:
             pytest.skip("requirements.lock not found — cannot audit production deps")
-        data = _run_pip_audit(requirements=requirements)
+        data = lock_audit
         vulns = _parse_vulns(data)
         thresholds = _load_thresholds()
         max_vulns = thresholds.get("max_dependency_vulnerabilities")
         assert max_vulns is not None, "max_dependency_vulnerabilities threshold must be configured"
         total = len(vulns)
-        env_total = len(_parse_vulns(_run_pip_audit()))
+        env_total = len(_parse_vulns(env_audit))
         print(
             f"\nProduction vulnerabilities: {total} (threshold: {max_vulns}); "
             f"full env (informational): {env_total}"

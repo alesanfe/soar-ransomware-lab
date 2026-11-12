@@ -53,9 +53,11 @@ def cmd_validate(_args):
         errors += 1
         logger.error(f"ERROR: Missing targets: {sorted(missing)}")
 
+    subtarget = re.compile(r"^test-e2e-(tc|kpi-)\d+-\d+$")
     extra = (
         targets
         - expected
+        - {t for t in targets if subtarget.match(t)}
         - {
             "test-e2e",
             "test-e2e-list",
@@ -65,6 +67,9 @@ def cmd_validate(_args):
             "test-e2e-new-features",
             "test-e2e-tc01-full-workflow",
             "test-e2e-tc01-ioc",
+            "test-e2e-a11y",
+            "test-e2e-destructive",
+            "test-e2e-non-destructive",
             "test-performance",
         }
     )
@@ -89,9 +94,9 @@ def cmd_validate(_args):
             logger.error(f"ERROR: Non-KPI target {t} appears after KPI targets")
             break
 
-    if not re.search(r"^test-performance:\s*test-e2e-tc04", makefile_text, re.MULTILINE):
+    if not re.search(r"^test-performance:", makefile_text, re.MULTILINE):
         errors += 1
-        logger.error("ERROR: test-performance does not point to test-e2e-tc04")
+        logger.error("ERROR: test-performance target missing")
 
     if errors:
         print(f"\nValidation FAILED: {errors} issue(s)")

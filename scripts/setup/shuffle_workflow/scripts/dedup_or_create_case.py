@@ -96,10 +96,22 @@ else:
                 {
                     "success": False,
                     "deduped": False,
-                    "body": {},
+                    # body._id must always exist — downstream nodes resolve
+                    # `$thehive_create_case.message.body._id`; a missing key
+                    # raises shuffle_variable_error BEFORE their code runs.
+                    "body": {"_id": ""},
                     "error": f"HTTP {exc.code}: {detail}",
                 }
             )
         )
     except Exception as exc:
-        print(json.dumps({"success": False, "deduped": False, "body": {}, "error": str(exc)}))
+        print(
+            json.dumps(
+                {
+                    "success": False,
+                    "deduped": False,
+                    "body": {"_id": ""},
+                    "error": str(exc),
+                }
+            )
+        )

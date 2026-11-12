@@ -111,6 +111,14 @@ def _es_basic_auth() -> str:
     return base64.b64encode(f"{config.ES_USER}:{config.ES_PASS}".encode()).decode()
 
 
+def _tenzir_headers() -> str:
+    """Tenzir REST headers — X-Tenzir-Token required in upstream mode."""
+    hdr = "Content-Type: application/json"
+    if config.TENZIR_TOKEN:
+        hdr += f"\nX-Tenzir-Token: {config.TENZIR_TOKEN}"
+    return hdr
+
+
 def _cortex_basic_auth() -> str:
     """Build the Cortex Basic auth header value from the latest .env.full."""
     from .credentials import fetch_password_from_env
@@ -118,6 +126,61 @@ def _cortex_basic_auth() -> str:
     cortex_pass = fetch_password_from_env("CORTEX_ADMIN_PASSWORD", config.CORTEX_ADMIN_PASS)
     cortex_user = fetch_password_from_env("CORTEX_ADMIN_USER", config.CORTEX_ADMIN_USER)
     return base64.b64encode(f"{cortex_user}:{cortex_pass}".encode()).decode()
+
+
+def cortex_guarded_action(
+    cortex_basic: str,
+    app_id_shuffle_tools: str,
+    aid: str,
+    label: str,
+    analyzer_id: str,
+    field_token: str,
+    dtype: str,
+    position: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a guarded Cortex analyzer node (execute_python + cortex_run_guarded).
+
+    Alerts can arrive with empty observables (edge cases, partial payloads);
+    raw http nodes then fired analyzer jobs that deterministically failed
+    (RDAP on domain="", hash="" on static nodes — DT-01 / TC-KPI-06).
+    The guarded script skips the call on empty input and prints the same
+    {status, body} envelope the http app produced, so $node consumers keep
+    working (they unwrap the {"success","message"} python-result envelope).
+    """
+    code = (
+        script_loader.load_script("cortex_run_guarded")
+        .replace("__ANAME__", label)
+        .replace(
+            "__ANALYZER_URL__",
+            f"{config.CORTEX_INT}/api/analyzer/{analyzer_id}/run",
+        )
+        .replace("__AUTH__", cortex_basic)
+        .replace("__DTYPE__", dtype)
+        .replace("__FIELD_TOKEN__", field_token)
+    )
+    return execute_python_action(aid, label, code, position, app_id_shuffle_tools)
+
+
+def _cortex_guarded(
+    ctx: WorkflowContext,
+    aid: str,
+    label: str,
+    analyzer_id: str,
+    field_token: str,
+    dtype: str,
+    position: dict[str, Any],
+) -> dict[str, Any]:
+    """Thin wrapper passing the WorkflowContext through to cortex_guarded_action."""
+    return cortex_guarded_action(
+        ctx.cortex_basic,
+        ctx.app_id_shuffle_tools,
+        aid,
+        label,
+        analyzer_id,
+        field_token,
+        dtype,
+        position,
+    )
 
 
 def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
@@ -129,7 +192,12 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
         execute_python_action(
             ACT_NORMALIZE,
             "normalize_inputs",
-            load("normalize_inputs"),
+            load("normalize_inputs")
+            .replace("__ALERT_SIGNING_KEY__", config.ALERT_SIGNING_KEY)
+            .replace("__ALERT_KEY_ID__", config.ALERT_SIGNING_KEY_ID)
+            .replace("__CALLBACK_TOKEN__", config.CALLBACK_SERVICE_TOKEN)
+            .replace("__CALLBACK_HMAC_KEY__", config.CALLBACK_HMAC_KEY)
+            .replace("__CALLBACK_KEY_ID__", config.CALLBACK_HMAC_KEY_ID),
             pos(250, 0),
             ctx.app_id_shuffle_tools,
         ),
@@ -237,47 +305,25 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             pos(300, -250),
             app_id=ctx.app_id_http,
         ),
-        # ── Node 5. Cortex: hash job ─────────────────────────────────────────
-        action(
+        # ── Node 5. Cortex: hash job (guarded — skips on empty hash) ────────
+        _cortex_guarded(
+            ctx,
             ACT_CORTEX_HASH,
             "cortex_hash",
-            "http",
-            "1.4.0",
-            "POST",
-            [
-                param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.hash_analyzer_id}/run"),
-                param(
-                    "headers",
-                    "Content-Type: application/json\nAuthorization: Basic " + ctx.cortex_basic,
-                ),
-                param(
-                    "body", '{"data": "$exec.hash", "attributes": {"dataType": "hash", "tlp": 2}}'
-                ),
-                param("timeout", "120"),
-            ],
+            ctx.hash_analyzer_id,
+            "$exec.hash",
+            "hash",
             pos(950, -200),
-            app_id=ctx.app_id_http,
         ),
-        # ── Node 12. Cortex: hash with Virusshare ────────────────────────────
-        action(
+        # ── Node 12. Cortex: hash with Virusshare (guarded) ────────────────
+        _cortex_guarded(
+            ctx,
             ACT_CORTEX_HASH_VIRUSSHARE,
             "cortex_hash_virusshare",
-            "http",
-            "1.4.0",
-            "POST",
-            [
-                param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.hash_virusshare_id}/run"),
-                param(
-                    "headers",
-                    "Content-Type: application/json\nAuthorization: Basic " + ctx.cortex_basic,
-                ),
-                param(
-                    "body", '{"data": "$exec.hash", "attributes": {"dataType": "hash", "tlp": 2}}'
-                ),
-                param("timeout", "120"),
-            ],
+            ctx.hash_virusshare_id,
+            "$exec.hash",
+            "hash",
             pos(950, -300),
-            app_id=ctx.app_id_http,
         ),
         # ── Node 5b. verify_cortex_hash ──────────────────────────────────────
         execute_python_action(
@@ -287,110 +333,55 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             pos(990, -200),
             ctx.app_id_shuffle_tools,
         ),
-        # ── Node 6. Cortex: IP job ───────────────────────────────────────────
-        action(
+        # ── Node 6. Cortex: IP job (guarded — skips on empty src_ip) ────────
+        _cortex_guarded(
+            ctx,
             ACT_CORTEX_IP,
             "cortex_ip",
-            "http",
-            "1.4.0",
-            "POST",
-            [
-                param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_analyzer_id}/run"),
-                param(
-                    "headers",
-                    "Content-Type: application/json\nAuthorization: Basic " + ctx.cortex_basic,
-                ),
-                param(
-                    "body", '{"data": "$exec.src_ip", "attributes": {"dataType": "ip", "tlp": 2}}'
-                ),
-                param("timeout", "120"),
-            ],
+            ctx.ip_analyzer_id,
+            "$exec.src_ip",
+            "ip",
             pos(950, 0),
-            app_id=ctx.app_id_http,
         ),
-        # ── Node 14. Cortex: IP with DShield ──────────────────────────────────
-        action(
+        # ── Node 14. Cortex: IP with DShield (guarded) ───────────────────────
+        _cortex_guarded(
+            ctx,
             ACT_CORTEX_IP_DSHIELD,
             "cortex_ip_dshield",
-            "http",
-            "1.4.0",
-            "POST",
-            [
-                param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_dshield_id}/run"),
-                param(
-                    "headers",
-                    "Content-Type: application/json\nAuthorization: Basic " + ctx.cortex_basic,
-                ),
-                param(
-                    "body", '{"data": "$exec.src_ip", "attributes": {"dataType": "ip", "tlp": 2}}'
-                ),
-                param("timeout", "120"),
-            ],
+            ctx.ip_dshield_id,
+            "$exec.src_ip",
+            "ip",
             pos(950, 100),
-            app_id=ctx.app_id_http,
         ),
-        # ── Node 17. Cortex: IP with IP-API ──────────────────────────────────
-        action(
+        # ── Node 17. Cortex: IP with IP-API (guarded) ────────────────────────
+        _cortex_guarded(
+            ctx,
             ACT_CORTEX_IP_IPAPI,
             "cortex_ip_ipapi",
-            "http",
-            "1.4.0",
-            "POST",
-            [
-                param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_ipapi_id}/run"),
-                param(
-                    "headers",
-                    "Content-Type: application/json\nAuthorization: Basic " + ctx.cortex_basic,
-                ),
-                param(
-                    "body", '{"data": "$exec.src_ip", "attributes": {"dataType": "ip", "tlp": 2}}'
-                ),
-                param("timeout", "120"),
-            ],
+            ctx.ip_ipapi_id,
+            "$exec.src_ip",
+            "ip",
             pos(950, 200),
-            app_id=ctx.app_id_http,
         ),
-        # ── Node 15. Cortex: IP with Mnemonic pDNS Public ─────────────────────
-        action(
+        # ── Node 15. Cortex: IP with Mnemonic pDNS Public (guarded) ─────────
+        _cortex_guarded(
+            ctx,
             ACT_CORTEX_IP_MNEMONIC_PDNS,
             "cortex_ip_mnemonic_pdns",
-            "http",
-            "1.4.0",
-            "POST",
-            [
-                param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_mnemonic_pdns_id}/run"),
-                param(
-                    "headers",
-                    "Content-Type: application/json\nAuthorization: Basic " + ctx.cortex_basic,
-                ),
-                param(
-                    "body", '{"data": "$exec.src_ip", "attributes": {"dataType": "ip", "tlp": 2}}'
-                ),
-                param("timeout", "120"),
-            ],
+            ctx.ip_mnemonic_pdns_id,
+            "$exec.src_ip",
+            "ip",
             pos(950, 300),
-            app_id=ctx.app_id_http,
         ),
-        # ── Node 16. Cortex: IP with GoogleDNS ───────────────────────────────
-        action(
+        # ── Node 16. Cortex: IP with GoogleDNS (guarded) ────────────────────
+        _cortex_guarded(
+            ctx,
             ACT_CORTEX_IP_GOOGLEDNS,
             "cortex_ip_googledns",
-            "http",
-            "1.4.0",
-            "POST",
-            [
-                param("url", f"{config.CORTEX_INT}/api/analyzer/{ctx.ip_googledns_id}/run"),
-                param(
-                    "headers",
-                    "Content-Type: application/json\nAuthorization: Basic " + ctx.cortex_basic,
-                ),
-                param(
-                    "body", '{"data": "$exec.src_ip", "attributes": {"dataType": "ip", "tlp": 2}}'
-                ),
-                param("timeout", "120"),
-            ],
+            ctx.ip_googledns_id,
+            "$exec.src_ip",
+            "ip",
             pos(950, 400),
-            app_id=ctx.app_id_http,
         ),
         # ── Node 6b. verify_cortex_ip ────────────────────────────────────────
         execute_python_action(
@@ -422,7 +413,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
                     ' "to_ids": true}, {"type": "ip-dst",'
                     ' "value": "$exec.src_ip", "to_ids": true}]}',
                 ),
-                param("verify", "false"),
+                param("verify", "true"),
                 param("timeout", "180"),
             ],
             pos(940, 200),
@@ -443,7 +434,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
                     '{"returnFormat": "json", "value": "$exec.hash",'
                     ' "type": ["md5", "sha1", "sha256"], "limit": 10}',
                 ),
-                param("verify", "false"),
+                param("verify", "true"),
                 param("timeout", "180"),
             ],
             pos(950, 200),
@@ -479,6 +470,9 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
                     f"Content-Type: application/json\nAuthorization: Basic {ctx.es_basic}",
                 ),
                 param("body", "$build_es_json.message"),
+                # Internal lab PKI — the worker trust store lacks the lab CA
+                # (same convention as the MISP http actions below).
+                param("verify", "true"),
                 param("timeout", "180"),
             ],
             pos(1200, -100),
@@ -577,6 +571,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
                     f"Content-Type: application/json\nAuthorization: Basic {ctx.es_basic}",
                 ),
                 param("body", "$build_metrics_json.message"),
+                param("verify", "true"),
                 param("timeout", "180"),
             ],
             pos(1600, 0),
@@ -591,7 +586,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             "POST",
             [
                 param("url", f"{config.TENZIR_URL}/api/v0/pipeline/create"),
-                param("headers", "Content-Type: application/json"),
+                param("headers", _tenzir_headers()),
                 param(
                     "body",
                     '{"definition": "export | where hostname == \\"$exec.hostname\\" or '
@@ -599,7 +594,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
                     '"name": "tenzir-$exec.alert_id", "hidden": true, "ttl": "30s", '
                     '"autostart": {"created": true}}',
                 ),
-                param("verify", "false"),
+                param("verify", "true"),
                 param("timeout", "30"),
             ],
             pos(1600, -200),
@@ -614,13 +609,13 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             "POST",
             [
                 param("url", f"{config.TENZIR_URL}/api/v0/serve"),
-                param("headers", "Content-Type: application/json"),
+                param("headers", _tenzir_headers()),
                 param(
                     "body",
                     '{"serve_id": "$exec.alert_id", "continuation_token": null, '
                     '"timeout": "3s", "max_events": 100}',
                 ),
-                param("verify", "false"),
+                param("verify", "true"),
                 param("timeout", "30"),
             ],
             pos(1600, -150),
@@ -636,10 +631,10 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
             [
                 param(
                     "url",
-                    "http://network-watcher:8080/api/connections?ip=$exec.src_ip&limit=50",
+                    "http://network-watcher:8080/api/connections?ip=$normalize_inputs.message.src_ip_enc&limit=50",
                 ),
                 param("headers", "Content-Type: application/json"),
-                param("verify", "false"),
+                param("verify", "true"),
                 param("timeout", "180"),
             ],
             pos(1600, -100),
@@ -658,8 +653,8 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
                     "headers",
                     "Content-Type: application/json"
                     + (
-                        f"\nX-Service-Token: {config.INTERNAL_SERVICE_TOKEN}"
-                        if config.INTERNAL_SERVICE_TOKEN
+                        f"\nX-Service-Token: {config.CACHE_SERVICE_TOKEN}"
+                        if config.CACHE_SERVICE_TOKEN
                         else ""
                     ),
                 ),
@@ -667,7 +662,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
                     "body",
                     '{"key": "ioc:$exec.hash", "value": "$exec.alert_id", "ttl_seconds": 3600}',
                 ),
-                param("verify", "false"),
+                param("verify", "true"),
                 param("timeout", "180"),
             ],
             pos(1600, 100),
@@ -689,7 +684,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
                     f"&start={ctx.loki_start_ns}&end={ctx.loki_end_ns}",
                 ),
                 param("headers", "Content-Type: application/json"),
-                param("verify", "false"),
+                param("verify", "true"),
                 param("timeout", "180"),
             ],
             pos(1600, 200),
@@ -739,7 +734,7 @@ def build_actions(ctx: WorkflowContext) -> list[dict[str, Any]]:
         execute_python_action(
             ACT_CONTAINMENT,
             "containment",
-            load("containment").replace("__SERVICE_TOKEN__", config.INTERNAL_SERVICE_TOKEN),
+            load("containment").replace("__SERVICE_TOKEN__", config.CONTAINMENT_SERVICE_TOKEN),
             pos(1500, -200),
             ctx.app_id_shuffle_tools,
         ),

@@ -18,3 +18,4 @@ no aspiracionales. Cada ADR enlaza el BUG/commit que lo materializó.
 | [0011](0011-taxii-lite-scope.md) | TAXII-lite read-only sobre STIX (no servidor completo) | Aceptado (INT-01) |
 | [0012](0012-single-node-opensearch.md) | OpenSearch single-node — limitación estructural | Aceptado |
 | [0013](0013-uvicorn-workers.md) | Uvicorn multi-worker opt-in con stores Redis compartidos | Aceptado |
+| [0014](0014-observability-stack-hardening.md) | S3 IAM por componente, s3-init fail-closed, OTel memory-limited, renderer TLS residual, excepciones de capacidades | Aceptado |

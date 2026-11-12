@@ -32,7 +32,7 @@ jobs:
   quality-checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -54,7 +54,7 @@ jobs:
           mkdir -p reports/holistic
           python scripts/reports/holistic_review.py --output-dir reports/holistic
       - name: Upload quality reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: quality-reports
           path: |
@@ -66,7 +66,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -79,7 +79,7 @@ jobs:
         run: |
           python -m pytest tests/unit/ --cov=src.soar_lab --cov-report=html:reports/coverage --cov-report=xml
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: coverage-report
           path: |
@@ -90,7 +90,7 @@ jobs:
   mutation-testing:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -99,7 +99,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[test,quality]"
-          pip install mutmut
+          pip install mutmut==3.8.1
       - name: Run mutation testing
         run: |
           mkdir -p reports/mutmut
@@ -107,7 +107,7 @@ jobs:
           mutmut results --html reports/mutmut/mutation_report.html || true
           mutmut junitxml > reports/mutmut/mutation_report.xml || true
       - name: Upload mutation report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: mutation-report
           path: reports/mutmut/

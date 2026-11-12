@@ -10,18 +10,17 @@ index to the decision-explainer use case.
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import requests
-import urllib3
 
 from soar_lab.common.constants import CONTENT_TYPE_JSON, HEADER_CONTENT_TYPE
 from soar_lab.common.opensearch import id_terms_filter
 from soar_lab.config.logging import get_logger
+from soar_lab.security.tls_config import ca_verify
 
 logger = get_logger(__name__)
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 EXECUTION_INDEX = "workflowexecution*"
 
@@ -32,6 +31,13 @@ class ShuffleExecutionIndex:
     def __init__(self, os_url: str, http: Any = None) -> None:
         self._os_url = os_url.rstrip("/")
         self._http = http if http is not None else requests
+        user = os.environ.get("SHUFFLE_OPENSEARCH_USERNAME") or os.environ.get(
+            "OPENSEARCH_USERNAME", "admin"
+        )
+        pw = os.environ.get("SHUFFLE_OPENSEARCH_PASSWORD") or os.environ.get(
+            "OPENSEARCH_PASSWORD", ""
+        )
+        self._auth = (user, pw) if pw else None
 
     def _search(self, body: dict[str, Any]) -> list[dict[str, Any]]:
         try:
@@ -40,7 +46,8 @@ class ShuffleExecutionIndex:
                 json=body,
                 headers={HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON},
                 timeout=30,
-                verify=False,
+                auth=self._auth,
+                verify=ca_verify(),
             )
         except Exception as exc:
             logger.warning("Execution-index search failed: %s", exc)

@@ -355,7 +355,7 @@
                 <button class="btn btn-secondary" data-action="toggleLogs">
                     <span id="logsToggleText">Start Live Logs</span>
                 </button>
-                <select class="log-select" id="logLevel">
+                <select class="log-select" id="logLevel" aria-label="Log level filter">
                     <option value="all">All Levels</option>
                     <option value="error">Errors Only</option>
                     <option value="warning">Warnings & Errors</option>
@@ -375,7 +375,7 @@
                 <button class="btn btn-primary" data-action="createBackup">Create Backup</button>
                 <button class="btn btn-secondary" data-action="listBackups">List Backups</button>
                 <div class="restore-section">
-                    <select class="backup-select" id="backupList">
+                    <select class="backup-select" id="backupList" aria-label="Backup to restore">
                         <option value="">Select backup...</option>
                     </select>
                     <button class="btn btn-warning" data-action="restoreBackup">Restore</button>

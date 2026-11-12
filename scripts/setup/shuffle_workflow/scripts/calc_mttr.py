@@ -30,7 +30,12 @@ try:
         start_time = dt.timestamp()
     else:
         start_time = float(webhook_timestamp)
-    mttr_seconds = time.time() - start_time
+        if start_time > 1e11:
+            start_time = start_time / 1000.0
+    now = time.time()
+    if start_time > now:
+        start_time = now
+    mttr_seconds = max(0.0, now - start_time)
 except Exception:
     mttr_seconds = 0
 mttr = str(round(mttr_seconds, 2))
@@ -50,9 +55,21 @@ def _parse(raw):
     if not raw or raw.startswith("$"):
         return None
     try:
-        return json.loads(raw)
+        obj = json.loads(raw)
     except Exception:
         return None
+    # execute_python results wrap stdout in {"success","message"} — unwrap so
+    # guarded cortex nodes keep the {status,body} shape the http app produced.
+    if isinstance(obj, dict) and "success" in obj and "message" in obj:
+        m = obj["message"]
+        if isinstance(m, dict):
+            return m
+        if isinstance(m, str):
+            try:
+                return json.loads(m.strip())
+            except Exception:
+                return obj
+    return obj
 
 
 def _safe_str(v, max_len=200):

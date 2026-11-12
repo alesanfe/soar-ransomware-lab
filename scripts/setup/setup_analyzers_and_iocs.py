@@ -22,6 +22,7 @@ import warnings
 import requests
 from dotenv import dotenv_values
 
+from soar_lab.security.tls_config import ca_verify
 from soar_lab.common.constants import (
     AUTH_BASIC_PREFIX,
     AUTH_BEARER_PREFIX,
@@ -43,7 +44,7 @@ if not _env:
 # The API container is created before reset_cortex.py updates .env.full, so its
 # environment variables are stale. Prefer the mounted .env.full file, which is
 # the authoritative source of the credentials and keys generated during setup.
-CORTEX_URL = _env.get("CORTEX_URL") or os.environ.get("CORTEX_URL", "http://cortex:9001")
+CORTEX_URL = _env.get("CORTEX_URL") or os.environ.get("CORTEX_URL", "https://cortex:9443")
 CORTEX_API_KEY = _env.get("CORTEX_API_KEY", "") or os.environ.get("CORTEX_API_KEY", "")
 CORTEX_USER = (
     _env.get("CORTEX_ADMIN_USER")
@@ -114,7 +115,7 @@ def misp_request(method, path, json_data=None, retries=10, delay=5, timeout=30):
     for attempt in range(1, retries + 1):
         try:
             resp = requests.request(
-                method, url, headers=headers, json=json_data, verify=False, timeout=timeout
+                method, url, headers=headers, json=json_data, verify=ca_verify(), timeout=timeout
             )
             if resp.status_code == 403 and "already" not in resp.text.lower():
                 logger.warning(

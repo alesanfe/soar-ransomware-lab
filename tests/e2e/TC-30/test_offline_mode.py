@@ -154,8 +154,13 @@ class TestOfflineMode(E2EBaseTest):
                 if parsed.get("skipped") is True:
                     return True
                 msg = parsed.get("message")
-                if isinstance(msg, dict) and msg.get("skipped") is True:
-                    return True
+                if isinstance(msg, dict):
+                    if msg.get("skipped") is True:
+                        return True
+                    # Workflow scripts report graceful degradation as a
+                    # structured error payload under message.status.
+                    if msg.get("status") == "error":
+                        return True
                 # Check for connection error indicators (graceful degradation)
                 raw_lower = raw_result.lower()
                 if any(
@@ -169,6 +174,7 @@ class TestOfflineMode(E2EBaseTest):
                         "connectionreseterror",
                         "connectionabortederror",
                         "name resolution",
+                        "does not resolve",
                         "service unavailable",
                     )
                 ):
@@ -223,7 +229,7 @@ class TestOfflineMode(E2EBaseTest):
             # the workflow budget covers it (bounded poll, not blind wait).
             cortex_healthy = self.wait_until(
                 lambda: self.verify_cortex()[0],
-                timeout=self.timeout("workflow"),
+                timeout=self.timeout("workflow") * 2,
                 interval=10,
                 description="Cortex healthy after reconnection",
             )

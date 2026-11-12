@@ -523,8 +523,3 @@ class TestLoadPerformance:
         # Clean up
         if results_file.exists():
             results_file.unlink()
-
-    def test_load_test_integration(self):
-        """Integration test for load testing."""
-        # Test runs regardless of external services availability
-        # Skip by default to avoid dependency on external services

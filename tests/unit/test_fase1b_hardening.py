@@ -150,7 +150,9 @@ class TestIdempotencyHeader:
         forward = sf.make_shuffle_forward(CP())
         result = await forward({"alert_id": "a1", "idempotency_key": "fp:abc"})
         assert result["ok"] is True
-        assert _FakeHttpClient.captured["headers"]["X-Idempotency-Key"] == "fp:abc"
+        # HMAC-002: idempotency travels in the body envelope — Shuffle
+        # hooks do not expose HTTP headers to the workflow.
+        assert _FakeHttpClient.captured["payload"]["idempotency_key"] == "fp:abc"
 
     async def test_forward_falls_back_to_alert_id(self, monkeypatch):
         import soar_lab.infrastructure.messaging.shuffle_forward as sf
@@ -163,7 +165,8 @@ class TestIdempotencyHeader:
 
         forward = sf.make_shuffle_forward(CP())
         await forward({"alert_id": "a-only"})
-        assert _FakeHttpClient.captured["headers"]["X-Idempotency-Key"] == "a-only"
+        # falls back to alert_id inside the envelope
+        assert _FakeHttpClient.captured["payload"]["idempotency_key"] == "a-only"
 
 
 # ---------------------------------------------------------------------
@@ -280,9 +283,11 @@ class TestRbacEnforcement:
         assert client.get("/analytics/metrics", headers=_HDR).status_code == 200
         assert client.post("/api/v1/alerts", headers=_HDR).status_code == 403
 
-    def test_missing_role_claim_is_legacy_admin(self):
+    def test_missing_role_claim_is_readonly_not_admin(self):
+        # AUTH-004: a JWT with no role claim resolves to READONLY —
+        # the old "legacy => admin" backcompat granted /backup/create.
         client, _ = _rbac_app(None)
-        assert client.post("/backup/create", headers=_HDR).status_code == 200
+        assert client.post("/backup/create", headers=_HDR).status_code == 403
 
     def test_any_role_can_bootstrap_ws_ticket(self):
         client, _ = _rbac_app("viewer")

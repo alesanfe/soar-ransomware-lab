@@ -25,15 +25,37 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _unwrap(obj):
+    """execute_python results wrap stdout in {"success": bool, "message": <json>}.
+
+    Unwrap one level so guarded nodes (cortex_run_guarded) feed the same
+    {status, body} shape the old http actions produced.
+    """
+    if isinstance(obj, dict) and "success" in obj and "message" in obj:
+        m = obj["message"]
+        if isinstance(m, dict):
+            return m
+        if isinstance(m, str):
+            m = m.strip()
+            try:
+                return json.loads(m)
+            except Exception:
+                try:
+                    return ast.literal_eval(m)
+                except Exception:
+                    return obj
+    return obj
+
+
 def _parse(raw):
     raw = raw.strip() if raw else ""
     if not raw or raw.startswith("$"):
         return None
     try:
-        return json.loads(raw)
+        return _unwrap(json.loads(raw))
     except Exception:
         try:
-            return ast.literal_eval(raw)
+            return _unwrap(ast.literal_eval(raw))
         except Exception:
             return None
 

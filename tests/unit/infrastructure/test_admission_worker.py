@@ -109,7 +109,7 @@ class TestForward:
         assert queue.acked == ["e-1"], "original entry must be acked once re-enqueued"
         assert len(queue.entries) == 1, "event must be re-enqueued for retry"
         assert store.records["adm-1"]["attempts"] == 1
-        assert store.records["adm-1"]["status"] == "queued"
+        assert store.records["adm-1"]["status"] == "retry_scheduled"
 
     async def test_max_attempts_goes_to_dlq(self):
         queue, store = FakeQueue(), FakeStore()
@@ -237,9 +237,11 @@ class TestForwardException:
         worker = AdmissionWorker(q, store, boom, max_attempts=5)
         assert await worker.run_once() == 1
         rec = store.records["adm-1"]
-        assert rec["status"] == "queued"
+        assert rec["status"] == "retry_scheduled"
         assert rec["attempts"] == 1
-        assert "dial refused" in rec["last_error"]
+        # B6/ERROR-001: last_error stores the structured code, never
+        # raw exception text (capability URLs can't leak into state).
+        assert rec["last_error"] == "FORWARD_EXCEPTION"
         assert worker.stats.retried_total == 1
 
     async def test_retry_delay_zero_skips_sleep(self, monkeypatch):
@@ -316,9 +318,10 @@ class TestDedupReclaimedEntry:
         assert q.acked == ["e-1"]
         assert worker.stats.dedup_total == 1
 
-    async def test_store_get_failure_falls_back_to_forward(self):
-        """A store.get() exception must not block forwarding — the queue
-        is the source of truth for pending work."""
+    async def test_store_get_failure_defers_entry(self):
+        """WORKER-003: an unreadable store must NOT trigger a forward —
+        the entry stays pending for recover() instead of risking a
+        duplicate downstream execution (fail-safe, not fail-open)."""
 
         class FlakyStore(FakeStore):
             async def get(self, admission_id):
@@ -328,8 +331,8 @@ class TestDedupReclaimedEntry:
         q.entries.append(("e-1", _admission(1)))
         worker = AdmissionWorker(q, FlakyStore(), _fwd({"ok": True, "exec_id": "wx-9"}))
         assert await worker.run_once() == 1
-        assert q.acked == ["e-1"]
-        assert worker.stats.forwarded_total == 1
+        assert q.acked == [], "deferred entry must stay pending"
+        assert worker.stats.forwarded_total == 0
 
     async def test_queued_record_still_forwards(self):
         """A reclaimed entry whose record is still queued (forward never

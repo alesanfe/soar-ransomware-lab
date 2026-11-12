@@ -42,3 +42,34 @@ class TestInitTelemetry:
                 CP({"OTEL_ENABLED": "1", "OTEL_EXPORTER_OTLP_ENDPOINT": "http://tempo:4318/"}),
             )
         exp.assert_called_once_with(endpoint="http://tempo:4318/v1/traces")
+
+
+class TestTelemetryEdges:
+    """OTEL_AVAILABLE=False fallback + shutdown flush (lines 57-59, 80-84)."""
+
+    def test_unavailable_packages_warns_and_disables(self, caplog):
+        import logging
+
+        import soar_lab.infrastructure.monitoring.telemetry as tel
+
+        with patch.object(tel, "OTEL_AVAILABLE", False):
+            with caplog.at_level(logging.WARNING):
+                assert init_telemetry(Mock(), CP({"OTEL_ENABLED": "1"})) is False
+        assert "not installed" in caplog.text
+
+    def test_shutdown_without_provider_noop(self):
+        from soar_lab.infrastructure.monitoring.telemetry import shutdown_telemetry
+
+        app = Mock()
+        app.state = Mock(spec=[])  # no otel_tracer_provider attr
+        shutdown_telemetry(app)  # must not raise
+
+    def test_shutdown_flushes_provider(self):
+        from soar_lab.infrastructure.monitoring.telemetry import shutdown_telemetry
+
+        provider = Mock()
+        app = Mock()
+        app.state = Mock()
+        app.state.otel_tracer_provider = provider
+        shutdown_telemetry(app)
+        provider.shutdown.assert_called_once()

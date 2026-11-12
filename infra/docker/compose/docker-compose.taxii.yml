@@ -1,0 +1,67 @@
+# Optional overlay: TAXII 2.1 threat-intel feed endpoint (medallion).
+# Not part of the default stack — opt in with:
+#   docker compose ... -f docker-compose.taxii.yml up -d taxii
+# Internal-only service: the lab consumes it from inside ti_net.
+services:
+  taxii:
+    build:
+      context: ../taxii
+      dockerfile: Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-soar}-taxii
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_taxii
+    restart: unless-stopped
+    # TAXII-EVAL-004: medallion is a plain WSGI app on :5000 — no special
+    # privileges needed. Runs as user taxii (Dockerfile), read-only rootfs
+    # with a tiny /tmp tmpfs for the rendered config. Self-hardened in this
+    # file (victim-sim convention) — this overlay is optional, so its
+    # hardening must not live in the default-set hardened overlay.
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
+    # TAXII-EVAL-001: credentials are injected at container start — the
+    # image only carries a template with placeholders (entrypoint.sh).
+    environment:
+      TAXII_READER_PASS: ${TAXII_READER_PASS}
+      TAXII_WRITER_PASS: ${TAXII_WRITER_PASS}
+    volumes:
+      # TAXII-EVAL-005: lab PKI — gunicorn terminates TLS with the
+      # CA-signed cert (medallion's own runner is HTTP-only).
+      - ../config/certs/taxii.crt:/etc/taxii/tls/taxii.crt:ro
+      - ../config/certs/taxii.key:/etc/taxii/tls/taxii.key:ro
+      - ../config/certs/ca.crt:/etc/taxii/tls/ca.crt:ro
+    networks:
+      # TAXII-EVAL-002: ti_net (internal:true) is the dedicated threat-intel
+      # plane — off soar_net so unrelated lab services can't reach the feed.
+      - ti_net
+    # TAXII-EVAL-003: app-level probe over TLS — medallion returns 401 on
+    # /taxii2/ without auth, which proves the app is alive (a bare TCP
+    # check would report healthy with a dead worker, same class as
+    # MISP-EVAL-001).
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import http.client,ssl;c=http.client.HTTPSConnection('localhost',5000,timeout=3,context=ssl.create_default_context(cafile='/etc/taxii/tls/ca.crt'));c.request('GET','/taxii2/');exit(0 if c.getresponse().status in (200,401) else 1)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+          pids: 64
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  ti_net:
+    name: ti_net
+    external: true

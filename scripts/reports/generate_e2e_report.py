@@ -55,8 +55,8 @@ INSIDE_CONTAINER = Path("/app").exists()
 
 if INSIDE_CONTAINER:
     DEFAULT_OUTPUT = Path("/app/reports/e2e")
-    ES_URL = os.environ.get("ELASTICSEARCH_URL", "http://elasticsearch:9200")
-    OS_URL = os.environ.get("SHUFFLE_OPENSEARCH_URL", "http://opensearch:9200")
+    ES_URL = os.environ.get("ELASTICSEARCH_URL", "https://elasticsearch:9200")
+    OS_URL = os.environ.get("SHUFFLE_OPENSEARCH_URL", "https://opensearch:9200")
     LOKI_URL = os.environ.get("LOKI_URL", "https://loki:3100")
     PROMTAIL_URL = os.environ.get("PROMTAIL_URL", "http://promtail:9080")
     GRAFANA_URL = os.environ.get("GRAFANA_URL", "https://grafana:3000")
@@ -64,8 +64,8 @@ if INSIDE_CONTAINER:
     RESULTS_DIR = Path("/app/reports/validation/results")
 else:
     DEFAULT_OUTPUT = REPO_ROOT / "reports" / "e2e"
-    ES_URL = os.environ.get("ELASTICSEARCH_URL", "http://localhost:9200")
-    OS_URL = os.environ.get("OPENSEARCH_URL", "http://localhost:9201")
+    ES_URL = os.environ.get("ELASTICSEARCH_URL", "https://localhost:19200")
+    OS_URL = os.environ.get("OPENSEARCH_URL", "https://localhost:19201")
     LOKI_URL = os.environ.get("LOKI_URL", "http://localhost:3100")
     PROMTAIL_URL = os.environ.get("PROMTAIL_URL", "http://localhost:9080")
     GRAFANA_URL = os.environ.get("GRAFANA_URL", "http://localhost:3000")
@@ -75,7 +75,28 @@ else:
 # GRAF-D10: loki/grafana serve lab-CA certs — pin the CA when it is mounted
 # (inside soar_api at /app/certs/ca.crt); fall back to no-verify on host runs.
 _CA_BUNDLE = Path("/app/certs/ca.crt")
-_REQUESTS_VERIFY: bool | str = str(_CA_BUNDLE) if _CA_BUNDLE.exists() else False
+_HOST_CA = REPO_ROOT / "infra" / "docker" / "config" / "certs" / "ca.crt"
+_REQUESTS_VERIFY: bool | str = (
+    str(_CA_BUNDLE) if _CA_BUNDLE.exists()
+    else str(_HOST_CA) if _HOST_CA.exists()
+    else False
+)
+
+# Datastore health probes now require auth (xpack/security plugins enabled).
+_SERVICE_AUTH: dict[str, tuple[str, str]] = {
+    "elasticsearch": (
+        os.environ.get("ELASTIC_USERNAME", "elastic"),
+        os.environ.get("ELASTIC_PASSWORD", ""),
+    ),
+    "opensearch": (
+        os.environ.get("OPENSEARCH_USERNAME", "admin"),
+        os.environ.get("OPENSEARCH_PASSWORD", ""),
+    ),
+    "grafana": (
+        os.environ.get("GRAFANA_ADMIN_USER", "admin"),
+        os.environ.get("GRAFANA_ADMIN_PASSWORD", ""),
+    ),
+}
 
 
 def _load_env() -> dict:
@@ -270,7 +291,11 @@ def fetch_test_results() -> dict:
     if not RESULTS_DIR.exists():
         return {"error": f"Results dir not found: {RESULTS_DIR}", "test_cases": []}
 
-    tc_reports: dict[str, list] = {}
+    # Dedupe: each file records one subtest run (test_name + unique run id).
+    # Result files accumulate across sessions, so keep only the LATEST run
+    # per (tc_id, test_name) — otherwise a TC shows all_passed=False forever
+    # because of failures from runs that were later fixed and re-verified.
+    latest: dict[tuple[str, str], dict] = {}
     for json_file in sorted(RESULTS_DIR.glob("TC-*_*.json")):
         try:
             data = json.loads(json_file.read_text(encoding="utf-8"))
@@ -278,11 +303,23 @@ def fetch_test_results() -> dict:
             continue
         name = json_file.stem
         tc_id = name.split("_")[0] if "_" in name else name
-        tc_reports.setdefault(tc_id, []).append(
-            {
+        test_name = data.get("test_name", name) if isinstance(data, dict) else name
+        key = (tc_id, test_name)
+        try:
+            mtime = json_file.stat().st_mtime
+        except OSError:
+            mtime = 0.0
+        if key not in latest or mtime >= latest[key]["mtime"]:
+            latest[key] = {
                 "file": json_file.name,
                 "data": data,
+                "mtime": mtime,
+                "tc_id": tc_id,
             }
+    tc_reports: dict[str, list] = {}
+    for entry in latest.values():
+        tc_reports.setdefault(entry["tc_id"], []).append(
+            {"file": entry["file"], "data": entry["data"]}
         )
 
     summary = []
@@ -693,7 +730,7 @@ def _thehive_primary(result: dict) -> bool:
             # TheHive 5: listings go through the Query API (POST /api/v1/query)
             # — GET /api/case only existed in TheHive 3.x.
             r = requests.post(
-                "http://thehive:9000/api/v1/query",
+                "https://thehive:9443/api/v1/query",
                 json={
                     "query": [
                         {"_name": "listCase"},
@@ -805,29 +842,33 @@ def fetch_workflow_executions() -> dict:
     """Fetch workflow execution stats from OpenSearch."""
     result: dict[str, Any] = {}
 
-    # Status distribution
-    body = json.dumps(
-        {
-            "size": 0,
-            "query": {"match_all": {}},
-            "aggs": {"by_status": {"terms": {"field": "status.keyword"}}},
-        }
-    )
-    try:
-        r = requests.post(
-            f"{OS_URL}/workflowexecution/_search",
-            data=body,
-            headers=_os_headers(),
-            timeout=30,
+    # Status distribution — `status` is keyword on rollover indices but
+    # text+keyword on the flat index; try both names.
+    for status_field in ("status", "status.keyword"):
+        body = json.dumps(
+            {
+                "size": 0,
+                "query": {"match_all": {}},
+                "aggs": {"by_status": {"terms": {"field": status_field}}},
+            }
         )
-        r.raise_for_status()
-        data = r.json()
-        result["status_distribution"] = [
-            {"status": b["key"], "count": b["doc_count"]}
-            for b in data.get("aggregations", {}).get("by_status", {}).get("buckets", [])
-        ]
-    except Exception as exc:
-        result["error"] = str(exc)
+        try:
+            r = requests.post(
+                f"{OS_URL}/workflowexecution/_search",
+                data=body,
+                headers=_os_headers(),
+                timeout=30,
+            )
+            r.raise_for_status()
+            data = r.json()
+            buckets = data.get("aggregations", {}).get("by_status", {}).get("buckets", [])
+            if buckets:
+                result["status_distribution"] = [
+                    {"status": b["key"], "count": b["doc_count"]} for b in buckets
+                ]
+                break
+        except Exception as exc:
+            result["error"] = str(exc)
 
     # Total count: use _count API to avoid OpenSearch max_result_window cap
     try:
@@ -1688,12 +1729,12 @@ def fetch_service_health() -> dict:
     """Check health of all SOAR services."""
     services = {
         "api": f"{API_URL}/health",
-        "thehive": f"{os.environ.get('THEHIVE_URL', 'http://thehive:9000' if INSIDE_CONTAINER else 'http://localhost:8100')}/api/status",
-        "shuffle": f"{os.environ.get('SHUFFLE_BACKEND_URL', 'http://shuffle-backend:5001' if INSIDE_CONTAINER else 'http://localhost:5001')}/api/v1/health",
+        "thehive": f"{os.environ.get('THEHIVE_URL', 'https://thehive:9443' if INSIDE_CONTAINER else 'https://localhost:8100')}/api/status",
+        "shuffle": f"{os.environ.get('SHUFFLE_BACKEND_URL', 'https://shuffle-backend:5443' if INSIDE_CONTAINER else 'http://localhost:5001')}/api/v1/health",
         "elasticsearch": f"{ES_URL}/_cluster/health",
         "opensearch": f"{OS_URL}/_cluster/health",
         "cortex": os.environ.get(
-            "CORTEX_URL", "http://cortex:9001" if INSIDE_CONTAINER else "http://localhost:8101"
+            "CORTEX_URL", "https://cortex:9443" if INSIDE_CONTAINER else "https://localhost:8101"
         ),
         "misp": f"{os.environ.get('MISP_URL', 'http://misp:80' if INSIDE_CONTAINER else 'http://localhost:8083')}/users/heartbeat",
         "grafana": f"{GRAFANA_URL}/api/health",
@@ -1710,7 +1751,12 @@ def fetch_service_health() -> dict:
     result = {}
     for name, url in services.items():
         try:
-            r = requests.get(url, timeout=15, verify=False)
+            r = requests.get(
+                url,
+                timeout=15,
+                verify=_REQUESTS_VERIFY,
+                auth=_SERVICE_AUTH.get(name),
+            )
             entry = {
                 "url": url,
                 "status_code": r.status_code,
@@ -1754,7 +1800,7 @@ def fetch_api_analytics() -> dict:
     result = {}
     for ep in endpoints:
         try:
-            r = requests.get(f"{API_URL}{ep}", timeout=30, verify=False)
+            r = requests.get(f"{API_URL}{ep}", timeout=30)
             if r.status_code == 200:
                 result[ep] = r.json()
             else:
@@ -2085,7 +2131,7 @@ def _fsm_15_thehive_tags_distribution(result: dict) -> None:
         return
     try:
         r = requests.post(
-            "http://thehive:9000/api/v1/query",
+            "https://thehive:9443/api/v1/query",
             json={
                 "query": [
                     {"_name": "listCase"},
@@ -2172,7 +2218,7 @@ def fetch_cortex_analyzers() -> dict:
     """Fetch available Cortex analyzers via the SOAR API."""
     result: dict[str, Any] = {}
     try:
-        r = requests.get(f"{API_URL}/soar/cortex/analyzers", timeout=30, verify=False)
+        r = requests.get(f"{API_URL}/soar/cortex/analyzers", timeout=30)
         if r.status_code == 200:
             d = r.json()
             analyzers = d.get("analyzers", d) if isinstance(d, dict) else d
@@ -6717,11 +6763,18 @@ def _md_sec_18_docker(data: dict, c: dict, lines: list, chart_paths) -> None:
 def _md_sec_19_analyzers(data: dict, c: dict, lines: list, chart_paths) -> None:
     """Report section 19_analyzers."""
     # ---- Cortex Analyzers Disponibles ----
+    # Header siempre presente: el ToC enlaza #analyzers-cortex-disponibles y
+    # una sección ausente rompe el anchor (DOC-EVAL residual).
+    lines.append("## Analyzers Cortex Disponibles")
+    lines.append("")
     cortex_analyzers = data.get("cortex_analyzers", {})
+    if not (cortex_analyzers and cortex_analyzers.get("total_available")):
+        lines.append("_Datos no disponibles en esta ejecución._")
+        lines.append("")
+        return
     if cortex_analyzers and cortex_analyzers.get("total_available"):
         lines.extend(
             [
-                "## Analyzers Cortex Disponibles",
                 "",
                 "> **Fuente:** API Cortex `/api/analyzer`.",
                 "> **Referencia TFM:** Tabla 4.3 (Analyzers Cortex Configurados).",
@@ -6793,12 +6846,18 @@ def _md_sec_21_calidad(data: dict, c: dict, lines: list, chart_paths) -> None:
     """Report section 21_calidad."""
     # ---- Métricas de Calidad del Software ----
     # Tabla 4.13 (figures_tables_list.md)
+    # Header siempre presente: el ToC enlaza #métricas-de-calidad-del-software
+    # y una sección ausente rompe el anchor.
+    lines.append("## Métricas de Calidad del Software")
+    lines.append("")
     qm = data.get("quality_metrics", {})
+    if not qm or "error" in qm:
+        lines.append("_Datos no disponibles en esta ejecución._")
+        lines.append("")
+        return
     if qm and "error" not in qm:
         lines.extend(
             [
-                "## Métricas de Calidad del Software",
-                "",
                 "> **Fuente:** `reports/quality/quality-summary.json` (generado por `scripts/quality/run_quality_checks.py`).",
                 "> **Referencia TFM:** Tabla 4.13 (Métricas de Calidad del Software).",
                 "> **Path analizado:** `src/` (código de producción, excluye tests y scripts).",
@@ -7460,6 +7519,9 @@ def main() -> int:
     )
     print(f"\nJSON: {json_path}")
 
+    # O-03: index a run summary into e2e-history for the 30d trend panels.
+    _index_e2e_history(data)
+
     # Generate Markdown
     md_path = output_dir / "e2e_report.md"
     generate_markdown(data, chart_paths, md_path)
@@ -7469,6 +7531,50 @@ def main() -> int:
     print("Done.")
     print("=" * 70)
     return 0
+
+
+def _index_e2e_history(data: dict) -> None:
+    """Index a compact run summary into the ``e2e-history`` ES index (O-03).
+
+    Keeps the last-N-days trend queryable from Grafana (E2E quality
+    dashboard): totals, pass rates and headline KPIs per report generation.
+    """
+    tr = data.get("test_results") or {}
+    tc_cases = tr.get("test_cases") or tr.get("cases") or []
+    mttr = data.get("mttr_by_phase") or {}
+    sm = (data.get("soar_metrics") or {}).get("mttr") or {}
+    doc = {
+        "@timestamp": datetime.now(UTC).isoformat(),
+        "metric_type": "e2e_run",
+        "run_at": data.get("generated_at") or datetime.now(UTC).isoformat(),
+        "total_tcs": len(tc_cases),
+        "passed_tcs": sum(1 for t in tc_cases if t.get("all_passed")),
+        "failed_tcs": sum(1 for t in tc_cases if not t.get("all_passed")),
+        "total_subtests": sum(
+            t.get("subtests_total", t.get("total", 0)) for t in tc_cases
+        ),
+        "passed_subtests": sum(
+            t.get("subtests_passed", t.get("passed", 0)) for t in tc_cases
+        ),
+        "failed_tc_ids": [t.get("tc_id") for t in tc_cases if not t.get("all_passed")],
+        "kpis": {
+            "mttr_mean_s": mttr.get("total_mttr_s") or sm.get("avg_s"),
+            "mttr_p95_s": sm.get("p95_s"),
+        },
+    }
+    try:
+        r = requests.post(
+            f"{ES_URL}/e2e-history/_doc",
+            json=doc,
+            headers=_es_headers(),
+            timeout=15,
+        )
+        if r.status_code in (200, 201):
+            print(f"  e2e-history indexed ({doc['passed_tcs']}/{doc['total_tcs']} TCs)")
+        else:
+            print(f"  e2e-history index failed: HTTP {r.status_code}")
+    except Exception as exc:
+        print(f"  e2e-history index skipped: {exc}")
 
 
 if __name__ == "__main__":

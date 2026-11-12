@@ -23,19 +23,37 @@ pointing at the published ports.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
+import ssl
 import sys
 import time
 import urllib.error
 import urllib.request
 
-OS_URL = os.environ.get("OPENSEARCH_URL", "http://opensearch:9200").rstrip("/")
+from soar_lab.security.tls_config import ca_verify
+
+OS_URL = os.environ.get("OPENSEARCH_URL", "https://opensearch:9200").rstrip("/")
 OSD_URL = os.environ.get("OPENSEARCH_DASHBOARDS_URL", "http://opensearch-dashboards:5601").rstrip(
     "/"
 )
 OS_USER = os.environ.get("OPENSEARCH_USERNAME", "admin")
 OS_PASSWORD = os.environ.get("OPENSEARCH_PASSWORD", "")
+
+_verify = ca_verify()
+if isinstance(_verify, str):
+    _SSL_CTX = ssl.create_default_context(cafile=_verify)
+elif _verify:
+    _SSL_CTX = ssl.create_default_context()
+else:
+    _SSL_CTX = ssl._create_unverified_context()
+
+_AUTH_HEADER = (
+    "Basic " + base64.b64encode(f"{OS_USER}:{OS_PASSWORD}".encode()).decode()
+    if OS_USER and OS_PASSWORD
+    else None
+)
 
 EXEC_ALIAS = "workflowexecution"
 EXEC_PATTERN = "workflowexecution*"
@@ -83,13 +101,10 @@ def _req(
     if headers:
         h.update(headers)
     req = urllib.request.Request(url, data=data, headers=h, method=method)
-    if OS_USER and OS_PASSWORD:
-        import base64
-
-        cred = base64.b64encode(f"{OS_USER}:{OS_PASSWORD}".encode()).decode()
-        req.add_header("Authorization", f"Basic {cred}")
+    if _AUTH_HEADER:
+        req.add_header("Authorization", _AUTH_HEADER)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX) as r:
             raw = r.read()
             return r.status, json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
@@ -194,14 +209,17 @@ def fix_epoch_seconds_index() -> None:
             '{"index":{"_index":"%s","_id":"%s"}}\n%s\n' % (dst, h["_id"], json.dumps(h["_source"]))
             for h in hits
         )
+        bulk_headers = {"Content-Type": "application/x-ndjson"}
+        if _AUTH_HEADER:
+            bulk_headers["Authorization"] = _AUTH_HEADER
         req = urllib.request.Request(
             f"{OS_URL}/_bulk?refresh=false",
             data=ndjson.encode(),
-            headers={"Content-Type": "application/x-ndjson"},
+            headers=bulk_headers,
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=120) as r:
+            with urllib.request.urlopen(req, timeout=120, context=_SSL_CTX) as r:
                 bulk = json.loads(r.read())
             if bulk.get("errors"):
                 print(f"[FAIL] bulk errors: {str(bulk)[:300]}")

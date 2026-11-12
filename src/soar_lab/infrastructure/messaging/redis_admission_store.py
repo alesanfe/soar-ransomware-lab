@@ -85,6 +85,35 @@ class RedisAdmissionStore:
         existing = await self.find_by_key(idempotency_key)
         return existing or admission_id
 
+    async def list_by_status(
+        self, statuses: set[str], limit: int = 500
+    ) -> list[dict[str, Any]]:
+        """ADMISSION-002: bounded scan for records in ``statuses``.
+
+        Used by the reconciler to find ``enqueue_failed`` orphans. SCAN +
+        HGETALL per candidate — runs under the leader lease every
+        ``recover_interval_s``, never on the hot path.
+        """
+        out: list[dict[str, Any]] = []
+        async for key in self.client.scan_iter(match=f"{_RECORD_PREFIX}*"):
+            if len(out) >= limit:
+                break
+            k = key.decode() if isinstance(key, bytes) else key
+            if k.startswith(_KEY_PREFIX):  # keyspace shares prefix pattern
+                continue
+            raw = await self.client.hgetall(k)
+            dec: dict[str, Any] = {}
+            for fk, fv in raw.items():
+                fk = fk.decode() if isinstance(fk, bytes) else fk
+                fv = fv.decode() if isinstance(fv, bytes) else fv
+                try:
+                    dec[fk] = json.loads(fv)
+                except (TypeError, ValueError):
+                    dec[fk] = fv
+            if dec.get("status") in statuses:
+                out.append(dec)
+        return out
+
     async def unbind_key(self, idempotency_key: str, admission_id: str) -> None:
         # Compare-and-delete so we never free a key claimed by someone else.
         script = (

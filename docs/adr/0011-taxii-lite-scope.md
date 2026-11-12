@@ -28,6 +28,9 @@ cliente TAXII 2.1 puede consumir sin adaptación:
 - `GET .../{id}/objects/` — envelope STIX servido con
   `application/taxii+json;version=2.1`, flag `more` computado por
   sonda exacta (`limit+1`), filtro `match[type]`.
+- `GET .../{id}/manifest/` — recurso manifest (spec lo exige en
+  colecciones read): entradas `{id, date_added, version, media_type}`
+  derivadas de `created`/`modified` de cada objeto.
 
 Todo el contenido proviene de `StixExportUseCase` — una sola fuente de
 objetos STIX, cero duplicación de lógica.
@@ -36,8 +39,9 @@ objetos STIX, cero duplicación de lógica.
 
 - Clientes TAXII pueden hacer discovery + pull de indicadores — cierra el
   control NIST 800-150 a nivel "parcial-implementado" con honestidad.
-- **No hay** `manifest`, `status`, ni `versions` — clientes que los exijan
-  recibirán 404, documentado en el discovery `description`.
+- **No hay** `status`, `versions`, ni write path — `status`/POST solo
+  aplican a colecciones `can_write` según la spec; `versions` no aplica
+  porque los objetos son deterministas (uuid5) e inmutables por id.
 - La colección es una vista materializada del corpus (stateless) — sin
   cursores; `limit` es un bound simple, no paginación real.
 

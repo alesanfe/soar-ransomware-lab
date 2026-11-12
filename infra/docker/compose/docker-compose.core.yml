@@ -9,17 +9,34 @@ services:
     image: ${REDIS_IMAGE:-redis:7-alpine}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_redis
     user: root
+    # TLS on :6379 (lab PKI) — plaintext port disabled. Clients use
+    # rediss:// + /certs/ca.crt (exporter) — internal HTTP debt closed.
     entrypoint: [ "sh", "-c",
                   "chown -R redis:redis /data && rm -f /data/temp-*.rdb /data/appendonly.aof*
-                  && exec docker-entrypoint.sh redis-server --requirepass \"${REDIS_PASSWORD}\" --appendonly no --save \"\"" ]
+                  && exec docker-entrypoint.sh redis-server --requirepass \"$$(cat /run/secrets/redis_password)\"
+                  --appendonly no --save \"\" --maxmemory ${REDIS_MAXMEMORY:-768mb}
+                  --maxmemory-policy noeviction
+                  --port 0 --tls-port 6379
+                  --tls-cert-file /etc/redis/tls/redis.crt
+                  --tls-key-file /etc/redis/tls/redis.key
+                  --tls-ca-cert-file /etc/redis/tls/ca.crt
+                  --tls-auth-clients no" ]
     command: []
+    # Secret via compose `secrets:` (env-sourced) — keeps REDIS_PASSWORD out
+    # of `docker inspect` args (CORE-EVAL residual).
+    secrets:
+      - redis_password
     volumes:
       - redis_data:/data
+      - ../config/certs/redis.crt:/etc/redis/tls/redis.crt:ro
+      - ../config/certs/redis.key:/etc/redis/tls/redis.key:ro
+      - ../config/certs/ca.crt:/etc/redis/tls/ca.crt:ro
     networks:
       - ti_net
       - soar_net
     healthcheck:
-      test: [ "CMD-SHELL", "nc -z 127.0.0.1 6379 || exit 1" ]
+      # App-level probe: real TLS+auth ping, not nc port-open.
+      test: [ "CMD-SHELL", "redis-cli --tls --cacert /etc/redis/tls/ca.crt -a \"$$(cat /run/secrets/redis_password)\" --no-auth-warning ping | grep -q PONG || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -43,22 +60,45 @@ services:
     image: ${THEHIVE_IMAGE:-strangebee/thehive:5.7.8-1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_thehive
     ports:
-      - "127.0.0.1:${THEHIVE_HTTP_PORT:-9000}:9000"
+      - "127.0.0.1:${THEHIVE_HOST_PORT:-8100}:9443"
     environment:
-      # Entrypoint-generated Cortex connector (cortex0)
+      # Entrypoint-generated Cortex connector (cortex0) — TLS via lab CA
       - TH_CORTEX_HOSTNAMES=${CORTEX_HOSTNAME:-cortex}
-      - TH_CORTEX_PROTO=${CORTEX_PROTO:-http}
-      - TH_CORTEX_PORT=${CORTEX_PORT:-9001}
-      - TH_CORTEX_KEYS=${CORTEX_API_KEY:-}
-      - THEHIVE_SECRET=${THEHIVE_SECRET:-}
+      - TH_CORTEX_PROTO=${CORTEX_PROTO:-https}
+      - TH_CORTEX_PORT=${CORTEX_PORT:-9443}
+      - TH_CORTEX_KEYS=${CORTEX_API_KEY:?CORTEX_API_KEY required for the Hive-Cortex connector}
+      - THEHIVE_SECRET=${THEHIVE_SECRET:?THEHIVE_SECRET required for session signing}
+      # CORE-OBS-002: JVM metrics via jmx_prometheus_javaagent :9404 +
+      # app instrumentation via Kanela — internal soar_net only. Agent
+      # jars pinned + sha1-verified.
+      # MUST be JAVA_OPTS, not JAVA_TOOL_OPTIONS: the sbt launcher runs
+      # `java -version` for its version check, and JAVA_TOOL_OPTIONS leaks
+      # into it — Kanela's actor system spawns non-daemon threads, so the
+      # version-check JVM never exits and the container hangs at boot.
+      - JAVA_OPTS=-javaagent:/opt/jmx/jmx-agent.jar=9404:/opt/jmx/thehive-jmx.yml -javaagent:/opt/jmx/kanela-agent.jar -Djavax.net.ssl.trustStore=/opt/certs/lab-cacerts.jks -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=JKS
+      # Index backend: Elasticsearch over TLS (Lucene unsupported since
+      # TH 5.1). The entrypoint generates db.janusgraph.index.search.*
+      # from these vars; SSL/truststore extras come from the include
+      # file (runtime/config/thehive.conf).
+      - TH_INDEX_BACKEND=elasticsearch
+      - TH_ELASTICSEARCH_HOSTNAMES=elasticsearch
+      - TH_ELASTICSEARCH_INDEX=thehive
+      - TH_ELASTICSEARCH_USERNAME=${ELASTIC_USERNAME:-elastic}
+      - TH_ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
     volumes:
       - thehive_files:/opt/thp/thehive/files
       - thehive_data:/opt/thp/thehive/data
+      - ../../../infra/docker/agents/jmx/jmx_prometheus_javaagent-1.0.1.jar:/opt/jmx/jmx-agent.jar:ro
+      - ../../../infra/docker/agents/jmx/kanela-agent-2.0.0.jar:/opt/jmx/kanela-agent.jar:ro
+      - ../../../infra/docker/config/jmx-exporter/thehive-jmx.yml:/opt/jmx/thehive-jmx.yml:ro
+      - ../../../infra/docker/config/certs/lab-cacerts.jks:/opt/certs/lab-cacerts.jks:ro
+      - ../../../infra/docker/config/certs/thehive-keystore.jks:/opt/certs/thehive-keystore.jks:ro
+      - ../../../infra/docker/config/certs/ca.crt:/opt/certs/ca.crt:ro
       - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/config/thehive.conf:/etc/thehive/application.conf:ro
     networks:
       - soar_net
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:9000/api/v1/status/public || exit 1" ]
+      test: [ "CMD-SHELL", "curl -fsS --cacert /opt/certs/ca.crt https://localhost:9443/api/v1/status/public" ]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -82,24 +122,39 @@ services:
     build:
       context: ../images/cortex
       dockerfile: Dockerfile
+    image: ${CORTEX_IMAGE:-soar-cortex:3.2.0-1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_cortex
     depends_on:
       elasticsearch:
         condition: service_healthy
+    environment:
+      # CORE-OBS-002: JVM metrics on :9404 — the entrypoint's `su -`
+      # login shell scrubs env, so the custom image entrypoint re-injects
+      # JAVA_TOOL_OPTIONS into the su'd command (Dockerfile patch).
+      # TLS: JVM truststore = JDK cacerts + lab CA (public TLS kept).
+      - JAVA_TOOL_OPTIONS=-javaagent:/opt/jmx/jmx-agent.jar=9404:/opt/jmx/cortex-jmx.yml -Djavax.net.ssl.trustStore=/opt/certs/lab-cacerts.jks -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=JKS
     ports:
-      - "127.0.0.1:${CORTEX_HTTP_PORT:-19001}:9001"
+      - "127.0.0.1:${CORTEX_HOST_PORT:-8101}:9443"
     volumes:
       - cortex_data:/var/lib/cortex
       - /var/run/docker.sock:/var/run/docker.sock
       - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/config/cortex.conf:/etc/cortex/application.conf:ro
       - ${RUNTIME_DIR:-${ARTIFACTS_DIR:-../../../runtime}}/data/cortex/jobs:/tmp/cortex-jobs
+      - ../../../infra/docker/agents/jmx/jmx_prometheus_javaagent-1.0.1.jar:/opt/jmx/jmx-agent.jar:ro
+      - ../../../infra/docker/config/jmx-exporter/cortex-jmx.yml:/opt/jmx/cortex-jmx.yml:ro
+      - ../../../infra/docker/config/certs/lab-cacerts.jks:/opt/certs/lab-cacerts.jks:ro
+      - ../../../infra/docker/config/certs/cortex-keystore.jks:/opt/certs/cortex-keystore.jks:ro
+      - ../../../infra/docker/config/certs/ca.crt:/opt/certs/ca.crt:ro
     networks:
       - soar_net
     healthcheck:
-      test: [ "CMD-SHELL", "curl -sk -o /dev/null -w '%{http_code}' http://localhost:9001/ | grep -qE '^[23]' || exit 1" ]
+      test: [ "CMD-SHELL", "curl -s --max-time 25 -o /dev/null -w '%{http_code}' --cacert /opt/certs/ca.crt https://localhost:9443/ | grep -qE '^[23]'" ]
       interval: 30s
-      timeout: 10s
-      start_period: 180s
+      # JVM warmup serves / in 10-16min: a 10s probe timeout reads it as
+      # "unhealthy" while it is merely slow, and 180s start_period is far
+      # under the observed worst-case bind time.
+      timeout: 30s
+      start_period: 900s
       retries: 15
     restart: unless-stopped
     deploy:
@@ -129,6 +184,8 @@ services:
       # (new container IP) does not leave the UI in "waiting for
       # database" — upstream resolves per request, no frontend restart.
       - ../../../infra/docker/config/shuffle-frontend/nginx.conf.tmpl:/etc/nginx/nginx.conf.tmpl:ro
+      # proxy_ssl_verify against the lab CA for backend:5443 upstream.
+      - ../../../infra/docker/config/certs/ca.crt:/etc/nginx/ssl/ca.crt:ro
     networks:
       - soar_net
       - ti_net
@@ -163,19 +220,26 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend
     environment:
       SHUFFLE_ELASTIC: "true"
-      SHUFFLE_OPENSEARCH_URL: ${SHUFFLE_OPENSEARCH_URL:-http://opensearch:9200}
-      SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "${SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY:-true}"
+      SHUFFLE_OPENSEARCH_URL: ${SHUFFLE_OPENSEARCH_URL:-https://opensearch:9200}
+      SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY: "${SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY:-false}"
+      SHUFFLE_OPENSEARCH_CERTIFICATE_FILE: /certs/ca.crt
       SHUFFLE_OPENSEARCH_USERNAME: ${OPENSEARCH_USERNAME:-admin}
       SHUFFLE_OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
       OUTER_HOSTNAME: ${OUTER_HOSTNAME:-host.docker.internal}
       SHUFFLE_APP_HOTLOAD_FOLDER: /shuffle-apps
       SHUFFLE_FILE_LOCATION: /shuffle-files
       SHUFFLE_APP_DOWNLOAD_LOCATION: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
-      SHUFFLE_APP_FORCE_UPDATE: "true"
+      # Boot determinism + zero-trust egress: don't re-pull the whole app
+      # catalog from GitHub on every start. Apps already in the DB keep
+      # working; set SHUFFLE_APP_FORCE_UPDATE=true to force a refresh.
+      SHUFFLE_APP_FORCE_UPDATE: ${SHUFFLE_APP_FORCE_UPDATE:-false}
       SHUFFLE_DEFAULT_USERNAME: ${SHUFFLE_DEFAULT_USERNAME:-admin}
       SHUFFLE_DEFAULT_PASSWORD: ${SHUFFLE_DEFAULT_PASSWORD}
       SHUFFLE_DEFAULT_APIKEY: ${SHUFFLE_DEFAULT_APIKEY}
-      SHUFFLE_SWAGGER_ENABLED: "${SHUFFLE_SWAGGER_ENABLED:-true}"
+      # Swagger off by default (ASVS 14.2: don't ship debug/docs surface
+      # you don't need). Verified dead anyway — no swagger route served
+      # on :5001 — but an explicit opt-in beats a permissive default.
+      SHUFFLE_SWAGGER_ENABLED: "${SHUFFLE_SWAGGER_ENABLED:-false}"
       SHUFFLE_AUTH_MODE: "multi"
       SHUFFLE_HEALTHCHECK_DISABLED: "true"
       SHUFFLE_DISABLE_RERUN_AND_ABORT: "true"
@@ -184,8 +248,9 @@ services:
       - shuffle_apps:/shuffle-apps
       - shuffle_files:/shuffle-files
       - /var/run/docker.sock:/var/run/docker.sock
+      - ../config/certs/ca.crt:/certs/ca.crt:ro
     ports:
-      - "127.0.0.1:${SHUFFLE_API_PORT:-15001}:5001"
+      - "127.0.0.1:${SHUFFLE_API_PORT:-15001}:5443"
     networks:
       - soar_net
       - ti_net
@@ -213,13 +278,106 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # TLS terminator sharing the backend netns: the Go binary only does
+  # http.ListenAndServe, so plaintext stays on loopback (never crosses the
+  # bridge) and callers use https://shuffle-backend:5443.
+  shuffle-backend-tls:
+    image: ${NGINX_IMAGE:-nginx:1.27-alpine}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend_tls
+    network_mode: "service:shuffle-backend"
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    volumes:
+      - ../config/nginx/shuffle-backend-tls.conf:/etc/nginx/nginx.conf:ro
+      - ../../../infra/docker/config/certs/shuffle-backend.crt:/etc/nginx/ssl/shuffle-backend.crt:ro
+      - ../../../infra/docker/config/certs/shuffle-backend.key:/etc/nginx/ssl/shuffle-backend.key:ro
+      - ../../../infra/docker/config/certs/ca.crt:/etc/nginx/ssl/ca.crt:ro
+    depends_on:
+      shuffle-backend:
+        condition: service_started
+    healthcheck:
+      # Loopback probe to the backend through the shared netns: if the
+      # backend was recreated, this sidecar stays pinned to the DEAD netns
+      # (same stale-ID trap as api-egress-guard) and 127.0.0.1:5001 vanishes
+      # → unhealthy flags the drift. Plaintext is loopback-only, no creds.
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5001/api/v1/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Ingress guard sharing the backend netns: the Go binary can only bind
+  # 0.0.0.0:5001, so without this plaintext is still reachable from any
+  # container on soar_net. INPUT rules drop external traffic to :5001 —
+  # plaintext stays loopback-only (sidecar + healthcheck), TLS callers
+  # use :5443. Same NET_ADMIN sidecar pattern as api-egress-guard.
+  shuffle-backend-ingress-guard:
+    image: ${NETSHOOT_IMAGE:-nicolaka/netshoot:v0.14}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_shuffle_backend_ingress_guard
+    network_mode: "service:shuffle-backend"
+    cap_add:
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    restart: unless-stopped
+    depends_on:
+      shuffle-backend:
+        condition: service_started
+      shuffle-backend-tls:
+        condition: service_started
+    command: >-
+      sh -c "iptables -N BACKEND_INGRESS 2>/dev/null;
+             iptables -F BACKEND_INGRESS;
+             iptables -A BACKEND_INGRESS -i lo -j ACCEPT;
+             iptables -A BACKEND_INGRESS -p tcp ! --dport 5001 -j ACCEPT;
+             iptables -A BACKEND_INGRESS -j DROP;
+             iptables -C INPUT -j BACKEND_INGRESS 2>/dev/null || iptables -I INPUT 1 -j BACKEND_INGRESS;
+             echo 'backend ingress guard installed'; sleep infinity"
+    healthcheck:
+      # Verify the DROP rule is still installed — if the backend is
+      # recreated the shared netns is fresh and plaintext leaks again.
+      test: [ "CMD-SHELL", "iptables -L INPUT -n | grep -q BACKEND_INGRESS && iptables -C BACKEND_INGRESS -j DROP" ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+          pids: 64
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
   network-watcher:
     build: ../../../src/soar_lab/infrastructure/network_watcher
+    image: ${NETWORK_WATCHER_IMAGE:-soar-network-watcher:1.0.0}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_network_watcher
     environment:
       TARGET_NETWORK: soar_net
     ports:
-      - "${NETWORK_WATCHER_PORT:-15130}:8080"
+      - "127.0.0.1:${NETWORK_WATCHER_PORT:-15130}:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -249,12 +407,19 @@ services:
     image: ${TENZIR_IMAGE:-tenzir/tenzir:v6.8.1}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_tenzir_node
     entrypoint: [ "tenzir-node" ]
-    # TENZIR_WEB_MODE: "dev" (lab default, relaxed) — set to a production
-    # mode via .env.hardened / environment for hardened profile (SOAR-016)
-    command: [ "--commands=web server --mode=${TENZIR_WEB_MODE:-dev} --bind=0.0.0.0" ]
+    # TENZIR_WEB_MODE (CORE-SEC-003 / SOAR-016): "server" — TLS (lab CA
+    # cert mounted below) + X-Tenzir-Token auth enforced. Tokens come from
+    # `tenzir-ctl web generate-token` (scripts/setup/init_tenzir_token.sh)
+    # and the workflow sends them in the header. "dev" (plain HTTP, no
+    # auth) remains available as an explicit opt-out for relaxed lab use;
+    # "upstream" is unusable cross-container (binds localhost only).
+    command: [ "--commands=web server --mode=${TENZIR_WEB_MODE:-server} --bind=0.0.0.0 --certfile=/etc/tenzir/tls/tenzir-node.crt --keyfile=/etc/tenzir/tls/tenzir-node.key" ]
+    volumes:
+      - ../config/certs/tenzir-node.crt:/etc/tenzir/tls/tenzir-node.crt:ro
+      - ../config/certs/tenzir-node.key:/etc/tenzir/tls/tenzir-node.key:ro
     ports:
-      - "${TENZIR_API_PORT:-15160}:5160"
-      - "${TENZIR_LOG_PORT:-15140}:1514"
+      - "127.0.0.1:${TENZIR_API_PORT:-15160}:5160"
+      - "127.0.0.1:${TENZIR_LOG_PORT:-15140}:1514"
     networks:
       - soar_net
     healthcheck:
@@ -291,8 +456,12 @@ services:
       SHUFFLE_ORBORUS_UUID: "69a3f786-b6ee-4410-9c54-7b8277710cec"
       ENVIRONMENT_NAME: ${SHUFFLE_ENV_NAME:-Shuffle}
       ORG_ID: ${SHUFFLE_ORG_ID:-Shuffle}
-      BASE_URL: ${SHUFFLE_BACKEND_URL:-http://shuffle-backend:5001}
-      SHUFFLE_OPENSEARCH_URL: ${SHUFFLE_OPENSEARCH_URL:-http://opensearch:9200}
+      BASE_URL: ${SHUFFLE_BACKEND_URL:-https://shuffle-backend:5443}
+      # Orborus reads SHUFFLE_OPENSEARCH_URL for stale-execution cleanup but
+      # has no USERNAME/PASSWORD/CERTIFICATE envs (checked the binary) — the
+      # creds go inline in the URL (upstream-supported pattern) and the lab
+      # CA rides in the system pool via the /etc/ssl/certs mount.
+      SHUFFLE_OPENSEARCH_URL: https://${OPENSEARCH_USERNAME:-admin}:${OPENSEARCH_PASSWORD}@opensearch:9200
       EXECUTION_ENVIRONMENT: docker
       SHUFFLE_APP_SDK_URL: ${SHUFFLE_APP_DOWNLOAD_LOCATION:-https://github.com/shuffle/python-apps}
       SHUFFLE_STATS_DISABLED: true
@@ -338,12 +507,22 @@ services:
       SHUFFLE_WORKER_SERVER_URL: ${SHUFFLE_WORKER_SERVER_URL:-}
       SHUFFLE_AUTO_IMAGE_DOWNLOAD: "false"
       SHUFFLE_PIPELINE_AUTH: ${SHUFFLE_DEFAULT_APIKEY}
-      SHUFFLE_PIPELINE_URL: ${TENZIR_URL:-http://tenzir-node:5160}
+      # Orborus auto-provisions its OWN `tenzir-node` container (dev mode,
+      # no auth, restart=always, tenzir-network) whenever pipelines are
+      # enabled — an unauthenticated API orphan that fights our managed,
+      # TLS+token soar_tenzir_node (it recreated it ~30s after deletion).
+      # The workflow reaches Tenzir via plain HTTP actions on the managed
+      # node's `tenzir-node` alias in soar_net, so orborus-managed
+      # pipelines stay OFF. Verified live: rm'd orphan came back until
+      # SHUFFLE_SKIP_PIPELINES was set.
+      SHUFFLE_SKIP_PIPELINES: ${SHUFFLE_SKIP_PIPELINES:-true}
+      SHUFFLE_PIPELINE_URL: ${SHUFFLE_PIPELINE_URL:-}
       SHUFFLE_APP_NETWORK: soar_net
       SHUFFLE_BASE_IMAGE_NAME: ghcr.io/shuffle/shuffle-worker
       ORBORUS_CONTAINER_NAME: ${COMPOSE_PROJECT_NAME:-soar}_orborus
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ../config/certs/ca.crt:/etc/ssl/certs/lab-ca.crt:ro
     networks:
       - soar_net
     depends_on:
@@ -352,7 +531,9 @@ services:
       shuffle-backend:
         condition: service_started
     healthcheck:
-      test: [ "CMD-SHELL", "nc -z shuffle-backend 5001 || exit 1" ]
+      # CORE-002: probe orborus's OWN process — the previous check only
+      # probed shuffle-backend, so a hung orborus stayed 'healthy'.
+      test: [ "CMD-SHELL", "pgrep -f orborus >/dev/null || exit 1" ]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -373,3 +554,50 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  redis-exporter:
+    # CORE-OBS-005: dedicated Redis metrics exporter — non-root static
+    # image, cap_drop ALL, read-only FS, creds via env (never argv).
+    image: ${REDIS_EXPORTER_IMAGE:-oliver006/redis_exporter:v1.66.0}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_redis_exporter
+    environment:
+      # Server is TLS-only (lab PKI) — exporter must use rediss + CA.
+      REDIS_ADDR: rediss://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+      REDIS_EXPORTER_TLS_CA_CERT_FILE: /certs/ca.crt
+    volumes:
+      - ../config/certs/ca.crt:/certs/ca.crt:ro
+    networks:
+      - ti_net
+      - soar_net
+    depends_on:
+      redis:
+        condition: service_healthy
+    # No container healthcheck: the image is distroless (no shell, no
+    # wget — exec is impossible). Health signal is the Prometheus
+    # `up{job="redis"}` scrape, plus this service's own exit status.
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+# Env-sourced secrets — mounted at /run/secrets/<name> inside the container.
+# Keeps credentials out of `docker inspect` env/args (compose env_file feeds
+# the source; the file never lands in the repo).
+secrets:
+  redis_password:
+    environment: REDIS_PASSWORD

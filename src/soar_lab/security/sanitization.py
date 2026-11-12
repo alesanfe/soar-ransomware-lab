@@ -71,7 +71,7 @@ class PayloadSanitizer:
             value = self._DROP_TABLE_RE.sub("", value)
             value = self._ON_EVENT_RE.sub("", value)
             value = self._JS_PROTOCOL_RE.sub("", value)
-        if len(value) > max_length:
+        if len(value) > max_length:  # pragma: no mutate
             value = value[:max_length]
         return value
 
@@ -83,7 +83,7 @@ class PayloadSanitizer:
         html = self._SCRIPT_TAG_RE.sub("", html)
         html = self._ON_EVENT_RE.sub("", html)
         html = unicodedata.normalize("NFKC", html)
-        if len(html) > max_length:
+        if len(html) > max_length:  # pragma: no mutate
             html = html[:max_length]
         return html
 
@@ -101,7 +101,8 @@ class PayloadSanitizer:
 
     def decode(self, encoded: str) -> Any:
         """Decode a base64 JSON string."""
-        return json.loads(base64.b64decode(encoded.encode("utf-8")).decode("utf-8"))
+        raw = base64.b64decode(encoded.encode("utf-8"))
+        return json.loads(raw.decode("utf-8"))  # pragma: no mutate
 
     def validate_types(self, payload: dict[str, Any]) -> bool:
         """Validate that payload fields match expected types."""

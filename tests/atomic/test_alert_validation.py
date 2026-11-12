@@ -197,8 +197,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "severity": 0,
             "event_type": "ransomware_detection",
         }
-        # CFG-002: severity 0 is NOT in canonical AlertSeverity (1-4) → invalid
-        assert not AlertValidator.validate_structure(alert)
+        # CONTRACT-001: canonical scale is 0..4 — INFORMATIONAL=0 is valid.
+        assert AlertValidator.validate_structure(alert)
 
     def test_edge_case_max_severity(self):
         """Test edge case: maximum severity."""
@@ -210,8 +210,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "severity": 100,
             "event_type": "ransomware_detection",
         }
-        # Should handle max severity gracefully
-        AlertValidator.validate_structure(alert)
+        # 100 is outside the canonical AlertSeverity range (1-4) → invalid.
+        assert not AlertValidator.validate_structure(alert)
 
     def test_edge_case_negative_severity(self):
         """Test edge case: negative severity."""
@@ -235,8 +235,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "severity": 2,
             "event_type": "ransomware_detection",
         }
-        # Should handle special characters
-        AlertValidator.validate_structure(alert)
+        # Contract: hostname is any non-empty str <=255 chars → valid.
+        assert AlertValidator.validate_structure(alert)
 
     def test_edge_case_unicode_in_hostname(self):
         """Test edge case: unicode characters in hostname."""
@@ -248,8 +248,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "severity": 2,
             "event_type": "ransomware_detection",
         }
-        # Should handle unicode
-        AlertValidator.validate_structure(alert)
+        # HOSTNAME_RE is UNICODE-aware (.{1,255}) → valid.
+        assert AlertValidator.validate_structure(alert)
 
     def test_edge_case_null_bytes_in_fields(self):
         """Test edge case: null bytes in fields."""
@@ -261,8 +261,9 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "severity": 2,
             "event_type": "ransomware_detection",
         }
-        # Should handle null bytes
-        AlertValidator.validate_structure(alert)
+        # \x00 matches HOSTNAME_RE `.` — contract accepts it (no crash,
+        # still structurally valid). Pin the behavior explicitly.
+        assert AlertValidator.validate_structure(alert)
 
     def test_edge_case_mixed_case_hash(self):
         """Test edge case: mixed case hash."""
@@ -274,8 +275,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "severity": 2,
             "event_type": "ransomware_detection",
         }
-        # Should handle mixed case
-        AlertValidator.validate_structure(alert)
+        # _HASH_RE accepts a-fA-F → mixed-case hex is valid.
+        assert AlertValidator.validate_structure(alert)
 
     def test_edge_case_future_timestamp(self):
         """Test edge case: future timestamp."""
@@ -291,8 +292,8 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "event_type": "ransomware_detection",
             "detection_time": future_time,
         }
-        # Should handle future timestamp
-        AlertValidator.validate_structure(alert)
+        # validate_structure does not gate on timestamps → still valid.
+        assert AlertValidator.validate_structure(alert)
 
     def test_edge_case_very_old_timestamp(self):
         """Test edge case: very old timestamp."""
@@ -308,5 +309,5 @@ class TestAlertValidationAtomic(unittest.TestCase):
             "event_type": "ransomware_detection",
             "detection_time": old_time,
         }
-        # Should handle old timestamp
-        AlertValidator.validate_structure(alert)
+        # validate_structure does not gate on timestamps → still valid.
+        assert AlertValidator.validate_structure(alert)

@@ -120,3 +120,57 @@ class TestJWTTokenProvider:
             provider.verify_token(token, secret, "HS256")
 
         assert "Invalid authentication credentials" in str(exc_info.value)
+
+
+class TestExtraClaims:
+    """AUTH-003: custom claims merge but reserved claims cannot be overridden."""
+
+    def test_extra_claims_merged(self):
+        provider = JWTTokenProvider()
+        secret = "test-secret-key-min-32-chars-long"
+        token = provider.create_token(
+            "u", secret, 60, "HS256", extra_claims={"role": "analyst"}
+        )
+        payload = provider.verify_token(token, secret, "HS256")
+        assert payload["role"] == "analyst"
+
+    def test_reserved_claims_cannot_be_overridden(self):
+        import jwt as _jwt
+
+        provider = JWTTokenProvider()
+        secret = "test-secret-key-min-32-chars-long"
+        token = provider.create_token(
+            "realuser",
+            secret,
+            60,
+            "HS256",
+            extra_claims={"sub": "attacker", "iat": 0, "exp": 0, "role": "admin"},
+        )
+        payload = _jwt.decode(token, secret, algorithms=["HS256"])
+        assert payload["sub"] == "realuser"  # not "attacker"
+        assert payload["role"] == "admin"  # non-reserved claims still merge
+
+    def test_none_extra_claims(self):
+        provider = JWTTokenProvider()
+        token = provider.create_token(
+            "u", "test-secret-key-min-32-chars-long", 60, "HS256", extra_claims=None
+        )
+        assert token
+
+
+class TestImportGuard:
+    """Module must fail loudly when PyJWT is absent (lines 16-19)."""
+
+    def test_missing_pyjwt_raises_importerror(self):
+        import importlib
+        import sys
+        from unittest.mock import patch
+
+        import soar_lab.infrastructure.jwt_token_provider as m
+
+        try:
+            with patch.dict(sys.modules, {"jwt": None}):
+                with pytest.raises(ImportError, match="PyJWT is required"):
+                    importlib.reload(m)
+        finally:
+            importlib.reload(m)

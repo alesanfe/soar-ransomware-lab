@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi import HTTPException
 
+from soar_lab.auth.models import Role
 from soar_lab.interfaces.api.auth import (
     DefaultDenyAuthMiddleware,
     _enforce_role,
@@ -26,15 +27,24 @@ class TestEnforceRoleEarlyReturns:
         # should not raise even with a service that would deny everything
         svc = MagicMock()
         svc.can_access_endpoint.return_value = False
-        _enforce_role(_request(auth_service=svc), {"service": "internal"})
-
-    def test_missing_role_claim_is_backcompat_admin(self):
-        svc = MagicMock()
-        _enforce_role(_request(auth_service=svc), {"user": "legacy"})
+        assert _enforce_role(_request(auth_service=svc), {"service": "internal"}) is None
         svc.can_access_endpoint.assert_not_called()
 
+    def test_missing_role_claim_is_readonly_checked(self):
+        # AUTH-004: a JWT without a role claim is legacy — resolved to
+        # READONLY and the RBAC check now runs (deny-by-default for
+        # mutating paths), never silently admin.
+        svc = MagicMock()
+        svc.can_access_endpoint.return_value = False
+        req = _request(auth_service=svc)
+        with pytest.raises(HTTPException) as exc:
+            _enforce_role(req, {"user": "legacy"})
+        assert exc.value.status_code == 403
+        called_user = svc.can_access_endpoint.call_args[0][0]
+        assert called_user.role == Role.READONLY
+
     def test_missing_auth_service_skips_check(self):
-        _enforce_role(_request(auth_service=None), {"user": "u", "role": "viewer"})
+        assert _enforce_role(_request(auth_service=None), {"user": "u", "role": "viewer"}) is None
 
     def test_denied_role_raises_403_and_audits(self):
         svc = MagicMock()

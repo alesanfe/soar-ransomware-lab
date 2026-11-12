@@ -15,6 +15,21 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "docker"
+    directory: "/apps/docs-site"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/apps/web-management"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/infra/docker/images/app-ca"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
     directory: "/infra/docker/images/cortex"
     schedule:
       interval: "weekly"
@@ -23,6 +38,23 @@ updates:
     directory: "/infra/docker/images/orborus"
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/infra/docker/images/worker"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/infra/docker/taxii"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/src/soar_lab/infrastructure/network_watcher"
+    schedule:
+      interval: "weekly"
+    # infra/docker/cortex-analyzers/robtex-*-patched: deprecated images
+    # kept for historical compat (AGENTS.md) — intentionally untracked.
 
   - package-ecosystem: "github-actions"
     directory: "/"

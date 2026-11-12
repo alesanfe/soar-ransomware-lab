@@ -17,26 +17,31 @@ logger = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPORTS_DIR = REPO_ROOT / "reports" / "validation" / "results"
 
-INTERNAL_BASE = os.environ.get("SHUFFLE_BACKEND_URL", "http://shuffle-backend:5001")
-HOST_BASE = os.environ.get("SHUFFLE_BACKEND_HOST_URL", "http://localhost:5001")
+INTERNAL_BASE = os.environ.get("SHUFFLE_BACKEND_URL", "https://shuffle-backend:5443")
+HOST_BASE = os.environ.get(
+    "SHUFFLE_BACKEND_HOST_URL",
+    f"https://localhost:{os.environ.get('SHUFFLE_API_PORT', '5001')}",
+)
+_SHUFFLE_HOST = HOST_BASE
 
 HOST_REPLACEMENTS = [
     # (pattern, replacement) — handles both service names and container names
-    (r"https?://shuffle-backend:5001", "http://localhost:5001"),
-    (r"https?://soar_shuffle_backend:5001", "http://localhost:5001"),
-    (r"https?://shuffle-frontend/api/v1/hooks", "http://localhost:5001/api/v1/hooks"),
-    (r"https?://shuffle-frontend:80/api/v1/hooks", "http://localhost:5001/api/v1/hooks"),
-    (r"https?://soar_shuffle_frontend/api/v1/hooks", "http://localhost:5001/api/v1/hooks"),
-    (r"https?://soar_shuffle_frontend:80/api/v1/hooks", "http://localhost:5001/api/v1/hooks"),
-    (r"https?://thehive:9000", "http://localhost:8100"),
-    (r"https?://soar_thehive:9000", "http://localhost:8100"),
-    (r"https?://cortex:9001", "http://localhost:8101"),
-    (r"https?://soar_cortex:9001", "http://localhost:8101"),
+    (r"https?://shuffle-backend:(5001|5443)", _SHUFFLE_HOST),
+    (r"https?://soar_shuffle_backend:5001", _SHUFFLE_HOST),
+    (r"https?://shuffle-frontend/api/v1/hooks", _SHUFFLE_HOST + "/api/v1/hooks"),
+    (r"https?://shuffle-frontend:80/api/v1/hooks", _SHUFFLE_HOST + "/api/v1/hooks"),
+    (r"https?://soar_shuffle_frontend/api/v1/hooks", _SHUFFLE_HOST + "/api/v1/hooks"),
+    (r"https?://soar_shuffle_frontend:80/api/v1/hooks", _SHUFFLE_HOST + "/api/v1/hooks"),
+    (r"https?://thehive:(9000|9443)", "https://localhost:8100"),
+    (r"https?://soar_thehive:(9000|9443)", "https://localhost:8100"),
+    (r"https?://cortex:(9001|9443)", "https://localhost:8101"),
+    (r"https?://soar_cortex:(9001|9443)", "https://localhost:8101"),
     (r"https?://misp:80", "http://localhost:8083"),
     (r"https?://soar_misp:80", "http://localhost:8083"),
-    (r"https?://soar_misp:443", "http://localhost:8083"),
-    (r"https?://elasticsearch:9200", "http://localhost:8200"),
-    (r"https?://soar_elasticsearch:9200", "http://localhost:8200"),
+    (r"https?://misp:443", "https://localhost:8083"),
+    (r"https?://soar_misp:443", "https://localhost:8083"),
+    (r"https?://elasticsearch:9200", "https://localhost:19200"),
+    (r"https?://soar_elasticsearch:9200", "https://localhost:19200"),
 ]
 
 

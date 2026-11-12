@@ -20,31 +20,34 @@ COMPOSE_DIR = ROOT / "infra" / "docker" / "compose"
 # - api: container health checks + enforced containment (VAL-010)
 # - orborus: spawns Shuffle worker containers (core function)
 # - network-watcher: monitors container network events
-# - promtail: docker_sd_configs log discovery (read-only use)
 # - cortex: DinD analyzers (live: via Docker Desktop proxy path)
 # - shuffle-backend: app lifecycle management; live mount resolves to
 #   Docker Desktop's docker.proxy.sock, not the raw socket
 # - docker-socket-proxy: IS the hardened proxy (mounts raw socket by
 #   design; exposes limited API verbs to the rest)
+# - netns-guardian: sole repair actor for netns-sharing sidecars — needs
+#   container rm (DELETE), which the proxy verb whitelist blocks
+#
+# OBS-EVAL-007: promtail no longer mounts it — docker_sd discovery and
+# log tailing go through docker-socket-proxy (CONTAINERS/INFO/PING).
 JUSTIFIED = {
     "api",
     "orborus",
     "network-watcher",
     "network_watcher",
-    "promtail",
     "cortex",
     "shuffle-backend",
     "shuffle_backend",
     "docker-socket-proxy",
+    "netns-guardian",
 }
 
 SOCKET_MARKERS = ("docker.sock", "docker.proxy.sock", "docker-socket-proxy")
 
 # Services that only OBSERVE the docker API must mount the socket read-only.
-# network-watcher only reads container/network events; promtail only reads
-# container metadata for log discovery. A writable mount would let either
-# one create/pause/kill containers — privilege they do not need.
-READONLY_REQUIRED = {"network-watcher", "network_watcher", "promtail"}
+# network-watcher only reads container/network events. A writable mount
+# would let it create/pause/kill containers — privilege it does not need.
+READONLY_REQUIRED = {"network-watcher", "network_watcher"}
 
 
 class _ComposeLoader(yaml.SafeLoader):
@@ -117,7 +120,18 @@ class TestDockerSocketAllowlist:
             pytest.skip("soar_shuffle_backend not running")
         sources = [m["Source"] for m in container.attrs.get("Mounts", [])]
         sock_mounts = [s for s in sources if "sock" in s.lower()]
-        assert sock_mounts, "expected a socket mount on shuffle-backend"
+        if not sock_mounts:
+            # SOAR-012 hardened state: raw mount removed entirely — the app
+            # reaches the daemon via DOCKER_HOST=tcp://docker-socket-proxy.
+            env = container.attrs.get("Config", {}).get("Env", [])
+            docker_host = next(
+                (e.split("=", 1)[1] for e in env if e.startswith("DOCKER_HOST=")), ""
+            )
+            assert "docker-socket-proxy" in docker_host, (
+                "shuffle-backend has no socket mount AND no DOCKER_HOST proxy "
+                f"(DOCKER_HOST={docker_host!r}) — socket access is unaccounted for"
+            )
+            return
         is_desktop = "desktop" in server_name.lower()
         if is_desktop:
             # Docker Desktop: the VM socket bind source is already the
@@ -134,12 +148,31 @@ class TestDockerSocketAllowlist:
 
     def test_known_inventory_matches(self):
         """Documented live inventory: raw socket on api, orborus,
-        network-watcher, promtail; proxy on cortex + shuffle-backend."""
+        network-watcher; proxy on cortex + shuffle-backend + promtail
+        (OBS-EVAL-007)."""
         found = set(_socket_mounts())
         unexpected = found - JUSTIFIED
         assert not unexpected
-        for expected in ("api", "orborus", "promtail"):
+        for expected in ("api", "orborus"):
             assert expected in found
+        assert "promtail" not in found, "promtail must use docker-socket-proxy"
+
+    def test_proxy_has_app_level_healthcheck(self):
+        """The proxy is a single point of failure for promtail discovery,
+        network-watcher, cortex DinD and orborus — a wedged haproxy must be
+        detectable, not silently dead. Its `/_ping` endpoint (PING=1 in the
+        whitelist) gives an application-level probe."""
+        data = yaml.load(
+            (COMPOSE_DIR / "docker-compose.yml").read_text(encoding="utf-8"),
+            Loader=_ComposeLoader,
+        )
+        svc = (data.get("services") or {})["docker-socket-proxy"]
+        test = svc.get("healthcheck", {}).get("test", [])
+        joined = " ".join(str(t) for t in test)
+        assert "_ping" in joined, (
+            "docker-socket-proxy lacks a /_ping healthcheck — a dead proxy "
+            "silently breaks every socket consumer"
+        )
 
     def test_readonly_consumers_mount_socket_ro(self):
         """Observe-only services must never get a writable docker socket."""

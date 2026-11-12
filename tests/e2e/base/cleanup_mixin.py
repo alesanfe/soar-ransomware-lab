@@ -87,11 +87,15 @@ class CleanupMixin:
         import redis as _redis
 
         try:
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = _redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password(),
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password(),
+                    decode_responses=True,
+                )
             )
             pattern = f"e2e:{self.correlation_id}:*"
             deleted = 0
@@ -173,7 +177,7 @@ class CleanupMixin:
                     index = parts[0]
                     doc_id = parts[2]
                     # self.s already carries the lab's TLS posture — no
-                    # per-call verify=False.
+                    # per-call verify=self.s.verify.
                     r = self.s.delete(
                         f"{es_url}/{index}/_doc/{doc_id}",
                         auth=es_auth,

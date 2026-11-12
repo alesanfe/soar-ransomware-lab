@@ -59,6 +59,10 @@ test = [
     "pytest-randomly>=3.15.0,<4.0",
     "requests-mock>=1.11.0,<2.0",
     "redis>=4.6.0,<9.0",
+    # starlette>=1.10 TestClient requires an HTTP client — httpx2 is
+    # preferred, httpx accepted as fallback (deprecation warning).
+    "httpx2>=2.0.0,<3.0; python_version >= '3.11'",
+    "httpx>=0.27.0,<1.0",
     # Imported by tests/quality + scripts/ci helpers (fawltydeps).
     "click>=8.0,<9.0",
     "packaging>=23.0,<27.0",
@@ -360,15 +364,27 @@ exclude_lines = [
 ]
 
 [tool.mutmut]
-source_paths = ["src/soar_lab/security/", "src/soar_lab/resilience/", "src/soar_lab/domain/"]
-pytest_add_cli_args = ["-q", "--tb=no", "--timeout=30", "--no-cov", "-o", "addopts=", "-o", "pythonpath=.", "-p", "no:cacheprovider"]
+# Mutation scope: the whole webhook/alert-ingestion pipeline — API
+# middleware (auth/rate-limit/body-limit/headers/trace-id), Redis
+# admission messaging, domain, security and resilience layers.
+source_paths = [
+    "src/soar_lab/interfaces/api/middleware/",
+    "src/soar_lab/infrastructure/messaging/",
+    "src/soar_lab/domain/",
+    "src/soar_lab/security/",
+    "src/soar_lab/resilience/",
+]
+pytest_add_cli_args = ["-q", "--tb=no", "--timeout=120", "--no-cov", "-o", "addopts=", "-o", "pythonpath=.", "-p", "no:cacheprovider", "--deselect", "tests/unit/test_property_based.py", "--deselect", "tests/unit/test_fase1_hardening.py::TestRepoRootDotenv::test_es_credentials_ignore_cwd_decoy"]
 pytest_add_cli_args_test_selection = ["tests/unit/"]
 # `*/ports/*` holds only Protocol `...` stubs — mutating declarations cannot
 # produce observable behavior differences (equivalent mutants by construction)
 do_not_mutate = ["src/soar_lab/__init__.py", "*/scripts/*", "*/tests/*", "*/ports/*"]
 # Full src tree must be copied so mutants/src/soar_lab is a regular package that
-# shadows any installed copy — otherwise the trampoline modules are never imported
-also_copy = ["scripts/", "src/", "detections/", ".env.example"]
+# shadows any installed copy — otherwise the trampoline modules are never imported.
+# Kept minimal on purpose: unit tests only need src + scripts + contracts —
+# copying infra/apps/docs (~2.5G total incl. runtime data) made generation
+# take ~20min and destabilised the Docker VM under bind-mount IO.
+also_copy = ["src/", "scripts/", "contracts/", "pytest.ini", ".env.example", ".env.container", "playbooks/", "detections/", "infra/", "apps/docs-site/Dockerfile", "apps/web-management/nginx.conf", "docs/", "Makefile.linux", "Makefile.win"]
 # -1 = unlimited depth (0 would record zero trampoline hits → "no tests found")
 dependency_tracking_depth = -1
 

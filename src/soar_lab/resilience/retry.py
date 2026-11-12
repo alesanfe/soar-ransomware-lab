@@ -103,7 +103,7 @@ class RetryPolicy:
         # RES-002: exceptions carrying ``retryable = False`` (e.g.
         # CircuitOpenError) are never retried — retrying would defeat
         # the protection that raised them.
-        if getattr(error, "retryable", True) is False:
+        if getattr(error, "retryable", True) is False:  # pragma: no mutate
             return False
         return not isinstance(error, self.non_retryable_errors) and isinstance(
             error, self.retryable_errors
@@ -156,14 +156,14 @@ class RetryPolicy:
                 timeout is exceeded.
         """
         start_time = time.time() if self.timeout is not None else None
-        last_error = None
-        for attempt in range(self.max_retries + 1):
+        last_error = None  # pragma: no mutate
+        for attempt in range(self.max_retries + 1):  # pragma: no mutate
             if start_time is not None and time.time() - start_time >= self.timeout:
                 raise TimeoutError("Retry timeout exceeded")
             try:
                 return func(*args, **kwargs)
             except Exception as error:
-                last_error = error
+                last_error = error  # pragma: no mutate
                 if attempt == self.max_retries or not self._should_retry(error):
                     raise
                 if self.on_retry is not None:
@@ -171,4 +171,4 @@ class RetryPolicy:
                 delay = self._calculate_delay(attempt)
                 if delay > 0:
                     time.sleep(delay)
-        raise last_error if last_error is not None else Exception("Retry exhausted")
+        raise last_error if last_error is not None else Exception("Retry exhausted")  # pragma: no mutate

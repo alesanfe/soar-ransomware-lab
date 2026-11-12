@@ -124,7 +124,7 @@ class TestResilience(E2EBaseTest):
         deadline = time.time() + timeout
         # Map container names to their HTTP health check URLs
         http_checks = {
-            "soar_cortex": ("http://cortex:9001/api/status", None),
+            "soar_cortex": ("https://cortex:9443/api/status", None),
             "soar_misp": ("https://misp:443/servers/getVersion", "misp_key"),
         }
         retry_errors = 0

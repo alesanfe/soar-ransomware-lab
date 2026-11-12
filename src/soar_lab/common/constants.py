@@ -180,11 +180,11 @@ DEFAULT_KPI_SEARCH_SIZE = 10000
 # ---------------------------------------------------------------------------
 # Default service URLs (Docker internal network)
 # ---------------------------------------------------------------------------
-DEFAULT_SHUFFLE_BACKEND_URL = "http://shuffle-backend:5001"
+DEFAULT_SHUFFLE_BACKEND_URL = "https://shuffle-backend:5443"
 DEFAULT_SHUFFLE_FRONTEND_URL = "http://shuffle-frontend"
-DEFAULT_OPENSEARCH_URL = "http://opensearch:9200"
-DEFAULT_ELASTICSEARCH_URL = "http://elasticsearch:9200"
-DEFAULT_OPENSEARCH_HOST_URL = "http://localhost:8201"
+DEFAULT_OPENSEARCH_URL = "https://opensearch:9200"
+DEFAULT_ELASTICSEARCH_URL = "https://elasticsearch:9200"
+DEFAULT_OPENSEARCH_HOST_URL = "https://localhost:19201"
 
 # Shuffle webhook URL template (token is appended at runtime)
 SHUFFLE_WEBHOOK_TEMPLATE = DEFAULT_SHUFFLE_BACKEND_URL + "/api/v1/hooks/{token}"

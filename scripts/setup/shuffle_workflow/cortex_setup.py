@@ -8,7 +8,7 @@ Uses :class:`soar_lab.infrastructure.integrations.cortex.client.CortexClient`
 for all HTTP interactions with the Cortex API.
 """
 
-# NOTE: All ``requests`` calls in this module use ``verify=False`` because
+# NOTE: All ``requests`` calls in this module use ``verify=config.VERIFY`` because
 # the lab uses self-signed certificates in the internal Docker network.
 # This is safe in the lab context but must NOT be used in production.
 
@@ -27,8 +27,9 @@ from soar_lab.common.constants import (
 )
 
 from . import config
-from .utils import action, branch, param, pos
-from .workflow_actions import ACT_THEHIVE
+from .analyzer_matrix import OBSERVABLE_FIELDS, allowed_fields, base_name
+from .utils import branch, pos
+from .workflow_actions import ACT_THEHIVE, cortex_guarded_action
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +141,7 @@ def _cortex_install_analyzer(definition_id: str, cortex_basic: str) -> bool:
                     "auto_extract_artifacts": False,
                 },
             },
-            verify=False,
+            verify=config.VERIFY,
             timeout=60,
         )
         if resp.status_code in (200, 201, 409):
@@ -157,7 +158,9 @@ def _cortex_install_analyzer(definition_id: str, cortex_basic: str) -> bool:
         return False
 
 
-def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[str, Any]:
+def discover_and_select_analyzers(
+    cortex_basic: str, app_id_http: str, app_id_shuffle_tools: str = ""
+) -> dict[str, Any]:
     """Discover installed analyzers, install missing wanted ones, and select
     IDs.
 
@@ -208,7 +211,7 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
             analyzers_r = requests.get(
                 f"{config.CORTEX_URL}/api/analyzer",
                 headers={HEADER_AUTHORIZATION: f"{AUTH_BASIC_PREFIX} {cortex_basic}"},
-                verify=False,
+                verify=config.VERIFY,
                 timeout=30,
             )
             if analyzers_r.ok:
@@ -219,7 +222,7 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
                     defs_r = requests.get(
                         f"{config.CORTEX_URL}/api/analyzerdefinition",
                         headers={HEADER_AUTHORIZATION: f"{AUTH_BASIC_PREFIX} {cortex_basic}"},
-                        verify=False,
+                        verify=config.VERIFY,
                         timeout=30,
                     )
                     defs = defs_r.json() if defs_r.ok and isinstance(defs_r.json(), list) else []
@@ -237,7 +240,7 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
                         analyzers_r = requests.get(
                             f"{config.CORTEX_URL}/api/analyzer",
                             headers={HEADER_AUTHORIZATION: f"{AUTH_BASIC_PREFIX} {cortex_basic}"},
-                            verify=False,
+                            verify=config.VERIFY,
                             timeout=30,
                         )
                         all_analyzers = (
@@ -292,9 +295,18 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
         elif ip_ans:
             ip_analyzer_id = _get_id(ip_ans[0])
         logger.info("[cortex] Selected IP analyzer: %s", ip_analyzer_id)
+        skip_bases_sel = {
+            re.sub(r"_\d+(?:_\d+)*$", "", n) for n in _SKIP_DYNAMIC_NAMES
+        }
         virusshare = sorted(
             (a for a in hash_ans if "Virusshare" in a["name"]), key=lambda x: x["name"]
         )
+        virusshare = [
+            a
+            for a in virusshare
+            if a["name"] not in _SKIP_DYNAMIC_NAMES
+            and re.sub(r"_\d+(?:_\d+)*$", "", a["name"]) not in skip_bases_sel
+        ]
         if virusshare:
             hash_virusshare_id = _get_id(virusshare[0])
             has_hash_virusshare = True
@@ -340,7 +352,7 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
         (``GoogleDNS_resolve``). Exact-name matching let skipped analyzers
         get dynamically wired anyway (BUG-072).
         """
-        return re.sub(r"_\d+(?:_\d+)*$", "", n)
+        return base_name(n)
 
     try:
         wired_names = {
@@ -365,16 +377,21 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
             if name in wired_names or base in wired_bases or base in skip_bases:
                 continue
             dtypes = a.get("dataTypeList", [])
-            if "domain" in dtypes:
-                field, dtype_label = "$exec.domain", "domain"
-            elif "url" in dtypes:
-                field, dtype_label = "$exec.url", "url"
-            elif "hash" in dtypes or "file" in dtypes:
-                field, dtype_label = "$exec.hash", "hash"
-            elif "ip" in dtypes:
-                field, dtype_label = "$exec.src_ip", "ip"
-            else:
+            # H-02/H-03: pick the observable field via the formal
+            # Observable→Analyzer matrix. Analyzers with no compatible
+            # field (file-only, forbidden) are never wired — they would
+            # deterministically fail on every alert (TC-KPI-06 miswiring).
+            compatible = allowed_fields(name, dtypes)
+            if not compatible:
+                logger.info(
+                    "[cortex] Not wiring %s: no compatible observable field "
+                    "(dataTypeList=%s)",
+                    name,
+                    dtypes,
+                )
                 continue
+            spec = OBSERVABLE_FIELDS[compatible[0]]
+            field, dtype_label = spec["token"], spec["data_type"]
             wired_names.add(name)
             slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
             aid = f"act_cortex_dyn_{slug}"
@@ -384,27 +401,15 @@ def discover_and_select_analyzers(cortex_basic: str, app_id_http: str) -> dict[s
                 return a_item.get("id") or a_item.get("_id") or a_item["name"]
 
             dynamic_cortex_actions.append(
-                action(
-                    aid=aid,
-                    name=f"cortex_dyn_{slug}",
-                    app_name="http",
-                    app_version="1.4.0",
-                    app_id=app_id_http,
-                    action_name="POST",
-                    params=[
-                        param("url", f"{config.CORTEX_INT}/api/analyzer/{_get_id(a)}/run"),
-                        param(
-                            "headers",
-                            "Content-Type: application/json\nAuthorization: Basic " + cortex_basic,
-                        ),
-                        param(
-                            "body",
-                            f'{{"data": "{field}",'
-                            f' "attributes": {{"dataType": "{dtype_label}", "tlp": 2}}}}',
-                        ),
-                        param("timeout", "120"),
-                    ],
-                    position=pos(950, dyn_pos_y),
+                cortex_guarded_action(
+                    cortex_basic,
+                    app_id_shuffle_tools or app_id_http,
+                    aid,
+                    f"cortex_dyn_{slug}",
+                    _get_id(a),
+                    field,
+                    dtype_label,
+                    pos(950, dyn_pos_y),
                 )
             )
             dynamic_cortex_branches.append(branch(f"br_hive_cortex_dyn_{slug}", ACT_THEHIVE, aid))

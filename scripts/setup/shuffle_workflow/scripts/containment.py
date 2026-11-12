@@ -26,14 +26,32 @@ if decision != "contain":
 else:
     hostname = r"""$exec.hostname"""
     alert_id = r"""$exec.alert_id"""
-    case_id = r"""$thehive_create_case.message.body._id"""
+    # Defensive: when create_case upstream failed, body={} and
+    # `.body._id` would be a shuffle_variable_error BEFORE this script
+    # runs. Resolve the whole result and degrade cleanly instead.
+    try:
+        _cc = json.loads(r"""$thehive_create_case.message""")
+        case_id = ((_cc.get("body") or {}).get("_id") or "")
+    except Exception:
+        case_id = ""
+    if not case_id:
+        print(
+            json.dumps(
+                {
+                    "success": True,
+                    "skipped": True,
+                    "reason": "no case_id — upstream create_case failed",
+                }
+            )
+        )
+        raise SystemExit(0)
     body = json.dumps(
         {"hostname": hostname, "alert_id": alert_id, "case_id": case_id, "mode": "simulated"}
     ).encode()
     headers = {"Content-Type": "application/json"}
     service_token = (
-        os.environ.get("SOAR_SERVICE_TOKEN")
-        or os.environ.get("INTERNAL_SERVICE_TOKEN")
+        os.environ.get("CONTAINMENT_SERVICE_TOKEN")
+        or os.environ.get("SOAR_SERVICE_TOKEN")
         or "__SERVICE_TOKEN__"
     )
     if service_token.startswith("__"):

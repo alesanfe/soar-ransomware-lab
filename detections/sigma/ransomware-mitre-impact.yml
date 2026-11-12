@@ -8,8 +8,22 @@ logsource:
 detection:
   selection:
     data.mitre_techniques|contains:
-      - T1486
-      - T1490
-      - T1491
+    - T1486
+    - T1490
+    - T1491
   condition: selection
 level: high
+tags:
+- attack.impact
+- attack.t1486
+# DOM-EVAL-001: the selection also matches T1490/T1491 — ATT&CK coverage
+# attribution must tag every technique the rule actually detects.
+- attack.t1490
+- attack.t1491
+falsepositives:
+- Legitimate disk-encryption or backup-maintenance tooling flagged by IT ops
+- Authorized data-destruction during decommissioning workflows
+references:
+- https://attack.mitre.org/techniques/T1486/
+- https://attack.mitre.org/techniques/T1490/
+- https://attack.mitre.org/techniques/T1491/

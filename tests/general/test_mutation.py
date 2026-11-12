@@ -91,14 +91,21 @@ class TestMutationInfrastructure:
             assert found_mutation, "At least one threshold file must reference mutation scores"
 
     def test_mutation_does_not_run_in_ci(self):
-        """Mutation testing must NOT run in standard CI (it takes 60-180
-        min)."""
+        """Mutation testing must not run UNBOUNDED in CI (it takes 60-180
+        min for the whole codebase).  The bounded mutation-gate job
+        (TST-003) constrains itself to ``--paths-to-mutate`` on a single
+        module — only an unbounded ``mutmut run`` is forbidden."""
         ci_yml = REPO_ROOT / ".github" / "workflows" / "ci.yml"
         if ci_yml.exists():
             content = ci_yml.read_text(encoding="utf-8")
-            assert (
-                "mutmut" not in content.lower()
-            ), "mutmut must not run in standard CI (too slow) — use make mutation on-demand"
+            lines = content.splitlines()
+            for i, line in enumerate(lines):
+                if "mutmut run" in line.lower():
+                    window = "\n".join(lines[i : i + 4])
+                    assert "--paths-to-mutate" in window, (
+                        "unbounded `mutmut run` in CI is forbidden (60-180min) "
+                        "— scope it with --paths-to-mutate"
+                    )
 
     def test_mutation_report_output_format(self):
         """Mutmut report generator must output to reports/mutmut/."""

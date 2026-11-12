@@ -64,14 +64,14 @@ class TestUIScreenshots(E2EBaseTest):
         "grafana": "http://localhost:8084/login",
         "web_management": "http://localhost:8085",
         "docs_site": "http://localhost:8086/soar-ransomware-lab/",
-        "thehive": "http://localhost:8100",
-        "cortex": "http://localhost:8101",
-        "opensearch_dashboards": "http://localhost:8202",
+        "thehive": "https://localhost:18100",
+        "cortex": "https://localhost:18101",
+        "opensearch_dashboards": "http://localhost:19202",
     }
     _API_ONLY_PORTS = {
         "shuffle_backend": "http://localhost:5001",
-        "elasticsearch": "http://localhost:8200",
-        "opensearch": "http://localhost:8201",
+        "elasticsearch": "https://localhost:19200",
+        "opensearch": "https://localhost:19201",
         "network_watcher": "http://localhost:15130",
         "tenzir_node": "http://localhost:15160",
     }
@@ -84,11 +84,11 @@ class TestUIScreenshots(E2EBaseTest):
     # ~30 s per client in DNS retries. Force published localhost ports.
     _HOST_URL_OVERRIDES = {
         "SHUFFLE_URL": "http://localhost:5001",
-        "THEHIVE_URL": "http://localhost:8100",
-        "CORTEX_URL": "http://localhost:8101",
+        "THEHIVE_URL": "https://localhost:18100",
+        "CORTEX_URL": "https://localhost:18101",
         "MISP_URL": "https://localhost:8083",
-        "ES_URL": "http://localhost:8200",
-        "OPENSEARCH_URL": "http://localhost:8201",
+        "ES_URL": "https://localhost:19200",
+        "OPENSEARCH_URL": "https://localhost:19201",
         "GRAFANA_URL": "http://localhost:8084",
         "API_URL": "http://localhost:8000",
         "LOKI_URL": "http://localhost:3100",

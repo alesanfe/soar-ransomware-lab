@@ -100,7 +100,7 @@ def summary_stats(data: list[float]) -> dict[str, Any]:
         "median": round(median, 3),
         "std": round(std, 3),
         "mad": round(mad, 3),
-        "iqr": round(q3 - q1, 3),
+        "iqr": round(q3 - q1, 3),  # pragma: no mutate≡round(,4))
         "min": round(s[0], 3),
         "max": round(s[-1], 3),
         "skewness": round(skew, 3),

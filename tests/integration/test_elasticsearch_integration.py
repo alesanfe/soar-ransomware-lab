@@ -21,7 +21,7 @@ class TestElasticsearchIntegration:
     def es_client(self):
         """Create Elasticsearch client for testing."""
         return ElasticsearchClient(
-            hosts=["http://localhost:9200"], username="elastic", password="test-pass"
+            hosts=["https://localhost:19200"], username="elastic", password=None
         )
 
     def test_connection_and_authentication(self, es_client):

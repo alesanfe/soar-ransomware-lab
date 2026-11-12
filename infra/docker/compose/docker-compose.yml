@@ -129,13 +129,83 @@ volumes:
   # merge and silently re-bind them to runtime/data.
 
 services:
+  # --- Restricted Docker API proxy (SOAR-012) ---
+  # Lives in the DEFAULT set (moved out of the hardened overlay in
+  # OBS-EVAL-007): promtail's docker_sd routes through it, and a
+  # depends_on from a default-set compose cannot resolve a service that
+  # only exists in the optional hardened overlay.
+  docker-socket-proxy:
+    image: ${DOCKER_PROXY_IMAGE:-tecnativa/docker-socket-proxy:v0.4.1}
+    container_name: ${COMPOSE_PROJECT_NAME:-soar}_docker_proxy
+    environment:
+      # Whitelist the minimum verb groups the consumers need.
+      CONTAINERS: "1"
+      NETWORKS: "1"
+      INFO: "1"
+      EVENTS: "1"
+      PING: "1"
+      EXEC: "1"        # network_watcher seeds docker.sock into workers
+      POST: "1"        # api restarts containers during failure drills
+      IMAGES: "1"      # SEC-03: DinD workers inspect/pull Shuffle app images
+      # Explicitly OFF (default): BUILD, VOLUMES, AUTH, SECRETS, SWARM,
+      # SERVICES, NODES, TASKS, PLUGINS, SYSTEM, DISTRIBUTION.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - soar_net
+    # NOTE: cap_drop ALL breaks the proxy's unix-socket connect() on Docker
+    # Desktop (haproxy returns 503 SC--). Needs DAC_OVERRIDE-equivalent access
+    # to the mounted socket — verb whitelist + socket :ro + no-new-privileges
+    # remain the effective controls.
+    security_opt:
+      - no-new-privileges:true
+    # docker-java (Cortex analyzer jobs) pools connections and reuses them
+    # past the stock `http-keep-alive 10s`: haproxy has already closed the
+    # socket, so the next pooled request dies mid-flight as
+    # NoHttpResponseException (observed in KPI-06 analyzer runs under
+    # load). Patch the rendered template in-place before the image
+    # entrypoint consumes it — allowlist and the rest of the config stay
+    # upstream-verbatim.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        ulimit -n 10000 2>/dev/null || true; sed -e 's/$${BIND_CONFIG}/[::]:2375 v4v6/' -e 's/timeout http-keep-alive 10s/timeout http-keep-alive 120s/' -e 's/timeout http-request 10s/timeout http-request 30s/' /usr/local/etc/haproxy/haproxy.cfg.template > /tmp/haproxy.cfg && exec haproxy -W -db -f /tmp/haproxy.cfg
+    # OBS/WEB-EVAL: app-level healthcheck — the proxy carries /_ping (PING=1
+    # whitelisted). Without it a wedged haproxy silently broke promtail's
+    # docker_sd, network_watcher, cortex DinD and orborus at once.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:2375/_ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   elasticsearch:
     image: ${ELASTICSEARCH_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:7.10.2}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_elasticsearch
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-false}
+      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED:-true}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      # TLS on HTTP API — lab CA-signed cert; internal plaintext is no
+      # longer accepted (all consumers verify against ca.crt).
+      - xpack.security.http.ssl.enabled=${ELASTIC_HTTP_SSL_ENABLED:-true}
+      - xpack.security.http.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch.crt
+      - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
+      - xpack.security.http.ssl.certificate_authorities=/usr/share/elasticsearch/config/certs/ca.crt
+      # TLS on transport (single-node: required by xpack, cheap anyway)
+      - xpack.security.transport.ssl.enabled=${ELASTIC_TRANSPORT_SSL_ENABLED:-true}
+      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.security.transport.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch.crt
+      - xpack.security.transport.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
+      - xpack.security.transport.ssl.certificate_authorities=/usr/share/elasticsearch/config/certs/ca.crt
       - action.auto_create_index=true
       - cluster.routing.allocation.disk.threshold_enabled=false
       - "ES_JAVA_OPTS=${ES_JAVA_OPTS:--Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true -Xlog:gc*=warning}"
@@ -149,13 +219,16 @@ services:
         hard: 65536
     volumes:
       - es_data:/usr/share/elasticsearch/data
+      - ../../../infra/docker/config/certs/elasticsearch.crt:/usr/share/elasticsearch/config/certs/elasticsearch.crt:ro
+      - ../../../infra/docker/config/certs/elasticsearch.key:/usr/share/elasticsearch/config/certs/elasticsearch.key:ro
+      - ../../../infra/docker/config/certs/ca.crt:/usr/share/elasticsearch/config/certs/ca.crt:ro
     ports:
       - "127.0.0.1:${ELASTICSEARCH_PORT:-19200}:9200"
     networks:
       - soar_net
       - ti_net
     healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS -u elastic:${ELASTIC_PASSWORD} 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1" ]
+      test: [ "CMD-SHELL", "curl -fsS --cacert /usr/share/elasticsearch/config/certs/ca.crt -u elastic:${ELASTIC_PASSWORD} 'https://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1" ]
       interval: 30s
       timeout: 15s
       retries: 10

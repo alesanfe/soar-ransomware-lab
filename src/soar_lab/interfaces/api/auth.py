@@ -78,7 +78,65 @@ def _auth_required(config_provider: Any) -> bool:
     return value not in ("0", "false", "off", "no")
 
 
-def _service_token_scope(request: Request, config_provider: Any) -> tuple[str | None, bool]:
+# AUTH-002: least-privilege service identities. Each env-var maps a
+# distinct credential to a narrow scope; "internal" stays the break-glass
+# full-access identity (NOT embedded in workflow definitions anymore).
+_SERVICE_TOKEN_SCOPES: tuple[tuple[str, str], ...] = (
+    ("INTERNAL_SERVICE_TOKEN", "internal"),
+    ("SHUFFLE_WEBHOOK_TOKEN", "webhook"),
+    ("CONTAINMENT_SERVICE_TOKEN", "containment"),
+    ("CACHE_SERVICE_TOKEN", "cache"),
+    ("CALLBACK_SERVICE_TOKEN", "callback"),
+    ("METRICS_SERVICE_TOKEN", "metrics"),
+)
+_SERVICE_TOKEN_PREV_SCOPES: tuple[tuple[str, str], ...] = tuple(
+    (f"{k}_PREV", sc) for k, sc in _SERVICE_TOKEN_SCOPES
+)
+
+# scope -> allowed (method, path) rules. A rule matches when method is
+# equal AND (path == rule or path.startswith(rule + "/")).
+_SCOPE_RULES: dict[str, tuple[tuple[str, str], ...]] = {
+    "internal": (),  # empty = unrestricted (break-glass only)
+    "webhook": (
+        ("POST", "/api/v1/alerts"),          # exact: ingest only
+        ("POST", "/api/v1/alerts/grafana"),  # exact: grafana receiver
+        ("GET", "/api/v1/alerts/"),          # prefix: admission status
+    ),
+    "callback": (("POST", "/api/v1/alerts/callback"),),
+    "containment": (("POST", "/api/v1/contain"),),
+    "cache": (
+        ("GET", "/api/v1/cache"),
+        ("GET", "/api/v1/cache/"),
+        ("POST", "/api/v1/cache"),
+        ("POST", "/api/v1/cache/"),
+    ),
+    "metrics": (("GET", "/metrics"),),
+}
+
+
+def _cred_fp(token_b: bytes) -> str:
+    """AUTH-005: irreversible credential fingerprint for audit/identity."""
+    return hashlib.sha256(token_b).hexdigest()[:12]
+
+
+def _scope_allowed(scope: str, method: str, path: str) -> bool:
+    rules = _SCOPE_RULES.get(scope)
+    if rules is None:
+        return False  # unknown scope -> deny
+    if not rules:
+        return True  # internal break-glass
+    m = method.upper()
+    for rm, rp in rules:
+        if m != rm:
+            continue
+        # Rules ending in "/" are prefix rules; otherwise exact match.
+        # (keeps /api/v1/alerts/callback out of the webhook scope.)
+        if path == rp or (rp.endswith("/") and path.startswith(rp)):
+            return True
+    return False
+
+
+def _service_token_scope(request: Request, config_provider: Any) -> tuple[str | None, bool, str | None]:
     """Resolve the X-Service-Token header to ``(scope, rotation_grace)``.
 
     ``INTERNAL_SERVICE_TOKEN`` grants the full ``internal`` scope. The
@@ -105,23 +163,17 @@ def _service_token_scope(request: Request, config_provider: Any) -> tuple[str | 
         if scheme.lower() == SERVICE_TOKEN_AUTH_SCHEME and credential.strip():
             token = credential.strip()
     if not token:
-        return None, False
+        return None, False, None
     token_b = token.encode("utf-8")
-    for key, scope in (
-        ("INTERNAL_SERVICE_TOKEN", "internal"),
-        ("SHUFFLE_WEBHOOK_TOKEN", "webhook"),
-    ):
+    for key, scope in _SERVICE_TOKEN_SCOPES:
         accepted = config_provider.get(key)
         if accepted and hmac.compare_digest(token_b, str(accepted).encode("utf-8")):
-            return scope, False
-    for key, scope in (
-        ("INTERNAL_SERVICE_TOKEN_PREV", "internal"),
-        ("SHUFFLE_WEBHOOK_TOKEN_PREV", "webhook"),
-    ):
+            return scope, False, _cred_fp(token_b)
+    for key, scope in _SERVICE_TOKEN_PREV_SCOPES:
         accepted = config_provider.get(key)
         if accepted and hmac.compare_digest(token_b, str(accepted).encode("utf-8")):
-            return scope, True
-    return None, False
+            return scope, True, _cred_fp(token_b)
+    return None, False, None
 
 
 # Webhook scope reaches alert ingest + admission status only — not DLQ
@@ -138,7 +190,11 @@ def _webhook_cidr_allowed(request: Request, config_provider: Any) -> bool:
     replayed from an arbitrary host. Empty/unset disables the check
     (lab default).
     """
-    raw = str(config_provider.get("WEBHOOK_ALLOW_CIDRS") or "").strip()
+    raw = str(
+        config_provider.get("SERVICE_TOKEN_ALLOW_CIDRS")
+        or config_provider.get("WEBHOOK_ALLOW_CIDRS")
+        or ""
+    ).strip()
     if not raw:
         return True
     client_ip = request.client.host if request.client else None
@@ -205,7 +261,9 @@ def _enforce_role(request: Request, principal: dict[str, Any]) -> None:
         return
     role_claim = principal.get("role")
     if role_claim is None:
-        return
+        # AUTH-004: a JWT without a role claim is legacy — read-only,
+        # never admin. Deny-by-default for anything mutating.
+        role_claim = Role.READONLY.value
     svc = getattr(request.app.state, "auth_service", None)
     if svc is None:
         return
@@ -270,9 +328,9 @@ async def require_api_auth(
         request.state._auth_principal = principal
         return principal
 
-    token_scope, rotation_grace = _service_token_scope(request, cp)
+    token_scope, rotation_grace, cred_fp = _service_token_scope(request, cp)
     if token_scope:
-        return _service_token_principal(request, cp, token_scope, rotation_grace)
+        return _service_token_principal(request, cp, token_scope, rotation_grace, cred_fp)
 
     if credentials is not None:
         principal = _jwt_principal(request, credentials)
@@ -292,28 +350,27 @@ def _service_token_principal(
     cp: Any,
     token_scope: str,
     rotation_grace: bool,
+    cred_fp: str | None = None,
 ) -> dict[str, Any]:
-    # The webhook-scope token may only reach ingest endpoints — it is
-    # distributed inside Shuffle workflow definitions and must not be
-    # a skeleton key for the whole API.
-    if token_scope == "webhook":  # pragma: allowlist secret
-        if not _webhook_cidr_allowed(request, cp):
-            _audit_access(
-                request,
-                principal="service:webhook",
-                result="deny",
-                detail=f"cidr-blocked src={request.client.host if request.client else '?'}",
-            )
-            raise HTTPException(status_code=403, detail="Webhook token source not allowed")
-        if not request.url.path.startswith(_WEBHOOK_SCOPE_PREFIX):
-            _audit_access(
-                request,
-                principal="service:webhook",
-                result="deny",
-                detail=f"scope=webhook {request.method} {request.url.path}",
-            )
-            raise HTTPException(status_code=403, detail="Webhook token scope is /api/v1/* only")
-    principal = {"service": token_scope}
+    # AUTH-002: every service token is confined to its scope rules and
+    # honours the CIDR allowlist — not only the webhook scope.
+    if not _webhook_cidr_allowed(request, cp):
+        _audit_access(
+            request,
+            principal=f"service:{token_scope}",
+            result="deny",
+            detail=f"cidr-blocked src={request.client.host if request.client else '?'}",
+        )
+        raise HTTPException(status_code=403, detail="Service token source not allowed")
+    if not _scope_allowed(token_scope, request.method, request.url.path):
+        _audit_access(
+            request,
+            principal=f"service:{token_scope}",
+            result="deny",
+            detail=f"scope={token_scope} {request.method} {request.url.path}",
+        )
+        raise HTTPException(status_code=403, detail=f"Token scope {token_scope} denied")
+    principal = {"service": token_scope, "credential_id": cred_fp}
     request.state._auth_principal = principal
     _audit_access(
         request,

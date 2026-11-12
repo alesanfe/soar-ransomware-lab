@@ -1,239 +1,229 @@
 #!/usr/bin/env python3
-"""Unit tests for interfaces/api/routes_analytics.py.
+"""Endpoint tests for routes_analytics — use cases mocked at module level."""
 
-Tests the analytics, KPI, and node-timing endpoints by registering them
-on a minimal FastAPI app with mocked dependencies in app.state.
-"""
-
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from soar_lab.interfaces.api.routes_analytics import register_analytics_routes
-
-__all__ = [
-    "TestMetricsEndpoint",
-    "TestKpisEndpoint",
-    "TestAggregatedKpisEndpoint",
-    "TestNodeTimingsEndpoint",
-]
+MOD = "soar_lab.interfaces.api.routes_analytics"
 
 
-@pytest.fixture()
-def analytics_app():
-    """Create a minimal FastAPI app with analytics routes and mocked deps."""
+def _app(repo=None, **state):
+    from soar_lab.interfaces.api.routes_analytics import register_analytics_routes
+
     app = FastAPI()
-
-    # Mock system metrics
-    app.state.system_metrics = Mock()
-
-    # Mock analytics service
-    mock_analytics = Mock()
-    mock_analytics.get_comprehensive_kpis.return_value = {"mttr": 120.5, "total": 10}
-
-    # Dependency function for analytics service
-    def get_analytics_service():
-        return mock_analytics
-
-    register_analytics_routes(app, get_analytics_service)
-    return app, mock_analytics
+    register_analytics_routes(app, lambda: Mock())
+    app.state.alert_repository = repo
+    for k, v in state.items():
+        setattr(app.state, k, v)
+    return TestClient(app, raise_server_exceptions=False)
 
 
-@pytest.fixture()
-def client(analytics_app):
-    """TestClient for the analytics routes app."""
-    app, _ = analytics_app
-    return TestClient(app)
+class TestMetricsKpis:
+    def test_metrics_mock_fallback(self):
+        c = _app()
+        c.app.state.system_metrics = None
+        r = c.get("/analytics/metrics")
+        assert r.status_code == 200
+        assert set(r.json()) == {"cpu", "memory", "disk", "timestamp"}
 
-
-class TestMetricsEndpoint:
-    """Test the /analytics/metrics endpoint."""
-
-    def test_metrics_with_system_metrics(self, client, analytics_app):
-        """Test /analytics/metrics returns real metrics when system_metrics is available."""
-        app, _ = analytics_app
-        app.state.system_metrics.get_hardware_metrics.return_value = {
-            "cpu": {"percent": 45.5},
-            "memory": {"percent": 60.2},
-            "disk": {"percent": 75.8},
+    def test_metrics_hardware_path(self):
+        sm = Mock()
+        sm.get_hardware_metrics.return_value = {
+            "cpu": {"percent": 11.0},
+            "memory": {"percent": 22.0},
+            "disk": {"percent": 33.0},
         }
+        c = _app()
+        c.app.state.system_metrics = sm
+        r = c.get("/analytics/metrics")
+        assert r.json()["cpu"] == 11.0
 
-        resp = client.get("/analytics/metrics")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["cpu"] == 45.5
-        assert data["memory"] == 60.2
-        assert data["disk"] == 75.8
+    def test_metrics_error_500(self):
+        sm = Mock()
+        sm.get_hardware_metrics.side_effect = RuntimeError("x")
+        c = _app()
+        c.app.state.system_metrics = sm
+        assert c.get("/analytics/metrics").status_code == 500
 
-    def test_metrics_without_system_metrics(self, client, analytics_app):
-        """Test /analytics/metrics returns mock values when system_metrics is None."""
-        app, _ = analytics_app
-        app.state.system_metrics = None
-
-        resp = client.get("/analytics/metrics")
-        assert resp.status_code == 200
-        data = resp.json()
-        # Mock values from route_helpers
-        assert "cpu" in data
-        assert "memory" in data
-        assert "disk" in data
-
-    def test_metrics_exception_returns_500(self, client, analytics_app):
-        """Test /analytics/metrics returns 500 when system_metrics raises."""
-        app, _ = analytics_app
-        app.state.system_metrics.get_hardware_metrics.side_effect = RuntimeError("sensor error")
-
-        resp = client.get("/analytics/metrics")
-        assert resp.status_code == 500
-
-
-class TestKpisEndpoint:
-    """Test the /analytics/kpis endpoint."""
-
-    def test_get_kpis_success(self, client, analytics_app):
-        """Test /analytics/kpis returns KPI data successfully."""
-        app, mock_analytics = analytics_app
-        mock_analytics.get_comprehensive_kpis.return_value = {"mttr": 100, "total": 5}
-
-        resp = client.get("/analytics/kpis")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["mttr"] == 100
-        assert data["total"] == 5
-
-    def test_get_kpis_with_log_file_path(self, client, analytics_app):
-        """Test /analytics/kpis with log_file_path query parameter."""
-        app, mock_analytics = analytics_app
-        mock_analytics.get_comprehensive_kpis.return_value = {"mttr": 50}
-
-        resp = client.get("/analytics/kpis?log_file_path=/tmp/notify.log")
-        assert resp.status_code == 200
-        mock_analytics.get_comprehensive_kpis.assert_called_with("/tmp/notify.log")
-
-    def test_get_kpis_exception_returns_500(self, client, analytics_app):
-        """Test /analytics/kpis returns 500 when analytics service raises."""
-        app, mock_analytics = analytics_app
-        mock_analytics.get_comprehensive_kpis.side_effect = RuntimeError("compute error")
-
-        resp = client.get("/analytics/kpis")
-        assert resp.status_code == 500
-
-
-class TestAggregatedKpisEndpoint:
-    """Test the /analytics/kpis/aggregated endpoint."""
-
-    def test_aggregated_kpis_success(self, client):
-        """Test /analytics/kpis/aggregated returns data successfully."""
-        mock_use_case = Mock()
-        mock_use_case.execute.return_value = {
-            "period_hours": 24,
-            "total_alerts": 10,
-            "mttr_statistics": {"mean": 120},
+    def test_kpis_overlay_uses_coverage_artifact(self, tmp_path):
+        cov = tmp_path / "coverage.json"
+        cov.write_text('{"totals": {"percent_covered": 87.5}}', encoding="utf-8")
+        ps = Mock()
+        ps.coverage_file = cov
+        analytics = Mock()
+        analytics.get_comprehensive_kpis.return_value = {
+            "performance": {"total_tests": 0, "average_coverage": 0}
         }
+        c = _app(path_service=ps)
+        c.app.dependency_overrides = {}
+        # re-register with our analytics provider
+        from soar_lab.interfaces.api.routes_analytics import register_analytics_routes
 
-        with patch(
-            "soar_lab.interfaces.api.routes_analytics.create_aggregated_kpis_use_case",
-            return_value=mock_use_case,
-        ):
-            resp = client.get("/analytics/kpis/aggregated")
-            assert resp.status_code == 200
-            data = resp.json()
-            assert data["total_alerts"] == 10
+        app = FastAPI()
+        register_analytics_routes(app, lambda: analytics)
+        app.state.path_service = ps
+        r = TestClient(app).get("/analytics/kpis")
+        assert r.status_code == 200
+        assert r.json()["performance"]["average_coverage"] == 87.5
+        assert r.json()["performance"]["coverage_source"] == "last_run_artifact"
 
-    def test_aggregated_kpis_with_hours_param(self, client):
-        """Test /analytics/kpis/aggregated with custom hours parameter."""
-        mock_use_case = Mock()
-        mock_use_case.execute.return_value = {"period_hours": 48, "total_alerts": 20}
-
-        with patch(
-            "soar_lab.interfaces.api.routes_analytics.create_aggregated_kpis_use_case",
-            return_value=mock_use_case,
-        ):
-            resp = client.get("/analytics/kpis/aggregated?hours=48")
-            assert resp.status_code == 200
-            mock_use_case.execute.assert_called_with(hours=48)
-
-    def test_aggregated_kpis_exception_returns_500(self, client):
-        """Test /analytics/kpis/aggregated returns 500 when use case raises."""
-        with patch(
-            "soar_lab.interfaces.api.routes_analytics.create_aggregated_kpis_use_case",
-            side_effect=RuntimeError("ES connection failed"),
-        ):
-            resp = client.get("/analytics/kpis/aggregated")
-            assert resp.status_code == 500
-
-
-class TestNodeTimingsEndpoint:
-    """Test the /analytics/node-timings endpoint."""
-
-    def test_node_timings_aggregated(self, client):
-        """Test /analytics/node-timings returns aggregated timings."""
-        mock_use_case = Mock()
-        mock_use_case.get_aggregated.return_value = {"nodes": [{"name": "node1", "avg_time": 5.0}]}
-
-        with patch(
-            "soar_lab.interfaces.api.routes_analytics.create_node_timings_use_case",
-            return_value=mock_use_case,
-        ):
-            resp = client.get("/analytics/node-timings")
-            assert resp.status_code == 200
-            data = resp.json()
-            assert "nodes" in data
-
-    def test_node_timings_with_execution_id(self, client):
-        """Test /analytics/node-timings with execution_id returns specific timings."""
-        mock_use_case = Mock()
-        mock_use_case.get_execution.return_value = {
-            "execution_id": "exec-1",
-            "timings": [{"node": "node1", "time": 3.0}],
+    def test_kpis_overlay_noop_without_artifact(self):
+        analytics = Mock()
+        analytics.get_comprehensive_kpis.return_value = {
+            "performance": {"total_tests": 0, "average_coverage": 0}
         }
+        from soar_lab.interfaces.api.routes_analytics import register_analytics_routes
 
-        with patch(
-            "soar_lab.interfaces.api.routes_analytics.create_node_timings_use_case",
-            return_value=mock_use_case,
+        app = FastAPI()
+        register_analytics_routes(app, lambda: analytics)
+        r = TestClient(app).get("/analytics/kpis")
+        assert r.status_code == 200
+        assert r.json()["performance"]["average_coverage"] == 0
+
+    def test_kpis_500(self):
+        analytics = Mock()
+        analytics.get_comprehensive_kpis.side_effect = RuntimeError("x")
+        from soar_lab.interfaces.api.routes_analytics import register_analytics_routes
+
+        app = FastAPI()
+        register_analytics_routes(app, lambda: analytics)
+        assert TestClient(app).get("/analytics/kpis").status_code == 500
+
+
+class TestAggregatedAndSlo:
+    def test_aggregated_503_and_500(self):
+        uc = Mock()
+        uc.execute.side_effect = requests.ConnectionError("down")
+        with patch(f"{MOD}.create_aggregated_kpis_use_case", return_value=uc):
+            assert _app().get("/analytics/kpis/aggregated").status_code == 503
+        uc.execute.side_effect = RuntimeError("boom")
+        with patch(f"{MOD}.create_aggregated_kpis_use_case", return_value=uc):
+            assert _app().get("/analytics/kpis/aggregated").status_code == 500
+
+    def test_aggregated_and_slo_success(self):
+        uc = Mock()
+        uc.execute.return_value = {"period_hours": 24}
+        with (
+            patch(f"{MOD}.create_aggregated_kpis_use_case", return_value=uc),
+            patch(f"{MOD}.evaluate_slos", return_value={"all_met": True}),
         ):
-            resp = client.get("/analytics/node-timings?execution_id=exec-1")
-            assert resp.status_code == 200
-            data = resp.json()
-            assert data["execution_id"] == "exec-1"
+            c = _app()
+            assert c.get("/analytics/kpis/aggregated?hours=2").json()["period_hours"] == 24
+            assert c.get("/analytics/slo").json()["all_met"] is True
 
-    def test_node_timings_execution_not_found(self, client):
-        """Test /analytics/node-timings returns 404 when execution not found."""
-        mock_use_case = Mock()
-        mock_use_case.get_execution.return_value = None
+    def test_slo_request_exception_503(self):
+        uc = Mock()
+        uc.execute.side_effect = requests.ConnectionError("x")
+        with patch(f"{MOD}.create_aggregated_kpis_use_case", return_value=uc):
+            assert _app().get("/analytics/slo").status_code == 503
 
-        with patch(
-            "soar_lab.interfaces.api.routes_analytics.create_node_timings_use_case",
-            return_value=mock_use_case,
+
+class TestNodeTimings:
+    def test_execution_found_not_found_and_aggregated(self):
+        uc = Mock()
+        uc.get_execution.side_effect = [None, {"nodes": []}]
+        uc.get_aggregated.return_value = {"agg": True}
+        with patch(f"{MOD}.create_node_timings_use_case", return_value=uc):
+            c = _app()
+            assert c.get("/analytics/node-timings?execution_id=e1").status_code == 404
+            assert c.get("/analytics/node-timings?execution_id=e1").json() == {"nodes": []}
+            assert c.get("/analytics/node-timings?hours=3").json() == {"agg": True}
+
+    def test_503_and_500(self):
+        uc = Mock()
+        uc.get_aggregated.side_effect = requests.ConnectionError("d")
+        with patch(f"{MOD}.create_node_timings_use_case", return_value=uc):
+            assert _app().get("/analytics/node-timings").status_code == 503
+        uc.get_aggregated.side_effect = RuntimeError("x")
+        with patch(f"{MOD}.create_node_timings_use_case", return_value=uc):
+            assert _app().get("/analytics/node-timings").status_code == 500
+
+
+class TestRepositoryEndpoints:
+    def _repo(self):
+        return Mock(get_alerts=Mock(return_value=[]), get_alert=Mock(return_value=None))
+
+    def test_repository_unavailable_503s(self):
+        c = _app(repo=None)
+        assert c.get("/analytics/attack-coverage").status_code == 503
+        assert c.get("/analytics/incident-report/a1").status_code == 503
+        assert c.get("/analytics/experiment/compare?variant_a=x&variant_b=y").status_code == 503
+        assert c.get("/api/v1/stix/bundle").status_code == 503
+        assert c.get("/analytics/sigma/matches").status_code == 503
+
+    def test_attack_coverage_formats_and_error(self):
+        repo = self._repo()
+        uc = Mock()
+        uc.navigator_layer.return_value = {"layer": 1}
+        uc.heatmap.return_value = {"heat": 1}
+        uc.coverage.return_value = {"cov": 1}
+        with patch(f"{MOD}.AttackCoverageUseCase", return_value=uc):
+            c = _app(repo=repo)
+            assert c.get("/analytics/attack-coverage?format=navigator").json() == {"layer": 1}
+            assert c.get("/analytics/attack-coverage?format=heatmap&limit=5").json() == {"heat": 1}
+            uc.coverage.assert_not_called()  # not yet — summary path next
+            assert c.get("/analytics/attack-coverage").json() == {"cov": 1}
+            uc.coverage.side_effect = RuntimeError("x")
+            assert c.get("/analytics/attack-coverage").status_code == 500
+
+    def test_incident_report_json_md_404_500(self):
+        repo = self._repo()
+        uc = Mock()
+        uc.build.return_value = {"report": 1}
+        uc.build_markdown.return_value = "# report"
+        with patch(f"{MOD}.IncidentReportUseCase", return_value=uc):
+            c = _app(repo=repo)
+            assert c.get("/analytics/incident-report/a1").json() == {"report": 1}
+            r = c.get("/analytics/incident-report/a1?format=markdown")
+            assert r.headers["content-type"].startswith("text/markdown")
+            uc.build.return_value = None
+            assert c.get("/analytics/incident-report/a1").status_code == 404
+            uc.build_markdown.return_value = None
+            assert c.get("/analytics/incident-report/a1?format=markdown").status_code == 404
+            uc.build.side_effect = RuntimeError("x")
+            assert c.get("/analytics/incident-report/a1").status_code == 500
+
+    def test_experiment_compare_ok_and_500(self):
+        repo = self._repo()
+        uc = Mock()
+        uc.compare.return_value = {"delta": 0.5}
+        with patch(f"{MOD}.ExperimentCompareUseCase", return_value=uc):
+            c = _app(repo=repo)
+            r = c.get("/analytics/experiment/compare?variant_a=a&variant_b=b")
+            assert r.json() == {"delta": 0.5}
+            uc.compare.side_effect = RuntimeError("x")
+            assert c.get("/analytics/experiment/compare?variant_a=a&variant_b=b").status_code == 500
+
+    def test_stix_bundle_ok_bounded_and_500(self):
+        repo = self._repo()
+        uc = Mock()
+        uc.build_bundle.return_value = {"type": "bundle", "objects": []}
+        with patch(f"{MOD}.StixExportUseCase", return_value=uc):
+            c = _app(repo=repo)
+            assert c.get("/api/v1/stix/bundle?limit=999999").json()["type"] == "bundle"
+            uc.build_bundle.assert_called_with(limit=10000)
+            uc.build_bundle.side_effect = RuntimeError("x")
+            assert c.get("/api/v1/stix/bundle").status_code == 500
+
+    def test_sigma_matches_ok_and_500(self, tmp_path):
+        repo = self._repo()
+        cp = Mock()
+        cp.get.return_value = str(tmp_path)
+        uc = Mock()
+        uc.scan.return_value = {"rules": 2}
+        with (
+            patch(f"{MOD}.SigmaEvalUseCase") as sig,
+            patch.object(sig, "load_rules", return_value=[]) as lr,
         ):
-            resp = client.get("/analytics/node-timings?execution_id=missing")
-            assert resp.status_code == 404
-            assert resp.json()["detail"] == "Execution not found"
-
-    def test_node_timings_exception_returns_500(self, client):
-        """Test /analytics/node-timings returns 500 when use case raises."""
-        with patch(
-            "soar_lab.interfaces.api.routes_analytics.create_node_timings_use_case",
-            side_effect=RuntimeError("connection error"),
-        ):
-            resp = client.get("/analytics/node-timings")
-            assert resp.status_code == 500
-
-    def test_node_timings_with_alert_id(self, client):
-        """Test /analytics/node-timings with both execution_id and alert_id."""
-        mock_use_case = Mock()
-        mock_use_case.get_execution.return_value = {"execution_id": "exec-2"}
-
-        with patch(
-            "soar_lab.interfaces.api.routes_analytics.create_node_timings_use_case",
-            return_value=mock_use_case,
-        ):
-            resp = client.get("/analytics/node-timings?execution_id=exec-2&alert_id=alert-1")
-            assert resp.status_code == 200
-            mock_use_case.get_execution.assert_called_with("exec-2", "alert-1")
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+            sig.load_rules = lr
+            sig.return_value = uc
+            c = _app(repo=repo, config_provider=cp)
+            r = c.get("/analytics/sigma/matches?limit=5")
+            assert r.status_code == 200
+            uc.scan.side_effect = RuntimeError("x")
+            assert c.get("/analytics/sigma/matches").status_code == 500

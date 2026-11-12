@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from soar_lab.common.exceptions import IntegrationError
 from soar_lab.infrastructure.integrations.misp.client import MISPClient
 
 
@@ -175,3 +176,192 @@ class TestMISPClient:
 
         result = client.health_check()
         assert result is False
+
+
+class TestMISPClientCoverage:
+    """Tests targeting previously uncovered MISPClient methods/paths."""
+
+    def _client(self) -> MISPClient:
+        return MISPClient(base_url="http://localhost:8083", api_key="test-key")
+
+    def test_get_pins_accept_json_and_forwards_headers(self):
+        """MISPClient.get pins Accept to JSON while delegating to the base."""
+        from unittest.mock import patch
+
+        from soar_lab.infrastructure.integrations.base_client import BaseHTTPClient
+
+        client = self._client()
+        with patch.object(BaseHTTPClient, "get", return_value={}) as base_get:
+            client.get("/events/view/1", headers={"X-Extra": "1"}, params={"a": 1})
+        base_get.assert_called_once_with(
+            "/events/view/1",
+            headers={"X-Extra": "1", "Accept": "application/json"},
+            params={"a": 1},
+        )
+
+    def test_normalize_response_wraps_dict(self):
+        assert MISPClient._normalize_response({"id": 1}) == [{"Event": {"id": 1}}]
+
+    def test_normalize_response_rejects_non_list(self):
+        assert MISPClient._normalize_response("nope") == []
+
+    def test_normalize_response_wraps_bare_items(self):
+        assert MISPClient._normalize_response([{"id": 1}, "junk", {"Event": {"id": 2}}]) == [
+            {"Event": {"id": 1}},
+            {"Event": {"id": 2}},
+        ]
+
+    def test_search_by_attributes_fetches_events(self):
+        client = self._client()
+        client.post = Mock(
+            return_value={"response": {"Attribute": [{"event_id": 7}, {"event_id": 7}, "junk"]}}
+        )
+        client.get_event = Mock(return_value={"id": 7, "info": "ev"})
+
+        result = client._search_by_attributes("8.8.8.8", "ip-dst", 5)
+
+        assert result == [{"Event": {"id": 7, "info": "ev"}}]
+        client.get_event.assert_called_once_with("7")
+
+    def test_search_by_attributes_empty_returns_empty(self):
+        client = self._client()
+        client.post = Mock(return_value={"response": {}})
+
+        assert client._search_by_attributes("8.8.8.8", None, 5) == []
+
+    def test_search_by_attributes_mismatched_event_skipped(self):
+        client = self._client()
+        client.post = Mock(return_value={"response": {"Attribute": [{"event_id": 7}]}})
+        client.get_event = Mock(return_value={"id": 8})  # id mismatch
+
+        assert client._search_by_attributes("8.8.8.8", None, 5) == []
+
+    def test_search_by_tags_with_string_and_list(self):
+        client = self._client()
+        client.post = Mock(return_value={"response": [{"id": "1"}]})
+
+        assert client._search_by_tags("tlp:red") == [{"Event": {"id": "1"}}]
+        payload_str = client.post.call_args.kwargs["data"]
+        assert payload_str["tag"] == "tlp:red"
+
+        client.post = Mock(return_value={"response": [{"id": "1"}]})
+        client._search_by_tags(["a", "b"], extra="x")
+        payload_list = client.post.call_args.kwargs["data"]
+        assert payload_list["tag"] == "a,b"
+        assert payload_list["extra"] == "x"
+
+        client.post = Mock(return_value={"response": [{"id": "1"}]})
+        client._search_by_tags(None)
+        assert "tag" not in client.post.call_args.kwargs["data"]
+
+    def test_search_events_without_value_uses_tags(self):
+        """value=None delegates to the tag-based search."""
+        client = self._client()
+        client.post = Mock(return_value={"response": [{"id": "1"}]})
+
+        assert client.search_events(tags="tlp:red") == [{"Event": {"id": "1"}}]
+        assert client.post.call_args.kwargs["data"]["tag"] == "tlp:red"
+
+    def test_search_events_value_endpoint_failure_falls_back(self):
+        """When /events/restSearch raises, the attribute search is used."""
+        client = self._client()
+        client.post = Mock(
+            side_effect=[
+                IntegrationError("MISPClient", "boom"),
+                {"response": {"Attribute": [{"event_id": 7}]}},
+            ]
+        )
+        client.get_event = Mock(return_value={"id": 7})
+
+        result = client.search_events("8.8.8.8")
+        assert result == [{"Event": {"id": 7}}]
+
+    def test_search_events_both_endpoints_fail_raises_first_error(self):
+        client = self._client()
+        client.post = Mock(
+            side_effect=[
+                IntegrationError("MISPClient", "first"),
+                IntegrationError("MISPClient", "second"),
+            ]
+        )
+
+        with pytest.raises(IntegrationError, match="first"):
+            client.search_events("8.8.8.8")
+
+    def test_search_events_empty_then_failure_raises_second_error(self):
+        """Empty first search (no error) + failing attribute search → the
+        attribute error propagates since there is no earlier failure."""
+        client = self._client()
+        client.post = Mock(
+            side_effect=[
+                {"response": []},
+                IntegrationError("MISPClient", "attr-fail"),
+            ]
+        )
+
+        with pytest.raises(IntegrationError, match="attr-fail"):
+            client.search_events("8.8.8.8")
+
+    def test_create_event_from_fields_and_attribute_rename(self):
+        client = self._client()
+        client.post = Mock(return_value={"Event": {"id": 9}})
+
+        result = client.create_event(info="ev", attributes=[{"type": "ip-dst"}])
+        assert result == {"id": 9}
+        sent = client.post.call_args.kwargs["data"]["Event"]
+        assert sent["info"] == "ev"
+        assert sent["Attribute"] == [{"type": "ip-dst"}]
+        assert "attributes" not in sent
+
+    def test_update_event(self):
+        client = self._client()
+        client.post = Mock(return_value={"Event": {"id": "3", "info": "upd"}})
+
+        assert client.update_event("3", info="upd") == {"id": "3", "info": "upd"}
+        client.post.assert_called_once_with("/events/edit/3", data={"info": "upd", "id": "3"})
+
+    def test_delete_event(self):
+        client = self._client()
+        client.post = Mock(return_value={"success": True})
+
+        assert client.delete_event("3") == {"success": True}
+        client.post.assert_called_once_with("/events/delete/3")
+
+    def test_create_attribute(self):
+        client = self._client()
+        client.post = Mock(return_value={"Attribute": {"id": 5}})
+
+        assert client.create_attribute("7", "ip-dst", "1.2.3.4", comment="c") == {"id": 5}
+        sent = client.post.call_args.kwargs["data"]
+        assert sent == {"type": "ip-dst", "value": "1.2.3.4", "comment": "c"}
+
+    def test_create_sighting(self):
+        client = self._client()
+        client.post = Mock(return_value={"Sighting": {"id": 6}})
+
+        assert client.create_sighting("5", source="lab") == {"id": 6}
+        sent = client.post.call_args.kwargs["data"]
+        assert sent == {"id": "5", "source": "lab"}
+
+    def test_create_attribute_proposal(self):
+        client = self._client()
+        client.post = Mock(return_value={"Attribute": {"id": 8}})
+
+        assert client.create_attribute_proposal("7", "domain", "evil.example") == {"id": 8}
+        sent = client.post.call_args.kwargs["data"]
+        assert sent == {"type": "domain", "value": "evil.example", "event_id": "7"}
+
+    def test_list_events_dict_response_and_non_list(self):
+        client = self._client()
+        client.get = Mock(return_value={"response": [{"id": "1"}]})
+        assert client.list_events() == [{"id": "1"}]
+
+        client.get = Mock(return_value={"other": "shape"})
+        assert client.list_events() == []
+
+    def test_get_server_info(self):
+        client = self._client()
+        client.get = Mock(return_value={"version": "2.4"})
+
+        assert client.get_server_info() == {"version": "2.4"}
+        client.get.assert_called_once_with("/servers/serverSettings.json")

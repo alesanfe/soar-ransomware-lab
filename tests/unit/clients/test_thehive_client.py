@@ -19,7 +19,7 @@ class TestTheHiveClient:
         import os
 
         if os.path.exists("/.dockerenv"):
-            assert client.base_url == "http://thehive:9000"
+            assert client.base_url == "https://thehive:9443"
         else:
             assert client.base_url == "http://localhost:9000"
 
@@ -37,7 +37,7 @@ class TestTheHiveClient:
         import os
 
         if os.path.exists("/.dockerenv"):
-            assert client.base_url == "http://thehive:9000"
+            assert client.base_url == "https://thehive:9443"
         else:
             assert client.base_url == "http://localhost:9000"
 

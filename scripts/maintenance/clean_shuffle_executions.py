@@ -45,6 +45,7 @@ from soar_lab.common.constants import (
     HEADER_AUTHORIZATION,
     HEADER_CONTENT_TYPE,
 )
+from soar_lab.security.tls_config import ca_verify
 
 logger = logging.getLogger(__name__)
 
@@ -71,14 +72,19 @@ def _load_env() -> None:
 
 _load_env()
 
-_ES_USER = os.environ.get("SHUFFLE_OPENSEARCH_USER", "admin")
-_ES_PASS = os.environ.get("SHUFFLE_OPENSEARCH_PASSWORD", "")
-_ES_URL = os.environ.get("SHUFFLE_OPENSEARCH_URL", "http://opensearch:9200")
+_ES_USER = os.environ.get(
+    "SHUFFLE_OPENSEARCH_USERNAME", os.environ.get("SHUFFLE_OPENSEARCH_USER", "admin")
+)
+_ES_PASS = os.environ.get(
+    "SHUFFLE_OPENSEARCH_PASSWORD", os.environ.get("OPENSEARCH_PASSWORD", "")
+)
+_ES_URL = os.environ.get("SHUFFLE_OPENSEARCH_URL", "https://opensearch:9200")
+_VERIFY = ca_verify()
 _API_KEY = os.environ.get(
     "SHUFFLE_DEFAULT_APIKEY",
     "DLLOPNJqbL2zlJX0icyGb1EJ1uBJpvefJOdW6G3hlDhuHW5gd4FqVV6atmmlu3Fi",
 )
-_SHUFFLE_URL = os.environ.get("SHUFFLE_BACKEND_URL", "http://shuffle-backend:5001")
+_SHUFFLE_URL = os.environ.get("SHUFFLE_BACKEND_URL", "https://shuffle-backend:5443")
 
 _EXECUTION_INDICES = (
     "workflowexecution*",
@@ -142,7 +148,7 @@ def _purge_opensearch() -> dict[str, int]:
                 json=query,
                 auth=auth,
                 timeout=30,
-                verify=False,
+                verify=_VERIFY,
             )
             if r.status_code == 404:
                 # Index doesn't exist yet — nothing to delete.

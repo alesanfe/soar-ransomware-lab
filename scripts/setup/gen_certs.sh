@@ -13,6 +13,11 @@ export MSYS_NO_PATHCONV=1
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CERT_DIR="${CERT_DIR:-$SCRIPT_DIR/../../infra/docker/config/certs}"
+# With MSYS_NO_PATHCONV=1 openssl.exe receives the literal /c/... MSYS path
+# and silently fails to open output files — normalize to Windows form.
+if command -v cygpath >/dev/null 2>&1; then
+    CERT_DIR="$(cd "$CERT_DIR" 2>/dev/null && cygpath -m "$PWD" || echo "$CERT_DIR")"
+fi
 LOG_DIR="${LOG_DIR:-$CERT_DIR/.logs}"
 LOG_FILE="${LOG_DIR}/gen_certs.log"
 
@@ -52,6 +57,13 @@ create_directories() {
 
 # Function to generate CA certificate
 generate_ca() {
+    # Idempotent: an existing CA is reused so that adding a service cert
+    # later (e.g. gen_certs.sh tenzir-node) does not silently rotate the
+    # CA and invalidate every issued certificate.
+    if [[ -f "$CERT_DIR/ca.key" && -f "$CERT_DIR/ca.crt" ]]; then
+        log "INFO" "CA already exists — reusing it (delete $CERT_DIR to force rotation)"
+        return 0
+    fi
     log "INFO" "Generating CA certificate"
     
     # Generate CA private key
@@ -188,11 +200,23 @@ verify_certificates() {
         return 1
     fi
     
-    # Verify server certificates
+    # Verify server certificates — only certs ISSUED by this CA belong in
+    # the check. Bundle files (ca-bundle.crt, debian-ca-plus-lab.crt) hold
+    # public roots that were never signed here; verifying them against the
+    # lab CA made --verify fail unconditionally once they existed.
+    local ca_subject
+    ca_subject=$(openssl x509 -in "$CERT_DIR/ca.crt" -noout -subject -nameopt RFC2253 \
+        | sed 's/^subject=//')
     for cert in "$CERT_DIR"/*.crt; do
         if [[ "$cert" != "$CERT_DIR/ca.crt" ]]; then
-            local hostname
+            local hostname issuer
             hostname=$(basename "$cert" .crt)
+            issuer=$(openssl x509 -in "$cert" -noout -issuer -nameopt RFC2253 2>/dev/null \
+                | sed 's/^issuer=//')
+            if [[ "$issuer" != "$ca_subject" ]]; then
+                log "INFO" "Skipping $hostname (not issued by lab CA)"
+                continue
+            fi
             if openssl verify -CAfile "$CERT_DIR/ca.crt" "$cert" >/dev/null 2>&1; then
                 log "INFO" "Certificate for $hostname verified"
             else

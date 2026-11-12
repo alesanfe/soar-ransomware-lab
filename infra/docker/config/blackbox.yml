@@ -1,0 +1,47 @@
+# Blackbox exporter — blackbox/synthetic probing of the observability stack
+# itself (OBS-023). Prometheus drives the probes; the exporter exposes
+# probe_success / probe_duration_seconds / probe_ssl_earliest_cert_expiry.
+modules:
+  # TLS+HTTP against lab-CA endpoints: handshake must succeed with the
+  # pinned CA (fails on expired cert, wrong CA or TLS downgrade).
+  https_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      preferred_ip_protocol: ip4
+      tls_config:
+        ca_file: /etc/blackbox/ca.crt
+        min_version: TLS12
+
+  # Plain internal HTTP (no TLS): readiness endpoints that are http-only.
+  http_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      valid_http_versions: ["HTTP/1.1"]
+      preferred_ip_protocol: ip4
+
+  # Bare TCP reachability (SeaweedFS S3/volume, postgres).
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: ip4
+
+  # TLS handshake only (no HTTP) — cert-expiry coverage for TLS services
+  # that don't serve a public HTTP health endpoint (opensearch, redis,
+  # shuffle-backend nginx). Emits probe_ssl_earliest_cert_expiry for the
+  # obs_cert_expiry_* alerts; handshake against the pinned CA fails on
+  # expired/wrong-CA certs, so probe_success doubles as a TLS health check.
+  tcp_tls:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: ip4
+      tls: true
+      tls_config:
+        ca_file: /etc/blackbox/ca.crt
+        min_version: TLS12

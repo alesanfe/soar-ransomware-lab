@@ -18,3 +18,140 @@
 2026-11-08 20:24:19 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
 2026-11-08 20:24:19 [INFO] Hostnames: misp
 2026-11-08 20:24:19 [INFO] Generating CA certificate
+2026-11-11 01:04:18 [INFO] Created directories: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs, /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs/.logs
+2026-11-11 01:04:18 [INFO] Starting certificate generation
+2026-11-11 01:04:18 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
+2026-11-11 01:04:18 [INFO] Hostnames: tenzir-node
+2026-11-11 01:04:18 [INFO] CA already exists — reusing it (delete /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs to force rotation)
+2026-11-11 01:04:18 [INFO] Generating server certificate for tenzir-node
+2026-11-11 01:04:22 [INFO] Created directories: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs, /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs/.logs
+2026-11-11 01:04:22 [INFO] Starting certificate generation
+2026-11-11 01:04:22 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
+2026-11-11 01:04:22 [INFO] Hostnames: tenzir-node
+2026-11-11 01:04:22 [INFO] CA already exists — reusing it (delete /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs to force rotation)
+2026-11-11 01:04:22 [INFO] Generating server certificate for tenzir-node
+2026-11-11 01:04:30 [INFO] Created directories: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs, /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs/.logs
+2026-11-11 01:04:30 [INFO] Starting certificate generation
+2026-11-11 01:04:30 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
+2026-11-11 01:04:31 [INFO] Hostnames: tenzir-node
+2026-11-11 01:04:31 [INFO] CA already exists — reusing it (delete /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs to force rotation)
+2026-11-11 01:04:31 [INFO] Generating server certificate for tenzir-node
+2026-11-11 01:04:43 [INFO] Created directories: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs, /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs/.logs
+2026-11-11 01:04:43 [INFO] Starting certificate generation
+2026-11-11 01:04:43 [INFO] Certificate directory: /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs
+2026-11-11 01:04:43 [INFO] Hostnames: tenzir-node
+2026-11-11 01:04:43 [INFO] CA already exists — reusing it (delete /c/Users/alex0/PycharmProjects/soar-ransomware-lab/scripts/setup/../../infra/docker/config/certs to force rotation)
+2026-11-11 01:04:43 [INFO] Generating server certificate for tenzir-node
+2026-11-11 01:05:18 [INFO] Created directories: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs, C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/.logs
+2026-11-11 01:05:18 [INFO] Starting certificate generation
+2026-11-11 01:05:18 [INFO] Certificate directory: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs
+2026-11-11 01:05:18 [INFO] Hostnames: tenzir-node
+2026-11-11 01:05:18 [INFO] CA already exists — reusing it (delete C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs to force rotation)
+2026-11-11 01:05:18 [INFO] Generating server certificate for tenzir-node
+2026-11-11 01:05:19 [INFO] Server certificate for tenzir-node generated successfully
+2026-11-11 01:05:19 [INFO] Creating certificate bundle
+2026-11-11 01:05:19 [INFO] Certificate bundle created: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/fullchain.pem
+2026-11-11 01:05:19 [INFO] Verifying generated certificates
+2026-11-11 01:05:20 [INFO] CA certificate verified
+2026-11-11 01:05:20 [INFO] Certificate for grafana verified
+2026-11-11 01:05:20 [INFO] Certificate for loki verified
+2026-11-11 01:05:20 [INFO] Certificate for misp verified
+2026-11-11 01:05:20 [INFO] Certificate for prometheus verified
+2026-11-11 01:05:20 [INFO] Certificate for tempo verified
+2026-11-11 01:05:21 [INFO] Certificate for tenzir-node verified
+2026-11-11 01:05:21 [INFO] All certificates verified successfully
+2026-11-11 01:05:21 [INFO] Certificate generation completed successfully
+2026-11-11 01:05:21 [INFO] Generated files:
+2026-11-11 01:05:21 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/ca.key (CA private key)
+2026-11-11 01:05:21 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/ca.crt (CA certificate)
+2026-11-11 01:05:21 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/fullchain.pem (Certificate bundle)
+2026-11-11 01:05:21 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/tenzir-node.key (Private key)
+2026-11-11 01:05:21 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/tenzir-node.crt (Certificate)
+2026-11-11 09:49:23 [INFO] Created directories: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs, C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/.logs
+2026-11-11 09:49:23 [INFO] Starting certificate generation
+2026-11-11 09:49:24 [INFO] Certificate directory: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs
+2026-11-11 09:49:24 [INFO] Hostnames: redis
+2026-11-11 09:49:24 [INFO] CA already exists — reusing it (delete C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs to force rotation)
+2026-11-11 09:49:24 [INFO] Generating server certificate for redis
+2026-11-11 09:49:25 [INFO] Server certificate for redis generated successfully
+2026-11-11 09:49:25 [INFO] Creating certificate bundle
+2026-11-11 09:49:25 [INFO] Certificate bundle created: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/fullchain.pem
+2026-11-11 09:49:25 [INFO] Verifying generated certificates
+2026-11-11 09:49:25 [INFO] CA certificate verified
+2026-11-11 09:49:25 [INFO] Certificate for grafana verified
+2026-11-11 09:49:26 [INFO] Certificate for loki verified
+2026-11-11 09:49:26 [INFO] Certificate for misp verified
+2026-11-11 09:49:26 [INFO] Certificate for prometheus verified
+2026-11-11 09:49:26 [INFO] Certificate for redis verified
+2026-11-11 09:49:26 [INFO] Certificate for tempo verified
+2026-11-11 09:49:26 [INFO] Certificate for tenzir-node verified
+2026-11-11 09:49:26 [INFO] All certificates verified successfully
+2026-11-11 09:49:26 [INFO] Certificate generation completed successfully
+2026-11-11 09:49:26 [INFO] Generated files:
+2026-11-11 09:49:26 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/ca.key (CA private key)
+2026-11-11 09:49:27 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/ca.crt (CA certificate)
+2026-11-11 09:49:27 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/fullchain.pem (Certificate bundle)
+2026-11-11 09:49:27 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/redis.key (Private key)
+2026-11-11 09:49:27 [INFO]   - C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/redis.crt (Certificate)
+2026-11-11 10:09:06 [INFO] Created directories: infra/docker/config/certs, C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/.logs
+2026-11-11 10:09:06 [INFO] Starting certificate generation
+2026-11-11 10:09:06 [INFO] Certificate directory: infra/docker/config/certs
+2026-11-11 10:09:06 [INFO] Hostnames: elasticsearch
+2026-11-11 10:09:06 [INFO] CA already exists — reusing it (delete infra/docker/config/certs to force rotation)
+2026-11-11 10:09:06 [INFO] Generating server certificate for elasticsearch
+2026-11-11 10:09:07 [INFO] Server certificate for elasticsearch generated successfully
+2026-11-11 10:09:07 [INFO] Creating certificate bundle
+2026-11-11 10:09:07 [INFO] Certificate bundle created: infra/docker/config/certs/fullchain.pem
+2026-11-11 10:09:07 [INFO] Verifying generated certificates
+2026-11-11 10:09:08 [INFO] CA certificate verified
+2026-11-11 10:09:08 [INFO] Certificate for elasticsearch verified
+2026-11-11 10:09:08 [INFO] Certificate for grafana verified
+2026-11-11 10:09:09 [INFO] Certificate for loki verified
+2026-11-11 10:09:09 [INFO] Certificate for misp verified
+2026-11-11 10:09:09 [INFO] Certificate for prometheus verified
+2026-11-11 10:09:09 [INFO] Certificate for redis verified
+2026-11-11 10:09:10 [INFO] Certificate for tempo verified
+2026-11-11 10:09:10 [INFO] Certificate for tenzir-node verified
+2026-11-11 10:09:10 [INFO] All certificates verified successfully
+2026-11-11 10:09:10 [INFO] Certificate generation completed successfully
+2026-11-11 10:09:10 [INFO] Generated files:
+2026-11-11 10:09:10 [INFO]   - infra/docker/config/certs/ca.key (CA private key)
+2026-11-11 10:09:10 [INFO]   - infra/docker/config/certs/ca.crt (CA certificate)
+2026-11-11 10:09:10 [INFO]   - infra/docker/config/certs/fullchain.pem (Certificate bundle)
+2026-11-11 10:09:10 [INFO]   - infra/docker/config/certs/elasticsearch.key (Private key)
+2026-11-11 10:09:10 [INFO]   - infra/docker/config/certs/elasticsearch.crt (Certificate)
+2026-11-11 12:18:12 [INFO] Created directories: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs, C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/.logs
+2026-11-11 12:18:12 [INFO] Starting certificate generation
+2026-11-11 12:18:12 [INFO] Certificate directory: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs
+2026-11-11 12:18:12 [INFO] Hostnames: cortex thehive shuffle-backend
+2026-11-11 12:18:12 [INFO] CA already exists — reusing it (delete C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs to force rotation)
+2026-11-11 12:18:12 [INFO] Generating server certificate for cortex
+2026-11-11 12:18:13 [INFO] Server certificate for cortex generated successfully
+2026-11-11 12:18:13 [INFO] Generating server certificate for thehive
+2026-11-11 12:18:14 [INFO] Server certificate for thehive generated successfully
+2026-11-11 12:18:14 [INFO] Generating server certificate for shuffle-backend
+2026-11-11 12:18:14 [INFO] Server certificate for shuffle-backend generated successfully
+2026-11-11 12:18:14 [INFO] Creating certificate bundle
+2026-11-11 12:18:14 [INFO] Certificate bundle created: C:/Users/alex0/PycharmProjects/soar-ransomware-lab/infra/docker/config/certs/fullchain.pem
+2026-11-11 12:18:14 [INFO] Verifying generated certificates
+2026-11-11 12:18:15 [INFO] CA certificate verified
+2026-11-11 12:18:15 [INFO] Certificate for admin verified
+2026-11-11 12:18:15 [ERROR] Certificate verification failed for ca-bundle
+2026-11-11 18:54:45 [INFO] Verifying generated certificates
+2026-11-11 18:54:47 [INFO] CA certificate verified
+2026-11-11 18:54:49 [INFO] Certificate for admin verified
+2026-11-11 18:54:50 [INFO] Skipping ca-bundle (not issued by lab CA)
+2026-11-11 18:54:51 [INFO] Certificate for cortex verified
+2026-11-11 18:54:52 [INFO] Skipping debian-ca-plus-lab (not issued by lab CA)
+2026-11-11 18:54:53 [INFO] Certificate for elasticsearch verified
+2026-11-11 18:54:54 [INFO] Certificate for grafana verified
+2026-11-11 18:54:54 [INFO] Certificate for loki verified
+2026-11-11 18:54:55 [INFO] Certificate for misp verified
+2026-11-11 18:54:56 [INFO] Certificate for opensearch verified
+2026-11-11 18:54:56 [INFO] Certificate for prometheus verified
+2026-11-11 18:54:57 [INFO] Certificate for redis verified
+2026-11-11 18:54:58 [INFO] Certificate for shuffle-backend verified
+2026-11-11 18:54:58 [INFO] Certificate for tempo verified
+2026-11-11 18:54:59 [INFO] Certificate for tenzir-node verified
+2026-11-11 18:55:00 [INFO] Certificate for thehive verified
+2026-11-11 18:55:00 [INFO] All certificates verified successfully

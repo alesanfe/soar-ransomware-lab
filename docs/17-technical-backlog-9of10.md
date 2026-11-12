@@ -1246,7 +1246,7 @@ los 3 exited restantes eran jobs en vuelo del drain. GC continuo cada
 ciclo de zombiecheck — `container_drift` ya no puede crecer sin límite.
 
 **2. docs-site unhealthy tras migración estática** — el healthcheck
-sondeaba `http://localhost:8080/...` pero nginx bindea solo IPv4
+sondeaba `http://localhost` en el puerto 8080 pero nginx bindea solo IPv4
 (`0.0.0.0:8080`) y `localhost` resuelve a `::1` en alpine → refused.
 Fix: `127.0.0.1` en el healthcheck (`docker-compose.api.yml`). Verificado:
 `IPv4-OK` / `localhost-FAIL` antes del cambio; tras recreate,
@@ -1866,6 +1866,99 @@ La lista residual de §3.37 quedó ejecutada — evidencia en docs/19
   0 5xx API. Antes: `timeout awaiting response headers` recurrentes.
 - **Promtail**: `positions.filename: /tmp/positions.yaml` — fin de errores
   `read-only file system` (tmpfs ephemeral by design).
+
+### 3.39 Sesión 2026-11-10 — cierre del backlog DT/H/O/A + TC-35 + fix MTTR
+
+Backlog ejecutado sobre el stack vivo (42/42 TCs verdes como baseline):
+
+| Item | Estado | Evidencia |
+|------|--------|-----------|
+| DT-01 Cortex guardado | DONE | `cortex_run_guarded.py` en nodos static+dyn; envelope `{status,body}` + `_unwrap` en consumidores; `domain=""` → `skipped`, no job fallido |
+| DT-02 node_timings | DONE | `backfill_node_timings.py` (status.keyword fix) — 99 docs parcheados con `results[].started_at/completed_at` reales; MTTR-VERIFY-1: 56/57 nodos |
+| DT-03 Grafana auth report | DONE | `GRAFANA_ADMIN_USER/PASSWORD` en compose api; dashboard API 200, render PNG 9.4KB |
+| DT-04 Loki saturación | DONE | scrape `loki` en Prometheus + panel go_goroutines/fds/rss + alerta `>80% pids_limit` provisioned |
+| H-01 validate-workflows | DONE | `scripts/setup/validate_workflows.py` — nodos huérfanos, refs `$x`, compat analyzer↔observable contra workflow vivo |
+| H-02 matriz Observable→Analyzer | DONE | `analyzer_matrix.py` — compatible/file-only/forbidden/unavailable/disabled + normalized-base-name skip |
+| H-03 pre-gen checks | DONE | `cortex_setup` usa la matriz: file-only → `continue` verificado ("Not wiring …: no compatible observable field") |
+| H-04 JSON schemas | DONE | `tests/contracts/` — 10/10 verde |
+| O-01..04 observabilidad | DONE | dashboards `soar-slo`+`soar-e2e-quality` provisionados (descriptions + bucketAggs válidos); `e2e-history` indexado desde el report (42/42, 1869/1869); 12 reglas `health=ok` |
+| A-01 catálogo TCs | DONE | `tests/e2e/TC_catalog.yaml` + `tests/contracts/test_tc_catalog.py` 4/4 — detectó TC-35 huérfano real |
+| A-02 versionado workflow | DONE | `webhook_info.json`: `workflow_id`, `workflow_hash` (sha256), `generator_version`, `generated_at` |
+| A-03 trazabilidad | DONE | `alert_id` (_id doc) ↔ `execution_id` (via `execution_argument`) ↔ 56 node timings ↔ `thehive_case_id` ↔ cortex job ids |
+| A-04 inventario analyzers | DONE | `analyzer_inventory.json` vía Cortex API (Bearer) |
+| QA-01 CI e2e | PARCIAL | `ci.yml` corre unit+integration en runners GitHub; e2e requiere el stack Docker completo (~16 GB, 1.5-3 h) — documentado como ejecución local/`make test-e2e` programada, no PR-gate |
+| QA-02 gaps resiliencia | PARCIAL | Cubierto: restart recovery (TC-17-03), Cortex/MISP/Orborus caídos + timeout degradado (TC-18-01..05), inputs malformados (TC-19). Gap restante: OpenSearch saturado, Loki caído, pérdida de red parcial |
+| QA-03 chaos | DONE | `make chaos-campaign` → `scripts/perf/chaos_campaign.py` (multi-fault + evidencia de recuperación); `chaos_lite.py` pausa Cortex mid-exec |
+| QA-04 mutation | DONE | `make mutation` → mutmut en Docker (on-demand, 60-180 min) |
+
+Bugs reales encontrados y corregidos esta sesión:
+
+- **TC-35 huérfano**: suite Grafana (17 tests) sin target make — cableada
+  `test-e2e-tc35` en ambos Makefiles + agregado `test-e2e` + `.PHONY`. 17/17 verde.
+- **Regla `cortex_success_rate_low` en error**: dos defectos — (a)
+  `classic_conditions`/`math` no aceptan inputs `__expr__` → patrón
+  reduce→math→threshold (documentado en ejemplos oficiales Grafana);
+  (b) queries ES sin `bucketAggs` → `date_histogram` sobre `createdAt`
+  (el `startDate` es `long`, no `date`); (c) NaN por división por cero →
+  `+0.0001` en denominador. Resultado: `inactive ok`, instancia `Normal`,
+  cero alerts error/nodata.
+- **MTTR negativo (-3913s)**: `calc_mttr.py` restaba `detection_time` en el
+  futuro (alertas con skew de reloj) y no soportaba epoch-ms → guarda
+  `start_time>now→now`, `>1e11→/1000`, `max(0,…)`. Workflow re-horneado;
+  verificado live `mttr_seconds=0.26`. 2 docs históricos sanados a 0.
+- **Mapping explosion soar-metrics**: `node_timings{node:{start,end,duration}}`
+  crecía ~3 campos/nodo dinámico → 813/1000 campos, updates 400.
+  `index.mapping.total_fields.limit: 4000` aplicado; deuda: migrar
+  `node_timings` a lista `[{node,start,end,duration}]` en próxima reindex.
+- **Stat panels sin bucketAggs**: 7 paneles stat nuevos → `terms` agg
+  (patrón de `kpi-dashboard`). Render PNG ya era válido; ahora datos reales.
+- **SHUFFLE_DEFAULT_APIKEY drift** (recurrente tras `init-webhook`):
+  resincronizada `.env`/`.env.full`/`.env.container` + recreate api → 200.
+
+Residual honesto:
+
+- `execErrState: Error` activo en reglas — cualquier regla que vuelva a
+  `error` dispara la metamonitorización `grafana_rule_eval_error`.
+
+### 3.40 Cierre de TODA la deuda residual (2026-11-10, cont.)
+
+| Ítem | Fix aplicado | Verificación |
+|------|--------------|--------------|
+| `node_timings` null al escribir | Backfill integrado en el loop `StaleExecutionGC` del api (`lifecycle.py`, cada `SHUFFLE_STALE_GC_INTERVAL_S`, toggle `TIMINGS_BACKFILL_ENABLED`) — auto-curación, ya no manual | loop registrado en `register_stale_exec_gc`; backfill 50/50 docs |
+| Schema `soar-metrics` (mapping explosion) | Reindex a `soar-metrics-v2` con `node_timings: {type:object, enabled:false}` (legible en `_source`, nunca indexado → acotado para siempre) + `total_fields.limit:4000` + swap por alias `soar-metrics` | 626/626 docs reindexados; write-via-alias verificado; mapping no crece con nuevos nombres de nodo |
+| Loki crecimiento goroutines | `memberlist` gossip eliminado (ring ya era `inmemory` — gossip inútil single-node) + `retention_delete_worker_count` 150→10 | config aplicada; baseline ~314 goroutines; bound `pids_limit:1024` + alerta `>80%` siguen armados |
+| QA-01 e2e en CI | `.github/workflows/e2e-smoke.yml`: schedule semanal + dispatch — stack compose real + subset (TC-19, TC-34, TC-00-01) + init-webhook + evidencia on-failure | workflow añadido |
+| QA-02 gaps resiliencia | **TC-36** nuevo: `soar_loki`/`soar_opensearch`/`soar_grafana` down → pipeline sobrevive/recupera; `E2E_SKIP_SERVICES` conectado (era feature muerta — no estaba en `env_keys`); teardown class-level como red | TC-36 **3/3 PASSED (211s)**, contrato catálogo **5/5** |
+| Catálogo incompleto | TC-35 tenía 4/17 tests catalogados, TC-28 1 hueco — completados (314 tests); nuevo contrato `test_every_disk_test_cataloged` (disco→catálogo) | 5/5 contract verde |
+| Makefile inalcanzable en contenedor | `Makefile.linux` montado ro en `soar_api` (hardened.yml — `volumes: !override` descubierto) | contrato corre in-container |
+
+### Sesión resiliencia/safety (TC-36..39 extendidos)
+
+| Ítem | Fix aplicado | Verificación |
+|------|--------------|--------------|
+| **GC zombie muerto en producción** (bug real cazado por TC-38) | `workflowexecution.status` es `text`+`keyword`; el GC consultaba `{"term":{"status":"EXECUTING"}}` sobre el campo analizado → `find_stale` devolvía siempre `[]`. Query corregida a `status.keyword` | TC-38 **3/3 PASSED (76s)**: zombie `EXECUTING` abortado, `FINISHED`/frescos intactos, GC idempotente |
+| ES outage (TC-36-04) | stop `soar_elasticsearch` durante consulta → fallo acotado, recuperación, sin falsos OK | en suite TC-36 |
+| Redis outage (TC-36-05) | stop `soar_redis` → degradación acotada + recuperación | en suite TC-36 |
+| Degradación parcial | **TC-37**: `docker pause` thehive (hang acotado), `docker update --cpus` cortex (workflow sobrevive CPU-starved) | TC-37 PASS |
+| Timeout/GC workflow | **TC-38**: zombie stale → `ABORTED` preservando doc; solo stale abortados; idempotente doble-pasada | 3/3 PASSED |
+| Contratos safety | **TC-39**: canary `THEHIVE_API_KEY` jamás en Loki (LogQL `{job=~".+"} \|= "..."` — la query anterior sin selector era inválida); backup corrupto rechazado antes de tocar datos; sidecar ausente sigue verificando tar; skew ±24h respuesta acotada; key Shuffle env↔servicio | **5/5 PASSED (210s)** |
+| JUnit exportable | hook `pytest_configure` en `tests/e2e/conftest.py`: todo run e2e emite `reports/junit/junit-<suite>-<ts>.xml` salvo `--junitxml` explícito | consumido por `flaky_report.py` |
+| Perfiles de suite | `test-e2e-destructive` (`-m destructive`, gate nightly) y `test-e2e-non-destructive` (`-m "not destructive"`, gate merge) en ambos Makefiles + markers aplicados a TC-36/37 (resilience+destructive), TC-38 (resilience), TC-39 (security) | contrato catálogo 5/5 sigue verde |
+| Targets TC-37/38/39 rotos | los targets apuntaban a `tests/e2e/TC37/` (sin guion) → `pytest` ERROR en ambos Makefiles | rutas corregidas a `TC-37/TC-38/TC-39` |
+| Makefile.win no montado | añadido bind-mount ro en `docker-compose.api.yml` (solo estaba el linux) | `e2e_suites.py validate` corre in-container |
+| Timeout map incompleto | TC-33..39 ausentes de `TIMEOUTS` en conftest e2e → caían al default | añadidos (1500s TC-36, 1200s TC-37) |
+| TLS/PKI, watermark, analyzer, feed, zero-trust | **TC-40** nuevo: CA no confiable rechazada + IP/SAN mismatch rechazado + CA lab OK (nunca `verify=False`); `read_only_allow_delete` → 429 `cluster_block_exception` + recovery; job Cortex real a estado terminal <180s; IoC push→pull→uuid round-trip MISP (`Attribute` capitalizado — el lowercase se ignoraba); matriz anonymous en api/shuffle/cortex/thehive/misp | **5/5 PASSED (43s)**; ES real reporta flood-stage watermark en el mensaje de bloqueo |
+| TAXII dedicado (E2E-MISP-001) | Overlay `docker-compose.taxii.yml`: `soar_taxii` = medallion 3.0.0 pineado (`infra/docker/taxii/`), api_root `soarlab`, colección `ransomware-iocs` con seed STIX 2.1. **TC-41**: discovery, pull, push+pull-back por `match[id]`, malformed-bundle bounded, anonymous 401/403, y path real TAXII→MISP | **6/6 PASSED (66s)**; overlay opt-in, no contamina `make up` |
+
+Residual honesto tras 3.40:
+
+- Shuffle 2.2.1 no evalúa branch conditions → los nodos Cortex *ejecutan*
+  aunque el observable sea vacío/inválido (devuelven `skipped` — no job, no
+  fallo). Es arquitectura de la plataforma, mitigada en el guard.
+- `soar-metrics` legacy quedó eliminado tras reindex; docs pre-v2 se
+  preservan en `soar-metrics-v2` con mapping estable.
+- e2e-smoke CI corre subset (~25-40 min) — la suite completa sigue siendo
+  de host/self-hosted por RAM del runner.
 
 ## 6. Referencias
 

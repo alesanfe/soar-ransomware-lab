@@ -109,13 +109,13 @@ def build_url(protocol: str, port_var: str, path: str = "") -> str:
             "API_PORT": "8000",
             "WEB_UI_PORT": "8085",
             "DOCS_PORT": "8086",
-            "THEHIVE_HTTP_PORT": "8100",
-            "CORTEX_HTTP_PORT": "8101",
+            "THEHIVE_HOST_PORT": "8100",
+            "CORTEX_HOST_PORT": "8101",
             "SHUFFLE_API_PORT": "5001",
             "SHUFFLE_UI_PORT": "8081",
-            "ELASTICSEARCH_PORT": "8200",
-            "OPENSEARCH_PORT": "8201",
-            "MISP_PORT": "8083",
+            "ELASTICSEARCH_PORT": "19200",
+            "OPENSEARCH_PORT": "19201",
+            "MISP_HOST_PORT": "8083",
             "GRAFANA_PORT": "8084",
         }
         port = fallbacks.get(port_var, "")
@@ -126,12 +126,48 @@ def main():
     load_env()
     ok = True
 
+    # Elasticsearch serves HTTPS+basic auth (xpack) on the lab CA.
+    lab_ca = os.environ.get(
+        "LAB_CA_BUNDLE",
+        os.path.join(
+            os.path.dirname(__file__), "..", "..", "infra", "docker", "config", "certs", "ca.crt"
+        ),
+    )
+    es_auth = (
+        os.environ.get("ELASTIC_USERNAME", "elastic"),
+        os.environ.get("ELASTIC_PASSWORD", ""),
+    )
+    os_auth = (
+        os.environ.get("OPENSEARCH_USERNAME", "admin"),
+        os.environ.get("OPENSEARCH_PASSWORD", ""),
+    )
+
     print("=== Core SOAR Services ===")
-    ok &= http_check("TheHive", build_url("http", "THEHIVE_HTTP_PORT", "/api/v1/status/public"))
-    ok &= http_check("Cortex", build_url("http", "CORTEX_HTTP_PORT", "/api/status"))
-    ok &= http_check("Shuffle", build_url("http", "SHUFFLE_API_PORT", "/api/v1/health"))
-    ok &= http_check("Elasticsearch", build_url("http", "ELASTICSEARCH_PORT", "_cluster/health"))
-    ok &= http_check("OpenSearch", build_url("http", "OPENSEARCH_PORT", "_cluster/health"))
+    ok &= http_check(
+        "TheHive",
+        build_url("https", "THEHIVE_HOST_PORT", "/api/v1/status/public"),
+        ca_bundle=lab_ca,
+    )
+    ok &= http_check(
+        "Cortex", build_url("https", "CORTEX_HOST_PORT", "/api/status"), ca_bundle=lab_ca
+    )
+    ok &= http_check(
+        "Shuffle",
+        build_url("https", "SHUFFLE_API_PORT", "/api/v1/health"),
+        ca_bundle=lab_ca,
+    )
+    ok &= http_check(
+        "Elasticsearch",
+        build_url("https", "ELASTICSEARCH_PORT", "_cluster/health"),
+        ca_bundle=lab_ca,
+        auth=es_auth,
+    )
+    ok &= http_check(
+        "OpenSearch",
+        build_url("https", "OPENSEARCH_PORT", "_cluster/health"),
+        ca_bundle=lab_ca,
+        auth=os_auth,
+    )
 
     print()
     print("=== API & Management ===")
@@ -140,13 +176,7 @@ def main():
 
     print()
     print("=== Threat Intelligence ===")
-    lab_ca = os.environ.get(
-        "LAB_CA_BUNDLE",
-        os.path.join(
-            os.path.dirname(__file__), "..", "..", "infra", "docker", "config", "certs", "ca.crt"
-        ),
-    )
-    ok &= http_check("MISP", build_url("https", "MISP_PORT"), ca_bundle=lab_ca)
+    ok &= http_check("MISP", build_url("https", "MISP_HOST_PORT"), ca_bundle=lab_ca)
 
     print()
     print("=== Observability ===")

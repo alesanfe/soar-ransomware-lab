@@ -86,7 +86,21 @@ class StixExportUseCase:
         """Export up to ``limit`` most recent alerts as a STIX bundle."""
         alerts = list(self._alerts_provider() or [])[: max(0, limit)]
         created = _now()
-        objects: list[dict[str, Any]] = [self._identity(created)]
+        # TLP:CLEAR marking-definition — the canonical marking id from the
+        # STIX 2.1 spec; the lab feed is shareable without restrictions.
+        objects: list[dict[str, Any]] = [
+            self._identity(created),
+            {
+                "type": "marking-definition",
+                "spec_version": STIX_SPEC_VERSION,
+                "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+                "created": created,
+                "definition_type": "tlp",
+                "name": "TLP:CLEAR",
+                "definition": {"tlp": "clear"},
+            },
+        ]
+        marking_ref = objects[1]["id"]
         seen_ids: set[str] = set()
 
         for alert in alerts:
@@ -114,6 +128,10 @@ class StixExportUseCase:
                         "pattern_type": "stix",
                         "valid_from": created,
                         "created_by_ref": objects[0]["id"],
+                        # Confidence 80: lab-verified IoC (generated or
+                        # ingested), not a third-party asserted sighting.
+                        "confidence": 80,
+                        "object_marking_refs": [marking_ref],
                     }
                 )
             if not indicator_refs:
@@ -129,6 +147,7 @@ class StixExportUseCase:
                     "context": "suspicious-activity",
                     "object_refs": indicator_refs,
                     "created_by_ref": objects[0]["id"],
+                    "object_marking_refs": [marking_ref],
                 }
             )
 

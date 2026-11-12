@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import re
+import ssl
 import sys
 import time
 import urllib.error
@@ -37,8 +38,21 @@ from soar_lab.common.constants import (
 
 logger = logging.getLogger(__name__)
 
-THEHIVE_URL = os.environ.get("THEHIVE_URL", "http://thehive:9000")
-CORTEX_URL = os.environ.get("CORTEX_URL", "http://cortex:9001")
+THEHIVE_URL = os.environ.get("THEHIVE_URL", "https://thehive:9443")
+CORTEX_URL = os.environ.get("CORTEX_URL", "https://cortex:9443")
+
+# urllib.urlopen does NOT honour REQUESTS_CA_BUNDLE — pin the lab CA
+# explicitly or every HTTPS call fails CERTIFICATE_VERIFY_FAILED.
+_verify: bool | str = True
+try:
+    from soar_lab.security.tls_config import ca_verify
+
+    _verify = ca_verify()
+except Exception:  # pragma: no cover — helper import must never break init
+    pass
+_SSL_CTX = ssl.create_default_context(cafile=_verify) if isinstance(_verify, str) else (
+    ssl.create_default_context() if _verify else ssl._create_unverified_context()
+)
 # TheHive 5 logins are email-format. THEHIVE_ADMIN_USER is the org-admin that
 # owns cases/alerts for the lab (built-in admin@thehive.local is a platform
 # superadmin without manageCase/* permissions — bootstrap only).
@@ -72,7 +86,7 @@ def thehive_request(method: str, path: str, body=None, user: str = "", password:
     headers = _auth_header(user, password) if user else {HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON}
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
+        with urllib.request.urlopen(req, timeout=30, context=_SSL_CTX) as resp:  # nosec B310
             raw = resp.read()
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
@@ -90,7 +104,7 @@ def wait_for_thehive(timeout: int = 300) -> bool:
     while time.time() < deadline:
         try:
             with urllib.request.urlopen(
-                f"{THEHIVE_URL}/api/v1/status/public", timeout=5
+                f"{THEHIVE_URL}/api/v1/status/public", timeout=5, context=_SSL_CTX
             ) as r:  # nosec B310
                 if r.status == 200:
                     logger.info("  ready.")
@@ -210,6 +224,16 @@ def set_admin_password(user_id: str, password: str, auth_user: str, auth_pass: s
     return False
 
 
+def unlock_user(user_id: str, auth_user: str, auth_pass: str) -> None:
+    """PATCH /user/{id} {locked:false} — a BJE rollback can resurrect users in
+    locked state (failed auth auto-lock), after which every renewed key 401s."""
+    result = thehive_request(
+        "PATCH", f"user/{user_id}", {"locked": False}, user=auth_user, password=auth_pass
+    )
+    if "error" not in result:
+        logger.info("  User unlocked (locked=false enforced).")
+
+
 def renew_api_key(user_id: str, auth_user: str, auth_pass: str) -> str | None:
     """POST /user/{id}/key/renew — returns the raw key as text/plain."""
     url = f"{THEHIVE_URL}/api/v1/user/{user_id}/key/renew"
@@ -218,7 +242,7 @@ def renew_api_key(user_id: str, auth_user: str, auth_pass: str) -> str | None:
             url, data=b"{}", method="POST", headers=_auth_header(auth_user, auth_pass)
         )
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
+            with urllib.request.urlopen(req, timeout=30, context=_SSL_CTX) as resp:  # nosec B310
                 key = resp.read().decode().strip().strip('"')
                 if len(key) > 10:
                     logger.info("  API key generated.")
@@ -344,7 +368,7 @@ def main() -> None:
             },
         )
         try:
-            with urllib.request.urlopen(req, timeout=10) as r:  # nosec B310
+            with urllib.request.urlopen(req, timeout=10, context=_SSL_CTX) as r:  # nosec B310
                 key_valid = r.status == 200
         except urllib.error.HTTPError as e:
             key_valid = False
@@ -360,6 +384,9 @@ def main() -> None:
     else:
         api_key = None
     if not api_key:
+        # A locked account makes every renewed key 401 — enforce unlocked
+        # before spending renew attempts (BJE rollback resurrects lock state).
+        unlock_user(org_user_id, auth_user, auth_pass)
         api_key = renew_api_key(org_user_id, auth_user, auth_pass)
         if not api_key:
             logger.error("ERROR: TheHive API key generation failed.")

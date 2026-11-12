@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '0 2 * * *'  # Daily at 2 AM UTC
 
+# SC-EVAL-002: least-privilege GITHUB_TOKEN — jobs needing more declare
+# job-level permissions (security-scan writes SARIF to code scanning).
+permissions:
+  contents: read
+
 jobs:
   validate-compose:
     runs-on: ubuntu-latest
@@ -27,12 +32,28 @@ jobs:
       - name: Compose security invariants (hardened, fail-closed)
         run: python scripts/setup/validate_compose_security.py --profile hardened
 
+  observability-configs:
+    # OBS-076/088/089/097/098/109/147: every observability config must pass
+    # its image-native validator before merge — promtool, loki -verify-config,
+    # tempo -config.verify, promtail -check-syntax, otelcol validate,
+    # blackbox --config.check, plus image pinning and LF endings.
+    runs-on: ubuntu-latest
+    needs: validate-compose
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Validate observability configs
+        run: bash scripts/ci/validate_observability_configs.sh
+      - name: Gitleaks secrets scan
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+
   lint-python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Set up Python
-        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install dependencies
@@ -90,7 +111,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Set up Python
-        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install dependencies
@@ -98,11 +119,48 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[test]"
       - name: Run unit tests
-        run: python -m pytest tests/unit/ -v --cov=src.soar_lab --cov-report=xml
+        run: >-
+          python -m pytest tests/unit/ -v --cov=src.soar_lab --cov-report=xml
+          --junitxml=reports/junit/unit.xml
       - name: Upload coverage
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
         with:
           file: ./coverage.xml
+      - name: Upload test results (ISO 29119 — completion record)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: junit-unit
+          path: reports/junit/unit.xml
+          if-no-files-found: ignore
+
+  test-local-suites:
+    # CI-EVAL-001: suites that need no live stack — previously uncovered in CI,
+    # which let red tests (stale oracles, hollow tests) survive undetected.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test,quality]"
+      - name: Run local-only suites (atomic/architecture/security/contract/general/quality)
+        run: >-
+          python -m pytest tests/atomic tests/architecture tests/security
+          tests/contract tests/contracts tests/general tests/quality
+          -m "not requires_docker and not requires_external" -q --tb=short
+          --junitxml=reports/junit/local-suites.xml
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: junit-local-suites
+          path: reports/junit/local-suites.xml
+          if-no-files-found: ignore
 
   test-integration:
     runs-on: ubuntu-latest
@@ -124,7 +182,14 @@ jobs:
             up -d
           sleep 60
       - name: Run integration tests
-        run: python -m pytest tests/integration/ -v
+        run: python -m pytest tests/integration/ -v --junitxml=reports/junit/integration.xml
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: junit-integration
+          path: reports/junit/integration.xml
+          if-no-files-found: ignore
       - name: Cleanup
         run: |
           docker compose \
@@ -135,6 +200,9 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # upload-sarif → GitHub code scanning
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Run Trivy vulnerability scanner
@@ -158,7 +226,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Set up Python
-        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install
@@ -171,15 +239,15 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Set up Python
-        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install project + cyclonedx
-        run: pip install -e . cyclonedx-bom
+        run: pip install -e . cyclonedx-bom==8.0.1
       - name: Generate CycloneDX SBOM (DEV-002)
         run: cyclonedx-py environment --of JSON -o sbom.json
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@b7d0e84a10a4e2f97d1ba5af9f1c25f22b1f6c99 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sbom-${{ github.sha }}
           path: sbom.json
@@ -189,7 +257,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Set up Python
-        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install
@@ -233,6 +301,23 @@ jobs:
           pip install --break-system-packages --ignore-installed -e .
           python3 -c "from soar_lab.application.use_cases.backup_service import BackupService; print('BackupService import OK')"
 
+  # DR-EVAL-007: periodic end-to-end exercise of the backup pipeline —
+  # tar → AES-256 encrypt → sha256 → decrypt → restore → marker verify.
+  # Runs a synthetic scratch volume so no project data is needed.
+  dr-drill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Synthetic backup + restore drill
+        run: |
+          docker volume create soar_drill_ci
+          docker run --rm -v soar_drill_ci:/data alpine:3.20 \
+            sh -c 'mkdir -p /data/chunks /data/wal && echo seed-a > /data/chunks/a.log && echo seed-b > /data/wal/b.log'
+          export BACKUP_PASSPHRASE="ci-drill-passphrase"
+          export BACKUP_VOLUMES="drill_ci"
+          bash scripts/maintenance/backup_obs_stack.sh backup /tmp/dr-backup
+          bash scripts/maintenance/backup_obs_stack.sh drill /tmp/dr-backup
+
   build-docs:
     runs-on: ubuntu-latest
     steps:
@@ -258,7 +343,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Set up Python
-        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install dependencies

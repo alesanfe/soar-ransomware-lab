@@ -245,62 +245,35 @@ class TestIOCGeneratorAtomic:
                 # If URL is generated, it should be valid
                 assert "://" in ioc["url"]
 
-    def test_url_validation_invalid_urls(self):
-        """Test URL validation with invalid URLs."""
-        invalid_urls = [
-            "not-a-url",
-            "htp://example.com",  # Typo in protocol
-            "http://",  # No domain
-            "example.com",  # No protocol
-            "javascript:alert(1)",  # JavaScript protocol
-            "data:text/html,<script>alert(1)</script>",  # Data URL
-        ]
+    def test_generated_urls_are_wellformed(self, generator):
+        """Every generated URL is a parseable http(s) URL with host+path."""
+        import re
 
-        # Should handle invalid URLs gracefully
-        for url in invalid_urls:
-            # This would test URL validation if URLs are part of IOCs
-            pass
+        url_re = re.compile(r"^https?://[a-z0-9]{5,12}\.[a-z]{2,4}/[a-z0-9./]+$")
+        for url in generator.generate_urls(50):
+            assert url_re.match(url), f"malformed URL generated: {url}"
 
-    def test_url_sanitization(self):
-        """Test URL sanitization."""
-        malicious_urls = [
-            "http://example.com/<script>alert(1)</script>",
-            'http://example.com/"><script>alert(1)</script>',
-            "http://example.com/?param=<img src=x onerror=alert(1)>",
-        ]
+    def test_generated_urls_have_no_injection_chars(self, generator):
+        """Generated URLs never embed markup/injection characters."""
+        for url in generator.generate_urls(50):
+            for bad in ("<", ">", '"', "'", " ", "(", ")"):
+                assert bad not in url, f"unsafe char {bad!r} in {url}"
 
-        # Should sanitize malicious URLs
-        for url in malicious_urls:
-            # This would test URL sanitization
-            pass
+    def test_generated_domains_are_valid_dns_names(self, generator):
+        """Generated domains match a single-label DNS name + known TLD."""
+        import re
 
-    def test_domain_validation(self, generator):
-        """Test domain validation."""
-        valid_domains = [
-            "example.com",
-            "subdomain.example.com",
-            "example.co.uk",
-            "malicious-domain.com",
-        ]
+        domain_re = re.compile(r"^[a-z0-9]{5,12}\.(com|net|org|io|biz|info|ru|cn|xyz)$")
+        for domain in generator.generate_domains(50):
+            assert domain_re.match(domain), f"invalid domain generated: {domain}"
 
-        invalid_domains = ["not a domain", "example..com", "-example.com", "example-.com"]
+    def test_generated_url_length_is_bounded(self, generator):
+        """Generated URLs stay within a sane bound (no unbounded strings)."""
+        # scheme(≤8) + label(≤12) + dot + tld(≤4) + '/' + path(≤11) ≤ 36.
+        for url in generator.generate_urls(50):
+            assert len(url) <= 64, f"unbounded URL generated: {url}"
 
-        # Should validate domains correctly
-        for domain in valid_domains:
-            assert len(domain) > 0
-
-        for domain in invalid_domains:
-            # Should handle invalid domains
-            pass
-
-    def test_url_length_limit(self):
-        """Test URL length limit."""
-        "http://example.com/" + "a" * 10000
-
-        # Should handle very long URLs (truncate or reject)
-
-    def test_url_with_credentials(self):
-        """Test URL with credentials."""
-        "http://user:password@example.com"
-
-        # Should handle URLs with credentials (sanitize or reject)
+    def test_generated_urls_have_no_credentials(self, generator):
+        """Generated URLs never embed userinfo credentials."""
+        for url in generator.generate_urls(50):
+            assert "@" not in url, f"credentials in generated URL: {url}"

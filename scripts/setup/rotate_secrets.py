@@ -129,7 +129,7 @@ def phase_live_api() -> None:
     logger.info("== Phase 1: live-API credential rotation ==")
     th_user = OLD.get("THEHIVE_ADMIN_USER", "admin@soar.local")
     th_pass = OLD.get("THEHIVE_ADMIN_PASSWORD", "")
-    th_url = "http://localhost:8100"
+    th_url = "https://localhost:8100"
 
     # TheHive API key renew
     code, out = http(
@@ -174,7 +174,7 @@ def phase_live_api() -> None:
     # Cortex org admin API key renew
     cx_user = OLD.get("CORTEX_ADMIN_USER", "orgadmin")
     cx_pass = OLD.get("CORTEX_ADMIN_PASSWORD", "")
-    cx_url = "http://localhost:8101"
+    cx_url = "https://localhost:8101"
     code, out = http(
         "POST",
         f"{cx_url}/api/user/{cx_user}/key/renew",
@@ -479,7 +479,7 @@ def phase_verify() -> None:
     # old thehive key must fail
     code, _ = http(
         "GET",
-        "http://localhost:8100/api/v1/user/current",
+        "https://localhost:8100/api/v1/user/current",
         headers={"Authorization": f"Bearer {OLD.get('THEHIVE_API_KEY','')}"},
     )
     logger.info("  old THEHIVE_API_KEY -> HTTP %d (expect 401)", code)
@@ -509,7 +509,31 @@ def main() -> int:
         logger.info("  NEEDS-MANUAL: %s", ", ".join(manual))
     if failed:
         logger.info("  FAILED: %s", ", ".join(failed))
+    write_audit_record(ok, manual, failed)
     return 0 if not failed else 2
+
+
+AUDIT_LOG = REPO_ROOT / "runtime" / "secrets-rotation.audit.jsonl"
+
+
+def write_audit_record(rotated_count: int, manual: list[str], failed: list[str]) -> None:
+    """Append a tamper-evident rotation record — ISO 27001 A.8.15 / OWASP
+    secrets-management auditing. Variable NAMES only; never secret values.
+    ``runtime/`` is gitignored so the trail stays off the repository."""
+    try:
+        AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "rotated": rotated_count,
+            "needs_manual": manual,
+            "failed": failed,
+            "vars": [v for v, _, _ in REPORT],
+        }
+        with AUDIT_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, sort_keys=True) + "\n")
+        logger.info("  audit record -> %s", AUDIT_LOG)
+    except OSError as exc:
+        logger.error("  audit record write failed: %s", exc)
 
 
 if __name__ == "__main__":

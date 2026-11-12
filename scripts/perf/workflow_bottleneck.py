@@ -26,8 +26,10 @@ Run inside the ``soar_api`` container::
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
+import ssl
 import sys
 import time
 import urllib.request
@@ -35,9 +37,20 @@ from pathlib import Path
 from typing import Any
 
 from soar_lab.application.use_cases.node_timing_extractor import NodeTimingExtractor
+from soar_lab.security.tls_config import ca_verify
 
-OPENSEARCH_URL = os.environ.get("OPENSEARCH_URL", "http://opensearch:9200")
+OPENSEARCH_URL = os.environ.get("OPENSEARCH_URL", "https://opensearch:9200")
 EXECUTION_INDEX = os.environ.get("SHUFFLE_EXECUTION_INDEX", "workflowexecution")
+
+_OS_USER = os.environ.get("OPENSEARCH_USERNAME", "admin")
+_OS_PASS = os.environ.get("OPENSEARCH_PASSWORD", "")
+_verify = ca_verify()
+if isinstance(_verify, str):
+    _SSL_CTX = ssl.create_default_context(cafile=_verify)
+elif _verify:
+    _SSL_CTX = ssl.create_default_context()
+else:
+    _SSL_CTX = ssl._create_unverified_context()
 
 
 def _pct(sorted_vals: list[float], q: float) -> float:
@@ -53,13 +66,17 @@ def fetch_finished_executions(size: int, os_url: str = OPENSEARCH_URL) -> list[d
             "query": {"term": {"status": "FINISHED"}},
         }
     ).encode()
+    headers = {"Content-Type": "application/json"}
+    if _OS_PASS:
+        cred = base64.b64encode(f"{_OS_USER}:{_OS_PASS}".encode()).decode()
+        headers["Authorization"] = f"Basic {cred}"
     req = urllib.request.Request(
         f"{os_url.rstrip('/')}/{EXECUTION_INDEX}/_search",
         data=body,
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=30, context=_SSL_CTX) as resp:
         data = json.loads(resp.read())
     return [h["_source"] for h in data.get("hits", {}).get("hits", [])]
 

@@ -14,6 +14,7 @@ Usage:
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -27,15 +28,38 @@ from soar_lab.infrastructure.integrations.shuffle.client import ShuffleClient
 logger = get_logger(__name__)
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
+_SECRET_NAME_RE = re.compile(r"(TOKEN|SECRET|PASSWORD|PASSWD|PASS|API_?KEY|SIGNING_KEY)")
 
 
 def _slug(name: str) -> str:
     return _SLUG_RE.sub("-", str(name).lower()).strip("-") or "unnamed"
 
 
+def _secret_placeholders() -> dict[str, str]:
+    """Map live secret values -> ``__VAR__`` placeholders.
+
+    Workflows carry real credentials in action headers (``X-Service-Token``,
+    ``Authorization`` …).  Exported playbooks are Git-tracked, so the live
+    values must never be written — replace each env-provided secret with a
+    deterministic placeholder that a re-import substitutes back.
+    """
+    out: dict[str, str] = {}
+    for key, val in os.environ.items():
+        if _SECRET_NAME_RE.search(key) and isinstance(val, str) and len(val) >= 16:
+            out[val] = f"__{key}__"
+    return out
+
+
+def _scrub(text: str, secrets: dict[str, str]) -> str:
+    for val, placeholder in sorted(secrets.items(), key=lambda kv: -len(kv[0])):
+        text = text.replace(val, placeholder)
+    return text
+
+
 def export_workflows(client: ShuffleClient, out_dir: Path, dry_run: bool = False) -> dict:
     """Dump each Shuffle workflow to ``<slug>-<id8>.json`` in out_dir."""
     workflows = client.list_workflows()
+    secrets = _secret_placeholders()
     written: list[str] = []
     skipped: list[str] = []
     for wf in workflows:
@@ -52,7 +76,10 @@ def export_workflows(client: ShuffleClient, out_dir: Path, dry_run: bool = False
             logger.info("[dry-run] would write playbooks/%s", filename)
             written.append(filename)
             continue
-        payload = json.dumps(detail, indent=2, sort_keys=True, default=str) + "\n"
+        payload = _scrub(
+            json.dumps(detail, indent=2, sort_keys=True, default=str) + "\n",
+            secrets,
+        )
         (out_dir / filename).write_text(payload, encoding="utf-8")
         written.append(filename)
     return {"exported": len(written), "skipped": skipped, "files": written}

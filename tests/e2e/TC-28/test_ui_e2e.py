@@ -446,12 +446,36 @@ class TestUIE2E(E2EBaseTest):
 
         self._log("STEP 1: Checking API UI web interface")
         api_url = self.get_service_url("api")
+        # API_DOCS_ENABLED controls the docs surface: "true" serves the
+        # Swagger UI at /docs, "spec" exposes only /openapi.json (the
+        # hardened default), "false" disables the docs surface entirely.
+        docs_mode = str(self.env.get("API_DOCS_ENABLED", "spec")).lower()
         try:
-            r = self.s.get(f"{api_url}/docs", timeout=10)
-            assert r.status_code == 200, f"API UI not accessible: HTTP {r.status_code}"
-            assert "text/html" in r.headers.get("Content-Type", ""), "Response should be HTML"
-            self._log(f"+ API UI accessible: HTTP {r.status_code}")
-            self._log("✓ API UI validated - web interface accessible")
+            if docs_mode == "spec":
+                r = self.s.get(f"{api_url}/openapi.json", timeout=10)
+                assert r.status_code == 200, (
+                    f"openapi.json not accessible in spec mode: HTTP {r.status_code}"
+                )
+                assert "paths" in r.json(), "openapi.json should contain a paths map"
+                d = self.s.get(f"{api_url}/docs", timeout=10)
+                assert d.status_code == 404, (
+                    f"/docs should be disabled in spec mode, got HTTP {d.status_code}"
+                )
+                self._log(f"+ spec mode: openapi.json 200, /docs disabled ({d.status_code})")
+            elif docs_mode in ("1", "true", "on", "yes"):
+                r = self.s.get(f"{api_url}/docs", timeout=10)
+                assert r.status_code == 200, f"API UI not accessible: HTTP {r.status_code}"
+                assert "text/html" in r.headers.get("Content-Type", ""), (
+                    "Response should be HTML"
+                )
+                self._log(f"+ API UI accessible: HTTP {r.status_code}")
+            else:
+                r = self.s.get(f"{api_url}/openapi.json", timeout=10)
+                assert r.status_code == 404, (
+                    f"docs surface should be disabled, got HTTP {r.status_code}"
+                )
+                self._log("+ docs surface fully disabled")
+            self._log("✓ API UI validated - docs surface matches API_DOCS_ENABLED")
         except Exception as e:
             self._log(f"+ API UI check failed: {e}")
             pytest.fail("API UI not available")

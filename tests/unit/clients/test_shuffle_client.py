@@ -236,9 +236,9 @@ class TestShuffleClient:
 
         assert result == [{"execution_id": "1"}]
 
-    def test_get_workflow_executions_raises_on_persistent_401(self):
-        """Test get_workflow_executions raises IntegrationError on persistent
-        401."""
+    def test_get_workflow_executions_returns_empty_on_persistent_401(self, caplog):
+        """Persistent 401 degrades to [] — callers poll this in a loop, so a
+        transient ES miss must not be surfaced as a hard failure."""
         with patch("soar_lab.infrastructure.integrations.shuffle.client.threading.Thread"):
             client = ShuffleClient(base_url="http://localhost:5001", api_key="test-key")
 
@@ -250,8 +250,12 @@ class TestShuffleClient:
 
         with patch("requests.get", return_value=self._make_es_empty_response()):
             client._session.get = Mock(return_value=mock_response)
-            with pytest.raises(IntegrationError, match="ShuffleClient"):
-                client.get_workflow_executions("123", retries=0, retry_delay=0.1)
+            with caplog.at_level("WARNING"):
+                result = client.get_workflow_executions("123", retries=0, retry_delay=0.1)
+
+        assert result == []
+        assert "workflow executions API fallback failed" in caplog.text
+        assert "ShuffleClient" in caplog.text
 
     def test_get_execution(self):
         """Test getting a specific execution."""

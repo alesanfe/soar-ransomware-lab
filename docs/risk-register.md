@@ -105,9 +105,59 @@
   justificadas; auto-cierre al actualizar Docusaurus cuando upstream
   parchee `tinypool`/`serialize-javascript`.
 
+## R-06 — Renderer `IGNORE_HTTPS_ERRORS=true` (Chromium NSS)
+
+- **Componente**: `grafana-renderer` (grafana-image-renderer 3.10.4).
+- **Impacto**: Bajo-medio (el callback renderer→grafana no autentica el
+  certificado del peer — MitM interno teórico).
+- **Probabilidad**: Muy baja (`logging_net` bridge aislada; renderer sin
+  puertos publicados, `cap_drop: ALL`, `no-new-privileges`; el tráfico
+  sigue cifrado en tránsito — solo falta verificación de identidad).
+- **Controles compensatorios**: segmentación de red, hardening del
+  contenedor, cert-expiry alerting (RB-18) que vigila los demás TLS.
+- **Decisión**: ADR-0014 §4 — Chromium NSS no admite CA vía env/flag en la
+  imagen oficial; la alternativa es mantener un fork de la imagen.
+- **Responsable**: owner del repo.
+- **Aceptado**: 2026-11-10. **Expira**: 2027-05-10.
+- **Cierre**: migrar a imagen rebuild con CA en trust store NSS si el
+  renderer pasa a exponerse fuera de `logging_net`.
+
+## R-07 — Object storage replicado en el mismo host (SeaweedFS)
+
+- **Componente**: `s3`/`s3-vol2` (placement 010, rack1+rack2 lógicos).
+- **Impacto**: Alto si cae el host/WSL — pérdida simultánea de ambos racks
+  (chunks de Loki + bloques de Tempo).
+- **Probabilidad**: Baja (host de desarrollo; datos del lab regenerables).
+- **Controles compensatorios**: replicación 010 sobrevive a la caída de un
+  volumen-contenedor (verificado con rack2 registrado);
+  `scripts/maintenance/backup_*.py` cubre volúmenes; s3-init fail-closed
+  garantiza buckets íntegros al arranque.
+- **Responsable**: owner del repo.
+- **Aceptado**: 2026-11-10. **Expira**: 2027-05-10.
+- **Cierre**: externalizar el S3 a un segundo host o a un backend gestionado
+  (MinIO/S3 remoto) si el lab pasa a multi-host.
+
+## R-08 — cAdvisor privileged (irreducible)
+
+- **Componente**: `cadvisor` (`privileged: true` + bind-mounts host
+  `/`, `/var/run`, `/sys`, `/var/lib/docker`).
+- **Impacto**: Medio (un compromiso del proceso cadvisor tiene acceso total
+  al host Docker).
+- **Probabilidad**: Baja (puerto 8080 solo en `logging_net`, sin publish;
+  imagen `v0.49.1` pinned; métricas read-only).
+- **Controles compensatorios**: no hay alternativa funcional — la métrica
+  de contenedores requiere cgroupfs del host. `no-new-privileges` no aplica
+  (privileged lo anula); scrape a 60s/30s timeout limita exposición
+  temporal; job validado por promtool en CI.
+- **Responsable**: owner del repo.
+- **Aceptado**: 2026-11-10 (ADR-0014 §5). **Expira**: 2027-05-10.
+- **Cierre**: n/a (requisito funcional); revisar si Docker expone
+  métricas nativas equivalentes.
+
 ## Revisión
 
 | Riesgo | Próxima revisión |
 | --- | --- |
 | R-01..R-04 | 2027-02-08 (trimestral) |
 | R-05 | Tras DOCS-003 |
+| R-06..R-08 | 2027-05-10 (semestral) |

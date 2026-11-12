@@ -7,16 +7,24 @@ services:
     image: ${MISP_DB_IMAGE:-mariadb:10.11}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_db
     environment:
-      MYSQL_ROOT_PASSWORD: ${MISP_DB_ROOT_PASSWORD}
+      # MISP-EVAL-011: passwords via _FILE so `docker inspect` exposes no
+      # literal secrets (same env-sourced secrets pattern as redis).
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/misp_db_root_password
       MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
       MYSQL_USER: ${MISP_DB_USER:-misp}
-      MYSQL_PASSWORD: ${MISP_DB_PASSWORD}
+      MYSQL_PASSWORD_FILE: /run/secrets/misp_db_password
     volumes:
       - misp_db:/var/lib/mysql
+    secrets:
+      - misp_db_root_password
+      - misp_db_password
     networks:
-      - soar_net
+      # NET-EVAL-2-001: dedicated internal-only plane — no NAT gateway,
+      # no egress of any kind. MariaDB only ever talks to the misp app
+      # and the blackbox probe; internet egress was never needed.
+      - misp_db_net
     healthcheck:
-      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1" ]
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$(cat /run/secrets/misp_db_root_password)\" || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -39,14 +47,16 @@ services:
   misp-modules:
     image: ${MISP_MODULES_IMAGE:-ghcr.io/misp/misp-docker/misp-modules:v3.0.9}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_misp_modules
+    # MISP-EVAL-012: functional probe — run a real dns module query
+    # instead of a bare TCP connect, which would pass on a dead worker.
     healthcheck:
-      test: [ "CMD-SHELL", "python3 -c \"import socket; s=socket.socket(); s.connect(('localhost',6666)); s.close()\" 2>/dev/null || exit 1" ]
+      test: [ "CMD-SHELL", "python3 -c \"import urllib.request,json; r=urllib.request.Request('http://localhost:6666/query',data=json.dumps({'module':'dns','hostname':'localhost'}).encode(),headers={'Content-Type':'application/json'}); urllib.request.urlopen(r,timeout=5)\" 2>/dev/null || exit 1" ]
       interval: 15s
       timeout: 10s
       retries: 20
       start_period: 180s
     networks:
-      - soar_net
+      - misp_internal
     restart: unless-stopped
     deploy:
       resources:
@@ -75,13 +85,15 @@ services:
       redis:
         condition: service_healthy
     environment:
-      BASE_URL: https://${MISP_HOSTNAME:-localhost}:${MISP_HTTPS_PORT:-8083}
+      BASE_URL: https://${MISP_HOSTNAME:-localhost}:${MISP_HOST_PORT:-8083}
       MYSQL_HOST: ${MISP_DB_HOST:-misp-db}
       MYSQL_PORT: ${MISP_DB_PORT:-3306}
       MYSQL_USER: ${MISP_DB_USER:-misp}
       MYSQL_PASSWORD: ${MISP_DB_PASSWORD}
       MYSQL_DATABASE: ${MISP_DB_NAME:-misp}
-      REDIS_HOST: ${MISP_REDIS_HOST:-redis}
+      # Redis is TLS-only (lab CA) — default must carry the scheme, a bare
+      # host falls back to plaintext and breaks sessions silently.
+      REDIS_HOST: ${MISP_REDIS_HOST:-tls://redis}
       REDIS_PORT: ${MISP_REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       ADMIN_EMAIL: ${MISP_ADMIN_EMAIL:-admin@soar.local}
@@ -104,7 +116,7 @@ services:
       # Host port maps to the TLS listener — BASE_URL is https://…:8083.
       # Publishing :80 instead produced an http→https redirect that lost
       # the port and made the web UI unreachable from the host.
-      - "127.0.0.1:${MISP_PORT:-8083}:443"
+      - "127.0.0.1:${MISP_HOST_PORT:-8083}:443"
     volumes:
       - misp_files:/var/www/MISP/app/files
       - misp_logs:/var/www/MISP/app/tmp/logs
@@ -114,10 +126,18 @@ services:
       # (scripts/setup/gen_certs.sh misp -> infra/docker/config/certs/).
       - ../../../infra/docker/config/certs/misp-full.pem:/etc/nginx/certs/cert.pem:ro
       - ../../../infra/docker/config/certs/misp.key:/etc/nginx/certs/key.pem:ro
+      # TLS-only Redis: phpredis session/cache clients verify the lab CA via
+      # the system store — Debian bundle + lab CA combined (see gen_certs.sh).
+      - ../../../infra/docker/config/certs/debian-ca-plus-lab.crt:/etc/ssl/certs/ca-certificates.crt:ro
     networks:
       - soar_net
+      - misp_internal
+      - misp_db_net
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost/users/heartbeat" ]
+      # Probe the real app over TLS — http://localhost returns a 301
+      # redirect that `curl -f` counts as healthy even when PHP is dead
+      # (MISP-EVAL-001). The mounted bundle carries the lab CA.
+      test: [ "CMD", "curl", "-f", "--cacert", "/etc/ssl/certs/ca-certificates.crt", "https://localhost/users/heartbeat" ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -136,3 +156,23 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+# Dedicated backend plane for misp-db + misp-modules (MISP-EVAL-007):
+# they expose no host port and accept no auth — the only callers are the
+# misp app itself and the blackbox exporter (monitoring plane).
+networks:
+  misp_internal:
+    name: ${COMPOSE_PROJECT_NAME:-soar}_misp_internal
+  misp_db_net:
+    # NET-EVAL-2-001: internal: true removes the NAT gateway — containers
+    # on this plane cannot reach the internet or any other network.
+    name: ${COMPOSE_PROJECT_NAME:-soar}_misp_db_net
+    internal: true
+
+# MISP-EVAL-011: env-sourced secrets — values never appear in
+# `docker inspect` (same pattern as redis_password in core).
+secrets:
+  misp_db_root_password:
+    environment: MISP_DB_ROOT_PASSWORD
+  misp_db_password:
+    environment: MISP_DB_PASSWORD

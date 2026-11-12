@@ -101,11 +101,15 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         try:
             import redis as _redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = _redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
             r.ping()
             services_status["redis"] = True
@@ -238,11 +242,15 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         try:
             import redis as _redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = _redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
             r.ping()
         except Exception as e:
@@ -403,11 +411,15 @@ class TestCompleteSOARIntegration(E2EBaseTest):
         # Assert Redis is reachable and responding to ping.
         import redis as _redis
 
+        from tests.e2e.helpers.redis_tls import redis_kwargs
+
         r = _redis.Redis(
-            host=self.get_redis_host(),
-            port=self.get_redis_port(),
-            password=self.get_redis_password() or None,
-            decode_responses=True,
+            **redis_kwargs(
+                host=self.get_redis_host(),
+                port=self.get_redis_port(),
+                password=self.get_redis_password() or None,
+                decode_responses=True,
+            )
         )
         assert r.ping() is True, "Redis PING did not return True"
 

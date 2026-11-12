@@ -1,0 +1,1773 @@
+version: 1
+test_cases:
+- id: TC-00
+  dir: tests/e2e/TC-00
+  suite: e2e
+  make_target: test-e2e-tc00
+  tests:
+  - name: test_workflow_malicious
+    file: test_both_workflows.py
+    description: 'TC-00-01: Malicious alert through the workflow with full'
+  - name: test_parallel_workflow_execution
+    file: test_both_workflows.py
+    description: 'TC-00-02: Parallel execution — no race conditions.'
+  - name: test_workflow_consistency
+    file: test_both_workflows.py
+    description: 'TC-00-03: Multiple executions produce consistent results.'
+  - name: test_execution_time_comparison
+    file: test_both_workflows.py
+    description: 'TC-00-04: Execution times are within acceptable range.'
+- id: TC-01
+  dir: tests/e2e/TC-01
+  suite: e2e
+  make_target: test-e2e-tc01
+  tests:
+  - name: test_malicious_alert_full_workflow_group_1
+    file: test_malicious.py
+    description: 'TC-01 batch 1: hashes + IPs (4 cases).'
+  - name: test_malicious_alert_full_workflow_group_2
+    file: test_malicious.py
+    description: 'TC-01 batch 2: domains + URLs (4 cases).'
+  - name: test_malicious_alert_full_workflow_group_3
+    file: test_malicious.py
+    description: 'TC-01 batch 3: mail + file (4 cases).'
+  - name: test_malicious_alert_full_workflow_group_4
+    file: test_malicious.py
+    description: 'TC-01 batch 4: fqdn + hostname (4 cases).'
+  - name: test_observable_validation
+    file: test_malicious.py
+    description: 'TC-01-03: Observable validation.'
+  - name: test_ioc_validation
+    file: test_malicious.py
+    description: 'TC-01-04: IoC validation.'
+  - name: test_tag_validation
+    file: test_malicious.py
+    description: 'TC-01-05: Tag validation.'
+  - name: test_tlp_pap_validation
+    file: test_malicious.py
+    description: 'TC-01-06: TLP/PAP validation.'
+  - name: test_task_validation
+    file: test_malicious.py
+    description: 'TC-01-07: Task validation.'
+  - name: test_state_machine_validation
+    file: test_malicious.py
+    description: 'TC-01-08: State machine validation.'
+  - name: test_opensearch_validation
+    file: test_malicious.py
+    description: 'TC-01-09: OpenSearch validation.'
+- id: TC-02
+  dir: tests/e2e/TC-02
+  suite: e2e
+  make_target: test-e2e-tc02
+  tests:
+  - name: test_benign_alert_workflow
+    file: test_benign.py
+    description: 'TC-02: E2E — benign alert triggers full SOAR pipeline with false-'
+  - name: test_no_blocking
+    file: test_benign.py
+    description: 'TC-02-02: No blocking for benign alerts.'
+  - name: test_no_isolation
+    file: test_benign.py
+    description: 'TC-02-03: No isolation for benign alerts.'
+  - name: test_no_unnecessary_intelligence
+    file: test_benign.py
+    description: 'TC-02-04: No unnecessary intelligence for benign alerts.'
+  - name: test_audit_trail
+    file: test_benign.py
+    description: 'TC-02-05: Audit trail for benign alerts.'
+  - name: test_case_closed_false_positive_with_reason
+    file: test_fp_closure.py
+    description: 'TC-02-x: FP closure persists resolution+reason in case summary.'
+  - name: test_fp_reclassification_to_true_positive
+    file: test_fp_closure.py
+    description: 'TC-02-x: FP -> InProgress -> TruePositive reclassification path.'
+  - name: test_invalid_resolution_status_rejected
+    file: test_fp_closure.py
+    description: 'TC-02-x: invalid status (Resolved/Closed) rejected by TheHive 5.'
+
+- id: TC-03
+  dir: tests/e2e/TC-03
+  suite: e2e
+  make_target: test-e2e-tc03
+  tests:
+  - name: test_edge_cases_resilience
+    file: test_edge_cases.py
+    description: 'TC-03: E2E resilience — edge-case payloads must not break any'
+  - name: test_empty_payload
+    file: test_edge_cases.py
+    description: 'TC-03-01: Empty payload test.'
+  - name: test_null_fields
+    file: test_edge_cases.py
+    description: 'TC-03-02: Null fields test.'
+  - name: test_unicode_characters
+    file: test_edge_cases.py
+    description: 'TC-03-03: Unicode characters test.'
+  - name: test_special_characters
+    file: test_edge_cases.py
+    description: 'TC-03-04: Special characters test.'
+  - name: test_large_payload
+    file: test_edge_cases.py
+    description: 'TC-03-05: Large payload test.'
+  - name: test_empty_arrays
+    file: test_edge_cases.py
+    description: 'TC-03-06: Empty arrays test.'
+  - name: test_nested_json
+    file: test_edge_cases.py
+    description: 'TC-03-07: Nested JSON test.'
+  - name: test_invalid_dates
+    file: test_edge_cases.py
+    description: 'TC-03-08: Invalid dates test.'
+  - name: test_invalid_hash
+    file: test_edge_cases.py
+    description: 'TC-03-09: Invalid hash test.'
+  - name: test_limit_minus_1b_passes_edge
+    file: test_boundary_exact.py
+    description: 'TC-03-x: 2MiB-1 crosses nginx edge — non-413 reaches backend.'
+  - name: test_limit_plus_1b_rejected
+    file: test_boundary_exact.py
+    description: 'TC-03-x: 2MiB+1 -> 413 at the edge (real DoS bound).'
+  - name: test_json_depth_bounded
+    file: test_boundary_exact.py
+    description: 'TC-03-x: 500-level nesting -> bounded 4xx/accept, never hang.'
+
+- id: TC-04
+  dir: tests/e2e/TC-04
+  suite: e2e
+  make_target: test-e2e-tc04
+  tests:
+  - name: test_single_alert_latency
+    file: test_performance.py
+    description: 'Test 1: Single alert latency should be < 5s.'
+  - name: test_concurrent_alerts
+    file: test_performance.py
+    description: 'Test 2: 10 concurrent alerts complete within the queueing'
+  - name: test_sequential_batch
+    file: test_performance.py
+    description: 'Test 3: Five sequential alerts with 0.5s delay.'
+  - name: test_memory_usage
+    file: test_performance.py
+    description: 'Test 4: Check memory usage of key services.'
+  - name: test_cpu_usage
+    file: test_performance.py
+    description: 'Test 5: Check CPU usage of key services.'
+  - name: test_kpi_calculation_performance
+    file: test_performance.py
+    description: 'Test 6: KPI calculation performance for 100 entries.'
+  - name: test_queue_depth
+    file: test_performance.py
+    description: 'Test 7: Queue depth under load.'
+  - name: test_workflow_latency
+    file: test_performance.py
+    description: 'TC-04-01: Workflow latency measurement.'
+  - name: test_total_response_time
+    file: test_performance.py
+    description: 'TC-04-02: Total response time measurement.'
+  - name: test_p50_percentile
+    file: test_performance.py
+    description: 'TC-04-03: p50 latency percentile.'
+  - name: test_p95_percentile
+    file: test_performance.py
+    description: 'TC-04-04: p95 latency percentile.'
+  - name: test_p99_percentile
+    file: test_performance.py
+    description: 'TC-04-05: p99 latency percentile.'
+  - name: test_redis_cache_hit
+    file: test_performance.py
+    description: 'TC-04-06: Redis cache hit validation.'
+  - name: test_sla_compliance
+    file: test_performance.py
+    description: 'TC-04-07: SLA maximum compliance.'
+- id: TC-05
+  dir: tests/e2e/TC-05
+  suite: e2e
+  make_target: test-e2e-tc05
+  tests:
+  - name: test_concurrent_alerts
+    file: test_concurrent_alerts.py
+    description: Send 5 alerts concurrently and verify separate cases are created.
+  - name: test_10_concurrent_alerts
+    file: test_concurrent_alerts.py
+    description: 'TC-05-01: 10 concurrent alerts.'
+  - name: test_mass_concurrent_alerts
+    file: test_concurrent_alerts.py
+    description: 'TC-05-02: Mass concurrent alerts.'
+  - name: test_data_consistency
+    file: test_concurrent_alerts.py
+    description: 'TC-05-03: Data consistency under load.'
+  - name: test_no_duplicates
+    file: test_concurrent_alerts.py
+    description: 'TC-05-04: Absence of duplicates.'
+  - name: test_recovery_after_load
+    file: test_concurrent_alerts.py
+    description: 'TC-05-05: Recovery after load.'
+- id: TC-06
+  dir: tests/e2e/TC-06
+  suite: e2e
+  make_target: test-e2e-tc06
+  tests:
+  - name: test_critical_severity
+    file: test_critical_severity.py
+    description: Send critical severity alert and verify case creation.
+  - name: test_critical_workflow
+    file: test_critical_severity.py
+    description: 'TC-06-01: Critical workflow execution.'
+  - name: test_correct_priority
+    file: test_critical_severity.py
+    description: 'TC-06-02: Correct priority assignment.'
+  - name: test_critical_tasks
+    file: test_critical_severity.py
+    description: 'TC-06-03: Critical severity tasks.'
+  - name: test_critical_sla
+    file: test_critical_severity.py
+    description: 'TC-06-04: Critical SLA compliance.'
+  - name: test_auto_escalation
+    file: test_critical_severity.py
+    description: 'TC-06-05: Automatic escalation for critical alerts.'
+  - name: test_full_severity_range_accepted
+    file: test_severity_matrix.py
+    description: 'TC-06-x: full 1-4 scale submits cleanly.'
+  - name: test_out_of_range_bounded_not_stored
+    file: test_severity_matrix.py
+    description: 'TC-06-x: 0/neg/huge severity -> 422 or normalized, never stored out of range.'
+  - name: test_severity_type_coercion_bounded
+    file: test_severity_matrix.py
+    description: 'TC-06-x: string/float/null/bool severity -> bounded contract.'
+
+- id: TC-07
+  dir: tests/e2e/TC-07
+  suite: e2e
+  make_target: test-e2e-tc07
+  tests:
+  - name: test_missing_fields
+    file: test_missing_fields.py
+    description: Send alert with empty hash and IP, verify workflow handles it.
+  - name: test_missing_required_field
+    file: test_missing_fields.py
+    description: 'TC-07-01: Missing required field.'
+  - name: test_missing_optional_field
+    file: test_missing_fields.py
+    description: 'TC-07-02: Missing optional field.'
+  - name: test_derivable_field
+    file: test_missing_fields.py
+    description: 'TC-07-03: Derivable field.'
+  - name: test_error_message
+    file: test_missing_fields.py
+    description: 'TC-07-04: Correct error message.'
+  - name: test_422_field_pinpointed_contract
+    file: test_error_contract.py
+    description: 'TC-07-x: 422 exposes {type,loc,msg} — exact failing field, machine-readable.'
+  - name: test_401_machine_readable_with_correlation
+    file: test_error_contract.py
+    description: 'TC-07-x: 401 JSON detail + x-request-id correlation.'
+  - name: test_404_machine_readable_with_correlation
+    file: test_error_contract.py
+    description: 'TC-07-x: 404 JSON detail + x-request-id correlation.'
+  - name: test_error_responses_are_json
+    file: test_error_contract.py
+    description: 'TC-07-x: application-level errors always JSON, never HTML/plaintext.'
+
+- id: TC-08
+  dir: tests/e2e/TC-08
+  suite: e2e
+  make_target: test-e2e-tc08
+  tests:
+  - name: test_additional_fields
+    file: test_additional_fields.py
+    description: Send alert with additional fields and verify they are preserved.
+  - name: test_unknown_field
+    file: test_additional_fields.py
+    description: 'TC-08-01: Unknown field handling.'
+  - name: test_custom_metadata
+    file: test_additional_fields.py
+    description: 'TC-08-02: Custom metadata preservation.'
+  - name: test_field_override_prevention
+    file: test_additional_fields.py
+    description: 'TC-08-03: Field override prevention.'
+  - name: test_nested_privilege_objects_not_persisted
+    file: test_mass_assignment_nested.py
+    description: 'TC-08-x: nested role/admin keys never reach stored alert verbatim.'
+  - name: test_dotted_and_proto_keys_rejected_or_inert
+    file: test_mass_assignment_nested.py
+    description: 'TC-08-x: a.b.c + __proto__ keys -> no 5xx, token claims unchanged.'
+  - name: test_array_of_objects_does_not_expand
+    file: test_mass_assignment_nested.py
+    description: 'TC-08-x: 500-item array payload bounded, no fan-out.'
+
+- id: TC-09
+  dir: tests/e2e/TC-09
+  suite: e2e
+  make_target: test-e2e-tc09
+  tests:
+  - name: test_realistic_ransomware
+    file: test_realistic_ransomware.py
+    description: Simulate realistic ransomware with multiple stages.
+  - name: test_ransomware_detection
+    file: test_realistic_ransomware.py
+    description: 'TC-09-01: Ransomware detection.'
+  - name: test_case_creation
+    file: test_realistic_ransomware.py
+    description: 'TC-09-02: Case creation.'
+  - name: test_cortex_analysis
+    file: test_realistic_ransomware.py
+    description: 'TC-09-03: Cortex analysis.'
+  - name: test_misp_ioc
+    file: test_realistic_ransomware.py
+    description: 'TC-09-04: MISP IOC lookup.'
+  - name: test_evidence_collection
+    file: test_realistic_ransomware.py
+    description: 'TC-09-05: Evidence collection.'
+  - name: test_task_assignment
+    file: test_realistic_ransomware.py
+    description: 'TC-09-06: Task assignment.'
+- id: TC-10
+  dir: tests/e2e/TC-10
+  suite: e2e
+  make_target: test-e2e-tc10
+  tests:
+  - name: test_tenzir_service_availability
+    file: test_tenzir_integration.py
+    description: Verificar que el servicio Tenzir está disponible (HTTP 200 en
+  - name: test_tenzir_pipeline_execution
+    file: test_tenzir_integration.py
+    description: Validar que el workflow ejecuta el pipeline de Tenzir y produce
+  - name: test_tenzir_pipeline_execution_cli
+    file: test_tenzir_integration.py
+    description: Validar que Tenzir está activo via CLI (fallback cuando REST API
+  - name: test_tenzir_network_events_retrieval
+    file: test_tenzir_integration.py
+    description: Validar la recuperación de eventos de red desde Tenzir para la IP
+      de
+  - name: test_tenzir_integration_completeness
+    file: test_tenzir_integration.py
+    description: Validar que la integración de Tenzir está completa en el
+  - name: test_tenzir_error_handling
+    file: test_tenzir_integration.py
+    description: Validar manejo de errores en la integración de Tenzir.
+  - name: test_tenzir_performance_requirements
+    file: test_tenzir_integration.py
+    description: Validar requisitos de rendimiento de Tenzir.
+  - name: test_tenzir_ingestion
+    file: test_tenzir_integration.py
+    description: 'TC-10-01: Tenzir ingestion.'
+  - name: test_tenzir_query
+    file: test_tenzir_integration.py
+    description: 'TC-10-02: Tenzir query.'
+  - name: test_tenzir_correlation
+    file: test_tenzir_integration.py
+    description: 'TC-10-03: Tenzir correlation.'
+  - name: test_tenzir_latency
+    file: test_tenzir_integration.py
+    description: 'TC-10-04: Tenzir latency.'
+- id: TC-11
+  dir: tests/e2e/TC-11
+  suite: e2e
+  make_target: test-e2e-tc11
+  tests:
+  - name: test_network_watcher_service_availability
+    file: test_network_watcher_integration.py
+    description: Verificar que el servicio Network Watcher está disponible (HTTP 200
+  - name: test_network_watcher_connections_endpoint
+    file: test_network_watcher_integration.py
+    description: Validar el endpoint de conexiones de Network Watcher.
+  - name: test_network_watcher_connection_monitoring
+    file: test_network_watcher_integration.py
+    description: Validar que el workflow incluye monitoreo de Network Watcher y
+  - name: test_network_watcher_real_time_monitoring
+    file: test_network_watcher_integration.py
+    description: Validar monitoreo en tiempo real de Network Watcher.
+  - name: test_network_watcher_error_handling
+    file: test_network_watcher_integration.py
+    description: Validar manejo de errores en Network Watcher.
+  - name: test_network_watcher_performance_requirements
+    file: test_network_watcher_integration.py
+    description: Validar requisitos de rendimiento de Network Watcher.
+  - name: test_network_watcher_integration_completeness
+    file: test_network_watcher_integration.py
+    description: Validar que la integración de Network Watcher está completa en el
+  - name: test_network_connection
+    file: test_network_watcher_integration.py
+    description: 'TC-11-01: Network connection.'
+  - name: test_network_source
+    file: test_network_watcher_integration.py
+    description: 'TC-11-02: Network source.'
+  - name: test_network_destination
+    file: test_network_watcher_integration.py
+    description: 'TC-11-03: Network destination.'
+  - name: test_network_correlation
+    file: test_network_watcher_integration.py
+    description: 'TC-11-04: Network correlation.'
+  - name: test_precision_tp_fp_fn_matrix
+    file: test_watcher_precision.py
+    description: 'TC-11-05: vista watcher == docker network inspect (TP/FP/FN reales).'
+  - name: test_brief_connection_tracked_and_removed
+    file: test_watcher_precision.py
+    description: 'TC-11-06: contenedor efímero aparece con latencia acotada y desaparece sin ghost.'
+  - name: test_reported_ips_are_parseable
+    file: test_watcher_precision.py
+    description: 'TC-11-07: todo IP reportado parsea IPv4/IPv6 — sanidad de esquema.'
+  - name: test_impostor_worker_rejected_image_not_in_allowlist
+    file: test_watcher_precision.py
+    description: 'TC-11-08: worker-* con imagen fuera de allowlist -> REJECTED (zero-trust).'
+  - name: test_watcher_restart_no_duplicate_entries
+    file: test_watcher_precision.py
+    description: 'TC-11-09: restart del watcher sin duplicados ni pérdida de la vista.'
+- id: TC-12
+  dir: tests/e2e/TC-12
+  suite: e2e
+  make_target: test-e2e-tc12
+  tests:
+  - name: test_redis_service_availability
+    file: test_redis_integration.py
+    description: Verificar que el servicio Redis está disponible.
+  - name: test_redis_direct_connection
+    file: test_redis_integration.py
+    description: Validar conexión directa a Redis.
+  - name: test_redis_ioc_caching_in_workflow
+    file: test_redis_integration.py
+    description: Validar que el workflow incluye cache de IoCs en Redis.
+  - name: test_redis_ioc_storage
+    file: test_redis_integration.py
+    description: Validar almacenamiento de IoCs en Redis.
+  - name: test_redis_ioc_retrieval
+    file: test_redis_integration.py
+    description: Validar recuperación de IoCs desde Redis.
+  - name: test_redis_cache_expiration
+    file: test_redis_integration.py
+    description: Validar expiración de cache en Redis.
+  - name: test_redis_pattern_matching
+    file: test_redis_integration.py
+    description: Validar búsqueda por patrones en Redis.
+  - name: test_redis_performance_requirements
+    file: test_redis_integration.py
+    description: Validar requisitos de rendimiento de Redis.
+  - name: test_redis_error_handling
+    file: test_redis_integration.py
+    description: Validar manejo de errores en Redis.
+  - name: test_redis_integration_completeness
+    file: test_redis_integration.py
+    description: Validar que la integración de Redis está completa en el workflow.
+- id: TC-13
+  dir: tests/e2e/TC-13
+  suite: e2e
+  make_target: test-e2e-tc13
+  tests:
+  - name: test_loki_service_availability
+    file: test_loki_integration.py
+    description: Verificar que el servicio Loki está disponible.
+  - name: test_loki_query_range_endpoint
+    file: test_loki_integration.py
+    description: Validar el endpoint query_range de Loki.
+  - name: test_loki_hostname_filtering
+    file: test_loki_integration.py
+    description: Validar filtrado por hostname en Loki.
+  - name: test_loki_ip_filtering
+    file: test_loki_integration.py
+    description: Validar filtrado por IP en Loki.
+  - name: test_loki_in_workflow
+    file: test_loki_integration.py
+    description: Validar que el workflow incluye búsqueda de logs en Loki.
+  - name: test_loki_log_parsing
+    file: test_loki_integration.py
+    description: Validar parsing de logs en Loki.
+  - name: test_loki_time_range_queries
+    file: test_loki_integration.py
+    description: Validar consultas por rango de tiempo en Loki.
+  - name: test_loki_error_handling
+    file: test_loki_integration.py
+    description: Validar manejo de errores en Loki.
+  - name: test_loki_performance_requirements
+    file: test_loki_integration.py
+  - name: test_retention_policy_configured
+    file: test_loki_retention.py
+    description: 'TC-13-x: /config expone retention 30d + compactor retention_enabled + delete store s3.'
+  - name: test_out_of_order_log_accepted
+    file: test_loki_retention.py
+    description: 'TC-13-x: log con timestamp -1h aceptado y consultable (fuera de orden tolerado).'
+  - name: test_future_timestamp_rejected
+    file: test_loki_retention.py
+    description: 'TC-13-x: log +1h futuro rechazado 400 — creation_grace_period enforced.'
+  - name: test_ingest_boundary_rejects_too_old
+    file: test_loki_retention.py
+    description: 'TC-13-x: log >168h rechazado 400 — reject_old_samples_max_age enforced.'
+  - name: test_compactor_metrics_present
+    file: test_loki_retention.py
+    description: 'TC-13-x: /metrics expone métricas del compactor — retención corriendo, no solo configurada.'
+    description: Validar requisitos de rendimiento de Loki.
+  - name: test_loki_integration_completeness
+    file: test_loki_integration.py
+    description: Validar que la integración de Loki está completa en el workflow.
+  - name: test_loki_log_aggregation
+    file: test_loki_integration.py
+    description: Validar agregación de logs en Loki.
+  - name: test_loki_ingestion
+    file: test_loki_integration.py
+    description: 'TC-13-01: Loki ingestion.'
+  - name: test_loki_trace_id_search
+    file: test_loki_integration.py
+    description: 'TC-13-02: Loki trace_id search.'
+  - name: test_loki_latency
+    file: test_loki_integration.py
+    description: 'TC-13-03: Loki latency.'
+  - name: test_loki_hidden_errors
+    file: test_loki_integration.py
+    description: 'TC-13-04: Loki hidden errors.'
+- id: TC-14
+  dir: tests/e2e/TC-14
+  suite: e2e
+  make_target: test-e2e-tc14
+  tests:
+  - name: test_all_new_services_availability
+    file: test_complete_soar_integration.py
+    description: Verificar que todos los nuevos servicios están disponibles.
+  - name: test_complete_workflow_execution
+    file: test_complete_soar_integration.py
+    description: Validar ejecución completa del workflow con todas las nuevas
+  - name: test_data_flow_between_services
+    file: test_complete_soar_integration.py
+    description: Validar flujo de datos entre los nuevos servicios y los
+  - name: test_error_handling_and_recovery
+    file: test_complete_soar_integration.py
+    description: Validar manejo de errores y recuperación en nuevas
+  - name: test_tenzir_data_flow
+    file: test_complete_soar_integration.py
+    description: 'TC-14-01: Tenzir data flow — assert Tenzir node executed and'
+  - name: test_network_watcher_data_flow
+    file: test_complete_soar_integration.py
+    description: 'TC-14-02: Network Watcher data flow — assert node executed and NW'
+  - name: test_redis_cache_flow
+    file: test_complete_soar_integration.py
+    description: 'TC-14-03: Redis cache flow — assert node executed and Redis is'
+  - name: test_loki_log_flow
+    file: test_complete_soar_integration.py
+    description: 'TC-14-04: Loki log flow — assert node executed and Loki has'
+  - name: test_trace_id_propagation
+    file: test_traceability.py
+    description: 'TC-14: Validate trace_id propagation across all systems.'
+  - name: test_cross_system_coherence
+    file: test_traceability.py
+    description: 'TC-14: Validate cross-system data coherence.'
+  - name: test_traceparent_propagates_end_to_end
+    file: test_otel_contract.py
+    description: 'TC-14-05: traceparent W3C inyectado aterriza en Tempo con el mismo trace ID.'
+  - name: test_per_hop_span_tree_intact
+    file: test_otel_contract.py
+    description: 'TC-14-06: árbol de spans íntegro — un traceId, raíces remotas/locales válidas.'
+  - name: test_span_timestamps_monotonic
+    file: test_otel_contract.py
+    description: 'TC-14-07: hijos dentro de la ventana temporal del padre (±2ms).'
+  - name: test_no_secrets_or_pii_in_span_attributes
+    file: test_otel_contract.py
+    description: 'TC-14-08: atributos de span sin credenciales ni PII.'
+  - name: test_concurrent_requests_isolated_traces
+    file: test_otel_contract.py
+    description: 'TC-14-09: N requests concurrentes -> N trace IDs distintos, sin bleed.'
+- id: TC-15
+  dir: tests/e2e/TC-15
+  suite: e2e
+  make_target: test-e2e-tc15
+  tests:
+  - name: test_get_latency
+    file: test_api_latency.py
+    description: 'TC-15-01: GET latency — measure TheHive list_cases (GET request).'
+  - name: test_post_latency
+    file: test_api_latency.py
+    description: 'TC-15-02: POST latency — measure TheHive observable creation (POST'
+  - name: test_search_latency
+    file: test_api_latency.py
+    description: 'TC-15-03: Search latency — measure TheHive search_cases with'
+  - name: test_p95_latency
+    file: test_api_latency.py
+    description: 'TC-15-04: p95 latency — send 20 requests, calculate p95, assert
+      <'
+  - name: test_sla_compliance
+    file: test_api_latency.py
+    description: 'TC-15-05: SLA compliance — assert all measured latencies meet'
+  - name: test_thehive_api_latency
+    file: test_api_latency.py
+    description: Test TheHive API latency under workflow load.
+  - name: test_cortex_api_latency
+    file: test_api_latency.py
+    description: Test Cortex API latency under workflow load.
+  - name: test_misp_api_latency
+    file: test_api_latency.py
+    description: Test MISP API latency under workflow load.
+  - name: test_p95_with_100_samples_and_ci
+    file: test_latency_stats.py
+    description: 'TC-15-06: >=100 muestras paceadas bajo rate-limit; p50/p95/p99 + Wilson CI.'
+  - name: test_cold_vs_warm_latency_separated
+    file: test_latency_stats.py
+    description: 'TC-15-07: cold start (JIT/conexión) separado de la cola warm — nunca promediado.'
+  - name: test_client_vs_server_latency_gap_bounded
+    file: test_latency_stats.py
+    description: 'TC-15-08: gap cliente-servidor acotado — overhead de proxy visible.'
+- id: TC-16
+  dir: tests/e2e/TC-16
+  suite: e2e
+  make_target: test-e2e-tc16
+  tests:
+  - name: test_error_classification
+    file: test_error_handling.py
+    description: 'TC-16: Validate error classification in workflow execution.'
+  - name: test_partial_success
+    file: test_error_handling.py
+    description: 'TC-16: Validate partial success handling.'
+  - name: test_degraded_mode
+    file: test_error_handling.py
+    description: 'TC-16: Validate degraded mode operation.'
+  - name: test_error_recovery
+    file: test_error_handling.py
+    description: 'TC-16: Validate error recovery mechanisms.'
+  - name: test_error_rate_by_service
+    file: test_error_rate.py
+    description: Validate error rates per service after generating real traffic.
+  - name: test_error_rate_by_type
+    file: test_error_rate.py
+    description: Test error rate by type (parametrized).
+  - name: test_retryable_vs_nonretryable_classification
+    file: test_retry_resilience.py
+    description: 'TC-16-x: non-retryable aborta en 1 intento; retryable respeta el bound.'
+  - name: test_circuit_open_never_retried_retryable_false
+    file: test_retry_resilience.py
+    description: 'TC-16-x: CircuitOpenError.retryable=False — ninguna policy lo reintenta (RES-002).'
+  - name: test_retry_storm_protection_load_sheds
+    file: test_retry_resilience.py
+    description: 'TC-16-x: breaker OPEN rechaza sin invocar backend — shedding real.'
+  - name: test_state_machine_halfopen_probe_then_recovers
+    file: test_retry_resilience.py
+    description: 'TC-16-x: OPEN->HALF_OPEN->CLOSED + probe failure re-abre.'
+  - name: test_error_budget_bounded_attempts_and_timeout
+    file: test_retry_resilience.py
+    description: 'TC-16-x: attempts=max_retries+1 y timeout global corta el budget.'
+  - name: test_backoff_jitter_stays_bounded
+    file: test_retry_resilience.py
+    description: 'TC-16-x: jitter exponencial dentro de la banda del factor.'
+- id: TC-17
+  dir: tests/e2e/TC-17
+  suite: e2e
+  make_target: test-e2e-tc17
+  tests:
+  - name: test_network_watcher_health
+    file: test_network_watcher_monitoring.py
+    description: Test Network Watcher health endpoint.
+  - name: test_network_watcher_connections
+    file: test_network_watcher_monitoring.py
+    description: Test Network Watcher connections endpoint.
+  - name: test_network_watcher_real_time_updates
+    file: test_network_watcher_monitoring.py
+    description: Test Network Watcher real-time connection updates during workflow
+  - name: test_restart_recovery
+    file: test_network_watcher_monitoring.py
+    description: 'TC-17-03: Restart recovery — actually restart the service and verify'
+  - name: test_connection_tracking
+    file: test_network_watcher_monitoring.py
+    description: 'TC-17-01: Connection tracking.'
+  - name: test_ip_filtering
+    file: test_network_watcher_monitoring.py
+    description: 'TC-17-02: IP filtering.'
+  - name: test_port_monitoring
+    file: test_network_watcher_monitoring.py
+    description: 'TC-17-03: Port monitoring.'
+  - name: test_protocol_detection
+    file: test_network_watcher_monitoring.py
+    description: 'TC-17-04: Protocol detection.'
+- id: TC-18
+  dir: tests/e2e/TC-18
+  suite: e2e
+  make_target: test-e2e-tc18
+  tests:
+  - name: test_cortex_unavailable
+    file: test_resilience.py
+    description: 'TC-18-01: Cortex unavailable — fault injection.'
+  - name: test_misp_unavailable
+    file: test_resilience.py
+    description: 'TC-18-02: MISP unavailable — fault injection.'
+  - name: test_both_unavailable
+    file: test_resilience.py
+    description: 'TC-18-03: Both Cortex and MISP unavailable — fault injection.'
+  - name: test_orborus_unavailable
+    file: test_resilience.py
+    description: 'TC-18-04: Orborus unavailable — fault injection.'
+  - name: test_dependency_timeout
+    file: test_resilience.py
+    description: 'TC-18-05: Dependency timeout — degraded mode with slow/unavailable'
+- id: TC-19
+  dir: tests/e2e/TC-19
+  suite: e2e
+  make_target: test-e2e-tc19
+  tests:
+  - name: test_malformed_json
+    file: test_security.py
+    description: 'TC-19: Validate rejection of malformed JSON payloads.'
+  - name: test_invalid_data_types
+    file: test_security.py
+    description: 'TC-19: Validate rejection of invalid data types.'
+  - name: test_sql_injection_attempt
+    file: test_security.py
+    description: 'TC-19: Validate SQL injection attempt is blocked.'
+  - name: test_xss_attempt
+    file: test_security.py
+    description: 'TC-19: Validate XSS attempt is blocked.'
+  - name: test_replay_attack_prevention
+    file: test_security.py
+    description: 'TC-19: Validate replay attack prevention.'
+  - name: test_oversized_payload
+    file: test_security.py
+    description: 'TC-19: Validate oversized payload handling.'
+  - name: test_broken_json
+    file: test_security.py
+    description: 'TC-19-01: Broken JSON.'
+  - name: test_unexpected_xml
+    file: test_security.py
+    description: 'TC-19-02: Unexpected XML.'
+  - name: test_excessive_payload
+    file: test_security.py
+    description: 'TC-19-03: Excessive payload.'
+  - name: test_expired_jwt
+    file: test_security.py
+    description: 'TC-19-04: Expired JWT.'
+  - name: test_revoked_api_key
+    file: test_security.py
+    description: 'TC-19-05: Revoked API key.'
+  - name: test_replay_attack
+    file: test_security.py
+    description: 'TC-19-06: Replay attack.'
+  - name: test_rate_limiting
+    file: test_security.py
+    description: 'TC-19-07: Rate limiting.'
+  - name: test_ssrf_attempt
+    file: test_security.py
+    description: 'TC-19: SSRF-style observables must not crash or pivot internally.'
+  - name: test_deserialization_attempt
+    file: test_security.py
+    description: 'TC-19: Serialized-object payloads must not execute code.'
+  - name: test_xxe_entity_expansion_never_resolves
+    file: test_injection_extended.py
+    description: 'TC-19-x: DOCTYPE+SYSTEM entity never resolves file contents.'
+  - name: test_ssti_payloads_stored_verbatim_never_evaluated
+    file: test_injection_extended.py
+    description: 'TC-19-x: {{7*7}}/${7*7}/ERB stored verbatim, never evaluated.'
+  - name: test_crlf_header_injection_never_lands
+    file: test_injection_extended.py
+    description: 'TC-19-x: CR/LF in field cannot inject response headers.'
+  - name: test_cl_te_smuggling_bounded
+    file: test_injection_extended.py
+    description: 'TC-19-x: CL+TE conflict -> single bounded response, no desync.'
+  - name: test_csv_formula_injection_stored_verbatim
+    file: test_injection_extended.py
+    description: 'TC-19-x: =cmd|/+SUM formulas stored, never executed.'
+  - name: test_path_traversal_fields_stored_verbatim
+    file: test_injection_extended.py
+    description: 'TC-19-x: ../ paths stored verbatim — evidence integrity.'
+  - name: test_pathological_input_bounded_latency
+    file: test_injection_extended.py
+    description: 'TC-19-x: ReDoS-class input bounded <30s, no regex backtrack DoS.'
+
+- id: TC-20
+  dir: tests/e2e/TC-20
+  suite: e2e
+  make_target: test-e2e-tc20
+  tests:
+  - name: test_zero_trust_authentication
+    file: test_zero_trust.py
+    description: 'TC-20: Validate that all services enforce authentication.'
+  - name: test_network_segmentation
+    file: test_zero_trust.py
+    description: 'TC-20: Validate that each service is ONLY accessible on its expected'
+  - name: test_least_privilege
+    file: test_zero_trust.py
+    description: 'TC-20: Validate least privilege access for service accounts.'
+  - name: test_micro_segmentation
+    file: test_zero_trust.py
+    description: 'TC-20: Validate micro-segmentation between components.'
+  - name: test_api_has_no_raw_docker_socket
+    file: test_network_matrix.py
+    description: 'TC-20-x: CIS 5.31 — api reaches daemon only via socket-proxy (regression: hardened overlay lost once).'
+  - name: test_docker_proxy_denies_privileged_verbs
+    file: test_network_matrix.py
+    description: 'TC-20-x: proxy whitelist blocks /secrets /nodes /swarm /services.'
+  - name: test_no_service_exposes_docker_tcp
+    file: test_network_matrix.py
+    description: 'TC-20-x: no service host listens on 2375.'
+  - name: test_smoke_api_ca_guard_after_recreate
+    file: test_egress_after_recreate.py
+    description: 'TC-20-x: post-recreate smoke — API + CA bundle + egress guard on live netns.'
+  - name: test_egress_rules_outlive_guard_container
+    file: test_egress_after_recreate.py
+    description: 'TC-20-x: iptables persist after guard removal (rules live in api netns).'
+  - name: test_stale_guard_netns_detected
+    file: test_egress_after_recreate.py
+    description: 'TC-20-x: guard on dead netns is detected as stale by inspector.'
+  - name: test_egress_persists_across_api_restart
+    file: test_egress_after_recreate.py
+    description: 'TC-20-x: docker restart api -> guard re-anchors, egress stays deny-external.'
+  - name: test_full_service_port_matrix
+    file: test_network_matrix.py
+    description: 'TC-20-x: 8 services x foreign-port matrix — no cross-service bleed.'
+  - name: test_egress_external_ip_blocked
+    file: test_network_matrix.py
+    description: 'TC-20-x: egress to public IPs blocked by api-egress-guard sidecar (iptables DROP non-RFC1918).'
+  - name: test_no_ipv6_global_address
+    file: test_network_matrix.py
+    description: 'TC-20-x: no non-loopback IPv6 (if_inet6 scope check).'
+
+- id: TC-21
+  dir: tests/e2e/TC-21
+  suite: e2e
+  make_target: test-e2e-tc21
+  tests:
+  - name: test_chain_of_custody
+    file: test_forensic.py
+    description: 'TC-21: Validate chain of custody for alerts.'
+  - name: test_audit_trail
+    file: test_forensic.py
+    description: 'TC-21: Validate audit trail for alert processing.'
+  - name: test_immutability
+    file: test_forensic.py
+    description: 'TC-21: Validate immutability of forensic data.'
+  - name: test_chain_of_custody_subcase
+    file: test_forensic.py
+    description: 'TC-21-01: Chain of custody.'
+  - name: test_checksum_backup
+    file: test_forensic.py
+    description: 'TC-21-02: Checksum backup.'
+  - name: test_evidence_immutability
+    file: test_forensic.py
+    description: 'TC-21-03: Evidence immutability.'
+  - name: test_audit_trail_subcase
+    file: test_forensic.py
+    description: 'TC-21-04: Audit trail.'
+  - name: test_fingerprint_detects_field_mutation
+    file: test_evidence_tamper.py
+    description: 'TC-21-x: severity/decision mutation on real evidence -> fingerprint diff.'
+  - name: test_fingerprint_detects_partial_rollback
+    file: test_evidence_tamper.py
+    description: 'TC-21-x: revert only one field -> fingerprint still differs, rollback caught.'
+  - name: test_deleted_evidence_detectable_by_gap
+    file: test_evidence_tamper.py
+    description: 'TC-21-x: deleted doc -> exact ids-count gap, silent deletion detectable.'
+
+- id: TC-22
+  dir: tests/e2e/TC-22
+  suite: e2e
+  make_target: test-e2e-tc22
+  tests:
+  - name: test_elasticsearch_persistence
+    file: test_persistence.py
+    description: 'TC-22: Validate Elasticsearch data persistence.'
+  - name: test_thehive_persistence
+    file: test_persistence.py
+    description: 'TC-22: Validate TheHive data persistence.'
+  - name: test_volume_persistence
+    file: test_persistence.py
+    description: 'TC-22: Validate Docker volume persistence.'
+  - name: test_backup_integrity
+    file: test_persistence.py
+    description: 'TC-22: Validate backup integrity against the real API.'
+  - name: test_data_consistency_after_restart
+    file: test_persistence.py
+    description: 'TC-22: Validate data consistency after simulated restart.'
+  - name: test_reboot_thehive
+    file: test_persistence.py
+    description: 'TC-22-01: Reboot TheHive.'
+  - name: test_container_recreation
+    file: test_persistence.py
+    description: 'TC-22-02: Container recreation.'
+  - name: test_docker_down_up
+    file: test_persistence.py
+    description: 'TC-22-03: Docker down/up.'
+  - name: test_backup_restore
+    file: test_persistence.py
+    description: 'TC-22-04: Backup restore — real canary round-trip.'
+  - name: test_selective_member_restore
+    file: test_selective_restore.py
+    description: 'TC-22-x: single tar member restored, sibling members stay out.'
+  - name: test_rpo_rto_measured_and_bounded
+    file: test_selective_restore.py
+    description: 'TC-22-x: RTO measured <30s, RPO=0 — restored bytes identical.'
+  - name: test_alternate_version_restore
+    file: test_selective_restore.py
+    description: 'TC-22-x: v1 backup restores v1 bytes, not v2 — version honored.'
+
+- id: TC-23
+  dir: tests/e2e/TC-23
+  suite: e2e
+  make_target: test-e2e-tc23
+  tests:
+  - name: test_pii_masking
+    file: test_privacy.py
+    description: 'TC-23: Validate PII masking in stored data.'
+  - name: test_secret_redaction
+    file: test_privacy.py
+    description: 'TC-23: Validate secret redaction in logs and exports.'
+  - name: test_data_minimization
+    file: test_privacy.py
+    description: 'TC-23: Validate data minimization principles.'
+  - name: test_pii_masking_subcase
+    file: test_privacy.py
+    description: 'TC-23-01: PII masking.'
+  - name: test_secret_redaction_subcase
+    file: test_privacy.py
+    description: 'TC-23-02: Secret redaction.'
+  - name: test_external_filtering
+    file: test_privacy.py
+    description: 'TC-23-03: External filtering.'
+  - name: test_sensitive_artifacts
+    file: test_privacy.py
+    description: 'TC-23-04: Sensitive artifacts.'
+  - name: test_junit_artifacts_carry_no_real_pii
+    file: test_pii_multisurface.py
+    description: 'TC-23-x: PII dictionary scan over all JUnit artifacts.'
+  - name: test_stored_metrics_doc_carries_no_unmasked_pii
+    file: test_pii_multisurface.py
+    description: 'TC-23-x: email/SSN canary masked-or-dropped in soar-metrics.'
+  - name: test_loki_streams_carry_no_raw_canary
+    file: test_pii_multisurface.py
+    description: 'TC-23-x: canary never lands verbatim in Loki streams (HTTPS+CA).'
+
+- id: TC-24
+  dir: tests/e2e/TC-24
+  suite: e2e
+  make_target: test-e2e-tc24
+  tests:
+  - name: test_ransomware_response
+    file: test_malware_specific.py
+    description: 'TC-24-01: Ransomware response.'
+  - name: test_rat_response
+    file: test_malware_specific.py
+    description: 'TC-24-02: RAT (Remote Access Trojan) response.'
+  - name: test_worm_response
+    file: test_malware_specific.py
+    description: 'TC-24-03: Worm response.'
+  - name: test_cryptominer_response
+    file: test_malware_specific.py
+    description: 'TC-24-04: Cryptominer response.'
+  - name: test_rules_wellformed_sigma_with_mitre_tags
+    file: test_playbook_coverage.py
+    description: 'TC-24-x: phishing/exfil/credstuffing/webshell sigma rules valid + MITRE tags.'
+  - name: test_typed_alerts_admitted_by_pipeline
+    file: test_playbook_coverage.py
+    description: 'TC-24-x: one alert per playbook type admitted by the pipeline.'
+  - name: test_playbook_alert_reaches_a_decision
+    file: test_playbook_coverage.py
+    description: 'TC-24-x: typed alert produces real workflowexecution + decision when metrics land.'
+
+- id: TC-25
+  dir: tests/e2e/TC-25
+  suite: e2e
+  make_target: test-e2e-tc25
+  tests:
+  - name: test_polymorphic_behavior
+    file: test_behavioral_detection.py
+    description: 'TC-25-01: Polymorphic malware detection.'
+  - name: test_low_and_slow_exfiltration
+    file: test_behavioral_detection.py
+    description: 'TC-25-02: Low and slow exfiltration detection.'
+  - name: test_multi_stage_kill_chain
+    file: test_behavioral_detection.py
+    description: 'TC-25-03: Multi-stage kill chain detection.'
+  - name: test_canary_file_detection
+    file: test_behavioral_detection.py
+    description: 'TC-25-04: Canary file detection.'
+- id: TC-26
+  dir: tests/e2e/TC-26
+  suite: e2e
+  make_target: test-e2e-tc26
+  tests:
+  - name: test_alert_storm
+    file: test_extreme_load.py
+    description: 'TC-26-01: Alert storm test.'
+  - name: test_concurrency_limit
+    file: test_extreme_load.py
+    description: 'TC-26-02: Concurrency limit test.'
+  - name: test_backpressure
+    file: test_extreme_load.py
+    description: 'TC-26-03: Backpressure test.'
+  - name: test_duplicate_prevention
+    file: test_extreme_load.py
+    description: 'TC-26-04: Duplicate prevention test.'
+  - name: test_dlq_redrive_full_lifecycle
+    file: test_queue_semantics.py
+    description: 'TC-26-05: dead_letter->dlq_list->dlq_redrive re-encola, borra DLQ, resetea attempts.'
+  - name: test_auto_redrive_skips_poison_and_respects_budget
+    file: test_queue_semantics.py
+    description: 'TC-26-06: decode_failed nunca re-encolado; cap redrive_count respetado.'
+  - name: test_pending_message_age_measurable
+    file: test_queue_semantics.py
+    description: 'TC-26-07: pending sin ack medible; claim_stale recoge al cruzar min_idle.'
+  - name: test_noeviction_policy_is_deliberate
+    file: test_queue_semantics.py
+    description: 'TC-26-08: maxmemory-policy=noeviction + maxmemory acotado — la cola nunca evicciona datos.'
+  - name: test_stream_bounded_by_maxlen
+    file: test_queue_semantics.py
+    description: 'TC-26-09: MAXLEN~ acota el stream (granularidad de nodo ~100 documentada).'
+  - name: test_redis_stats_exported
+    file: test_queue_semantics.py
+    description: 'TC-26-10: keyspace hits/misses + commandstats expuestos — superficie observable.'
+- id: TC-27
+  dir: tests/e2e/TC-27
+  suite: e2e
+  make_target: test-e2e-tc27
+  tests:
+  - name: test_configuration_drift_detection
+    file: test_configuration.py
+    description: 'TC-27-01: Configuration drift detection.'
+  - name: test_golden_configuration
+    file: test_configuration.py
+    description: 'TC-27-02: Golden configuration validation.'
+  - name: test_volume_persistence
+    file: test_configuration.py
+    description: 'TC-27-03: Volume persistence validation.'
+  - name: test_environment_variables
+    file: test_configuration.py
+    description: 'TC-27-04: Environment variables validation.'
+  - name: test_baseline_versioned_with_commit
+    file: test_baseline_semantics.py
+    description: 'TC-27-05: commit.txt ancla el baseline a un SHA git válido.'
+  - name: test_no_secret_values_in_baselines
+    file: test_baseline_semantics.py
+    description: 'TC-27-06: sin valores secretos opacos en baselines (solo nombres de campo).'
+  - name: test_semantic_diff_detects_change_not_format
+    file: test_baseline_semantics.py
+    description: 'TC-27-07: diff semántico detecta mutación real, ignora ruido de formato.'
+  - name: test_volatile_fields_normalized
+    file: test_baseline_semantics.py
+    description: 'TC-27-08: claves volátiles (_id, timestamps) normalizadas en el diff.'
+  - name: test_rebaseline_path_is_sanctioned_script
+    file: test_baseline_semantics.py
+    description: 'TC-27-09: rebaseline solo vía export_openapi.py + gate byte-identical.'
+- id: TC-28
+  dir: tests/e2e/TC-28
+  suite: e2e
+  make_target: test-e2e-tc28
+  tests:
+  - name: test_shuffle_login
+    file: test_ui_e2e.py
+    description: 'TC-28-01: Shuffle login test.'
+  - name: test_thehive_navigation
+    file: test_ui_e2e.py
+    description: 'TC-28-02: TheHive UI accessibility and login test.'
+  - name: test_shuffle_workflow_creation
+    file: test_ui_e2e.py
+    description: 'TC-28-03: Shuffle workflow creation test.'
+  - name: test_thehive_case_creation
+    file: test_ui_e2e.py
+    description: 'TC-28-04: TheHive case creation test.'
+  - name: test_dashboard_accessibility
+    file: test_ui_e2e.py
+    description: 'TC-28-05: Dashboard UI accessibility and login test.'
+  - name: test_cortex_ui
+    file: test_ui_e2e.py
+    description: 'TC-28-06: Cortex UI accessibility and login test.'
+  - name: test_network_watcher_ui
+    file: test_ui_e2e.py
+    description: 'TC-28-07: Network Watcher UI accessibility test.'
+  - name: test_api_ui
+    file: test_ui_e2e.py
+    description: 'TC-28-08: API UI accessibility test.'
+  - name: test_docs_site_ui
+    file: test_ui_e2e.py
+    description: 'TC-28-09: Docs Site UI accessibility test.'
+  - name: test_web_management_ui
+    file: test_ui_e2e.py
+    description: 'TC-28-10: Web Management UI accessibility test.'
+  - name: test_misp_ui
+    file: test_ui_e2e.py
+    description: 'TC-28-11: MISP UI accessibility and login test.'
+  - name: test_all_ui_accessibility
+    file: test_ui_e2e.py
+    description: 'TC-28-13: All UI accessibility test suite.'
+  - name: test_shuffle_frontend_renders
+    file: test_ui_playwright.py
+    description: La UI de Shuffle carga y renderiza contenido real (no 5xx/white page).
+  - name: test_thehive_login_page_renders
+    file: test_ui_playwright.py
+    description: TheHive sirve una página de login con campos de credenciales.
+  - name: test_grafana_kpi_dashboard_renders_panels
+    file: test_ui_playwright.py
+    description: Login real en Grafana + dashboard provisionado renderiza paneles.
+  - name: test_cortex_ui_renders
+    file: test_ui_playwright.py
+    description: Cortex sirve su UI (login page) — no un error HTTP ni página vacía.
+  - name: test_port_surface_inventory
+    file: test_ui_screenshots.py
+    description: 'Oracle estático: cada puerto UI sigue sirviendo HTML; cada puerto'
+  - name: test_all_uis_render_and_capture
+    file: test_ui_screenshots.py
+    description: Render real en Chromium de cada UI + captura PNG.
+  - name: test_web_management_soar_panel_present
+    file: test_ui_screenshots.py
+    description: La consola propia debe montar la sección SOAR Pipeline (la parte
+  - name: test_web_management_authenticated_capture
+    file: test_ui_screenshots.py
+    description: Login real con WEB_UI_* → la consola operativa carga datos y se
+  - name: test_all_pages_captured
+    file: test_ui_screenshots.py
+    description: 'Captura exhaustiva: cada página navegable de cada UI.'
+  - name: test_wcag_aa_audit
+    file: test_ui_a11y.py
+    description: 'TC-28: WCAG AA accessibility audit of the web UIs.'
+  - name: test_document_language_declared
+    file: test_semantic_a11y.py
+    description: 'TC-28-x: html lang on owned UIs (WCAG 3.1.1) — server-side audit.'
+  - name: test_nonempty_title
+    file: test_semantic_a11y.py
+    description: 'TC-28-x: non-empty title (WCAG 2.4.2).'
+  - name: test_single_h1_and_ordered_headings
+    file: test_semantic_a11y.py
+    description: 'TC-28-x: single h1 + no heading-level jumps (WCAG 1.3.1).'
+  - name: test_landmark_regions_present
+    file: test_semantic_a11y.py
+    description: 'TC-28-x: main+nav landmarks (WCAG 1.3.1/2.4.1) — fixed real gaps.'
+  - name: test_images_have_alt_text
+    file: test_semantic_a11y.py
+    description: 'TC-28-x: all img have alt (WCAG 1.1.1).'
+  - name: test_form_controls_labeled
+    file: test_semantic_a11y.py
+    description: 'TC-28-x: form controls labeled (WCAG 3.3.2/4.1.2) — fixed real gaps.'
+  - name: test_responsive_viewport_meta
+    file: test_semantic_a11y.py
+    description: 'TC-28-x: viewport meta present (WCAG 1.4.10 prerequisite).'
+  - name: test_owned_pages_have_no_gate_violations
+    file: test_axe_browser_audit.py
+    description: 'TC-28-x: real Chromium+axe audit — owned pages zero critical/serious violations.'
+  - name: test_audit_renders_document
+    file: test_axe_browser_audit.py
+    description: 'TC-28-x: axe actually executed in browser; each audited page rendered a document.'
+  - name: test_vendor_pages_audited_informational
+    file: test_axe_browser_audit.py
+    description: 'TC-28-x: third-party UIs audited info-only; unreachable vendor pages do not gate.'
+
+- id: TC-29
+  dir: tests/e2e/TC-29
+  suite: e2e
+  make_target: test-e2e-tc29
+  tests:
+  - name: test_mitre_attack_mapping
+    file: test_compliance.py
+    description: 'TC-29: Validate MITRE ATT&CK technique mapping.'
+  - name: test_mass_evidence_upload
+    file: test_large_evidence.py
+    description: 'TC-29-01: Mass evidence upload test.'
+  - name: test_nginx_size_limit
+    file: test_large_evidence.py
+    description: 'TC-29-02: Nginx size limit test.'
+  - name: test_cortex_large_artifact
+    file: test_large_evidence.py
+    description: 'TC-29-03: Cortex large artifact test.'
+  - name: test_checksum_validation
+    file: test_large_evidence.py
+    description: 'TC-29-04: Checksum validation test.'
+  - name: test_chunked_transfer_encoding_bounded
+    file: test_payload_abuse.py
+    description: 'TC-29-x: chunked body handled bounded, no hang/5xx.'
+  - name: test_gzip_bomb_class_body_bounded
+    file: test_payload_abuse.py
+    description: 'TC-29-x: 50x+ gzip expansion bounded — no unbounded inflate.'
+  - name: test_nested_zip_like_attachment_bounded
+    file: test_payload_abuse.py
+    description: 'TC-29-x: recursive-zip blob stored/rejected, never inflated.'
+
+- id: TC-30
+  dir: tests/e2e/TC-30
+  suite: e2e
+  make_target: test-e2e-tc30
+  tests:
+  - name: test_air_gapped_mode
+    file: test_offline_mode.py
+    description: 'TC-30-01: Air gapped mode test.'
+  - name: test_internet_failure_simulation
+    file: test_offline_mode.py
+    description: 'TC-30-02: Internet failure simulation test.'
+  - name: test_offline_recovery
+    file: test_offline_mode.py
+    description: 'TC-30-03: Offline recovery test.'
+  - name: test_nxdomain_fails_fast_typed
+    file: test_dns_boundaries.py
+    description: 'TC-30-04: NXDOMAIN devuelve gaierror tipado en <5s — fail rápido, nunca hang.'
+  - name: test_dns_cannot_bypass_embedded_resolver
+    file: test_dns_boundaries.py
+    description: 'TC-30-05: query a resolver externo es interceptada y REFUSED (rcode 5) — sin bypass DNS.'
+  - name: test_internal_resolves_external_unreachable
+    file: test_dns_boundaries.py
+    description: 'TC-30-06: nombres internos resuelven+reachable; externos ni siquiera resuelven.'
+  - name: test_dns_failures_leave_api_healthy
+    file: test_dns_boundaries.py
+    description: 'TC-30-07: sondas NXDOMAIN/REFUSED no wedgean el proceso API.'
+- id: TC-31
+  dir: tests/e2e/TC-31
+  suite: e2e
+  make_target: test-e2e-tc31
+  tests:
+  - name: test_mitre_attack_mapping
+    file: test_compliance.py
+    description: 'TC-31: Validate MITRE ATT&CK technique mapping.'
+  - name: test_d3fend_mapping_full
+    file: test_compliance.py
+    description: 'TC-31: Validate D3FEND technique mapping (full version).'
+  - name: test_audit_trail_compliance
+    file: test_compliance.py
+    description: 'TC-31: Validate audit trail compliance.'
+  - name: test_regulatory_compliance
+    file: test_compliance.py
+    description: 'TC-31: Validate regulatory compliance.'
+  - name: test_mitre_mapping
+    file: test_compliance.py
+    description: 'TC-31-01: MITRE ATT&CK mapping.'
+  - name: test_d3fend_mapping
+    file: test_compliance.py
+    description: 'TC-31-02: D3FEND mapping.'
+  - name: test_audit_trail
+    file: test_compliance.py
+    description: 'TC-31-03: Audit trail.'
+  - name: test_closure_report
+    file: test_compliance.py
+    description: 'TC-31-04: Closure report.'
+  - name: test_containment_endpoint_success
+    file: test_containment_endpoint.py
+    description: 'TC-31-01: POST /api/v1/contain returns simulated containment'
+  - name: test_containment_endpoint_validation_error
+    file: test_containment_endpoint.py
+    description: 'TC-31-02: POST /api/v1/contain with missing fields returns 422.'
+  - name: test_containment_endpoint_default_mode
+    file: test_containment_endpoint.py
+    description: 'TC-31-03: POST /api/v1/contain without mode field uses default'
+  - name: test_catalog_versioned_and_wellformed
+    file: test_attack_catalog.py
+    description: 'TC-31-x: ATT&CK catalog is versioned, ids wellformed, every entry has name+D3FEND.'
+  - name: test_no_rule_uses_deprecated_technique
+    file: test_attack_catalog.py
+    description: 'TC-31-x: no sigma rule references a deprecated/revoked ATT&CK technique.'
+  - name: test_every_tagged_technique_in_versioned_catalog
+    file: test_attack_catalog.py
+    description: 'TC-31-x: every rule technique tag resolves in the versioned catalog.'
+  - name: test_every_used_technique_has_d3fend_coverage
+    file: test_attack_catalog.py
+    description: 'TC-31-x: every technique used by rules maps >=1 D3FEND countermeasure.'
+  - name: test_technique_tag_format_is_stix_attack_pattern
+    file: test_attack_catalog.py
+    description: 'TC-31-x: MITRE tags conform to STIX attack-pattern external-id format.'
+
+- id: TC-32
+  dir: tests/e2e/TC-32
+  suite: e2e
+  make_target: test-e2e-tc32
+  tests:
+  - name: test_golden_thread_integrity
+    file: test_golden_thread.py
+    description: 'TC-32: Validate Golden Thread data integrity across all systems.'
+  - name: test_end_to_end_data_flow
+    file: test_golden_thread.py
+    description: 'TC-32: Validate end-to-end data flow.'
+  - name: test_health_matrix
+    file: test_golden_thread.py
+    description: 'TC-32-01: Health Matrix validation.'
+  - name: test_full_remediation_cycle
+    file: test_golden_thread.py
+    description: 'TC-32-03: Full Remediation Cycle validation.'
+  - name: test_ioc_analysis_time
+    file: test_ioc_analysis_time.py
+    description: 'TC-32: Verify IoC analysis time < 30s per indicator (RNF-01).'
+- id: TC-33
+  dir: tests/e2e/TC-33
+  suite: e2e
+  make_target: test-e2e-tc33
+  tests:
+  - name: test_download_and_hash_all_samples
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-01: Download ALL malware samples from forensics repo, verify'
+  - name: test_malicious_hash_ioc
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-02: Send TREZ_cor 4.52.3.exe SHA256 as IoC to the SOAR'
+  - name: test_pulsar_rat_hash
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-03: Send Pulsar RAT v1.6.6.0 SHA256 as IoC.'
+  - name: test_c2_url_ioc
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-04: Send C2 URLs (Pastebin, Dropbox, GitHub) as IoCs.'
+  - name: test_c2_domain_ioc
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-05: Send C2 domains (pastebin.com, dropbox.com, etc.) as IoCs.'
+  - name: test_c2_ip_ioc
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-06: Send C2 IP addresses as IoCs.'
+  - name: test_telegram_ioc
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-07: Send Telegram Bot ID + Chat ID as exfiltration IoC.'
+  - name: test_registry_persistence
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-08: Send registry persistence keys as IoCs.'
+  - name: test_mitre_mapping
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-09: Verify MITRE ATT&CK techniques are mapped in TheHive case.'
+  - name: test_multi_ioc_alert
+    file: test_gminst4ll_real_iocs.py
+    description: 'TC-33-10: Send alert with ALL GMinst4ll IoCs in a single execution.'
+  - name: test_availability_gate_explicit
+    file: test_offline_samples.py
+    description: 'TC-33-11: manifiesto ausente -> fallo explícito, nunca skip silencioso.'
+  - name: test_all_ioc_hashes_pinned_sha256
+    file: test_offline_samples.py
+    description: 'TC-33-12: cada IoC y muestra pinea SHA-256 válido — integridad en manifiesto.'
+  - name: test_manifest_deterministic_no_duplicate_pins
+    file: test_offline_samples.py
+    description: 'TC-33-13: dump canónico determinista; sin pins sha256 duplicados.'
+  - name: test_samples_inert_by_construction
+    file: test_offline_samples.py
+    description: 'TC-33-14: sin directivas de ejecución ni descompresión en el manifiesto/handler.'
+  - name: test_offline_ioc_values_self_contained
+    file: test_offline_samples.py
+    description: 'TC-33-15: categorías IoC completas y bien formadas — pipeline offline.'
+- id: TC-34
+  dir: tests/e2e/TC-34
+  suite: e2e
+  make_target: test-e2e-tc34
+  tests:
+  - name: test_valid_admission
+    file: test_webhook_contract_matrix.py
+    description: 'Row ''valid'': service auth + valid payload → 202 + queryable record.'
+  - name: test_rejected_status
+    file: test_webhook_contract_matrix.py
+    description: 'Rejection rows: precise status code, no admission_id in the body.'
+  - name: test_rejected_no_side_effects
+    file: test_webhook_contract_matrix.py
+    description: 'Rejection rows leave no trace: no case, no alert document.'
+  - name: test_replay_idempotent
+    file: test_webhook_contract_matrix.py
+    description: 'Row ''replay'': same alert twice → 202 + SAME admission_id, no dup.'
+  - name: test_secret_not_leaked_to_logs
+    file: test_webhook_contract_matrix.py
+    description: 'Row ''secret_canary'': credential-looking field is admitted but
+      a'
+  - name: test_rate_limited
+    file: test_webhook_contract_matrix.py
+    description: 'Row ''rate_limited'': burst beyond budget → 429 + Retry-After.'
+  - name: test_matrix_completeness
+    file: test_webhook_contract_matrix.py
+    description: Every documented matrix row is implemented and self-consistent.
+- id: TC-35
+  dir: tests/e2e/TC-35
+  suite: e2e
+  make_target: test-e2e-tc35
+  tests:
+  - name: test_delivered_alert_visible_in_loki
+    file: test_grafana_rendering.py
+    description: 'Closed loop: the webhook log line must be queryable in Loki.'
+  - name: test_elasticsearch_exporter_scraped
+    file: test_grafana_rendering.py
+    description: 'GRAF-029: ES cluster health must be observable via the exporter.'
+  - name: test_no_rule_stuck_in_error_state
+    file: test_grafana_rendering.py
+    description: 'GRAF-021 metamonitoring: no rule may sit in error/nodata persistently.'
+  - name: test_error_query_excludes_observability_stack
+    file: test_grafana_rendering.py
+    description: The domain-filtered error query must not return loki/grafana lines.
+  - name: test_grafana_health_database_ok
+    file: test_grafana_rendering.py
+    description: Grafana health endpoint reports database ok.
+  - name: test_all_dashboards_provisioned
+    file: test_grafana_rendering.py
+    description: Every dashboard JSON under provisioning is loaded.
+  - name: test_all_datasources_resolve
+    file: test_grafana_rendering.py
+    description: Every configured datasource resolves its health check.
+  - name: test_every_panel_renders_real_png
+    file: test_grafana_rendering.py
+    description: Every panel renders a non-empty real PNG via the renderer.
+  - name: test_es_terms_agg_returns_multiple_buckets
+    file: test_grafana_rendering.py
+    description: Elasticsearch terms aggregation returns multiple buckets.
+  - name: test_loki_recent_logs_nonzero
+    file: test_grafana_rendering.py
+    description: Loki query_range returns recent log entries.
+  - name: test_contact_point_provisioned
+    file: test_grafana_rendering.py
+    description: Alerting contact point is provisioned.
+  - name: test_notification_policy_routes_to_webhook
+    file: test_grafana_rendering.py
+    description: Notification policy routes alerts to the webhook endpoint.
+  - name: test_grafana_alert_webhook_accepts_notification
+    file: test_grafana_rendering.py
+    description: Grafana webhook endpoint accepts a notification POST.
+  - name: test_prometheus_targets_up
+    file: test_grafana_rendering.py
+    description: All Prometheus scrape targets are up.
+  - name: test_alert_rules_provisioned_and_evaluating
+    file: test_grafana_rendering.py
+    description: All alert rules are provisioned and evaluating.
+  - name: test_spanmetrics_p99_resolves
+    file: test_grafana_rendering.py
+    description: Tempo spanmetrics p99 metric resolves.
+  - name: test_all_panels_have_descriptions
+    file: test_grafana_rendering.py
+    description: Every panel carries a description.
+
+- id: TC-KPI-01
+  dir: tests/e2e/TC-KPI-01
+  suite: kpi
+  make_target: test-e2e-kpi-01
+  tests:
+  - name: test_mttr_calculation
+    file: test_mttr_calculation.py
+    description: Send alert and verify MTTR is calculated and stored.
+- id: TC-KPI-02
+  dir: tests/e2e/TC-KPI-02
+  suite: kpi
+  make_target: test-e2e-kpi-02
+  tests:
+  - name: test_kpi_dashboard
+    file: test_kpi_dashboard.py
+    description: Verify Grafana dashboard is accessible and displays data.
+  - name: test_mttr_percentiles
+    file: test_mttr_percentiles.py
+    description: 'TC-KPI-02: Send N alerts, collect MTTR from ES, calculate'
+  - name: test_run_scoped_query_excludes_ambient_load
+    file: test_kpi_isolation.py
+    description: 'KPI-ISO: run docs (alert_id/trace_id) are a strict subset of the ambient window — locust load provably excluded.'
+  - name: test_formal_numerator_denominator_success_rate
+    file: test_kpi_isolation.py
+    description: 'KPI-ISO: success_rate = N(success=true)/N(success present); den>0, no zero-fill.'
+  - name: test_mttr_numerator_excludes_zero_mttr_docs
+    file: test_kpi_isolation.py
+    description: 'KPI-ISO: MTTR numerator excludes observe/zero docs; negative MTTR regression guard.'
+
+- id: TC-KPI-03
+  dir: tests/e2e/TC-KPI-03
+  suite: kpi
+  make_target: test-e2e-kpi-03
+  tests:
+  - name: test_kpi_alerts
+    file: test_kpi_alerts.py
+    description: Verify KPI alert manager detects threshold violations.
+- id: TC-KPI-04
+  dir: tests/e2e/TC-KPI-04
+  suite: kpi
+  make_target: test-e2e-kpi-04
+  tests:
+  - name: test_mttr_percentiles
+    file: test_mttr_percentiles.py
+    description: Validate MTTR percentiles meet SLA objectives.
+  - name: test_service_success_rates_by_alert_type
+    file: test_service_success_rates.py
+    description: Validate service success rates by alert type (malicious vs
+- id: TC-KPI-05
+  dir: tests/e2e/TC-KPI-05
+  suite: kpi
+  make_target: test-e2e-kpi-05
+  tests:
+  - name: test_node_timings
+    file: test_node_timings.py
+    description: Send alert, wait for completion, fetch per-node timings from API.
+  - name: test_service_success_rates_by_alert_type
+    file: test_service_success_rates.py
+    description: Validate service success rates by alert type (malicious vs
+- id: TC-KPI-06
+  dir: tests/e2e/TC-KPI-06
+  suite: kpi
+  make_target: test-e2e-kpi-06
+  tests:
+  - name: test_shuffle_thehive_coherence
+    file: test_kpi_data_coherence.py
+    description: 'TC-KPI-06-01: Shuffle and TheHive coherence.'
+  - name: test_elasticsearch_opensearch_coherence
+    file: test_kpi_data_coherence.py
+    description: 'TC-KPI-06-02: Elasticsearch and OpenSearch coherence.'
+  - name: test_loki_workflow_coherence
+    file: test_kpi_data_coherence.py
+    description: 'TC-KPI-06-03: Loki and workflow coherence.'
+  - name: test_cross_system_metric_coherence
+    file: test_kpi_data_coherence.py
+    description: 'TC-KPI-06-04: Cross-system metric coherence.'
+  - name: test_cortex_analyzer_success_rate
+    file: test_service_health.py
+    description: Cortex analyzer jobs must have a success rate above 50%.
+  - name: test_misp_api_functional
+    file: test_service_health.py
+    description: MISP API must be functional (can search events and get valid
+  - name: test_workflow_notification_rate
+    file: test_service_health.py
+    description: Workflow notification/error rate must be below 30%.
+  - name: test_workflow_aborted_rate
+    file: test_service_health.py
+    description: Workflow ABORTED rate must be below 20%.
+  - name: test_cortex_analyzer_images_available
+    file: test_service_health.py
+    description: Cortex must have analyzer Docker images installed.
+- id: TC-36
+  dir: tests/e2e/TC-36
+  suite: e2e
+  make_target: test-e2e-tc36
+  tests:
+  - name: test_loki_unavailable_pipeline_survives
+    file: test_observability_outages.py
+    description: 'TC-36-01: Loki down -> alert pipeline still FINISHES; Loki recovers
+      and serves queries.'
+  - name: test_opensearch_down_bounded_failure_then_recovers
+    file: test_observability_outages.py
+    description: 'TC-36-02: OpenSearch (Shuffle store) down -> webhook fails bounded,
+      API stays healthy, recovery resumes scheduling.'
+  - name: test_grafana_down_zero_functional_impact
+    file: test_observability_outages.py
+    description: 'TC-36-03: Grafana down -> zero functional impact on the pipeline;
+      Grafana API recovers.'
+  - name: test_elasticsearch_down_bounded_then_recovers
+    file: test_observability_outages.py
+    description: 'TC-36-04: Elasticsearch down -> webhook bounded, API live, recovery
+      resumes indexing.'
+  - name: test_redis_down_bounded_then_recovers
+    file: test_observability_outages.py
+    description: 'TC-36-05: Redis down -> webhook bounded, API live, dedup restored
+      after restart.'
+  - name: test_bulk_partial_failure_reports_per_item
+    file: test_es_deep_contracts.py
+    description: 'TC-36-x: ES bulk indexes valid doc + flags bad one — never silent dual-drop.'
+  - name: test_incompatible_index_mapping_rejected_bounded
+    file: test_es_deep_contracts.py
+    description: 'TC-36-x: mapping violation 4xx bounded; index not poisoned.'
+  - name: test_reingested_duplicate_alert_dedupes_by_id
+    file: test_es_deep_contracts.py
+    description: 'TC-36-x: replayed alert_id collapses to one logical doc (terms agg).'
+  - name: test_metrics_absent_does_not_read_as_zero
+    file: test_es_deep_contracts.py
+    description: 'TC-36-x: ghost alert -> no data, never fabricated zero bucket.'
+  - name: test_tempo_down_api_unaffected_recovers
+    file: test_obs_pipeline_outages.py
+    description: 'TC-36-x: Tempo down -> spans dropped, API unaffected, recovery resumes traces.'
+  - name: test_otel_collector_down_api_unaffected
+    file: test_obs_pipeline_outages.py
+    description: 'TC-36-x: collector down -> OTLP export fails async, request path never blocks.'
+  - name: test_prometheus_down_scrape_gap_bounded
+    file: test_obs_pipeline_outages.py
+    description: 'TC-36-x: Prometheus down -> /metrics local OK, gap acotado, target vuelve up.'
+  - name: test_promtail_replays_loki_backlog_zero_loss
+    file: test_obs_pipeline_outages.py
+    description: 'TC-36-x: Loki down -> promtail positions replay del backlog sin pérdida.'
+  - name: test_tempo_kill9_unclean_recovery
+    file: test_obs_pipeline_outages.py
+    description: 'TC-36-x: chaos kill -9 Tempo -> unclean exit, API unaffected, traces resume.'
+
+- id: TC-37
+  dir: tests/e2e/TC-37
+  suite: e2e
+  make_target: test-e2e-tc37
+  tests:
+  - name: test_thehive_frozen_bounded_hang
+    file: test_partial_degradation.py
+    description: 'TC-37-01: docker pause TheHive -> bounded hang, API stays live, recovery FINISHES.'
+  - name: test_cortex_cpu_starved_workflow_survives
+    file: test_partial_degradation.py
+    description: 'TC-37-02: CPU-throttle Cortex -> workflow reaches terminal state, never EXECUTING forever.'
+  - name: test_netem_delay_250ms_bounded
+    file: test_partial_degradation.py
+    description: 'TC-37-03: real tc netem 250ms on TheHive link -> bounded slowdown, no error.'
+  - name: test_netem_packet_loss_10pct_bounded
+    file: test_partial_degradation.py
+    description: 'TC-37-04: 10% packet loss -> TCP retransmits carry requests, all bounded.'
+  - name: test_netem_jitter_delay_bounded
+    file: test_partial_degradation.py
+    description: 'TC-37-05: 150ms+75ms jitter -> variable latency still completes.'
+  - name: test_netem_partition_fails_bounded_then_recovers
+    file: test_partial_degradation.py
+    description: 'TC-37-06: 100% loss = partition -> bounded client failure, recovery on removal.'
+  - name: test_no_orphan_qdisc_after_degradation
+    file: test_partial_degradation.py
+    description: 'TC-37-07: teardown hygiene — zero netem rules may survive the suite.'
+  - name: test_netem_duplication_bounded
+    file: test_partial_degradation.py
+    description: 'TC-37-08: 25% packet duplication -> TCP dedup, all requests complete.'
+  - name: test_netem_reorder_bounded
+    file: test_partial_degradation.py
+    description: 'TC-37-09: reorder 50%/50% -> out-of-order segments still reassemble.'
+  - name: test_unilateral_partition_egress_drop
+    file: test_partial_degradation.py
+    description: 'TC-37-10: iptables OUTPUT DROP = one-way partition -> bounded fail + recovery.'
+  - name: test_netem_corruption_bounded
+    file: test_netem_advanced.py
+    description: 'TC-37-11: 5% bit corruption -> TCP checksum drops+retransmits, bounded, no corrupt data.'
+  - name: test_netem_bandwidth_ceiling_bounded
+    file: test_netem_advanced.py
+    description: 'TC-37-12: tbf 2mbit on 6.3MB asset -> stretched transfer, still completes.'
+  - name: test_netem_asymmetric_one_direction_only
+    file: test_netem_advanced.py
+    description: 'TC-37-13: egress-only delay — reverse path + other links stay clean.'
+  - name: test_qdisc_gone_after_all_faults
+    file: test_netem_advanced.py
+    description: 'TC-37-14: no netem/tbf residue survives the advanced suite.'
+- id: TC-38
+  dir: tests/e2e/TC-38
+  suite: e2e
+  make_target: test-e2e-tc38
+  tests:
+  - name: test_gc_aborts_only_stale_executing
+    file: test_workflow_timeouts.py
+    description: 'TC-38-01: StaleExecutionGC aborts only EXECUTING docs older than the stale window.'
+  - name: test_gc_idempotent_double_pass
+    file: test_workflow_timeouts.py
+    description: 'TC-38-02: second GC pass is a no-op on aborted docs.'
+  - name: test_no_zombie_executing_older_than_stale_window
+    file: test_workflow_timeouts.py
+    description: 'TC-38-03: zero stale EXECUTING docs exist (GC wired into API lifecycle).'
+  - name: test_timeout_state_machine_audit_trail
+    file: test_workflow_timeouts.py
+    description: 'TC-38-04: EXECUTING->TIMED_OUT->CANCELLING->ABORTED leaves audit timestamps.'
+  - name: test_late_result_is_reconciled_not_clobbered
+    file: test_workflow_timeouts.py
+    description: 'TC-38-05: doc flipped to FINISHED mid-pass is never overwritten (conditional transition).'
+  - name: test_cancelling_forced_abort_after_max_confirms
+    file: test_workflow_timeouts.py
+    description: 'TC-38-06: CANCELLING with max confirm attempts -> ABORTED(forced=true), never stuck.'
+  - name: test_timeout_metrics_exposed_on_prometheus_endpoint
+    file: test_workflow_timeouts.py
+    description: 'TC-38-07: /metrics exposes stuck_total + oldest_executing_seconds + transitions.'
+  - name: test_node_durations_bounded_observed
+    file: test_workflow_timeouts.py
+    description: 'TC-38-08: every recorded node_timings entry stays under the workflow bound.'
+- id: TC-39
+  dir: tests/e2e/TC-39
+  suite: e2e
+  make_target: test-e2e-tc39
+  tests:
+  - name: test_clock_skew_bounded
+    file: test_safety_contracts.py
+    description: 'TC-39-01: detection_time ±24h gets a bounded response (no 500/hang).'
+  - name: test_real_secret_never_leaks_to_loki
+    file: test_safety_contracts.py
+    description: 'TC-39-02: the real TheHive API key never appears in Loki log entries.'
+  - name: test_shuffle_env_key_still_valid
+    file: test_safety_contracts.py
+    description: 'TC-39-03: .env SHUFFLE_DEFAULT_APIKEY still authenticates (drift regression).'
+  - name: test_corrupt_backup_rejected_before_touching_files
+    file: test_safety_contracts.py
+    description: 'TC-39-04: corrupted backup fails verify+extract before touching any file.'
+  - name: test_missing_checksum_sidecar_still_verifies_tar
+    file: test_safety_contracts.py
+    description: 'TC-39-05: valid tar without sidecar verifies; truncated tar does not.'
+  - name: test_detection_time_now_mttr_positive_and_bounded
+    file: test_temporal_boundaries.py
+    description: 'TC-39-x: detection_time==now -> 0 < mttr < 600.'
+  - name: test_future_detection_time_clamps_mttr_to_zero
+    file: test_temporal_boundaries.py
+    description: 'TC-39-x: future detection_time clamps mttr to ~0 exactly.'
+  - name: test_timezone_offset_instant_equivalent_to_z
+    file: test_temporal_boundaries.py
+    description: 'TC-39-x: offset-timestamp parsed as same instant (DST path).'
+  - name: test_replay_same_alert_id_bounded_no_corruption
+    file: test_temporal_boundaries.py
+    description: 'TC-39-x: replay of identical alert_id bounded, docs stay well-formed.'
+
+- id: TC-40
+  dir: tests/e2e/TC-40
+  suite: e2e
+  make_target: test-e2e-tc40
+  tests:
+  - name: test_tls_untrusted_ca_rejected
+    file: test_extended_safety.py
+    description: 'TC-40-01: untrusted CA and hostname mismatch must fail TLS; lab CA succeeds.'
+  - name: test_es_readonly_watermark_clear_block
+    file: test_extended_safety.py
+    description: 'TC-40-02: flood-stage read_only block rejects writes with cluster_block_exception, recovers.'
+  - name: test_analyzer_job_bounded_terminal_state
+    file: test_extended_safety.py
+    description: 'TC-40-03: real Cortex analyzer job reaches terminal status within 180s.'
+  - name: test_misp_ioc_pull_push_roundtrip
+    file: test_extended_safety.py
+    description: 'TC-40-04: IoC push→pull→uuid-lookup round-trip via MISP REST (feed contract).'
+  - name: test_anonymous_requests_rejected_everywhere
+    file: test_extended_safety.py
+    description: 'TC-40-05: zero-trust floor — anonymous requests rejected on all auth surfaces.'
+  - name: test_coexistence_window_two_keys_valid
+    file: test_cred_rotation_diskfull.py
+    description: 'TC-40-06: CRED-001 — old+new MISP authkeys both valid (zero-downtime window).'
+  - name: test_stale_key_rejected_after_revocation
+    file: test_cred_rotation_diskfull.py
+    description: 'TC-40-07: revoked key -> 401/403 immediately, primary unaffected.'
+  - name: test_rotation_repeatable_and_propagatable
+    file: test_cred_rotation_diskfull.py
+    description: 'TC-40-08: rotated key via env-file mechanism authenticates end-to-end.'
+  - name: test_bounded_filesystem_exists
+    file: test_cred_rotation_diskfull.py
+    description: 'TC-40-09: DS-001 — 48MB tmpfs mounted for real ENOSPC injection.'
+  - name: test_disk_full_fails_fast_then_recovers
+    file: test_cred_rotation_diskfull.py
+    description: 'TC-40-10: fill fs -> ENOSPC bounded, cleanup restores writability.'
+  - name: test_partial_artifact_never_passes_integrity
+    file: test_cred_rotation_diskfull.py
+    description: 'TC-40-11: truncated tar from ENOSPC mid-write is rejected by integrity gate.'
+  - name: test_expired_certificate_rejected
+    file: test_pki_full.py
+    description: 'TC-40-12: openssl verify rejects an expired cert (mini-CA).'
+  - name: test_not_yet_valid_certificate_rejected
+    file: test_pki_full.py
+    description: 'TC-40-13: openssl verify rejects a not-yet-valid cert.'
+  - name: test_incomplete_chain_rejected
+    file: test_pki_full.py
+    description: 'TC-40-14: foreign-CA leaf fails against lab CA.'
+  - name: test_revoked_certificate_rejected_via_crl
+    file: test_pki_full.py
+    description: 'TC-40-15: real CRL revocation check fails post-revoke.'
+  - name: test_mtls_client_cert_trust_contract
+    file: test_pki_full.py
+    description: 'TC-40-16: CA-signed client cert verifies; rogue self-signed does not.'
+  - name: test_empty_observable_guarded_nodes_workflow_finishes
+    file: test_analyzer_semantics.py
+    description: 'TC-40-x: empty observables -> guarded nodes skip, workflow terminal.'
+  - name: test_malformed_observable_bounded_not_hung
+    file: test_analyzer_semantics.py
+    description: 'TC-40-x: malformed hash/ip -> bounded terminal, never a hang.'
+  - name: test_mandatory_decision_spine_always_present
+    file: test_analyzer_semantics.py
+    description: 'TC-40-x: completed workflow always carries valid decision.'
+  - name: test_misp_key_rotated_while_workflow_in_flight
+    file: test_rotation_midflight.py
+    description: 'TC-40-17: CRED-001 mid-flight — authkey rotated during a live workflow; it still terminates.'
+  - name: test_init_unlocks_locked_analyst_and_key_works
+    file: test_thehive_locked_regression.py
+    description: 'TC-40-18: TH-LOCKED regression — locked:true analyst is unlocked by init; key validates.'
+  - name: test_init_thehive_twice_no_duplicates
+    file: test_init_idempotency.py
+    description: 'TC-40-19: init_thehive x2 -> exactly one analyst user, no duplicate org/key drift.'
+  - name: test_guard_apply_twice_no_rule_duplication
+    file: test_init_idempotency.py
+    description: 'TC-40-20: egress-guard apply x2 -> single chain entry, idempotent rules.'
+
+- id: TC-41
+  dir: tests/e2e/TC-41
+  suite: e2e
+  make_target: test-e2e-tc41
+  tests:
+  - name: test_taxii_discovery_and_api_root
+    file: test_taxii_feed.py
+    description: 'TC-41-01: TAXII discovery advertises soarlab api root + versions.'
+  - name: test_taxii_pull_seeded_collection
+    file: test_taxii_feed.py
+    description: 'TC-41-02: ransomware-iocs collection exposes the seeded STIX indicator.'
+  - name: test_taxii_push_then_pull_back
+    file: test_taxii_feed.py
+    description: 'TC-41-03: POST indicator -> status complete -> retrievable by match[id].'
+  - name: test_taxii_malformed_bundle_rejected
+    file: test_taxii_feed.py
+    description: 'TC-41-04: malformed STIX bundles are bounded-rejected, never silently accepted.'
+  - name: test_taxii_anonymous_rejected
+    file: test_taxii_feed.py
+    description: 'TC-41-05: anonymous access to all TAXII endpoints -> 401/403.'
+  - name: test_taxii_feed_into_misp
+    file: test_taxii_feed.py
+    description: 'TC-41-06: TAXII pull -> MISP attribute ingest -> round-trip verified.'
+  - name: test_pagination_limit_and_next
+    file: test_taxii_pagination.py
+    description: 'TC-41-07: limit bounds the page; next token pages further objects.'
+  - name: test_added_after_incremental_sync
+    file: test_taxii_pagination.py
+    description: 'TC-41-08: added_after filters objects — incremental feed contract.'
+  - name: test_pagination_respects_match_id_filter
+    file: test_taxii_pagination.py
+    description: 'TC-41-09: limit composes with match[id] — filtered pages correct.'
+  - name: test_versions_endpoint_lists_object_history
+    file: test_taxii_versions_ratelimit.py
+    description: 'TC-41-x: /versions lists real STIX history; match[version]=last resolves.'
+  - name: test_burst_requests_consistent_and_bounded
+    file: test_taxii_versions_ratelimit.py
+    description: 'TC-41-x: 20-request burst — no 5xx/hang; medallion lacks 429 (documented).'
+  - name: test_anonymous_burst_uniformly_rejected
+    file: test_taxii_versions_ratelimit.py
+    description: 'TC-41-x: anonymous burst uniformly 401/403 — no smuggled request.'
+

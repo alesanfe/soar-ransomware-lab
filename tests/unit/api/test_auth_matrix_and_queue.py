@@ -189,8 +189,9 @@ class _FakeQueue:
 class TestAtomicIdempotency:
     @pytest.mark.asyncio
     async def test_concurrent_same_key_enqueues_once(self) -> None:
-        """Two racing admits with the same key: ONE enqueue wins the NX
-        claim; the loser gets the winner's admission back."""
+        """Two racing admits with the same key AND same payload: ONE
+        enqueue wins the NX claim; the loser replays the winner's
+        admission (idempotent delivery)."""
         from soar_lab.application.use_cases.alert_admission import AlertAdmissionUseCase
 
         store, queue = _FakeStore(), _FakeQueue()
@@ -198,16 +199,35 @@ class TestAtomicIdempotency:
 
         r1, r2 = await asyncio.gather(
             uc.admit({"title": "a"}, idempotency_key="k1"),
-            uc.admit({"title": "b"}, idempotency_key="k1"),
+            uc.admit({"title": "a"}, idempotency_key="k1"),
         )
         assert len(queue.events) == 1
         assert r1["admission_id"] == r2["admission_id"]
 
     @pytest.mark.asyncio
-    async def test_failed_enqueue_unbinds_key(self) -> None:
-        """Compensation: if enqueue dies after winning NX, the key is
-        released so a retry is not stuck to a phantom admission."""
-        from soar_lab.application.use_cases.alert_admission import AlertAdmissionUseCase
+    async def test_same_key_different_content_conflicts(self) -> None:
+        """IDEMP-004: same key bound to a different payload is a loud
+        conflict — silently replaying would mask a client bug."""
+        from soar_lab.application.use_cases.alert_admission import (
+            AlertAdmissionUseCase,
+            IdempotencyConflictError,
+        )
+
+        store, queue = _FakeStore(), _FakeQueue()
+        uc = AlertAdmissionUseCase(queue=queue, store=store)
+        await uc.admit({"title": "a"}, idempotency_key="k1")
+        with pytest.raises(IdempotencyConflictError):
+            await uc.admit({"title": "b"}, idempotency_key="k1")
+
+    @pytest.mark.asyncio
+    async def test_failed_enqueue_marks_record_and_keeps_binding(self) -> None:
+        """B4: if enqueue dies after winning NX, the record is marked
+        enqueue_failed (reconcilable) and the binding is KEPT so a caller
+        retry replays into this record instead of minting a second."""
+        from soar_lab.application.use_cases.alert_admission import (
+            AlertAdmissionUseCase,
+            QueueUnavailableError,
+        )
 
         store, queue = _FakeStore(), _FakeQueue()
 
@@ -216,9 +236,9 @@ class TestAtomicIdempotency:
 
         queue.enqueue = boom
         uc = AlertAdmissionUseCase(queue=queue, store=store)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(QueueUnavailableError):
             await uc.admit({"title": "x"}, idempotency_key="k2")
-        assert "k2" not in store.keys
+        assert "k2" in store.keys  # binding kept → retry replays, no double-mint
 
 
 # ---------------------------------------------------------------------------
@@ -319,6 +339,10 @@ class TestWorkerBackoff:
 
         monkeypatch.setattr(asyncio, "sleep", fake_sleep)
         store, queue = Mock(), Mock()
+        # WORKER-003: _terminal_check must read a non-terminal record —
+        # a bare Mock store returns a non-awaitable Mock and the worker
+        # correctly defers instead of forwarding.
+        store.get = AsyncMock(return_value={"status": "queued"})
         store.update = AsyncMock()
         queue.ack, queue.enqueue = AsyncMock(), AsyncMock()
         w = AdmissionWorker(queue=queue, store=store, forward=AsyncMock(return_value={"ok": False}))

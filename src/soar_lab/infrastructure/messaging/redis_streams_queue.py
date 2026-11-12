@@ -157,7 +157,9 @@ class RedisStreamsQueue:
             out.append(
                 {
                     "dlq_entry_id": self._s(entry_id),
-                    "reason": self._s(fields.get("reason")) or "unknown",
+                    "reason": (
+                        self._s(fields["reason"]) if fields.get("reason") else "unknown"
+                    ),
                     "payload": payload,
                 }
             )

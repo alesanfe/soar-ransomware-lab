@@ -8,6 +8,10 @@ from pathlib import Path
 
 import requests
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from soar_lab.security.tls_config import ca_verify  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env.full
@@ -46,7 +50,7 @@ def create_grafana_datasource():
     # Check if datasource already exists
     list_url = f"{GRAFANA_URL}/api/datasources"
     try:
-        response = requests.get(list_url, auth=auth, verify=False, timeout=10)  # nosec B501
+        response = requests.get(list_url, auth=auth, verify=ca_verify(), timeout=10)
     except Exception as e:
         logger.error(f"Could not list Grafana datasources: {e}")
         return None
@@ -60,8 +64,8 @@ def create_grafana_datasource():
     # Create datasource
     try:
         response = requests.post(
-            url, json=datasource_config, auth=auth, verify=False, timeout=10
-        )  # nosec B501
+            url, json=datasource_config, auth=auth, verify=ca_verify(), timeout=10
+        )
     except Exception as e:
         logger.error(f"Could not create Grafana datasource: {e}")
         return None
@@ -170,7 +174,7 @@ def create_grafana_dashboard():
     # Check if dashboard already exists (provisioned via file)
     try:
         check_url = f"{GRAFANA_URL}/api/dashboards/uid/soar-kpi-main"
-        check_resp = requests.get(check_url, auth=auth, verify=False, timeout=10)  # nosec B501
+        check_resp = requests.get(check_url, auth=auth, verify=ca_verify(), timeout=10)
         if check_resp.status_code == 200:
             existing = check_resp.json()
             uid = existing.get("dashboard", {}).get("uid", "")
@@ -181,8 +185,8 @@ def create_grafana_dashboard():
 
     try:
         response = requests.post(
-            url, json=dashboard_config, auth=auth, verify=False, timeout=10
-        )  # nosec B501
+            url, json=dashboard_config, auth=auth, verify=ca_verify(), timeout=10
+        )
     except Exception as e:
         logger.error(f"Could not create Grafana dashboard: {e}")
         return None

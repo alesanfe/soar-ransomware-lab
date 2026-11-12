@@ -112,7 +112,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "process": "locky.exe",
             "techniques": ["T1486"],
             "tactics": ["Impact"],
-            "hash": "5f7e1c6e2b8d4a3f9c1b6e7d8a9f0c2b4e6d8a0f2c4e6b8d0a2f4c6e8b0d2f4",
+            "hash": "5f7e1c6e2b8d4a3f9c1b6e7d8a9f0c2b4e6d8a0f2c4e6b8d0a2f4c6e8b0d2f40",
             "severity": int(AlertSeverity.HIGH),
         },
         {
@@ -120,7 +120,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "process": "ryuk.exe",
             "techniques": ["T1486", "T1059"],
             "tactics": ["Impact", "Execution"],
-            "hash": "3f9b1d2e5c8a4b7f0d3e6c9a2b5f8d1e4c7a0b3d6e9f2c5a8b1d4e7f0a3c6b9",
+            "hash": "3f9b1d2e5c8a4b7f0d3e6c9a2b5f8d1e4c7a0b3d6e9f2c5a8b1d4e7f0a3c6b90",
             "severity": int(AlertSeverity.HIGH),
         },
         {
@@ -136,7 +136,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "process": "revil.exe",
             "techniques": ["T1486"],
             "tactics": ["Impact"],
-            "hash": "f0e1d2c3b4a5968778695a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3",
+            "hash": "f0e1d2c3b4a5968778695a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
             "severity": int(AlertSeverity.HIGH),
         },
         {
@@ -160,7 +160,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "process": "royal.exe",
             "techniques": ["T1486", "T1027"],
             "tactics": ["Impact", "Defense Evasion"],
-            "hash": "7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8",
+            "hash": "7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a80",
             "severity": int(AlertSeverity.HIGH),
         },
         {
@@ -168,7 +168,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "process": "play.exe",
             "techniques": ["T1486"],
             "tactics": ["Impact"],
-            "hash": "4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5",
+            "hash": "4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d50",
             "severity": int(AlertSeverity.HIGH),
         },
         # === LockBit 3.0 (CISA AA23-075A, AA23-325A) ===
@@ -184,7 +184,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "name": "LockBit Black",
             "process": "lbb.exe",
             "techniques": ["T1486", "T1556.006", "T1563", "T1539"],
-            "tactics": ["Impact", "Credential Access"],
+            "tactics": ["Impact", "Credential Access", "Lateral Movement"],
             "hash": "a18a6bacc0d8b1dd4544cdf1e178a98a36b575b5be8b307c27c65455b1307616",
             "severity": int(AlertSeverity.HIGH),
         },
@@ -201,7 +201,7 @@ def generate_malicious_alert(alert_id: int) -> dict:
             "name": "ALPHV BlackCat Linux",
             "process": "him",
             "techniques": ["T1486", "T1567", "T1078"],
-            "tactics": ["Impact", "Exfiltration"],
+            "tactics": ["Impact", "Exfiltration", "Initial Access"],
             "hash": "bbfe7289de6ab1f374d0bcbeecf31cad2333b0928ea883ca13b9e733b58e27b1",
             "severity": int(AlertSeverity.HIGH),
         },
@@ -218,7 +218,14 @@ def generate_malicious_alert(alert_id: int) -> dict:
                 "T1572",
                 "T1059.001",
             ],
-            "tactics": ["Initial Access", "Execution", "Defense Evasion"],
+            "tactics": [
+                "Initial Access",
+                "Execution",
+                "Defense Evasion",
+                "Privilege Escalation",
+                "Lateral Movement",
+                "Command and Control",
+            ],
             "hash": "08207409e1d789aea68419b04354184490ce46339be071c6c185c75ab9d08cba",
             "severity": int(AlertSeverity.HIGH),
         },
@@ -253,8 +260,10 @@ def generate_malicious_alert(alert_id: int) -> dict:
                 "Discovery",
                 "Execution",
                 "Persistence",
+                "Privilege Escalation",
                 "Credential Access",
                 "Lateral Movement",
+                "Command and Control",
             ],
             "hash": "3552dda80bd6875c1ed1273ca7562c9ace3de2f757266dae70f60bf204089a4a",
             "severity": int(AlertSeverity.HIGH),
@@ -537,8 +546,8 @@ def send_alert(alert: dict, webhook_url: str, max_retries: int = 3) -> tuple[boo
             if resp.status_code == 200:
                 return True, resp.status_code
             last_status = resp.status_code
-            # 500 = backend saturado, reintentar con backoff
-            if resp.status_code == 500 and attempt < max_retries - 1:
+            # 5xx = backend saturado/transitorio, reintentar con backoff
+            if resp.status_code >= 500 and attempt < max_retries - 1:
                 wait = (attempt + 1) * 10  # 10s, 20s, 30s
                 logger.warning(
                     f"         ⚠️  HTTP {resp.status_code}, reintentando en {wait}s "
@@ -562,6 +571,7 @@ def send_alert(alert: dict, webhook_url: str, max_retries: int = 3) -> tuple[boo
 
 
 def main() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     parser = argparse.ArgumentParser()
     parser.add_argument("--count", type=int, default=5, help="Número de alertas")
     parser.add_argument("--delay", type=float, default=2, help="Delay entre alertas (seg)")

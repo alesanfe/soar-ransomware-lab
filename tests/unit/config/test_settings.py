@@ -20,8 +20,8 @@ class TestSettings:
             "API_HOST",
             "REDIS_URL",
             "MISP_URL",
-            "THEHIVE_HTTP_PORT",
-            "CORTEX_HTTP_PORT",
+            "THEHIVE_HOST_PORT",
+            "CORTEX_HOST_PORT",
             "SHUFFLE_UI_PORT",
             "SHUFFLE_API_PORT",
             "RETENTION_DAYS",
@@ -149,12 +149,12 @@ class TestSettings:
         assert isinstance(settings._config.get("project_name"), str)
 
     def test_thehive_port_default(self, settings):
-        """Test default THEHIVE_HTTP_PORT."""
-        assert settings._config.get("thehive_port") == 9000
+        """Test default THEHIVE_HOST_PORT."""
+        assert settings._config.get("thehive_port") == 8100
 
     def test_cortex_port_default(self, settings):
-        """Test default CORTEX_HTTP_PORT."""
-        assert settings._config.get("cortex_port") == 9001
+        """Test default CORTEX_HOST_PORT."""
+        assert settings._config.get("cortex_port") == 8101
 
     def test_shuffle_ui_port_default(self, settings):
         """Test default SHUFFLE_UI_PORT."""
@@ -170,7 +170,7 @@ class TestSettings:
         assert isinstance(settings._config.get("elasticsearch_port"), int)
 
     def test_misp_port_default(self, settings):
-        """Test default MISP_PORT."""
+        """Test default MISP_HOST_PORT."""
         assert settings._config.get("misp_port") == 8083
 
     def test_http_port_default(self, settings):
@@ -179,15 +179,15 @@ class TestSettings:
 
     def test_thehive_url_default(self, settings):
         """Test default THEHIVE_URL."""
-        assert settings._config.get("thehive_url") == "http://thehive:9000"
+        assert settings._config.get("thehive_url") == "https://thehive:9443"
 
     def test_cortex_url_default(self, settings):
         """Test default CORTEX_URL."""
-        assert settings._config.get("cortex_url") == "http://cortex:9001"
+        assert settings._config.get("cortex_url") == "https://cortex:9443"
 
     def test_shuffle_url_default(self, settings):
         """Test default SHUFFLE_URL."""
-        assert settings._config.get("shuffle_url") == "http://shuffle-backend:5001"
+        assert settings._config.get("shuffle_url") == "https://shuffle-backend:5443"
 
     def test_misp_url_default(self, settings):
         """Test default MISP_URL — https since BUG-070 (self-signed cert)."""
@@ -195,11 +195,11 @@ class TestSettings:
 
     def test_elasticsearch_url_default(self, settings):
         """Test default ELASTICSEARCH_URL."""
-        assert settings._config.get("elasticsearch_url") == "http://elasticsearch:9200"
+        assert settings._config.get("elasticsearch_url") == "https://elasticsearch:9200"
 
     def test_shuffle_webhook_url_default(self, settings):
         """Test default SHUFFLE_WEBHOOK_URL."""
-        assert settings._config.get("shuffle_webhook_url") == "http://localhost:5001/api/v1/hooks"
+        assert settings._config.get("shuffle_webhook_url") == "https://localhost:5001/api/v1/hooks"
 
     def test_elastic_security_enabled_default(self, settings):
         """Test ELASTIC_SECURITY_ENABLED exists."""

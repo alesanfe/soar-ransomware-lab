@@ -87,6 +87,19 @@ def _substitute(text: str, env: dict[str, str], template_name: str) -> str:
     return _VAR_RE.sub(replacer, text)
 
 
+def _docker_host_path(p: Path) -> str:
+    """Path as seen by the Docker daemon for DinD bind mounts.
+
+    Docker Desktop on Windows exposes host paths under
+    ``/run/desktop/mnt/host/<drive>/...``; on Linux/macOS the daemon sees
+    the real filesystem path.
+    """
+    resolved = str(p.resolve()).replace("\\", "/")
+    if os.name == "nt" and len(resolved) >= 2 and resolved[1] == ":":
+        return f"/run/desktop/mnt/host/{resolved[0].lower()}{resolved[2:]}"
+    return resolved
+
+
 def render_all(env: dict[str, str], output_dir: Path) -> list[Path]:
     """Render all templates. Returns list of rendered file paths."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -141,6 +154,14 @@ def main() -> int:
         return 1
 
     env = _load_env(args.env_file)
+
+    # CORE-003: CORTEX_DOCKER_JOB_DIR is the HOST path the docker daemon
+    # must bind-mount into DinD analyzer containers. It used to default to
+    # a developer's Windows path — now computed per-OS when unset.
+    if not env.get("CORTEX_DOCKER_JOB_DIR"):
+        env["CORTEX_DOCKER_JOB_DIR"] = _docker_host_path(
+            REPO_ROOT / "runtime" / "data" / "cortex" / "jobs"
+        )
 
     rendered = render_all(env, args.output_dir)
     if not rendered:

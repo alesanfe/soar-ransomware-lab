@@ -19,7 +19,17 @@ docker exec soar_misp tail -50 /var/www/MISP/app/tmp/logs/error.log
 ```
 
 Causas frecuentes: primera inicialización incompleta (DB migrations),
-OOM en workers, o corrupción de `cake` jobs tras un stop abrupto.
+OOM en workers, redis sin TLS (`REDIS_HOST` debe ser `tls://redis`), o
+corrupción de `cake` jobs tras un stop abrupto.
+
+Desde MISP-EVAL-007, `misp-db` y `misp-modules` están en `misp_internal`,
+no en `soar_net`. Desde `soar_api` deben aparecer como no resolubles; desde
+`soar_misp` sí deben resolver:
+
+```bash
+docker exec soar_misp getent hosts misp-db misp-modules
+docker exec soar_api python -c "import socket; socket.gethostbyname('misp-db')"  # debe fallar
+```
 
 ## Acción
 
@@ -40,7 +50,9 @@ docker exec soar_misp supervisorctl tail prio_03 stderr
 
 ```bash
 docker exec soar_api python -c "…MISPClient.health_check()"   # → True
-docker exec soar_api curl -sk https://misp/users/login | head
+docker exec soar_api curl --cacert /app/certs/ca.crt https://misp/users/heartbeat  # → 200
+# Blackbox probes (Prometheus)
+probe_success{instance=~".*misp.*"} == 1
 ```
 
 ## Prevención

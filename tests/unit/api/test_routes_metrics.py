@@ -61,6 +61,7 @@ class TestScrape:
             dead_total = 1
             forward_seconds_total = 2.5
             inflight = 0
+            orphans_repaired_total = 0  # WORKER-003 field added with reconciler
             errors = {'HTTP 503 "upstream"': 2}
 
         app = _app(admission_worker_stats=Stats())

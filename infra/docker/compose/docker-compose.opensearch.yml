@@ -39,7 +39,26 @@ services:
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g -Dlog4j2.formatMsgNoLookups=true"
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}
-      - plugins.security.disabled=${OPENSEARCH_SECURITY_DISABLED:-true}
+      - plugins.security.disabled=${OPENSEARCH_SECURITY_DISABLED:-false}
+      # 2.10 image runs install_demo_configuration.sh (demo certs + admin:admin)
+      # on first secure boot unless disabled; our PKI makes it unnecessary.
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      # Lab PKI (infra/docker/config/certs): single-node transport+HTTP TLS
+      # signed by the lab CA. admin_dn/nodes_dn use the minimal /CN= DNs of
+      # admin.crt / opensearch.crt (generated ad-hoc — gen_certs.sh only
+      # issues serverAuth EKU which transport rejects).
+      - plugins.security.allow_default_init_securityindex=true
+      - plugins.security.ssl.transport.pemcert_filepath=certs/opensearch.crt
+      - plugins.security.ssl.transport.pemkey_filepath=certs/opensearch.key
+      - plugins.security.ssl.transport.pemtrustedcas_filepath=certs/ca.crt
+      - plugins.security.ssl.transport.enforce_hostname_verification=false
+      - plugins.security.ssl.transport.resolve_hostname=false
+      - plugins.security.ssl.http.enabled=true
+      - plugins.security.ssl.http.pemcert_filepath=certs/opensearch.crt
+      - plugins.security.ssl.http.pemkey_filepath=certs/opensearch.key
+      - plugins.security.ssl.http.pemtrustedcas_filepath=certs/ca.crt
+      - plugins.security.nodes_dn=CN=opensearch
+      - plugins.security.authcz.admin_dn=CN=admin
     ulimits:
       memlock:
         soft: -1
@@ -49,12 +68,20 @@ services:
         hard: 65536
     volumes:
       - opensearch_data:/usr/share/opensearch/data
+      - ../config/certs/opensearch.crt:/usr/share/opensearch/config/certs/opensearch.crt:ro
+      - ../config/certs/opensearch.key:/usr/share/opensearch/config/certs/opensearch.key:ro
+      - ../config/certs/admin.crt:/usr/share/opensearch/config/certs/admin.crt:ro
+      - ../config/certs/admin.key:/usr/share/opensearch/config/certs/admin.key:ro
+      - ../config/certs/ca.crt:/usr/share/opensearch/config/certs/ca.crt:ro
+      # Custom internal_users.yml (admin/kibanaserver = OPENSEARCH_PASSWORD) is
+      # what allow_default_init_securityindex seeds the security index with.
+      - ../config/opensearch/internal_users.yml:/usr/share/opensearch/config/opensearch-security/internal_users.yml:ro
     ports:
       - "127.0.0.1:${OPENSEARCH_PORT:-19201}:9200"
     networks:
       - soar_net
     healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1" ]
+      test: [ "CMD-SHELL", "curl -fsS --cacert /usr/share/opensearch/config/certs/ca.crt -u \"admin:$${OPENSEARCH_INITIAL_ADMIN_PASSWORD}\" 'https://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=10s' || exit 1" ]
       interval: 30s
       timeout: 15s
       retries: 10
@@ -78,8 +105,16 @@ services:
     image: ${OPENSEARCH_DASHBOARDS_IMAGE:-opensearchproject/opensearch-dashboards:2.10.0}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_opensearch_dashboards
     environment:
-      - OPENSEARCH_HOSTS=["${SHUFFLE_OPENSEARCH_URL:-http://opensearch:9200}"]
+      - OPENSEARCH_HOSTS=["${SHUFFLE_OPENSEARCH_URL:-https://opensearch:9200}"]
+      - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME:-admin}
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
+      # Service-account auth to OpenSearch without the interactive login
+      # plugin (dashboards UX unchanged, wire still TLS+auth).
       - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      - OPENSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/opensearch-dashboards/config/certs/ca.crt
+      - OPENSEARCH_SSL_VERIFICATIONMODE=full
+    volumes:
+      - ../config/certs/ca.crt:/usr/share/opensearch-dashboards/config/certs/ca.crt:ro
     ports:
       - "127.0.0.1:${OPENSEARCH_DASHBOARDS_PORT:-5602}:5601"
     networks:

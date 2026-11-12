@@ -104,3 +104,15 @@ def register_taxii_routes(app_instance: FastAPI) -> None:
         if envelope is None:
             raise HTTPException(status_code=404, detail="Collection not found")
         return JSONResponse(envelope, media_type=_TAXII_MEDIA)
+
+    @app_instance.get(
+        _BASE + "/api/collections/{collection_id}/manifest/",
+        dependencies=[_AUTH],
+        tags=["taxii"],
+        summary="Object manifest (TAXII media type)",
+    )
+    async def taxii_manifest(collection_id: str, limit: int = 1000) -> Any:
+        envelope = _server(app_instance).manifest(collection_id, limit=limit)
+        if envelope is None:
+            raise HTTPException(status_code=404, detail="Collection not found")
+        return JSONResponse(envelope, media_type=_TAXII_MEDIA)

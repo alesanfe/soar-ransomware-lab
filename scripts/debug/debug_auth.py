@@ -16,10 +16,10 @@ try:
     logger.info(f"webhook_info: {json.dumps(info, indent=2)}")
     api_key = info.get("shuffle_api_key")
     logger.info("API Key: <redacted>")
-    shuffle_url = os.environ.get("SHUFFLE_BACKEND_URL", "http://shuffle-backend:5001")
+    shuffle_url = os.environ.get("SHUFFLE_BACKEND_URL", "https://shuffle-backend:5443")
     url = f"{shuffle_url}/api/v1/workflows/{info.get('workflow_id')}"
     logger.info(f"URL: {url}")
-    r = requests.get(url, headers={"Authorization": f"Bearer {api_key}"}, verify=False)
+    r = requests.get(url, headers={"Authorization": f"Bearer {api_key}"})
     logger.info(f"Status: {r.status_code}")
     logger.info(f"Response: {r.text[:500]}")
 except Exception as e:

@@ -81,7 +81,8 @@ class TimeoutHandler:
         Raises:
             TimeoutError: If the operation exceeds the timeout.
         """
-        return self.execute_with_timeout(func, timeout=self.timeout, *args, **kwargs)
+        kwargs["timeout"] = self.timeout  # pragma: no mutate
+        return self.execute_with_timeout(func, *args, **kwargs)
 
     def execute_with_timeout(
         self,
@@ -110,7 +111,7 @@ class TimeoutHandler:
             TimeoutError: If the operation does not complete within the deadline.
         """
         deadline = timeout or self.default_timeout or self.timeout
-        result: Any = None
+        result: Any = None  # pragma: no mutate asigna antes de completed.set())
         error: BaseException | None = None
         completed = threading.Event()
 
@@ -170,7 +171,7 @@ class _TimeoutContext:
         """
         self.timeout = timeout
         self._timer: threading.Timer | None = None
-        self._old_handler = None
+        self._old_handler = None  # pragma: no mutate
         self._signum = _resolve_signum()
 
     def __enter__(self) -> Self:

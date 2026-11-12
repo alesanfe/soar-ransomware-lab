@@ -173,3 +173,128 @@ class TestBackpressure:
         queue.events = [{}] * 10  # now saturated
         second = await uc.admit({"title": "x"}, idempotency_key="k")
         assert second["admission_id"] == first["admission_id"]
+
+
+class TestTransitionAndConflicts:
+    def test_check_transition_edges(self):
+        from soar_lab.application.use_cases.alert_admission import check_transition
+
+        assert check_transition(None, "queued") is True
+        assert check_transition(None, "forwarded") is False
+        # Unknown/missing state behaves like fresh: only "queued" allowed.
+        assert check_transition("bogus", "queued") is True
+        assert check_transition("bogus", "dead") is False
+        assert check_transition("dead", "queued") is True  # operator redrive
+        assert check_transition("workflow_accepted", "queued") is False
+
+    async def test_idempotency_conflict_raises_409(self):
+        from soar_lab.application.use_cases.alert_admission import IdempotencyConflictError
+
+        uc = _uc()
+        await uc.admit({"alert_id": "a", "hostname": "h1"}, idempotency_key="k1")
+        with pytest.raises(IdempotencyConflictError):
+            await uc.admit({"alert_id": "b", "hostname": "DIFFERENT"}, idempotency_key="k1")
+
+    async def test_orphan_binding_repaired_and_retried(self):
+        uc = _uc()
+        # Pre-bind a key to a phantom admission_id (no record).
+        uc.store.by_key["k-orphan"] = "adm-ghost"
+        r = await uc.admit({"alert_id": "x", "title": "t"}, idempotency_key="k-orphan")
+        assert r["status"] == "queued"
+        assert uc.orphan_bindings_cleaned == 1
+        assert uc.store.by_key["k-orphan"] == r["admission_id"]
+
+    async def test_binding_exhaustion_raises_queue_unavailable(self):
+        from soar_lab.application.use_cases.alert_admission import QueueUnavailableError
+
+        store = FakeAdmissionStore()
+
+        # Key is always claimed by a phantom whose record never exists —
+        # both repair attempts exhaust the loop -> for/else fires.
+        async def always_ghost(key, aid):
+            return "ghost"
+
+        async def never_record(aid):
+            return None
+
+        store.try_bind_key = always_ghost
+        store.get = never_record
+        uc = AlertAdmissionUseCase(queue=FakeEventQueue(), store=store)
+        with pytest.raises(QueueUnavailableError, match="idempotency binding"):
+            await uc.admit({"title": "t"}, idempotency_key="k")
+
+    async def test_non_serializable_payload_rejected(self):
+        uc = _uc()
+        circular: dict = {}
+        circular["self"] = circular  # default=str can't save a cycle
+        with pytest.raises(AdmissionValidationError, match="serializable"):
+            await uc.admit(circular)
+
+    async def test_no_key_skips_binding(self):
+        # No idempotency_key/alert_id/fingerprint -> line 184 break.
+        uc = _uc()
+        r = await uc.admit({})
+        assert r["status"] == "queued"
+        assert uc.store.by_key == {}
+
+
+class TestWorkflowVerdict:
+    async def test_unknown_returns_none(self):
+        assert await _uc().record_workflow_verdict("adm-x", "accepted") is None
+
+    async def test_ignored_when_not_forwarded(self):
+        uc = _uc()
+        r = await uc.admit({"alert_id": "a"})
+        rec = await uc.record_workflow_verdict(r["admission_id"], "accepted")
+        assert rec["status"] == "queued"  # ignored, no transition
+
+    async def test_forwarded_transitions(self):
+        uc = _uc()
+        r = await uc.admit({"alert_id": "a"})
+        aid = r["admission_id"]
+        await uc.store.update(aid, {"status": "forwarded"})
+        rec = await uc.record_workflow_verdict(aid, "rejected", reason="bad sig")
+        assert rec["status"] == "workflow_rejected"
+        assert rec["state_version"] == 2
+
+
+class TestReconcile:
+    async def test_repairs_enqueue_failed_records(self):
+        uc = _uc()
+        stuck = [
+            {"admission_id": "a1", "alert": {"title": "t"}, "attempts": 1, "state_version": 1},
+            {"admission_id": "a2", "alert": "not-a-dict"},  # skipped
+            {"admission_id": None},  # skipped
+        ]
+        await uc.store.create(stuck[0])  # so update() works
+
+        async def list_stuck(statuses, limit):
+            return stuck
+
+        uc.store.list_by_status = list_stuck
+        out = await uc.reconcile()
+        assert out == {"enqueue_failed_repaired": 1}
+        assert uc.orphans_repaired == 1
+        assert uc.store.records["a1"]["status"] == "queued"
+        assert uc.queue.events[0]["admission_id"] == "a1"
+
+    async def test_list_by_status_missing_or_failing(self):
+        uc = _uc()
+        assert await uc.reconcile() == {"enqueue_failed_repaired": 0}
+
+        async def boom(statuses, limit):
+            raise RuntimeError("redis down")
+
+        uc.store.list_by_status = boom
+        assert await uc.reconcile() == {"enqueue_failed_repaired": 0}
+
+    async def test_reenqueue_failure_leaves_record(self):
+        uc = _uc()
+        await uc.store.create({"admission_id": "a1", "alert": {"t": 1}})
+
+        async def stuck(statuses, limit):
+            return [{"admission_id": "a1", "alert": {"t": 1}}]
+
+        uc.store.list_by_status = stuck
+        uc.queue.enqueue = lambda e: (_ for _ in ()).throw(RuntimeError("full"))
+        assert await uc.reconcile() == {"enqueue_failed_repaired": 0}

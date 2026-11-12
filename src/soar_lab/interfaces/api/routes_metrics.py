@@ -141,6 +141,13 @@ def register_metrics_route(app_instance: FastAPI) -> None:
             )
             _metric(
                 lines,
+                "soar_admission_orphans_repaired_total",
+                stats.orphans_repaired_total,
+                "ADMISSION-002: enqueue_failed records re-enqueued by the reconciler.",
+                mtype="counter",
+            )
+            _metric(
+                lines,
                 "soar_admission_inflight",
                 stats.inflight,
                 "Forwards currently in flight.",
@@ -153,6 +160,33 @@ def register_metrics_route(app_instance: FastAPI) -> None:
                     "Forward failures by last-error fingerprint.",
                     mtype="counter",
                     labels={"error": err[:80].replace('"', "'").replace("\\", "/")},
+                )
+
+        # --- TMO-001: workflow timeout state machine -------------------
+        gc = getattr(app_instance.state, "stale_gc", None)
+        if gc is not None:
+            gm = gc.metrics
+            _metric(
+                lines,
+                "soar_workflow_stuck_total",
+                gm.stuck_total,
+                "Executions that exceeded the stale threshold (EXECUTING zombies).",
+                mtype="counter",
+            )
+            _metric(
+                lines,
+                "soar_workflow_oldest_executing_seconds",
+                gm.oldest_executing_seconds,
+                "Age of the oldest EXECUTING workflow execution.",
+            )
+            for to_state, count in sorted(gm.transitions.items()):
+                _metric(
+                    lines,
+                    "soar_workflow_timeout_transitions_total",
+                    count,
+                    "GC state-machine transitions by destination state.",
+                    mtype="counter",
+                    labels={"to_state": to_state},
                 )
 
         # --- GRAF-ALERT-RX: notifications received from Grafana --------

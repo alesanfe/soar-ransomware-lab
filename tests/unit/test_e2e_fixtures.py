@@ -36,7 +36,7 @@ def test_fixture_ips_are_valid():
     for name, case in _cases(_load()):
         ip = case.get("ip")
         if ip:
-            ipaddress.ip_address(ip)
+            assert ipaddress.ip_address(ip), f"{name}: malformed fixture ip {ip}"
 
 
 def test_malicious_cases_have_required_fields():

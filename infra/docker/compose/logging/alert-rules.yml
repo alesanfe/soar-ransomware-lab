@@ -30,7 +30,8 @@ groups:
           type: loki
           uid: loki
         editorMode: code
-        expr: sum(count_over_time({compose_project=~".+", compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"} |~ "(?i)error|exception|traceback|fatal" [5m]))
+        expr: sum(count_over_time({compose_project=~".+", compose_service!~"loki|grafana.*|prometheus|cadvisor|tempo|otel-collector|promtail"}
+          |~ "(?i)error|exception|traceback|fatal" [5m]))
         instant: true
         intervalMs: 1000
         maxDataPoints: 43200
@@ -88,7 +89,8 @@ groups:
           type: loki
           uid: loki
         editorMode: code
-        expr: sum(count_over_time({compose_service="api"} |~ "(?i)error|exception|traceback" [5m]))
+        expr: sum(count_over_time({compose_service="api"} |~ "(?i)error|exception|traceback"
+          [5m]))
         instant: true
         intervalMs: 1000
         maxDataPoints: 43200
@@ -265,7 +267,8 @@ groups:
       component: redis-streams
       team: soar-ops
     annotations:
-      summary: soar_queue_dlq_size > 0 for 10m — dead-lettered admissions need reprocessing (runbook 20).
+      summary: soar_queue_dlq_size > 0 for 10m — dead-lettered admissions need reprocessing
+        (runbook 20).
       runbook: docs/20-observability-runbooks.md#RB-01
     data:
     - refId: A
@@ -324,7 +327,8 @@ groups:
       component: redis-streams
       team: soar-ops
     annotations:
-      summary: Consumer lag > 50 pending for 10m — admission consumer stalled (runbook 20).
+      summary: Consumer lag > 50 pending for 10m — admission consumer stalled (runbook
+        20).
       runbook: docs/20-observability-runbooks.md#RB-02
     data:
     - refId: A
@@ -383,7 +387,8 @@ groups:
       component: admission
       team: soar-ops
     annotations:
-      summary: Admissions being dead-lettered — rate(soar_admission_dead_total) > 0 for 10m.
+      summary: Admissions being dead-lettered — rate(soar_admission_dead_total) >
+        0 for 10m.
       runbook: docs/20-observability-runbooks.md#RB-05
     data:
     - refId: A
@@ -501,7 +506,8 @@ groups:
       component: storage
       team: soar-ops
     annotations:
-      summary: More than 5 unassigned shards for 15m — single-node replica yellow is benign, beyond that investigate.
+      summary: More than 5 unassigned shards for 15m — single-node replica yellow
+        is benign, beyond that investigate.
       runbook: docs/20-observability-runbooks.md#RB-03
     data:
     - refId: A
@@ -560,7 +566,8 @@ groups:
       component: metamonitoring
       team: soar-ops
     annotations:
-      summary: Grafana rules evaluating to error or nodata — the alerting system itself is degraded (GRAF-021).
+      summary: Grafana rules evaluating to error or nodata — the alerting system itself
+        is degraded (GRAF-021).
       runbook: docs/20-observability-runbooks.md#RB-05
     data:
     - refId: A
@@ -602,6 +609,1243 @@ groups:
         datasource:
           type: __expr__
           uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: soar_loki_goroutines_high
+    title: Loki goroutines approaching pids_limit
+    condition: B
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: loki
+      team: soar-ops
+    annotations:
+      summary: 'go_goroutines{service="loki"} > 820 (80% of pids_limit 1024) for 10m.
+        Loki goroutines map 1:1 to kernel threads under pids_limit — at the cap the
+        healthcheck cannot fork and the container flaps (observed: 256 -> 512 -> 1024
+        ceiling raises). Investigate a real goroutine leak vs sustained query load
+        before raising again.'
+      runbook: docs/20-observability-runbooks.md
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: go_goroutines{service="loki"}
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 820
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: cortex_success_rate_low
+    title: Cortex analyzer success rate below 60%
+    condition: D
+    for: 15m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: elasticsearch
+      component: cortex
+      team: soar-ops
+    annotations:
+      summary: Cortex job success share in the last 30m fell under 60% (O-04 / KPI-06
+        guard). Check analyzer inventory and recent miswirings (make validate-workflows,
+        analyzer_inventory.json).
+      runbook: docs/20-observability-runbooks.md
+    data:
+    - refId: A
+      datasourceUid: elasticsearch
+      relativeTimeRange:
+        from: 1800
+        to: 0
+      model:
+        datasource:
+          type: elasticsearch
+          uid: elasticsearch
+        query: status:"Success"
+        bucketAggs:
+        - type: date_histogram
+          field: createdAt
+          id: '2'
+          settings:
+            interval: auto
+            min_doc_count: 0
+            trimEdges: 0
+        metrics:
+        - type: count
+          id: '1'
+        refId: A
+        timeField: createdAt
+        intervalMs: 1000
+        maxDataPoints: 43200
+    - refId: B
+      datasourceUid: elasticsearch
+      relativeTimeRange:
+        from: 1800
+        to: 0
+      model:
+        datasource:
+          type: elasticsearch
+          uid: elasticsearch
+        query: status:"Failure"
+        bucketAggs:
+        - type: date_histogram
+          field: createdAt
+          id: '2'
+          settings:
+            interval: auto
+            min_doc_count: 0
+            trimEdges: 0
+        metrics:
+        - type: count
+          id: '1'
+        refId: B
+        timeField: createdAt
+        intervalMs: 1000
+        maxDataPoints: 43200
+    - refId: RA
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 1800
+        to: 0
+      model:
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        reducer: sum
+        refId: RA
+        type: reduce
+    - refId: RB
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 1800
+        to: 0
+      model:
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: B
+        intervalMs: 1000
+        maxDataPoints: 43200
+        reducer: sum
+        refId: RB
+        type: reduce
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 1800
+        to: 0
+      model:
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: 100 * $RB / ($RA + $RB + 0.0001)
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: C
+        type: math
+    - refId: D
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 1800
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 40
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - C
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: C
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: D
+        type: threshold
+  - uid: soar_workflow_executing_stuck
+    title: Workflow execution stuck in EXECUTING
+    condition: B
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+      source: prometheus
+      component: shuffle-gc
+      team: soar-ops
+    annotations:
+      summary: Oldest EXECUTING workflow older than the stale threshold — GC should
+        have aborted it (runbook 20).
+      runbook: docs/20-observability-runbooks.md#RB-01
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: soar_workflow_oldest_executing_seconds
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1800
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+- orgId: 1
+  name: soar-observability-selfmon
+  folder: SOAR Alerts
+  interval: 1m
+  rules:
+  - uid: obs_probe_down
+    title: Observability endpoint unreachable (blackbox)
+    condition: B
+    for: 3m
+    noDataState: Alerting
+    execErrState: Error
+    labels:
+      severity: critical
+      source: prometheus
+      component: metamonitoring
+      team: soar-ops
+    annotations:
+      summary: A blackbox probe (TLS/HTTP/TCP) has failed for 3m — {{ $labels.instance
+        }} is unreachable or its cert is invalid (OBS-022/023).
+      runbook: docs/20-observability-runbooks.md#RB-16
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: min(probe_success)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: min
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_prometheus_target_down
+    title: Prometheus scrape target down
+    condition: B
+    for: 5m
+    noDataState: Alerting
+    execErrState: Error
+    labels:
+      severity: critical
+      source: prometheus
+      component: metamonitoring
+      team: soar-ops
+    annotations:
+      summary: A scrape target is down for 5m — {{ $labels.job }} (OBS-022). 8/8 up
+        is the release gate.
+      runbook: docs/20-observability-runbooks.md#RB-17
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: sum(up == 0) or vector(0)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_cert_expiry_30d
+    title: Internal certificate expires within 30 days
+    condition: B
+    for: 1h
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: pki
+      team: soar-ops
+    annotations:
+      summary: Certificate for {{ $labels.instance }} expires in <30d (OBS-046). Renew
+        with make certs.
+      runbook: docs/20-observability-runbooks.md#RB-18
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: min(probe_ssl_earliest_cert_expiry - time()) or vector(99999999)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 2592000
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: min
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_cert_expiry_14d
+    title: Internal certificate expires within 14 days
+    condition: B
+    for: 1h
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+      source: prometheus
+      component: pki
+      team: soar-ops
+    annotations:
+      summary: Certificate for {{ $labels.instance }} expires in <14d (OBS-046). Renew
+        with make certs NOW.
+      runbook: docs/20-observability-runbooks.md#RB-18
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: min(probe_ssl_earliest_cert_expiry - time()) or vector(99999999)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1209600
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: min
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_container_restart_loop
+    title: Container restart loop (cadvisor)
+    condition: B
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: containers
+      team: soar-ops
+    annotations:
+      summary: A container restarted >3 times in 15m — {{ $labels.name }} is crash-looping
+        (OBS-021).
+      runbook: docs/20-observability-runbooks.md#RB-19
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: max(changes(container_start_time_seconds{name=~"soar_.+",image!="",name!=""}[15m]))
+          or vector(0)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 900
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 3
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: max
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_s3_objectstore_errors
+    title: S3/SeaweedFS object-store errors in logs
+    condition: B
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+      source: loki
+      component: seaweedfs
+      team: soar-ops
+    annotations:
+      summary: NoSuchBucket/AccessDenied/S3 errors detected — check S3 creds, iam.config
+        and bucket state (OBS-011).
+      runbook: docs/20-observability-runbooks.md#RB-20
+    data:
+    - refId: A
+      datasourceUid: loki
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: loki
+          uid: loki
+        editorMode: code
+        expr: sum(count_over_time({compose_service=~"loki|tempo|s3.*"} |~ "(?i)nosuchbucket|accessdenied|signaturedoesnotmatch|s3
+          error|compactor.*(error|fail)" !~ "component=(frontend|querier|query-frontend)|caller=(metrics|engine|roundtrip)[.]go|msg=.executing
+          query." [5m]))
+        instant: true
+        intervalMs: 1000
+        maxDataPoints: 43200
+        queryType: instant
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 3
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_otel_spans_dropped
+    title: OTel Collector dropping or refusing spans
+    condition: B
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: otel-collector
+      team: soar-ops
+    annotations:
+      summary: The collector is refusing spans at the receiver or dropping them at
+        a full send queue (OBS-085).
+      runbook: docs/20-observability-runbooks.md#RB-21
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: sum(increase(otelcol_exporter_enqueue_failed_spans[5m])) + sum(increase(otelcol_receiver_refused_spans[5m]))
+          or vector(0)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_iscm_watchdog
+    title: ISCM watchdog (always firing)
+    condition: B
+    for: 0m
+    noDataState: Alerting
+    execErrState: Alerting
+    labels:
+      severity: info
+      source: prometheus
+      component: metamonitoring
+      watchdog: 'true'
+      team: soar-ops
+    annotations:
+      summary: Dead-man's-switch heartbeat — this rule is ALWAYS firing. Its notifications
+        prove the alert->webhook->API->Loki channel is alive (OBS-025). If they stop,
+        obs_alert_channel_silent fires.
+      runbook: docs/20-observability-runbooks.md#RB-22
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: vector(1)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_alert_channel_silent
+    title: Alert notification channel silent (watchdog absent)
+    condition: B
+    for: 30m
+    noDataState: Alerting
+    execErrState: Error
+    labels:
+      severity: critical
+      source: prometheus
+      component: metamonitoring
+      team: soar-ops
+    annotations:
+      summary: No Grafana alert notifications reached the API in >4.5h while the watchdog
+        should repeat every 4h — the alert channel is broken (OBS-025/127).
+      runbook: docs/20-observability-runbooks.md#RB-23
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: sum(increase(soar_grafana_alert_notifications_total[270m])) or vector(0)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 300
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: obs_admission_slo_burn_rate
+    title: Admission SLO burning too fast
+    condition: B
+    for: 15m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: slo
+      team: soar-ops
+    annotations:
+      summary: Admission error ratio exceeds 14.4x the 1% error budget on both 5m
+        and 1h windows — fast-burn alert (SLO 99% admission success).
+      runbook: docs/20-observability-runbooks.md#RB-02
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 3600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: "(\n  sum(rate(soar_admission_dead_total[5m]))\n  /\n  sum(rate(soar_admission_processed_total[5m])\
+          \ + rate(soar_admission_dead_total[5m]))\n) > 0.144 and (\n  sum(rate(soar_admission_dead_total[1h]))\n\
+          \  /\n  sum(rate(soar_admission_processed_total[1h]) + rate(soar_admission_dead_total[1h]))\n\
+          ) > 0.144"
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 3600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: last
+          type: query
+        datasource:
+          type: __expr__
+          uid: __expr__
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+- name: core-availability
+  folder: SOAR Alerts
+  interval: 1m
+  rules:
+  - uid: core_service_down
+    title: Core SOAR service unreachable (blackbox)
+    condition: B
+    for: 3m
+    noDataState: Alerting
+    execErrState: Error
+    labels:
+      severity: critical
+      source: prometheus
+      component: core
+      team: soar-ops
+    annotations:
+      summary: Core probe failed for 3m — {{ $labels.instance }} unreachable (CORE-OBS-008
+        P0).
+      runbook: docs/runbooks/core/service-down.md
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: min(probe_success{instance=~".*(thehive|cortex|shuffle|redis|tenzir|watcher|misp|taxii|keycloak|oauth2).*"})
+          by (instance)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: min
+          type: query
+        datasource:
+          type: __expr__
+        editorMode: code
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: core_metrics_scrape_failing
+    title: Core service metrics scrape failing
+    condition: B
+    for: 3m
+    noDataState: Alerting
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: core
+      team: soar-ops
+    annotations:
+      summary: Prometheus cannot scrape {{ $labels.job }} for 3m (CORE-OBS-008 P1).
+      runbook: docs/runbooks/core/service-down.md
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: min(up{job=~"thehive-jmx|cortex-jmx|redis"}) by (job)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: min
+          type: query
+        datasource:
+          type: __expr__
+        editorMode: code
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: core_redis_memory_high
+    title: Redis memory usage above 80 percent
+    condition: B
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: redis
+      team: soar-ops
+    annotations:
+      summary: Redis used memory above 80 percent of max for 10m (CORE-OBS-005).
+      runbook: docs/runbooks/core/redis-memory-pressure.md
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: max(redis_memory_used_bytes / redis_memory_max_bytes)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0.8
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: max
+          type: query
+        datasource:
+          type: __expr__
+        editorMode: code
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: core_redis_evictions
+    title: Redis evicting keys
+    condition: B
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: redis
+      team: soar-ops
+    annotations:
+      summary: Redis is evicting keys — queue entries may be silently dropped.
+      runbook: docs/runbooks/core/redis-memory-pressure.md
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: sum(rate(redis_evicted_keys_total[5m]))
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: max
+          type: query
+        datasource:
+          type: __expr__
+        editorMode: code
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: core_jvm_heap_pressure
+    title: JVM heap above 90 percent (thehive/cortex)
+    condition: B
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: jvm
+      team: soar-ops
+    annotations:
+      summary: '{{ $labels.instance }} JVM heap >90 percent for 10m (CORE-OBS-002).'
+      runbook: docs/runbooks/core/service-down.md
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: prometheus
+          uid: prometheus
+        editorMode: code
+        expr: max(jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"})
+          by (instance)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 0.9
+            type: gt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: max
+          type: query
+        datasource:
+          type: __expr__
+        editorMode: code
+        expression: A
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: B
+        type: classic_conditions
+  - uid: core_tenzir_ingest_stalled
+    title: Tenzir ingest stalled
+    condition: B
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+      source: prometheus
+      component: tenzir
+      team: soar-ops
+    annotations:
+      summary: No new tenzir events observed via Loki for 10m — pipeline loss (P0).
+      runbook: docs/runbooks/core/tenzir-backpressure.md
+    data:
+    - refId: A
+      datasourceUid: loki
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        datasource:
+          type: loki
+          uid: loki
+        editorMode: code
+        expr: count_over_time({compose_service="tenzir-node"}[10m])
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 600
+        to: 0
+      model:
+        conditions:
+        - evaluator:
+            params:
+            - 1
+            type: lt
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            params: []
+            type: sum
+          type: query
+        datasource:
+          type: __expr__
+        editorMode: code
         expression: A
         intervalMs: 1000
         maxDataPoints: 43200

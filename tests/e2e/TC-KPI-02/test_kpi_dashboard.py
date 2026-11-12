@@ -24,6 +24,9 @@ class TestKPIDashboard(E2EBaseTest):
             "GRAFANA_ADMIN_USER", self.env.get("GRAFANA_USER", "admin")
         )
         self.grafana_pass = self.env.get("GRAFANA_ADMIN_PASSWORD", self.env.get("GRAFANA_PASS", ""))
+        from tests.e2e.base.service_mixins import _lab_ca_bundle
+
+        self._verify = _lab_ca_bundle()
 
     def _log(self, msg: str):
         elapsed = (datetime.now(UTC) - self.t0).total_seconds()
@@ -36,7 +39,7 @@ class TestKPIDashboard(E2EBaseTest):
         # Step 1: Check Grafana is accessible
         self._log("STEP 1: Checking Grafana accessibility")
         try:
-            r = requests.get(f"{self.grafana_url}/api/health", timeout=10)
+            r = requests.get(f"{self.grafana_url}/api/health", timeout=10, verify=self._verify)
             assert isinstance(r.status_code, int), "Status code must be integer"
             assert r.status_code == 200, f"Grafana not accessible: HTTP {r.status_code}"
             self._log("  + Grafana is accessible")
@@ -46,7 +49,7 @@ class TestKPIDashboard(E2EBaseTest):
         # Step 2: Verify Grafana credentials with Basic Auth
         self._log("STEP 2: Verifying Grafana credentials")
         auth = (self.grafana_user, self.grafana_pass)
-        r = requests.get(f"{self.grafana_url}/api/org", auth=auth, timeout=10)
+        r = requests.get(f"{self.grafana_url}/api/org", auth=auth, timeout=10, verify=self._verify)
         assert r.status_code == 200, f"Expected HTTP 200, got {r.status_code}"
         data = r.json()
         assert isinstance(data, dict), "Response must be JSON object"
@@ -58,7 +61,7 @@ class TestKPIDashboard(E2EBaseTest):
         soar_dashboard = None
         dashboard_uid = None
         if authenticated:
-            r = requests.get(f"{self.grafana_url}/api/search?query=SOAR", auth=auth, timeout=10)
+            r = requests.get(f"{self.grafana_url}/api/search?query=SOAR", auth=auth, timeout=10, verify=self._verify)
             assert r.status_code == 200, f"Expected HTTP 200, got {r.status_code}"
             dashboards = r.json()
             assert isinstance(dashboards, list), "Dashboards must be a list"
@@ -95,6 +98,7 @@ class TestKPIDashboard(E2EBaseTest):
                         json=import_data,
                         auth=auth,
                         timeout=10,
+                        verify=self._verify,
                     )
                     if r.status_code == 200:
                         self._log("  + Dashboard imported successfully")

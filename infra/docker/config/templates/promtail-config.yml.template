@@ -14,7 +14,10 @@ clients:
 scrape_configs:
   - job_name: docker-logs
     docker_sd_configs:
-      - host: unix:///var/run/docker.sock
+      # OBS-EVAL-007: discovery + log tailing go through the restricted
+      # docker-socket-proxy (CONTAINERS/INFO/PING whitelisted) — same
+      # SOAR-012 pattern as api/cortex/orborus. No raw daemon socket.
+      - host: tcp://docker-socket-proxy:2375
         refresh_interval: 5s
     relabel_configs:
       - source_labels: [ '__meta_docker_container_name' ]
@@ -50,11 +53,20 @@ scrape_configs:
       - replace:
           expression: "(/api/v1/hooks/)[A-Za-z0-9._~%-]+"
           replace: "${1}<REDACTED>"
+      # OBS-070: HTTP header dumps — Authorization (Basic/Bearer/Token),
+      # X-Api-Key and Cookie values must never reach Loki.
+      - replace:
+          expression: "(?i)(authorization[\"']?\\s*[:=]\\s*(?:basic|bearer|service-token|token)\\s+)([A-Za-z0-9+/=._~-]{8,})"
+          replace: "${1}<REDACTED>"
+      - replace:
+          expression: "(?i)((?:x-?api-?key|x-?service-?token)[\"']?\\s*[:=]\\s*)([A-Za-z0-9+/=._~-]{8,})"
+          replace: "${1}<REDACTED>"
+      - replace:
+          expression: "(?i)(cookie[\"']?\\s*[:=]\\s*)([^\\s;]+)"
+          replace: "${1}<REDACTED>"
 
-  - job_name: system-logs
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: system-logs
-          __path__: /var/log/**/*.log
+  # NOTE: a `system-logs` job scraping /var/log/** was removed — the path
+  # resolves INSIDE the promtail container (no host mount exists), so it
+  # only ever tailed image-build leftovers (apt/dpkg/faillog) and, under
+  # the non-root uid, produced permission-denied noise. Host system logs
+  # would need an explicit :ro mount to be meaningful.

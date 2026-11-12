@@ -124,8 +124,7 @@ class TestInjectHosts:
         mock_container.exec_run.side_effect = Exception("exec failed")
 
         with patch.object(nw, "get_ip", return_value="172.18.0.2"):
-            # Should not raise
-            nw.inject_hosts(mock_container, mock_client, "soar_net")
+            assert nw.inject_hosts(mock_container, mock_client, "soar_net") is None
 
 
 class TestSetupDockerSocket:
@@ -157,6 +156,10 @@ class TestSetupDockerSocket:
         with (
             patch("os.path.exists", return_value=True),
             patch("os.path.isfile", return_value=True),
+            # setup_docker_socket probes via pathlib.Path methods —
+            # Path.exists() does not route through os.path on 3.11.
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_file", return_value=True),
             patch("tarfile.open", return_value=mock_tf),
         ):
             nw.setup_docker_socket(mock_container)
@@ -182,8 +185,7 @@ class TestSetupDockerSocket:
             patch("os.path.isfile", return_value=True),
             patch("tarfile.open", return_value=mock_tf),
         ):
-            # Should not raise
-            nw.setup_docker_socket(mock_container)
+            assert nw.setup_docker_socket(mock_container) is None
 
 
 class TestFixResolv:
@@ -207,8 +209,7 @@ class TestFixResolv:
         mock_container.name = "worker-1"
         mock_container.exec_run.side_effect = Exception("exec failed")
 
-        # Should not raise
-        nw.fix_resolv(mock_container, "soar_net")
+        assert nw.fix_resolv(mock_container, "soar_net") is None
 
 
 class TestAttach:
@@ -334,8 +335,7 @@ class TestAttach:
         mock_client = Mock()
         mock_client.networks.get.side_effect = Exception("network error")
 
-        # Should not raise
-        nw.attach(mock_client, "cid123", "worker-1", "soar_net")
+        assert nw.attach(mock_client, "cid123", "worker-1", "soar_net") is None
 
 
 class TestInjectHostsFile:

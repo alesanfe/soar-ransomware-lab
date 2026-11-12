@@ -7,9 +7,11 @@ from urllib.parse import urljoin
 
 import requests
 
+from soar_lab.security.tls_config import ca_verify
+
 logger = logging.getLogger(__name__)
 
-BASE = os.environ.get("OPENSEARCH_URL", "http://localhost:19201")
+BASE = os.environ.get("OPENSEARCH_URL", "https://localhost:19201")
 OPENSEARCH_USERNAME = os.environ.get("OPENSEARCH_USERNAME", "admin")
 OPENSEARCH_PASSWORD = os.environ.get("OPENSEARCH_PASSWORD")
 
@@ -20,15 +22,16 @@ if not OPENSEARCH_PASSWORD:
     )
 
 AUTH = (OPENSEARCH_USERNAME, OPENSEARCH_PASSWORD)
+_VERIFY = ca_verify()
 
 
 def get(path):
-    r = requests.get(urljoin(BASE, path), auth=AUTH)
+    r = requests.get(urljoin(BASE, path), auth=AUTH, verify=_VERIFY)
     return r.status_code, r.json()
 
 
 def get_cat(path):
-    r = requests.get(urljoin(BASE, path), auth=AUTH)
+    r = requests.get(urljoin(BASE, path), auth=AUTH, verify=_VERIFY)
     return r.text
 
 
@@ -48,7 +51,7 @@ print("\n=== template status ===", status)
 print(json.dumps(tmpl, indent=2))
 
 # 4. health endpoint
-shuffle_api_url = os.environ.get("SHUFFLE_API_URL", "http://localhost:15001")
+shuffle_api_url = os.environ.get("SHUFFLE_API_URL", "https://localhost:15001")
 r = requests.get(f"{shuffle_api_url}/api/v1/health")
 print("\n=== shuffle health ===", r.status_code)
 print(json.dumps(r.json(), indent=2))

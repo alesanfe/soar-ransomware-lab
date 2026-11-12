@@ -51,6 +51,9 @@ from .auth import (
     require_api_auth,
 )
 from .middleware import (
+    BodyLimitMiddleware,
+    BodyLimitRule,
+    PreAuthRateLimitMiddleware,
     RateLimitMiddleware,
     RateLimitRule,
     SecurityHeadersMiddleware,
@@ -318,21 +321,26 @@ def _build_ws_ticket_store(cp):
 def _add_middlewares(app_instance: FastAPI, cp) -> None:
     """Attach middleware in registration order (last added = outermost).
 
-    Order: CORS -> TraceId -> RateLimit -> DefaultDenyAuth -> SecurityHeaders.
+    Order: SecurityHeaders -> DefaultDenyAuth -> RateLimit -> CORS, with TraceId outermost (added last).
     """
-    # CORS middleware - configurable via environment variable
+    # CONFIG-002: wildcard origins + credentials is a misconfiguration —
+    # refuse it unless the operator explicitly accepts the risk.
     cors_origins = cp.get("CORS_ORIGINS", ["*"])
+    _creds = str(cp.get("CORS_ALLOW_CREDENTIALS", "true")).lower() in ("1","true","on","yes")
+    if (cors_origins == "*" or "*" in (cors_origins if isinstance(cors_origins, list) else [cors_origins])) and _creds:
+        if str(cp.get("CORS_ALLOW_ANY", "")).lower() in ("1","true","on","yes"):
+            logger.warning("CORS wildcard + credentials explicitly allowed (CORS_ALLOW_ANY) — lab only")
+        else:
+            logger.warning("CORS: dropping allow_credentials with wildcard origins (set CORS_ORIGINS or CORS_ALLOW_ANY)")
+            _creds = False
     app_instance.add_middleware(
         CORSMiddleware,
         # nosemgrep: wildcard-cors -- env-configurable; lab default serves local UIs
         allow_origins=cors_origins,
-        allow_credentials=True,
+        allow_credentials=_creds,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    # Trace ID middleware — injects X-Request-ID for end-to-end correlation
-    app_instance.add_middleware(TraceIdMiddleware)
 
     # Rate limiting — sliding window per client (token or IP). Exempts
     # health/docs/static so probes and UIs are not throttled.
@@ -359,6 +367,41 @@ def _add_middlewares(app_instance: FastAPI, cp) -> None:
     # cannot silently ship unauthenticated.
     app_instance.add_middleware(DefaultDenyAuthMiddleware)
 
+    # DOS-002: pre-auth per-IP limiter — added AFTER DefaultDeny in
+    # registration order. Last-added is outermost in Starlette, so this
+    # executes BEFORE auth: brute-force on the service token / JWT
+    # consumes budget instead of getting unlimited free 401s.
+    _preauth_enabled = str(cp.get("PREAUTH_RATE_LIMIT_ENABLED", "true")).lower() not in (
+        "0", "false", "off", "no",
+    )
+    app_instance.add_middleware(
+        PreAuthRateLimitMiddleware,
+        per_minute=int(cp.get("PREAUTH_RATE_LIMIT_PER_MINUTE", 60)),
+        trusted_proxies=[
+            n.strip()
+            for n in str(cp.get("RATE_LIMIT_TRUSTED_PROXIES", "")).split(",")
+            if n.strip()
+        ],
+        enabled=_preauth_enabled,
+    )
+
+    # DOS-001: pre-parse body cap — Content-Length checked before read,
+    # streamed bytes counted so chunked lies can't bypass. Ingest gets
+    # a hard ceiling at 2x WEBHOOK_PAYLOAD_MAX_SIZE so oversized-but-
+    # parseable bodies still reach the domain validator, which owns the
+    # contractual 422 for payloads over max_payload_bytes; only bodies
+    # beyond the transport ceiling are cut pre-parse with 413.
+    app_instance.add_middleware(
+        BodyLimitMiddleware,
+        default_max_bytes=int(cp.get("REQUEST_BODY_MAX_BYTES", "1048576")),
+        rules=[
+            BodyLimitRule(
+                "/api/v1/alerts",
+                int(cp.get("WEBHOOK_PAYLOAD_MAX_SIZE", "262144")) * 2,
+            )
+        ],
+    )
+
     # SEC-HEADERS: added LAST so it is the outermost middleware — every
     # response (including 401/403/429/500 raised by inner middleware)
     # gets the hardened header set. HSTS is opt-out for plain-HTTP dev.
@@ -369,6 +412,11 @@ def _add_middlewares(app_instance: FastAPI, cp) -> None:
         "no",
     )
     app_instance.add_middleware(SecurityHeadersMiddleware, hsts_enabled=_hsts)
+
+    # Trace ID — added LAST so it is the outermost layer: every response
+    # (including 401/403 rejections raised by DefaultDenyAuth) must carry
+    # X-Request-ID, otherwise failed-auth attempts are uncorrelatable.
+    app_instance.add_middleware(TraceIdMiddleware)
 
 
 def _register_exception_handlers(app_instance: FastAPI) -> None:
@@ -818,7 +866,11 @@ def _filter_docs_portal(html: str, ui_enabled: bool) -> str:
 
 def _get_fallback_html() -> str:
     """Get fallback HTML when API docs are not available."""
-    return """<html><head><title>SOAR Lab Management
-           API</title></head><body><h1>SOAR Lab Management API</h1><p>API
-           Documentation: <a href="/docs">/docs</a></p><p>Health Check: <a
-           href="/health">/health</a></p></body></html>"""
+    return """<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+           <meta name="viewport" content="width=device-width, initial-scale=1">
+           <title>SOAR Lab Management API</title></head><body>
+           <header><h1>SOAR Lab Management API</h1></header>
+           <main><nav aria-label="API links"><ul>
+           <li><a href="/docs">API Documentation (/docs)</a></li>
+           <li><a href="/health">Health Check (/health)</a></li>
+           </ul></nav></main></body></html>"""

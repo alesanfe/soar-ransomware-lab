@@ -44,7 +44,9 @@ RUN git init . && \
 # 0002 async dispatch in the swarm branch of runWorkflowExecutionTransaction
 # 0003 async handleExecutionResult inside setWorkflowExecution (all modes)
 # 0004 SHUFFLE_WARM_APPS: per-image app servers sharing worker netns (docker)
-COPY patches/ ./patches/
+# Build context is infra/docker (see Makefile.* worker-build target) so the
+# lab CA can also be baked into the final image.
+COPY images/worker/patches/ ./patches/
 RUN for p in patches/*.patch; do \
         git apply --check "$p" && git apply "$p" || exit 1; \
     done && rm -rf patches
@@ -60,10 +62,14 @@ ENV SHUFFLE_BASE_IMAGE_REGISTRY=docker.io
 ENV SHUFFLE_BASE_IMAGE_NAME=frikky/shuffle
 ENV SHUFFLE_BASE_IMAGE_TAG_SUFFIX=0.8.70
 ENV SHUFFLE_OPENSEARCH_URL=https://opensearch:9200
-ENV SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY=true
+ENV SHUFFLE_OPENSEARCH_SKIPSSL_VERIFY=false
 # Poll interval override (seconds >=1); unset = upstream default 5.
 ENV SHUFFLE_WORKER_POLL_TIME=
 
-RUN apk add --no-cache bash tzdata
+RUN apk add --no-cache bash tzdata ca-certificates
+# Lab CA -> system trust store: workers talk to OpenSearch over TLS and
+# must verify against the lab CA (was SKIPSSL_VERIFY=true debt).
+COPY config/certs/ca.crt /usr/local/share/ca-certificates/lab-ca.crt
+RUN update-ca-certificates
 COPY --from=builder /worker /worker
 CMD ["./worker"]

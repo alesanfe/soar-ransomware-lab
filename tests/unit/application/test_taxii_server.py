@@ -73,13 +73,14 @@ class TestObjects:
 
     def test_objects_limit_sets_more_flag(self):
         # ``limit`` bounds ALERTS exported, not objects — 3 alerts produce
-        # 1 identity + 3 indicators + 3 groupings = 7 objects, and the
-        # remaining 2 alerts make the envelope report ``more``.
+        # 1 identity + 1 marking-definition + 3 indicators + 3 groupings
+        # = 8 objects, and the remaining 2 alerts make the envelope
+        # report ``more``.
         alerts = [{"alert_id": f"AL-{i}", "data": {"hash": SHA}} for i in range(5)]
         env = _server(alerts).objects(ALERTS_COLLECTION_ID, limit=3)
         assert env is not None
         assert env["more"] is True
-        assert len(env["objects"]) == 7
+        assert len(env["objects"]) == 8
 
     def test_objects_no_truncation_more_false(self):
         env = _server(ALERTS).objects(ALERTS_COLLECTION_ID, limit=100)

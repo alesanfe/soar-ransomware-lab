@@ -1,0 +1,29 @@
+title: Webshell deployment / execution
+id: soar-lab-0006
+status: experimental
+description: Webshell write or suspicious web-access log pattern indicating post-exploitation
+  web persistence used by ransomware actors.
+logsource:
+  product: soar-lab
+detection:
+  selection_path:
+    data.url|contains:
+    - /uploads/
+    - /files/
+    - .php?cmd=
+    - .aspx?cmd=
+    - shell.jsp
+  selection_write:
+    data.event_type:
+    - webshell_write
+    - file_write_webroot
+  condition: 1 of selection_*
+level: critical
+tags:
+- attack.persistence
+- attack.t1505.003
+falsepositives:
+- CMS upload paths and admin panels using cmd= query parameters legitimately
+- Authorized vulnerability scanners probing the same paths
+references:
+- https://attack.mitre.org/techniques/T1505/003/

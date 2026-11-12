@@ -41,9 +41,22 @@ def _parse(raw):
     if not raw or raw.startswith("$"):
         return None
     try:
-        return json.loads(raw)
+        obj = json.loads(raw)
     except Exception:
         return None
+    # execute_python results wrap stdout in {"success","message"} (dict or
+    # JSON string) — unwrap so guarded cortex nodes keep the {status,body}
+    # shape the old http actions produced.
+    if isinstance(obj, dict) and "success" in obj and "message" in obj:
+        m = obj["message"]
+        if isinstance(m, dict):
+            return m
+        if isinstance(m, str):
+            try:
+                return json.loads(m.strip())
+            except Exception:
+                return obj
+    return obj
 
 
 def _safe_str(v, max_len=200):

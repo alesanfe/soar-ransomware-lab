@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 with open("/app/runtime/results/webhook_info.json") as f:
     info = json.load(f)
 api_key = info.get("shuffle_api_key")
-shuffle_url = os.environ.get("SHUFFLE_BACKEND_URL", "http://shuffle-backend:5001")
+shuffle_url = os.environ.get("SHUFFLE_BACKEND_URL", "https://shuffle-backend:5443")
 url = f"{shuffle_url}/api/v1/workflows/{info.get('workflow_id')}"
-r = requests.get(url, headers={"Authorization": f"Bearer {api_key}"}, verify=False)
+r = requests.get(url, headers={"Authorization": f"Bearer {api_key}"})
 if r.status_code == 200:
     data = r.json()
     actions = data.get("actions", [])

@@ -6,9 +6,9 @@ fixing branches/startnode, registering the webhook hook in ES, and
 creating the soar-alerts / soar-metrics indices.
 """
 
-# NOTE: All ``requests`` calls in this module use ``verify=False`` because
-# the lab uses self-signed certificates in the internal Docker network.
-# This is safe in the lab context but must NOT be used in production.
+# NOTE: All ``requests`` calls in this module use ``verify=config.VERIFY``
+# — pinned to the lab CA (mounted at /app/certs/ inside soar_api; the
+# repo copy covers host runs). Replaces the old verify=False blanket.
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ def ensure_shuffle_environment(session: requests.Session) -> str:
             f"{config.SHUFFLE_DATA_URL}/environments/_search?q=Name:Shuffle",
             timeout=15,
             auth=es_auth,
-            verify=False,
+            verify=config.VERIFY,
         )
         if env_search.status_code == 200:
             hits = env_search.json().get("hits", {}).get("hits", [])
@@ -77,7 +77,7 @@ def ensure_shuffle_environment(session: requests.Session) -> str:
                         f"{config.SHUFFLE_DATA_URL}/organizations/_search?size=1",
                         timeout=10,
                         auth=es_auth,
-                        verify=False,
+                        verify=config.VERIFY,
                     ).json()
                     org_id = (
                         _orgs.get("hits", {}).get("hits", [{}])[0].get("_source", {}).get("id", "")
@@ -88,7 +88,7 @@ def ensure_shuffle_environment(session: requests.Session) -> str:
                 org_id = str(uuid.uuid4())
             env_id = str(uuid.uuid4())
             idx_check = requests.get(
-                f"{config.SHUFFLE_DATA_URL}/environments", timeout=10, auth=es_auth, verify=False
+                f"{config.SHUFFLE_DATA_URL}/environments", timeout=10, auth=es_auth, verify=config.VERIFY
             )
             if idx_check.status_code == 404:
                 requests.put(
@@ -96,7 +96,7 @@ def ensure_shuffle_environment(session: requests.Session) -> str:
                     json={"settings": {"number_of_replicas": 0, "number_of_shards": 1}},
                     timeout=15,
                     auth=es_auth,
-                    verify=False,
+                    verify=config.VERIFY,
                 )
             env_doc = {
                 "Name": "Shuffle",
@@ -114,7 +114,7 @@ def ensure_shuffle_environment(session: requests.Session) -> str:
                 json=env_doc,
                 timeout=15,
                 auth=es_auth,
-                verify=False,
+                verify=config.VERIFY,
             )
             logger.info(
                 "'Shuffle' environment created: HTTP %d (id=%s, org=%s)",
@@ -200,7 +200,7 @@ def _patch_es_workflow_docs(wf_id: str, trigger_id: str) -> None:
             f"{config.SHUFFLE_DATA_URL}/{index}/_doc/{doc_id}",
             timeout=10,
             auth=es_auth,
-            verify=False,
+            verify=config.VERIFY,
         )
         if r.status_code != 200:
             return r.status_code
@@ -218,7 +218,7 @@ def _patch_es_workflow_docs(wf_id: str, trigger_id: str) -> None:
             json=src,
             timeout=15,
             auth=es_auth,
-            verify=False,
+            verify=config.VERIFY,
         )
         return rp.status_code
 
@@ -227,7 +227,7 @@ def _patch_es_workflow_docs(wf_id: str, trigger_id: str) -> None:
             f"{config.SHUFFLE_DATA_URL}/_cat/indices/workflow-*?h=index",
             timeout=10,
             auth=es_auth,
-            verify=False,
+            verify=config.VERIFY,
         )
         _wf_index = (_wf_idx_res.text.strip().split("\n") + ["workflow-000001"])[
             0
@@ -239,7 +239,7 @@ def _patch_es_workflow_docs(wf_id: str, trigger_id: str) -> None:
             f"{config.SHUFFLE_DATA_URL}/_cat/indices/workflow_revisions-*?h=index",
             timeout=10,
             auth=es_auth,
-            verify=False,
+            verify=config.VERIFY,
         )
         _rev_index = (_rev_idx_res.text.strip().split("\n") + ["workflow_revisions-000001"])[
             0
@@ -258,7 +258,7 @@ def _patch_es_workflow_docs(wf_id: str, trigger_id: str) -> None:
                 },
                 timeout=10,
                 auth=es_auth,
-                verify=False,
+                verify=config.VERIFY,
             )
             if _rev_search.status_code == 200:
                 _hits = _rev_search.json().get("hits", {}).get("hits", [])
@@ -267,7 +267,7 @@ def _patch_es_workflow_docs(wf_id: str, trigger_id: str) -> None:
                     f"{config.SHUFFLE_DATA_URL}/{_rev_index}/_search?size=50",
                     timeout=10,
                     auth=es_auth,
-                    verify=False,
+                    verify=config.VERIFY,
                 )
                 _hits = [
                     _h
@@ -328,9 +328,13 @@ def register_hook_in_es(trigger_id: str, wf_id: str, org_id: str) -> None:
             "soar_opensearch",
             "curl",
             "-s",
+            "--cacert",
+            "/usr/share/opensearch/config/certs/ca.crt",
+            "-u",
+            f"{config.SHUFFLE_DATA_USER}:{config.SHUFFLE_DATA_PASS}",
             "-X",
             "PUT",
-            f"http://localhost:9200/hooks/_doc/{trigger_id}",
+            f"https://localhost:9200/hooks/_doc/{trigger_id}",
             "-H",
             "Content-Type: application/json",
             "-d",
@@ -352,14 +356,14 @@ def ensure_es_indices() -> None:
 
     # soar-alerts
     try:
-        r_idx = requests.get(f"{config.ES_URL}/soar-alerts", timeout=10, auth=es_auth, verify=False)
+        r_idx = requests.get(f"{config.ES_URL}/soar-alerts", timeout=10, auth=es_auth, verify=config.VERIFY)
         if r_idx.status_code == 404:
             create = requests.put(
                 f"{config.ES_URL}/soar-alerts",
                 json={"settings": {"number_of_replicas": 0, "number_of_shards": 1}},
                 timeout=15,
                 auth=es_auth,
-                verify=False,
+                verify=config.VERIFY,
             )
             logger.info("soar-alerts index created: HTTP %d", create.status_code)
         else:
@@ -370,7 +374,7 @@ def ensure_es_indices() -> None:
     # soar-metrics
     try:
         r_metrics = requests.get(
-            f"{config.ES_URL}/soar-metrics", timeout=10, auth=es_auth, verify=False
+            f"{config.ES_URL}/soar-metrics", timeout=10, auth=es_auth, verify=config.VERIFY
         )
         if r_metrics.status_code == 404:
             metrics_mapping = {
@@ -397,7 +401,7 @@ def ensure_es_indices() -> None:
                 json=metrics_mapping,
                 timeout=15,
                 auth=es_auth,
-                verify=False,
+                verify=config.VERIFY,
             )
             logger.info("soar-metrics index created with mapping: HTTP %d", create_m.status_code)
         else:
@@ -460,7 +464,7 @@ def import_grafana_dashboard() -> None:
                 f"{grafana_url}/api/dashboards/uid/{uid}",
                 auth=(grafana_user, grafana_pass),
                 timeout=10,
-                verify=False,
+                verify=config.VERIFY,
             )
             if existing.status_code == 200:
                 logger.info(
@@ -485,7 +489,7 @@ def import_grafana_dashboard() -> None:
             json=payload,
             headers={HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON},
             timeout=15,
-            verify=False,
+            verify=config.VERIFY,
         )
         if grafana_response.status_code == 200:
             result = grafana_response.json()
@@ -502,8 +506,16 @@ def import_grafana_dashboard() -> None:
         logger.warning("Error importing KPI dashboard: %s", e)
 
 
+GENERATOR_VERSION = "2.0.0-guarded-cortex"
+
+
 def save_webhook_info(
-    trigger_id: str, wf_id: str, org_id: str, webhook_url_internal: str, webhook_url: str
+    trigger_id: str,
+    wf_id: str,
+    org_id: str,
+    webhook_url_internal: str,
+    webhook_url: str,
+    workflow_hash: str = "",
 ) -> None:
     """Save webhook_info.json for E2E tests."""
     default_info_dir = (
@@ -527,6 +539,9 @@ def save_webhook_info(
         "trigger_id": trigger_id,
         "org_id": org_id,
         "workflow_name": config.WF_NAME,
+        "workflow_hash": workflow_hash,
+        "generator_version": GENERATOR_VERSION,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "actions": {
             "thehive": f"{config.THEHIVE_URL} - create case",
             "cortex_hash": f"{config.CORTEX_URL} - analyze hash",

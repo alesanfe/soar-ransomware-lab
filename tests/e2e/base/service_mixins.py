@@ -147,7 +147,7 @@ class ShuffleMixin:
                     json=payload,
                     headers=headers,
                     timeout=20,
-                    verify=False,
+                    verify=self.s.verify,
                 )
                 if r.status_code == 200:
                     body = r.json() if r.content else {}
@@ -216,7 +216,7 @@ class ShuffleMixin:
             r = requests.get(
                 f"{self.shuffle.base_url}/api/v1/executions/{execution_id}",
                 timeout=30,
-                verify=False,
+                verify=self.s.verify,
             )
             if r.status_code == 200:
                 return r.json()
@@ -228,8 +228,9 @@ class ShuffleMixin:
             os_url = self.get_service_url("opensearch")
             r = requests.get(
                 f"{os_url}/workflowexecution/_doc/{execution_id}",
+                auth=self.s.auth,
                 timeout=30,
-                verify=False,
+                verify=self.s.verify,
             )
             if r.status_code == 200:
                 return r.json().get("_source", {})
@@ -495,7 +496,7 @@ class SearchMixin:
 
         # Force refresh
         try:
-            requests.post(f"{es_url}/{index}/_refresh", auth=es_auth, timeout=10, verify=False)
+            requests.post(f"{es_url}/{index}/_refresh", auth=es_auth, timeout=10, verify=self.s.verify)
         except Exception:
             pass
 
@@ -510,7 +511,7 @@ class SearchMixin:
                 self._log(f"  + ES search error: {e}")
             time.sleep(5)
             try:
-                requests.post(f"{es_url}/{index}/_refresh", auth=es_auth, timeout=10, verify=False)
+                requests.post(f"{es_url}/{index}/_refresh", auth=es_auth, timeout=10, verify=self.s.verify)
             except Exception:
                 pass
 
@@ -548,8 +549,9 @@ class SearchMixin:
         try:
             r = requests.get(
                 f"{os_url}/workflowexecution/_doc/{execution_id}",
+                auth=self.s.auth,
                 timeout=timeout,
-                verify=False,
+                verify=self.s.verify,
             )
             if r.status_code == 200:
                 return r.json().get("_source", {})
@@ -567,8 +569,9 @@ class SearchMixin:
         try:
             r = requests.get(
                 f"{os_url}/workflowexecution/_doc/{execution_id}",
+                auth=self.s.auth,
                 timeout=timeout,
-                verify=False,
+                verify=self.s.verify,
             )
             duration = time.time() - t0
             if r.status_code == 200:
@@ -617,7 +620,7 @@ class SearchMixin:
 
         # Force refresh
         try:
-            requests.post(f"{es_url}/{index}/_refresh", auth=es_auth, timeout=10, verify=False)
+            requests.post(f"{es_url}/{index}/_refresh", auth=es_auth, timeout=10, verify=self.s.verify)
         except Exception:
             pass
 
@@ -629,7 +632,7 @@ class SearchMixin:
                     json={"query": {"match": {"alert_id": alert_id}}},
                     auth=es_auth,
                     timeout=10,
-                    verify=False,
+                    verify=self.s.verify,
                 )
                 if r.status_code == 200:
                     hits = r.json().get("hits", {}).get("hits", [])
@@ -662,11 +665,15 @@ class SearchMixin:
         import redis as _redis
 
         try:
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = _redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password(),
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password(),
+                    decode_responses=True,
+                )
             )
             for key in r.scan_iter(f"*{key_fragment}*"):
                 self._log(f"  + Redis key found: {key}")

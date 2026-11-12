@@ -15,7 +15,8 @@ const config = {
     projectName: 'soar-ransomware-lab',
     trailingSlash: false,
 
-    onBrokenLinks: 'warn',
+    onBrokenLinks: 'throw',
+    onBrokenAnchors: 'throw',
 
     i18n: {
         defaultLocale: 'en',
@@ -42,7 +43,7 @@ const config = {
     markdown: {
         format: 'md',
         hooks: {
-            onBrokenMarkdownLinks: 'warn',
+            onBrokenMarkdownLinks: 'throw',
         },
     },
 

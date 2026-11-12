@@ -88,7 +88,7 @@ class TestWorkflowValidator:
     def test_non_numeric_status_does_not_crash(self):
         execution = self._execution({"status": "OK", "body": {"success": True}})
         # Must not raise — non-numeric status is not an HTTP error.
-        workflow_validator.validate_workflow_results(execution)
+        assert workflow_validator.validate_workflow_results(execution) is None
 
     def test_numeric_string_status_still_checked(self):
         execution = self._execution({"status": "500"})
@@ -311,7 +311,7 @@ class TestTC26WebhookSend:
         klass = cls._load_cls()
         stub = klass.__new__(klass)
         stub.shuffle = MagicMock()
-        stub.webhook_url = "http://shuffle-backend:5001/api/v1/hooks/x"
+        stub.webhook_url = "https://shuffle-backend:5443/api/v1/hooks/x"
         return stub
 
     @staticmethod

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soar.lab/contracts/alert.schema.json",
+  "title": "SOAR alert ingest contract (schema_version 1.0)",
+  "type": "object",
+  "required": ["schema_version"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "Contract version. Unknown versions are rejected (CONTRACT-003)."
+    },
+    "severity": {
+      "$ref": "severity.schema.json",
+      "description": "Canonical severity; absent => documented default 'medium' (2)."
+    },
+    "alert_id": {"type": "string", "maxLength": 128},
+    "idempotency_key": {"type": "string", "maxLength": 256},
+    "title": {"type": "string", "maxLength": 512},
+    "description": {"type": "string", "maxLength": 8192},
+    "source": {"type": "string", "maxLength": 128},
+    "alert_type": {"type": "string", "maxLength": 128},
+    "event_type": {"type": "string", "maxLength": 128},
+    "hostname": {
+      "type": "string",
+      "maxLength": 253,
+      "pattern": "^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9_.-]*[A-Za-z0-9])?$"
+    },
+    "src_ip": {
+      "type": "string",
+      "maxLength": 45,
+      "description": "Must parse as IPv4 or IPv6 (validated in code, INPUT-002)."
+    },
+    "hash": {"type": "string", "minLength": 32, "maxLength": 64},
+    "domain": {"type": "string", "maxLength": 253},
+    "detection_time": {"type": "string", "maxLength": 64},
+    "mitre_techniques": {
+      "type": "array",
+      "items": {"type": "string", "maxLength": 64},
+      "maxItems": 64
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Vendor namespaced extensions (INPUT-004): keys MUST look like 'vendor.example/key'; arbitrary top-level extras are bounded, not forwarded blindly."
+    }
+  }
+}

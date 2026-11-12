@@ -45,7 +45,7 @@ Estado por dominio ASVS con evidencia concreta del repo. Convención:
 | Control | Estado | Evidencia |
 | --- | --- | --- |
 | Validación de entrada | ✅ | Pydantic v2 en todos los contratos API (`interfaces/api/contracts.py`) |
-| Sanitización de payloads | ✅ | `PayloadSanitizer` (`security/`) en ingestas |
+| Sanitización de payloads | ✅ | `PayloadSanitizer` cableado en `AlertIngestSchema.to_alert_dict()` (campos free-text) + `security/redaction.py` en errores/logs |
 | Output encoding | ✅ | UI propia: `escapeHtml` en todo render dinámico (js/util.js) |
 | Query parametrizada | ✅ | clientes usan params, no concat de SQL; ES/OS via cliente oficial |
 

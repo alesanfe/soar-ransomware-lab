@@ -35,11 +35,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
             result = r.ping()
             assert result is True, "Redis ping should return True"
@@ -73,11 +77,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
 
             # Probar ping
@@ -114,11 +122,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
 
             # ISO-001: scope the query to THIS run's hash — a global
@@ -148,11 +160,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
 
             # Simular almacenamiento de IoC como lo hace el workflow
@@ -184,11 +200,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
 
             # Preparar datos de prueba
@@ -225,11 +245,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
 
             # Almacenar con TTL corto
@@ -257,11 +281,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
 
             # Preparar múltiples IoCs
@@ -298,11 +326,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
 
             # Probar rendimiento de operaciones básicas
@@ -336,11 +368,15 @@ class TestRedisIntegration(E2EBaseTest):
         try:
             import redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password() or None,
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password() or None,
+                    decode_responses=True,
+                )
             )
 
             # Probar operación con key que no existe

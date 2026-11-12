@@ -52,7 +52,11 @@ class SimulatedIOCGenerator:
             for i in range(count)
         ]
 
-    def generate_ioc(self, alert_id: str = "", is_malicious: bool = True) -> dict[str, Any]:
+    def generate_ioc(
+        self,
+        alert_id: str = "",  # pragma: no mutate
+        is_malicious: bool = True,
+    ) -> dict[str, Any]:
         """Generate a single IOC dict for an alert."""
         h = self.generate_malicious_hash() if is_malicious else self.generate_benign_hash()
         return {

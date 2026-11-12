@@ -1,0 +1,15 @@
+# JMX exporter rules for TheHive 5 (Play Framework / JanusGraph).
+# java.lang.* beans (heap, GC, threads, classes, process) are exported
+# automatically by the agent's default rules — custom rules here add
+# ONLY the app-level beans to avoid duplicate-metric scrape failures.
+startDelaySeconds: 0
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  # TheHive / dropwizard metrics (JanusGraph storage + Lucene index)
+  - pattern: "metrics<name=berkeleyje\\.(\\w+)><>(\\w+)"
+    name: thehive_berkeleyje_$1_$2
+    type: GAUGE
+  - pattern: "metrics<name=lucene\\.(\\w+)><>(\\w+)"
+    name: thehive_lucene_$1_$2
+    type: GAUGE

@@ -34,7 +34,7 @@ class TestIdempotency:
     def es_client(self):
         """Create Elasticsearch client for testing."""
         return ElasticsearchClient(
-            base_url=os.environ.get("ES_URL", "http://localhost:9200"),
+            base_url=os.environ.get("ES_URL", "https://localhost:19200"),
             username=os.environ.get("ELASTIC_USERNAME", "elastic"),
             password=os.environ.get("ELASTIC_PASSWORD", "test-pass"),
         )

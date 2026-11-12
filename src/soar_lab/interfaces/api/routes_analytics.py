@@ -73,9 +73,18 @@ def create_node_timings_use_case() -> NodeTimingsUseCase:
     config_provider = InfrastructureConfigProvider(settings)
 
     extractor = NodeTimingExtractor(
-        opensearch_url=config_provider.get("opensearch_url", DEFAULT_OPENSEARCH_URL),
-        opensearch_user=config_provider.get("opensearch_user", "admin"),
-        opensearch_pass=config_provider.get("opensearch_password", ""),
+        opensearch_url=config_provider.get(
+            "SHUFFLE_OPENSEARCH_URL",
+            config_provider.get("OPENSEARCH_URL", DEFAULT_OPENSEARCH_URL),
+        ),
+        opensearch_user=config_provider.get(
+            "SHUFFLE_OPENSEARCH_USERNAME",
+            config_provider.get("OPENSEARCH_USERNAME", "admin"),
+        ),
+        opensearch_pass=config_provider.get(
+            "SHUFFLE_OPENSEARCH_PASSWORD",
+            config_provider.get("OPENSEARCH_PASSWORD", ""),
+        ),
         elasticsearch_url=config_provider.get("elasticsearch_url"),
         elasticsearch_user=config_provider.get("elasticsearch_user", "elastic"),
         elasticsearch_pass=config_provider.get("elasticsearch_password", ""),

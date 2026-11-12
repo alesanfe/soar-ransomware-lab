@@ -40,7 +40,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from .cleanup_mixin import CleanupMixin
-from .config_mixin import ConfigMixin
+from .config_mixin import ConfigMixin, LabDatastoreAuth, ca_verify
 from .docker_mixin import DockerMixin
 from .evidence_mixin import EvidenceMixin
 from .isolation_mixin import IsolationMixin
@@ -151,9 +151,12 @@ class E2EBaseTest(
         self.create_misp_client()
         self.create_search_clients()
 
-        # Raw requests session for direct HTTP calls
+        # Raw requests session for direct HTTP calls — lab-CA-pinned verify
+        # + datastore auth (OS/ES picked by host/port; explicit Bearer
+        # headers still win per-request).
         self.s = requests.Session()
-        self.s.verify = False
+        self.s.verify = ca_verify()
+        self.s.auth = LabDatastoreAuth(self.env)
         _svc_token = self.env.get("INTERNAL_SERVICE_TOKEN", "")
         if _svc_token:
             self.s.headers["X-Service-Token"] = _svc_token
@@ -866,7 +869,7 @@ class E2EBaseTest(
                     "end": str(int(time.time() * 1e9)),
                 },
                 timeout=timeout,
-                verify=False,
+                verify=self.s.verify,
             )
 
             error_lines: list[str] = []

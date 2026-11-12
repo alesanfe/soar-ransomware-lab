@@ -294,6 +294,118 @@ en **dos racks**. Backfill histórico ya ejecutado
 - VHDX: `scripts/maintenance/compact_vhdx.ps1 [-AutoStop]` — compactación
   segura con guardas (rechaza si Docker/WSL sigue activo).
 
+### RB-16 — `obs_probe_down` (blackbox probe failing)
+
+`probe_success == 0` durante 2 scrapes. El endpoint objetivo no responde
+HTTPS correctamente o el exporter no lo alcanza.
+
+1. `docker logs soar_blackbox_exporter --tail 30` — errores de probe
+   (TLS handshake, timeout, DNS).
+2. Probar a mano desde la red: `docker exec soar_prometheus wget -qO-
+   https://<target>/ready --ca-certificate=/etc/prometheus/tls/ca.crt`.
+3. Si es `probe_ssl_verify` — cert caducado o SAN incorrecto: ver RB-18.
+4. Si el servicio está healthy pero el probe falla: el nombre/PUERTO del
+   target en `prometheus.yml` (job `blackbox-*`) puede estar desactualizado.
+
+### RB-17 — `obs_prometheus_target_down`
+
+`up == 0` más de 2 min. Un scrape target dejó de contestar.
+
+1. `https://grafana:3000` → Prometheus `/targets` — última causa (`dial tcp`,
+   `server returned 401`, `context deadline exceeded`).
+2. DNS: `docker exec soar_prometheus nslookup <job>` — el servicio y
+   Prometheus deben compartir `logging_net` (cadvisor sólo estaba en una
+   red una vez y el target daba `lookup cadvisor: no such host`).
+3. Scrape timeout: cadvisor enumera todos los contenedores — su job corre a
+   `scrape_interval: 60s` + `scrape_timeout: 30s`; promtool exige
+   `timeout <= interval` (gate: `validate_observability_configs.sh`).
+4. Si el contenedor está en crash-loop → RB-19.
+
+### RB-18 — `obs_cert_expiry_30d` / `obs_cert_expiry_14d`
+
+`probe_ssl_earliest_cert_expiry - time() < 30d/14d`. Un cert del stack va a
+expirar.
+
+1. Identificar el endpoint: label `instance` del alert (probe_xxx).
+2. Regenerar: `scripts/setup/gen_certs.sh` (o `make certs`) — regenera CA +
+   certs de servicio en `infra/docker/config/certs/`.
+3. Re-emitir el PEM embebido en el datasource template de Grafana
+   (`secureJsonData.tlsCACert` lleva el PEM inline) y recrear:
+   `docker compose up -d grafana prometheus loki tempo`.
+4. Validar: `curl --cacert infra/docker/config/certs/ca.crt
+   https://<svc>/ready` sin `-k`.
+
+### RB-19 — `obs_container_restart_loop`
+
+`increase(container_start_time_seconds[15m]) > 3` — un servicio reinicia en
+bucle.
+
+1. `docker ps --filter status=restarting` y `docker logs <svc> --tail 50`.
+2. Causas frecuentes ya vistas:
+   - `s3-vol2`: `su-exec: setgroups` — el `cap_drop: ALL` rompía el
+     entrypoint; el servicio conserva `cap_add` justificada (ver ADR-0014).
+   - `tempo`: `ListObjects AccessDenied` — IAM S3 sin permiso en el bucket
+     (ver RB-20 / iam.config.json `policyNames`).
+   - Scripts shell con CRLF → `set: illegal option -` (`.gitattributes`
+     fija `*.sh eol=lf`; gate CI lo detecta con `od`).
+3. Tras corregir la causa: `docker compose up -d <svc>` y confirmar
+   `restart_count` estable.
+
+### RB-20 — `obs_s3_objectstore_errors`
+
+Errores `NoSuchBucket`/`AccessDenied` en logs de loki/tempo hacia SeaweedFS.
+
+1. `docker logs soar_s3 --tail 50` y `docker logs soar_loki|soar_tempo |
+   grep -i denied`.
+2. IAM: `infra/docker/config/seaweedfs/iam.config.json` — cada componente
+   usa credenciales propias con `policyNames` → policy con `Resource`
+   ARN-scoped (`arn:aws:s3:::loki/*`). Verificación SigV4 en vivo:
+   `tests/integration/test_observability_live.py::TestTLSAndS3`.
+3. Buckets ausentes: `s3-init` los crea con probe write/read/delete —
+   `docker logs soar_s3_init`.
+4. Credenciales: rotadas en `.env` (`LOKI_S3_*`, `TEMPO_S3_*`); el par por
+   defecto `soar-s3/soar-s3-secret-change-me` está REVOCADO (403).
+
+### RB-21 — `obs_otel_spans_dropped`
+
+`otelcol_processor_dropped_spans` o `otelcol_exporter_enqueue_failed_*` > 0.
+
+1. `docker logs soar_otel_collector --tail 50` — `memory_limiter` activo?
+   (soft limit ~82% del cgroup de 512m).
+2. Cola saturada → Tempo no absorbe: check `https://tempo:3200/ready` y
+   `soar_tempo` healthy; la sending_queue tiene retry con backoff.
+3. Burst persistente: subir `memory_limiter.limit_mib` o el batch
+   `send_batch_max_size` en `infra/docker/config/otel-collector-config.yaml`
+   y recrear. Gate CI: `otelcol validate`.
+
+### RB-22 — `obs_iscm_watchdog` (siempre firing — NIST 800-137 ISCM)
+
+Heartbeat deliberado (`expr: vector(1)`, `noDataState: Alerting`, repite
+cada 4h). Debe estar **firing permanentemente** — es la prueba de vida del
+bucle eval→notify→API.
+
+1. Si NO está firing: el pipeline de eval está roto → revisar Grafana logs
+   (`Unified Alerting`), datasource Grafana-Prometheus, y que el ruleset
+   provisionado carga (`/api/v1/provisioning/alert-rules` → 22 reglas).
+2. Cada firing genera una notificación al contact point `soar-api-webhook`
+   → la API incrementa su contador de alertas — es la señal que consume
+   RB-23.
+
+### RB-23 — `obs_alert_channel_silent`
+
+La API no registró notificaciones de Grafana en >4.5h mientras el watchdog
+debiera repetir cada 4h — el canal alerta→webhook está muerto aunque las
+reglas evalúen.
+
+1. `https://grafana:3000/alerting/notifications` — últimas entregas y
+   errores del contact point `soar-api-webhook`.
+2. `docker logs soar_grafana | grep -i notif` — TLS fallando contra
+   `api:8000`? (el contact point usa HTTPS + lab CA).
+3. Endpoint receptor: `POST /api/v1/alerts/grafana` con
+   `Authorization: Service-Token $INTERNAL_SERVICE_TOKEN` — test vivo:
+   `test_webhook_endpoint_accepts_synthetic_alert`.
+4. Si el token rotó: actualizar `grafana-contact-points.yml` + `.env`.
+
 ## 4. Validación
 
 ### 4.1 Verificación

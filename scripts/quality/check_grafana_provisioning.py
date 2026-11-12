@@ -24,14 +24,24 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LOGGING_DIR = REPO_ROOT / "infra" / "docker" / "compose" / "logging"
-DATASOURCES = LOGGING_DIR / "grafana-datasources.yml"
+# Rendered artifact mounted by docker-compose.logging.yml. Fall back to the
+# template so the check also works before `generate_env.py` has run (CI).
+DATASOURCES_RENDERED = REPO_ROOT / "runtime" / "config" / "grafana-datasources.yml"
+DATASOURCES_TEMPLATE = (
+    REPO_ROOT / "infra" / "docker" / "config" / "templates" / "grafana-datasources.yml.template"
+)
+DATASOURCES = DATASOURCES_RENDERED if DATASOURCES_RENDERED.exists() else DATASOURCES_TEMPLATE
 ALERT_RULES = LOGGING_DIR / "alert-rules.yml"
 PROVIDER = LOGGING_DIR / "grafana-kpi-dashboard.yml"
 COMPOSE = LOGGING_DIR / "docker-compose.logging.yml"
 DASHBOARDS = sorted(LOGGING_DIR.glob("*dashboard*.json"))
 
 VALID_EXPR_UIDS = {"__expr__"}
-REQUIRED_PANEL_KEYS = {"id", "targets", "type", "title"}
+# Built-in pseudo-datasources (e.g. alertlist panels use -- Grafana --).
+BUILTIN_DS_UIDS = {"-- Grafana --", "grafana", "-- Dashboard --", "datasource"}
+REQUIRED_PANEL_KEYS = {"id", "type", "title"}
+# Panel types that legitimately have no query targets.
+NO_TARGET_PANEL_TYPES = {"alertlist", "dashlist", "text", "news", "annolist"}
 REQUIRED_RULE_KEYS = {"uid", "title", "condition", "data", "for"}
 
 
@@ -84,12 +94,14 @@ def check_dashboards(known_uids: set[str], errors: list[str]) -> None:
                     f"{path.name}: panel id={panel.get('id')} missing {sorted(missing)}",
                     errors,
                 )
+            if panel.get("type") not in NO_TARGET_PANEL_TYPES and "targets" not in panel:
+                _fail(f"{path.name}: panel id={panel.get('id')} missing ['targets']", errors)
             ds = panel.get("datasource") or {}
             uid = ds.get("uid")
             if uid and uid.startswith("${"):
                 # dashboard templating variable (e.g. ${DS_ELASTICSEARCH})
                 continue
-            if uid and uid not in known_uids and uid not in VALID_EXPR_UIDS:
+            if uid and uid not in known_uids and uid not in VALID_EXPR_UIDS | BUILTIN_DS_UIDS:
                 _fail(
                     f"{path.name}: panel id={panel.get('id')} references "
                     f"unknown datasource uid '{uid}'",

@@ -9,7 +9,13 @@ import time
 logger = logging.getLogger(__name__)
 alert_id = r"""$exec.alert_id"""
 hostname = r"""$exec.hostname"""
-case_id = r"""$thehive_create_case.message.body._id"""
+# Defensive resolution — see containment.py: body={} on upstream
+# failure makes `.body._id` a shuffle_variable_error.
+try:
+    _cc = json.loads(r"""$thehive_create_case.message""")
+    case_id = ((_cc.get("body") or {}).get("_id") or "")
+except Exception:
+    case_id = ""
 decision_raw = r"""$calc_decision.message"""
 try:
     d = json.loads(decision_raw)

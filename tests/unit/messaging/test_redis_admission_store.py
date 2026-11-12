@@ -108,3 +108,52 @@ class TestIdempotencyKeys:
         assert nkeys == 1
         assert key == "soar:admission:key:k1"
         assert arg == "adm-1"
+
+
+class TestListByStatus:
+    """ADMISSION-002: bounded SCAN+HGETALL for reconciler orphans."""
+
+    def _scan(self, keys):
+        async def _iter(match=None):
+            for k in keys:
+                yield k
+
+        return _iter
+
+    async def test_filters_status_skips_keyspace_and_decodes(self, store, client):
+        client.scan_iter = self._scan(
+            [
+                b"soar:admission:adm-1",
+                b"soar:admission:key:k1",  # idempotency key — skipped
+                b"soar:admission:adm-2",
+            ]
+        )
+        client.hgetall.side_effect = [
+            {b"status": b"enqueue_failed", b"n": b"3"},
+            {b"status": b"queued"},
+        ]
+
+        out = await store.list_by_status({"enqueue_failed"})
+
+        assert len(out) == 1
+        assert out[0]["status"] == "enqueue_failed"
+        assert out[0]["n"] == 3  # JSON int decoded
+        # hgetall never ran on the idempotency-key entry.
+        assert client.hgetall.await_count == 2
+
+    async def test_keeps_unparseable_field_values(self, store, client):
+        client.scan_iter = self._scan([b"soar:admission:adm-1"])
+        client.hgetall.return_value = {"status": "enqueue_failed", "raw": b"{[not-json"}
+
+        out = await store.list_by_status({"enqueue_failed"})
+
+        assert out[0]["raw"] == "{[not-json"
+
+    async def test_respects_limit(self, store, client):
+        keys = [f"soar:admission:adm-{i}".encode() for i in range(5)]
+        client.scan_iter = self._scan(keys)
+        client.hgetall.return_value = {b"status": b"enqueue_failed"}
+
+        out = await store.list_by_status({"enqueue_failed"}, limit=2)
+
+        assert len(out) == 2

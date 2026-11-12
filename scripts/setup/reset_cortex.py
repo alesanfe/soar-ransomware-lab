@@ -29,8 +29,8 @@ from soar_lab.common.constants import (
 
 logger = logging.getLogger(__name__)
 
-ES_URL = os.environ.get("ELASTICSEARCH_URL", os.environ.get("ES_URL", "http://elasticsearch:9200"))
-CORTEX_URL = os.environ.get("CORTEX_URL", "http://cortex:9001")
+ES_URL = os.environ.get("ELASTICSEARCH_URL", os.environ.get("ES_URL", "https://elasticsearch:9200"))
+CORTEX_URL = os.environ.get("CORTEX_URL", "https://cortex:9443")
 ES_INDEX = "cortex"
 SUPERADMIN_USER = "admin"
 ADMIN_PASS = os.environ.get("CORTEX_ADMIN_PASSWORD", "")

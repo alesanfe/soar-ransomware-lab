@@ -189,12 +189,15 @@ class TestConfiguration(E2EBaseTest):
 
         # --- Step 3: Assert port mappings match expected ranges ---
         self._log("STEP 3: Verifying port mappings")
-        # Check that key services have port mappings defined
+        # Check that key services have port mappings defined. Internal
+        # ports follow the hardened TLS topology: TheHive and Cortex
+        # serve HTTPS on 9443, Shuffle's published API port is the TLS
+        # terminator on 5443 (5001 stays loopback-only by design).
         port_checks = [
             ("elasticsearch", "9200"),
-            ("thehive", "9000"),
-            ("cortex", "9001"),
-            ("shuffle-backend", "5001"),
+            ("thehive", "9443"),
+            ("cortex", "9443"),
+            ("shuffle-backend", "5443"),
         ]
         for svc, internal_port in port_checks:
             # Port mappings look like: "${PORT:-default}:internal_port"
@@ -339,11 +342,15 @@ class TestConfiguration(E2EBaseTest):
         try:
             import redis as _redis
 
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = _redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password(),
-                decode_responses=True,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password(),
+                    decode_responses=True,
+                )
             )
             r.ping()
             self._log("+ Redis is accessible (data volume active)")

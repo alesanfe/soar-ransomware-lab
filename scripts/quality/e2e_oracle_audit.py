@@ -55,6 +55,7 @@ class Finding:
     category: str
     severity: str
     snippet: str
+    ordinal: int = 0
 
 
 @dataclass
@@ -79,6 +80,28 @@ def _src_seg_full(source: str, node: ast.AST) -> str:
     """
     seg = ast.get_source_segment(source, node) or ""
     return " ".join(seg.split())
+
+
+_ORACLE_TOKENS = ("assert", "fail", "raises", "skip", "validate", "check_response")
+
+
+def _has_any_oracle(fn: ast.FunctionDef) -> bool:
+    """Return True when a test body contains something that can fail.
+
+    Oracles counted: ``assert``, ``raise``, ``pytest.raises``/``pytest.fail``/
+    ``pytest.skip`` calls, ``self.assert*`` unittest helpers and
+    self-checking calls such as schemathesis ``call_and_validate``.
+    A test without any of these can never fail — it only inflates the
+    pass count (TEST-EVAL-001).
+    """
+    for n in ast.walk(fn):
+        if isinstance(n, (ast.Assert, ast.Raise)):
+            return True
+        if isinstance(n, ast.Call):
+            s = ast.unparse(n.func).lower()
+            if any(t in s for t in _ORACLE_TOKENS):
+                return True
+    return False
 
 
 def _is_status_expr(node: ast.AST) -> bool:
@@ -119,6 +142,12 @@ class OracleVisitor(ast.NodeVisitor):
         if node.name.startswith("test"):
             self.report.test_functions += 1
             self._fn_asserts[node.name] = []
+            # no_oracle: a test with zero assert/raise/fail/raises/validate
+            # constructs can never fail.  @pytest.fixture helpers and
+            # @pytest.mark.skip-marked tests are exempt.
+            deco = " ".join(ast.unparse(d).lower() for d in node.decorator_list)
+            if "fixture" not in deco and "skip" not in deco and not _has_any_oracle(node):
+                self._add(node, "no_oracle", "high")
         self.generic_visit(node)
         self._current_fn.pop()
 
@@ -416,16 +445,26 @@ def scan(root: Path) -> list[FileReport]:
         visitor.visit(tree)
         visitor.finalize()
         reports.append(visitor.report)
+    for report in reports:
+        groups: dict[tuple[str, str], list[Finding]] = {}
+        for finding in sorted(report.findings, key=lambda f: f.line):
+            groups.setdefault((finding.function, finding.category), []).append(finding)
+        for group in groups.values():
+            for i, finding in enumerate(group):
+                finding.ordinal = i
     return reports
 
 
 def finding_fingerprint(f: Finding) -> str:
     """Stable identity for a finding, independent of line drift.
 
-    file + category + enclosing function + normalized snippet — enough to
-    match a finding across refactors without pinning line numbers.
+    file + category + enclosing function + ordinal — the ordinal is the
+    finding's index within its (function, category) group, assigned in
+    line order during scan.  Snippet text is deliberately excluded: AST
+    source segments render differently across Python versions (PEP 701
+    f-strings), which made fingerprint hashes platform-dependent.
     """
-    key = f"{f.file}|{f.category}|{f.function}|{f.snippet.strip()[:80]}"
+    key = f"{f.file}|{f.category}|{f.function}|{f.ordinal}"
     import hashlib
 
     return hashlib.sha1(key.encode()).hexdigest()[:16]

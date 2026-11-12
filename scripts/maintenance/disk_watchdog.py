@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
+import os
 import subprocess
 import sys
 import time
@@ -34,6 +35,28 @@ BACKENDS = {
     "opensearch": "soar_opensearch",
 }
 
+# Elasticsearch serves HTTPS+basic auth (xpack); curl runs inside the
+# backend container where the lab CA is already mounted.
+_ES_AUTH = f"elastic:{os.environ.get('ELASTIC_PASSWORD', '')}"
+_ES_CACERT = "/usr/share/elasticsearch/config/certs/ca.crt"
+_OS_AUTH = f"{os.environ.get('OPENSEARCH_USERNAME', 'admin')}:{os.environ.get('OPENSEARCH_PASSWORD', '')}"
+_OS_CACERT = "/usr/share/opensearch/config/certs/ca.crt"
+
+
+def _cat_cmd(container: str, path: str) -> list[str]:
+    """Backend-local _cat/_cluster request honouring each backend's scheme."""
+    if container == "soar_elasticsearch":
+        return [
+            "docker", "exec", container, "curl", "-sf",
+            "--cacert", _ES_CACERT, "-u", _ES_AUTH,
+            f"https://localhost:9200{path}",
+        ]
+    return [
+        "docker", "exec", container, "curl", "-sf",
+        "--cacert", _OS_CACERT, "-u", _OS_AUTH,
+        f"https://localhost:9200{path}",
+    ]
+
 
 def _run(cmd: list[str], timeout: int = 30) -> str:
     out = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
@@ -41,16 +64,7 @@ def _run(cmd: list[str], timeout: int = 30) -> str:
 
 
 def check_allocation(name: str, container: str) -> list[dict]:
-    raw = _run(
-        [
-            "docker",
-            "exec",
-            container,
-            "curl",
-            "-sf",
-            "http://localhost:9200/_cat/allocation?v&format=json",
-        ]
-    )
+    raw = _run(_cat_cmd(container, "/_cat/allocation?v&format=json"))
     try:
         nodes = json.loads(raw or "[]")
     except json.JSONDecodeError:
@@ -66,16 +80,7 @@ def check_allocation(name: str, container: str) -> list[dict]:
 
 
 def flood_stage_active(container: str) -> bool:
-    raw = _run(
-        [
-            "docker",
-            "exec",
-            container,
-            "curl",
-            "-sf",
-            "http://localhost:9200/_cluster/state/blocks",
-        ]
-    )
+    raw = _run(_cat_cmd(container, "/_cluster/state/blocks"))
     try:
         state = json.loads(raw or "{}")
     except json.JSONDecodeError:
@@ -113,11 +118,15 @@ def stale_executions() -> int:
             "soar_opensearch",
             "curl",
             "-sf",
+            "--cacert",
+            _OS_CACERT,
+            "-u",
+            _OS_AUTH,
             "-H",
             "Content-Type: application/json",
             "-d",
             body,
-            "http://localhost:9200/workflowexecution/_count",
+            "https://localhost:9200/workflowexecution/_count",
         ]
     )
     try:

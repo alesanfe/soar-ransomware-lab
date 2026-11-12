@@ -78,7 +78,7 @@ def create_shuffle_session() -> requests.Session:
     /api/v1/users/login``.
     """
     session = requests.Session()
-    session.verify = False
+    session.verify = config.VERIFY
     session.headers.update({HEADER_CONTENT_TYPE: CONTENT_TYPE_JSON})
 
     logger.info("Authenticating to Shuffle at %s ...", config.SHUFFLE_URL)

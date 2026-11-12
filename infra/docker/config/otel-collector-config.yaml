@@ -1,6 +1,10 @@
 # OpenTelemetry Collector — receives OTLP from the SOAR API (and any other
 # instrumented service) and exports traces to Tempo.  Lab profile: minimal
 # pipeline, no tail-sampling (traces are sparse enough to keep all).
+#
+# OBS-076..079: production-grade processor/exporter chain —
+# memory_limiter (backpressure before OOM) -> batch -> otlp exporter with
+# retry_on_failure + bounded sending_queue (survives short Tempo outages).
 receivers:
   otlp:
     protocols:
@@ -9,24 +13,52 @@ receivers:
       grpc:
         endpoint: 0.0.0.0:4317
 
+extensions:
+  # OBS-006: real liveness/readiness endpoint for external probes
+  # (blackbox exporter + any orchestrator). The compose healthcheck itself
+  # uses the image-native `otelcol validate` — the image is distroless.
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: /
+
 processors:
+  # OBS-078: must be FIRST — refuses telemetry before it can balloon
+  # memory. Aligned with the container limit (256M): hard cap 200MiB,
+  # spike allowance 64MiB.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 200
+    spike_limit_mib: 64
   batch:
     timeout: 2s
     send_batch_size: 512
+    send_batch_max_size: 1024
 
 exporters:
   otlp/tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
+    # OBS-077: transient Tempo unavailability retries instead of dropping;
+    # bounded queue caps memory under a prolonged outage.
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: 1000
   debug:
     verbosity: basic
 
 service:
+  extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch]
       exporters: [otlp/tempo, debug]
   telemetry:
     logs:

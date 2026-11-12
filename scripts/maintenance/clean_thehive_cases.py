@@ -47,7 +47,7 @@ def main() -> int:
 
     from soar_lab.infrastructure.integrations.thehive.client import TheHiveClient
 
-    thehive_url = os.environ.get("THEHIVE_URL", "http://thehive:9000")
+    thehive_url = os.environ.get("THEHIVE_URL", "https://thehive:9443")
     thehive_key = os.environ.get("THEHIVE_API_KEY", "")
 
     if not thehive_key:

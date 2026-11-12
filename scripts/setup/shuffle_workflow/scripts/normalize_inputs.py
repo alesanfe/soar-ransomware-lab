@@ -7,12 +7,28 @@
 #
 # Subsequent nodes reference $normalize_inputs.message.<field> for optional
 # fields and $exec.<field> for required fields.
-"""Shuffle node: validate and normalize alert fields (severity, IoCs)."""
+"""Shuffle node: verify signature, validate contract, normalize alert fields.
 
+CONTRACT-001/003 + HMAC-002 + INPUT-002 embedded mirror:
+- Verifies the embedded ``security`` envelope signature (HMAC-SHA256)
+  when ``ALERT_SIGNING_KEY`` is provisioned — unsigned payloads are
+  rejected when a key exists; legacy unsigned mode only when the key
+  is intentionally empty (lab transition, documented).
+- Severity shares the canonical 0..4 table with the API — nothing the
+  API admits can be dropped here on severity alone.
+- src_ip/hostname are validated and emitted url-encoded (*_enc) so
+  downstream nodes can interpolate them into URLs without injection.
+- On rejection a best-effort signed callback reports the verdict to
+  /api/v1/alerts/callback so admission state stays honest (CONTRACT-004).
+"""
+
+import hashlib
+import hmac
 import json
 import logging
 import re
 import socket
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +41,95 @@ try:
         exec_data = {}
 except Exception:
     pass
+
+# ── Embedded provisioning (replaced at workflow setup) ────────────────────────
+ALERT_SIGNING_KEY = "__ALERT_SIGNING_KEY__"
+ALERT_KEY_ID = "__ALERT_KEY_ID__"
+CALLBACK_TOKEN = "__CALLBACK_TOKEN__"
+CALLBACK_HMAC_KEY = "__CALLBACK_HMAC_KEY__"
+CALLBACK_KEY_ID = "__CALLBACK_KEY_ID__"
+API_CALLBACK_URL = "http://api:8000/api/v1/alerts/callback"
+if ALERT_SIGNING_KEY.startswith("__"):
+    ALERT_SIGNING_KEY = ""
+if CALLBACK_TOKEN.startswith("__"):
+    CALLBACK_TOKEN = ""
+if CALLBACK_HMAC_KEY.startswith("__"):
+    CALLBACK_HMAC_KEY = ""
+
+
+def _canonical(obj):
+    return json.dumps(obj, sort_keys=True, default=str, separators=(",", ":")).encode()
+
+
+def _verify_envelope(msg):
+    """HMAC-002: verify the embedded security block (mirror of
+    soar_lab.security.webhook_signing.verify_envelope)."""
+    sec = msg.get("security")
+    if not isinstance(sec, dict):
+        if ALERT_SIGNING_KEY:
+            return "missing security envelope"
+        return None  # unsigned mode (key not provisioned)
+    if ALERT_SIGNING_KEY and sec.get("key_id") not in (ALERT_KEY_ID, None):
+        return "unknown key id"
+    if not ALERT_SIGNING_KEY:
+        return None  # envelope present but no key to check — accept (lab)
+    if sec.get("alg") != "v1":
+        return "envelope alg not allowed"
+    try:
+        if abs(time.time() - int(sec.get("timestamp"))) > 300:
+            return "envelope timestamp stale"
+    except (TypeError, ValueError):
+        return "envelope timestamp malformed"
+    clean = {k: v for k, v in msg.items() if k != "security"}
+    digest = hashlib.sha256(_canonical(clean)).hexdigest()
+    if not hmac.compare_digest(digest, str(sec.get("payload_sha256", ""))):
+        return "payload digest mismatch"
+    expected = hmac.new(
+        ALERT_SIGNING_KEY.encode(),
+        "v1|%s|%s|%s" % (int(sec["timestamp"]), sec.get("nonce"), digest).encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(expected, str(sec.get("signature", ""))):
+        return "envelope signature mismatch"
+    return None
+
+
+def _send_callback(admission_id, outcome, reason):
+    """CONTRACT-004: best-effort signed verdict back to the API."""
+    if not admission_id or not CALLBACK_TOKEN:
+        return
+    import urllib.request
+    body = json.dumps({
+        "admission_id": admission_id,
+        "outcome": outcome,
+        "reason": reason[:200],
+    }).encode()
+    headers = {"Content-Type": "application/json", "X-Service-Token": CALLBACK_TOKEN}
+    if CALLBACK_HMAC_KEY:
+        nonce = hashlib.sha256(("%s%s" % (time.time(), admission_id)).encode()).hexdigest()[:32]
+        ts = str(int(time.time()))
+        csha = hashlib.sha256(body).hexdigest()
+        canonical = "POST\n/api/v1/alerts/callback\n%s\n%s\n%s" % (ts, nonce, csha)
+        sig = hmac.new(CALLBACK_HMAC_KEY.encode(), canonical.encode(), hashlib.sha256).hexdigest()
+        headers.update({
+            "X-SOAR-Signature-Version": "v1",
+            "X-SOAR-Key-Id": CALLBACK_KEY_ID,
+            "X-SOAR-Timestamp": ts,
+            "X-SOAR-Nonce": nonce,
+            "X-SOAR-Content-SHA256": csha,
+            "X-SOAR-Signature": "v1=" + sig,
+        })
+    try:
+        req = urllib.request.Request(API_CALLBACK_URL, data=body, headers=headers, method="POST")
+        urllib.request.urlopen(req, timeout=10)
+    except Exception:
+        pass  # verdict loss is logged by the API side via stuck admissions
+
+
+def _reject(reason):
+    _send_callback(exec_data.get("admission_id"), "rejected", reason)
+    raise KeyboardInterrupt("REJECTED: %s" % reason)
+
 
 # DNS warmup: resolve all service hostnames to warm Docker's
 # embedded DNS cache. This prevents intermittent
@@ -40,7 +145,6 @@ _dns_hosts = [
     "thehive",
     "elasticsearch",
 ]
-import time as _time
 
 for _h in _dns_hosts:
     for _attempt in range(5):
@@ -48,7 +152,19 @@ for _h in _dns_hosts:
             socket.getaddrinfo(_h, None)
             break
         except Exception:
-            _time.sleep(1)
+            time.sleep(1)
+
+# ── Signature verification (before any field is trusted) ──────────────────────
+_sig_err = _verify_envelope(exec_data)
+if _sig_err:
+    _reject("signature: %s" % _sig_err)
+
+# CONTRACT-003: envelope unwrapping + version check. When the forwarder
+# wraps the alert it still copies fields top-level, so exec_data works
+# for both legacy flat payloads and enveloped ones.
+_schema_version = str(exec_data.get("schema_version", "1.0"))
+if _schema_version not in ("1.0",):
+    _reject("unknown schema_version %s" % _schema_version)
 
 # Field aliases: map alternative field names from different simulators
 # to the canonical names expected by the workflow.
@@ -74,27 +190,69 @@ def _get_field(key, default=""):
     return default
 
 
-# Validate severity (required) — accept both numeric (1-3) and string
-# ("low", "medium", "high", "critical") formats.
-severity_raw = str(exec_data.get("severity", "")).strip()
-if not severity_raw:
-    raise KeyboardInterrupt("REJECTED: missing webhook severity")
-if re.match(r"^\d+(?:\.\d+)?$", severity_raw):
-    severity = int(float(severity_raw))
+# ── CONTRACT-001: canonical severity — same table as the API ─────────────────
+_SEV_NAMES = {
+    "informational": 0, "info": 0,
+    "low": 1,
+    "medium": 2, "med": 2, "warning": 2, "warn": 2,
+    "high": 3,
+    "critical": 4, "crit": 4,
+}
+_sev_raw = exec_data.get("severity", None)
+if _sev_raw is None:
+    _reject("missing webhook severity")
+if isinstance(_sev_raw, bool):
+    _reject("severity must not be a bool")
+if isinstance(_sev_raw, (int, float)):
+    severity = int(_sev_raw)
+    if not (float(_sev_raw) == severity) or severity < 0 or severity > 4:
+        _reject("severity out of range: %s" % _sev_raw)
 else:
-    _sev_map = {"low": 1, "medium": 2, "high": 3, "critical": 3, "info": 1, "warning": 2}
-    severity = _sev_map.get(severity_raw.lower(), 0)
-if severity < 1 or severity > 3:
-    raise KeyboardInterrupt("REJECTED: severity out of range: %s" % severity_raw)
+    _txt = str(_sev_raw).strip().lower()
+    if _txt in _SEV_NAMES:
+        severity = _SEV_NAMES[_txt]
+    elif re.fullmatch(r"\d+(?:\.0+)?", _txt):
+        severity = int(float(_txt))
+        if severity < 0 or severity > 4:
+            _reject("severity out of range: %s" % _sev_raw)
+    else:
+        _reject("unknown severity: %s" % _sev_raw)
+
+# ── INPUT-002: validate + url-encode fields used inside downstream URLs ──────
+import ipaddress
+from urllib.parse import quote
+
+_src_ip = str(_get_field("src_ip") or "")
+src_ip_enc = ""
+if _src_ip:
+    try:
+        ipaddress.ip_address(_src_ip)
+        src_ip_enc = quote(_src_ip, safe="")
+    except ValueError:
+        _reject("invalid src_ip")
+
+_hostname = str(_get_field("hostname") or "")
+_HOST_RE = re.compile(r"^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9_.-]*[A-Za-z0-9])?$")
+hostname_enc = ""
+if _hostname:
+    if not _HOST_RE.match(_hostname):
+        _reject("invalid hostname")
+    hostname_enc = quote(_hostname, safe="")
 
 # Build normalized output with defaults for optional fields
 normalized = {
     "severity": severity,
+    "thehive_severity": min(3, max(1, severity)),  # TheHive scale 1..3
     "alert_id": _get_field("alert_id"),
+    "admission_id": exec_data.get("admission_id", ""),
+    "event_id": exec_data.get("event_id", ""),
+    "delivery_id": exec_data.get("delivery_id", ""),
     "trace_id": exec_data.get("trace_id", ""),
     "alert_type": _get_field("alert_type", "ransomware"),
-    "hostname": _get_field("hostname"),
-    "src_ip": _get_field("src_ip"),
+    "hostname": _hostname,
+    "hostname_enc": hostname_enc,
+    "src_ip": _src_ip,
+    "src_ip_enc": src_ip_enc,
     "hash": _get_field("hash"),
     "source": _get_field("source", "shuffle-soar"),
     "detection_time": _get_field("detection_time"),
@@ -158,7 +316,7 @@ normalized["case"] = {
         f"Alert: {alert_id} | Trace: {trace_id} | Type: {alert_type} | Host: {hostname}"
         f" | Hash: {hash_val} | IP: {src_ip} | MITRE: {mitre_str}"
     ),
-    "severity": severity,
+    "severity": normalized["thehive_severity"],
     "tlp": 2,
     "tags": [
         "ransomware",
@@ -174,4 +332,8 @@ normalized["case"] = {
         else (["priority:high"] if severity == 2 else [])
     ),
 }
+
+# CONTRACT-004: report acceptance so the admission reaches a real
+# terminal state instead of staying "forwarded" forever.
+_send_callback(exec_data.get("admission_id"), "accepted", "normalized")
 print(json.dumps(normalized))

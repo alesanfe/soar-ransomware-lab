@@ -6,10 +6,12 @@
 #     -f docker-compose.opensearch.yml -f logging/docker-compose.logging.yml \
 #     -f docker-compose.sso.yml up -d
 #
-# Entry points once enabled:
-#   http://localhost:8088  → SSO-gated Web Management console
-#   http://localhost:8089  → SSO-gated Shuffle frontend
-#   http://localhost:8087  → Keycloak admin (realm "soar")
+# Entry points once enabled (all TLS with the lab CA):
+#   https://localhost:8072  → SSO-gated Web Management console
+#   https://localhost:8073  → SSO-gated Shuffle frontend
+#   https://localhost:8071  → Keycloak admin (realm "soar")
+# Ports 8071-8073 sit in the free window between Hyper-V exclusions
+# (7969-8068, 8081-8180) — the old 808x bindings were unreachable.
 #
 # The direct service ports remain reachable (loopback only) — the SSO
 # gateways are the authenticated front doors, not a hard network lock.
@@ -19,31 +21,50 @@ services:
   keycloak:
     image: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.0}
     container_name: ${COMPOSE_PROJECT_NAME:-soar}_keycloak
-    command: >
-      start-dev
-      --import-realm
-      --hostname=http://localhost:8087
-      --hostname-strict=false
-      --http-enabled=true
+    # SSO-EVAL-002: realm is a template with secret placeholders — the
+    # entrypoint renders it from env at container start (fail-closed).
+    entrypoint: ["/srv/entrypoint.sh"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: ${KC_HOSTNAME:-https://localhost:8071}
+      # SSO-EVAL-004: start-dev forces the plain-HTTP listener — env is the
+      # override that actually lands in the Quarkus runtime.
+      KC_HTTP_ENABLED: "false"
       KC_LOG_LEVEL: INFO
       KC_HTTP_MANAGEMENT_PORT: 9000
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      KC_ADMIN_USER_PASS: ${KC_ADMIN_USER_PASS}
+      KC_ANALYST_USER_PASS: ${KC_ANALYST_USER_PASS}
     volumes:
-      - ../config/keycloak/soar-realm.json:/opt/keycloak/data/import/soar-realm.json:ro
+      - ../config/keycloak/soar-realm.json:/srv/soar-realm.template.json:ro
+      - ../config/keycloak/entrypoint.sh:/srv/entrypoint.sh:ro
+      - ../config/certs/keycloak.crt:/etc/keycloak/tls/keycloak.crt:ro
+      - ../config/certs/keycloak.key:/etc/keycloak/tls/keycloak.key:ro
+      - ../config/certs/ca.crt:/etc/keycloak/tls/ca.crt:ro
+    # SSO-EVAL-003: Keycloak runs as uid 1000 (non-root upstream).
+    # read_only NOT aplicable: kc.sh start-dev re-aumenta el jar de Quarkus
+    # al arrancar (escribe en lib/) — requeriría imagen 'optimized' custom.
+    # Self-hardened here (victim-sim convention): this overlay is optional,
+    # so its hardening must not live in the default-set hardened overlay.
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     ports:
-      - "127.0.0.1:${KEYCLOAK_PORT:-8087}:8080"
+      - "127.0.0.1:${KEYCLOAK_PORT:-8071}:8443"
     networks:
       - soar_net
     healthcheck:
-      # KC26 serves /health on the management port (9000), not :8080.
+      # KC26 serves /health on the management port (9000) over HTTPS —
+      # a plain /dev/tcp GET gets TLS bytes and never matches '200',
+      # which is why the old check kept the service `starting` forever.
+      # JDK17 single-file source: real HTTPS probe (trust-all is fine —
+      # this is localhost mgmt, not a credential path).
       test: ["CMD-SHELL",
-             "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n' >&3
-             && head -1 <&3 | grep -q 200"]
-      interval: 15s
-      timeout: 10s
+             "echo 'import javax.net.ssl.*;import java.net.*;import java.security.cert.*;public class HC{public static void main(String[]a)throws Exception{TrustManager[]t={new X509TrustManager(){public void checkClientTrusted(X509Certificate[]c,String s){}public void checkServerTrusted(X509Certificate[]c,String s){}public X509Certificate[]getAcceptedIssuers(){return null;}}};SSLContext x=SSLContext.getInstance(\"TLS\");x.init(null,t,null);HttpsURLConnection.setDefaultSSLSocketFactory(x.getSocketFactory());HttpsURLConnection.setDefaultHostnameVerifier((h,s)->true);var r=(HttpsURLConnection)new URL(\"https://localhost:9000/health/ready\").openConnection();r.setConnectTimeout(3000);System.exit(r.getResponseCode()==200?0:1);}}' > /tmp/HC.java && $$(find /usr/lib/jvm -name java -type f | head -1) /tmp/HC.java"]
+      interval: 30s
+      timeout: 15s
       retries: 10
       start_period: 90s
     restart: unless-stopped
@@ -52,6 +73,7 @@ services:
         limits:
           cpus: '1.5'
           memory: 1G
+          pids: 1024  # JVM + worker threads
         reservations:
           cpus: '0.5'
           memory: 512M
@@ -71,31 +93,60 @@ services:
         condition: service_started
     environment:
       OAUTH2_PROXY_PROVIDER: oidc
-      # Split-host OIDC: the browser reaches Keycloak on localhost:8087
-      # (its advertised hostname → iss claim) while the proxy uses the
-      # in-network backchannel keycloak:8080 for token/JWKS calls.
-      OAUTH2_PROXY_OIDC_ISSUER_URL: http://localhost:8087/realms/soar
+      # Split-host OIDC over TLS: the browser reaches Keycloak on
+      # localhost:${KEYCLOAK_PORT:-8071} (advertised hostname → iss claim)
+      # while the proxy uses the in-network backchannel keycloak:8443
+      # for token/JWKS calls — both verified against the lab CA.
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://localhost:${KEYCLOAK_PORT:-8071}/realms/soar
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
-      OAUTH2_PROXY_LOGIN_URL: http://localhost:8087/realms/soar/protocol/openid-connect/auth
-      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/soar/protocol/openid-connect/token
-      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/soar/protocol/openid-connect/certs
+      OAUTH2_PROXY_LOGIN_URL: https://localhost:${KEYCLOAK_PORT:-8071}/realms/soar/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: https://keycloak:8443/realms/soar/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: https://keycloak:8443/realms/soar/protocol/openid-connect/certs
+      OAUTH2_PROXY_PROVIDER_CA_FILES: /etc/ssl/lab/ca.crt
       OAUTH2_PROXY_CLIENT_ID: soar-proxy
-      OAUTH2_PROXY_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-soar-lab-oidc-secret}
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET:-soarlab-cookie-secret-32bytes-XX}
-      OAUTH2_PROXY_COOKIE_SECURE: "false"
-      OAUTH2_PROXY_REDIRECT_URL: http://localhost:8088/oauth2/callback
-      OAUTH2_PROXY_UPSTREAMS: http://web-management:80
-      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+      # SSO-EVAL-005: TLS listener → Secure+SameSite cookies are correct.
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_SAMESITE: "lax"
+      OAUTH2_PROXY_REDIRECT_URL: https://localhost:${OAUTH2_WEB_PORT:-8072}/oauth2/callback
+      OAUTH2_PROXY_UPSTREAMS: http://web-management:8080
+      # TLS front on :8443; the plain-HTTP listener is pinned to container
+      # loopback so nothing on soar_net can bypass it.
+      OAUTH2_PROXY_HTTPS_ADDRESS: 0.0.0.0:8443
+      OAUTH2_PROXY_TLS_CERT_FILE: /etc/oauth2/tls/oauth2-proxy.crt
+      OAUTH2_PROXY_TLS_KEY_FILE: /etc/oauth2/tls/oauth2-proxy.key
+      OAUTH2_PROXY_HTTP_ADDRESS: 127.0.0.1:4180
       OAUTH2_PROXY_SCOPE: "openid profile email"
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
       OAUTH2_PROXY_PASS_USER_HEADERS: "true"
       OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+    # oauth2-proxy is distroless (uid 65532, no shell) — fully stateless.
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
+    volumes:
+      - ../config/certs/oauth2-proxy.crt:/etc/oauth2/tls/oauth2-proxy.crt:ro
+      - ../config/certs/oauth2-proxy.key:/etc/oauth2/tls/oauth2-proxy.key:ro
+      - ../config/certs/ca.crt:/etc/ssl/lab/ca.crt:ro
     ports:
-      - "127.0.0.1:8088:4180"
+      - "127.0.0.1:${OAUTH2_WEB_PORT:-8072}:8443"
     networks:
       - soar_net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+          pids: 64
+        reservations:
+          cpus: '0.05'
+          memory: 32M
     logging:
       driver: "json-file"
       options:
@@ -112,18 +163,23 @@ services:
         condition: service_started
     environment:
       OAUTH2_PROXY_PROVIDER: oidc
-      OAUTH2_PROXY_OIDC_ISSUER_URL: http://localhost:8087/realms/soar
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://localhost:${KEYCLOAK_PORT:-8071}/realms/soar
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
-      OAUTH2_PROXY_LOGIN_URL: http://localhost:8087/realms/soar/protocol/openid-connect/auth
-      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/soar/protocol/openid-connect/token
-      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/soar/protocol/openid-connect/certs
+      OAUTH2_PROXY_LOGIN_URL: https://localhost:${KEYCLOAK_PORT:-8071}/realms/soar/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: https://keycloak:8443/realms/soar/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: https://keycloak:8443/realms/soar/protocol/openid-connect/certs
+      OAUTH2_PROXY_PROVIDER_CA_FILES: /etc/ssl/lab/ca.crt
       OAUTH2_PROXY_CLIENT_ID: soar-proxy
-      OAUTH2_PROXY_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-soar-lab-oidc-secret}
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET:-soarlab-cookie-secret-32bytes-XX}
-      OAUTH2_PROXY_COOKIE_SECURE: "false"
-      OAUTH2_PROXY_REDIRECT_URL: http://localhost:8089/oauth2/callback
+      OAUTH2_PROXY_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_SAMESITE: "lax"
+      OAUTH2_PROXY_REDIRECT_URL: https://localhost:${OAUTH2_SHUFFLE_PORT:-8073}/oauth2/callback
       OAUTH2_PROXY_UPSTREAMS: http://shuffle-frontend:80
-      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_HTTPS_ADDRESS: 0.0.0.0:8443
+      OAUTH2_PROXY_TLS_CERT_FILE: /etc/oauth2/tls/oauth2-proxy.crt
+      OAUTH2_PROXY_TLS_KEY_FILE: /etc/oauth2/tls/oauth2-proxy.key
+      OAUTH2_PROXY_HTTP_ADDRESS: 127.0.0.1:4180
       OAUTH2_PROXY_SCOPE: "openid profile email"
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
@@ -131,11 +187,30 @@ services:
       OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
       # Shuffle is a heavy SPA — allow larger headers/longer upstream waits.
       OAUTH2_PROXY_UPSTREAM_TIMEOUT: 60s
+    volumes:
+      - ../config/certs/oauth2-proxy.crt:/etc/oauth2/tls/oauth2-proxy.crt:ro
+      - ../config/certs/oauth2-proxy.key:/etc/oauth2/tls/oauth2-proxy.key:ro
+      - ../config/certs/ca.crt:/etc/ssl/lab/ca.crt:ro
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
     ports:
-      - "127.0.0.1:8089:4180"
+      - "127.0.0.1:${OAUTH2_SHUFFLE_PORT:-8073}:8443"
     networks:
       - soar_net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+          pids: 64
+        reservations:
+          cpus: '0.05'
+          memory: 32M
     logging:
       driver: "json-file"
       options:

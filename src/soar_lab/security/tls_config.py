@@ -12,8 +12,9 @@ log — this module stays side-effect free so it can run at import time.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
-__all__ = ["verify_tls", "FALSEY_ENV"]
+__all__ = ["verify_tls", "ca_verify", "FALSEY_ENV"]
 
 # Values that explicitly disable verification — everything else (including
 # a typo) keeps the safe default.
@@ -38,3 +39,20 @@ def verify_tls(service: str, *, default: bool = True) -> bool:
         else f"{service.upper().replace('-', '_')}_VERIFY_TLS"
     )
     return os.environ.get(var, str(default).lower()).strip().lower() not in FALSEY_ENV
+
+
+def ca_verify(*, default: bool = True) -> bool | str:
+    """``requests`` ``verify`` value pinned to the lab CA when reachable.
+
+    Resolution order: the combined certifi+lab bundle mounted in soar_api
+    (keeps public-CA endpoints working), then the bare lab CA mounted
+    there, then the repo copy for host runs, then *default*.
+    """
+    for path in (
+        Path("/app/certs/ca-bundle.crt"),
+        Path("/app/certs/ca.crt"),
+        Path(__file__).resolve().parents[3] / "infra" / "docker" / "config" / "certs" / "ca.crt",
+    ):
+        if path.exists():
+            return str(path)
+    return default

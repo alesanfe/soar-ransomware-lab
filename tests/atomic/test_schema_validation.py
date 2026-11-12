@@ -319,9 +319,10 @@ class TestSchemaValidationAtomic:
             {"id": "T1486", "name": "Data Encrypted"},  # Duplicate
         ]
 
-        # Should handle duplicates (deduplicate or accept)
-        MITREInfo(techniques=techniques)
-        # Check if duplicates are handled
+        # Contract: techniques is list[Any] — duplicates are preserved
+        # verbatim (dedup is a pipeline concern, not the schema's).
+        info = MITREInfo(techniques=techniques)
+        assert len(info.techniques) == 2
 
     def test_mitre_technique_sub_techniques(self):
         """Test MITRE sub-technique validation."""

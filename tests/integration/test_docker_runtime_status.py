@@ -2,10 +2,13 @@
 """Docker Runtime Status Tests Validates that Docker containers are running,
 healthy, and accessible."""
 
+import os
 import subprocess
 
 import pytest
 import requests
+
+from soar_lab.security.tls_config import ca_verify
 
 
 @pytest.mark.requires_docker
@@ -94,7 +97,15 @@ class TestDockerRuntimeStatus:
     def test_elasticsearch_accessible(self):
         """Test that Elasticsearch is accessible on port 9200."""
         try:
-            response = requests.get("http://elasticsearch:9200/_cluster/health", timeout=10)
+            response = requests.get(
+                "https://elasticsearch:9200/_cluster/health",
+                auth=(
+                    os.environ.get("ELASTIC_USERNAME", "elastic"),
+                    os.environ.get("ELASTIC_PASSWORD", ""),
+                ),
+                verify=ca_verify(),
+                timeout=10,
+            )
             assert response.status_code in [
                 200,
                 503,
@@ -105,35 +116,35 @@ class TestDockerRuntimeStatus:
     def test_thehive_accessible(self):
         """Test that TheHive is accessible on port 9000."""
         try:
-            response = requests.get("http://thehive:9000/api/v1/status/public", timeout=10)
+            response = requests.get("https://thehive:9443/api/v1/status/public", timeout=10)
             assert response.status_code in [
                 200,
                 401,
             ], f"TheHive should respond (got {response.status_code})"
         except requests.exceptions.ConnectionError:
-            pytest.fail("TheHive not accessible on thehive:9000")
+            pytest.fail("TheHive not accessible on thehive:9443")
 
     def test_cortex_accessible(self):
         """Test that Cortex is accessible on port 9001."""
         try:
-            response = requests.get("http://cortex:9001/api/status", timeout=10)
+            response = requests.get("https://cortex:9443/api/status", timeout=10)
             assert response.status_code in [
                 200,
                 401,
             ], f"Cortex should respond (got {response.status_code})"
         except requests.exceptions.ConnectionError:
-            pytest.fail("Cortex not accessible on cortex:9001")
+            pytest.fail("Cortex not accessible on cortex:9443")
 
     def test_shuffle_backend_accessible(self):
         """Test that Shuffle backend is accessible on port 5001."""
         try:
-            response = requests.get("http://shuffle-backend:5001/api/v1/health", timeout=10)
+            response = requests.get("https://shuffle-backend:5443/api/v1/health", timeout=10)
             assert response.status_code in [
                 200,
                 401,
             ], f"Shuffle backend should respond (got {response.status_code})"
         except requests.exceptions.ConnectionError:
-            pytest.fail("Shuffle backend not accessible on shuffle-backend:5001")
+            pytest.fail("Shuffle backend not accessible on shuffle-backend:5443")
 
     def test_api_accessible(self):
         """Test that SOAR API is accessible on port 8000."""

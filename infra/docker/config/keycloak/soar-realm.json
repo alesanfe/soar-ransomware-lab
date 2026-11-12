@@ -2,13 +2,15 @@
   "realm": "soar",
   "enabled": true,
   "displayName": "SOAR Ransomware Lab",
-  "sslRequired": "none",
+  "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "accessTokenLifespan": 300,
   "ssoSessionMaxLifespan": 28800,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
   "roles": {
     "realm": [
       {
@@ -42,19 +44,20 @@
       "clientId": "soar-proxy",
       "enabled": true,
       "publicClient": false,
-      "secret": "soar-lab-oidc-secret",
+      "secret": "__OIDC_CLIENT_SECRET__",
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "redirectUris": [
-        "http://localhost:8088/oauth2/callback",
-        "http://localhost:8089/oauth2/callback",
+        "https://localhost:8072/oauth2/callback",
+        "https://localhost:8073/oauth2/callback",
         "http://localhost:8084/login/generic_oauth"
       ],
       "webOrigins": [
-        "http://localhost:8088",
-        "http://localhost:8089",
+        "https://localhost:8072",
+        "https://localhost:8073",
         "http://localhost:8084"
       ],
       "protocolMappers": [
@@ -85,7 +88,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "soar-admin",
+          "value": "__KC_ADMIN_USER_PASS__",
           "temporary": false
         }
       ],
@@ -93,7 +96,7 @@
         "platform-admin",
         "auditor"
       ],
-      "requiredActions": [],
+      "requiredActions": ["CONFIGURE_TOTP"],
       "emailVerified": true
     },
     {
@@ -105,15 +108,18 @@
       "credentials": [
         {
           "type": "password",
-          "value": "soar-analyst",
+          "value": "__KC_ANALYST_USER_PASS__",
           "temporary": false
         }
       ],
       "realmRoles": [
         "soc-analyst-l2"
       ],
-      "requiredActions": [],
+      "requiredActions": ["CONFIGURE_TOTP"],
       "emailVerified": true
     }
-  ]
+  ],
+  "bruteForceProtected": true,
+  "ssoSessionIdleTimeout": 1800,
+  "passwordPolicy": "length(8) and notUsername(undefined)"
 }

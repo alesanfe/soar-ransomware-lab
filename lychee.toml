@@ -1,0 +1,27 @@
+# lychee link-checker configuration — used by `make docs-lint`.
+# Run: lychee --config lychee.toml docs/
+
+# Internal/private endpoints in docs are lab URLs, not public links.
+exclude_all_private = true
+exclude = [
+  '^https?://localhost',
+  '^https?://127\.0\.0\.1',
+  '^https?://0\.0\.0\.0',
+  '^https?://\[?::1\]?',
+  '^https?://[^/]*\.local',
+  '^https?://[^/]*\.internal',
+  '^mailto:',
+  # Placeholder/example URLs in docs (tokens, ids, ports as <placeholders>)
+  '.*<.*>.*',
+  '.*\$\{.*\}.*',
+]
+
+# Verify #anchor fragments in links to markdown files.
+include_fragments = true
+
+# Be tolerant with rate-limited / bot-protected externals when run online.
+accept = [200, 204, 206, 429]
+retry_wait_time = 2
+max_retries = 3
+timeout = 20
+user_agent = "soar-lab-docs-linkcheck"

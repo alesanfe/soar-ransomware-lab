@@ -9,13 +9,14 @@ fetch the lab's indicators:
 - ``GET <root>/api/collections/``   — collection list
 - ``GET <root>/api/collections/{id}/``         — collection metadata
 - ``GET <root>/api/collections/{id}/objects/`` — STIX objects envelope
+- ``GET <root>/api/collections/{id}/manifest/``— object manifest
 
 This is deliberately **not** a full TAXII 2.x server: there is a
-single static read-only collection backed by
-:class:`StixExportUseCase`, no ``manifest`` resource, no ``status``
-resource, no object-level version tracking, and pagination is a
-plain ``limit`` bound rather than envelope paging. The honest
-boundary is documented in ``docs/adr/0011-taxii-lite-scope.md``.
+single read-only collection backed by :class:`StixExportUseCase`, no
+``status`` resource and no write path (both only apply to writable
+collections per the spec), no object-level version history, and
+pagination is a plain ``limit`` bound rather than envelope paging.
+The honest boundary is documented in ``docs/adr/0011-taxii-lite-scope.md``.
 """
 
 from __future__ import annotations
@@ -31,6 +32,7 @@ ALERTS_COLLECTION_ID = str(uuid.uuid5(STIX_NS, "taxii-collection:lab-alerts"))
 
 _TAXII_VERSION = "taxii-2.1"
 _MEDIA_TYPE = "application/taxii+json;version=2.1"
+_STIX_MEDIA_TYPE = "application/stix+json;version=2.1"
 
 
 class TaxiiLiteServer:
@@ -108,6 +110,35 @@ class TaxiiLiteServer:
             "more": more,
             "objects": objects,
         }
+
+    def manifest(
+        self,
+        collection_id: str,
+        *,
+        limit: int = 1000,
+    ) -> dict[str, Any] | None:
+        """TAXII 2.1 manifest resource — one entry per object.
+
+        Each entry carries ``id``, ``date_added`` (mapped from the STIX
+        ``created`` timestamp), ``version`` and ``media_type``, matching
+        the manifest record shape the spec defines.
+        """
+        if collection_id != ALERTS_COLLECTION_ID:
+            return None
+        bounded = max(1, min(limit, 10_000))
+        bundle = self._stix.build_bundle(limit=bounded)
+        objects = list(bundle.get("objects") or [])
+        entries = [
+            {
+                "id": o.get("id"),
+                "date_added": o.get("created") or o.get("modified"),
+                "version": o.get("modified") or o.get("created"),
+                "media_type": _STIX_MEDIA_TYPE,
+            }
+            for o in objects
+            if isinstance(o, dict) and o.get("id")
+        ]
+        return {"more": False, "objects": entries}
 
     # ------------------------------------------------------------------
 

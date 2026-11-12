@@ -22,3 +22,12 @@ RUN rm -f /etc/apt/sources.list.d/corretto.list && \
     ln -sf /usr/bin/pip3 /usr/bin/pip && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# CORE-OBS-002: the entrypoint launches cortex via `su - cortex -c` (login
+# shell), which scrubs JAVA_TOOL_OPTIONS — JVM agents injected via env
+# would never load. Inject the variable into the su'd command string so
+# it expands in the root shell before the user switch.
+# SOAR-012: same treatment for DOCKER_HOST — the hardened overlay points
+# analyzer spawning at the restricted docker-socket-proxy instead of the
+# raw daemon socket; without the inline, `su -` drops it too.
+RUN sed -i 's#su - cortex -c "/opt/cortex/bin/cortex#su - cortex -c "JAVA_TOOL_OPTIONS=\\"$JAVA_TOOL_OPTIONS\\" DOCKER_HOST=\\"$DOCKER_HOST\\" /opt/cortex/bin/cortex#' /opt/cortex/entrypoint

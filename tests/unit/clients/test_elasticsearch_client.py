@@ -322,3 +322,164 @@ class TestElasticsearchClient:
 
         result = client.health_check()
         assert result is False
+
+
+class TestElasticsearchClientCoverage:
+    """Tests targeting previously uncovered ElasticsearchClient paths."""
+
+    def _client(self) -> ElasticsearchClient:
+        return ElasticsearchClient(base_url="http://localhost:9200")
+
+    def test_hosts_list_uses_first_entry(self):
+        client = ElasticsearchClient(hosts=["http://es-a:9200", "http://es-b:9200"])
+        assert client.base_url.startswith("http")
+
+    def test_hosts_empty_list_falls_back_to_config(self):
+        mock_config = Mock()
+        mock_config.get.side_effect = lambda key, default=None: {
+            "elasticsearch_url": "http://localhost:9200",
+        }.get(key, default)
+        client = ElasticsearchClient(hosts=[], config_provider=mock_config)
+        assert client.base_url
+
+    def test_info(self):
+        client = self._client()
+        client.get = Mock(return_value={"cluster_name": "soar"})
+        assert client.info() == {"cluster_name": "soar"}
+        client.get.assert_called_once_with("/")
+
+    def test_indices_property_and_refresh(self):
+        client = self._client()
+        client.post = Mock(return_value={"_shards": {"successful": 1}})
+        assert client.indices.refresh("idx") == {"_shards": {"successful": 1}}
+        client.post.assert_called_once_with("/idx/_refresh")
+
+    def test_indices_get_mapping(self):
+        client = self._client()
+        client.get = Mock(return_value={"mappings": {"properties": {}}})
+        assert client.indices.get_mapping("idx") == {
+            "idx": {"mappings": {"properties": {}}}
+        }
+
+        client.get = Mock(return_value={})
+        assert client.indices.get_mapping("idx") == {"idx": {"mappings": {}}}
+
+    def test_indices_create_and_delete_delegate(self):
+        client = self._client()
+        client.create_index = Mock(return_value={"acknowledged": True})
+        client.delete_index = Mock(return_value=True)
+
+        assert client.indices.create("idx", body={"mappings": {"m": 1}}) == {
+            "acknowledged": True
+        }
+        client.create_index.assert_called_once_with(index_name="idx", mapping={"m": 1})
+        assert client.indices.delete("idx") is True
+        client.delete_index.assert_called_once_with("idx")
+
+    def test_create_index_builds_body_and_puts(self):
+        client = self._client()
+        client.index_exists = Mock(return_value=False)
+        client.put = Mock(return_value={"acknowledged": True, "index": "idx"})
+
+        result = client.create_index("idx", settings={"number_of_shards": 1})
+        assert result == {"acknowledged": True, "index": "idx"}
+        body = client.put.call_args.kwargs["data"]
+        assert body["settings"] == {"number_of_shards": 1}
+        assert "alert_id" in body["mappings"]["properties"]
+
+    def test_create_index_explicit_mapping_no_settings(self):
+        """Custom mapping skips the default; no settings skips that key."""
+        client = self._client()
+        client.index_exists = Mock(return_value=False)
+        client.put = Mock(return_value={"acknowledged": True})
+
+        client.create_index("idx", mapping={"properties": {"x": {"type": "keyword"}}})
+        body = client.put.call_args.kwargs["data"]
+        assert "settings" not in body
+        assert body["mappings"] == {"properties": {"x": {"type": "keyword"}}}
+
+    def test_create_index_existing_short_circuits(self):
+        client = self._client()
+        client.index_exists = Mock(return_value=True)
+        client.put = Mock()
+
+        result = client.create_index("idx")
+        assert result == {"acknowledged": True, "index": "idx"}
+        client.put.assert_not_called()
+
+    def test_index_exists_true_false_and_error(self):
+        client = self._client()
+        ok = Mock(status_code=200)
+        client._session.head = Mock(return_value=ok)
+        assert client.index_exists("idx") is True
+
+        missing = Mock(status_code=404)
+        client._session.head = Mock(return_value=missing)
+        assert client.index_exists("idx") is False
+
+        client._session.head = Mock(side_effect=Exception("boom"))
+        assert client.index_exists("idx") is False
+
+    def test_index_document_refresh_appends_param(self):
+        client = self._client()
+        client.post = Mock(return_value={"result": "created"})
+
+        client.index_document({"a": 1}, refresh=True)
+        client.post.assert_called_once_with(
+            "/soar-alerts/_doc?refresh=true", data={"a": 1}
+        )
+
+    def test_search_with_aggs(self):
+        client = self._client()
+        client.post = Mock(return_value={"hits": {"hits": []}, "aggregations": {}})
+
+        client.search(aggs={"by_tag": {"terms": {"field": "tag"}}})
+        body = client.post.call_args.kwargs["data"]
+        assert body["aggs"] == {"by_tag": {"terms": {"field": "tag"}}}
+
+    def test_update_document_retry_none_omits_param_and_refresh(self):
+        client = self._client()
+        client.post = Mock(return_value={"result": "updated"})
+
+        client.update_document("1", {"a": 1}, retry_on_conflict=None, refresh=True)
+        client.post.assert_called_once_with(
+            "/soar-alerts/_update/1?refresh=true", data={"doc": {"a": 1}}
+        )
+
+        client.update_document("1", {"a": 1}, retry_on_conflict=3)
+        client.post.assert_called_with(
+            "/soar-alerts/_update/1?retry_on_conflict=3", data={"doc": {"a": 1}}
+        )
+
+    def test_bulk_index_delegates_through_post_raw(self):
+        client = self._client()
+        client.post_raw = Mock(return_value={"errors": False, "items": []})
+
+        result = client.bulk_index(
+            [{"id": "d1", "v": 1}], index="idx", doc_id_field="id", refresh=True
+        )
+        assert result == {"errors": False, "items": []}
+        path, body, content_type = client.post_raw.call_args.args
+        assert path == "/idx/_bulk?refresh=true"
+        assert '"_id": "d1"' in body
+        assert content_type == "application/x-ndjson"
+
+    def test_scroll_search_yields_and_clears_scroll(self):
+        client = self._client()
+        page1 = {
+            "_scroll_id": "s1",
+            "hits": {"hits": [{"_source": {"n": 1}}]},
+        }
+        page2 = {"_scroll_id": "s2", "hits": {"hits": []}}
+        client.post = Mock(side_effect=[page1, page2])
+        client.delete = Mock(return_value={})
+
+        assert list(client.scroll_search(size=1)) == [{"n": 1}]
+        assert client.post.call_count == 2
+        client.delete.assert_called_once()
+
+    def test_auth_not_applied_without_password(self):
+        """No credentials anywhere → session.auth stays unset (50->exit)."""
+        with patch.dict("os.environ", {}, clear=True):
+            client = ElasticsearchClient(base_url="http://localhost:9200")
+        assert client._session.auth is None

@@ -80,12 +80,12 @@ class InMemorySlidingWindowStore:
             window = self._hits[key]
             while window and now - window[0] >= window_s:
                 window.popleft()
+            window.append(now)
             if now - self._last_sweep > 2 * window_s:
                 stale = [k for k, w in self._hits.items() if not w or now - w[-1] >= window_s]
                 for k in stale:
                     self._hits.pop(k, None)
                 self._last_sweep = now
-            window.append(now)
             return len(window), window[0]
 
 

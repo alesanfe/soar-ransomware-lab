@@ -64,6 +64,19 @@ class AlertmanagerWebhook(BaseModel, extra="allow"):
     commonAnnotations: dict[str, Any] = Field(default_factory=dict)
 
 
+_CONTROL_CHARS = tuple(chr(c) for c in range(0x20)) + ("\x7f",)
+
+
+def _log_safe(value: Any, max_len: int = 120) -> str:
+    """Escape log-forging characters in untrusted label values."""
+    if value is None:
+        return "-"
+    text = str(value)
+    for c in _CONTROL_CHARS:
+        text = text.replace(c, " ")
+    return text[:max_len] or "-"
+
+
 def register_grafana_alert_routes(app_instance: FastAPI) -> None:
     """Register the Grafana notification receiver endpoint."""
 
@@ -81,17 +94,20 @@ def register_grafana_alert_routes(app_instance: FastAPI) -> None:
         for alert in payload.alerts:
             alert_status = alert.status if alert.status in ("firing", "resolved") else status
             log = logger.warning if alert_status == "firing" else logger.info
+            # INPUT-003: label values are attacker-influenceable — escape
+            # control chars before they reach the log line (CWE-117: a
+            # newline in alertname must not forge extra Loki entries).
             log(
                 "grafana_alert=1 status=%s name=%s severity=%s summary=%s "
                 "fingerprint=%s starts_at=%s ends_at=%s receiver=%s",
                 alert_status,
-                alert.labels.get("alertname", alert.labels.get("rulename", "unknown")),
-                alert.labels.get("severity", "none"),
-                alert.annotations.get("summary", "")[:200],
-                alert.fingerprint,
-                alert.startsAt,
-                alert.endsAt,
-                payload.receiver,
+                _log_safe(alert.labels.get("alertname", alert.labels.get("rulename", "unknown"))),
+                _log_safe(alert.labels.get("severity", "none")),
+                _log_safe(alert.annotations.get("summary", ""), 200),
+                _log_safe(alert.fingerprint),
+                _log_safe(alert.startsAt),
+                _log_safe(alert.endsAt),
+                _log_safe(payload.receiver),
             )
 
         if not payload.alerts:

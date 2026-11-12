@@ -23,7 +23,14 @@ PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 RENDER_TIMEOUT_S = 120
 MIN_PNG_BYTES = 2_000  # a degenerate/blank render is far smaller than a real panel
 
-EXPECTED_DASHBOARDS = {"soar-kpi-main", "soar-logs", "soar-traces", "soar-saturation"}
+EXPECTED_DASHBOARDS = {
+    "soar-kpi-main",
+    "soar-logs",
+    "soar-traces",
+    "soar-saturation",
+    "soar-slo",
+    "soar-e2e-quality",
+}
 EXPECTED_DATASOURCES = {"elasticsearch", "loki", "tempo", "prometheus", "soar-api"}
 
 
@@ -37,7 +44,7 @@ class TestGrafanaRendering(E2EBaseTest):
         self.grafana = self.get_service_url("grafana").rstrip("/")
         self.api = self.get_service_url("api").rstrip("/")
         self.gs = requests.Session()
-        self.gs.verify = False
+        self.gs.verify = self.s.verify
         user = self.env.get("GRAFANA_ADMIN_USER", "admin")
         password = self.env.get("GRAFANA_ADMIN_PASSWORD", "")
         self.gs.auth = (user, password)

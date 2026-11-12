@@ -54,7 +54,7 @@ class NodeTimingExtractor:
         credentials.
 
         Args:
-            opensearch_url: OpenSearch base URL (e.g. ``http://opensearch:9200``).
+            opensearch_url: OpenSearch base URL (e.g. ``https://opensearch:9200``).
             opensearch_user: OpenSearch username (default ``admin``).
             opensearch_pass: OpenSearch password (None to skip auth).
             elasticsearch_url: Elasticsearch base URL for indexing metrics.

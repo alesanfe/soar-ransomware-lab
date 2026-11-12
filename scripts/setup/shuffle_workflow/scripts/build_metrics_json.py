@@ -8,6 +8,26 @@ import time
 
 logger = logging.getLogger(__name__)
 
+
+def _unwrap(obj):
+    """Unwrap the execute_python {"success","message"} result envelope.
+
+    Guarded cortex nodes (cortex_run_guarded) print a {status, body}
+    envelope identical to the old http action result — unwrap one level so
+    the extraction below keeps working on both shapes.
+    """
+    if isinstance(obj, dict) and "success" in obj and "message" in obj:
+        m = obj["message"]
+        if isinstance(m, dict):
+            return m
+        if isinstance(m, str):
+            try:
+                return json.loads(m.strip())
+            except Exception:
+                return obj
+    return obj
+
+
 alert_id = """$exec.alert_id"""
 trace_id = """$exec.trace_id"""
 if not isinstance(trace_id, str) or trace_id.startswith("$"):
@@ -68,7 +88,7 @@ except Exception:
 
 cortex_hash_job = ""
 try:
-    _ch = json.loads(r"""$cortex_hash""")
+    _ch = _unwrap(json.loads(r"""$cortex_hash"""))
     _body = _ch.get("body", _ch) if isinstance(_ch, dict) else {}
     cortex_hash_job = _body.get("id", _body.get("_id", "")) if isinstance(_body, dict) else ""
 except Exception:
@@ -76,7 +96,7 @@ except Exception:
 
 cortex_ip_job = ""
 try:
-    _ci = json.loads(r"""$cortex_ip""")
+    _ci = _unwrap(json.loads(r"""$cortex_ip"""))
     _body = _ci.get("body", _ci) if isinstance(_ci, dict) else {}
     cortex_ip_job = _body.get("id", _body.get("_id", "")) if isinstance(_body, dict) else ""
 except Exception:

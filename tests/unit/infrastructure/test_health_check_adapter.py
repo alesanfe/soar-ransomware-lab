@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for health_check_adapter.py."""
 
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -119,3 +119,54 @@ class TestHTTPHealthCheckAdapter:
         mock_http_client.get.assert_called_once_with(
             "http://service1.local/health", verify_ssl=True
         )
+
+
+class TestTcpCheck:
+    """_check_tcp: raw-socket reachability for non-HTTP services."""
+
+    @pytest.mark.asyncio
+    async def test_tcp_url_dispatches_to_tcp_check(self):
+        adapter = HTTPHealthCheckAdapter(http_client=Mock())
+        adapter._check_tcp = AsyncMock(return_value=True)
+
+        result = await adapter.check_service("redis", "tcp://redis:6379")
+
+        assert result is True
+        adapter._check_tcp.assert_awaited_once_with("redis", "tcp://redis:6379")
+
+    @pytest.mark.asyncio
+    async def test_tcp_connect_success(self):
+        adapter = HTTPHealthCheckAdapter(http_client=Mock())
+        with patch("socket.create_connection") as conn:
+            conn.return_value.__enter__ = Mock(return_value=None)
+            conn.return_value.__exit__ = Mock(return_value=False)
+            assert await adapter._check_tcp("redis", "tcp://redis:6379") is True
+
+    @pytest.mark.asyncio
+    async def test_tcp_connect_refused(self):
+        adapter = HTTPHealthCheckAdapter(http_client=Mock())
+        with patch("socket.create_connection", side_effect=OSError("refused")):
+            assert await adapter._check_tcp("redis", "tcp://redis:6379") is False
+
+    @pytest.mark.asyncio
+    async def test_tcp_invalid_port(self):
+        adapter = HTTPHealthCheckAdapter(http_client=Mock())
+        assert await adapter._check_tcp("redis", "tcp://redis:notaport") is False
+
+    @pytest.mark.asyncio
+    async def test_tcp_trailing_slash_stripped(self):
+        adapter = HTTPHealthCheckAdapter(http_client=Mock())
+        with patch("socket.create_connection") as conn:
+            conn.return_value.__enter__ = Mock(return_value=None)
+            conn.return_value.__exit__ = Mock(return_value=False)
+            await adapter._check_tcp("redis", "tcp://redis:6379/")
+            conn.assert_called_once()
+            assert conn.call_args.args[0] == ("redis", 6379)
+
+    @pytest.mark.asyncio
+    async def test_tcp_thread_exception_returns_false(self):
+        adapter = HTTPHealthCheckAdapter(http_client=Mock())
+        with patch(
+            "asyncio.to_thread", new=AsyncMock(side_effect=RuntimeError("thread exploded"))
+        ):
+            assert await adapter._check_tcp("redis", "tcp://redis:6379") is False

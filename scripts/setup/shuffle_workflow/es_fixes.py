@@ -17,7 +17,7 @@ Two idempotent fixes that run during setup:
    ``soar_api`` keepalive loop.
 """
 
-# NOTE: All ``requests`` calls in this module use ``verify=False`` because
+# NOTE: All ``requests`` calls in this module use ``verify=config.VERIFY`` because
 # the lab uses self-signed certificates in the internal Docker network.
 # This is safe in the lab context but must NOT be used in production.
 
@@ -79,7 +79,7 @@ def fix_es_users_mapping() -> None:
     # Wait up to 60 s for ES to be available
     for _attempt in range(12):
         try:
-            _r = requests.get(f"{_es}/_cluster/health", headers=_h, timeout=5, verify=False)
+            _r = requests.get(f"{_es}/_cluster/health", headers=_h, timeout=5, verify=config.VERIFY)
             if _r.status_code < 300:
                 break
         except Exception as _e:
@@ -112,7 +112,7 @@ def fix_es_users_mapping() -> None:
     # Check if the mapping already has apikey.keyword subfield
     _has_kw_subfield = False
     try:
-        _mr = requests.get(f"{_es}/users/_mapping", headers=_h, timeout=10, verify=False)
+        _mr = requests.get(f"{_es}/users/_mapping", headers=_h, timeout=10, verify=config.VERIFY)
         if _mr.status_code == 200:
             _apikey_prop = (
                 _mr.json()
@@ -130,15 +130,15 @@ def fix_es_users_mapping() -> None:
         docs."""
         try:
             _sr = requests.get(
-                f"{_es}/{idx_name}/_search?size=100", headers=_h, timeout=10, verify=False
+                f"{_es}/{idx_name}/_search?size=100", headers=_h, timeout=10, verify=config.VERIFY
             )
             _docs = _sr.json().get("hits", {}).get("hits", []) if _sr.status_code == 200 else []
         except Exception as _e:
             logger.warning("[es-fix] Error reading %s: %s", idx_name, _e)
             _docs = []
-        requests.delete(f"{_es}/{idx_name}", headers=_h, timeout=10, verify=False)
+        requests.delete(f"{_es}/{idx_name}", headers=_h, timeout=10, verify=config.VERIFY)
         _cr = requests.put(
-            f"{_es}/{idx_name}", headers=_h, json=_correct_mapping, timeout=10, verify=False
+            f"{_es}/{idx_name}", headers=_h, json=_correct_mapping, timeout=10, verify=config.VERIFY
         )
         if _cr.status_code not in (200, 201):
             logger.error(
@@ -151,18 +151,18 @@ def fix_es_users_mapping() -> None:
                 headers=_h,
                 json=_doc["_source"],
                 timeout=10,
-                verify=False,
+                verify=config.VERIFY,
             )
             if _ir.status_code not in (200, 201):
                 logger.warning("[es-fix] Error inserting into %s: %d", idx_name, _ir.status_code)
-        requests.post(f"{_es}/{idx_name}/_refresh", headers=_h, timeout=5, verify=False)
+        requests.post(f"{_es}/{idx_name}/_refresh", headers=_h, timeout=5, verify=config.VERIFY)
         _sample_key = _docs[0]["_source"].get("apikey", "") if _docs else ""
         if _sample_key:
             _vr = requests.post(
                 f"{_es}/{idx_name}/_search",
                 headers=_h,
                 timeout=10,
-                verify=False,
+                verify=config.VERIFY,
                 json={"query": {"term": {"apikey.keyword": _sample_key}}},
             )
             _hits = (
@@ -190,7 +190,7 @@ def fix_es_users_mapping() -> None:
     # Always ensure users_v2 exists with correct mapping and contains the user
     _v2_ok = False
     try:
-        _v2r = requests.get(f"{_es}/users_v2/_mapping", headers=_h, timeout=10, verify=False)
+        _v2r = requests.get(f"{_es}/users_v2/_mapping", headers=_h, timeout=10, verify=config.VERIFY)
         if _v2r.status_code == 200:
             _v2_apikey = (
                 _v2r.json()
@@ -206,9 +206,9 @@ def fix_es_users_mapping() -> None:
         logger.info("[es-fix] Creating/fixing users_v2 with correct mapping ...")
         _reindex_users("users_v2")
     else:
-        _u_r = requests.get(f"{_es}/users/_search?size=100", headers=_h, timeout=10, verify=False)
+        _u_r = requests.get(f"{_es}/users/_search?size=100", headers=_h, timeout=10, verify=config.VERIFY)
         _u2_r = requests.get(
-            f"{_es}/users_v2/_search?size=100", headers=_h, timeout=10, verify=False
+            f"{_es}/users_v2/_search?size=100", headers=_h, timeout=10, verify=config.VERIFY
         )
         _u_docs = _u_r.json().get("hits", {}).get("hits", []) if _u_r.status_code == 200 else []
         _u2_count = (
@@ -224,16 +224,16 @@ def fix_es_users_mapping() -> None:
                     headers=_h,
                     json=_d["_source"],
                     timeout=10,
-                    verify=False,
+                    verify=config.VERIFY,
                 )
-            requests.post(f"{_es}/users_v2/_refresh", headers=_h, timeout=5, verify=False)
+            requests.post(f"{_es}/users_v2/_refresh", headers=_h, timeout=5, verify=config.VERIFY)
             logger.info("[es-fix] users_v2: %d user(s) copied", len(_u_docs))
         else:
             logger.info("[es-fix] users_v2: OK")
 
     # ── 2. Fix apikey in 'organizations' index ────────────────────────────────
     try:
-        _usr_r = requests.get(f"{_es}/users/_search?size=100", headers=_h, timeout=10, verify=False)
+        _usr_r = requests.get(f"{_es}/users/_search?size=100", headers=_h, timeout=10, verify=config.VERIFY)
         _usr_map = {}
         if _usr_r.status_code == 200:
             for _u in _usr_r.json().get("hits", {}).get("hits", []):
@@ -243,7 +243,7 @@ def fix_es_users_mapping() -> None:
                     _usr_map[_s.get("username", "")] = _s["apikey"]
 
         _org_r = requests.get(
-            f"{_es}/organizations/_search?size=20", headers=_h, timeout=10, verify=False
+            f"{_es}/organizations/_search?size=20", headers=_h, timeout=10, verify=config.VERIFY
         )
         if _org_r.status_code == 200:
             _org_fixed = 0
@@ -264,7 +264,7 @@ def fix_es_users_mapping() -> None:
                         headers=_h,
                         json=_org_src,
                         timeout=10,
-                        verify=False,
+                        verify=config.VERIFY,
                     )
                     if _pr.status_code in (200, 201):
                         _org_fixed += 1
@@ -292,7 +292,7 @@ def fix_workflow_execution_mapping() -> None:
 
     try:
         _r = requests.get(
-            f"{_es}/workflowexecution-*/_mapping", headers=_h, timeout=10, verify=False
+            f"{_es}/workflowexecution-*/_mapping", headers=_h, timeout=10, verify=config.VERIFY
         )
         if _r.status_code != 200:
             logger.info("[workflow-fix] No workflowexecution indices found, skipping")
@@ -328,7 +328,7 @@ def fix_workflow_execution_mapping() -> None:
                     }
                 },
                 timeout=10,
-                verify=False,
+                verify=config.VERIFY,
             )
             if _put_r.status_code in (200, 201):
                 logger.info("[workflow-fix] Added started_at to %s", _idx_name)
@@ -380,7 +380,7 @@ def sync_apikey() -> None:
 
     # Find the admin user in users_v2
     try:
-        _sr = requests.get(f"{_es}/users_v2/_search?size=100", headers=_h, timeout=10, verify=False)
+        _sr = requests.get(f"{_es}/users_v2/_search?size=100", headers=_h, timeout=10, verify=config.VERIFY)
         _hits = _sr.json().get("hits", {}).get("hits", []) if _sr.status_code == 200 else []
     except Exception as _e:
         logger.warning("[apikey-sync] Could not read users_v2: %s", _e)
@@ -398,7 +398,7 @@ def sync_apikey() -> None:
             headers=_h,
             json={"doc": {"apikey": _expected_key}},
             timeout=10,
-            verify=False,
+            verify=config.VERIFY,
         )
         # Update users (old index) if it exists
         requests.post(
@@ -406,7 +406,7 @@ def sync_apikey() -> None:
             headers=_h,
             json={"doc": {"apikey": _expected_key}},
             timeout=10,
-            verify=False,
+            verify=config.VERIFY,
         )
         _fixed += 1
         logger.info("[apikey-sync] Updated user %s apikey in users/users_v2", _uid)
@@ -414,7 +414,7 @@ def sync_apikey() -> None:
     # Sync organizations index
     try:
         _org_r = requests.get(
-            f"{_es}/organizations/_search?size=20", headers=_h, timeout=10, verify=False
+            f"{_es}/organizations/_search?size=20", headers=_h, timeout=10, verify=config.VERIFY
         )
         if _org_r.status_code == 200:
             for _org_hit in _org_r.json().get("hits", {}).get("hits", []):
@@ -430,7 +430,7 @@ def sync_apikey() -> None:
                         headers=_h,
                         json=_org_src,
                         timeout=10,
-                        verify=False,
+                        verify=config.VERIFY,
                     )
                     logger.info("[apikey-sync] Synced apikey in organization %s", _org_hit["_id"])
     except Exception as _e:
@@ -440,7 +440,7 @@ def sync_apikey() -> None:
         f"{_es}/users_v2,users,organizations/_refresh",
         headers=_h,
         timeout=5,
-        verify=False,
+        verify=config.VERIFY,
     )
     if _fixed:
         logger.info("[apikey-sync] %d user(s) updated — DB now matches .env.full", _fixed)

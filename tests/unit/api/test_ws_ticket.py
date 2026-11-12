@@ -270,11 +270,14 @@ class TestWsLogsGate:
 
     def test_counts_released_after_disconnect(self):
         client = TestClient(_app())
+        connected = 0
         for _ in range(4):
             t = _ticket(client)
             with client.websocket_connect(f"/ws/logs?ticket={t}") as ws:
                 ws.receive_json()
+            connected += 1
         # 4 sequential connects succeeded → counts decremented on close
+        assert connected == 4
 
     def test_ticket_never_logged(self, caplog):
         client = TestClient(_app())

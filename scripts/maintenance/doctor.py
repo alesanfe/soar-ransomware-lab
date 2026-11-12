@@ -113,10 +113,19 @@ def check_env_full() -> Check:
 
 
 def _http_status(url: str, timeout: float = 4.0) -> int | None:
+    import ssl
     import urllib.request
+
+    ctx = None
+    if url.startswith("https"):
+        # Reachability probe only — lab-CA endpoints fail the system
+        # trust store on host runs; auth/identity checks live elsewhere.
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
     try:
         req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
             return resp.status
     except Exception as exc:
         code = getattr(exc, "code", None)
@@ -145,7 +154,7 @@ def _container_health(name: str) -> str | None:
 
 def check_es() -> Check:
     # ES publishes host port 8200 → container 9200 in this stack.
-    url = os.getenv("ELASTICSEARCH_URL", "http://localhost:8200")
+    url = os.getenv("ELASTICSEARCH_URL", "https://localhost:19200")
     status = _http_status(f"{url}/_cluster/health")
     if status == 200:
         return Check("elasticsearch", "OK", "reachable (yellow is normal "
@@ -184,7 +193,12 @@ def check_redis() -> Check:
     # Redis is internal-only — check via docker exec ping, with auth if
     # REDIS_PASSWORD is configured (env or .env.full).
     password = os.getenv("REDIS_PASSWORD") or _env_file_value("REDIS_PASSWORD")
-    cmd = ["docker", "exec", "soar_redis", "redis-cli"]
+    # Redis serves TLS only (docker-compose.core.yml --tls-port) — a plaintext
+    # ping always fails with I/O error, producing a false WARN.
+    cmd = [
+        "docker", "exec", "soar_redis", "redis-cli",
+        "--tls", "--cacert", "/etc/redis/tls/ca.crt",
+    ]
     if password:
         cmd += ["-a", password, "--no-auth-warning"]
     code, out = _sh(cmd + ["ping"], timeout=8)

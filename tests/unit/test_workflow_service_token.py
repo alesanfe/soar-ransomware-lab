@@ -71,8 +71,11 @@ class TestServiceTokenPlaceholder:
             "__SERVICE_TOKEN__" not in code
         ), "containment script still contains the unsubstituted placeholder"
         assert (
-            config.INTERNAL_SERVICE_TOKEN in code
-        ), "INTERNAL_SERVICE_TOKEN was not baked into the containment script"
+            config.CONTAINMENT_SERVICE_TOKEN in code
+        ), "CONTAINMENT_SERVICE_TOKEN was not baked into the containment script"
+        assert (
+            config.INTERNAL_SERVICE_TOKEN not in code
+        ), "AUTH-001: the full-scope INTERNAL token must never be baked"
 
     def test_baked_token_reaches_header(self):
         actions = workflow_actions.build_actions(_ctx())

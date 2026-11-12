@@ -1,0 +1,14 @@
+{
+  "users": {
+    "taxii_reader": "__TAXII_READER_PASS__",
+    "taxii_writer": "__TAXII_WRITER_PASS__"
+  },
+  "taxii": {
+    "max_page_size": 100
+  },
+  "backend": {
+    "module": "medallion.backends.memory_backend",
+    "module_class": "MemoryBackend",
+    "filename": "/srv/data.json"
+  }
+}

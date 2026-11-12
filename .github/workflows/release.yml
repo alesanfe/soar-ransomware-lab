@@ -66,12 +66,12 @@ jobs:
       - name: CycloneDX SBOM (python deps)
         if: matrix.name == 'soar-api'
         run: |
-          pip install cyclonedx-bom
+          pip install cyclonedx-bom==8.0.1
           pip install -e .
           cyclonedx-py environment --of JSON -o sbom-python.json
       - name: Upload SBOM
         if: matrix.name == 'soar-api'
-        uses: actions/upload-artifact@b7d0e84a10a4e2f97d1ba5af9f1c25f22b1f6c99 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sbom-${{ github.ref_name }}
           path: sbom-python.json

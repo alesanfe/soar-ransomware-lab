@@ -7,11 +7,19 @@ logsource:
 detection:
   selection_ip:
     data.source_ip|contains:
-      - "185.220.101"
-      - "194.165.16"
+    - 185.220.101
+    - 194.165.16
   selection_domain:
     data.domain|endswith:
-      - ".onion"
-      - ".bit"
+    - .onion
+    - .bit
   condition: 1 of selection_*
 level: critical
+tags:
+- attack.command_and_control
+- attack.t1071.001
+falsepositives:
+- Privacy-focused research traffic to .onion/.bit services in academic or CTI contexts
+- CDN or VPN exit-node ranges overlapping the flagged prefixes
+references:
+- https://attack.mitre.org/techniques/T1071/001/

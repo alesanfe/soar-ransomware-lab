@@ -58,17 +58,19 @@ datasources:
     uid: elasticsearch
     type: elasticsearch
     access: proxy
-    url: ${ELASTICSEARCH_URL:-http://elasticsearch:9200}
+    url: ${ELASTICSEARCH_URL:-https://elasticsearch:9200}
     jsonData:
       esVersion: "7.10.0"
       timeField: "@timestamp"
       index: "soar-metrics"
       maxConcurrentShardRequests: 5
       includeFrozen: false
+      tlsAuthWithCACert: true
     basicAuth: true
     basicAuthUser: ${ELASTIC_USERNAME:-elastic}
     secureJsonData:
       basicAuthPassword: ${ELASTIC_PASSWORD}
+      tlsCACert: $__file{/etc/grafana/tls/ca.crt}
     editable: true
   - name: Tempo
     uid: tempo
@@ -236,5 +238,12 @@ datasources:
     uid: workflowexec-json
     type: marcusolsson-json-datasource
     access: proxy
-    url: ${OPENSEARCH_URL:-http://opensearch:9200}
+    url: ${OPENSEARCH_URL:-https://opensearch:9200}
+    jsonData:
+      tlsAuthWithCACert: true
+    basicAuth: true
+    basicAuthUser: ${OPENSEARCH_USERNAME:-admin}
+    secureJsonData:
+      basicAuthPassword: ${OPENSEARCH_PASSWORD}
+      tlsCACert: $__file{/etc/grafana/tls/ca.crt}
     editable: true

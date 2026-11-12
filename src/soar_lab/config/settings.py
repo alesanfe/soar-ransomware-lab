@@ -198,15 +198,15 @@ class Settings:
         """Compose project name, published ports and service base URLs."""
         return {
             "project_name": os.getenv("COMPOSE_PROJECT_NAME", "soar"),
-            "thehive_port": int(os.getenv("THEHIVE_HTTP_PORT", "9000")),
-            "cortex_port": int(os.getenv("CORTEX_HTTP_PORT", "9001")),
+            "thehive_port": int(os.getenv("THEHIVE_HOST_PORT", "8100")),
+            "cortex_port": int(os.getenv("CORTEX_HOST_PORT", "8101")),
             "shuffle_ui_port": int(os.getenv("SHUFFLE_UI_PORT", "8081")),
             "shuffle_api_port": int(os.getenv("SHUFFLE_API_PORT", "5001")),
             "elasticsearch_port": int(os.getenv("ELASTICSEARCH_PORT", "9201")),
-            "misp_port": int(os.getenv("MISP_PORT", "8083")),
+            "misp_port": int(os.getenv("MISP_HOST_PORT", "8083")),
             "http_port": int(os.getenv("HTTP_PORT", "80")),
-            "thehive_url": os.getenv("THEHIVE_URL", "http://thehive:9000"),
-            "cortex_url": os.getenv("CORTEX_URL", "http://cortex:9001"),
+            "thehive_url": os.getenv("THEHIVE_URL", "https://thehive:9443"),
+            "cortex_url": os.getenv("CORTEX_URL", "https://cortex:9443"),
             "shuffle_url": os.getenv("SHUFFLE_URL", DEFAULT_SHUFFLE_BACKEND_URL),
             # MISP in this stack serves HTTPS with a self-signed cert — the
             # http:80 default was BUG-070. Keep the source default aligned
@@ -216,7 +216,7 @@ class Settings:
                 "ES_URL", os.getenv("ELASTICSEARCH_URL", DEFAULT_ELASTICSEARCH_URL)
             ),
             "shuffle_webhook_url": os.getenv(
-                "SHUFFLE_WEBHOOK_URL", "http://localhost:5001/api/v1/hooks"
+                "SHUFFLE_WEBHOOK_URL", "https://localhost:5001/api/v1/hooks"
             ),
         }
 
@@ -282,10 +282,10 @@ class Settings:
         """Per-service health URL + container name pairs."""
         return {
             "thehive_health_url": os.getenv(
-                "THEHIVE_HEALTH_URL", "http://thehive:9000/api/v1/status/public"
+                "THEHIVE_HEALTH_URL", "https://thehive:9443/api/v1/status/public"
             ),
             "thehive_container": os.getenv("THEHIVE_CONTAINER", "soar_thehive"),
-            "cortex_health_url": os.getenv("CORTEX_HEALTH_URL", "http://cortex:9001/"),
+            "cortex_health_url": os.getenv("CORTEX_HEALTH_URL", "https://cortex:9443/"),
             "cortex_container": os.getenv("CORTEX_CONTAINER", "soar_cortex"),
             "shuffle_ui_health_url": os.getenv(
                 "SHUFFLE_UI_HEALTH_URL", "http://shuffle-frontend:80/"
@@ -294,7 +294,7 @@ class Settings:
                 "SHUFFLE_FRONTEND_CONTAINER", "soar_shuffle_frontend"
             ),
             "shuffle_health_url": os.getenv(
-                "SHUFFLE_HEALTH_URL", "http://shuffle-backend:5001/api/v1/health"
+                "SHUFFLE_HEALTH_URL", "https://shuffle-backend:5443/api/v1/health"
             ),
             "shuffle_container": os.getenv("SHUFFLE_CONTAINER", "soar_shuffle_backend"),
             "docs_health_url": os.getenv("DOCS_HEALTH_URL", "http://docs-site:8080/"),
@@ -302,9 +302,13 @@ class Settings:
             "api_health_url": os.getenv("API_HEALTH_URL", "http://api:8000/health"),
             "api_container": os.getenv("API_CONTAINER", "soar_api"),
             "elasticsearch_health_url": os.getenv(
-                "ELASTICSEARCH_HEALTH_URL", "http://elasticsearch:9200/_cluster/health"
+                "ELASTICSEARCH_HEALTH_URL", "https://elasticsearch:9200/_cluster/health"
             ),
             "elasticsearch_container": os.getenv("ELASTICSEARCH_CONTAINER", "soar_elasticsearch"),
+            "opensearch_health_url": os.getenv(
+                "OPENSEARCH_HEALTH_URL", "https://opensearch:9200/_cluster/health"
+            ),
+            "opensearch_container": os.getenv("OPENSEARCH_CONTAINER", "soar_opensearch"),
             "nginx_health_url": os.getenv("NGINX_HEALTH_URL", "http://nginx:80/"),
             "nginx_container": os.getenv("NGINX_CONTAINER", "soar_nginx"),
             "redis_health_url": os.getenv("REDIS_HEALTH_URL", "tcp://redis:6379"),
@@ -325,6 +329,8 @@ class Settings:
                 "loki": "/app/certs/ca.crt",
                 "grafana": "/app/certs/ca.crt",
                 "misp": "/app/certs/ca.crt",
+                "elasticsearch": "/app/certs/ca.crt",
+                "opensearch": "/app/certs/ca.crt",
             },
         }
 
@@ -444,6 +450,10 @@ class Settings:
                 "url": self._config.get("elasticsearch_health_url"),
                 "container": self._config.get("elasticsearch_container"),
             },
+            "opensearch": {
+                "url": self._config.get("opensearch_health_url"),
+                "container": self._config.get("opensearch_container"),
+            },
             "nginx": {
                 "url": self._config.get("nginx_health_url"),
                 "container": self._config.get("nginx_container"),
@@ -472,7 +482,7 @@ class Settings:
 
     def get_webhook_url(self) -> str:
         """Get Shuffle webhook URL."""
-        return self._config.get("shuffle_webhook_url", "http://localhost:5001/api/v1/hooks")
+        return self._config.get("shuffle_webhook_url", "https://localhost:5001/api/v1/hooks")
 
     def __str__(self) -> str:
         """String representation of configuration."""

@@ -219,9 +219,18 @@ class TestServiceHealthValidation(E2EBaseTest):
         self._log("=== Test: Workflow Notification Rate ===")
         os_url = self.get_service_url("opensearch")
 
-        # Count total workflow executions
+        # Scope both counts to the same rolling 24h window (matching
+        # test_workflow_aborted_rate). A cumulative count would keep
+        # monotonically worsening as outage/chaos tests accumulate.
+        since = int(time.time() - 86400)
+
+        # Count workflow executions in the window
         try:
-            r = self.s.get(f"{os_url}/workflowexecution/_count", timeout=15)
+            r = self.s.post(
+                f"{os_url}/workflowexecution/_count",
+                json={"query": {"range": {"started_at": {"gte": since}}}},
+                timeout=15,
+            )
             r.raise_for_status()
             total_executions = r.json().get("count", 0)
         except Exception as e:
@@ -230,19 +239,38 @@ class TestServiceHealthValidation(E2EBaseTest):
         if total_executions == 0:
             pytest.fail("No workflow executions found - workflow has never been triggered")
 
-        # Count notifications (errors)
+        # Count DISTINCT executions that produced error notifications.
+        # A single failed execution emits one notification per downstream
+        # node that references a missing variable (~10 each), so raw
+        # notification count would overstate the error rate ~10x.
+        # `execution_id` is a text field (no cardinality agg), so dedupe
+        # client-side.
         try:
-            r2 = self.s.get(f"{os_url}/notifications-000001/_count", timeout=15)
+            r2 = self.s.post(
+                f"{os_url}/notifications-000001/_search",
+                json={
+                    "size": 10000,
+                    "_source": ["execution_id"],
+                    "query": {"range": {"created_at": {"gte": since}}},
+                },
+                timeout=30,
+            )
             r2.raise_for_status()
-            total_notifications = r2.json().get("count", 0)
+            hits = r2.json().get("hits", {}).get("hits", [])
+            total_notifications = r2.json().get("hits", {}).get("total", {}).get("value", 0)
+            errored_executions = len(
+                {h.get("_source", {}).get("execution_id") for h in hits}
+            )
         except Exception:
             total_notifications = 0
+            errored_executions = 0
 
         notification_rate = (
-            (total_notifications / total_executions * 100) if total_executions > 0 else 0
+            (errored_executions / total_executions * 100) if total_executions > 0 else 0
         )
         self._log(
-            f"Workflow: {total_executions} executions, {total_notifications} notifications "
+            f"Workflow: {total_executions} executions (24h), {errored_executions} with "
+            f"error notifications ({total_notifications} notifications total) "
             f"({notification_rate:.1f}% notification rate)"
         )
 
@@ -250,7 +278,7 @@ class TestServiceHealthValidation(E2EBaseTest):
         max_rate = 30.0
         assert notification_rate <= max_rate, (
             f"Workflow notification rate is {notification_rate:.1f}% "
-            f"({total_notifications}/{total_executions}), "
+            f"({errored_executions} errored/{total_executions} executions in 24h), "
             f"above maximum threshold of {max_rate}%. "
             f"This indicates systemic workflow errors (missing variables, broken nodes). "
             f"Check workflow variable references ($webhook.* vs $exec.*)."
@@ -282,19 +310,25 @@ class TestServiceHealthValidation(E2EBaseTest):
         self._log("=== Test: Workflow Aborted Rate ===")
         os_url = self.get_service_url("opensearch")
 
-        # Count by status. `status` is a text+keyword field on the flat
-        # `workflowexecution` index (dynamic mapping); aggregate the keyword
-        # sub-field which covers every doc in that index.
-        body = {
-            "size": 0,
-            "query": {"range": {"started_at": {"gte": int(time.time() - 86400)}}},
-            "aggs": {"by_status": {"terms": {"field": "status.keyword"}}},
-        }
-        try:
-            r = self.s.post(f"{os_url}/workflowexecution/_search", json=body, timeout=30)
-            r.raise_for_status()
-        except Exception as e:
-            pytest.fail(f"Cannot query OpenSearch: {e}")
+        # Count by status. `status` is a keyword field on the rollover
+        # `workflowexecution-*` index; fall back to `status.keyword` which
+        # covered the old flat index's text+keyword dynamic mapping.
+        r = None
+        for status_field in ("status", "status.keyword"):
+            body = {
+                "size": 0,
+                "query": {"range": {"started_at": {"gte": int(time.time() - 86400)}}},
+                "aggs": {"by_status": {"terms": {"field": status_field}}},
+            }
+            try:
+                r = self.s.post(
+                    f"{os_url}/workflowexecution/_search", json=body, timeout=30
+                )
+                r.raise_for_status()
+            except Exception as e:
+                pytest.fail(f"Cannot query OpenSearch: {e}")
+            if r.json().get("aggregations", {}).get("by_status", {}).get("buckets"):
+                break
 
         buckets = r.json().get("aggregations", {}).get("by_status", {}).get("buckets", [])
         if not buckets:

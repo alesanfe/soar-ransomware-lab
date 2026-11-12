@@ -42,12 +42,12 @@ class TestUIPlaywright(E2EBaseTest):
     BROWSER_TIMEOUT_MS = 30_000
 
     # Browsers always run on the host — never resolve container hostnames
-    # (.env files carry in-network URLs like http://thehive:9000 which a
+    # (.env files carry in-network URLs like https://thehive:9443 which a
     # host-side browser cannot reach).
     _HOST_PORTS = {
         "shuffle_frontend": "http://localhost:8081",
-        "thehive": "http://localhost:8100",
-        "cortex": "http://localhost:8101",
+        "thehive": "https://localhost:18100",
+        "cortex": "https://localhost:18101",
         "misp": "http://localhost:8083",
         "grafana": "http://localhost:8084",
     }

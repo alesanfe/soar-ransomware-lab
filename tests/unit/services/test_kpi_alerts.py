@@ -245,8 +245,7 @@ class TestKPIAlertManager:
         mock_es = Mock()
         manager = KPIAlertManager(elasticsearch_client=mock_es, webhook_url=None)
 
-        # Should not raise exception
-        manager._send_alert({"message": "test alert"})
+        assert manager._send_alert({"message": "test alert"}) is None
 
     def test_send_alert_with_webhook(self):
         """Test sending alert when webhook is configured."""
@@ -258,7 +257,7 @@ class TestKPIAlertManager:
         # This will try to send the alert via requests
         # We just check it doesn't raise an exception
         alert = {"message": "test alert"}
-        manager._send_alert(alert)
+        assert manager._send_alert(alert) is None
 
 
 if __name__ == "__main__":

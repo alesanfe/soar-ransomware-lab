@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Observable submitted to a Cortex analyzer (guarded node output)",
+  "type": "object",
+  "required": ["data", "attributes"],
+  "properties": {
+    "data": {"type": "string", "minLength": 1},
+    "attributes": {
+      "type": "object",
+      "required": ["dataType"],
+      "properties": {
+        "dataType": {"enum": ["hash", "ip", "domain", "url", "fqdn", "file", "other"]},
+        "tlp": {"type": "integer", "minimum": 0, "maximum": 3},
+        "pap": {"type": "integer", "minimum": 0, "maximum": 3}
+      }
+    }
+  },
+  "additionalProperties": true
+}

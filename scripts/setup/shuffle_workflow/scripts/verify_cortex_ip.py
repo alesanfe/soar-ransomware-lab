@@ -16,6 +16,14 @@ try:
         obj = ast.literal_eval(raw)
     if not isinstance(obj, dict):
         raise Exception("Cortex IP response is not a dict")
+    # execute_python wraps stdout in {"success","message"} (dict or JSON str)
+    if isinstance(obj.get("message"), dict):
+        obj = obj["message"]
+    elif isinstance(obj.get("message"), str) and "success" in obj:
+        try:
+            obj = json.loads(obj["message"])
+        except Exception:
+            pass
     body = obj.get("body", obj)
     job_id = body.get("id") or body.get("_id") or body.get("jobId")
     status = body.get("status") or obj.get("status", "unknown")

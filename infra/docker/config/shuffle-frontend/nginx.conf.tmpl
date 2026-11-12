@@ -57,7 +57,7 @@ http {
 			add_header X-Content-Type-Options nosniff;
 
 			# security headers
-			add_header X-XSS-Protection "1; mode=block";
+			# EDGE-EVAL-001: X-XSS-Protection dropped (deprecated; CSP supersedes it).
 			# add_header Content-Security-Policy "default-src 'self'";
 			add_header Referrer-Policy "no-referrer";
 			server_tokens off;
@@ -76,7 +76,12 @@ http {
 			# caches the IP — a backend recreate (new IP) leaves the UI in
 			# "waiting for database" until the frontend is restarted.
 			resolver 127.0.0.11 valid=10s ipv6=off;
-			set $shuffle_backend "http://${BACKEND_HOSTNAME}:5001";
+			set $shuffle_backend "https://${BACKEND_HOSTNAME}:5443";
+			proxy_ssl_trusted_certificate /etc/nginx/ssl/ca.crt;
+			proxy_ssl_verify on;
+			proxy_ssl_verify_depth 2;
+			proxy_ssl_server_name on;
+			proxy_ssl_name ${BACKEND_HOSTNAME};
 			proxy_pass $shuffle_backend;
 			proxy_next_upstream error timeout http_502 http_503 http_504;
 			proxy_buffering off;
@@ -95,7 +100,8 @@ http {
 		server_name         "localhost";
 		ssl_certificate     fullchain.cert.pem;
 		ssl_certificate_key privkey.pem;
-		ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+		# EDGE-EVAL-002: TLSv1/1.1 deprecated (RFC 8996) — align with edge policy.
+		ssl_protocols       TLSv1.2 TLSv1.3;
 		ssl_ciphers         HIGH:!aNULL:!MD5;
 
 		location / {
@@ -105,7 +111,7 @@ http {
 			add_header X-Content-Type-Options nosniff;
 
 			# security headers
-			add_header X-XSS-Protection "1; mode=block";
+			# EDGE-EVAL-001: X-XSS-Protection dropped (deprecated; CSP supersedes it).
 			# add_header Content-Security-Policy "default-src 'self'";
 			add_header Referrer-Policy "no-referrer";
 			server_tokens off;
@@ -122,7 +128,12 @@ http {
 		location ~ /api/v(1|2) {
 			# SHF-001: per-request DNS resolution (see port-80 block).
 			resolver 127.0.0.11 valid=10s ipv6=off;
-			set $shuffle_backend "http://${BACKEND_HOSTNAME}:5001";
+			set $shuffle_backend "https://${BACKEND_HOSTNAME}:5443";
+			proxy_ssl_trusted_certificate /etc/nginx/ssl/ca.crt;
+			proxy_ssl_verify on;
+			proxy_ssl_verify_depth 2;
+			proxy_ssl_server_name on;
+			proxy_ssl_name ${BACKEND_HOSTNAME};
 			proxy_pass $shuffle_backend;
 			proxy_next_upstream error timeout http_502 http_503 http_504;
 

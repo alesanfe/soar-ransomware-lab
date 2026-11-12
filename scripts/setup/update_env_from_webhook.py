@@ -75,7 +75,7 @@ def es_url_and_auth(env: dict[str, str]) -> tuple[str, tuple[str, str] | None]:
         or os.environ.get("OPENSEARCH_URL")
         or env.get("SHUFFLE_OPENSEARCH_URL")
         or env.get("OPENSEARCH_URL")
-        or "http://opensearch:9200"
+        or "https://opensearch:9200"
     )
     if not url.startswith("http"):
         url = "http://" + url

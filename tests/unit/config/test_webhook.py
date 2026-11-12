@@ -48,12 +48,15 @@ class TestResolveWebhookUrl:
     def test_token_builds_backend_url(self):
         with _clean_env():
             result = resolve_webhook_url(token="abc123")
-            assert result == "http://shuffle-backend:5001/api/v1/hooks/abc123"
+            assert result == "https://shuffle-backend:5443/api/v1/hooks/abc123"
 
     @patch.dict("os.environ", {"SIEM_WEBHOOK_TOKEN": "tok456"})
     def test_env_variable_siem_webhook_token(self):
-        result = resolve_webhook_url()
-        assert result == "http://shuffle-backend:5001/api/v1/hooks/tok456"
+        # _clean_env clears SHUFFLE_WEBHOOK_URL — conftest loads .env.full
+        # with override=True, so the ambient URL would shadow the token.
+        with _clean_env(), patch.dict("os.environ", {"SIEM_WEBHOOK_TOKEN": "tok456"}):
+            result = resolve_webhook_url()
+        assert result == "https://shuffle-backend:5443/api/v1/hooks/tok456"
 
     def test_env_url_overrides_token(self):
         with _clean_env():

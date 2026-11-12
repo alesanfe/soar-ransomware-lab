@@ -544,8 +544,3 @@ class TestStressPerformance:
         assert isinstance(stress_tester.api_token, str)
         assert stress_tester.results == []
         assert stress_tester.system_metrics == []
-
-    def test_stress_test_integration(self):
-        """Integration test for stress testing."""
-        # Test runs regardless of external services availability
-        # Skip by default to avoid dependency on external services

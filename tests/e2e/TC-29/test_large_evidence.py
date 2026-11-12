@@ -150,7 +150,7 @@ class TestLargeEvidence(E2EBaseTest):
 
         # Build Nginx-proxied webhook URL to enforce client_max_body_size.
         # The direct shuffle-backend URL has no size limit; Nginx enforces 2m.
-        # webhook_url = http://shuffle-backend:5001/api/v1/hooks/<id>
+        # webhook_url = https://shuffle-backend:5443/api/v1/hooks/<id>
         # nginx_url   = https://nginx/shuffle-api/api/v1/hooks/<id>
         import urllib.parse as _up
 

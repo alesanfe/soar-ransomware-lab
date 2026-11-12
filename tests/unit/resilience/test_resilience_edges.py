@@ -66,8 +66,10 @@ class TestTimeoutHandlerEdges:
         import soar_lab.resilience.timeout as to
 
         monkeypatch.setattr(to, "_resolve_signum", lambda: None)
+        ran = False
         with timeout_context(0.01):  # must not raise — signal unavailable
-            pass
+            ran = True
+        assert ran
 
     def test_context_cancels_timer_and_restores(self, monkeypatch):
         import soar_lab.resilience.timeout as to

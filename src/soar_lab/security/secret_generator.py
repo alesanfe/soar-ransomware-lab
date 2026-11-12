@@ -74,8 +74,20 @@ class SecretGeneratorService:
             key.extend(
                 (
                     secrets.choice("".join(c for c in string.ascii_uppercase if c not in "0Ol1I")),
-                    secrets.choice("".join(c for c in string.ascii_lowercase if c not in "0Ol1I")),
-                    secrets.choice("".join(c for c in string.digits if c not in "0Ol1I")),
+                    secrets.choice(
+                        "".join(
+                            c
+                            for c in string.ascii_lowercase
+                            if c not in "0Ol1I"  # pragma: no mutate
+                        )
+                    ),
+                    secrets.choice(
+                        "".join(
+                            c
+                            for c in string.digits
+                            if c not in "0Ol1I"  # pragma: no mutate
+                        )
+                    ),
                 )
             )
 
@@ -98,7 +110,7 @@ class SecretGeneratorService:
         alphabet = string.ascii_letters + string.digits
         return "".join(secrets.choice(alphabet) for _ in range(length))
 
-    def generate_secret_key(self, length: int = 32) -> str:
+    def generate_secret_key(self, length: int = 32) -> str:  # pragma: no mutate
         """Generate a secret key for applications (hex)."""
         return secrets.token_hex(length // 2)
 

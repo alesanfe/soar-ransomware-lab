@@ -84,6 +84,18 @@ class TestAdditionalVerbs:
         with pytest.raises(IntegrationError):
             client.patch("doc/1", data={})
 
+    def test_delete_success_and_error(self):
+        client = _client()
+        resp = _mock_response({"deleted": True})
+        client._session = Mock(headers={}, delete=Mock(return_value=resp))
+        assert client.delete("doc/9") == {"deleted": True}
+        _, kwargs = client._session.delete.call_args
+        assert kwargs["timeout"] == client.timeout
+
+        client._session.delete.side_effect = requests.ConnectionError("down")
+        with pytest.raises(IntegrationError):
+            client.delete("doc/9")
+
 
 class TestTranslateErrorEdges:
     def test_generic_request_exception_maps_to_plain_integration_error(self):
@@ -144,8 +156,8 @@ class TestDockerUrlResolution:
     def test_non_localhost_passthrough(self):
         client = _client()
         with self._in_docker():
-            url, _ = client._resolve_docker_base_url("http://thehive:9000/api", None)
-        assert url == "http://thehive:9000/api"
+            url, _ = client._resolve_docker_base_url("https://thehive:9443/api", None)
+        assert url == "https://thehive:9443/api"
 
     def test_localhost_without_port_passthrough(self):
         client = _client()
@@ -163,14 +175,14 @@ class TestDockerUrlResolution:
         client = _client()
         with self._in_docker():
             url, _ = client._resolve_docker_base_url("http://localhost:9200", None)
-        assert url == "http://elasticsearch:9200"
+        assert url == "https://elasticsearch:9200"
 
     def test_mapped_port_loads_key_when_placeholder(self):
         client = _client()
         with self._in_docker():
             with patch.object(client, "_load_env_key", return_value="real-key") as load:
                 url, key = client._resolve_docker_base_url("http://localhost:9000", "test-key")
-        assert url == "http://thehive:9000"
+        assert url == "https://thehive:9443"
         assert key == "real-key"
         load.assert_called_once_with("thehive_api_key")
 
@@ -178,7 +190,7 @@ class TestDockerUrlResolution:
         client = _client()
         with self._in_docker():
             url, key = client._resolve_docker_base_url("http://localhost:9000", "real")
-        assert url == "http://thehive:9000"
+        assert url == "https://thehive:9443"
         assert key == "real"
 
     def test_resolution_exception_falls_back_to_input(self):

@@ -27,7 +27,24 @@ if decision != "contain":
         )
     )
 else:
-    case_id = r"""$thehive_create_case.message.body._id"""
+    # Defensive resolution — see containment.py: body={} on upstream
+    # failure makes `.body._id` a shuffle_variable_error.
+    try:
+        _cc = json.loads(r"""$thehive_create_case.message""")
+        case_id = ((_cc.get("body") or {}).get("_id") or "")
+    except Exception:
+        case_id = ""
+    if not case_id:
+        print(
+            json.dumps(
+                {
+                    "success": True,
+                    "skipped": True,
+                    "reason": "no case_id — upstream create_case failed",
+                }
+            )
+        )
+        raise SystemExit(0)
     url = "__THEHIVE_INT__/api/v1/case/" + case_id
     body = json.dumps({"status": "InProgress"}).encode()
     req = urllib.request.Request(

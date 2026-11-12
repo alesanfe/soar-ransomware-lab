@@ -16,10 +16,10 @@ def mock_post():
 @pytest.fixture
 def extractor(mock_post):
     return NodeTimingExtractor(
-        opensearch_url="http://opensearch:9200",
+        opensearch_url="https://opensearch:9200",
         opensearch_user="admin",
         opensearch_pass="test",
-        elasticsearch_url="http://elasticsearch:9200",
+        elasticsearch_url="https://elasticsearch:9200",
         elasticsearch_user="elastic",
         elasticsearch_pass="test",
         metrics_index="soar-metrics",

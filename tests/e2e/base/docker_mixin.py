@@ -88,14 +88,23 @@ class DockerMixin:
         return any(marker in low for marker in self._TRANSIENT_MARKERS)
 
     def _check_with_warmup_retries(
-        self, name: str, check_fn, attempts: int = 3, pause_s: float = 5.0
+        self, name: str, check_fn, attempts: int = 0, pause_s: float = 0.0
     ) -> tuple[bool, str]:
         """Retry a health check through service warmup transients.
 
         One slow start (MISP PHP warmup, JVM under memory pressure) used to
         fail the whole suite; definitive answers still fail on first try.
+        Docker Desktop on Windows also reconciles containers in waves
+        (multi-service "connection refused" for 1-3 min), so the defaults
+        are env-tunable: E2E_HEALTH_ATTEMPTS / E2E_HEALTH_PAUSE_S.
         """
+        import os
         import time
+
+        if not attempts:
+            attempts = int(os.environ.get("E2E_HEALTH_ATTEMPTS", "10"))
+        if not pause_s:
+            pause_s = float(os.environ.get("E2E_HEALTH_PAUSE_S", "8"))
 
         last: tuple[bool, str] = (False, "no result")
         for attempt in range(1, attempts + 1):
@@ -156,7 +165,7 @@ class DockerMixin:
     ) -> tuple[bool, str]:
         """Check if an HTTP endpoint is reachable."""
         try:
-            r = requests.get(url, timeout=timeout, verify=False, auth=auth)
+            r = requests.get(url, timeout=timeout, verify=self.s.verify, auth=auth)
             if r.status_code < 500:
                 return True, f"OK ({r.status_code})"
             return False, f"HTTP {r.status_code}"
@@ -179,7 +188,7 @@ class DockerMixin:
             return False, msg
         # Check cluster health
         try:
-            r = requests.get(f"{url}/_cluster/health", timeout=10, auth=auth, verify=False)
+            r = requests.get(f"{url}/_cluster/health", timeout=10, auth=auth, verify=self.s.verify)
             if r.status_code == 200:
                 status = r.json().get("status", "unknown")
                 if status in ("green", "yellow"):
@@ -192,11 +201,13 @@ class DockerMixin:
     def verify_opensearch(self) -> tuple[bool, str]:
         """Verify OpenSearch is healthy."""
         url = self.get_service_url("opensearch")
-        ok, msg = self._check_http(url)
+        ok, msg = self._check_http(url, auth=self.s.auth)
         if not ok:
             return False, msg
         try:
-            r = requests.get(f"{url}/_cluster/health", timeout=10, verify=False)
+            r = requests.get(
+                f"{url}/_cluster/health", timeout=10, auth=self.s.auth, verify=self.s.verify
+            )
             if r.status_code == 200:
                 status = r.json().get("status", "unknown")
                 if status in ("green", "yellow"):
@@ -211,12 +222,16 @@ class DockerMixin:
         import redis as _redis
 
         try:
+            from tests.e2e.helpers.redis_tls import redis_kwargs
+
             r = _redis.Redis(
-                host=self.get_redis_host(),
-                port=self.get_redis_port(),
-                password=self.get_redis_password(),
-                decode_responses=True,
-                socket_timeout=10,
+                **redis_kwargs(
+                    host=self.get_redis_host(),
+                    port=self.get_redis_port(),
+                    password=self.get_redis_password(),
+                    decode_responses=True,
+                    socket_timeout=10,
+                )
             )
             pong = r.ping()
             if pong:
@@ -240,7 +255,7 @@ class DockerMixin:
                 f"{url}/api/v1/user/current",
                 headers={"Authorization": f"Bearer {api_key}"},
                 timeout=10,
-                verify=False,
+                verify=self.s.verify,
             )
             if r.status_code == 200:
                 return True, "OK"
@@ -272,7 +287,7 @@ class DockerMixin:
                         "Authorization": f"Basic {creds}",
                     },
                     timeout=10,
-                    verify=False,
+                    verify=self.s.verify,
                 )
                 if r.status_code == 200:
                     return True, "OK"
@@ -292,7 +307,7 @@ class DockerMixin:
                 f"{url}/servers/getVersion",
                 headers={"Authorization": api_key, "Accept": "application/json"},
                 timeout=10,
-                verify=False,
+                verify=self.s.verify,
             )
             if r.status_code == 200:
                 return True, "OK"
@@ -374,7 +389,7 @@ class DockerMixin:
 
     def verify_web_management(self) -> tuple[bool, str]:
         """Verify Web Management UI is available."""
-        url = "http://web-management:80"
+        url = "http://web-management:8080"
         ok, msg = self._check_http(url, timeout=5)
         if ok:
             return True, f"OK ({url})"
@@ -392,7 +407,7 @@ class DockerMixin:
         """Verify Loki is ready."""
         url = self.get_service_url("loki")
         try:
-            r = requests.get(f"{url}/ready", timeout=10, verify=False)
+            r = requests.get(f"{url}/ready", timeout=10, verify=self.s.verify)
             if r.status_code == 200:
                 return True, "OK"
             return False, f"HTTP {r.status_code}"
@@ -403,7 +418,7 @@ class DockerMixin:
         """Verify Promtail is collecting metrics."""
         url = self.get_service_url("promtail")
         try:
-            r = requests.get(f"{url}/metrics", timeout=10, verify=False)
+            r = requests.get(f"{url}/metrics", timeout=10, verify=self.s.verify)
             if r.status_code == 200:
                 return True, "OK"
             return False, f"HTTP {r.status_code}"
@@ -414,7 +429,7 @@ class DockerMixin:
         """Verify Grafana is healthy."""
         url = self.get_service_url("grafana")
         try:
-            r = requests.get(f"{url}/api/health", timeout=10, verify=False)
+            r = requests.get(f"{url}/api/health", timeout=10, verify=self.s.verify)
             if r.status_code == 200:
                 return True, "OK"
             return False, f"HTTP {r.status_code}"

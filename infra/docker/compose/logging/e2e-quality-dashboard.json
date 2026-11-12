@@ -1,0 +1,703 @@
+{
+  "uid": "soar-e2e-quality",
+  "title": "E2E Quality Gate",
+  "tags": [
+    "soar",
+    "e2e",
+    "quality",
+    "o-02"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Latest run: TCs passed",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "elasticsearch"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "max",
+              "field": "passed_tcs"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "metric_type",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "_term"
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "description": "Number of test cases passed in the most recent e2e-history doc."
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Latest run: TCs failed",
+      "gridPos": {
+        "h": [
+          {
+            "color": "green",
+            "value": null
+          },
+          {
+            "color": "red",
+            "value": 1
+          }
+        ],
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "elasticsearch"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "max",
+              "field": "failed_tcs"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "metric_type",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "_term"
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "description": "Number of test cases failed in the most recent e2e-history doc."
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Subtests passed (latest)",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "elasticsearch"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "max",
+              "field": "passed_subtests"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "metric_type",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "_term"
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "description": "Subtests passed in the latest e2e run."
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Report runs indexed",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "elasticsearch"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "count"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "metric_type",
+              "settings": {
+                "size": "1",
+                "order": "desc",
+                "orderBy": "_term"
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "description": "Total e2e-history documents indexed (one per report run)."
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "TC pass trend (30d)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "elasticsearch"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "passed",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "max",
+              "field": "passed_tcs"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "total",
+          "metrics": [
+            {
+              "id": "3",
+              "type": "max",
+              "field": "total_tcs"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "4",
+              "type": "date_histogram",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "description": "Passed test cases per report run over the last 30 days."
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "KPI trend — success / containment / automation (%)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "elasticsearch"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "success %",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "avg",
+              "field": "kpis.success_rate"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "containment %",
+          "metrics": [
+            {
+              "id": "3",
+              "type": "avg",
+              "field": "kpis.containment_rate"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "4",
+              "type": "date_histogram",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "automation %",
+          "metrics": [
+            {
+              "id": "5",
+              "type": "avg",
+              "field": "kpis.automation_rate"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "6",
+              "type": "date_histogram",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "description": "KPI success/containment/automation rates trended over report runs."
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "MTTR trend (s)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "elasticsearch"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"e2e_run\"",
+          "alias": "mean mttr",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "avg",
+              "field": "kpis.mttr_mean_s"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "date_histogram",
+              "settings": {
+                "interval": "1d",
+                "min_doc_count": 0,
+                "trimEdges": 0
+              }
+            }
+          ],
+          "timeField": "@timestamp",
+          "index": "e2e-history"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "description": "Mean total MTTR seconds across e2e-history report runs."
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Node mean duration (latest 100 execs)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "elasticsearch"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "elasticsearch"
+          },
+          "query": "metric_type:\"workflow_execution\"",
+          "alias": "mttr by verdict",
+          "metrics": [
+            {
+              "id": "1",
+              "type": "avg",
+              "field": "mttr_seconds"
+            }
+          ],
+          "bucketAggs": [
+            {
+              "id": "2",
+              "type": "terms",
+              "field": "verdict.keyword",
+              "settings": {
+                "size": "10",
+                "order": "desc",
+                "orderBy": "_term"
+              }
+            }
+          ],
+          "timeField": "@timestamp"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 12,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "description": "Mean duration per workflow node across the latest 100 soar-metrics docs."
+    }
+  ]
+}

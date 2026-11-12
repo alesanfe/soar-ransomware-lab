@@ -1,0 +1,41 @@
+# Versioned ATT&CK coverage catalog — the contract TC-31 validates against.
+# version follows ATT&CK release cadence; `deprecated` lists technique ids
+# officially withdrawn/merged upstream (no rule may reference them).
+version: "2026-11"
+techniques:
+  t1071.001:
+    name: Application Layer Protocol — Web Protocols
+    d3fend: [Network Traffic Filtering, Protocol Metadata Analysis]
+  t1486:
+    name: Data Encrypted for Impact
+    d3fend: [File Analysis, Executable Allowlisting, System Call Filtering]
+  t1490:
+    name: Inhibit System Recovery
+    d3fend: [File Integrity Monitoring, System Call Filtering, Process Spawned Process Analysis]
+  t1491:
+    name: Defacement
+    d3fend: [File Integrity Monitoring, Web Server Hardening, Access Control Mediation]
+  t1505.003:
+    name: Server Software Component — Web Shell
+    d3fend: [File Analysis, Web Server Hardening, Process Spawned Process Analysis]
+  t1534:
+    name: Internal Spearphishing
+    d3fend: [Email Filtering, Attachment Analysis, Sender Reputation Analysis]
+  t1566:
+    name: Phishing
+    d3fend: [Email Filtering, URL Analysis, User Behavior Analysis]
+  t1048:
+    name: Exfiltration Over Alternative Protocol
+    d3fend: [Network Traffic Filtering, Per Host Download-Upload Ratio Analysis]
+  t1110.004:
+    name: Brute Force — Credential Stuffing
+    d3fend: [Authentication Event Thresholding, Account Locking]
+  t1078:
+    name: Valid Accounts
+    d3fend: [Multi-factor Authentication, User Behavior Analysis]
+  t1567.002:
+    name: Exfiltration to Cloud Storage
+    d3fend: [Outbound Traffic Filtering, Cloud Storage Access Auditing]
+deprecated:
+  t1086: PowerShell — deprecated in ATT&CK v5, merged into t1059.001
+  t1117: Regsvr32 — deprecated in ATT&CK v11, merged into t1218.010

@@ -266,7 +266,7 @@ class TestEdgeCases(E2EBaseTest):
         alert and causing it to time out.
         """
         self._log("STEP 2b: Waiting for edge-case workflows to complete...")
-        es_url = self.get_service_url("opensearch") or "http://opensearch:9200"
+        es_url = self.get_service_url("opensearch") or "https://opensearch:9200"
         deadline = time.time() + timeout
         poll_errors = 0
         while time.time() < deadline:
@@ -385,8 +385,11 @@ class TestEdgeCases(E2EBaseTest):
         self._log(f"Sending {len(self._edge_payloads())} edge-case payloads...")
 
         self._step_send_edge_cases()
-        self._step_verify_services_healthy()
+        # Drain the Orborus queue BEFORE the health checks: the edge-case case
+        # only exists once its workflow lands, and 9 queued executions take
+        # far longer than the 60s TheHive poll inside the health check.
         self._step_wait_for_edge_case_workflows()
+        self._step_verify_services_healthy()
         self._step_final_normal_alert()
 
         # Validate edge case results were recorded and all passed

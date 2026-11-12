@@ -1,0 +1,93 @@
+name: E2E Smoke (scheduled)
+
+# QA-01: scheduled E2E smoke over the REAL compose stack. The full suite
+# (~3h, ~16 GB RAM) cannot run on GitHub-hosted runners; this job runs a
+# representative subset on a weekly cadence + manual dispatch, so pipeline
+# regressions surface between releases instead of only on maintainer hosts.
+# Self-hosting the full `make test-e2e` is the documented step-up.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 0' # Sundays 03:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-smoke
+  cancel-in-progress: false
+
+jobs:
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Free disk space for the SOAR stack
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/share/boost \
+            "$AGENT_TOOLSDIRECTORY" || true
+          df -h /
+
+      - name: Create .env from example
+        run: cp .env.example .env
+
+      - name: Generate dev secrets
+        run: |
+          make -f Makefile.linux generate-secrets >> .env || true
+
+      - name: Build compose stack
+        run: |
+          make -f Makefile.linux build || docker compose \
+            --env-file .env \
+            -f infra/docker/compose/docker-compose.yml \
+            -f infra/docker/compose/docker-compose.core.yml \
+            -f infra/docker/compose/docker-compose.api.yml \
+            -f infra/docker/compose/logging/docker-compose.logging.yml \
+            build
+
+      - name: Start stack
+        run: |
+          make -f Makefile.linux up || docker compose \
+            --env-file .env \
+            -f infra/docker/compose/docker-compose.yml \
+            -f infra/docker/compose/docker-compose.core.yml \
+            -f infra/docker/compose/docker-compose.api.yml \
+            -f infra/docker/compose/logging/docker-compose.logging.yml \
+            up -d
+
+      - name: Wait for services
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec soar_api curl -sf http://localhost:8000/api/health >/dev/null 2>&1; then
+              echo "API healthy"; break
+            fi
+            sleep 10
+          done
+          docker ps --format '{{.Names}} {{.Status}}'
+
+      - name: Initialize Shuffle webhook
+        run: make -f Makefile.linux init-webhook
+
+      - name: E2E smoke subset (fast TCs)
+        run: |
+          # Webhook contract + security negative paths — no workflow wait needed.
+          make -f Makefile.linux test-e2e-tc19 || exit 1
+          make -f Makefile.linux test-e2e-tc34 || exit 1
+          # One full happy-path alert → workflow → case → metrics chain.
+          make -f Makefile.linux test-e2e-tc00-01 || exit 1
+
+      - name: Collect evidence on failure
+        if: failure()
+        run: |
+          docker ps -a
+          for c in soar_api soar_shuffle-backend soar_loki; do
+            echo "=== $c logs ==="; docker logs --tail 100 "$c" 2>&1 || true
+          done
+
+      - name: Tear down
+        if: always()
+        run: make -f Makefile.linux down || true

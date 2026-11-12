@@ -260,3 +260,80 @@ y verificado por CA (medible: `-k` ya no es necesario dentro del stack).
 El stack conserva la nota **9.5/10**: los residuos que quedan son de
 arquitectura de laboratorio (single-host, third-party mTLS), no deudas de
 implementación.
+
+## Séptima revisión — sprint OBS (2026-11-10, backlog de 203 ítems)
+
+Sprint de cierre de deuda operativa verificado en el stack vivo. Evidencia
+medible, no aspiracional:
+
+| Ítem | Resolución | Evidencia en vivo |
+|------|------------|-------------------|
+| **Secrets S3 por defecto** | **Cerrado** — rotados a `soar-s3-admin` + per-componente `soar-loki`/`soar-tempo` en `.env`; el par default `soar-s3/soar-s3-secret-change-me` devuelve `403 InvalidAccessKeyId` | SigV4 real: loki→loki `200`, loki→tempo `403 AccessDenied`, default `403` (`test_bucket_scoping_enforced`, `test_old_default_s3_credentials_rejected`) |
+| **IAM scoping por bucket** | **Cerrado** — identidades estáticas + `policyNames` con `Resource` ARN-scoped en `iam.config.json` (ADR-0014 §1) | 403 cross-bucket verificado in vivo |
+| **`s3-init` fail-open** | **Cerrado** — `set -euo pipefail`, creación idempotente, sonda write→read(retry)→delete vía filer, exit ≠0 si falla; `depends_on: service_completed_successfully` en loki/tempo | `docker logs soar_s3_init` → probe OK; salida `Completed` |
+| **OTel sin healthcheck ni backpressure** | **Cerrado** — `/otelcol validate` (distroless, no hay shell); `memory_limiter` + `batch` + `sending_queue`/`retry_on_failure` | container `healthy`; config validada por el gate CI |
+| **Alertas rotas / referencias** | **Cerrado + regression gate** — bug real detectado por el validador nuevo (`cortex_success_rate_low` D→D autorreferencia); test architecture rechaza self-ref, forward-ref, ciclos directos/indirectos, duplicados | 22 reglas en 3 grupos provisionadas, **0 eval errors** en `/api/prometheus/grafana/api/v1/rules` |
+| **Servicios caídos sin alerta** | **Cerrado** — 9 reglas `obs_*`: probe down, target down, cert expiry 30d/14d, restart loop, S3 errors, spans dropped, ISCM watchdog, canal silencioso | provisionadas con severity+runbook (RB-16..23) |
+| **Probing blackbox / cert expiry** | **Cerrado** — `blackbox-exporter` v0.25.0, 14 probes https/tcp en `prometheus.yml`, métrica `probe_ssl_earliest_cert_expiry` | 22/22 targets up (8 scrape + 14 probes); `test_cert_expiry_metric_present` |
+| **Hardening capabilities** | **Cerrado** — `no-new-privileges` + `cap_drop: ALL` selectivo; excepciones justificadas: cadvisor `privileged` (irreducible, R-08), s3-vol2 `SETUID/GID` (su-exec, verificado crash-loop sin ellas) | stack healthy tras recreate completo |
+| **Redacción de secretos en logs** | **Cerrado** — template promtail amplía `replace` a `Authorization`/`Bearer`/`Cookie`/`X-Api-Key`/tokens/passwords + URLs de webhook Shuffle | `promtail -check-syntax` PASS en CI |
+| **Validadores de config** | **Cerrado** — `scripts/ci/validate_observability_configs.sh`: compose config + promtool (config/web-config) + loki/tempo/promtail/otelcol/blackbox validators nativos + pinning + LF + gitleaks | **10/10 PASS**; job `observability-configs` en `ci.yml`; cazó un bug real (`scrape_timeout > interval` en cadvisor) |
+| **Renderer `IGNORE_HTTPS_ERRORS`** | **ADR aceptado** — Chromium NSS no admite CA vía env; tráfico cifrado, verificación desactivada documentada (R-06, ADR-0014 §4) | RB-13 + risk register |
+| **Tests vivos E2E** | **Cerrado** — `tests/integration/test_observability_live.py`: 14 tests (targets, probes, cert metric, reglas, contact point, webhook sintético 200, TLS×4, IAM×2, watchdog) | **14/14 PASS** con `-m requires_docker` |
+
+### Bugs reales encontrados en este sprint
+
+- **`cortex_success_rate_low` autorreferencia D→D** (validador estático).
+- **cadvisor `scrape_timeout: 30s` > `scrape_interval: 15s`** (promtool) →
+  job a 60s/30s.
+- **`s3-vol2` crash-loop por `cap_drop: ALL`** (su-exec) → excepción con
+  `SETUID/SETGID`.
+- **`accelerator` no es métrica válida en cadvisor v0.49** → fuera de
+  `disable_metrics`.
+- **`infra/docker/compose/config/` con dirs vacíos fantasma** (bind-mount
+  sobre ruta inexistente crea directorios) → borrados; el validator lo
+  detectó como "is a directory".
+- **MSYS grep `-lU $'\r'` devuelve falsos positivos** (modo texto elimina
+  CR) — el check LF usa `od` hex.
+
+### Deuda residual tras el sprint (explícita)
+
+- Renderer sin verificación de peer (R-06, ADR-0014 §4).
+- SeaweedFS 2 racks en el mismo host (R-07); filer/gateway single-instance.
+- OTLP gRPC :4317/:4318 en claro dentro de la red (mTLS de terceros, fuera
+  de perímetro lab).
+- HA real, storage externo, WORM/immutability y notificación externa
+  (SMTP/PagerDuty) = horizonte producción, fuera del alcance del lab —
+  documentado, no implementado.
+- Backup/restore drill del stack de observabilidad + tests de
+  disk-full/capacidad: pendientes (sprint siguiente).
+
+### Nota (séptima revisión)
+
+Con IAM efectivo, init fail-closed, backpressure, probes, self-monitoring
+alerting, hardening medido y un gate CI que valida cada config con su
+binario nativo, las deudas de **implementación** del stack están cerradas.
+Lo que resta es horizonte de producción (multi-host, mTLS third-party,
+WORM) — arquitectura, no deuda. Nota mantenida **9.5/10** con evidencia
+reproducible.
+
+## Octava revisión — sprint 2: failure-injection, backup/restore, retención, SLO (2026-11-10)
+
+El segundo sprint cerró los ítems operativos restantes del registro
+(`docs/24` §2.3) y el failure-injection **cazó 3 bugs reales**:
+
+| Ítem | Resolución | Evidencia |
+|------|------------|-----------|
+| **Backup/restore** | `scripts/maintenance/backup_obs_stack.sh` + `make backup-obs`/`drill-obs` | 7/7 volúmenes tareados+verificados; drill a volúmenes scratch con markers; **RTO 94s** |
+| **Failure-injection** | `docker stop tempo` → `obs_probe_down` firing a los +4m → restart → inactive | lazo completo kill→fire→restore→resolve + notificación al API |
+| **Bug: promtail ingest parado** | `cap_drop: ALL` quitó `CAP_DAC_OVERRIDE` → EACCES en docker.sock | `cap_add: [DAC_OVERRIDE]` — 637k+ entries/20MB a Loki tras el fix; la alerta `soar_loki_ingest_stalled` lo detectó (señal real) |
+| **Bug: `obs_alert_channel_silent` perma-fire** | `increase()` sin `sum()` — series `{status="resolved|other"}` siempre 0 | `sum(increase(...))` |
+| **Bug: `obs_s3_*` self-match (RB-06)** | query-echo de loki contiene la regex | `!~` excluye `caller=(metrics|engine|roundtrip)[.]go`/`executing query` |
+| **Retención** | evidencia de purga real | tempo `deleting block` (sweep 48h) + loki compactor cycles cada ~1min |
+| **SLO/burn-rate** | `obs_admission_slo_burn_rate` (5m+1h, 14.4× budget 1%) | 23 reglas provisionadas; solo watchdog firing |
+
+**Nota**: la cadena de monitorización demostró valor real — el failure-
+injection reveló una regresión de hardening silenciosa (promtail) que el
+healthcheck no cubría, y dos bugs semánticos en las propias alertas.
+Estado: **23 reglas, 0 errores, solo watchdog firing**; suites 19/19 +
+15/15 + 10/10 verdes.

@@ -1,0 +1,21 @@
+---
+# Internal user database for the lab OpenSearch node.
+# Only the service accounts used by this stack are defined — the upstream
+# demo users are intentionally omitted. Hash = bcrypt of OPENSEARCH_PASSWORD
+# (generate with plugins/opensearch-security/tools/hash.sh).
+
+_meta:
+  type: "internalusers"
+  config_version: 2
+
+admin:
+  hash: "$2y$12$WFyoXdC9Q7s/u3r8nrS6Q.y882P88ihfLpql/18/9gcQhrPPBPvkm"
+  reserved: true
+  backend_roles:
+  - "admin"
+  description: "Lab admin user (password = OPENSEARCH_PASSWORD)"
+
+kibanaserver:
+  hash: "$2y$12$WFyoXdC9Q7s/u3r8nrS6Q.y882P88ihfLpql/18/9gcQhrPPBPvkm"
+  reserved: true
+  description: "OpenSearch Dashboards service account (password = OPENSEARCH_PASSWORD)"

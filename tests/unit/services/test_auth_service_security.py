@@ -34,7 +34,7 @@ class TestSecretLengthBypass:
 
     def test_long_api_secret_passes(self):
         svc = _service({"api_auth_secret": "x" * 40})
-        svc._validate_secret_length("x" * 40)
+        assert svc._validate_secret_length("x" * 40) is None
 
     def test_jwt_secret_still_enforced(self):
         svc = _service({"jwt_secret_key": "y" * 40})

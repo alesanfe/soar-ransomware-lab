@@ -5,7 +5,7 @@
 # Node.js in the final image.
 
 # Stage 1: reproducible dependencies (DOCS-008: npm ci, lockfile-pinned).
-FROM node:22-alpine AS deps
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS deps
 WORKDIR /opt/docusaurus
 COPY apps/docs-site/package.json apps/docs-site/package-lock.json ./
 RUN npm ci
@@ -26,7 +26,7 @@ COPY reports/e2e/charts ./docs/reports/e2e/charts
 RUN npm run build
 
 # Stage 3: static serving — nginx only, non-root capable, read-only FS safe.
-FROM nginx:1.27-alpine
+FROM nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
 COPY apps/docs-site/nginx.conf /etc/nginx/conf.d/default.conf
 # baseUrl=/soar-ransomware-lab/ — the site must live under that path on
 # disk or every asset/link 404s (and try_files loops to a 500).

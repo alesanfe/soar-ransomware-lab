@@ -147,6 +147,20 @@ class TestTimeoutHandling:
 
         assert call_count[0] == 1, "Should timeout on first call"
 
+    def test_exit_without_enter_restores_no_signal(self):
+        """__exit__ con _old_handler=None debe omitir el restore de señal.
+
+        Mata al mutante `_TimeoutContext.__exit__` (and→or): con signum
+        resuelto pero sin handler previo, el mutante llama
+        ``signal.signal(signum, None)`` → TypeError.
+        """
+        from soar_lab.resilience.timeout import _TimeoutContext
+
+        ctx = _TimeoutContext(0.1)
+        if ctx._signum is None:
+            pytest.skip("platform exposes no timeout signal")
+        ctx.__exit__(None, None, None)
+
     def test_timeout_with_context_manager(self):
         """Test timeout as context manager."""
         from soar_lab.resilience.timeout import timeout_context

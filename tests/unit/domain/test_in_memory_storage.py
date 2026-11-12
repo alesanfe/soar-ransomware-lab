@@ -91,7 +91,7 @@ class TestInMemoryStorage:
         """Test delete nonexistent key does not raise error."""
         storage = InMemoryStorage()
 
-        storage.delete("nonexistent.txt")  # Should not raise
+        assert storage.delete("nonexistent.txt") is None
 
     def test_clear(self):
         """Test clear removes all data."""
@@ -218,17 +218,13 @@ class TestInMemoryStorage:
         """Test store_backup_metadata is a no-op (placeholder)"""
         storage = InMemoryStorage()
 
-        storage.store_backup_metadata("backup.tar.gz", {"user": "test"})
-
-        # Should not raise, just a placeholder
+        assert storage.store_backup_metadata("backup.tar.gz", {"user": "test"}) is None
 
     def test_log_restore_operation(self):
         """Test log_restore_operation is a no-op (placeholder)"""
         storage = InMemoryStorage()
 
-        storage.log_restore_operation("backup.tar.gz", {"user": "test"})
-
-        # Should not raise, just a placeholder
+        assert storage.log_restore_operation("backup.tar.gz", {"user": "test"}) is None
 
     def test_get_backup_directory(self):
         """Test get_backup_directory returns in-memory path."""

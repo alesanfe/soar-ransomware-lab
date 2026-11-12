@@ -35,53 +35,79 @@ def _svc_headers() -> dict:
     return {"X-Service-Token": token} if token else {}
 
 
-def _get_host_url(host: str, port: int, path: str = "") -> str:
-    """Return appropriate URL based on environment (host vs container)."""
+# Services terminated with the lab PKI (TLS since the security hardening):
+# datastores, grafana/loki, thehive/cortex/shuffle/misp all serve lab-CA
+# certs. Keyed on the FINAL target port (after host/docker remapping).
+_TLS_PORTS = {443, 3000, 3100, 5001, 5443, 9200, 9201, 9443, 18100, 18101, 19200, 19201}
+
+# Basic-auth credentials for the secured datastores.
+_ES_AUTH = (
+    os.environ.get("ELASTIC_USERNAME", "elastic"),
+    os.environ.get("ELASTIC_PASSWORD", ""),
+)
+
+
+def _lab_verify() -> str | bool:
+    """CA bundle for lab-TLS calls (mounted in soar_api; repo path on host)."""
+    for cand in ("/app/certs/ca.crt", "infra/docker/config/certs/ca.crt"):
+        if os.path.exists(cand):
+            return cand
+    return True
+
+
+def _get_host_url(host: str, port: int, path: str = "") -> str | None:
+    """Return URL to reach (host,port) — container names inside docker,
+    published ports on host. ``None`` when the service is deliberately not
+    host-published under the hardened overlay (grafana/loki/misp/docs)."""
     if _IN_DOCKER:
-        # Inside container, use container names for external services
-        # but localhost for the API itself (running in same container)
+        # Inside docker the key is the logical service port the test
+        # addresses; value is (container_name, internal port actually
+        # served). All TLS-terminated services sit behind the lab PKI.
+        # Service (not container) names — the lab PKI SANs cover the
+        # compose service aliases; soar_* container names are not in them.
         host_mapping = {
             "localhost": {
-                9201: ("soar_elasticsearch", 9200),
-                9000: ("soar_thehive", 9000),
-                9001: ("soar_cortex", 9001),
-                5001: ("soar_shuffle_backend", 5001),
-                5601: ("soar_opensearch_dashboards", 5601),
-                8085: ("soar_web_management", 80),
-                8083: ("soar_misp", 80),
-                8084: ("soar_grafana", 3000),
-                3100: ("soar_loki", 3100),
-                8086: ("soar_docs_site", 8080),
+                8000: ("api", 8000),
+                9201: ("elasticsearch", 9200),
+                9200: ("opensearch", 9200),
+                9000: ("thehive", 9443),
+                9001: ("cortex", 9443),
+                5001: ("shuffle-backend", 5443),
+                5601: ("opensearch-dashboards", 5601),
+                8085: ("web-management", 8080),
+                8083: ("misp", 443),
+                8084: ("grafana", 3000),
+                3100: ("loki", 3100),
+                8086: ("docs-site", 8080),
             }
         }
-        # For API (port 8000), use localhost since it's in the same container
-        if port == 8000:
-            mapped_host = "localhost"
-            mapped_port = port
-        elif host in host_mapping and port in host_mapping[host]:
-            mapped_host, mapped_port = host_mapping[host][port]
-        else:
-            mapped_host = host
-            mapped_port = port
-        if mapped_port:
-            return f"http://{mapped_host}:{mapped_port}{path}"
-        else:
-            return f"http://{mapped_host}{path}"
+        mapped_host, mapped_port = host_mapping.get(host, {}).get(port, (host, port))
+        mapped_host = mapped_host or host
+        mapped_port = mapped_port or port
     else:
         # On host, services publish remapped ports (see docker-compose):
-        # internal → host-published. Unmapped services are not reachable.
+        # requested port → host-published. Unmapped = not host-reachable
+        # by design — callers fall back to docker-inspect liveness.
         host_port_map = {
-            9201: 8200,  # elasticsearch
-            9200: 8201,  # opensearch
-            9000: 8100,  # thehive
-            9001: 8101,  # cortex
-            5601: 8202,  # opensearch-dashboards
+            8000: 8070,   # api
+            9201: 19200,  # elasticsearch
+            9200: 19201,  # opensearch
+            9000: 18100,  # thehive  (TLS 9443 internal)
+            9001: 18101,  # cortex   (TLS 9443 internal)
+            5001: 5001,   # shuffle  (TLS 5443 internal)
+            5601: 19202,  # opensearch-dashboards
+            8085: 443,    # web-management via nginx /
+            8084: 18084,  # grafana (TLS 3000 internal; 8084 in Hyper-V excl range)
+            8083: 18083,  # misp (TLS 443 internal;    8083 in Hyper-V excl range)
+            8086: 18086,  # docs-site (                8086 in Hyper-V excl range)
         }
-        mapped_port = host_port_map.get(port, port)
-        if mapped_port:
-            return f"http://{host}:{mapped_port}{path}"
-        else:
-            return f"http://{host}{path}"
+        if port not in host_port_map:
+            return None
+        mapped_host, mapped_port = host, host_port_map[port]
+    scheme = "https" if mapped_port in _TLS_PORTS else "http"
+    if mapped_port:
+        return f"{scheme}://{mapped_host}:{mapped_port}{path}"
+    return f"{scheme}://{mapped_host}{path}"
 
 
 def _run(cmd: list[str], timeout: int = 15) -> subprocess.CompletedProcess:
@@ -155,7 +181,7 @@ class TestSmokeCritical:
         """ROLLBACK if Elasticsearch cluster is RED."""
         try:
             url = _get_host_url("localhost", 9201, "/_cluster/health")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, auth=_ES_AUTH, verify=_lab_verify())
             assert r.status_code == 200
             status = r.json().get("status", "red")
             # Accept red status as long as ES is responding
@@ -181,7 +207,7 @@ class TestSmokeHigh:
     def test_thehive_api_responds(self):
         try:
             url = _get_host_url("localhost", 9000, "/api/status")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, verify=_lab_verify())
             assert r.status_code in (200, 401, 403), f"TheHive /api/status returned {r.status_code}"
         except requests.ConnectionError:
             pytest.fail("TheHive not reachable")
@@ -189,7 +215,7 @@ class TestSmokeHigh:
     def test_cortex_api_responds(self):
         try:
             url = _get_host_url("localhost", 9001, "/api/status")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, verify=_lab_verify())
             assert r.status_code in (200, 401, 403), f"Cortex /api/status returned {r.status_code}"
         except requests.ConnectionError:
             pytest.fail("Cortex not reachable")
@@ -197,7 +223,7 @@ class TestSmokeHigh:
     def test_shuffle_backend_responds(self):
         try:
             url = _get_host_url("localhost", 5001, "/api/v1/health")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, verify=_lab_verify())
             assert r.status_code in (200, 401), f"Shuffle backend returned {r.status_code}"
         except requests.ConnectionError:
             pytest.fail("Shuffle backend not reachable")
@@ -272,12 +298,13 @@ class TestSmokeMedium:
 
     def test_grafana_responds(self):
         try:
-            # Use container name and internal port when running inside Docker
-            if os.path.exists("/.dockerenv"):
+            # In-docker: https://soar_grafana:3000. On host: published as
+            # https://localhost:8084 (TLS per compose spec).
+            if _IN_DOCKER:
                 url = _get_host_url("grafana", 3000, "/api/health")
             else:
                 url = _get_host_url("localhost", 8084, "/api/health")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, verify=_lab_verify())
             assert r.status_code == 200, f"Grafana /api/health returned {r.status_code}"
         except requests.ConnectionError:
             pytest.fail("Grafana not reachable")
@@ -292,7 +319,7 @@ class TestSmokeMedium:
             return
         try:
             url = _get_host_url("localhost", 3100, "/ready")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, verify=_lab_verify())
             # Accept any status as long as Loki is responding
             assert r.status_code in (200, 503), f"Loki /ready returned {r.status_code}"
         except requests.ConnectionError:
@@ -300,8 +327,10 @@ class TestSmokeMedium:
 
     def test_web_management_ui_responds(self):
         try:
+            # In-docker: http://soar_web_management:8080. On host: nginx
+            # proxies it at https://localhost/ (8085 is not published).
             url = _get_host_url("localhost", 8085, "")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, verify=_lab_verify())
             assert r.status_code == 200, f"Web management UI returned {r.status_code}"
             assert "text/html" in r.headers.get("content-type", "")
         except requests.ConnectionError:
@@ -371,10 +400,10 @@ class TestSmokeResources:
         try:
             # Use container name and internal port when running inside Docker
             if os.path.exists("/.dockerenv"):
-                url = "http://elasticsearch:9200/_cat/allocation?v&format=json"
+                url = "https://elasticsearch:9200/_cat/allocation?v&format=json"
             else:
                 url = _get_host_url("localhost", 9201, "/_cat/allocation?v&format=json")
-            r = requests.get(url, timeout=TIMEOUT)
+            r = requests.get(url, timeout=TIMEOUT, auth=_ES_AUTH, verify=_lab_verify())
             assert r.status_code == 200, "ES allocation endpoint not available"
             nodes = r.json()
             for node in nodes:

@@ -3,6 +3,7 @@
 import importlib.util
 import py_compile
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "Makefile.win").is_file())
@@ -34,11 +35,13 @@ def test_all_scripts_compile():
     """py_compile every script — catches syntax/import-level breakage
     without executing anything (scripts may be destructive)."""
     failures = []
-    for path in sorted(SCRIPTS.rglob("*.py")):
-        if "__pycache__" in path.parts:
-            continue
-        try:
-            py_compile.compile(str(path), doraise=True)
-        except py_compile.PyCompileError as exc:
-            failures.append(f"{path.relative_to(ROOT)}: {exc.msg}")
+    with tempfile.TemporaryDirectory() as tmp:
+        for path in sorted(SCRIPTS.rglob("*.py")):
+            if "__pycache__" in path.parts:
+                continue
+            cfile = Path(tmp) / f"{len(failures)}_{path.stem}.pyc"
+            try:
+                py_compile.compile(str(path), cfile=str(cfile), doraise=True)
+            except py_compile.PyCompileError as exc:
+                failures.append(f"{path.relative_to(ROOT)}: {exc.msg}")
     assert not failures, "scripts that fail to compile:\n" + "\n".join(failures)

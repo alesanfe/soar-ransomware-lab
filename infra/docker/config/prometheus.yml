@@ -17,6 +17,11 @@ scrape_configs:
 
   - job_name: cadvisor
     metrics_path: /metrics
+    # cadvisor enumerates all containers — slower than the 10s default on a
+    # busy host. Prometheus requires scrape_timeout <= scrape_interval, so
+    # the job runs at 60s resolution (host metrics don't need 15s).
+    scrape_interval: 60s
+    scrape_timeout: 30s
     static_configs:
       - targets: ["cadvisor:8080"]
         labels: {service: cadvisor}
@@ -69,3 +74,130 @@ scrape_configs:
     static_configs:
       - targets: ["elasticsearch-exporter:9114"]
         labels: {service: elasticsearch}
+
+  # === Core SOAR service metrics (CORE-OBS-002/005) ===
+  - job_name: thehive-jmx
+    static_configs:
+      - targets: ["thehive:9404"]
+        labels: {service: thehive, metrics: jvm}
+
+  # thehive-app (kamon embedded reporter on :9095) intentionally removed:
+  # the kanela agent jar does not bundle kamon-prometheus, so nothing
+  # listens on 9095 — a permanently-down target is pure alert noise.
+  # App/JVM visibility is provided by thehive-jmx on :9404.
+
+  - job_name: cortex-jmx
+    static_configs:
+      - targets: ["cortex:9404"]
+        labels: {service: cortex}
+
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+        labels: {service: redis}
+
+  # === Synthetic probing (OBS-023/046/048) ===
+  # Prometheus asks the blackbox exporter to probe each endpoint; the
+  # metrics land as probe_success / probe_duration_seconds /
+  # probe_ssl_earliest_cert_expiry{instance=...} and drive the
+  # probe-down and certificate-expiry alerts.
+
+  - job_name: blackbox-https
+    metrics_path: /probe
+    params:
+      module: [https_2xx]
+    static_configs:
+      - targets:
+          - https://grafana:3000/api/health
+          - https://loki:3100/ready
+          - https://tempo:3200/ready
+          - https://prometheus:9090/-/ready
+          # CORE-006: core SOAR services — TLS health endpoints (lab CA)
+          - https://thehive:9443/api/v1/status/public
+          - https://cortex:9443/api/status
+          # MISP-EVAL-002: threat-intel stack — public heartbeat (lab CA)
+          - https://misp/users/heartbeat
+          # SSO-EVAL-004: TLS-only SSO plane (lab CA)
+          - https://keycloak:9000/health/ready
+          - https://oauth2-proxy-web:8443/ping
+          - https://oauth2-proxy-shuffle:8443/ping
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: blackbox-http
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://otel-collector:13133/
+          - http://cadvisor:8080/healthz
+          - http://elasticsearch-exporter:9114/healthz
+          - http://grafana-renderer:8081/
+          - http://s3:9333/cluster/status
+          - http://s3-vol2:8081/status
+          - http://s3:8888/
+          # CORE-006: core SOAR services — public health endpoints only
+          # (no API creds stored in prometheus config)
+          - http://network-watcher:8080/health
+          # (SSO targets moved to blackbox-https — TLS-only plane)
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: blackbox-tcp
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+          - s3:8333        # S3 gateway
+          - s3-vol2:8081   # volume server
+          - grafana-db:5432
+          # CORE-006: core SOAR services — TCP liveness for auth'd APIs
+          - cortex:9443
+          # MISP-EVAL-002: misp-db (MariaDB) + misp-modules TCP liveness
+          - misp-db:3306
+          - misp-modules:6666
+          # TAXII-EVAL-005: medallion feed on ti_net (TCP liveness; the
+          # HTTP endpoint requires auth so 2xx probes would always fail)
+          - taxii:5000
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # TLS handshake probes (PKI-EVAL-001): TLS services without a public
+  # HTTP health endpoint — a plain TCP probe would pass on a broken TLS
+  # listener, so the handshake itself is verified against the lab CA and
+  # probe_ssl_earliest_cert_expiry feeds the obs_cert_expiry_* alerts.
+  - job_name: blackbox-tls
+    metrics_path: /probe
+    params:
+      module: [tcp_tls]
+    static_configs:
+      - targets:
+          - opensearch:9200
+          - elasticsearch:9200
+          - redis:6379
+          - shuffle-backend:5443
+          - tenzir-node:5160
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

@@ -34,7 +34,7 @@ class ObservabilityMixin:
                     f"{loki_url}/loki/api/v1/query",
                     params={"query": query},
                     timeout=30,
-                    verify=False,
+                    verify=self.s.verify,
                 )
                 if r.status_code == 200:
                     data = r.json()
@@ -69,7 +69,7 @@ class ObservabilityMixin:
         t0 = time.time()
         loki_url = self.get_service_url("loki")
         try:
-            r = requests.get(f"{loki_url}/ready", timeout=10, verify=False)
+            r = requests.get(f"{loki_url}/ready", timeout=10, verify=self.s.verify)
             if r.status_code == 200:
                 self.record_assertion("loki_ready", True, time.time() - t0)
                 return True
@@ -89,7 +89,7 @@ class ObservabilityMixin:
         t0 = time.time()
         promtail_url = self.get_service_url("promtail")
         try:
-            r = requests.get(f"{promtail_url}/metrics", timeout=10, verify=False)
+            r = requests.get(f"{promtail_url}/metrics", timeout=10, verify=self.s.verify)
             if r.status_code == 200:
                 # Check for log entries counter. Promtail exposes entries under
                 # several metric names depending on version:
@@ -131,7 +131,7 @@ class ObservabilityMixin:
         t0 = time.time()
         grafana_url = self.get_service_url("grafana")
         try:
-            r = requests.get(f"{grafana_url}/api/health", timeout=10, verify=False)
+            r = requests.get(f"{grafana_url}/api/health", timeout=10, verify=self.s.verify)
             if r.status_code != 200:
                 self.record_assertion(
                     "grafana_healthy",
@@ -150,7 +150,7 @@ class ObservabilityMixin:
                 f"{grafana_url}/api/datasources",
                 auth=auth,
                 timeout=10,
-                verify=False,
+                verify=self.s.verify,
             )
             if r2.status_code == 200:
                 datasources = r2.json()
@@ -191,7 +191,7 @@ class ObservabilityMixin:
                 f"{loki_url}/loki/api/v1/query",
                 params={"query": query},
                 timeout=30,
-                verify=False,
+                verify=self.s.verify,
             )
             if r.status_code == 200:
                 return r.json()

@@ -14,11 +14,26 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
 
 import requests
+
+from soar_lab.security.tls_config import ca_verify
+
+_VERIFY = ca_verify()
+_OS_URL = os.environ.get("SHUFFLE_OPENSEARCH_URL", "https://opensearch:9200").rstrip("/")
+_ES_URL = os.environ.get("ES_URL", "https://elasticsearch:9200").rstrip("/")
+_OS_AUTH = (
+    os.environ.get("SHUFFLE_OPENSEARCH_USERNAME", os.environ.get("OPENSEARCH_USERNAME", "admin")),
+    os.environ.get("SHUFFLE_OPENSEARCH_PASSWORD", os.environ.get("OPENSEARCH_PASSWORD", "")),
+)
+_ES_AUTH = (
+    os.environ.get("ELASTIC_USERNAME", "elastic"),
+    os.environ.get("ELASTIC_PASSWORD", ""),
+)
 
 
 def _get_api_key() -> str:
@@ -49,7 +64,9 @@ def _wait_for_opensearch(timeout: int = 60) -> bool:
     while time.time() < deadline:
         try:
             r = requests.get(
-                "http://opensearch:9200/_cluster/health?wait_for_status=yellow&timeout=5s",
+                f"{_OS_URL}/_cluster/health?wait_for_status=yellow&timeout=5s",
+                auth=_OS_AUTH,
+                verify=_VERIFY,
                 timeout=10,
             )
             if r.status_code == 200:
@@ -95,7 +112,7 @@ def main() -> int:
         "mitre_tactics": ["Impact"],
     }
 
-    webhook_url = f"http://shuffle-backend:5001/api/v1/hooks/{webhook_token}"
+    webhook_url = f"https://shuffle-backend:5443/api/v1/hooks/{webhook_token}"
     execution_id = None
 
     print(f"[warmup] Sending test alert to {webhook_url}...", flush=True)
@@ -131,7 +148,7 @@ def main() -> int:
     while time.time() < deadline:
         try:
             r = requests.get(
-                f"http://shuffle-backend:5001/api/v1/executions/{execution_id}",
+                f"https://shuffle-backend:5443/api/v1/executions/{execution_id}",
                 headers=headers,
                 timeout=15,
             )
@@ -151,7 +168,7 @@ def main() -> int:
         # Abort the workflow since it's taking too long
         try:
             requests.delete(
-                f"http://shuffle-backend:5001/api/v1/executions/{execution_id}",
+                f"https://shuffle-backend:5443/api/v1/executions/{execution_id}",
                 headers=headers,
                 timeout=15,
             )
@@ -163,7 +180,7 @@ def main() -> int:
     print("[warmup] Cleaning up test execution from OpenSearch...", flush=True)
     try:
         requests.delete(
-            f"http://shuffle-backend:5001/api/v1/executions/{execution_id}",
+            f"https://shuffle-backend:5443/api/v1/executions/{execution_id}",
             headers=headers,
             timeout=15,
         )
@@ -171,7 +188,9 @@ def main() -> int:
         pass
     try:
         requests.post(
-            "http://opensearch:9200/workflowexecution/_delete_by_query",
+            f"{_OS_URL}/workflowexecution/_delete_by_query",
+            auth=_OS_AUTH,
+            verify=_VERIFY,
             json={
                 "query": {
                     "bool": {
@@ -199,7 +218,7 @@ def main() -> int:
         if thehive_key:
             for retry in range(3):
                 r = requests.post(
-                    "http://thehive:9000/api/v1/query",
+                    "https://thehive:9443/api/v1/query",
                     headers={"Authorization": f"Bearer {thehive_key}"},
                     json={
                         "query": [
@@ -220,7 +239,7 @@ def main() -> int:
                         case_id = case.get("_id") or case.get("id")
                         try:
                             requests.delete(
-                                f"http://thehive:9000/api/v1/case/{case_id}",
+                                f"https://thehive:9443/api/v1/case/{case_id}",
                                 headers={"Authorization": f"Bearer {thehive_key}"},
                                 timeout=15,
                             )
@@ -237,10 +256,12 @@ def main() -> int:
     # Step 6: Clean up test metrics and alerts from Elasticsearch
     print("[warmup] Cleaning up test alert/metrics from Elasticsearch...", flush=True)
     for idx in ["soar-alerts", "soar-metrics"]:
-        for es_host in ["http://elasticsearch:9200", "http://opensearch:9200"]:
+        for es_host, es_auth in ((_ES_URL, _ES_AUTH), (_OS_URL, _OS_AUTH)):
             try:
                 requests.post(
                     f"{es_host}/{idx}/_delete_by_query",
+                    auth=es_auth,
+                    verify=_VERIFY,
                     json={"query": {"term": {"alert_id": "WARMUP-TEST"}}},
                     timeout=15,
                 )
@@ -250,7 +271,9 @@ def main() -> int:
     # Also clean up any Cortex jobs for the warmup alert
     try:
         requests.post(
-            "http://elasticsearch:9200/cortex_6/_delete_by_query",
+            f"{_ES_URL}/cortex_6/_delete_by_query",
+            auth=_ES_AUTH,
+            verify=_VERIFY,
             json={"query": {"term": {"alert_id": "WARMUP-TEST"}}},
             timeout=15,
         )

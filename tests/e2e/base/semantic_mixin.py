@@ -593,7 +593,7 @@ class SemanticMixin:
                     },
                     auth=es_auth,
                     timeout=10,
-                    verify=False,
+                    verify=self.s.verify,
                 )
                 if (
                     r.status_code == 200
@@ -615,8 +615,9 @@ class SemanticMixin:
                 if exec_id:
                     r = requests.get(
                         f"{os_url}/workflowexecution/_doc/{exec_id}",
+                        auth=self.s.auth,
                         timeout=10,
-                        verify=False,
+                        verify=self.s.verify,
                     )
                     if r.status_code == 200:
                         source_str = _json.dumps(r.json().get("_source", {}), default=str)
@@ -653,7 +654,7 @@ class SemanticMixin:
                     },
                     auth=es_auth,
                     timeout=10,
-                    verify=False,
+                    verify=self.s.verify,
                 )
                 if (
                     r.status_code == 200

@@ -67,7 +67,7 @@ class TestFilesystemStorage:
         storage = FilesystemStorage(str(tmp_path))
 
         # Should not raise error
-        storage.delete("nonexistent.txt")
+        assert storage.delete("nonexistent.txt") is None
 
     def test_ensure_directory_exists(self, tmp_path):
         """Test ensure_directory_exists."""
@@ -172,14 +172,14 @@ class TestFilesystemStorage:
         storage = FilesystemStorage(str(tmp_path))
 
         # Should not raise error (placeholder implementation)
-        storage.store_backup_metadata("backup.tar.gz", {"key": "value"})
+        assert storage.store_backup_metadata("backup.tar.gz", {"key": "value"}) is None
 
     def test_log_restore_operation(self, tmp_path):
         """Test log_restore_operation (placeholder)"""
         storage = FilesystemStorage(str(tmp_path))
 
         # Should not raise error (placeholder implementation)
-        storage.log_restore_operation("backup.tar.gz", {"key": "value"})
+        assert storage.log_restore_operation("backup.tar.gz", {"key": "value"}) is None
 
     def test_get_base_directory(self, tmp_path):
         """Test get_base_directory."""

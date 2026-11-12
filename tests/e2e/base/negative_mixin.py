@@ -224,11 +224,14 @@ class NegativeAssertionsMixin:
 
     def _loki_contains_value(self, value: str, *, limit: int = 50) -> bool:
         """Return True when Loki holds a log line containing ``value``."""
+        from .service_mixins import _lab_ca_bundle
+
         loki_url = self.get_service_url("loki")
         r = requests.get(
             f"{loki_url}/loki/api/v1/query",
             params={"query": f'{{job=~".+"}} |= "{value}"', "limit": limit},
             timeout=15,
+            verify=_lab_ca_bundle(),
         )
         r.raise_for_status()
         streams = (r.json().get("data") or {}).get("result", [])

@@ -20,13 +20,16 @@ __all__ = [
 
 
 class AlertSeverity(IntEnum):
-    """Canonical alert severity (CFG-001) — TheHive/MISP scale 1..4.
+    """Canonical alert severity (CFG-001/CONTRACT-001) — scale 0..4.
 
     Single source of truth: validators, KPI aggregation, ingest schema
     and generators MUST derive their accepted range from this enum.
     IntEnum so ``severity == AlertSeverity.HIGH`` works on raw ints.
+    INFORMATIONAL=0 was added by CONTRACT-001 (shared API<->workflow
+    contract) — TheHive's 1..3 mapping is applied at case build time.
     """
 
+    INFORMATIONAL = 0
     LOW = 1
     MEDIUM = 2
     HIGH = 3

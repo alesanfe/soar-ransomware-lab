@@ -96,10 +96,13 @@ _TEST_KEY_PLACEHOLDER = "test-key"
 
 # Integration tests inside Docker often hardcode localhost URLs.
 _DOCKER_HOST_MAP = {
-    9000: ("thehive:9000", "thehive_api_key"),
-    9001: ("cortex:9001", "cortex_api_key"),
+    9000: ("thehive:9443", "thehive_api_key"),
+    8100: ("thehive:9443", "thehive_api_key"),
+    9001: ("cortex:9443", "cortex_api_key"),
+    8101: ("cortex:9443", "cortex_api_key"),
     8083: ("misp:80", "misp_api_key"),
-    5001: ("shuffle-backend:5001", "shuffle_api_key"),
+    5001: ("shuffle-backend:5443", "shuffle_api_key"),
+    15001: ("shuffle-backend:5443", "shuffle_api_key"),
     9200: ("elasticsearch:9200", None),
     9201: ("elasticsearch:9200", None),
 }
@@ -126,7 +129,7 @@ class BaseHTTPClient(SyncHTTPClient):
         config.
 
         Args:
-            base_url: Base URL of the remote service (e.g. ``http://thehive:9000``).
+            base_url: Base URL of the remote service (e.g. ``https://thehive:9443``).
             api_key: Optional Bearer token for Authorization header.
             timeout: Per-request timeout in seconds.
             retries: Maximum number of retry attempts on transient errors.
@@ -245,7 +248,8 @@ class BaseHTTPClient(SyncHTTPClient):
         if not mapping:
             return base_url, api_key
         netloc, key_name = mapping
-        scheme = "https" if parsed.port == 8083 else (parsed.scheme or "http")
+        https_ports = (8083, 9000, 9001, 8100, 8101, 5001, 15001, 9200, 9201)
+        scheme = "https" if parsed.port in https_ports else (parsed.scheme or "http")
         base_url = urlunparse(parsed._replace(scheme=scheme, netloc=netloc))
         if key_name and (not api_key or api_key == _TEST_KEY_PLACEHOLDER):
             api_key = self._load_env_key(key_name)

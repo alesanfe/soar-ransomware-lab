@@ -40,8 +40,8 @@ from soar_lab.infrastructure.monitoring.health_check_adapter import (
 from soar_lab.infrastructure.monitoring.health_service import HealthService
 from soar_lab.infrastructure.monitoring.system_metrics_driver import SystemMetricsDriver
 from soar_lab.infrastructure.path_service import PathService
-from soar_lab.infrastructure.persistence.sqlite_alert_repository import (
-    SqliteAlertRepository,
+from soar_lab.infrastructure.persistence.elasticsearch_alert_repository import (
+    ElasticsearchAlertRepository,
 )
 from soar_lab.infrastructure.pytest_output_parser import PytestOutputParser
 from soar_lab.infrastructure.pytest_test_runner import PytestTestRunner
@@ -74,6 +74,23 @@ class CompositionRoot:
             logger.warning("Configuration validation failed to run", exc_info=True)
         self.config_provider = InfrastructureConfigProvider(settings)
 
+        # API-EVAL-003: multi-worker mode requires shared backends — with
+        # UVICORN_WORKERS>1 and memory stores, rate windows and WS tickets
+        # silently fragment per-process. Fail closed: the operator set
+        # workers explicitly, so the misconfiguration is deliberate, not
+        # environmental (contrast: missing integrations only warn).
+        try:
+            _workers = int(self.config_provider.get("UVICORN_WORKERS", "1") or "1")
+        except (TypeError, ValueError):
+            _workers = 1
+        if _workers > 1:
+            for key in ("RATE_LIMIT_BACKEND", "WS_TICKET_BACKEND"):
+                if str(self.config_provider.get(key, "memory")).lower() != "redis":
+                    raise RuntimeError(
+                        f"UVICORN_WORKERS={_workers} requires {key}=redis — "
+                        "memory backends fragment state across workers"
+                    )
+
         _log_dir_str = self.config_provider.get("log_dir", "")
         setup_logging(
             log_level=self.config_provider.get("log_level", "INFO"),
@@ -91,7 +108,7 @@ class CompositionRoot:
         self.path_service.ensure_directories()
 
         self.storage = FilesystemStorage(config_provider=self.config_provider)
-        self.alert_repository = SqliteAlertRepository(
+        self.alert_repository = ElasticsearchAlertRepository(
             config_provider=self.config_provider, path_service=self.path_service
         )
         self.system_metrics = SystemMetricsDriver()
