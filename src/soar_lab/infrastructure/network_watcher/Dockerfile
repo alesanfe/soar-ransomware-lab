@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM python:3.15-alpine
 RUN apk add --no-cache socat && pip install --no-cache-dir docker==7.1.0
 COPY _constants.py /app/_constants.py
 COPY _handler.py /app/_handler.py
