@@ -19,7 +19,7 @@
 #     `go mod tidy` in its Dockerfile), so transitive Go modules resolve at
 #     build time against the Go proxy. Same exposure as the upstream image;
 #     documented in docs/17 (PERF-004).
-FROM golang:1.25-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59 AS builder
+FROM golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS builder
 
 # Commit that refs/tags/v2.2.1 resolved to on 2026-11-07
 # (git ls-remote https://github.com/Shuffle/Shuffle refs/tags/v2.2.1).
