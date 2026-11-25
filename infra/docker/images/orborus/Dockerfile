@@ -14,7 +14,7 @@
 #     with `git apply --check` — a silent partial application or an upstream
 #     drift in the patched regions now fails the build instead of producing a
 #     differently-behaving binary.
-FROM golang:1.25-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59 AS builder
+FROM golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS builder
 
 # Commit that refs/tags/v2.2.1 resolved to on 2026-11-06
 # (git ls-remote https://github.com/Shuffle/orborus refs/tags/v2.2.1).
