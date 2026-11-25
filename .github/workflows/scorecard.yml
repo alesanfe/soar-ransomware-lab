@@ -30,7 +30,6 @@ jobs:
           results_file: results.sarif
           results_format: sarif
           publish_results: true
-          fail_on_publish_error: true
 
       - name: Upload artifact
         if: always()
