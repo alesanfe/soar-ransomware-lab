@@ -21,7 +21,7 @@ jobs:
       - name: Validate docker-compose
         working-directory: infra/docker/compose
         run: |
-          docker compose \
+          docker compose --env-file .env.full \
             -f docker-compose.yml \
             -f docker-compose.core.yml \
             -f docker-compose.misp.yml \
@@ -175,7 +175,7 @@ jobs:
       - name: Start services
         run: |
           cp .env.example .env.full
-          docker compose \
+          docker compose --env-file .env.full \
             -f infra/docker/compose/docker-compose.yml \
             -f infra/docker/compose/docker-compose.core.yml \
             -f infra/docker/compose/docker-compose.api.yml \
@@ -192,7 +192,7 @@ jobs:
           if-no-files-found: ignore
       - name: Cleanup
         run: |
-          docker compose \
+          docker compose --env-file .env.full \
             -f infra/docker/compose/docker-compose.yml \
             -f infra/docker/compose/docker-compose.core.yml \
             -f infra/docker/compose/docker-compose.api.yml \
