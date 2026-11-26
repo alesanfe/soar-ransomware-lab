@@ -351,7 +351,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .[dev]
       - name: Lint Markdown
-        uses: DavidAnson/markdownlint-cli2-action@eb5ca3ab411449c66620fe7f1b3c9e10547144b0 # v18
+        uses: DavidAnson/markdownlint-cli2-action@3ce8f712b5d8f31acd8e201be6d97e3d2bb23eb7 # v25.1.0
         with:
           globs: 'docs/**/*.md'
       - name: Check internal links
